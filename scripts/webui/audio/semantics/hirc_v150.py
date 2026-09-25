@@ -15,6 +15,8 @@ from scripts.webui.audio.semantics.event_projection import HIRC_OBJECT_TYPE_LABE
 
 from struct import unpack_from
 from scripts.webui.audio.semantics.context_utils import SELECTION_HIRC_TYPES
+from scripts.webui.audio.semantics.wwise_enums import display_labels, enum_name
+from scripts.webui.audio.semantics.wwise_effect_native import effect_parameter_schema
 
 HIRC_ACTION_OPERATION_LABELS = {
     0x0100: "stop",
@@ -56,30 +58,35 @@ HIRC_ACTION_OPERATION_LABELS = {
 
 HIRC_PLAYBACK_ACTION_OPERATIONS = frozenset({0x0400, 0x2100})
 
-HIRC_ACTION_PROPERTY_LABELS = {
-    0x39: "delayTime",
-    0x3A: "transitionTime",
-    0x3B: "probability",
-}
 
-HIRC_FADE_CURVE_LABELS = {
-    0: "Log3",
-    1: "Sine",
-    2: "Log1",
-    3: "InvSCurve",
-    4: "Linear",
-    5: "SCurve",
-    6: "Exp1",
-    7: "SineRecip",
-    8: "Exp3",
-    9: "Constant",
-}
+def hirc_action_type_name(action_type: int | None) -> str | None:
+    """Name the whole 16-bit action type from the reviewed SDK enum contract.
 
-HIRC_BANK_TYPE_LABELS = {
-    0: "User",
-    30: "Event",
-    31: "Bus",
-}
+    The labels above are keyed on ``actionType & 0xFF00``, which is what decides
+    the body layout, so the low byte has never been named. ``AkActionType`` names
+    the full word: the same high byte appears as ``Stop_E``, ``Stop_E_O``,
+    ``Stop_ALL`` and ``Stop_ALL_O``, so masking discards a distinction the
+    serializer made. This returns the SDK identifier for the whole word and
+    ``None`` when the contract does not name it; the suffix is the SDK's own
+    spelling, and reading a target scope out of it would be an inference this
+    does not make. Naming a value is not execution, selection, or audibility.
+    """
+    if action_type is None:
+        return None
+    return enum_name("AkActionType", int(action_type))
+
+
+HIRC_ACTION_PROPERTY_LABELS = display_labels(
+    "AkPropID", "AkPropID_",
+    include=("DelayTime", "TransitionTime", "Probability"),
+    lower_first=True,
+)
+
+HIRC_FADE_CURVE_LABELS = display_labels(
+    "AkCurveInterpolation", "AkCurveInterpolation_", exclude=("LastFadeCurve",),
+)
+
+HIRC_BANK_TYPE_LABELS = display_labels("AkBankTypeEnum", "AkBankType_")
 
 HIRC_MUSIC_NODE_TYPES = frozenset({10, 11, 12, 13})
 
@@ -95,56 +102,41 @@ HIRC_TYPED_CHILD_CONTAINER_TYPES = frozenset({5, 6, 7, 9, *HIRC_MUSIC_PARENT_NOD
 
 HIRC_AUDIO_NODE_TYPES = frozenset({2, 5, 6, 7, 9, *HIRC_MUSIC_NODE_TYPES})
 
-HIRC_RTPC_TYPE_LABELS = {
-    0: "gameParameter",
-    1: "midiParameter",
-    2: "switch",
-    3: "state",
-    4: "modulator",
-}
+HIRC_RTPC_TYPE_LABELS = display_labels(
+    "AkGameSyncType", "AkGameSyncType_", exclude=("Count", "MaxNum"),
+    spellings={"MIDIParameter": "midiParameter"}, lower_first=True,
+)
 
-HIRC_ACTION_VALUE_MEANING_LABELS = {
-    0: "default",
-    1: "independent",
-    2: "offset",
-}
+HIRC_ACTION_VALUE_MEANING_LABELS = display_labels(
+    "AkValueMeaning", "AkValueMeaning_", lower_first=True,
+)
 
-HIRC_RTPC_ACCUM_LABELS = {
-    0: "none",
-    1: "exclusive",
-    2: "additive",
-    3: "multiply",
-    4: "boolean",
-    5: "maximum",
-    6: "filter",
-}
+HIRC_RTPC_ACCUM_LABELS = display_labels(
+    "AkRtpcAccum", "AkRtpcAccum_", exclude=("Count",), lower_first=True,
+)
 
-HIRC_RTPC_SCALING_LABELS = {
-    0: "none",
-    2: "decibel",
-    3: "logarithmic",
-    4: "decibelToLinear",
-}
+HIRC_RTPC_SCALING_LABELS = display_labels(
+    "AkCurveScaling", "AkCurveScaling_", exclude=("MaxNum",),
+    spellings={"dB": "decibel", "Log": "logarithmic", "dBToLin": "decibelToLinear"},
+    lower_first=True,
+)
 
-HIRC_STATE_SYNC_TYPE_LABELS = {
-    0: "immediate",
-    1: "nextGrid",
-    2: "nextBar",
-    3: "nextBeat",
-    4: "nextMarker",
-    5: "nextUserMarker",
-    6: "entryMarker",
-    7: "exitMarker",
-    8: "exitNever",
-    9: "lastExitPosition",
-}
+# The layer-detail view historically spells this one SDK member "log".
+HIRC_LAYER_RTPC_SCALING_LABELS = display_labels(
+    "AkCurveScaling", "AkCurveScaling_", exclude=("MaxNum",),
+    spellings={"dB": "decibel", "Log": "log", "dBToLin": "decibelToLinear"},
+    lower_first=True,
+)
+
+HIRC_STATE_SYNC_TYPE_LABELS = display_labels(
+    "AkSyncType", "SyncType", lower_first=True,
+)
 
 # In Wwise 2023.1.17 the RTPC/state ParamID is the AkPropID itself (the SDK PDB
 # carries no separate RTPC id enum), so the curve and state property labels are
 # the same table as the initial-property bundle. Ids above 0xFF encode an effect
 # slot in the high byte: the shipped two-byte keys are 0x130 and 0x230, slot 1
 # and slot 2 of AkPropID_BypassFX (0x30). The label carries that slot.
-HIRC_RTPC_PARAMETER_LABELS = None  # replaced below, after HIRC_INITIAL_PROPERTY_LABELS
 
 
 def hirc_rtpc_parameter_label(parameter_id: int) -> str:
@@ -155,94 +147,18 @@ def hirc_rtpc_parameter_label(parameter_id: int) -> str:
     return f"{base}[slot {slot}]" if slot else base
 
 
-HIRC_INITIAL_PROPERTY_LABELS = {
-    0x00: "Volume",
-    0x01: "Pitch",
-    0x02: "LPF",
-    0x03: "HPF",
-    0x04: "BusVolume",
-    0x05: "MakeUpGain",
-    0x06: "Priority",
-    0x07: "MuteRatio",
-    0x08: "UserAuxSendVolume0",
-    0x09: "UserAuxSendVolume1",
-    0x0A: "UserAuxSendVolume2",
-    0x0B: "UserAuxSendVolume3",
-    0x0C: "GameAuxSendVolume",
-    0x0D: "OutputBusVolume",
-    0x0E: "OutputBusHPF",
-    0x0F: "OutputBusLPF",
-    0x10: "UserAuxSendLPF0",
-    0x11: "UserAuxSendLPF1",
-    0x12: "UserAuxSendLPF2",
-    0x13: "UserAuxSendLPF3",
-    0x14: "UserAuxSendHPF0",
-    0x15: "UserAuxSendHPF1",
-    0x16: "UserAuxSendHPF2",
-    0x17: "UserAuxSendHPF3",
-    0x18: "GameAuxSendLPF",
-    0x19: "GameAuxSendHPF",
-    0x1A: "ReflectionBusVolume",
-    0x1B: "HDRBusThreshold",
-    0x1C: "HDRBusRatio",
-    0x1D: "HDRBusReleaseTime",
-    0x1E: "HDRActiveRange",
-    0x1F: "MidiTransposition",
-    0x20: "MidiVelocityOffset",
-    0x21: "PlaybackSpeed",
-    0x22: "InitialDelay",
-    0x23: "PositionPanX2D",
-    0x24: "PositionPanY2D",
-    0x25: "PositionPanZ2D",
-    0x26: "PositionPanX3D",
-    0x27: "PositionPanY3D",
-    0x28: "PositionPanZ3D",
-    0x29: "PositioningCenterPercent",
-    0x2A: "PositioningTypeBlend",
-    0x2B: "PositioningEnableAttenuation",
-    0x2C: "PositioningConeAttenuationOnOff",
-    0x2D: "PositioningConeAttenuation",
-    0x2E: "PositioningConeLPF",
-    0x2F: "PositioningConeHPF",
-    0x30: "BypassFX",
-    0x31: "BypassAllFX",
-    0x32: "Available0",
-    0x33: "Available1",
-    0x34: "Available2",
-    0x35: "MaxNumInstances",
-    0x36: "BypassAllMetadata",
-    0x37: "PlayMechanismSpecialTransitionsValue",
-    0x38: "PriorityDistanceOffset",
-    0x39: "DelayTime",
-    0x3A: "TransitionTime",
-    0x3B: "Probability",
-    0x3C: "DialogueMode",
-    0x3D: "HDRBusGameParam",
-    0x3E: "HDRBusGameParamMin",
-    0x3F: "HDRBusGameParamMax",
-    0x40: "LoopStart",
-    0x41: "LoopEnd",
-    0x42: "TrimInTime",
-    0x43: "TrimOutTime",
-    0x44: "FadeInTime",
-    0x45: "FadeOutTime",
-    0x46: "FadeInCurve",
-    0x47: "FadeOutCurve",
-    0x48: "LoopCrossfadeDuration",
-    0x49: "CrossfadeUpCurve",
-    0x4A: "CrossfadeDownCurve",
-    0x4B: "MidiTrackingRootNote",
-    0x4C: "MidiPlayOnNoteType",
-    0x4D: "MidiKeyRangeMin",
-    0x4E: "MidiKeyRangeMax",
-    0x4F: "MidiVelocityRangeMin",
-    0x50: "MidiVelocityRangeMax",
-    0x51: "MidiChannelMask",
-    0x52: "MidiTempoSource",
-    0x53: "MidiTargetNode",
-    0x54: "Loop",
-    0x55: "AttenuationID",
-}
+HIRC_INITIAL_PROPERTY_LABELS = display_labels(
+    "AkPropID", "AkPropID_",
+    exclude=("FirstRtpc", "LastRtpc", "FirstNonRtpc", "NUM"),
+    spellings={
+        "Positioning_Pan_X_2D": "PositionPanX2D",
+        "Positioning_Pan_Y_2D": "PositionPanY2D",
+        "Positioning_Pan_Z_2D": "PositionPanZ2D",
+        "Positioning_Pan_X_3D": "PositionPanX3D",
+        "Positioning_Pan_Y_3D": "PositionPanY3D",
+        "Positioning_Pan_Z_3D": "PositionPanZ3D",
+    },
+)
 HIRC_RTPC_PARAMETER_LABELS = HIRC_INITIAL_PROPERTY_LABELS
 
 HIRC_INITIAL_PROPERTY_U32_LABELS = frozenset({"AttenuationID"})
@@ -271,284 +187,6 @@ HIRC_BUILTIN_EFFECT_PLUGIN_LABELS = {
     0x00BE0003: "3D Audio Bed Mixer",
 }
 
-HIRC_EFFECT_PARAMETER_CONTRACT = {
-    "akSoundEngineSha256": "b33c3c71e44c305fb1c3903942308f2ab55a7854d68c719fe55e7de323e7dba2",
-    "akSoundEngineFileSize": 3586536,
-    "evidence": "shippedAkSoundEngineSetParamsBlockDisassembly",
-    "schemas": {
-        0x00690003: {
-            "schema": "wwiseParametricEqFxParamsV1",
-            "parameterByteLengths": [56],
-            "setParamsBlockRva": "0x00218860",
-        },
-        0x006A0003: {
-            "schema": "wwiseDelayFxParamsV1",
-            "parameterByteLengths": [18],
-            "setParamsBlockRva": "0x001ed030",
-        },
-        0x006C0003: {
-            "schema": "wwiseCompressorFxParamsV1",
-            "parameterByteLengths": [22],
-            "setParamsBlockRva": "0x001eb650",
-        },
-        0x006D0003: {
-            "schema": "wwiseExpanderFxParamsV1",
-            "parameterByteLengths": [22],
-            "setParamsBlockRva": "0x001eb650",
-        },
-        0x00760003: {
-            "schema": "wwiseRoomVerbFxParamsV1",
-            "parameterByteLengths": [186],
-            "setParamsBlockRva": "0x00231d50",
-            "setParamRva": "0x00231590",
-            "defaultInitRva": "0x00231430",
-            "runtimeErUpdateRva": "0x0022b070",
-            "privateTuningNativeEvidence": {
-                "status": "exactNativeUseRolesPublicNamesUnresolved",
-                "nativeStructOffsetDelta": 14,
-                "ranges": [
-                    {
-                        "setParamIds": [100, 101, 102, 103, 104],
-                        "serializedOffsets": [142, 146, 150, 154, 158],
-                        "nativeStructOffsets": [156, 160, 164, 168, 172],
-                        "role": "earlyReflectionTapPatternSynthesisInputs",
-                        "detail": (
-                            "0x00229b60 reads the five contiguous floats as two "
-                            "endpoint pairs plus a middle variation input, applies "
-                            "linear interpolation and seeded per-tap variation, "
-                            "then 0x0022a010 normalizes the generated values into "
-                            "the ER grid used by per-unit setup."
-                        ),
-                        "consumerRvas": ["0x00229b60"],
-                        "evidenceBoundary": (
-                            "RuntimeErUpdate calls the native pattern generator with "
-                            "the five contiguous values as bounded/randomized tap "
-                            "inputs; the public authoring names remain unresolved."
-                        ),
-                    },
-                    {
-                        "setParamIds": [105, 106, 107],
-                        "serializedOffsets": [162, 166, 170],
-                        "nativeStructOffsets": [176, 180, 184],
-                        "role": "nativeRoleUnobservedInAuditedRoomVerbPath",
-                        "consumerRvas": [],
-                        "evidenceBoundary": (
-                            "The current RoomVerb native region shows exact SetParam, "
-                            "default-initialization, and copy accesses for these fields "
-                            "but no direct read in the audited update helpers."
-                        ),
-                    },
-                    {
-                        "setParamIds": [108],
-                        "serializedOffsets": [174],
-                        "nativeStructOffsets": [188],
-                        "role": "sixChannelCoefficientDerivationInput",
-                        "detail": (
-                            "0x0022ab2e scales the value by 2*pi and a native "
-                            "divisor, then writes six coefficients of the form "
-                            "1 - (2*pi * value / divisor) for ER/reverb unit "
-                            "initialization."
-                        ),
-                        "consumerRvas": ["0x0022ab2e"],
-                        "evidenceBoundary": (
-                            "Runtime initialization multiplies this value by a native "
-                            "constant and derives six channel coefficients; no public "
-                            "parameter name is inferred."
-                        ),
-                    },
-                    {
-                        "setParamIds": [109, 110],
-                        "serializedOffsets": [178, 182],
-                        "nativeStructOffsets": [192, 196],
-                        "role": "earlyReflectionSecondaryPatternInputs",
-                        "detail": (
-                            "0x00229e20 reads the two values as a secondary ER "
-                            "pattern range/spread, builds seeded four-lane values "
-                            "per unit, and the caller converts them into the "
-                            "secondary per-unit pattern before allocation."
-                        ),
-                        "consumerRvas": ["0x00229e20"],
-                        "evidenceBoundary": (
-                            "RuntimeErUpdate calls a second native pattern generator "
-                            "that reads these two values; the public authoring names "
-                            "remain unresolved."
-                        ),
-                    },
-                ],
-            },
-            "semanticBoundary": (
-                "all 37 public authoring properties are identified; exact "
-                "SetParam IDs 100..110 retain exact values; native update-role "
-                "evidence is available for three groups, while public names remain "
-                "unresolved"
-            ),
-        },
-        0x007E0003: {
-            "schema": "wwiseGuitarDistortionFxParamsV1",
-            "parameterByteLengths": [126],
-            "setParamsBlockRva": "0x001f6650",
-            "setParamRva": "0x001f6270",
-            "defaultInitRva": "0x001f5f70",
-            "semanticBoundary": (
-                "all six pre/post EQ bands and six public distortion/output "
-                "properties are identified"
-            ),
-        },
-        0x007F0003: {
-            "schema": "wwiseConvolutionReverbFxParamsV1",
-            "parameterByteLengths": [57],
-            "setParamsBlockRva": "0x00258340",
-            "setParamRva": "0x00257fd0",
-            "defaultInitRva": "0x00257f10",
-            "privateTuningNativeEvidence": {
-                "status": "exactForwardedPrivateFieldsPublicNamesUnresolved",
-                "ranges": [
-                    {
-                        "setParamIds": [34],
-                        "serializedOffsets": [52],
-                        "nativeStructOffsets": [60],
-                        "wrapperOffsets": [76],
-                        "role": "privateRuntimeScalarForwardedToConvolutionEngineProcess",
-                        "detail": (
-                            "SetParam ID 34 writes native +0x3c; wrapper code copies "
-                            "it to +0x4c and passes it as the fifth float to the "
-                            "convolution processor's virtual method."
-                        ),
-                        "consumerRvas": [
-                            "0x00254a83",
-                            "0x00254bd8",
-                            "0x00258520",
-                        ],
-                        "status": "exactForwardedScalarEngineReadUnobserved",
-                        "evidenceBoundary": (
-                            "SetParam ID 34 writes native +0x3c; the wrapper copies it "
-                            "to +0x4c and forwards it as the fifth floating-point "
-                            "argument on both convolution processing paths. The "
-                            "current CPU engine method at 0x00258520 does not read "
-                            "that register in the audited body, so no public name or "
-                            "DSP effect is inferred."
-                        ),
-                    },
-                    {
-                        "setParamIds": [None],
-                        "serializedOffsets": [56],
-                        "nativeStructOffsets": [64],
-                        "wrapperOffsets": [80],
-                        "role": "serializedByteForwardedToConvolutionRuntimeState",
-                        "detail": (
-                            "Serialized byte 56 is copied through native +0x40 and "
-                            "wrapper +0x50 into runtime state +0x8c before the "
-                            "convolution state update."
-                        ),
-                        "consumerRvas": ["0x00254d27"],
-                        "status": "exactForwardedRolePublicNameUnresolved",
-                        "evidenceBoundary": (
-                            "The final serialized byte is copied to native +0x40, "
-                            "then to wrapper +0x50 and onward to wrapper state +0x8c. "
-                            "The current binary does not expose a stable public "
-                            "parameter name for this byte."
-                        ),
-                    },
-                ],
-            },
-            "semanticBoundary": (
-                "13 public runtime properties are identified; SetParam ID 34 "
-                "and serialized byte 56 retain exact values with native forwarding "
-                "evidence, but their public names and final DSP roles remain "
-                "unresolved"
-            ),
-        },
-        0x00BA0003: {
-            "schema": "wwiseMasteringSuiteFxParamsV1",
-            "parameterByteLengths": [304],
-            "setParamsBlockRva": "0x00249fd0",
-            "setParamRva": "0x00249a50",
-            "defaultInitRva": "0x00249630",
-            "channelGainNativeMapping": {
-                "serializedOffsets": [235, 239, 243, 247, 251, 255, 259, 263, 267, 271, 275, 279],
-                "nativeStructOffsets": [280, 284, 288, 292, 296, 300, 304, 308, 312, 316, 320, 324],
-                "status": "exactSetParamsBlockSlotMappingSpeakerNamesUnresolved",
-            },
-            "privateTuningNativeEvidence": {
-                "status": "exactSetParamStorageOnlyPublicNamesUnresolved",
-                "ranges": [
-                    {
-                        "setParamIds": [100],
-                        "serializedOffsets": [4],
-                        "nativeStructOffsets": [24],
-                        "role": "privateUint32StoredAtNativeStructOffset",
-                        "consumerRvas": [],
-                        "nativeUseStatus": (
-                            "nativeSetParamStorageOnlyNoDirectReadObserved"
-                        ),
-                        "evidenceBoundary": (
-                            "SetParam 100 copies the exact uint32 from serialized "
-                            "offset 4 to native +0x18; SetParamsBlock and the "
-                            "parameter copy path preserve the same field. No "
-                            "direct read was observed in the audited Mastering "
-                            "Suite runtime region, so its public name and DSP "
-                            "role remain unresolved."
-                        ),
-                    },
-                    {
-                        "setParamIds": [200],
-                        "serializedOffsets": [110],
-                        "nativeStructOffsets": [136],
-                        "role": "privateUint32StoredAtNativeStructOffset",
-                        "consumerRvas": [],
-                        "nativeUseStatus": (
-                            "nativeSetParamStorageOnlyNoDirectReadObserved"
-                        ),
-                        "evidenceBoundary": (
-                            "SetParam 200 copies the exact uint32 from serialized "
-                            "offset 110 to native +0x88; SetParamsBlock and the "
-                            "parameter copy path preserve the same field. No "
-                            "direct read was observed in the audited Mastering "
-                            "Suite runtime region, so its public name and DSP "
-                            "role remain unresolved."
-                        ),
-                    },
-                ],
-            },
-            "semanticBoundary": (
-                "the four public modules, six EQ bands, four compressor bands, "
-                "master/channel gains, and limiter controls are identified; "
-                "SetParam IDs 100 and 200 retain exact unnamed codes with "
-                "storage-only native evidence"
-            ),
-        },
-        0x00730003: {
-            "schema": "wwiseMatrixReverbFxParamsV1",
-            "parameterByteLengths": [29, 45, 61, 77, 93],
-            "setParamsBlockRva": "0x002158f0",
-        },
-        0x00810003: {
-            "schema": "wwiseMeterFxParamsV1",
-            "parameterByteLengths": [28],
-            "setParamsBlockRva": "0x00216f90",
-        },
-        0x00870003: {
-            "schema": "wwiseStereoDelayFxParamsV1",
-            "parameterByteLengths": [62],
-            "setParamsBlockRva": "0x002350c0",
-        },
-        0x00880003: {
-            "schema": "wwisePitchShifterFxParamsV1",
-            "parameterByteLengths": [38],
-            "setParamsBlockRva": "0x0021b520",
-        },
-        0x008A0003: {
-            "schema": "wwiseHarmonizerFxParamsV1",
-            "parameterByteLengths": [68],
-            "setParamsBlockRva": "0x001fa760",
-        },
-        0x008B0003: {
-            "schema": "wwiseGainFxParamsV1",
-            "parameterByteLengths": [8],
-            "setParamsBlockRva": "0x001f5560",
-        },
-    },
-}
 
 HIRC_PARAMETRIC_EQ_FILTER_LABELS = {
     0: "Low Pass",
@@ -643,37 +281,12 @@ HIRC_ROOMVERB_TONE_CURVE_LABELS = {
     2: "High Shelf",
 }
 
-HIRC_CONVOLUTION_REVERB_TYPE_LABELS = {0: "Reverb", 1: "Filter"}
-
 HIRC_GUITAR_DISTORTION_TYPE_LABELS = {
     0: "None",
     1: "Overdrive",
     2: "Heavy",
     3: "Clip",
     4: "Fuzz",
-}
-
-HIRC_MASTERING_EQ_FILTER_LABELS = {
-    0: "Off",
-    1: "Low Pass Resonant (Two-Pole)",
-    2: "High Pass Resonant (Two-Pole)",
-    3: "Peak (Notch)",
-    4: "High Shelf",
-    5: "Low Shelf",
-    6: "Low Pass (One-Pole)",
-    7: "High Pass (One-Pole)",
-}
-
-HIRC_MASTERING_COMPRESSOR_LINK_LABELS = {
-    0: "No Link",
-    1: "All Channels",
-    2: "Partial Link",
-}
-
-HIRC_MASTERING_LIMITER_MODE_LABELS = {
-    0: "Soft-Knee",
-    1: "Hard-Knee",
-    2: "Advanced",
 }
 
 def iter_bnk_sections(bank_payload: bytes) -> list[tuple[bytes, bytes]]:
@@ -1316,16 +929,9 @@ def hirc_v150_control_action(data: bytes, bank_version: int | None) -> dict[str,
     )
     return evidence
 
-HIRC_PLUGIN_TYPE_LABELS = {
-    0: "none",
-    1: "codec",
-    2: "source",
-    3: "effect",
-    6: "mixer",
-    7: "sink",
-    8: "globalExtension",
-    9: "metadata",
-}
+HIRC_PLUGIN_TYPE_LABELS = display_labels(
+    "AkPluginType", "AkPluginType", exclude=("Mask",), lower_first=True,
+)
 
 HIRC_STREAM_TYPE_LABELS = {
     0: "memory",
@@ -1640,6 +1246,8 @@ def _hirc_effect_number(value: float) -> str:
 def decode_hirc_v150_effect_parameters(
     plugin_class_id: int,
     parameter_data: bytes,
+    *,
+    native_evidence_validated: bool = False,
 ) -> dict[str, Any] | None:
     """Decode current shipped Wwise effect parameter blocks fail-closed.
 
@@ -1649,8 +1257,12 @@ def decode_hirc_v150_effect_parameters(
     slot bypass, platform DSP, and audibility are intentionally not inferred.
     """
 
-    contract = HIRC_EFFECT_PARAMETER_CONTRACT["schemas"].get(plugin_class_id)
-    if not contract or len(parameter_data) not in contract["parameterByteLengths"]:
+    contract = effect_parameter_schema(plugin_class_id)
+    if (
+        not native_evidence_validated
+        or not contract
+        or len(parameter_data) not in contract["parameterByteLengths"]
+    ):
         return None
     parser_status = "typedExactShippedAkSoundEngineSetParamsBlock"
     parameter_boundary = "typedExactAuthoredBaseValues"
@@ -1945,39 +1557,17 @@ def decode_hirc_v150_effect_parameters(
                     )
                 )
 
-            private_native_ranges = (
-                (0, 5, "earlyReflectionTapPatternSynthesisInputs", ["0x00229b60"],
-                 "exactNativeUseRolePublicNameUnresolved",
-                 "0x00229b60 reads the five contiguous floats as two endpoint pairs plus a middle variation input, applies linear interpolation and seeded per-tap variation, then 0x0022a010 normalizes the generated values into the ER grid used by per-unit setup."),
-                (5, 3, "nativeRoleUnobservedInAuditedRoomVerbPath", [],
-                 "exactNativeReadBoundaryNoDirectReadObserved", ""),
-                (8, 1, "sixChannelCoefficientDerivationInput", ["0x0022ab2e"],
-                 "exactNativeUseRolePublicNameUnresolved",
-                 "0x0022ab2e scales the value by 2*pi and a native divisor, then writes six coefficients of the form 1 - (2*pi * value / divisor) for ER/reverb unit initialization."),
-                (9, 2, "earlyReflectionSecondaryPatternInputs", ["0x00229e20"],
-                 "exactNativeUseRolePublicNameUnresolved",
-                 "0x00229e20 reads the two values as a secondary ER pattern range/spread, builds seeded four-lane values per unit, and the caller converts them into the secondary per-unit pattern before allocation."),
-            )
-            private_native_rows: dict[int, dict[str, Any]] = {}
-            for start_index, count, role, consumers, native_status, detail in private_native_ranges:
-                for index in range(start_index, start_index + count):
-                    private_native_rows[index] = {
-                        "nativeStructOffset": 0x9C + index * 4,
-                        "nativeUseRole": role,
-                        "nativeUseStatus": native_status,
-                        "nativeUseDetail": detail,
-                        "nativeConsumerRvas": consumers,
-                    }
-            internal_tuning = []
-            for index in range(11):
-                serialized_offset = 142 + index * 4
-                internal_tuning.append({
-                    "setParamId": 100 + index,
-                    "serializedOffset": serialized_offset,
-                    "value": _hirc_effect_float(parameter_data, serialized_offset),
+            # Current SetParamsBlock authenticates the eleven serialized floats.
+            # Their older SetParam IDs and runtime consumer roles have not been
+            # revalidated on the selected client and are withheld.
+            internal_tuning = [
+                {
+                    "serializedOffset": 142 + index * 4,
+                    "value": _hirc_effect_float(parameter_data, 142 + index * 4),
                     "semanticStatus": "exactValueMeaningUnresolved",
-                    **private_native_rows[index],
-                })
+                }
+                for index in range(11)
+            ]
             values = {
                 "reverb": {
                     "preDelayMilliseconds": _hirc_effect_float(parameter_data, 85),
@@ -2046,12 +1636,9 @@ def decode_hirc_v150_effect_parameters(
             )
             parameter_boundary = "typedExactLayoutPartialAuthoredSemantics"
             semantic_boundary = (
-                "All 37 public RoomVerb authoring properties are identified from "
-                "SetParam dispatch plus runtime use. Native update-role evidence "
-                "classifies IDs 100..104, 108, and 109..110 by exact consumer "
-                "functions, while IDs 105..107 have no direct read in the audited "
-                "RoomVerb update helpers; IDs 100..110 retain exact values and "
-                "public parameter names remain unresolved."
+                "Current SetParamsBlock authenticates 37 public authored controls "
+                "and eleven additional serialized floats. Public names and "
+                "selected-client runtime roles for the eleven values remain unresolved."
             )
         elif plugin_class_id == 0x007E0003:  # Guitar Distortion
             eq_bands: list[dict[str, Any]] = []
@@ -2141,331 +1728,6 @@ def decode_hirc_v150_effect_parameters(
                 + "; post EQ "
                 + ", ".join(eq_summaries["postDistortion"])
             )
-        elif plugin_class_id == 0x007F0003:  # Convolution Reverb
-            pre_delay_ms = _hirc_effect_float_range(
-                parameter_data, 0, 0.0, 1000.0,
-                "Convolution Reverb pre-delay",
-            )
-            rear_delay_ms = _hirc_effect_float_range(
-                parameter_data, 4, 0.0, 200.0,
-                "Convolution Reverb rear delay",
-            )
-            reverb_type = unpack_from("<I", parameter_data, 48)[0]
-            if reverb_type not in HIRC_CONVOLUTION_REVERB_TYPE_LABELS:
-                raise ValueError("invalid Convolution Reverb type")
-            private_native_rows = [
-                {
-                    "setParamId": 34,
-                    "serializedOffset": 52,
-                    "nativeStructOffset": 60,
-                    "wrapperOffset": 76,
-                    "value": _hirc_effect_float(parameter_data, 52),
-                    "semanticStatus": "exactValueMeaningUnresolved",
-                    "nativeUseRole": (
-                        "privateRuntimeScalarForwardedToConvolutionEngineProcess"
-                    ),
-                    "nativeUseDetail": (
-                        "SetParam ID 34 writes native +0x3c; wrapper code copies it "
-                        "to +0x4c and passes it as the fifth float to the "
-                        "convolution processor's virtual method."
-                    ),
-                    "nativeUseStatus": "exactForwardedScalarEngineReadUnobserved",
-                    "nativeConsumerRvas": [
-                        "0x00254a83",
-                        "0x00254bd8",
-                        "0x00258520",
-                    ],
-                },
-                {
-                    "setParamId": None,
-                    "serializedOffset": 56,
-                    "nativeStructOffset": 64,
-                    "wrapperOffset": 80,
-                    "rawCode": parameter_data[56],
-                    "semanticStatus": "exactValueMeaningUnresolved",
-                    "nativeUseRole": "serializedByteForwardedToConvolutionRuntimeState",
-                    "nativeUseDetail": (
-                        "Serialized byte 56 is copied through native +0x40 and "
-                        "wrapper +0x50 into runtime state +0x8c before the "
-                        "convolution state update."
-                    ),
-                    "nativeUseStatus": "exactForwardedRolePublicNameUnresolved",
-                    "nativeConsumerRvas": ["0x00254d27"],
-                },
-            ]
-            values = {
-                "preDelayMilliseconds": pre_delay_ms,
-                "rearDelayMilliseconds": rear_delay_ms,
-                "inputLevelsDb": {
-                    "center": _hirc_effect_float_range(
-                        parameter_data, 12, -96.3, 0.0,
-                        "Convolution Reverb center input level",
-                    ),
-                    "lfe": _hirc_effect_float_range(
-                        parameter_data, 16, -96.3, 0.0,
-                        "Convolution Reverb LFE input level",
-                    ),
-                },
-                "inputSpreadDegrees": _hirc_effect_float_range(
-                    parameter_data, 20, 0.0, 180.0,
-                    "Convolution Reverb input spread",
-                ),
-                "reverbLevelsDb": {
-                    "front": _hirc_effect_float_range(
-                        parameter_data, 24, -96.3, 0.0,
-                        "Convolution Reverb front level",
-                    ),
-                    "rear": _hirc_effect_float_range(
-                        parameter_data, 28, -96.3, 0.0,
-                        "Convolution Reverb rear level",
-                    ),
-                    "center": _hirc_effect_float_range(
-                        parameter_data, 32, -96.3, 0.0,
-                        "Convolution Reverb center level",
-                    ),
-                    "lfe": _hirc_effect_float_range(
-                        parameter_data, 36, -96.3, 0.0,
-                        "Convolution Reverb LFE level",
-                    ),
-                },
-                "outputLevelsDb": {
-                    "dry": _hirc_effect_float_range(
-                        parameter_data, 40, -96.3, 24.0,
-                        "Convolution Reverb dry level",
-                    ),
-                    "reverb": _hirc_effect_float_range(
-                        parameter_data, 44, -96.3, 24.0,
-                        "Convolution Reverb output level",
-                    ),
-                },
-                "outputSpreadDegrees": _hirc_effect_float_range(
-                    parameter_data, 8, 0.0, 180.0,
-                    "Convolution Reverb output spread",
-                ),
-                "reverbType": reverb_type,
-                "reverbTypeLabel": HIRC_CONVOLUTION_REVERB_TYPE_LABELS[reverb_type],
-                "unresolvedParameters": private_native_rows,
-            }
-            input_levels = values["inputLevelsDb"]
-            reverb_levels = values["reverbLevelsDb"]
-            output_levels = values["outputLevelsDb"]
-            summary = (
-                f"{values['reverbTypeLabel']}; pre-delay "
-                f"{_hirc_effect_number(pre_delay_ms)} ms; rear delay "
-                f"{_hirc_effect_number(rear_delay_ms)} ms; input spread "
-                f"{_hirc_effect_number(values['inputSpreadDegrees'])} deg; "
-                f"input C {_hirc_effect_number(input_levels['center'])} dB / LFE "
-                f"{_hirc_effect_number(input_levels['lfe'])} dB; reverb F "
-                f"{_hirc_effect_number(reverb_levels['front'])} / R "
-                f"{_hirc_effect_number(reverb_levels['rear'])} / C "
-                f"{_hirc_effect_number(reverb_levels['center'])} / LFE "
-                f"{_hirc_effect_number(reverb_levels['lfe'])} dB; dry "
-                f"{_hirc_effect_number(output_levels['dry'])} dB; reverb "
-                f"{_hirc_effect_number(output_levels['reverb'])} dB; output spread "
-                f"{_hirc_effect_number(values['outputSpreadDegrees'])} deg"
-            )
-            parser_status = (
-                "typedExactLayoutPartialSemanticsShippedAkSoundEngineSetParamsBlock"
-            )
-            parameter_boundary = "typedExactLayoutPartialAuthoredSemantics"
-            semantic_boundary = (
-                "The 13 public Convolution Reverb runtime properties are identified "
-                "from the shipped SetParamsBlock/SetParam layout, property groups, "
-                "and enforced ranges. SetParam ID 34 and serialized byte 56 retain "
-                "exact values with native forwarding roles: the scalar is forwarded "
-                "to both convolution processing paths while the current CPU engine "
-                "body does not expose a read of that argument, and the final byte is "
-                "copied into runtime state; public names and final DSP roles remain "
-                "unresolved."
-            )
-        elif plugin_class_id == 0x00BA0003:  # Mastering Suite
-            module_names = (
-                "parametricEq", "multibandCompressor", "masterVolume", "limiter"
-            )
-            module_enabled = {
-                name: _hirc_effect_bool(parameter_data, index)
-                for index, name in enumerate(module_names)
-            }
-
-            eq_bands: list[dict[str, Any]] = []
-            eq_summaries: list[str] = []
-            for index in range(6):
-                offset = 14 + index * 16
-                filter_mode = unpack_from("<I", parameter_data, offset)[0]
-                if filter_mode not in HIRC_MASTERING_EQ_FILTER_LABELS:
-                    raise ValueError("invalid Mastering Suite EQ filter mode")
-                band = {
-                    "band": index + 1,
-                    "enabled": _hirc_effect_bool(parameter_data, 8 + index),
-                    "filterMode": filter_mode,
-                    "filterModeLabel": HIRC_MASTERING_EQ_FILTER_LABELS[filter_mode],
-                    "frequencyHz": _hirc_effect_float(parameter_data, offset + 4),
-                    "gainDb": _hirc_effect_float(parameter_data, offset + 8),
-                    "qualityFactor": _hirc_effect_float(parameter_data, offset + 12),
-                }
-                if band["frequencyHz"] <= 0.0 or band["qualityFactor"] <= 0.0:
-                    raise ValueError("invalid Mastering Suite EQ frequency or Q")
-                eq_bands.append(band)
-                eq_summaries.append(
-                    f"B{index + 1} "
-                    + (
-                        f"{band['filterModeLabel']} "
-                        f"{_hirc_effect_number(band['frequencyHz'])} Hz "
-                        f"{_hirc_effect_number(band['gainDb'])} dB "
-                        f"Q {_hirc_effect_number(band['qualityFactor'])}"
-                        if band["enabled"] else "off"
-                    )
-                )
-
-            compressor_link_mode = unpack_from("<I", parameter_data, 114)[0]
-            if compressor_link_mode not in HIRC_MASTERING_COMPRESSOR_LINK_LABELS:
-                raise ValueError("invalid Mastering Suite compressor link mode")
-            link_strength = _hirc_effect_float_range(
-                parameter_data, 118, 0.0, 100.0,
-                "Mastering Suite compressor link strength",
-            )
-            crossover_frequencies = [
-                _hirc_effect_float(parameter_data, 127 + index * 4)
-                for index in range(3)
-            ]
-            if (
-                any(value <= 0.0 for value in crossover_frequencies)
-                or crossover_frequencies != sorted(crossover_frequencies)
-            ):
-                raise ValueError("invalid Mastering Suite compressor crossovers")
-
-            compressor_bands: list[dict[str, Any]] = []
-            compressor_summaries: list[str] = []
-            for index in range(4):
-                offset = 139 + index * 24
-                band = {
-                    "band": index + 1,
-                    "enabled": _hirc_effect_bool(parameter_data, 123 + index),
-                    "thresholdDb": _hirc_effect_float(parameter_data, offset),
-                    "ratio": _hirc_effect_float(parameter_data, offset + 4),
-                    "attackSeconds": _hirc_effect_float(parameter_data, offset + 8),
-                    "releaseSeconds": _hirc_effect_float(parameter_data, offset + 12),
-                    "knee": _hirc_effect_float(parameter_data, offset + 16),
-                    "makeupGainDb": _hirc_effect_float(parameter_data, offset + 20),
-                }
-                if (
-                    band["ratio"] <= 0.0
-                    or band["attackSeconds"] < 0.0
-                    or band["releaseSeconds"] < 0.0
-                    or band["knee"] < 0.0
-                ):
-                    raise ValueError("invalid Mastering Suite compressor band")
-                compressor_bands.append(band)
-                compressor_summaries.append(
-                    f"B{index + 1} "
-                    + (
-                        f"{_hirc_effect_number(band['thresholdDb'])} dB, "
-                        f"{_hirc_effect_number(band['ratio'])}:1"
-                        if band["enabled"] else "off"
-                    )
-                )
-
-            channel_gains = [
-                {
-                    "channelIndex": index,
-                    "serializedOffset": 235 + index * 4,
-                    "nativeStructOffset": 0x118 + index * 4,
-                    "gainDb": _hirc_effect_float(parameter_data, 235 + index * 4),
-                }
-                for index in range(12)
-            ]
-            limiter_mode = unpack_from("<I", parameter_data, 283)[0]
-            if limiter_mode not in HIRC_MASTERING_LIMITER_MODE_LABELS:
-                raise ValueError("invalid Mastering Suite limiter mode")
-            values = {
-                "moduleEnabled": module_enabled,
-                "parametricEq": {
-                    "bands": eq_bands,
-                },
-                "multibandCompressor": {
-                    "channelLinkMode": compressor_link_mode,
-                    "channelLinkModeLabel": HIRC_MASTERING_COMPRESSOR_LINK_LABELS[
-                        compressor_link_mode
-                    ],
-                    "linkStrengthPercent": link_strength,
-                    "stereoLink": _hirc_effect_bool(parameter_data, 122),
-                    "crossoverFrequenciesHz": crossover_frequencies,
-                    "bands": compressor_bands,
-                },
-                "masterVolume": {
-                    "gainDb": _hirc_effect_float(parameter_data, 231),
-                    "channelGainsDb": channel_gains,
-                    "channelOrderStatus": "serializedWwiseChannelIndex",
-                },
-                "limiter": {
-                    "mode": limiter_mode,
-                    "modeLabel": HIRC_MASTERING_LIMITER_MODE_LABELS[limiter_mode],
-                    "thresholdDb": _hirc_effect_float(parameter_data, 287),
-                    "attackSeconds": _hirc_effect_float(parameter_data, 291),
-                    "releaseSeconds": _hirc_effect_float(parameter_data, 295),
-                    "outputGainDb": _hirc_effect_float(parameter_data, 299),
-                    "linkChannels": _hirc_effect_bool(parameter_data, 303),
-                },
-                "unresolvedParameters": [
-                    {
-                        "setParamId": 100,
-                        "serializedOffset": 4,
-                        "nativeStructOffset": 24,
-                        "rawCode": unpack_from("<I", parameter_data, 4)[0],
-                        "semanticStatus": "exactValueMeaningUnresolved",
-                        "nativeUseRole": "privateUint32StoredAtNativeStructOffset",
-                        "nativeUseStatus": (
-                            "nativeSetParamStorageOnlyNoDirectReadObserved"
-                        ),
-                        "nativeConsumerRvas": [],
-                    },
-                    {
-                        "setParamId": 200,
-                        "serializedOffset": 110,
-                        "nativeStructOffset": 136,
-                        "rawCode": unpack_from("<I", parameter_data, 110)[0],
-                        "semanticStatus": "exactValueMeaningUnresolved",
-                        "nativeUseRole": "privateUint32StoredAtNativeStructOffset",
-                        "nativeUseStatus": (
-                            "nativeSetParamStorageOnlyNoDirectReadObserved"
-                        ),
-                        "nativeConsumerRvas": [],
-                    },
-                ],
-            }
-            enabled_modules = [
-                name for name, enabled in module_enabled.items() if enabled
-            ]
-            compressor = values["multibandCompressor"]
-            master_volume = values["masterVolume"]
-            limiter = values["limiter"]
-            summary = (
-                "modules " + ", ".join(enabled_modules or ["all bypassed"])
-                + "; EQ " + ", ".join(eq_summaries)
-                + "; compressor " + ", ".join(compressor_summaries)
-                + f"; {compressor['channelLinkModeLabel']}, strength "
-                f"{_hirc_effect_number(compressor['linkStrengthPercent'])}%, stereo "
-                + ("linked" if compressor["stereoLink"] else "independent")
-                + f"; master {_hirc_effect_number(master_volume['gainDb'])} dB; "
-                f"limiter {limiter['modeLabel']} at "
-                f"{_hirc_effect_number(limiter['thresholdDb'])} dB, channels "
-                + ("linked" if limiter["linkChannels"] else "independent")
-            )
-            parser_status = (
-                "typedExactLayoutPartialSemanticsShippedAkSoundEngineSetParamsBlock"
-            )
-            parameter_boundary = "typedExactLayoutPartialAuthoredSemantics"
-            semantic_boundary = (
-                "The four public Mastering Suite modules, six EQ bands, four "
-                "multiband-compressor bands, master/channel gains, and limiter "
-                "controls are identified from the shipped SetParamsBlock/SetParam "
-                "layout and public module contract. SetParam IDs 100 and 200 "
-                "retain exact uint32 values with exact native storage-only evidence "
-                "but no direct read observed in the audited runtime; their private "
-                "meanings remain unresolved. SetParamsBlock maps serialized channel "
-                "gains 235..279 to native +0x118..+0x144 with stride 4, but speaker "
-                "names are not inferred for those 12 slots."
-            )
         elif plugin_class_id == 0x00730003:  # Matrix Reverb
             number_of_delays = unpack_from("<I", parameter_data, 8)[0]
             if number_of_delays not in (4, 8, 12, 16):
@@ -2511,7 +1773,7 @@ def decode_hirc_v150_effect_parameters(
         "parameterSchema": contract["schema"],
         "parameterValues": values,
         "parameterSummary": summary,
-        "parameterSetParamsBlockRva": contract["setParamsBlockRva"],
+        "parameterSetParamsBlockRva": contract["setParamsBlock"]["rva"],
         "parameterBoundary": parameter_boundary,
         **({"parameterSemanticBoundary": semantic_boundary} if semantic_boundary else {}),
         "parameterRuntimeBoundary": (
@@ -2570,6 +1832,8 @@ def _hirc_v150_plugin_media_dependency_prefix(
 def hirc_v150_effect_definition(
     object_type: int,
     data: bytes,
+    *,
+    parameter_native_gate: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Decode exact class, parameter, and bounded media-dependency prefixes.
 
@@ -2595,7 +1859,12 @@ def hirc_v150_effect_definition(
         return None
     company_id = (plugin_class_id >> 4) & 0x0FFF
     plugin_id = plugin_class_id >> 16
-    if plugin_class_id in HIRC_BUILTIN_EFFECT_PLUGIN_LABELS:
+    native_status = str((parameter_native_gate or {}).get("status") or "missing")
+    class_validated = (
+        native_status == "validated"
+        and f"0x{plugin_class_id:08x}" in (parameter_native_gate or {}).get("validatedClassIds", ())
+    )
+    if class_validated and plugin_class_id in HIRC_BUILTIN_EFFECT_PLUGIN_LABELS:
         plugin_name = HIRC_BUILTIN_EFFECT_PLUGIN_LABELS[plugin_class_id]
         name_evidence = "shippedAkSoundEngineRegistrationClassId"
     else:
@@ -2621,6 +1890,9 @@ def hirc_v150_effect_definition(
         "parameterSha256": hashlib.sha256(parameter_data).hexdigest(),
         "trailingByteLength": len(trailing_data),
         "parameterBoundary": "opaquePluginSpecificPayload",
+        "parameterNativeEvidenceStatus": "validated" if class_validated else (
+            "pendingReview" if native_status == "validated" else native_status
+        ),
     }
     plugin_media = _hirc_v150_plugin_media_dependency_prefix(
         plugin_class_id, trailing_data
@@ -2628,13 +1900,16 @@ def hirc_v150_effect_definition(
     if plugin_media is not None:
         definition.update(plugin_media)
     decoded_parameters = decode_hirc_v150_effect_parameters(
-        plugin_class_id, parameter_data
+        plugin_class_id, parameter_data,
+        native_evidence_validated=class_validated,
     )
     if decoded_parameters is not None:
         definition.update(decoded_parameters)
         definition["parameterBoundary"] = decoded_parameters.get(
             "parameterBoundary", "typedExactAuthoredBaseValues"
         )
+    elif plugin_class_id in HIRC_BUILTIN_EFFECT_PLUGIN_LABELS and not class_validated:
+        definition["parameterBoundary"] = "opaqueNativeEvidenceUnavailable"
     return definition
 
 def hirc_v150_music_track(data: bytes) -> dict[str, Any] | None:
@@ -4543,6 +3818,7 @@ def finalize_hirc_post_process_catalog(
                 "companyId", "pluginId", "pluginName", "pluginNameEvidence",
                 "parameterByteLength", "parameterSha256", "parameterParserStatus",
                 "parameterSchema", "parameterSummary", "parameterBoundary",
+                "parameterNativeEvidenceStatus",
                 "parameterSemanticBoundary", "parameterRuntimeBoundary",
                 "pluginMediaDependencies", "pluginMediaDependencyCount",
                 "parameterValues", "parameterSetParamsBlockRva",
@@ -4669,6 +3945,7 @@ def resolve_hirc_post_process_summary(
                 "pluginMediaDependencies", "pluginMediaPrefixByteLength",
                 "postPluginMediaTrailingByteLength", "pluginMediaBoundary",
                 "parameterBoundary", "parameterParserStatus", "parameterSchema",
+                "parameterNativeEvidenceStatus",
                 "parameterValues", "parameterSummary", "parameterSetParamsBlockRva",
                 "parameterSemanticBoundary", "parameterRuntimeBoundary",
                 "definitionOccurrenceCount",
@@ -5141,7 +4418,9 @@ def hirc_v150_music_switch_structure(
                 raise ValueError("invalid v150 MusicSwitch tree topology")
             visited.add(index)
             node = raw_nodes[index]
-            current_path = (*path, int(node["key"]))
+            # AkDecisionTree::ResolvePath starts at node zero and searches its
+            # children for the first argument. The root key is not an argument.
+            current_path = path if depth == 0 else (*path, int(node["key"]))
             if depth >= tree_depth:
                 leaves.append({
                     "audioNodeId": int(node["value"]),
@@ -5152,8 +4431,16 @@ def hirc_v150_music_switch_structure(
                 return
             child_index = int(node["value"]) & 0xFFFF
             child_count_value = (int(node["value"]) >> 16) & 0xFFFF
-            if not child_count_value or child_index + child_count_value > len(raw_nodes):
+            if not child_count_value:
+                return
+            if child_index + child_count_value > len(raw_nodes):
                 raise ValueError("invalid v150 MusicSwitch child range")
+            child_keys = [
+                int(raw_nodes[child]["key"])
+                for child in range(child_index, child_index + child_count_value)
+            ]
+            if any(right <= left for left, right in zip(child_keys, child_keys[1:])):
+                raise ValueError("unsorted v150 MusicSwitch child keys")
             for child in range(child_index, child_index + child_count_value):
                 visit(child, depth + 1, current_path)
 
@@ -5203,7 +4490,7 @@ def hirc_v150_music_switch_structure(
             "treeLeaves": leaves,
             "selectorValidation": selector_validation,
         }
-    except (ValueError, OverflowError):
+    except (ValueError, OverflowError, RecursionError):
         return None
 
 def refine_hirc_v150_music_switch_selector_ownership(
@@ -5712,24 +4999,6 @@ def hirc_v150_layer_tail(
             })
         return points
 
-    rtpc_type_labels = {
-        0: "gameParameter",
-        1: "midiParameter",
-        2: "switch",
-        3: "state",
-        4: "modulator",
-    }
-    rtpc_accum_labels = {
-        0: "none",
-        1: "exclusive",
-        2: "additive",
-        3: "multiply",
-        4: "boolean",
-        5: "maximum",
-        6: "filter",
-    }
-    scaling_labels = {0: "none", 2: "decibel", 3: "log", 4: "decibelToLinear"}
-
     try:
         layer_count = take_u32("LayerCount")
         if layer_count > max(0, (len(data) - offset - 1) // 15):
@@ -5756,13 +5025,13 @@ def hirc_v150_layer_tail(
                     "curveIndex": curve_index,
                     "rtpcId": rtpc_id,
                     "rtpcType": rtpc_type,
-                    "rtpcTypeLabel": rtpc_type_labels.get(rtpc_type, f"type{rtpc_type}"),
+                    "rtpcTypeLabel": HIRC_RTPC_TYPE_LABELS.get(rtpc_type, f"type{rtpc_type}"),
                     "rtpcAccum": rtpc_accum,
-                    "rtpcAccumLabel": rtpc_accum_labels.get(rtpc_accum, f"mode{rtpc_accum}"),
+                    "rtpcAccumLabel": HIRC_RTPC_ACCUM_LABELS.get(rtpc_accum, f"mode{rtpc_accum}"),
                     "paramId": param_id,
                     "curveId": curve_id,
                     "scaling": scaling,
-                    "scalingLabel": scaling_labels.get(scaling, f"scaling{scaling}"),
+                    "scalingLabel": HIRC_LAYER_RTPC_SCALING_LABELS.get(scaling, f"scaling{scaling}"),
                     "pointCount": point_count,
                     "points": points,
                 })
@@ -5792,7 +5061,7 @@ def hirc_v150_layer_tail(
                 "initialRtpcCurves": initial_curves,
                 "rtpcId": layer_rtpc_id,
                 "rtpcType": layer_rtpc_type,
-                "rtpcTypeLabel": rtpc_type_labels.get(
+                "rtpcTypeLabel": HIRC_RTPC_TYPE_LABELS.get(
                     layer_rtpc_type, f"type{layer_rtpc_type}"
                 ),
                 "associationCount": association_count,
@@ -6170,6 +5439,10 @@ def traverse_hirc_event(
                 "actionType": action_type,
                 "operation": HIRC_ACTION_OPERATION_LABELS.get(operation, f"operation0x{operation:04x}" if operation is not None else "truncated"),
                 "scope": (action_type & 0x00FF) if action_type is not None else None,
+                # The whole word, named by the SDK enum contract. `operation`
+                # stays the masked high byte because that is what decides the
+                # body layout and what the page filters on.
+                "actionTypeName": hirc_action_type_name(action_type),
                 "targetId": target_id,
                 "targetType": target_type or None,
                 "targetTypeLabel": (

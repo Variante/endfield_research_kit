@@ -8,7 +8,7 @@ from typing import Any
 def semantic_context_group(kind: Any) -> str:
     value = str(kind or "")
     if value in {
-        "characterSkill", "enemySkill", "buffPlaySoundAction",
+        "characterSkill", "enemySkill", "buffPlaySoundAction", "skillPlaySoundAction",
         "projectileSoundField", "gameplayConfigAudioReference",
         "abilityVoiceTriggerAction", "nativeVoiceTriggerCallsite",
     }:
@@ -382,7 +382,9 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
         summary["nonMediaSourceCount"] = non_media_source_count
     canonical_play_sound_contexts = [
         context for context in contexts
-        if isinstance(context, dict) and context.get("kind") == "buffPlaySoundAction"
+        if isinstance(context, dict) and context.get("kind") in {
+            "buffPlaySoundAction", "skillPlaySoundAction"
+        }
     ]
     trigger_play_sound_action_count = sum(
         int(context.get("triggerPlaySoundActionCount") or 0)

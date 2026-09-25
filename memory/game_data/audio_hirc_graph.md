@@ -1222,15 +1222,25 @@ Above the anonymous body framing recorded above sits a *typed* v150 read of the
 same objects, which resolves fields by name because the Wwise 2023.1.17
 serialization order is known. Everything here is **authored serialized data**: none of it is
 runtime DSP, effective inheritance, branch choice, or audibility. Per-build
-addresses, symbol hashes and changing row counts belong to the generated Audio
-evidence and to `reports/story/recovery/audio/`, not here.
+addresses and symbol hashes belong to reviewed contracts; changing row counts
+belong to generated Audio evidence and reports, not here.
 
 ### Effect slots and the built-in plug-in parameter blocks
 
 - The v150 HIRC parser publishes **exact NodeBase effect slots and output-bus
   IDs**. Effect definitions retain physical PCK/bank scope, built-in plug-in
   class identity, and parameter hashes.
-- Fingerprinted shipped `SetParamsBlock` layouts decode exact authored base
+- The selected `AkSoundEngine.dll` now gates the typed built-in parameter
+  families through `scripts/game_data/contracts/wwise_effect_parameters_native.json`.
+  Each reviewed current method body matches the named installed Wwise SDK COFF
+  method outside relocation operands, and the reader checks the selected
+  `GameAssembly.dll`/metadata/DLL hashes plus each method body before publishing
+  a typed value. The previous Python constant pinned an older DLL but its
+  decoder did not check that pin; the resulting old publication had no current
+  native basis. Missing, drifted, or pending native evidence keeps the class ID,
+  parameter length/SHA, and plug-in media prefix while withholding names and
+  values.
+- Reviewed current `SetParamsBlock` layouts decode exact authored base
   settings for **Gain, Delay, Compressor, Expander, three-band Parametric EQ,
   Meter, Matrix Reverb, Pitch Shifter, Harmonizer and Stereo Delay**. Guitar
   Distortion exposes three pre-EQ and three post-EQ bands plus distortion type,
@@ -1240,43 +1250,38 @@ evidence and to `reports/story/recovery/audio/`, not here.
   the bypass/ShareSet subset. **These flags are not runtime DSP/audibility
   proof** and remain separate from node-level `bypassAll` and dynamic BypassFX
   controls.
-- **RoomVerb** exposes all 37 public authoring controls and all 31 ER pattern
-  names. Its 11 additional private algorithm-tuning IDs retain exact values with
-  native-use roles: five feed early-reflection tap-pattern synthesis (endpoint
-  pairs plus seeded per-tap variation, then ER-grid normalization), one feeds
-  six-channel coefficient derivation, two feed a seeded secondary
-  reflection-pattern generator, and three remain **name/read-unresolved** in the
-  audited native path.
-- **Convolution Reverb** exposes its 13 public runtime controls plus exact
-  impulse-response plug-in media IDs. Its two private rows retain exact native
-  forwarding evidence: SetParam 34 reaches a wrapper field and both convolution
-  processing paths, while serialized byte 56 reaches a second wrapper field and
-  runtime state. **The current CPU consumer does not expose a read of the
-  forwarded scalar**, so public names and final DSP roles remain fail-closed,
-  and **IR IDs are not emitted as playable WEM leaves**.
-- **Mastering Suite** exposes its four output-device modules: six EQ bands, four
-  multiband-compressor bands with crossover/link controls, overall plus 12
-  serialized channel gains, and limiter mode/threshold/timing/output/link
-  values. Its SetParam IDs **100 and 200 remain exact unnamed codes**: binary
-  evidence pins them to native storage fields, but **no direct read is observed
-  in the audited runtime region**, so the UI labels them storage-only and keeps
-  those definitions visibly partial rather than inferring processing-order or
-  profile semantics. The 12 channel gains map exactly from serialized offsets
-  235..279 to consecutive native fields at stride 4, while **speaker names
-  remain unresolved**.
+- **RoomVerb** has a current reviewed `SetParamsBlock` match. It exposes the
+  public authored controls and 31 ER pattern names. Eleven additional floats
+  retain exact serialized offsets and values but no current-client public names
+  or runtime roles. Earlier private SetParam-ID/consumer-role claims came from
+  the previous DLL and are withheld until the selected consumer bodies are
+  revalidated.
+- **Convolution Reverb** and **Mastering Suite** remain opaque parameter blocks
+  on the selected client. Current DLL vtables expose plausible methods, but
+  there is no reviewed SDK-object comparison or direct current class-ID
+  registration proof for either family. Earlier native forwarding/storage-role
+  claims were tied to the older DLL and do not establish current semantics.
+  The old decoder branches carrying those previous-build addresses and labels
+  have been removed; the current publisher still leaves both parameter blocks
+  opaque. Reintroducing typed fields requires a reviewed current
+  class-ID-to-method join and parameter layout.
+  Convolution's bounded impulse-response plug-in media IDs remain exact bank
+  data and are not emitted as playable WEM leaves.
 
 ### The Bus forest, typed and complete
 
-- Type-8/type-18 HIRC objects publish the **complete 279-bus parent hierarchy**
-  -- 276 parent edges and three roots -- which is the typed reading of the
-  `0x08`/`0x12` forest recorded above.
+- Type-8/type-18 HIRC objects publish a complete parent hierarchy over the
+  unique bus definitions in the selected banks. Every published bus resolves
+  either to a parent bus or an explicit root. This is the typed reading of the
+  `0x08`/`0x12` forest recorded above; per-build definition, edge and root
+  counts belong to the generated Audio summary. Earlier fixed counts in this
+  section described a previous publication and drifted from the current index.
 - Typed v150 `CAkBus` parsing consumes the property, positioning, Aux, duck and
   bus-state fields **before** InitialFX, and proves the serialized effect count
-  on all 279 buses: 128 have an explicit zero-count list (including the 50 Audio
-  Bus and 11 Auxiliary Bus rows previously recovered by sibling correlation),
-  while 151 carry 247 decoded non-empty slots.
+  for each published bus. Empty and nonempty InitialFX lists remain distinct;
+  the generated summary records their counts and the decoded slot total.
 - The Bus parser continues through the v150 suffix **in its actual order --
-  InitialRTPC before StateChunk** -- and parses all 279 Bus payloads exactly.
+  InitialRTPC before StateChunk** -- and parses each published Bus payload exactly.
   Parameter labels use the current RTPC table; out-of-range IDs such as
   `0x1802`/`0x1804` remain **explicit custom/internal numerics rather than
   guessed DSP names**.

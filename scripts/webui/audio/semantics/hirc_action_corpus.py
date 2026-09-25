@@ -1289,7 +1289,7 @@ class _BodyLane:
         self.examples: list[dict[str, Any]] = []
 
     def read(self, container: dict[str, Any], type_stats: Any, expected_count: int, label: str):
-        return _read_hirc_body_metrics(
+        metrics = _read_hirc_body_metrics(
             container.get(self.frame_key),
             type_stats,
             expected_count,
@@ -1302,6 +1302,30 @@ class _BodyLane:
             fixed_bytes_per_body=self.fixed_bytes_per_body,
             selector_families_matching_groups=self.selector_families_matching_groups,
         )
+        if self.type_key == "0x0C":
+            groups = metrics["groupCounts"]
+            nodes = groups.get("decisionTreeNodes", 0)
+            if groups.get("decisionTreeBytes", 0) != nodes * 12:
+                raise ValueError(f"type 0x0C decision-tree byte/node mismatch: {label}")
+            if (groups.get("decisionTreeReachableNodes", 0)
+                    + groups.get("decisionTreeUnreachableNodes", 0) != nodes):
+                raise ValueError(f"type 0x0C decision-tree reachability partition mismatch: {label}")
+            leaves = groups.get("decisionTreeLeafVisits", 0)
+            leaf_id_partition = sum(groups.get(key, 0) for key in (
+                "decisionTreeZeroLeafVisits",
+                "decisionTreeSameBankLeafVisits",
+                "decisionTreeAmbiguousSameBankLeafVisits",
+                "decisionTreeMissingSameBankLeafVisits",
+                "decisionTreeUnjoinedLeafVisits",
+            ))
+            if leaf_id_partition != leaves:
+                raise ValueError(f"type 0x0C decision-tree leaf identity partition mismatch: {label}")
+            if (groups.get("decisionTreeZeroLeafVisits", 0) > leaves
+                    or groups.get("decisionTreeProbabilityOver100", 0) > leaves
+                    or groups.get("decisionTreeFallbackBranches", 0)
+                    > groups.get("decisionTreeBranchVisits", 0)):
+                raise ValueError(f"type 0x0C decision-tree topology counters mismatch: {label}")
+        return metrics
 
     def add_package(
         self,
@@ -1722,8 +1746,9 @@ def _build_body_lanes() -> dict[str, "_BodyLane"]:
             claim=(
                 "numeric HIRC type 0x0C (CAkMusicSwitchCntr) object bodies are consumed "
                 "by the transition-aware music node parameters, a continue flag, counted "
-                "decision arguments and a sized decision tree, reaching the declared body "
-                "end when status is exact"
+                "decision arguments and a sized decision tree whose reachable child ranges "
+                "and sorted sibling keys are checked, reaching the declared body end when "
+                "status is exact"
             ),
             layout=(
                 "The reader consumes " + MUSIC_NODE_LAYOUT + ", then " + MUSIC_TRANSITION_LAYOUT
@@ -1732,12 +1757,16 @@ def _build_body_lanes() -> dict[str, "_BodyLane"]:
                 "uTreeDataSize bytes of decision tree, as CAkMusicSwitchCntr::SetInitialValues "
                 "reads them. The tree is handed whole to AkDecisionTree::SetTree; the reader "
                 "requires whole 12-byte nodes (u32 key, u32 audio node id or u16 children "
-                "index plus u16 count, u16 weight, u16 probability) as ResolvePath indexes "
-                "them, and counts them, without walking the tree."
+                "index plus u16 count, u16 weight, u16 probability). From the sentinel "
+                "root, it walks uTreeDepth child levels, checks each reachable range and "
+                "the strict key order used by ResolvePath's binary search, and counts "
+                "reachable branches, leaves and stored unreachable nodes."
             ),
             extra_residuals=MUSIC_LANE_RESIDUALS + (
-                "the decision tree nodes are counted, not walked; key meaning and the "
-                "children ranges are not checked",
+                "tree leaves carry audio-node ids joined only to unique declarations "
+                "inside their own bank; a missing same-bank target is not a corpus-wide "
+                "absence. Runtime argument values, fallback or weighted choice, and "
+                "audibility remain open",
             ),
             extra_element_widths=MUSIC_ELEMENT_WIDTHS | MUSIC_TRANSITION_WIDTHS | {
                 "decisionArgumentEntries": 5,
@@ -1745,8 +1774,13 @@ def _build_body_lanes() -> dict[str, "_BodyLane"]:
                 # twelve, so it carries no width of its own in the byte bound.
                 "decisionTreeBytes": 1,
             },
-            unconditional_selectors=MUSIC_SELECTOR_FAMILIES + ("continuePlayback_", "decisionMode_"),
-            selector_families_matching_groups={"transitionObject_": "transitionRuleEntries"},
+            unconditional_selectors=MUSIC_SELECTOR_FAMILIES + (
+                "continuePlayback_", "decisionMode_", "decisionTreeStructure_"
+            ),
+            selector_families_matching_groups={
+                "transitionObject_": "transitionRuleEntries",
+                "decisionTreeLeafTargetType_": "decisionTreeSameBankLeafVisits",
+            },
             upstream_note=(
                 "type 0x0C has no preceding per-object census, so every malformed body "
                 "reaches this lane as a counted failure"
@@ -2922,7 +2956,9 @@ def _markdown(report: dict[str, Any]) -> str:
             "|---|---:|",
             operation_rows,
             "",
-            "The parser reports byte framing only. Numeric operation codes remain unnamed; this audit does not establish field ownership, operation meaning, runtime execution, event selection, or audibility.",
+            "The parser reports byte framing only. This audit does not establish field ownership, runtime execution, event selection, or audibility.",
+            "",
+            "Operation codes used to be on that list as unnamed, and are not any more. The codes here are `actionType & 0xFF00`, the mask that decides the body layout; the serialized value is the whole 16-bit word, and the reviewed `wwise_sdk_enums` contract names 53 of the 55 distinct words this corpus ships. The masked table below therefore reports fewer distinct values than the corpus contains -- four serialized words appear here as one `0x0100`. See `hirc_action_type_named_latest.md` for the full-word census. Naming a value is still not operation meaning in the sense this paragraph denies: the name is the SDK's identifier for a serialized constant, not an observed effect.",
             "",
             "Target resolution used to be on that list and has been removed, because it "
             "is now established elsewhere: the reference-graph report classifies this "

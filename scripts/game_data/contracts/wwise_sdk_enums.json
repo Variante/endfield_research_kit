@@ -1,5 +1,5 @@
 {
- "schema": "endfield.wwise-sdk-enums.v1",
+ "schema": "endfield.wwise-sdk-enums.v2",
  "status": "reviewed",
  "provenance": {
   "sdk": "Wwise 2023.1.17.8841, the exact version the shipped AkSoundEngine.dll names",
@@ -11,7 +11,19 @@
   "extractor": "scratch/reverse_engineering/wwise_sdk/pdb_enums.py",
   "licence": "derived facts only; the SDK itself is Audiokinetic's and is not vendored"
  },
- "evidenceBoundary": "exact for the names and values as compiled into the SDK; whether a given bank byte carries one of these enums is established per field by the disassembled deserializer, not by this file",
+ "evidenceBoundary": "exact for the names and values as compiled into the SDK; the AkRtpcCurveParams.rtpcType field identity is direct from the selected PDB field list and the SDK deserializer; other bank-byte-to-enum assignments still require their own field evidence",
+ "fieldTypeEvidence": {
+  "AkRtpcCurveParams.rtpcType": {
+   "pdb": "AkSoundEngine.pdb",
+   "completeTypeIndex": "0x3210",
+   "fieldListIndex": "0x320F",
+   "fieldOffset": 0,
+   "fieldTypeIndex": "0x3207",
+   "fieldType": "AkGameSyncType",
+   "deserializer": "AK::RTPC::ReadRtpcCurves<CAkParameterNodeBase>",
+   "boundary": "The selected CodeView LF_STRUCTURE field list types rtpcType at byte offset zero as AkGameSyncType. The SDK deserializer reads the RTPC type byte into that parameter structure before its AddRtpcCurve virtual call. This names the serialized field, not a runtime control value or an effective curve."
+  }
+ },
  "enums": {
   "AkBank::AKBKHircType": {
    "HIRCType_Sound": 2,
@@ -246,6 +258,15 @@
    "AkCurveScaling_Log": 3,
    "AkCurveScaling_dBToLin": 4,
    "AkCurveScaling_MaxNum": 8
+  },
+  "AkGameSyncType": {
+   "AkGameSyncType_GameParameter": 0,
+   "AkGameSyncType_MIDIParameter": 1,
+   "AkGameSyncType_Switch": 2,
+   "AkGameSyncType_State": 3,
+   "AkGameSyncType_Modulator": 4,
+   "AkGameSyncType_Count": 5,
+   "AkGameSyncType_MaxNum": 8
   },
   "AkRtpcAccum": {
    "AkRtpcAccum_None": 0,

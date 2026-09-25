@@ -95,6 +95,10 @@
       runtimeObservedRequestNote: "This Event was observed at a managed audio request boundary in a hash-verified capture. It proves the request executed in that capture, not Wwise branch selection, decoded-media selection, or audibility.",
       runtimeComponents: "Runtime components",
       hircInventory: "Wwise HIRC inventory",
+      effectParameterGate: "Effect parameter evidence",
+      effectParameterGateValidated: "Selected native gate validated {count} reviewed plug-in classes. Named settings are authored bank values; live effect activation and DSP output remain unobserved.",
+      effectParameterGateUnavailable: "Selected native gate: {status}. Native-backed setting names are unavailable or unverified; raw parameter evidence remains.",
+      effectParameterGateAbsent: "This Audio index has no selected native effect-parameter gate. Refresh its generated data before relying on named settings.",
       controlCatalog: "Audio controls / cue catalog",
       physicsAudioCatalog: "Physics / environment audio definitions",
       modelViewStateAudioCatalog: "ModelView state audio behaviors",
@@ -326,6 +330,26 @@
       selectorEvidence: "Selector evidence",
       selectorBranches: "Possible State/Switch branches",
       selectorRuntimeUnobserved: "Runtime value and selected branch were not observed; all selector candidates remain possible.",
+      musicDecisionTrees: "Music Switch decision trees",
+      musicDecisionTreeTreeCount: "trees",
+      musicDecisionTreeLeafCount: "leaves",
+      musicDecisionTreeSearch: "Find container, group, key, leaf, or ownership",
+      musicDecisionTreeBoundary: "These are authored HIRC paths and same-bank leaf join results. Runtime group values, selected branches, and audibility were not observed.",
+      musicDecisionTreeResults: "Showing {shown} of {matching} matching leaves",
+      musicDecisionTreeNoMatches: "No matching authored leaves.",
+      musicDecisionTreePrevious: "Previous",
+      musicDecisionTreeNext: "Next",
+      musicDecisionTreeGroup: "group",
+      musicDecisionTreeType: "type",
+      musicDecisionTreeLeaf: "leaf",
+      musicDecisionTreeRoot: "root",
+      musicDecisionTreeWeight: "stored weight",
+      musicDecisionTreeProbability: "stored probability",
+      musicDecisionTreeDirectChild: "direct reciprocal child",
+      musicDecisionTreeDescendant: "recursively owned descendant",
+      musicDecisionTreeUnbound: "explicit zero / unbound leaf",
+      musicDecisionTreeMissing: "no declaration in this bank",
+      musicDecisionTreeOtherParent: "same-bank object under another parent",
       sourceEvidence: "Wwise source evidence",
       actionDispatch: "Action dispatch",
       actionOrdinal: "Action",
@@ -409,6 +433,10 @@
       runtimeObservedRequestNote: "\u6b64 Event \u5728\u5df2\u9a8c\u8bc1\u54c8\u5e0c\u7684\u6355\u83b7\u4e2d\u4e8e\u97f3\u9891\u8bf7\u6c42\u8fb9\u754c\u88ab\u89c2\u5bdf\u5230\u3002\u8fd9\u4ec5\u8bc1\u660e\u8be5\u6355\u83b7\u4e2d\u7684\u8bf7\u6c42\u6267\u884c\uff0c\u4e0d\u8bc1\u660e Wwise \u5206\u652f\u3001\u5df2\u89e3\u7801\u5a92\u4f53\u6216\u53ef\u542c\u6027\u3002",
       runtimeComponents: "\u8fd0\u884c\u65f6\u7ec4\u4ef6",
       hircInventory: "Wwise HIRC \u5e93\u5b58",
+      effectParameterGate: "\u6548\u679c\u53c2\u6570\u8bc1\u636e",
+      effectParameterGateValidated: "\u5f53\u524d\u7248\u672c\u539f\u751f\u6821\u9a8c\u901a\u8fc7\uff0c\u8986\u76d6 {count} \u4e2a\u5df2\u5ba1\u67e5\u7684\u63d2\u4ef6\u7c7b\u522b\u3002\u5177\u540d\u8bbe\u7f6e\u662f\u97f3\u9891\u5e93\u4e2d\u7684\u521b\u4f5c\u503c\uff1b\u6548\u679c\u7684\u8fd0\u884c\u65f6\u6fc0\u6d3b\u4e0e DSP \u8f93\u51fa\u672a\u89c2\u6d4b\u3002",
+      effectParameterGateUnavailable: "\u5f53\u524d\u7248\u672c\u539f\u751f\u6821\u9a8c\uff1a{status}\u3002\u539f\u751f\u652f\u6301\u7684\u8bbe\u7f6e\u540d\u79f0\u4e0d\u53ef\u7528\u6216\u672a\u9a8c\u8bc1\uff1b\u4ecd\u4fdd\u7559\u539f\u59cb\u53c2\u6570\u8bc1\u636e\u3002",
+      effectParameterGateAbsent: "\u6b64\u97f3\u9891\u7d22\u5f15\u6ca1\u6709\u5f53\u524d\u7248\u672c\u7684\u6548\u679c\u53c2\u6570\u6821\u9a8c\u4fe1\u606f\u3002\u8bf7\u5237\u65b0\u751f\u6210\u6570\u636e\u540e\u518d\u4f9d\u636e\u5177\u540d\u8bbe\u7f6e\u3002",
       controlCatalog: "\u97f3\u9891\u63a7\u5236 / Cue \u76ee\u5f55",
       physicsAudioCatalog: "\u7269\u7406 / \u73af\u5883\u97f3\u9891\u5b9a\u4e49",
       modelViewStateAudioCatalog: "ModelView \u72b6\u6001\u97f3\u9891\u884c\u4e3a",
@@ -640,6 +668,26 @@
       selectorEvidence: "\u9009\u62e9\u5668\u8bc1\u636e",
       selectorBranches: "\u53ef\u80fd的 State/Switch \u5206\u652f",
       selectorRuntimeUnobserved: "\u672a\u89c2\u5bdf\u8fd0\u884c\u65f6\u503c\u548c\u5df2\u9009\u5206\u652f\uff1b\u6240\u6709\u9009\u62e9\u5668\u5019\u9009\u9879\u4ecd\u53ef\u80fd\u3002",
+      musicDecisionTrees: "\u97f3\u4e50 Switch \u51b3\u7b56\u6811",
+      musicDecisionTreeTreeCount: "\u68f5\u6811",
+      musicDecisionTreeLeafCount: "\u4e2a\u53f6\u8282\u70b9",
+      musicDecisionTreeSearch: "\u67e5\u627e\u5bb9\u5668\u3001\u7ec4\u3001\u952e\u3001\u53f6\u8282\u70b9\u6216\u6240\u5c5e\u5173\u7cfb",
+      musicDecisionTreeBoundary: "\u6b64\u5904\u662f HIRC \u4e2d\u5b58\u50a8\u7684\u8def\u5f84\u548c\u540c\u97f3\u9891\u5305\u53f6\u8282\u70b9\u5173\u8054\u7ed3\u679c\u3002\u8fd0\u884c\u65f6\u7ec4\u503c\u3001\u5df2\u9009\u5206\u652f\u548c\u53ef\u542c\u7ed3\u679c\u5747\u672a\u89c2\u5bdf\u3002",
+      musicDecisionTreeResults: "\u663e\u793a {shown} / {matching} \u4e2a\u5339\u914d\u53f6\u8282\u70b9",
+      musicDecisionTreeNoMatches: "\u6ca1\u6709\u5339\u914d\u7684\u5b58\u50a8\u53f6\u8282\u70b9\u3002",
+      musicDecisionTreePrevious: "\u4e0a\u4e00\u9875",
+      musicDecisionTreeNext: "\u4e0b\u4e00\u9875",
+      musicDecisionTreeGroup: "\u7ec4",
+      musicDecisionTreeType: "\u7c7b\u578b",
+      musicDecisionTreeLeaf: "\u53f6\u8282\u70b9",
+      musicDecisionTreeRoot: "\u6839",
+      musicDecisionTreeWeight: "\u5b58\u50a8\u6743\u91cd",
+      musicDecisionTreeProbability: "\u5b58\u50a8\u6982\u7387",
+      musicDecisionTreeDirectChild: "\u76f4\u63a5\u53cc\u5411\u5b50\u8282\u70b9",
+      musicDecisionTreeDescendant: "\u9012\u5f52\u6240\u5c5e\u7684\u540e\u4ee3",
+      musicDecisionTreeUnbound: "\u663e\u5f0f\u96f6\u503c / \u672a\u7ed1\u5b9a\u53f6\u8282\u70b9",
+      musicDecisionTreeMissing: "\u6b64\u97f3\u9891\u5305\u5185\u65e0\u58f0\u660e",
+      musicDecisionTreeOtherParent: "\u540c\u97f3\u9891\u5305\u4e2d\u5c5e\u4e8e\u5176\u4ed6\u7236\u8282\u70b9",
       sourceEvidence: "Wwise \u97f3\u6e90\u8bc1\u636e",
       actionDispatch: "Action \u6d3e\u53d1",
       actionOrdinal: "Action",
@@ -1004,7 +1052,7 @@
   }
 
   function contextGroup(kind) {
-    if (["characterSkill", "enemySkill", "buffPlaySoundAction", "projectileSoundField", "abilityVoiceTriggerAction"].includes(kind)) return "gameplay";
+    if (["characterSkill", "enemySkill", "buffPlaySoundAction", "skillPlaySoundAction", "projectileSoundField", "abilityVoiceTriggerAction"].includes(kind)) return "gameplay";
     if (["sceneGlobalAudioEvent", "sceneEmitterAudioEvent"].includes(kind)) return "sceneAudio";
     if (kind === "cutsceneTimeline") return "cutscene";
     if (kind === "levelSequenceAudio") return "timeline";
@@ -2583,6 +2631,17 @@
         ["Bus authored State values", processing.busStateValueCount],
       ];
       for (const [label, value] of processingFacts) if (value !== undefined && value !== null) grid.appendChild(statNode(label, formatNumber(value)));
+      const effectGate = processing.effectParameterNativeGate;
+      if (effectGate && typeof effectGate === "object") {
+        const validatedClasses = Array.isArray(effectGate.validatedClassIds) ? effectGate.validatedClassIds : null;
+        const status = normalize(effectGate.status) || "unavailable";
+        const gateNote = status === "validated" && validatedClasses
+          ? t("effectParameterGateValidated").replace("{count}", formatNumber(validatedClasses.length))
+          : t("effectParameterGateUnavailable").replace("{status}", status);
+        section.appendChild(noteSection(t("effectParameterGate"), gateNote));
+      } else {
+        section.appendChild(noteSection(t("effectParameterGate"), t("effectParameterGateAbsent")));
+      }
       const plugins = Object.entries(processing.effectPluginReferenceCounts || {}).map(([name, count]) => `${name}: ${formatNumber(count)}`);
       if (plugins.length) section.appendChild(chipSection("Recovered DSP plug-ins", plugins));
       const parameterSchemas = Object.entries(processing.effectParameterSchemaCounts || {}).map(([name, count]) => `${humanize(name)}: ${formatNumber(count)}`);
@@ -3482,6 +3541,10 @@
       if (context?.ownerLinkStatus) parts.push(`gameplay owner ${humanize(context.ownerLinkStatus)}`);
       parts.push("config member, activation, Event posting, and runtime owner unobserved");
     }
+    if (kind === "buffPlaySoundAction" || kind === "skillPlaySoundAction") {
+      parts.push(`${context?.configKind || "gameplay config"} ${context?.configId || ""}`.trim());
+      if (context?.ownerLinkStatus) parts.push(`gameplay owner ${humanize(context.ownerLinkStatus)}`);
+    }
     if (context?.confidence) parts.push(context.confidence);
     if (context?.modelId) parts.push(`model ${context.modelId}`);
     if (context?.subTemplateId) parts.push(`sub-template ${context.subTemplateId}`);
@@ -3708,14 +3771,21 @@
     if (triggerSourcePaths.length) parts.push(triggerSourcePaths.length === 1 ? triggerSourcePaths[0] : `${triggerSourcePaths[0]} +${triggerSourcePaths.length - 1}`);
     const playSoundActions = asArray(context?.triggerPlaySoundActions).filter((value) => value && typeof value === "object");
     for (const action of playSoundActions) {
+      const hasFrame = action.startFrame !== null && action.startFrame !== undefined
+        && action.endFrame !== null && action.endFrame !== undefined;
       const actionParts = [
-        `PlaySound frame ${action.startFrame ?? "?"}-${action.endFrame ?? "?"}`,
+        hasFrame ? `PlaySound frame ${action.startFrame}-${action.endFrame}` : "PlaySound",
+        action.buffEventName ? `Buff event ${action.buffEventName}` : "",
+        action.abilityEventName ? `Ability event ${action.abilityEventName}` : "",
         action.stopOnEnd ? `stop on end / ${action.stopFadeDurationMs ?? 0} ms fade` : "not stopped by this action's end",
         action.useTempEmitter ? "temporary emitter" : "",
         action.followMountPoint ? `follow mount ${action.mountPoint || "(unnamed)"}` : "",
         action.useWeaponMountPoint ? `weapon ${action.weaponIndex ?? "?"} / ${action.weaponMountPoint || "mount"}` : "",
-        action.targetSelector ? `target ${action.targetSelector}` : "target settings unresolved",
+        action.targetSettingsStatus === "exactWholeRecord"
+          ? "typed target settings / runtime target unresolved"
+          : action.targetSelector ? `target ${action.targetSelector}` : "target settings unresolved",
         action.useTimeDilationPauseAndSeek ? "time-dilation pause/seek" : "",
+        STATE.showDebug && action.actionPath ? `action ${action.actionPath}` : "",
       ].filter(Boolean);
       parts.push(actionParts.join(" / "));
     }
@@ -3922,6 +3992,14 @@
       for (const action of asArray(evidence?.actionEvidence)) {
         const operation = humanize(action?.operation || "unknown action");
         actions.set(operation, (actions.get(operation) || 0) + 1);
+        // `operation` is the masked high byte and stays the grouping key.
+        // `actionTypeName` is the whole 16-bit word as the Wwise SDK enum
+        // contract spells it, so Stop_E and Stop_ALL_O stop reading alike. It
+        // names a serialized value and claims nothing about playback.
+        const actionTypeName = typeof action?.actionTypeName === "string" && action.actionTypeName
+          ? action.actionTypeName.replace(/^AkActionType_/, "")
+          : "";
+        const operationLabel = actionTypeName ? `${operation} / ${actionTypeName}` : operation;
         const serializedPath = asArray(action?.serializedPathTypeLabels)
           .map((value) => humanize(value))
           .join(" -> ");
@@ -3958,7 +4036,7 @@
           const initialRtpcEvidence = initialRtpc
             ? `Initial RTPC ${initialRtpc.rtpcIdHex || "?"} / ${formatNumber(initialRtpc.curveCount || 0)} curve${Number(initialRtpc.curveCount || 0) === 1 ? "" : "s"}`
             : "";
-          actionDetails.push(`${t("actionOrdinal")} ${Number(action.eventActionOrdinal || 0) + 1} (${operation}): ${control}${pathEvidence ? ` / ${pathEvidence}` : ""}${initialRtpcEvidence ? ` / ${initialRtpcEvidence}` : ""}`);
+          actionDetails.push(`${t("actionOrdinal")} ${Number(action.eventActionOrdinal || 0) + 1} (${operationLabel}): ${control}${pathEvidence ? ` / ${pathEvidence}` : ""}${initialRtpcEvidence ? ` / ${initialRtpcEvidence}` : ""}`);
         }
         if (action?.actionParserStatus !== "typedExactV150" || !["play", "playEvent"].includes(action?.operation)) continue;
         const delay = asArray(action?.delay?.baseValuesMs);
@@ -3973,7 +4051,7 @@
           action?.fade?.curveLabel ? `${t("fadeCurve")} ${action.fade.curveLabel}` : "",
           pathEvidence,
         ].filter(Boolean).join(" / ");
-        actionDetails.push(`${t("actionOrdinal")} ${Number(action.eventActionOrdinal || 0) + 1} (${operation}): ${detail}`);
+        actionDetails.push(`${t("actionOrdinal")} ${Number(action.eventActionOrdinal || 0) + 1} (${operationLabel}): ${detail}`);
       }
       for (const container of asArray(evidence?.containerEvidence)) {
         const relation = normalize(container?.edgeKind) || "unknown";
@@ -4722,6 +4800,127 @@
       details.appendChild(branchDetails);
       if (branchIndex >= 63) break;
     }
+    return details;
+  }
+
+  function musicSwitchTreeSection(record) {
+    const trees = asArray(record?.evidence).flatMap((evidence) =>
+      asArray(evidence?.musicNodeEvidence)
+        .filter((node) => node?.objectType === 12
+          && normalize(node?.structureStatus).startsWith("typedExactV150"))
+        .map((node) => ({ node, bank: normalize(evidence?.bank) }))
+    );
+    if (!trees.length) return null;
+    const hex = (value) => "0x" + (Number(value) >>> 0).toString(16).padStart(8, "0");
+    const ownershipLabels = {
+      directReciprocalChild: "musicDecisionTreeDirectChild",
+      recursiveOwnedDescendant: "musicDecisionTreeDescendant",
+      explicitUnboundLeaf: "musicDecisionTreeUnbound",
+      sameBankObjectMissing: "musicDecisionTreeMissing",
+      sameBankOtherParent: "musicDecisionTreeOtherParent",
+    };
+    const rows = [];
+    for (const { node, bank } of trees) {
+      const args = asArray(node.arguments);
+      if (!Number.isInteger(node.treeDepth) || args.length !== node.treeDepth) continue;
+      for (const leaf of asArray(node.treeLeaves)) {
+        const keys = asArray(leaf?.pathKeys);
+        if (keys.length !== args.length) continue;
+        const path = args.map((arg, index) =>
+          t("musicDecisionTreeGroup") + " " + hex(arg.groupId)
+            + " (" + t("musicDecisionTreeType") + " " + arg.groupType + ") = " + hex(keys[index])
+        ).join(" / ") || t("musicDecisionTreeRoot");
+        const ownership = ownershipLabels[leaf.ownershipStatus]
+          ? t(ownershipLabels[leaf.ownershipStatus])
+          : humanize(leaf.ownershipStatus || "ownershipUnresolved");
+        const title = hex(node.objectId) + " → " + hex(leaf.audioNodeId);
+        const bankLabel = bank.split(/[\\/]/).pop();
+        const search = [
+          title, node.objectId, leaf.audioNodeId, path, ownership,
+          leaf.ownershipStatus, bank,
+          ...args.flatMap((arg, index) => [arg.groupId, hex(arg.groupId), keys[index], hex(keys[index]), arg.groupType]),
+        ].join(" ").toLowerCase();
+        rows.push({ title, path, ownership, bankLabel, leaf, search });
+      }
+    }
+    if (!rows.length) return null;
+
+    const details = document.createElement("details");
+    details.className = "audio-music-tree";
+    const summary = document.createElement("summary");
+    summary.textContent = t("musicDecisionTrees") + " ("
+      + formatNumber(trees.length) + " " + t("musicDecisionTreeTreeCount")
+      + " / " + formatNumber(rows.length) + " " + t("musicDecisionTreeLeafCount") + ")";
+    const body = document.createElement("div");
+    body.className = "audio-music-tree-body";
+    const boundary = document.createElement("p");
+    boundary.className = "audio-detail-note";
+    boundary.textContent = t("musicDecisionTreeBoundary");
+    const search = document.createElement("input");
+    search.className = "audio-music-tree-search";
+    search.type = "search";
+    search.placeholder = t("musicDecisionTreeSearch");
+    search.setAttribute("aria-label", t("musicDecisionTreeSearch"));
+    const results = document.createElement("small");
+    results.className = "audio-music-tree-results";
+    results.setAttribute("aria-live", "polite");
+    const list = document.createElement("div");
+    list.className = "audio-music-tree-list";
+    const navigation = document.createElement("div");
+    navigation.className = "audio-music-tree-navigation";
+    const previous = document.createElement("button");
+    previous.type = "button";
+    previous.textContent = t("musicDecisionTreePrevious");
+    const next = document.createElement("button");
+    next.type = "button";
+    next.textContent = t("musicDecisionTreeNext");
+    navigation.append(previous, next);
+    const pageSize = 40;
+    let page = 0;
+    const render = () => {
+      const terms = search.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+      const matching = terms.length
+        ? rows.filter((row) => terms.every((term) => row.search.includes(term)))
+        : rows;
+      page = Math.min(page, Math.max(0, Math.ceil(matching.length / pageSize) - 1));
+      const visible = matching.slice(page * pageSize, (page + 1) * pageSize);
+      results.textContent = t("musicDecisionTreeResults")
+        .replace("{shown}", formatNumber(visible.length))
+        .replace("{matching}", formatNumber(matching.length));
+      list.replaceChildren();
+      for (const row of visible) {
+        const item = document.createElement("div");
+        item.className = "audio-music-tree-row";
+        const heading = document.createElement("strong");
+        heading.textContent = t("musicDecisionTreeLeaf") + " " + row.title;
+        const path = document.createElement("span");
+        path.textContent = row.path;
+        const meta = document.createElement("small");
+        meta.textContent = [
+          row.ownership,
+          t("musicDecisionTreeWeight") + " " + row.leaf.weight,
+          t("musicDecisionTreeProbability") + " " + row.leaf.probability + "%",
+          row.bankLabel,
+        ].filter(Boolean).join(" / ");
+        item.append(heading, path, meta);
+        list.appendChild(item);
+      }
+      if (!visible.length) {
+        const empty = document.createElement("p");
+        empty.className = "audio-detail-note";
+        empty.textContent = t("musicDecisionTreeNoMatches");
+        list.appendChild(empty);
+      }
+      navigation.hidden = matching.length <= pageSize;
+      previous.disabled = page === 0;
+      next.disabled = (page + 1) * pageSize >= matching.length;
+    };
+    search.addEventListener("input", () => { page = 0; render(); });
+    previous.addEventListener("click", () => { page -= 1; render(); });
+    next.addEventListener("click", () => { page += 1; render(); });
+    body.append(boundary, search, results, list, navigation);
+    details.append(summary, body);
+    render();
     return details;
   }
 
@@ -5545,6 +5744,8 @@
     if (record.kind === "events") {
       const selectorBranches = selectorBranchesSection(raw);
       if (selectorBranches) panel.appendChild(selectorBranches);
+      const musicSwitchTrees = musicSwitchTreeSection(raw);
+      if (musicSwitchTrees) panel.appendChild(musicSwitchTrees);
     }
     const sourceEvidence = sourceEvidenceSummary(raw);
     if (sourceEvidence.length) panel.appendChild(chipSection(t("sourceEvidence"), sourceEvidence));

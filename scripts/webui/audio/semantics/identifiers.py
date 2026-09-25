@@ -106,6 +106,16 @@ def audio_hash_generator_compute(value: str) -> int:
     return hash_value
 
 
+def fnv1_32(value: str) -> int:
+    """Hash the UTF-8 bytes used for Audio builder Event-name candidates."""
+
+    hash_value = 0x811C9DC5
+    for byte in value.encode("utf-8"):
+        hash_value = (hash_value * 0x01000193) & 0xFFFFFFFF
+        hash_value ^= byte
+    return hash_value
+
+
 def audio_dialog_external_media_id(dialog_path: str, dumper_language: str) -> int:
     """Return the AKPK external-source id for an authored AudioDialog path."""
 

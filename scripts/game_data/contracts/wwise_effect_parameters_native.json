@@ -1,0 +1,579 @@
+{
+  "schema": "endfield.wwise-effect-parameters-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "sdkInputs": {
+    "version": "Wwise 2023.1.17.8841",
+    "variant": "SDK/x64_vc170/Release/lib"
+  },
+  "evidenceBoundary": "Current AkSoundEngine SetParamsBlock method bodies match named SDK COFF methods exactly outside SDK relocation operand bytes. Selected native hashes and each current method body hash gate only the listed parameter schemas. Unreviewed proprietary class IDs remain opaque.",
+  "parameterSchemas": {
+    "0x00690003": {
+      "schema": "wwiseParametricEqFxParamsV1",
+      "parameterByteLengths": [
+        56
+      ],
+      "setParamsBlock": {
+        "rva": "0x00218860",
+        "bodyLength": 153,
+        "bodySha256": "5957e8598a2de1a747f275b0637758689cea6203487b3a2487c5ba4cd5169d17",
+        "sdkLibrary": "AkParametricEQFX.lib",
+        "sdkLibrarySha256": "24dfcadd3cc898fd7b6d04ddb22ae4dbe27c406914d1a2cb21e9af466429e1d7",
+        "sdkObjectMember": "/82",
+        "sdkObjectMemberOffset": 43708,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkParameterEQFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "5957e8598a2de1a747f275b0637758689cea6203487b3a2487c5ba4cd5169d17",
+        "sdkRelocations": [],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x00810003": {
+      "schema": "wwiseMeterFxParamsV1",
+      "parameterByteLengths": [
+        28
+      ],
+      "setParamsBlock": {
+        "rva": "0x00216f90",
+        "bodyLength": 81,
+        "bodySha256": "8a34e4bbab0c21d5028cc1fbf0196cb3ea38c41dec25bc8852b8f356b5371bec",
+        "sdkLibrary": "AkMeterFX.lib",
+        "sdkLibrarySha256": "7a16effd9088fff9afd67131d1a35fcba01fca6a257d90ab712d74a57171e7b4",
+        "sdkObjectMember": "/137",
+        "sdkObjectMemberOffset": 150388,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkMeterFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "8a34e4bbab0c21d5028cc1fbf0196cb3ea38c41dec25bc8852b8f356b5371bec",
+        "sdkRelocations": [],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x008b0003": {
+      "schema": "wwiseGainFxParamsV1",
+      "parameterByteLengths": [
+        8
+      ],
+      "setParamsBlock": {
+        "rva": "0x001f5560",
+        "bodyLength": 17,
+        "bodySha256": "9bfe1a4c85345526001b7a94fd8b978a08a6f1d522d576be533b27724f7da559",
+        "sdkLibrary": "AkGainFX.lib",
+        "sdkLibrarySha256": "6adcdd9a5afdda991791d92a9994a191075a21d270ecc7f9e57e7d9a98988682",
+        "sdkObjectMember": "/66",
+        "sdkObjectMemberOffset": 41506,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkGainFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "9bfe1a4c85345526001b7a94fd8b978a08a6f1d522d576be533b27724f7da559",
+        "sdkRelocations": [],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x006a0003": {
+      "schema": "wwiseDelayFxParamsV1",
+      "parameterByteLengths": [
+        18
+      ],
+      "setParamsBlock": {
+        "rva": "0x001ed030",
+        "bodyLength": 156,
+        "bodySha256": "7991f819c583b3f8e89216cdb2e3b3bb26ee5fe4e56b9862626c9d260148eaec",
+        "sdkLibrary": "AkDelayFX.lib",
+        "sdkLibrarySha256": "5f34112d60d76a98d5ef381ef85a799410d017d0aded80d4175b4906bae87c23",
+        "sdkObjectMember": "/0",
+        "sdkObjectMemberOffset": 6020,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkDelayFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "5c7c38d0e9e2df187a729753b798c2351702d3480db8ba54cbe851993141ca6d",
+        "sdkRelocations": [
+          {
+            "offset": 20,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 68,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 73,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 81,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 89,
+            "width": 4,
+            "coffType": 4
+          }
+        ],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x006c0003": {
+      "schema": "wwiseCompressorFxParamsV1",
+      "parameterByteLengths": [
+        22
+      ],
+      "setParamsBlock": {
+        "rva": "0x001eb650",
+        "bodyLength": 108,
+        "bodySha256": "b4c7f1f08fd7f4f0bc5f54774ba83316cb26142453a435d34c62de84a8ea6986",
+        "sdkLibrary": "AkCompressorFX.lib",
+        "sdkLibrarySha256": "605da40349d48ce649565752a5d26e2aa2d7e2ad30370c3a46794298f133fd2c",
+        "sdkObjectMember": "/78",
+        "sdkObjectMemberOffset": 46814,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkCompressorFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "3afc39b7c3e111e9eb54d155121c4e33c83757f270d348d594f8612ec54d9bd1",
+        "sdkRelocations": [
+          {
+            "offset": 46,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 64,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 69,
+            "width": 4,
+            "coffType": 4
+          }
+        ],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x006d0003": {
+      "schema": "wwiseExpanderFxParamsV1",
+      "parameterByteLengths": [
+        22
+      ],
+      "setParamsBlock": {
+        "rva": "0x001eb650",
+        "bodyLength": 108,
+        "bodySha256": "b4c7f1f08fd7f4f0bc5f54774ba83316cb26142453a435d34c62de84a8ea6986",
+        "sdkLibrary": "AkExpanderFX.lib",
+        "sdkLibrarySha256": "8ca46c6518375b048cc18078d1cabfab4df59ebdea4453fac968a7b21a5c1904",
+        "sdkObjectMember": "/74",
+        "sdkObjectMemberOffset": 46772,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkExpanderFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "3afc39b7c3e111e9eb54d155121c4e33c83757f270d348d594f8612ec54d9bd1",
+        "sdkRelocations": [
+          {
+            "offset": 46,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 64,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 69,
+            "width": 4,
+            "coffType": 4
+          }
+        ],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x00730003": {
+      "schema": "wwiseMatrixReverbFxParamsV1",
+      "parameterByteLengths": [
+        29,
+        45,
+        61,
+        77,
+        93
+      ],
+      "setParamsBlock": {
+        "rva": "0x002158f0",
+        "bodyLength": 190,
+        "bodySha256": "cb512b9886348e8ef6395bc6324cc73c7f944285b5aace79be832906a3f0f840",
+        "sdkLibrary": "AkMatrixReverbFX.lib",
+        "sdkLibrarySha256": "f9a1e101c222f5fbde56d176f73bdf6e33ed92846124dc5730d022543afd38e3",
+        "sdkObjectMember": "/82",
+        "sdkObjectMemberOffset": 44912,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkFDNReverbFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "db41d217ad6d60c0d35320578b27fa5cb01dc4bc9a284552cd8b410a994cd637",
+        "sdkRelocations": [
+          {
+            "offset": 25,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 55,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 60,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 78,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 86,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 91,
+            "width": 4,
+            "coffType": 4
+          }
+        ],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x00880003": {
+      "schema": "wwisePitchShifterFxParamsV1",
+      "parameterByteLengths": [
+        38
+      ],
+      "setParamsBlock": {
+        "rva": "0x0021b520",
+        "bodyLength": 198,
+        "bodySha256": "699294df90a7490a56e3384ea0e64534edec1795b2c6113922af1bd8fa3cbb3c",
+        "sdkLibrary": "AkPitchShifterFX.lib",
+        "sdkLibrarySha256": "eb78fd6bc69373508d9a434bc1b0a6209683df9119dc280bfce27893f6391e27",
+        "sdkObjectMember": "/82",
+        "sdkObjectMemberOffset": 47960,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkPitchShifterFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "d53f52ff2787b143153c43308b8f7c1f23adca93d8fd16af229914425a388bbe",
+        "sdkRelocations": [
+          {
+            "offset": 25,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 44,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 49,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 66,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 74,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 79,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 97,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 129,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 134,
+            "width": 4,
+            "coffType": 4
+          }
+        ],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x008a0003": {
+      "schema": "wwiseHarmonizerFxParamsV1",
+      "parameterByteLengths": [
+        68
+      ],
+      "setParamsBlock": {
+        "rva": "0x001fa760",
+        "bodyLength": 367,
+        "bodySha256": "b9f38af97e9fec5b10b4779ca55f732f0119dafd2638fc2ef0bf0852d5313fad",
+        "sdkLibrary": "AkHarmonizerFX.lib",
+        "sdkLibrarySha256": "617123e0b12c494e697e5222031a197ddcfc59c798f5df6bb02c54a95f9adbf0",
+        "sdkObjectMember": "/78",
+        "sdkObjectMemberOffset": 69476,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkHarmonizerFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "3dcd40dcb3e5b581575060bb8ad5b58c7b3d622942174b54679eb4143cc03502",
+        "sdkRelocations": [
+          {
+            "offset": 26,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 45,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 62,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 71,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 80,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 103,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 137,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 172,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 177,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 201,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 267,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 291,
+            "width": 4,
+            "coffType": 4
+          }
+        ],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x00870003": {
+      "schema": "wwiseStereoDelayFxParamsV1",
+      "parameterByteLengths": [
+        62
+      ],
+      "setParamsBlock": {
+        "rva": "0x002350c0",
+        "bodyLength": 301,
+        "bodySha256": "4dfe221e8e07db7c14a90092a98a2a7a52da6fd31f584e7d24db0e0dcd62db6b",
+        "sdkLibrary": "AkStereoDelayFX.lib",
+        "sdkLibrarySha256": "3e9cd8f8e2dd89b4d038e73806a370f603340a590b511e841eb09bd0c01b32ed",
+        "sdkObjectMember": "/158",
+        "sdkObjectMemberOffset": 151140,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkStereoDelayFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "19ef3cec7f667aace771267570ca7f245f22fa4d070a25aed8a6edcf3b26f74f",
+        "sdkRelocations": [
+          {
+            "offset": 34,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 57,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 66,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 88,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 126,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 148,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 206,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 228,
+            "width": 4,
+            "coffType": 4
+          }
+        ],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x007e0003": {
+      "schema": "wwiseGuitarDistortionFxParamsV1",
+      "parameterByteLengths": [
+        126
+      ],
+      "setParamsBlock": {
+        "rva": "0x001f6650",
+        "bodyLength": 407,
+        "bodySha256": "04f7909227b239fba42627d23430019e6d11eb3d63801cdbc89f65c7f666beac",
+        "sdkLibrary": "AkGuitarDistortionFX.lib",
+        "sdkLibrarySha256": "45414ff2bcebf967f02da00197715c60f255bf931d0df5ca3bce6881b1ff9948",
+        "sdkObjectMember": "/90",
+        "sdkObjectMemberOffset": 48642,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkGuitarDistortionFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "2bf3564bd05f0503cd007b9db8ae3d3f28ab89da9e6c5c23729c3ee2b9612298",
+        "sdkRelocations": [
+          {
+            "offset": 326,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 334,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 339,
+            "width": 4,
+            "coffType": 4
+          }
+        ],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    },
+    "0x00760003": {
+      "schema": "wwiseRoomVerbFxParamsV1",
+      "parameterByteLengths": [
+        186
+      ],
+      "setParamsBlock": {
+        "rva": "0x00231d50",
+        "bodyLength": 683,
+        "bodySha256": "f59f67bd1b886bbab094071c3b95347ada3a8ab2bdf8e25b5e1fc17bb427f9d1",
+        "sdkLibrary": "AkRoomVerbFX.lib",
+        "sdkLibrarySha256": "a5fc091edb2d1458222f5f862a0b39887c2b867ada5d744a14e2256ec070121f",
+        "sdkObjectMember": "/204",
+        "sdkObjectMemberOffset": 178702,
+        "sdkMethodSymbol": "?SetParamsBlock@CAkRoomVerbFXParams@@UEAA?AW4AKRESULT@@PEBXI@Z",
+        "sdkMethodBodySha256": "4b5c0f708d8297307a962c45da559288f5a7467ad8222d44d5217c19a9b6b72a",
+        "sdkRelocations": [
+          {
+            "offset": 116,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 124,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 176,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 198,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 220,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 242,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 264,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 286,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 311,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 316,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 480,
+            "width": 4,
+            "coffType": 4
+          },
+          {
+            "offset": 502,
+            "width": 4,
+            "coffType": 4
+          }
+        ],
+        "matchBoundary": "exactCodeExcludingSdkRelocations"
+      },
+      "status": "reviewed"
+    }
+  },
+  "unreviewedClassIds": [
+    "0x007f0003",
+    "0x00ba0003"
+  ]
+}

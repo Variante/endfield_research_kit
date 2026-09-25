@@ -10,6 +10,7 @@ from scripts.game_data.extraction.unity_overlay import chunk_slot_key, effective
 
 import json
 import re
+import sys
 from collections import Counter, defaultdict, deque
 from struct import unpack_from
 from pathlib import Path, PurePosixPath
@@ -18,6 +19,11 @@ from scripts.webui.audio.semantics.context_utils import iter_asset_map_objects
 from scripts.webui.audio.semantics.context_utils import json_dump
 from scripts.webui.audio.semantics.context_utils import load_json_strict
 from scripts.webui.audio.semantics.context_utils import normalize_posix
+from scripts.webui.audio.semantics.identifiers import fnv1_32
+from scripts.webui.audio.semantics.play_sound_actions import (
+    apply_event_enum_names,
+    selected_event_enum_names,
+)
 
 from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavailable
 from scripts.game_data.extraction.animestudio_index_io import iter_effective_layer_objects
@@ -1448,12 +1454,14 @@ def seed_buff_play_sound_events(
         record_events = record.setdefault("events", set())
         for event_key, actions in sorted((events or {}).items()):
             authored_ids = {
-                str(action.get("eventId") or "").strip()
+                str(action.get("eventId") or "")
                 for action in actions or []
-                if isinstance(action, dict) and str(action.get("eventId") or "").strip()
+                if isinstance(action, dict)
+                and str(action.get("eventId") or "").strip()
+                and str(action.get("eventId") or "") == str(action.get("eventId") or "").strip()
             }
-            if not authored_ids and str(event_key or "").strip():
-                authored_ids.add(str(event_key).strip())
+            if not authored_ids and str(event_key or "") and str(event_key) == str(event_key).strip():
+                authored_ids.add(str(event_key))
             for event_id in sorted(authored_ids):
                 if event_id in record_events:
                     continue
@@ -1509,13 +1517,21 @@ def collect_buff_play_sound_actions(
 
     if decoder is None:
         from scripts.game_data.memorypack.buff import (
-            BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
             BUFF_PLAY_SOUND_ACTION_TAG,
             consume_buff_play_sound_action,
         )
         from scripts.game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
+        from scripts.game_data import levelscript_union_tags
 
-        member_count = BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS[BUFF_PLAY_SOUND_ACTION_TAG]
+        play_sound_pair = levelscript_union_tags.pair(
+            "AbilityActionData", "Core_PlaySoundAction_PlaySoundActionData"
+        )
+        if (
+            not isinstance(play_sound_pair[0], int)
+            or play_sound_pair[0] != BUFF_PLAY_SOUND_ACTION_TAG
+        ):
+            raise ValueError("Buff PlaySound action union pair is unavailable for the selected build")
+        member_count = play_sound_pair[1]
         signature = bytes([MEMORYPACK_UNION_WIDE_TAG]) + int(BUFF_PLAY_SOUND_ACTION_TAG).to_bytes(2, "little") + bytes([member_count])
 
         def decoder(_path: Path, data: bytes, _size: int) -> list[tuple[dict[str, Any], dict[str, Any], dict[str, Any]]]:
@@ -1585,8 +1601,8 @@ def collect_buff_play_sound_actions(
                 continue
             source_has_play_sound = False
             for action_index, (timeline, sequence, action) in enumerate(decoded_actions):
-                event_id = str(action.get("soundEvent") or "").strip()
-                if not event_id:
+                event_id = str(action.get("soundEvent") or "")
+                if not event_id.strip():
                     continue
                 source_has_play_sound = True
                 prefix = action.get("prefix") or {}
@@ -1594,6 +1610,11 @@ def collect_buff_play_sound_actions(
                 row = {
                     "buffId": buff_id,
                     "eventId": event_id,
+                    "eventLiteralStatus": (
+                        "outerWhitespaceUnresolved"
+                        if event_id != event_id.strip()
+                        else "asSerialized"
+                    ),
                     "timelineActionIndex": timeline.get("index"),
                     "actionDataIndex": action_index,
                     "startFrame": timeline.get("startFrame"),
@@ -1664,6 +1685,10 @@ def collect_buff_play_sound_actions(
             "buffPlaySoundDecodeFailures": decode_failures,
             "buffPlaySoundActionOccurrences": len(merged),
             "buffPlaySoundUniqueEvents": len({str(row["eventId"]).lower() for row in merged.values()}),
+            "buffPlaySoundOuterWhitespaceEventLiterals": sum(
+                row["eventLiteralStatus"] == "outerWhitespaceUnresolved"
+                for row in merged.values()
+            ),
         },
     }
 
@@ -1766,6 +1791,7 @@ def collect_gameplay_audio_references(
         str(row.get("eventId") or "").lower()
         for row in authored_play_sound_actions
         if str(row.get("eventId") or "")
+        and row.get("eventLiteralStatus") != "outerWhitespaceUnresolved"
     }
     owned_skill_ids: set[str] = set()
 
@@ -1841,10 +1867,9 @@ def collect_gameplay_audio_references(
             if actions:
                 evidence["playSoundActions"] = actions
             event_evidence[event_id].append(evidence)
-        if not event_evidence:
-            continue
-        owned_skill_ids.add(skill_id)
-        event_names.update(event_evidence)
+        if event_evidence:
+            owned_skill_ids.add(skill_id)
+            event_names.update(event_evidence)
         seen_owner_keys: set[tuple[str, str, str]] = set()
         for matched_owner in matched_owners:
             owner_key = (
@@ -1866,7 +1891,7 @@ def collect_gameplay_audio_references(
         owner_id = str(enemy.get("id") or "")
         born_buffs = {str(value or "").strip() for value in enemy.get("bornBuffs") or [] if str(value or "").strip()}
         buff_events = gameplay_buff_audio(born_buffs, buff_records)
-        if not buff_events:
+        if not born_buffs:
             continue
         event_names.update(buff_events)
         owners.append({
@@ -1878,6 +1903,7 @@ def collect_gameplay_audio_references(
             "ownershipMethod": "enemyBornBuffField",
             "ownershipSources": [],
             "sources": [],
+            "bornBuffIds": sorted(born_buffs),
             "events": {
                 event_id: [{
                     "kind": "enemyBornBuffData",
@@ -1955,13 +1981,294 @@ def collect_gameplay_audio_references(
             "skillPlaySoundUniqueEvents": int(
                 (skill_play_sound.get("counts") or {}).get("buffPlaySoundUniqueEvents") or 0
             ),
+            "skillPlaySoundOuterWhitespaceEventLiterals": int(
+                (skill_play_sound.get("counts") or {}).get("buffPlaySoundOuterWhitespaceEventLiterals") or 0
+            ),
             "skillPlaySoundSeededEventRefs": seeded_skill_play_sound_events,
             **play_sound_owner_counts,
             **(animation_audio.get("counts") or {}),
             **(profile_voices.get("counts") or {}),
         },
         "animationControllerIndex": animation_audio.get("animationControllerIndex") or {},
+        "_skillRecords": skill_records,
+        "_buffRecords": buff_records,
     }
+
+
+def reachable_buff_ids(
+    starts: set[str] | list[str],
+    buff_records: dict[str, dict[str, Any]],
+) -> set[str]:
+    """Follow only authored BuffData references from the given config IDs."""
+    reached: set[str] = set()
+    queue = deque(str(value) for value in starts if str(value))
+    while queue:
+        buff_id = queue.popleft()
+        if buff_id in reached:
+            continue
+        reached.add(buff_id)
+        queue.extend(
+            str(value) for value in (buff_records.get(buff_id) or {}).get("buffs") or set()
+            if str(value) and str(value) not in reached
+        )
+    return reached
+
+
+def compact_exact_play_sound_action(
+    row: dict[str, Any],
+    hirc_hashes: set[int],
+) -> dict[str, Any]:
+    """Keep a whole-record action raw until a selected HIRC hash claims it."""
+    literal = str(row.get("eventLiteral") or "")
+    literal_status = str(row.get("eventLiteralStatus") or "empty")
+    if literal_status == "empty":
+        identity_status = "emptyLiteral"
+    elif literal_status == "outerWhitespaceUnresolved":
+        identity_status = "outerWhitespaceUnresolved"
+    elif fnv1_32(literal.lower()) in hirc_hashes:
+        identity_status = "selectedHircEventObject"
+    else:
+        identity_status = "eventHashAbsentFromScannedBankSet"
+    fields = row.get("serializedAction") or {}
+    source = str(row.get("sourcePath") or "")
+    compact = {
+        "configKind": row.get("configKind"),
+        "configId": row.get("configId"),
+        "sourcePath": source,
+        "sourcePaths": [source] if source else [],
+        "sourceSha256": row.get("sourceSha256"),
+        "actionPath": row.get("actionPath"),
+        "eventLiteral": literal,
+        "eventLiteralStatus": literal_status,
+        "eventIdentityStatus": identity_status,
+        "startFrame": row.get("startFrame"),
+        "endFrame": row.get("endFrame"),
+        "buffEvent": row.get("buffEvent"),
+        "buffEventName": row.get("buffEventName"),
+        "abilityEvent": row.get("abilityEvent"),
+        "abilityEventName": row.get("abilityEventName"),
+        "enclosingActionTypes": row.get("enclosingActionTypes") or [],
+        "onlyExecuteWhenSourceIsGuard": row.get("onlyExecuteWhenSourceIsGuard"),
+        "onlyExecuteWhenSourceIsMainChar": row.get("onlyExecuteWhenSourceIsMainChar"),
+        "isEnabled": fields.get("isEnable"),
+        "priorityLevel": fields.get("priorityLevel"),
+        "priorityOffset": fields.get("priorityOffset"),
+        "serverActionIndex": fields.get("serverActionIndex"),
+        "canInterruptTimeMs": fields.get("_canInterruptTimeMs"),
+        "interruptFadeDurationMs": fields.get("_intrptFadeDurationMs"),
+        "jumpToWhenPlayMs": fields.get("_jumpToWhenPlayMs"),
+        "stopFadeDurationMs": fields.get("_stopFadeDurationMs"),
+        "stopOnEnd": fields.get("_stopOnEnd"),
+        "useTempEmitter": fields.get("_useTempEmitter"),
+        "followMountPoint": fields.get("followMountPoint"),
+        "mountPoint": fields.get("mountPoint"),
+        "targetSettings": fields.get("targetSettings"),
+        "targetSettingsStatus": "exactWholeRecord",
+        "timeDilationFadeInDurationMs": fields.get("timeDilationFadeInDurationMs"),
+        "timeDilationFadeOutDurationMs": fields.get("timeDilationFadeOutDurationMs"),
+        "timeDilationPauseThreshold": fields.get("timeDilationPauseThreshold"),
+        "timeDilationSeekThreshold": fields.get("timeDilationSeekThreshold"),
+        "useTimeDilationPauseAndSeek": fields.get("useTimeDilationPauseAndSeek"),
+        "useWeaponMountPoint": fields.get("useWeaponMountPoint"),
+        "weaponIndex": fields.get("weaponIndex"),
+        "weaponMountPoint": fields.get("weaponMountPoint"),
+        "runtimeConditionStatus": "unresolved",
+        "evidence": "exactWholeRecordMemoryPackPlaySoundActionData",
+    }
+    if row.get("configKind") == "BuffData":
+        compact["buffId"] = row.get("configId")
+    elif row.get("configKind") == "SkillData":
+        compact["skillId"] = row.get("configId")
+    if identity_status == "selectedHircEventObject":
+        compact["eventId"] = literal.lower()
+        compact["eventHash"] = fnv1_32(literal.lower())
+    return compact
+
+
+def enrich_gameplay_play_sound_actions(
+    references: dict[str, Any],
+    decoded_actions: list[dict[str, Any]],
+    decoded_audit: dict[str, Any],
+    wwise_event_inventory: list[dict[str, Any]],
+    *,
+    gameassembly: Path,
+    metadata: Path,
+) -> dict[str, Any]:
+    """Attach exact actions through config ownership after HIRC identity is known."""
+    families = decoded_audit.get("families") or {}
+    reason = ""
+    if decoded_audit.get("status") != "validated":
+        reason = f"decoded-native-gate={decoded_audit.get('status', 'missing')}"
+    elif any(
+        not isinstance(families.get(family), dict)
+        or families[family].get("status") != "read"
+        or not int(families[family].get("decoded") or 0)
+        or int(families[family].get("refused") or 0)
+        for family in ("SkillData", "BuffData")
+    ):
+        reason = "incomplete-exact-payload-family"
+    hirc_hashes = {
+        int(row["eventHash"]) & 0xFFFFFFFF
+        for row in wwise_event_inventory
+        if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
+    }
+    if not reason and (
+        not wwise_event_inventory or not hirc_hashes
+        or any(
+            not isinstance(row, dict) or not isinstance(row.get("eventHash"), int)
+            for row in wwise_event_inventory
+        )
+    ):
+        reason = "missing-selected-hirc-inventory"
+    if not reason and (
+        any(row.get("configKind") not in ("SkillData", "BuffData") for row in decoded_actions)
+        or any(
+            sum(row.get("configKind") == family for row in decoded_actions)
+            != int(families[family].get("playSoundActions") or 0)
+            for family in ("SkillData", "BuffData")
+        )
+    ):
+        reason = "incomplete-exact-action-rows"
+    if reason:
+        audit = {"status": "unavailable", "reason": reason}
+        references["exactPlaySoundActionAudit"] = audit
+        print(f"Exact Gameplay PlaySound actions skipped: {reason}", file=sys.stderr)
+        return audit
+    try:
+        enum_names, enum_audit = selected_event_enum_names(gameassembly, metadata)
+        apply_event_enum_names(decoded_actions, enum_names)
+    except (OSError, ValueError, RuntimeError, KeyError, IndexError) as error:
+        audit = {"status": "unavailable", "reason": f"selected-event-enums={error}"}
+        references["exactPlaySoundActionAudit"] = audit
+        print(f"Exact Gameplay PlaySound actions skipped: {error}", file=sys.stderr)
+        return audit
+
+    compact_rows = [compact_exact_play_sound_action(row, hirc_hashes) for row in decoded_actions]
+    owners = references.get("owners") or []
+    skill_records = references.get("_skillRecords") or {}
+    buff_records = references.get("_buffRecords") or {}
+    by_skill: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    by_buff: dict[str, list[tuple[dict[str, Any], str]]] = defaultdict(list)
+    for owner in owners:
+        skill_id = str(owner.get("skillId") or "")
+        if skill_id:
+            by_skill[skill_id].append(owner)
+            starts = (skill_records.get(skill_id) or {}).get("buffs") or set()
+            for buff_id in reachable_buff_ids(starts, buff_records):
+                by_buff[buff_id].append((owner, "skillBuffData"))
+        elif owner.get("ownershipMethod") == "enemyBornBuffField":
+            for buff_id in reachable_buff_ids(owner.get("bornBuffIds") or [], buff_records):
+                by_buff[buff_id].append((owner, "enemyBornBuffData"))
+
+    grouped: dict[tuple[int, str, str, str], tuple[dict[str, Any], list[dict[str, Any]]]] = {}
+    linked_config_events: set[tuple[str, str, str]] = set()
+    for row in compact_rows:
+        event_id = str(row.get("eventId") or "")
+        matches: list[tuple[dict[str, Any], str]] = []
+        if event_id and row.get("configKind") == "SkillData":
+            matches = [(owner, "skillData") for owner in by_skill.get(str(row["configId"]), [])]
+        elif event_id and row.get("configKind") == "BuffData":
+            matches = by_buff.get(str(row["configId"]), [])
+        seen_owner_ids: set[int] = set()
+        for owner, kind in matches:
+            owner_key = id(owner)
+            if owner_key in seen_owner_ids:
+                continue
+            seen_owner_ids.add(owner_key)
+            owner_events = owner.setdefault("events", {})
+            existing_id = next((key for key in owner_events if key.lower() == event_id), event_id)
+            key = (owner_key, existing_id, kind, str(row["configId"]))
+            if key not in grouped:
+                grouped[key] = (owner, [])
+            grouped[key][1].append(row)
+        row["ownerLinkCount"] = len(seen_owner_ids)
+        row["ownerLinkStatus"] = "linkedThroughAuthoredConfig" if seen_owner_ids else "unresolved"
+        if seen_owner_ids:
+            linked_config_events.add((str(row["configKind"]), str(row["configId"]), event_id))
+
+    for owner in owners:
+        for evidence_rows in (owner.get("events") or {}).values():
+            for evidence in evidence_rows:
+                if isinstance(evidence, dict):
+                    evidence.pop("playSoundActions", None)
+    for (_owner_id, event_id, kind, config_id), (owner, action_rows) in grouped.items():
+        evidence = {
+            "kind": kind,
+            "skillId": str(owner.get("skillId") or ""),
+            "playSoundActions": action_rows,
+        }
+        if kind != "skillData":
+            evidence["buffIds"] = [config_id]
+        owner.setdefault("events", {}).setdefault(event_id, []).append(evidence)
+
+    references["authoredPlaySoundActions"] = [
+        row for row in compact_rows if row.get("configKind") == "BuffData"
+    ]
+    references["authoredSkillPlaySoundActions"] = [
+        row for row in compact_rows if row.get("configKind") == "SkillData"
+    ]
+    references["authoredConfigEventReferences"] = [
+        row for row in references.get("authoredConfigEventReferences") or []
+        if (str(row.get("configKind") or ""), str(row.get("configId") or ""),
+            str(row.get("eventId") or "").lower()) not in linked_config_events
+    ]
+    references.setdefault("eventNames", set()).update(
+        row["eventId"] for row in compact_rows if row.get("eventId")
+    )
+    counts = references.setdefault("counts", {})
+    for family, prefix in (("BuffData", "buff"), ("SkillData", "skill")):
+        rows = [row for row in compact_rows if row.get("configKind") == family]
+        counts[f"local{prefix.capitalize()}PlaySoundActionOccurrences"] = counts.get(
+            f"{prefix}PlaySoundActionOccurrences", 0
+        )
+        counts[f"{prefix}PlaySoundDecodedSourceFiles"] = len({
+            str(row["sourcePath"]) for row in rows
+        })
+        counts[f"{prefix}PlaySoundActionOccurrences"] = len(rows)
+        counts[f"{prefix}PlaySoundUniqueEvents"] = len({
+            str(row["eventId"]) for row in rows if row.get("eventId")
+        })
+        counts[f"{prefix}PlaySoundOuterWhitespaceEventLiterals"] = sum(
+            row["eventLiteralStatus"] == "outerWhitespaceUnresolved" for row in rows
+        )
+    counts["buffPlaySoundActionsLinkedToGameplayOwner"] = sum(
+        bool(row["ownerLinkCount"]) for row in references["authoredPlaySoundActions"]
+    )
+    counts["buffPlaySoundActionsOwnerUnresolved"] = sum(
+        not row["ownerLinkCount"] for row in references["authoredPlaySoundActions"]
+    )
+    counts["skillPlaySoundActionsLinkedToGameplayOwner"] = sum(
+        bool(row["ownerLinkCount"]) for row in references["authoredSkillPlaySoundActions"]
+    )
+    counts["skillPlaySoundActionsOwnerUnresolved"] = sum(
+        not row["ownerLinkCount"] for row in references["authoredSkillPlaySoundActions"]
+    )
+    counts["audioReferences"] = sum(len(owner.get("events") or {}) for owner in owners)
+    counts["audioEventNames"] = len(references["eventNames"])
+    counts["audioOwnedSkills"] = len({
+        str(owner.get("skillId") or "") for owner in owners
+        if owner.get("skillId") and owner.get("events")
+    })
+    counts["authoredConfigEventReferences"] = len(references["authoredConfigEventReferences"])
+    counts["authoredConfigEventReferenceEvents"] = len({
+        str(row.get("eventId") or "") for row in references["authoredConfigEventReferences"]
+    })
+    audit = {
+        "status": "validated",
+        "decodedActionCount": len(compact_rows),
+        "hircMatchedActions": sum(row.get("eventIdentityStatus") == "selectedHircEventObject" for row in compact_rows),
+        "ownerLinkedActions": sum(bool(row["ownerLinkCount"]) for row in compact_rows),
+        "eventEnumFields": {
+            key: value["fieldType"] for key, value in enum_audit.items()
+        },
+        "evidenceBoundary": (
+            "Exact whole-record PlaySound action path and selected HIRC Event identity; "
+            "Skill/Buff owner links follow authored config dependencies. Enum labels are "
+            "serialized trigger slots, not observed execution or audible playback."
+        ),
+    }
+    references["exactPlaySoundActionAudit"] = audit
+    return audit
 
 def compact_gameplay_audio_link(entry: dict[str, Any]) -> dict[str, Any]:
     compact = {
@@ -2038,7 +2345,12 @@ def link_gameplay_audio(
                 if status != "inferredSkillConfigOwner"
                 else "inferredOwnerExactAuthoredPlaySoundAction"
             )
-            activation_status = "authoredFrameWindowRecoveredConditionUnresolved"
+            activation_status = (
+                "authoredFrameWindowRecoveredConditionUnresolved"
+                if all(action.get("startFrame") is not None and action.get("endFrame") is not None
+                       for action in play_sound_actions)
+                else "authoredTriggerContextRecoveredConditionUnresolved"
+            )
         else:
             request_evidence = (
                 "exactAuthoredDependency"
@@ -2909,18 +3221,20 @@ def link_gameplay_audio(
         **animation_evidence,
     })
     json_dump(path, {
-        "schemaVersion": 5,
+        "schemaVersion": 6,
         "language": language,
         "counts": stats,
         "animationEventCatalogPath": GAMEPLAY_SFX_ANIMATION_CATALOG_NAME,
         "animationEvidencePath": GAMEPLAY_SFX_ANIMATION_EVIDENCE_NAME,
         "authoredPlaySoundActions": references.get("authoredPlaySoundActions") or [],
+        "authoredSkillPlaySoundActions": references.get("authoredSkillPlaySoundActions") or [],
+        "exactPlaySoundActionAudit": references.get("exactPlaySoundActionAudit") or {"status": "unavailable"},
         "authoredConfigEventReferences": references.get("authoredConfigEventReferences") or [],
         "characters": characters,
         "enemies": enemies,
         "scope": {
-            "source": "SkillData/BuffData event references, decoded BuffData PlaySound actions, EnemyData ability bundles, AnimationClip audio callbacks, CharacterTable profile voices, and Wwise HIRC traversal",
-            "playSoundActionBoundary": "Current MemoryPack PlaySoundActionData yields exact event, frame window, stop/fade, routing, time-dilation controls, and typed TargetSettings when the nested reader lands exactly; runtime activation conditions and selected targets remain unresolved.",
+            "source": "SkillData/BuffData event references and exact whole-record PlaySound actions, EnemyData ability bundles, AnimationClip audio callbacks, CharacterTable profile voices, and Wwise HIRC traversal",
+            "playSoundActionBoundary": "Exact whole-record SkillData/BuffData PlaySound actions preserve raw literals, enclosing frame or trigger context, stop/fade, routing, time-dilation controls, and typed TargetSettings. A selected HIRC Event object hash is required for Event identity; authored config ownership links remain distinct from runtime activation, target selection, and audible playback. Empty, outer-whitespace, and HIRC-unmatched literals remain raw action catalog rows without Event links.",
             "characterOwnership": "direct gameplay skill id",
             "characterFamilyOwnership": "longest playable skill id prefix inferred for authored child SkillData",
             "enemyOwnership": "exact SkillData identifiers recovered from enemy-template AbilitySystemData, with enemy-id prefix fallback and exact born-buff fields",

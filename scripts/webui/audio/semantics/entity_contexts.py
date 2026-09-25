@@ -301,23 +301,35 @@ def collect_gameplay_contexts(webui_root: Path, language: str) -> dict[str, list
             "ownerLinkStatus": "unresolved",
         }
         _append_context(contexts, seen, reference.get("eventId"), context)
-    for action in payload.get("authoredPlaySoundActions") or []:
-        if not isinstance(action, dict):
-            continue
-        context = {
-            "kind": "buffPlaySoundAction",
-            "confidence": "direct",
-            "semanticRole": "authoredAbilitySoundAction",
-            "triggerRequestEvidence": ["exactAuthoredPlaySoundAction"],
-            "triggerRuntimeActivationStatuses": ["authoredFrameWindowRecoveredConditionUnresolved"],
-            "triggerRelationTypes": ["buffPlaySoundAction"],
-            "triggerEvidenceKinds": ["buffPlaySoundActionData"],
-            "triggerBuffIds": [str(action.get("buffId") or "")],
-            "triggerSourcePaths": list(action.get("sourcePaths") or []),
-            "triggerPlaySoundActionCount": 1,
-            "triggerPlaySoundActions": [action],
-        }
-        _append_context(contexts, seen, action.get("eventId"), context)
+    for catalog_key, config_kind, context_kind in (
+        ("authoredPlaySoundActions", "BuffData", "buffPlaySoundAction"),
+        ("authoredSkillPlaySoundActions", "SkillData", "skillPlaySoundAction"),
+    ):
+        for action in payload.get(catalog_key) or []:
+            if not isinstance(action, dict) or not action.get("eventId"):
+                continue
+            has_frame = (action.get("startFrame") is not None
+                         and action.get("endFrame") is not None)
+            context = {
+                "kind": context_kind,
+                "configKind": config_kind,
+                "configId": str(action.get("configId") or ""),
+                "confidence": "direct",
+                "semanticRole": "authoredAbilitySoundAction",
+                "triggerRequestEvidence": ["exactAuthoredPlaySoundAction"],
+                "triggerRuntimeActivationStatuses": [
+                    "authoredFrameWindowRecoveredConditionUnresolved" if has_frame
+                    else "authoredTriggerContextRecoveredConditionUnresolved"
+                ],
+                "triggerRelationTypes": [context_kind],
+                "triggerEvidenceKinds": ["playSoundActionData"],
+                "triggerBuffIds": ([str(action.get("buffId"))] if action.get("buffId") else []),
+                "triggerSourcePaths": list(action.get("sourcePaths") or []),
+                "triggerPlaySoundActionCount": 1,
+                "triggerPlaySoundActions": [action],
+                "ownerLinkStatus": str(action.get("ownerLinkStatus") or "unresolved"),
+            }
+            _append_context(contexts, seen, action["eventId"], context)
     for owner_kind, bucket_name in (("character", "characters"), ("enemy", "enemies")):
         bucket = payload.get(bucket_name) if isinstance(payload, dict) else None
         if not isinstance(bucket, dict):

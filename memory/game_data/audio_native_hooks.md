@@ -33,6 +33,49 @@ build, and do not restore module-global default game paths.
   runtime gap is source-state/sourceInfo instance selection and opened-handle
   identity.
 
+## PlaySound's checked default branches hash the serialized string as written
+
+`scripts/webui/audio/semantics/native_play_sound_string.py` validates the
+selected `GameAssembly.dll` and `global-metadata.dat` against
+`scripts/game_data/contracts/audio_play_sound_string_native.json`, then checks
+the named bodies, exact bytes, `_soundEvent` field offset and direct dataflow.
+It publishes nothing on a missing or different native pair. The checks cover
+the object-post and position-post default bodies reached from
+`PlaySoundAction._DoPlaySound`.
+
+- The object branch reads the `PlaySoundActionData._soundEvent` string and
+  passes that same pointer to its post helper. The helper checks for a nonempty
+  string, calls `AudioHashGenerator.Compute(string)`, and sends the resulting
+  integer to `AudioAdapter._PostEvent`.
+- The position branch reads the same field and passes it to
+  `AudioBattleUtil.PostEventAtPositionWithMixingType(string, ...)`. That overload
+  checks for a nonempty string, calls the same `Compute(string)`, and forwards
+  the integer to its position-post overload.
+- The selected `Compute(string)` body hashes the whole managed UTF-16 string,
+  folding ASCII uppercase letters. It does not trim whitespace. Thus the
+  checked default branches preserve a trailing space through hashing, even
+  though the case fold makes ASCII capitalization immaterial.
+
+The exact `SkillData/eny_0080_reaper_skill_left` PlaySound action carries a
+trailing space in its sound string. The raw string and a hypothetical trimmed
+string yield distinct ids. In the **current scanned CN HIRC bank set**, only
+the trimmed id has an Event object. This is a selected-corpus counterexample
+to silently trimming authored PlaySound strings; it does not establish which
+action branch ran or what Wwise did with a post. The exact action source and
+selected HIRC comparison are recorded in the generated PlaySound corpus and
+native audit under `reports/audio/`, with the reusable decoder and validator
+above providing the tracked checks.
+
+The checked methods also test iFix patch state before their default bodies.
+A fresh MD5-verified dump of the installed `IFixPatchOut` set has no declared
+replacement target for the named methods in this checked route; the files
+parse exactly to EOF. That narrows the shipped-patch alternative, as recorded
+in [`ifix_patch.md`](ifix_patch.md), but does not observe runtime patch state
+or rule out another patch source. Other PlaySound routes, live action
+execution, bank loading and audibility remain unresolved. Do not apply this
+default-body finding to every PlaySound branch or promote the trimmed spelling
+to a runtime Event identity.
+
 ## The codec argument is a separate closed boundary
 
 - Current metadata defines `Beyond.Audio.AudioCodec` as `PCM=-1`, `ADPCM=1`,

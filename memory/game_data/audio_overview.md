@@ -189,16 +189,18 @@ Stable conclusions:
   stream packages are also too large to base64 through the CLI's JSONL stream
   (`default_chinese_stream.pck` throws `OutOfMemoryException`), so a whole-corpus
   Python read is not available by that route.
-- **`AkRtpcType` is not in the contract, or in the SDK.** The RTPC curve's
-  one-byte type field is labelled from a five-entry table in `hirc_v150.py` that
-  no contract or PDB sources: the PDB extraction carries `AkRtpcAccum`,
-  `AkRtpcCurve::OwnerType` and `AkRTPCKeyFieldType`, and no `AkRtpcType` at all.
-  Only two values ship -- 0 (20,205 curves, labelled `gameParameter`) and 4
-  (1,025, labelled `modulator`) -- so the other three labels are unexercised.
-  Value 4 agrees with `AkRtpcCurve::OwnerType`'s `Modulator`; value 0 does not
-  agree with its `ParameterNode`. That is one agreement out of two and settles
-  nothing. Treat both published labels as unsourced until the deserializer names
-  the field.
+- **The RTPC type is `AkGameSyncType`, not `AkRtpcCurve::OwnerType`.** The older
+  audit searched for `AkRtpcType`, missed `AkGameSyncType`, and called the
+  five-entry label table unsourced. The reviewed `AkSoundEngine.pdb` has a
+  complete `AkRtpcCurveParams` type whose `rtpcType` member at offset zero is
+  `AkGameSyncType`. `AK::RTPC::ReadRtpcCurves<CAkParameterNodeBase>` reads the
+  serialized type byte into that parameter structure and passes it to
+  `AddRtpcCurve`. The enum names 0 `GameParameter`, 1 `MIDIParameter`, 2
+  `Switch`, 3 `State`, and 4 `Modulator`; 5 `Count` and 8 `MaxNum` are markers,
+  not type labels. The current corpus exercises 0 (20,205 curves) and 4
+  (1,025). `scripts/game_data/contracts/wwise_sdk_enums.json` records the
+  selected PDB field/type indices and enum values. This names the stored field;
+  it does not identify a live RTPC value or prove curve activation.
 - **Layer 4 opens for audio.** The anonymous four-byte values inside the exactly
   framed terminal vectors of numeric types `0x04`, `0x05`, `0x06`, `0x07` and `0x09` are object
   identities. All 240,898 of them resolve, every one to exactly one HIRC object
@@ -234,11 +236,12 @@ Stable conclusions:
   `0x09`-`0x0E`, `0x10`, `0x11`, `0x13`-`0x16`, with `0x08`/`0x12` (bus) and `0x03`
   (action) exact from before and now named, and `0x0F` framed but unshipped. The
   layouts, the three corrections the read forced, and the enum contract are in
-  [`audio_hirc_parser.md`](audio_hirc_parser.md). What structural work remains is
-  inside blobs the engine itself hands to a plug-in or a tree: effect plug-in
-  parameter blocks (owned by the typed v150 effect parse) and decision-tree node
-  meaning. Everything past that is layers 5 and 6, which need a host process, not
-  another reader.
+  [`audio_hirc_parser.md`](audio_hirc_parser.md). The `0x0C` decision trees are now
+  walked structurally against the SDK resolver and the current corpus; `0x0F`
+  has only fixture coverage because no object ships. What structural work
+  remains is inside effect plug-in parameter blocks (owned by the typed v150
+  effect parse). Live tree selection belongs to layers 5 and 6, which need a
+  host process.
 
 ## Naming: what the shipped literals actually reach
 
@@ -488,31 +491,48 @@ handoff for the audio lane, with the witness each step needs. Read
 [`audio_hirc_parser.md`](audio_hirc_parser.md) first; the layouts there are the
 contract every step below builds on.
 
-1. **Name the values the lanes only count.** *Started.*
-   `scripts/webui/audio/semantics/wwise_enums.py` is now the one loader for
-   `scripts/game_data/contracts/wwise_sdk_enums.json`, with a fail-closed
-   schema and status load, and `hirc_v150.py` takes the
-   full-word action name from it and publishes `actionTypeName` on every action
-   row. An audit of the remaining tables against the contract found that
-   `AkCurveInterpolation`, `AkBankTypeEnum`, `AkValueMeaning`, `AkRtpcAccum`,
-   `AkCurveScaling`, `AkSyncType`, `AkPropID` and `AkPluginType` all agree
-   value-for-value, so only their *spelling* differs from the SDK's. What is
-   left is to have those tables read the contract as well rather than duplicate
-   it, and to resolve the unsourced `AkRtpcType` table above.
-2. **Rename the bus lane's fitted vocabulary.** `FrameSharedBody` and the
-   `0x08`/`0x12` reports still say "second list", "middle block", "tail". The
-   `CAkBus` layout in the parser topic names each of them (ducks, property
-   bundle, HDR bits, state chunk after group I). Report keys are the only cost.
-3. **Decision-tree keys.** `0x0C` and `0x0F` trees are counted as whole 12-byte
-   nodes but not walked. Walking them (children ranges, leaf audio-node ids
-   against the bank's objects, probability sums) is a bounded corpus check with
-   the node layout already known from `AkDecisionTree::ResolvePath`; the
-   `0x0C` "names near the end" in `audio_hirc_graph.md` are these keys.
+1. **Name the values the lanes only count.** The shared SDK enum tables are
+   consolidated in `scripts/webui/audio/semantics/wwise_enums.py` and its
+   reviewed contract. `hirc_v150.py` derives interpolation, bank type, value
+   meaning, RTPC accumulation/scaling/type, sync type, property and plug-in
+   type labels from the contract, preserving the existing display spellings.
+   Range markers are excluded and unsupported values remain numeric. The
+   full-word action name is likewise read from the contract and published as
+   `actionTypeName`; the two shipped Trigger extensions still have no stock SDK
+   name. The RTPC type correction above closes the one previously unsourced
+   shared enum. Other plug-in-specific value tables require their own witness.
+2. **Bus vocabulary is closed in the maintained v150 projection.** The old
+   `FrameSharedBody` and `0x08`/`0x12` investigation reports retain anonymous
+   names such as "second list" and "middle block", but they are historical
+   artifacts, not the current reader. `_hirc_v150_bus_serialized_layout`
+   publishes the selected `CAkBus` property bundle, positioning and auxiliary
+   flags, instance/HDR fields, duck records, InitialFX, metadata, and the
+   separately typed State/RTPC suffix. The current CN index gives every
+   published bus definition a typed v150 bus and State/RTPC status; the Audio
+   page already presents those authored controls along media-to-bus paths.
+   This closes the old report-key task, not runtime bus selection or audibility.
+
+3. **Decision-tree structure. Completed for shipped `0x0C`.** The maintained
+   HIRC framer now walks each whole 12-byte tree from its sentinel root at the
+   stored depth. It checks child ranges and strict sibling-key order against
+   `AkDecisionTree::ResolvePath`, partitions reachable nodes and leaf ids, and
+   joins nonzero leaves to unique objects declared in the same bank. The fresh
+   VFS-backed corpus gate passed every shipped `0x0C` body with all nodes
+   reachable. Some leaves have no same-bank declaration, so their ownership
+   remains unresolved. `0x0F` shares the walk and has fixture coverage only;
+   no shipped object exercises it. The SDK treats `+8` as relative weight and
+   `+10` as a selected-leaf probability gate, so sibling probabilities do not
+   have to sum to 100. Runtime arguments and selected leaves remain open.
 4. **Plug-in parameter blocks.** `0x10`/`0x11`/`0x15` and type `0x02` source
    plug-ins carry `uSize` bytes the engine hands to the plug-in. The typed
-   v150 effect parse owns the built-in layouts; the SDK's
-   `SDK/samples/Plugins` and `include/AK/Plugin` headers are the witness for
-   any it does not cover. Do not fit these from the corpus.
+   v150 effect parse owns the reviewed built-in layouts. Its current contract
+   binds selected native hashes and SDK-matched `SetParamsBlock` bodies; the
+   older unchecked DLL pin had allowed stale native-derived labels into the
+   Audio page. Convolution Reverb and Mastering Suite still have no proved
+   current class-to-method join, so their parameter bytes remain opaque even
+   where a method-shaped body is nearby. The SDK's `SDK/samples/Plugins` and
+   `include/AK/Plugin` headers are the witness for further public fields. Do
+   not fit these from the corpus.
 5. **Layers 5 and 6 need a host, not a reader.** The shipped DLL has no
    profiler communication layer. Build a small process that links the SDK's
    Profile libraries, loads the game's `.pck` files through the sample

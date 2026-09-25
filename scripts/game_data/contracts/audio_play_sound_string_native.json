@@ -1,0 +1,67 @@
+{
+  "schema": "endfield.audio-play-sound-string-native.v1",
+  "status": "exact-pinned-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "fieldContract": {
+    "actionDataPointerOffset": 32,
+    "soundEvent": "Beyond.Gameplay.Core.PlaySoundAction+PlaySoundActionData::_soundEvent",
+    "soundEventOffset": 32
+  },
+  "methods": {
+    "doPlaySound": {
+      "type": "Beyond.Gameplay.Core.PlaySoundAction",
+      "method": "_DoPlaySound",
+      "token": "0x0600e76b",
+      "rva": 52766528,
+      "bodyLength": 549,
+      "bodySha256": "b5937aff64325d236c16fbe052b063429a2daba377ec77800d335721440ad43d"
+    },
+    "doPostEvent": {
+      "type": "Beyond.Gameplay.Core.PlaySoundAction",
+      "method": "_DoPostEvent",
+      "token": "0x0600e76d",
+      "rva": 52765888,
+      "bodyLength": 406,
+      "bodySha256": "8d2211ea8416b9010fc78810b70513af735db73656b7a3e0ffc3f0c004728a07"
+    },
+    "doPostEventAtPosition": {
+      "type": "Beyond.Gameplay.Core.PlaySoundAction",
+      "method": "_DoPostEventAtPosition",
+      "token": "0x0600e76e",
+      "rva": 74741280,
+      "bodyLength": 135,
+      "bodySha256": "dcc59aa16fc6f0c546cd2568a4d9ab90239ac5da9c7843959fd35e03fa3b2258"
+    },
+    "computeString": {
+      "type": "Beyond.Audio.AudioHashGenerator",
+      "method": "Compute",
+      "parameters": ["System.String"],
+      "token": "0x06000139",
+      "rva": 57750720,
+      "bodyLength": 249,
+      "bodySha256": "9e761ac27310c9ebe87741c2f6c1c58cf65f4c006c983b9ebcc2016688e5e647"
+    },
+    "postAtPositionString": {
+      "type": "Beyond.Gameplay.Audio.AudioBattleUtil",
+      "method": "PostEventAtPositionWithMixingType",
+      "parameters": ["System.String", "System.Boolean", "UnityEngine.Vector3"],
+      "token": "0x0600a327",
+      "rva": 49244640,
+      "bodyLength": 144,
+      "bodySha256": "083bdff905da676ca0a3db66531aa03bd92ad93b3f9a6df453314298c0f4ed81"
+    }
+  },
+  "anonymousPostHelper": {
+    "rva": 52766304,
+    "bodyLength": 142,
+    "bodySha256": "3bdd0720b2ef7f0bda0bd3912f58460ccc63c4cc99aebd0501a19d7848fe0b99"
+  },
+  "evidenceBoundary": {
+    "exact": "The selected method identities, field offset, code bytes, and direct calls prove that the checked unpatched object and position branches consume the serialized sound string without trimming before AudioHashGenerator.Compute(string). The selected Compute(string) body folds ASCII uppercase and hashes the full UTF-16 string length, including spaces.",
+    "conditional": "The native method prologues test iFix patches; the default-body route applies only when those methods are not replaced at runtime. An authored PlaySoundAction also must execute and select the checked branch.",
+    "unresolved": "The iFix replacement branch, other PlaySound routing branches, live action execution, bank loading, Wwise posting outcome, and audible media are not established here."
+  }
+}

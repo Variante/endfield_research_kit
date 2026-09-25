@@ -29,7 +29,7 @@ call order:
 | F | `CAkParameterNodeBase::SetAuxParams` | `u8 byBitVector` (bit0 bOverrideGameAuxSends, bit1 bUseGameAuxSends, bit2 bOverrideUserAuxSends, bit3 bHasAux, bit4 bOverrideReflectionsAuxBus); bit3 gates 4 x `u32 auxID`; then always `u32 reflectionsAuxBus` |
 | G | `CAkParameterNode::SetAdvSettingsParams` | `u8 byBitVector` (bit0 bKillNewest, bit1 bUseVirtualBehavior, bit2 bIgnoreParentMaxNumInst, bit3 bIsGlobalLimit, bit4 bVVoicesOptOverrideParent), `u8 eVirtualQueueBehavior`, `u16 u16MaxNumInstance`, `u8 eBelowThresholdBehavior`, `u8 byBitVector2` |
 | H | `CAkStateAware::ReadStateChunk` (through `CAkParamNodeStateAware`) | varint `ulNumStateProps` x `{varint AkPropID, u8 accumType, u8 inDb}`; varint `ulNumStateGroups` x `{u32 ulStateGroupID, u8 eStateSyncType, varint ulNumStates x {u32 ulStateID, u16 count, count x u16 AkPropID, count x u32 value}}` -- the "six-byte element" is one property as two parallel runs; the engine rejects a state whose ids are not strictly increasing |
-| I | `AK::RTPC::ReadRtpcCurves<T>` | `u16 uNumCurves` x `{u32 RTPCID, u8 rtpcType, u8 rtpcAccum, varint ParamID, u32 rtpcCurveID, u8 eScaling, u16 ulSize x {f32 from, f32 to, u32 interp}}` |
+| I | `AK::RTPC::ReadRtpcCurves<T>` | `u16 uNumCurves` x `{u32 RTPCID, u8 rtpcType (AkGameSyncType), u8 rtpcAccum, varint ParamID, u32 rtpcCurveID, u8 eScaling, u16 ulSize x {f32 from, f32 to, u32 interp}}` |
 
 Two reader corrections fell out. Every count in group H is a seven-bit continuation
 value, and the corpus only ever spends one byte on each, so the byte widths were
@@ -76,7 +76,7 @@ adds `u32` rules of `{u32 n x u32 srcID, u32 m x u32 dstID, 21-byte source rule,
 | --- | --- | --- |
 | `0x0A` | `CAkMusicSegment` | `f64 fDuration`; `u32` markers of `{u32 id, f64 fPosition, NUL-terminated name}` -- the variable-length name is why no stride ever fit, and the "names at fixed distances from the end" were these |
 | `0x0B` | `CAkMusicTrack` | **the node frame comes last here**: `u8 uFlags`; `u32` sources x the type `0x02` source record (`CAkBankMgr::LoadSource`, plug-in params included); `u32` playlist items of 44 bytes (`u32 trackID, u32 sourceID, u32 eventID, f64 fPlayAt, f64 fBeginTrimOffset, f64 fEndTrimOffset, f64 fSrcDuration`); `u32 numSubTrack` **only when the playlist is nonempty** (two shipped bodies have none); `u32` clip automations of `{u32 uClipIndex, u32 eAutoType, u32 n x 12-byte points}`; the node frame; `u8 eTrackType`, and for type 3 `u8 eGroupType, u32 uGroupID, u32 uDefaultSwitch, u32 n x u32 assoc` plus a 32-byte transition block; `s32 iLookAheadTime` -- the "terminator, always 100" was this |
-| `0x0C` | `CAkMusicSwitchCntr` | transition rules; `u8 bIsContinuePlayback`; `u32 uTreeDepth`, that many `u32` group ids then that many `u8` group types; `u32 uTreeDataSize`, `u8 uMode`, the tree bytes handed whole to `AkDecisionTree::SetTree` (12-byte nodes, not framed here) |
+| `0x0C` | `CAkMusicSwitchCntr` | transition rules; `u8 bIsContinuePlayback`; `u32 uTreeDepth`, that many `u32` group ids then that many `u8` group types; `u32 uTreeDataSize`, `u8 uMode`, the tree bytes handed whole to `AkDecisionTree::SetTree`; the maintained framer also walks its 12-byte nodes |
 | `0x0D` | `CAkMusicRanSeqCntr` | transition rules; `u32` playlist items of 30 bytes (`u32 SegmentID, u32 playlistItemID, u32 NumChildren, u32 eRSType, s16 Loop, s16 LoopMin, s16 LoopMax, u32 Weight, u16 wAvoidRepeatCount, u8 bIsUsingWeight, u8 bIsShuffle`), nested by `NumChildren` in the engine and read flat |
 
 All four are shipped lanes (`hirc_type0a/0b/0c/0d_body_current_latest`): 4,158,
@@ -104,9 +104,44 @@ retired in favour of lanes, and the lanes close exactly on the current input set
 | `0x15` | `CAkAudioDevice` | `CAkFxBase` then `AkOwnedEffectSlots::SetInitialValues`: `u8 uNumFx`, `u8 bitsFXBypass` when nonzero, `uNumFx x {u8 index, u32 fxID, u8 flags}` |
 | decision tree | `AkDecisionTree::SetTree` / `ResolvePath` | the blob is copied whole; a node is 12 bytes: `u32 key`, `u32 audioNodeId` or `{u16 childrenIdx, u16 childrenCount}`, `u16 weight`, `u16 probability` (0..100) |
 
+The SDK resolver sharpens the tree reading. It checks the supplied argument count
+against the stored depth, starts at node zero, and uses that node as the result
+only for depth zero. At positive depth, the root is a sentinel: its key is **not**
+an argument value. Each branch's low half-word at `+4` indexes a contiguous
+12-byte child range; its high half-word at `+6` counts that range. The resolver
+binary-searches each range by the child key at `+0`, and a first child keyed zero
+is a fallback when the requested key is absent. The event-detail parser now
+reports path keys for argument levels only and rejects out-of-range or unsorted
+children. `0x0C` and `0x0F` use this same tree representation; the installed
+corpus has no `0x0F` objects, so its topology is fixture-checked only.
+
+The SDK also distinguishes the two trailing half-words. Weighted choice adds
+the `+8` values as relative weights; `ResolvePath` applies the `+10` value as a
+probability gate to a resolved leaf. Sibling probabilities are **not** a
+sum-to-100 partition, so a sum check would reject a valid tree. These methods
+describe authored possibilities and the resolver's algorithm, not the live
+argument values, chosen branch, or audible output.
+
+The maintained `FrameDecisionTreeNodes` walk applies those SDK read rules to
+the sized tree in both `0x0C` and `0x0F`. It starts at the sentinel root, visits
+the stored depth, checks each reachable child range and strict sibling-key
+order, then partitions leaf ids into zero, unique same-bank declaration,
+duplicate same-bank declaration, and absent same-bank declaration. The
+`hirc_action_corpus` type-`0x0C` gate checks the node-byte, reachability, and
+leaf-identity partitions against the fresh VFS audit. Every shipped `0x0C`
+body closed exactly; every stored node was reachable, every child range was in
+bounds and sorted, and no leaf probability exceeded 100. Most nonzero leaves
+joined to one declaration in their own bank, spanning music segment, music
+switch, and music random/sequence container types. Some leaves have no
+same-bank declaration; that establishes only a local ownership gap, not global
+absence or an invalid tree. Zero-valued leaves are also present. The same
+topology walk is fixture-checked for `0x0F`, but the installed corpus ships no
+`0x0F` body. The checked graph is authored structure; runtime argument values,
+fallback or weighted selection, and audibility remain unobserved.
+
 **Three corrections the PDB forced.** The enum type records name every property
 and operation; the values now live in `scripts/game_data/contracts/wwise_sdk_enums.json`
-(32 enums, with the PDB hashes as provenance). (1) The RTPC and state `ParamID`
+(33 enums, with the PDB hashes as provenance). (1) The RTPC and state `ParamID`
 **is the `AkPropID`** -- the PDB carries no separate RTPC id enum -- so the repo's
 older RTPC label table (wwiser's pre-2019 numbering, where 6 meant InitialDelay
 and 12 MidiVelocityOffset) was wrong for v150 and now aliases the initial-property
@@ -121,6 +156,15 @@ only when its playlist is nonempty. The repo's other label tables (curve
 interpolation, RTPC accumulation, curve scaling, sync type, bank type, plug-in
 type, source type, value meaning, initial properties) agree with the PDB up to
 spelling.
+
+**A later PDB field-list correction names the RTPC type.** The prior search for
+`AkRtpcType` overlooked `AkGameSyncType`. In the same selected
+`AkSoundEngine.pdb`, the complete `AkRtpcCurveParams` structure has its
+`rtpcType` field at byte offset zero with `AkGameSyncType` as its CodeView field
+type. `ReadRtpcCurves` reads the serialized byte into that structure before the
+`AddRtpcCurve` call. The five real enum members name the stored values 0–4;
+`Count` and `MaxNum` are SDK range markers. This is direct field identity,
+not a claim about runtime control values or curve activation.
 
 ## THE HIRC TYPE DISPATCH, READ OUT OF THE SHIPPED PARSER
 

@@ -1552,7 +1552,7 @@ def build_audio_semantic_data(
         }
     )
     play_sound_action_contexts = sum(
-        context.get("kind") == "buffPlaySoundAction"
+        context.get("kind") in {"buffPlaySoundAction", "skillPlaySoundAction"}
         for row in events
         for context in row.get("contexts") or []
         if isinstance(context, dict) and context.get("triggerPlaySoundActionCount")
@@ -1560,7 +1560,7 @@ def build_audio_semantic_data(
     play_sound_action_events = sum(
         any(
             isinstance(context, dict)
-            and context.get("kind") == "buffPlaySoundAction"
+            and context.get("kind") in {"buffPlaySoundAction", "skillPlaySoundAction"}
             and context.get("triggerPlaySoundActionCount")
             for context in row.get("contexts") or []
         )
@@ -1570,7 +1570,9 @@ def build_audio_semantic_data(
         int(context.get("triggerPlaySoundActionCount") or 0)
         for row in events
         for context in row.get("contexts") or []
-        if isinstance(context, dict) and context.get("kind") == "buffPlaySoundAction"
+        if isinstance(context, dict) and context.get("kind") in {
+            "buffPlaySoundAction", "skillPlaySoundAction"
+        }
     )
     wwise_source_reference_counts: Counter[str] = Counter()
     wwise_source_event_counts: Counter[str] = Counter()
@@ -2308,7 +2310,7 @@ def build_audio_semantic_data(
             gameplay_enemies.setdefault(enemy_id, {})[
                 "enemyResponseCandidateEvents"
             ] = response_events
-        gameplay_sound_effects["schemaVersion"] = 10
+        gameplay_sound_effects["schemaVersion"] = 11
         gameplay_sound_effects["characterNamespaceAudio"] = {
             "schemaVersion": character_namespace_gameplay.get("schemaVersion"),
             "counts": character_namespace_gameplay.get("counts") or {},

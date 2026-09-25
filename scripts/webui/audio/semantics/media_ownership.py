@@ -78,6 +78,7 @@ CONTEXT_OWNERSHIP_DOMAINS = {
     "characterSkill": "characterGameplay",
     "enemySkill": "enemyGameplay",
     "buffPlaySoundAction": "gameplayAction",
+    "skillPlaySoundAction": "gameplayAction",
     "projectileSoundField": "projectileGameplay",
     "monoBehaviourAudioIdField": "authoredComponent",
     "interactiveAudioTrigger": "interactiveObject",

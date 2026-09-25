@@ -36,6 +36,7 @@ from scripts.webui.audio.semantics.identifiers import (
     audio_dialog_external_media_id,
     audio_hash_generator_compute,
     collect_metadata_audio_literals,
+    fnv1_32,
     hashed_event_key,
     is_rtpc_parameter_name,
 )
@@ -45,6 +46,10 @@ from scripts.webui.audio.semantics.authored_payload_event_names import (
     collect_authored_payload_event_names,
     summarize_authored_payload_event_name_recovery,
 )
+from scripts.webui.audio.semantics.decoded_payload_event_names import (
+    collect_decoded_event_names,
+    summarize_decoded_event_name_recovery,
+)
 from scripts.webui.audio.semantics.table_contexts import collect_table_audio_events
 from scripts.webui.audio.semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
 from scripts.webui.audio.semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
@@ -52,8 +57,9 @@ from scripts.webui.audio.semantics.context_utils import SELECTION_HIRC_TYPES, js
 from scripts.webui.audio.semantics.event_aliases import collect_audio_dialog_wwise_event_aliases, collect_skill_id_dictionary_wwise_event_aliases, collect_sns_voice_wwise_event_aliases, collect_typed_ui_table_wwise_event_aliases, collect_voice_table_wwise_event_aliases
 from scripts.webui.audio.semantics.cutscene_audio import collect_fmv_cutscene_audio_events, collect_levelseq_cutscene_audio_events, collect_timeline_cutscene_audio_events, collect_video_binding_audio_containers, mono_behaviour_json_by_path_id, story_key_from_fmv_id, story_key_from_video_binding, strip_fmv_gender_prefix, timeline_audio_container_for
 from scripts.webui.audio.semantics.projectile_audio import projectile_event_key, projectile_sound_hashes, projectile_sound_references, write_projectile_audio_sidecar
-from scripts.webui.audio.semantics.gameplay_audio import animation_clip_action_kind, animation_clip_audio_events, animation_clip_context, animation_clip_path_id, animation_clip_reachability_status, animation_controller_contexts, animation_override_contexts, animation_override_reachability_status, animator_controller_state_clip_refs, animestudio_storage_root, annotate_play_sound_action_owner_links, collect_animation_controller_index, collect_animation_override_index, collect_buff_play_sound_actions, collect_gameplay_animation_audio, collect_gameplay_audio_references, collect_gameplay_profile_voices, compact_gameplay_audio_link, enemy_template_animation_tokens, enemy_template_skill_references, enemy_template_source_files, gameplay_buff_audio, gameplay_character_token_owners, gameplay_config_records, iter_json_strings, length_prefixed_matches, link_gameplay_audio, play_sound_action_marker, profile_voice_action_kind, seed_buff_play_sound_events
-from scripts.webui.audio.semantics.hirc_v150 import HIRC_EFFECT_PARAMETER_CONTRACT, add_hirc_bus_definition_candidate, add_hirc_effect_definition_candidate, collect_hirc_decoded_sound_definitions, decode_hirc_v150_effect_parameters, finalize_hirc_post_process_catalog, hirc_action_target_id, hirc_action_type, hirc_bus_parent_path, hirc_event_action_ids, hirc_object_parent_id, hirc_reciprocal_child_list, hirc_v150_bus_processing, hirc_v150_control_action, hirc_v150_effect_definition, hirc_v150_empty_music_children, hirc_v150_layer_child_candidate, hirc_v150_layer_tail, hirc_v150_music_random_sequence_structure, hirc_v150_music_segment_structure, hirc_v150_music_structure, hirc_v150_music_switch_structure, hirc_v150_music_track, hirc_v150_node_processing, hirc_v150_playback_action, hirc_v150_random_sequence_properties, hirc_v150_sound_source, hirc_v150_switch_mapping, iter_bnk_sections, parse_hirc_objects, refine_hirc_v150_music_switch_selector_ownership, resolve_hirc_post_process_summary, summarize_hirc_action_dispatch, summarize_hirc_node_processing, summarize_hirc_object_types, traverse_hirc_event
+from scripts.webui.audio.semantics.gameplay_audio import animation_clip_action_kind, animation_clip_audio_events, animation_clip_context, animation_clip_path_id, animation_clip_reachability_status, animation_controller_contexts, animation_override_contexts, animation_override_reachability_status, animator_controller_state_clip_refs, animestudio_storage_root, annotate_play_sound_action_owner_links, collect_animation_controller_index, collect_animation_override_index, collect_buff_play_sound_actions, collect_gameplay_animation_audio, collect_gameplay_audio_references, collect_gameplay_profile_voices, compact_gameplay_audio_link, enemy_template_animation_tokens, enemy_template_skill_references, enemy_template_source_files, enrich_gameplay_play_sound_actions, gameplay_buff_audio, gameplay_character_token_owners, gameplay_config_records, iter_json_strings, length_prefixed_matches, link_gameplay_audio, play_sound_action_marker, profile_voice_action_kind, seed_buff_play_sound_events
+from scripts.webui.audio.semantics.hirc_v150 import add_hirc_bus_definition_candidate, add_hirc_effect_definition_candidate, collect_hirc_decoded_sound_definitions, decode_hirc_v150_effect_parameters, finalize_hirc_post_process_catalog, hirc_action_target_id, hirc_action_type, hirc_bus_parent_path, hirc_event_action_ids, hirc_object_parent_id, hirc_reciprocal_child_list, hirc_v150_bus_processing, hirc_v150_control_action, hirc_v150_effect_definition, hirc_v150_empty_music_children, hirc_v150_layer_child_candidate, hirc_v150_layer_tail, hirc_v150_music_random_sequence_structure, hirc_v150_music_segment_structure, hirc_v150_music_structure, hirc_v150_music_switch_structure, hirc_v150_music_track, hirc_v150_node_processing, hirc_v150_playback_action, hirc_v150_random_sequence_properties, hirc_v150_sound_source, hirc_v150_switch_mapping, iter_bnk_sections, parse_hirc_objects, refine_hirc_v150_music_switch_selector_ownership, resolve_hirc_post_process_summary, summarize_hirc_action_dispatch, summarize_hirc_node_processing, summarize_hirc_object_types, traverse_hirc_event
+from scripts.webui.audio.semantics.wwise_effect_native import check_effect_parameter_native_inputs, load_effect_parameter_contract
 from scripts.webui.audio.build_audio_semantics import build_audio_semantic_data
 from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavailable, iter_published_objects, raw_json_path_for_object
 
@@ -149,7 +155,12 @@ EVENT_BANK_FILE_REGEX = r"(^|[\\/])(?:[^\\/]*banks|hotfix[^\\/]*)\.pck$"
 # 44 adds the authored serialized-payload Event-name source. Bumping it retires
 # every cached Event index built before those names existed, so a stale cache
 # cannot keep publishing a hash-only identity for an Event that now has one.
-EVENT_EVIDENCE_SCHEMA_VERSION = 44
+# 45 adds `actionTypeName`, the Wwise SDK identifier for the whole 16-bit action
+# type. A cache built at 44 carries action rows named only by the masked high
+# byte, so it must not keep publishing them.
+# 46 adds the gated decoded-payload member source. Older caches cannot carry it.
+# 47 keeps unmatched member candidates out of the published Event-name pool.
+EVENT_EVIDENCE_SCHEMA_VERSION = 48
 HASHED_EVENT_KEY_RE = re.compile(r"^hashed-event:0x([0-9a-f]{8})$", re.IGNORECASE)
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
@@ -686,14 +697,6 @@ def audio_vfs_sources(args: argparse.Namespace) -> list[tuple[str, Path, Path | 
 
 def audio_id_from_path(path: str) -> str:
     return PurePosixPath(path.replace("\\", "/")).stem.lower()
-
-
-def fnv1_32(value: str) -> int:
-    hash_value = 0x811C9DC5
-    for byte in value.encode("utf-8"):
-        hash_value = (hash_value * 0x01000193) & 0xFFFFFFFF
-        hash_value ^= byte
-    return hash_value
 
 
 def derive_vfs_key(seed: int) -> int:
@@ -1924,6 +1927,15 @@ def collect_event_audio_index(
     if not numeric_audio_ids:
         return {}, []
 
+    effect_native_gate = check_effect_parameter_native_inputs(args.game_root)
+    effect_contract = load_effect_parameter_contract()
+    if effect_native_gate["status"] != "validated":
+        print(
+            "Audio effect parameter native evidence skipped: "
+            + str(effect_native_gate["detail"]),
+            file=sys.stderr,
+        )
+
     event_links: dict[str, list[dict[str, Any]]] = defaultdict(list)
     event_evidence: dict[tuple[str, str, int], dict[str, Any]] = {}
     linked_by_key: dict[tuple[str, str], dict[str, Any]] = {}
@@ -2044,7 +2056,7 @@ def collect_event_audio_index(
                         bank_name=bank_name,
                     )
                 effect_definition = hirc_v150_effect_definition(
-                    object_type, data
+                    object_type, data, parameter_native_gate=effect_native_gate
                 )
                 if effect_definition is not None:
                     add_hirc_effect_definition_candidate(
@@ -2707,7 +2719,12 @@ def collect_event_audio_index(
                     unique_plugin_media_dependencies[key]
                     for key in sorted(unique_plugin_media_dependencies)
                 ],
-                "effectParameterBinaryContract": HIRC_EFFECT_PARAMETER_CONTRACT,
+                "effectParameterBinaryContract": {
+                    "schema": effect_contract["schema"],
+                    "reviewedClassIds": sorted(effect_contract["parameterSchemas"]),
+                    "unreviewedClassIds": effect_contract["unreviewedClassIds"],
+                },
+                "effectParameterNativeGate": effect_native_gate,
                 "effectPluginReferenceCounts": dict(
                     sorted(corpus_plugin_reference_counts.items())
                 ),
@@ -2827,8 +2844,8 @@ def collect_event_audio_index(
                     sorted(corpus_bus_resolution_counts.items())
                 ),
                 "pluginNameEvidence": (
-                    "Built-in class IDs are pinned by registration objects and "
-                    "factory source paths embedded in the shipped AkSoundEngine.dll."
+                    "Named built-in parameter layouts use reviewed SDK methods "
+                    "whose bodies match the selected AkSoundEngine.dll."
                 ),
                 "evidenceBoundary": (
                     "The bank proves ordered direct effect slots, plug-in class "
@@ -2843,9 +2860,10 @@ def collect_event_audio_index(
                     "zero-count/non-empty arrays plus authored Bus control curves "
                     "and State overrides; "
                     "the legacy sibling prefix/suffix correlation remains only for "
-                    "non-v150 or synthetic payloads. Fourteen "
-                    "current-client SetParamsBlock schemas decode authored base "
-                    "values; the v150 AkPropID bundle also preserves exact raw U32 "
+                    "non-v150 or synthetic payloads. Twelve reviewed "
+                    "current-client SetParamsBlock families decode authored base "
+                    "values; Convolution Reverb and Mastering Suite remain opaque. "
+                    "The v150 AkPropID bundle also preserves exact raw U32 "
                     "and finite-float base-property values. Initial BypassFX/"
                     "BypassAllFX property IDs are absent in this corpus; direct "
                     "NodeBase bypass remains a separate field. Other plug-in "
@@ -2997,6 +3015,44 @@ def event_media_inventory_fingerprint(
     return hashlib.sha256(encoded).hexdigest()
 
 
+def decoded_payload_cache_matches(
+    payload: dict[str, Any],
+    expected_names: set[str],
+    expected_audit: dict[str, Any],
+) -> bool:
+    """Keep cached Event identities tied to the current decoded source and gate."""
+    cached_sources = payload.get("eventNameSources") or {}
+    if not isinstance(cached_sources, dict):
+        return False
+    cached_names = {
+        str(name).lower() for name, sources in cached_sources.items()
+        if isinstance(sources, list) and "decodedPayloadMember" in sources
+    }
+    if cached_names != {name.lower() for name in expected_names}:
+        return False
+    prior_audit = payload.get("decodedPayloadEventNameRecovery") or {}
+    if not isinstance(prior_audit, dict) or any(
+        prior_audit.get(key) != expected_audit.get(key)
+        for key in ("status", "nativeInputs")
+    ):
+        return False
+    # Action counts annotate the Gameplay sidecar and may be added to a
+    # whole-record audit without changing the cached HIRC Event identity pool.
+    prior_families = prior_audit.get("families") or {}
+    expected_families = expected_audit.get("families") or {}
+    if not isinstance(prior_families, dict) or set(prior_families) != set(expected_families):
+        return False
+    return all(
+        isinstance(prior_families[family], dict)
+        and isinstance(expected_families[family], dict)
+        and all(
+            prior_families[family].get(key) == expected_families[family].get(key)
+            for key in ("status", "decoded", "refused")
+        )
+        for family in expected_families
+    )
+
+
 def load_cached_event_audio_index(
     language_root: Path,
     event_names: set[str],
@@ -3006,6 +3062,8 @@ def load_cached_event_audio_index(
     explicit_event_hashes: set[int] | None = None,
     expected_format: str | None = None,
     expected_media_inventory_fingerprint: str | None = None,
+    expected_decoded_payload_names: set[str] | None = None,
+    expected_decoded_payload_audit: dict[str, Any] | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], list[dict[str, Any]]] | None:
     """Reuse event-to-media links from the last audio index when complete."""
     payload = load_json_strict(language_root / "index.json", {})
@@ -3014,6 +3072,13 @@ def load_cached_event_audio_index(
     if expected_format and str(payload.get("format") or "").lower() != expected_format.lower():
         return None
     if int(payload.get("eventEvidenceSchemaVersion") or 0) < EVENT_EVIDENCE_SCHEMA_VERSION:
+        return None
+    if expected_decoded_payload_names is not None and (
+        expected_decoded_payload_audit is None
+        or not decoded_payload_cache_matches(
+            payload, expected_decoded_payload_names, expected_decoded_payload_audit
+        )
+    ):
         return None
     raw_inventory = payload.get("wwiseEventInventory")
     expected_inventory_count = int(
@@ -3981,11 +4046,20 @@ def build_audio(args: argparse.Namespace) -> int:
         authored_payload_event_names,
         authored_payload_event_name_audit,
     ) = collect_authored_payload_event_names(args.export_root)
+    decoded_payload_candidates, decoded_payload_grammar_reachable, decoded_payload_actions, decoded_payload_audit = collect_decoded_event_names(
+        args.export_root,
+        gameassembly=args.game_root.parent / "GameAssembly.dll",
+        metadata=args.game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat",
+    )
+    decoded_payload_event_names = {
+        name.lower() for names in decoded_payload_candidates.values() for name in names
+    }
     event_name_source_sets: dict[str, set[str]] = {
         "storyOrCoreAudioTable": collect_audio_event_names(conv_dir, args.export_root),
         "typedAudioTableOrConfig": table_event_names,
         "luaPostEvent": set(lua_post_event_names),
         "authoredPayloadLiteral": set(authored_payload_event_names),
+        "decodedPayloadMember": decoded_payload_event_names,
     }
     stage.mark("collectAudioEventNames")
     event_names = set().union(*event_name_source_sets.values())
@@ -4048,6 +4122,14 @@ def build_audio(args: argparse.Namespace) -> int:
     gameplay_event_names = set(gameplay_audio_references.get("eventNames") or set())
     event_name_source_sets["gameplayReference"] = gameplay_event_names
     event_names.update(gameplay_event_names)
+    # Member placement offers a candidate, not an Event object. Keep every
+    # candidate available to the HIRC pass, but cache reuse only needs names
+    # established by the other sources; the decoded source and selected native
+    # gate have their own exact cache check.
+    other_event_names = set().union(*(
+        names for source, names in event_name_source_sets.items()
+        if source != "decodedPayloadMember"
+    ))
     projectile_event_hashes = projectile_sound_hashes(args.webui_root)
     explicit_event_hashes = projectile_event_hashes | table_event_hashes
     explicit_event_names_by_hash = {
@@ -4061,13 +4143,15 @@ def build_audio(args: argparse.Namespace) -> int:
     cached_event_index = (
         load_cached_event_audio_index(
             language_root,
-            event_names,
+            other_event_names,
             args.audio_root,
             args.webui_root,
             language,
             explicit_event_hashes,
             expected_format=AUDIO_OUTPUT_FORMAT,
             expected_media_inventory_fingerprint=media_inventory_fingerprint,
+            expected_decoded_payload_names=decoded_payload_event_names,
+            expected_decoded_payload_audit=decoded_payload_audit,
         )
         if args.skip_decode and not args.refresh_hirc
         else None
@@ -4094,6 +4178,21 @@ def build_audio(args: argparse.Namespace) -> int:
             wwise_event_inventory,
         )
     stage.mark("eventAudioIndex")
+    decoded_payload_event_name_recovery = summarize_decoded_event_name_recovery(
+        decoded_payload_candidates,
+        decoded_payload_audit,
+        wwise_event_inventory,
+        fnv1_32=fnv1_32,
+        grammar_reachable=decoded_payload_grammar_reachable,
+    )
+    # The source member also holds an authored sound-design note in the current
+    # corpus. Only a matching HIRC Event hash promotes a decoded-only candidate
+    # into the published Event-name pool. Other sources can still carry their
+    # own authored references to Events absent from the scanned banks.
+    event_names = other_event_names | set(
+        decoded_payload_event_name_recovery["promotedNames"]
+    )
+    stage.mark("decodedPayloadEventNameRecovery")
     audio_dialog_wwise_event_aliases = collect_audio_dialog_wwise_event_aliases(
         audio_dialog_paths,
         wwise_event_inventory,
@@ -4168,8 +4267,7 @@ def build_audio(args: argparse.Namespace) -> int:
                 if event_hash in skill_id_dictionary_alias_hashes
                 else "typedVoiceTableEventNameRecovered"
             )
-    # Every observed-string source is exhausted by this point, so the Events
-    # still without a name are regenerated from the grammar those names share.
+    # Remaining hash-only Events are candidates for grammar recovery.
     stage.mark("wwiseEventAliases")
     grammar_event_name_recovery = name_recovery.recover_event_names(
         event_names,
@@ -4250,6 +4348,15 @@ def build_audio(args: argparse.Namespace) -> int:
         event_audio_by_id,
         event_evidence,
     )
+    enrich_gameplay_play_sound_actions(
+        gameplay_audio_references,
+        decoded_payload_actions,
+        decoded_payload_audit,
+        wwise_event_inventory,
+        gameassembly=args.game_root.parent / "GameAssembly.dll",
+        metadata=args.game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat",
+    )
+    stage.mark("enrichGameplayPlaySoundActions")
     gameplay_link_stats = link_gameplay_audio(
         args.webui_root,
         language,
@@ -4317,6 +4424,12 @@ def build_audio(args: argparse.Namespace) -> int:
             "authoredPayloadRecoveredWwiseEventNames": int(
                 authored_payload_event_name_recovery.get("promotedCount") or 0
             ),
+            "decodedPayloadEventNameCandidates": int(
+                decoded_payload_event_name_recovery.get("candidateCount") or 0
+            ),
+            "decodedPayloadRecoveredWwiseEventNames": int(
+                decoded_payload_event_name_recovery.get("promotedCount") or 0
+            ),
             "authoredPayloadEventNameExpectedCoincidences": float(
                 authored_payload_event_name_recovery.get(
                     "expectedCoincidentalPreimages"
@@ -4361,6 +4474,7 @@ def build_audio(args: argparse.Namespace) -> int:
             if key != "entries"
         },
         "authoredPayloadEventNameRecovery": authored_payload_event_name_recovery,
+        "decodedPayloadEventNameRecovery": decoded_payload_event_name_recovery,
         "luaAudioReferenceSummary": lua_audio_payload.get("summary") or {},
         "luaAudioReferences": lua_audio_references,
         # Persist the exact Timeline/LevelSequence/FMV evidence used by the

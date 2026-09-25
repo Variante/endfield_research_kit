@@ -285,9 +285,10 @@ Events with no recovered name at all**. Accepting both spellings adds a further
 *The general point is worth keeping.* "Every source is exhausted" was a claim
 about where names live, and what actually bounded recovery was how one scanner
 read them. The check that exposed it came from outside the lane: decoding
-SkillData and BuffData whole gave 4,091 strings sitting in members literally
-named `_soundEvent`, of which 4,072 hash to a current Event -- so the schema
-position said "Event" where the spelling grammar had to guess.
+SkillData and BuffData whole found strings sitting in members literally
+named `_soundEvent`, which was the clue to inspect member placement. The first
+count was too broad because member placement alone does not prove Event identity;
+the selected-HIRC promotion rule below is the durable conclusion.
 
 ## The member is a better handle than the spelling
 
@@ -298,23 +299,115 @@ that do not: `eny_0125_fdcentur_lance_skill_01_a_hit` is an Event and begins
 not be widened to accept, because widening it on a suffix is the failure mode
 this lane exists to avoid.
 
+The source audit's grammar delta consists of unprefixed `eny_*` names and
+`Play_au_*` names in this corpus. They are admitted by exact member placement
+plus the selected HIRC hash gate, not by expanding the byte grammar to fit
+those shapes. The report owns the changing inventory.
+
 `decoded_payload_event_names` uses the member instead. A string in a member the
-generated wrapper calls `_soundEvent` is an Event reference because of where it
-sits, and the promotion gate is unchanged -- FNV-1 equality with a current
-Event object id. Over the decodable families it offers 4,090 candidates, of
-which 4,071 are claimed by a current Event against a coincidence expectation of
-0.024, and **197 of those are names the byte scan cannot reach at all**.
+generated wrapper calls `_soundEvent` is an Event **candidate** because of where
+it sits. The selected `SkillData/eny_0123_klcap_hag028_suicide.json` decodes to
+EOF yet contains a Chinese sound-design instruction in `_soundEvent`, not an
+Event spelling. That corrects the earlier claim that member placement alone
+proved an Event reference. The promotion gate is FNV-1 equality with a selected
+HIRC Event object id. Only promoted decoded candidates enter the builder's
+Event-name pool on this source's authority; other authored sources can still
+retain their own references when no Event object is in the scanned banks. The
+exact-decode source adds names the byte scan cannot offer; the generated source
+report owns current counts and the coincidence expectation.
+
+Two `SkillData/eny_0080_reaper_*` `soundEvent` values also end in a literal
+space. Their exact strings do not name a selected HIRC Event object. A stripped
+spelling found by another source does not change the serialized value. The
+selected native default object and position PlaySound routes pass that value
+untrimmed into `AudioHashGenerator.Compute(string)`, which hashes the full
+string length. The checked Reaper example hashes differently with and without
+its trailing space; only the hypothetical trimmed id occurs in the current
+scanned CN HIRC set. This is a default-body static result, not proof that the
+action executed or that an iFix replacement follows the same route. See
+[`audio_native_hooks.md`](audio_native_hooks.md) and the reviewed
+`audio_play_sound_string_native.json` contract.
+
+The prose note also exposes a hash-domain trap. The Audio builder's candidate
+gate hashes UTF-8 bytes, while the game-side `AudioHashGenerator` used for page
+authored identities hashes UTF-16 code units. Their ASCII results agree; the
+non-ASCII note produces different values. A page identity computed from the
+latter is not a HIRC object receipt, and the current corpus does not establish
+a Wwise Event naming rule for non-ASCII strings.
+
+The first standalone audit overstated its promoted count because it compared
+against generated page Event identities. Those include hashes absent from the
+source Audio index's HIRC Event object inventory. The standalone command now
+reads that inventory, validates its occurrence count, and agrees with the
+builder's promotion gate. A page-only Event identity cannot promote a decoded
+member candidate as a HIRC object.
 
 Two constraints keep it from being a different guess. The member names are an
-explicit list of members that were read and found to hold Event references, not
-a pattern over member names -- admitting anything containing `sound` would move
-the guess up one level rather than remove it. And a decoded value counts only
-when its record consumed to EOF exactly, so a drifted cursor contributes
-nothing.
+explicit list of observed candidate carriers, not a pattern over member names
+-- admitting anything containing `sound` would move the guess up one level
+rather than remove it. And a decoded value counts only when its record consumed
+to EOF exactly, so a drifted cursor contributes nothing.
 
-The module is a standalone source with its own report and is **not yet wired
-into `build_audio`**; wiring it is the remaining step, and it would make the
-Audio build depend on the installed-build gate, which it currently does not.
+The decoded member source now feeds `build_audio` before HIRC traversal, so a
+matching current Event object can carry the recovered spelling into its
+Event/media rows. The builder passes its selected `GameAssembly.dll` and
+`global-metadata.dat` to the plan gate. A missing or mismatched pair contributes
+no decoded names and leaves the other Audio sources available; the index records
+that gate and the per-family exact-decode counts. Reusing an Event/media cache
+also requires the same decoded name set, native inputs, gate status, and family
+decode counts. The builder and standalone audit compute the grammar comparison
+from the same payload read as the exact decode, so the reported contribution
+means names the byte grammar actually missed. The standalone report remains
+useful for a focused source audit.
+These are still authored references and hash-matched identities, not observed
+posting, branch selection, or audibility.
+
+## A typed PlaySound member is broader than the local timeline envelope
+
+The exact whole-record `SkillData` and `BuffData` plans decode every current
+payload to EOF and expose `PlaySoundActionData` union records in their authored
+tree. `play_sound_action_corpus` records each union's source hash and path, raw
+sound string, enclosing timeline frame window when present, Buff or Ability
+event code when present, and enclosing action types. The selected native
+`BuffActionMap.buffEvent` and `AbilityActionMap.abilityEvent` field types resolve
+to `Buff.Event` and `AbilitySystem.Event`; their default-value tables supply
+the exact enum labels for those serialized codes. Its current-corpus comparison
+proves the earlier local action reader is a strict subset: it accepts locally bounded
+single-item timeline envelopes, while exact records also place PlaySound under
+multi-item timelines, nested conditional/channeling actions, Buff event actions,
+and ability event actions. The audit reports both populations and refuses
+partial whole-record decoding. The local reader's missing actions do not become
+runtime-posting evidence merely by adding them to an inventory.
+
+The whole record also retains the decoded `targetSettings` structure beside
+each action, including selector data and routing fields. Those are authored
+parameters, not a selected runtime target. They are a richer source than the
+local envelope's bounded target-settings slice. The published Gameplay sound
+sidecar now keeps this exact structure, while its owner links follow authored
+SkillData, referenced BuffData, or enemy born-Buff dependencies. A route to a
+config is not a selected runtime target or proof of posting.
+
+The exact path is essential context. A PlaySoundAction nested under an
+`IfElseAction` branch retains the containing frame window, but that frame is
+not a proof that the branch executes. Buff and Ability event names identify
+the stored enum values, not an observed dispatch or runtime condition. A raw
+string can be empty, carry outer whitespace, or be a prose instruction. The
+action corpus therefore keeps that literal distinct from a Wwise Event identity;
+only the selected HIRC hash gate can promote a candidate on decoded-member
+authority.
+This explains why trimming a PlaySound field or treating every typed member as
+an Event would corrupt the Audio page even though both rows are exact decodes.
+The sidecar retains every exact action in separate SkillData and BuffData
+catalogs, including raw literals with no Event identity. Only HIRC-matched
+actions join Event contexts; selected native enum names label their stored
+trigger slots. Audio detail rows expose these actions even when no Gameplay
+character or enemy owner is recovered.
+
+`buff_abilityentity_interact_firewall_10m` illustrates the recovered topology:
+its PlaySound literals for fire-wall start, hit, and end sit under
+`OnBuffStart`, `DuringBuffEnable`, and `OnBuffFinish` action-map values
+respectively. Those are direct authored trigger slots; they do not establish
+that a particular buff instance reached those slots or posted the Events.
 
 ## What still needs new evidence
 
