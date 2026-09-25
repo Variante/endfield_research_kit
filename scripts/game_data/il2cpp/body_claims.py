@@ -14,17 +14,44 @@ by type and method, and evaluates them against whichever build is installed:
 ``matches``           some instruction (fragments included) fully matches a regex
 ``notCallsPrefix``    no direct or one-helper-deep callee name starts with the prefix
 ``returnsConstant``   some path returns the immediate value in ``eax``
+``returnsEnumMember`` the immediate return matches a named member in the
+                      selected build's native enum
 ``returnsArgument``   some path returns the named argument register unchanged
 ``storesConstant``    writes an immediate into a named field of ``this``
 ``readsField``        reads a named field (any base register)
+``writesField``       writes a named field (any base register, including SSE stores)
+``readsNestedField``  reads a named field through a previously loaded parent field
+``passesFieldToCall`` loads a named field into a named register at a named call
+``passesArgumentToCall`` a named incoming argument reaches a named callee
+                      parameter through register copies
+``passesEnumMemberToCall`` a selected enum member reaches a named callee
+                      register parameter through constant and register moves
+``callsAnonymousHelper`` a named caller reaches one unnamed native body whose
+                      owned fragments contain selected calls and instructions;
+                      caller parameters or constants can be checked at the call
+``passesOutParameterToCall`` a named out-parameter slot is read back and passed
+                      to a named later call
+``passesNestedFieldToCall`` a named child field read through a named parent
+                      reaches a named callee stack parameter
+``forwardsStackParameter`` a named incoming stack parameter reaches a named
+                      callee stack parameter
+``loadsLiterals``     loads each named string literal through an IL2CPP usage cell
+``loadsFloat32``      loads the named Single constant through a RIP-relative MOVSS
 ``zeroArgumentAt``    a named call receives zero in the given argument register
 ``branchesOnSign``    compares a named field with zero and branches on less-than
 ``storesArgument``    writes an argument register (through register moves) into a
                       named field of any object
+``bindsLiteralToCallback`` a selected IL2CPP Action<T> callback and string-key
+                      usage feed the same typed _TryAssign call
+``dispatchesVirtualMethod`` an instance-data field and property blackboard
+                      reach the selected native virtual slot, whose base and
+                      named overrides all declare the same method
 ``comparesWithArguments`` compares one value with each named argument register
                       (through register moves), and with zero when ``zero`` is set
 
 A method with several overloads is selected by its ``parameters`` type names.
+``classArguments`` selects a concrete generic class instantiation when several
+instantiations share the same method name.
 
 Field offsets come from the selected build's MetadataRegistration, so no claim
 carries an offset, token, address or hash. A claim that fails is a reviewed
@@ -40,6 +67,7 @@ from functools import cached_property
 from typing import Any, Iterable
 
 from scripts.game_data.il2cpp import protocol as il2cpp
+from scripts.game_data.il2cpp.call_graph import CallGraph, loaded_literals
 from scripts.game_data.il2cpp.native_image import NativeImage
 
 #: A helper or fragment larger than this is a method in its own right.
@@ -110,6 +138,23 @@ class BodyIndex:
         return {self.metadata.type_full_name(row): row for row in self.metadata.types}
 
     @cached_property
+    def enum_defaults(self) -> dict[int, tuple[int, int]]:
+        return il2cpp.field_defaults(self.metadata)
+
+    def enum_member_id(self, type_name: str, member_name: str) -> int:
+        try:
+            members = il2cpp.native_enum_members(
+                self.metadata, self.enum_defaults, self.pe, self.image.registration,
+                type_name,
+            )
+        except (RuntimeError, ValueError, KeyError, IndexError) as exc:
+            raise ClaimError(f"enum-unavailable:{type_name}:{exc}") from exc
+        matches = [row["id"] for row in members if row["name"] == member_name]
+        if len(matches) != 1:
+            raise ClaimError(f"enum-member-missing-or-duplicate:{type_name}.{member_name}")
+        return matches[0]
+
+    @cached_property
     def by_suffix(self) -> dict[str, set[str]]:
         """Full names keyed by every ``Type.Method`` suffix spelling."""
         table: dict[str, set[str]] = {}
@@ -176,10 +221,13 @@ class BodyIndex:
         return self.mapper.decode_x64_subset(self.pe.bytes_at_va(pointer, size), pointer, stop_offset=size)
 
     def ifix_patch_id(self, pointer: int) -> str | None:
-        """The iFix patch id the body at ``pointer`` tests before its AOT path.
+        """An early iFix patch id tested by the body at ``pointer``.
 
         An iFix-wrapped method loads its patch id into ``ecx`` and calls
-        ``IFix.WrappersManagerImpl.IsPatched`` in its prologue.
+        ``IFix.WrappersManagerImpl.IsPatched`` in its prologue. This bounded
+        search inspects at most the first 40 decoded instructions in 0x200
+        bytes; ``None`` means not found there, not proof that the method is
+        unwrapped or absent from an installed patch file.
         """
         size = min(self._extent(pointer), 0x200)
         last_ecx = None
@@ -207,22 +255,71 @@ class BodyIndex:
             ])
         return found
 
+    def parameter_location(self, pointer: int, symbol: str, parameter: str) -> tuple[str, int | str]:
+        """Resolve one named parameter to its Windows x64 argument location.
+
+        A stack offset is relative to entry RSP. At a call site the same
+        parameter occupies an outgoing slot eight bytes lower, because the
+        return address has not yet been pushed.
+        """
+        locations: set[tuple[str, int | str]] = set()
+        for row in self.names_by_pointer.get(pointer) or []:
+            if f"{row.get('type')}.{row.get('method')}" != symbol:
+                continue
+            method_index = row.get("methodIndex")
+            if not isinstance(method_index, int) or not 0 <= method_index < len(self.metadata.methods):
+                continue
+            method = self.metadata.methods[method_index]
+            parameters = self.metadata.parameters_for(method)
+            matches = [position for position, item in enumerate(parameters)
+                       if self.metadata.string(item.name_index) == parameter]
+            if len(matches) != 1:
+                continue
+            position = matches[0]
+            registers = ("rcx", "rdx", "r8", "r9") if method.flags & 0x10 else ("rdx", "r8", "r9")
+            if position < len(registers):
+                locations.add(("register", registers[position]))
+            else:
+                locations.add(("stack", 0x28 + (position - len(registers)) * 8))
+        if len(locations) != 1:
+            raise ClaimError(f"parameter missing or ambiguous: {symbol}.{parameter} at 0x{pointer:x}")
+        return next(iter(locations))
+
     def body(
         self,
         type_name: str,
         method: str,
         method_arguments: list[str] | None = None,
         parameters: list[str] | None = None,
+        parameters_prefix: list[str] | None = None,
+        class_arguments: list[str] | None = None,
     ) -> Body:
         pointers = sorted(self.pointers_by_name.get(f"{type_name}.{method}") or [])
         if parameters is not None:
             pointers = [pointer for pointer in pointers if list(parameters) in self.parameter_types(pointer)]
+        if parameters_prefix is not None:
+            pointers = [
+                pointer for pointer in pointers
+                if any(
+                    signature[:len(parameters_prefix)] == list(parameters_prefix)
+                    for signature in self.parameter_types(pointer)
+                )
+            ]
         if method_arguments is not None:
             pointers = [
                 pointer for pointer in pointers
                 if any(
                     [arg.get("typeName") for arg in (row.get("methodInstantiation") or {}).get("arguments") or []]
                     == list(method_arguments)
+                    for row in self.names_by_pointer[pointer]
+                )
+            ]
+        if class_arguments is not None:
+            pointers = [
+                pointer for pointer in pointers
+                if any(
+                    [arg.get("typeName") for arg in (row.get("classInstantiation") or {}).get("arguments") or []]
+                    == list(class_arguments)
                     for row in self.names_by_pointer[pointer]
                 )
             ]
@@ -337,10 +434,453 @@ def _condition(row: dict[str, Any]) -> str:
     return text.split(" ", 1)[0]
 
 
+_REGISTER_ROOT = {
+    alias: root
+    for root, aliases in {
+        "rax": ("rax", "eax", "ax", "al", "ah"),
+        "rbx": ("rbx", "ebx", "bx", "bl", "bh"),
+        "rcx": ("rcx", "ecx", "cx", "cl", "ch"),
+        "rdx": ("rdx", "edx", "dx", "dl", "dh"),
+        "rsi": ("rsi", "esi", "si", "sil"),
+        "rdi": ("rdi", "edi", "di", "dil"),
+        "rbp": ("rbp", "ebp", "bp", "bpl"),
+        "rsp": ("rsp", "esp", "sp", "spl"),
+        **{f"r{number}": tuple(f"r{number}{suffix}" for suffix in ("", "d", "w", "b"))
+           for number in range(8, 16)},
+    }.items()
+    for alias in aliases
+}
+
+
+def _writes_register(row: dict[str, Any], register: str) -> bool:
+    root = _REGISTER_ROOT.get(register, register)
+    write = row.get("write")
+    if isinstance(write, dict):
+        written = write.get("register")
+        return isinstance(written, str) and _REGISTER_ROOT.get(written, written) == root
+    match = re.match(r"(?:mov|movsxd|movzx|movsx|lea|xor|pop|add|sub|or|and|shl|shr|sar|imul|inc|dec) (\w+)(?:,|$)", str(row.get("text") or ""))
+    return bool(match and _REGISTER_ROOT.get(match.group(1), match.group(1)) == root)
+
+
+def _field_load(text: str, offset: int) -> str | None:
+    match = re.fullmatch(rf"mov (\w+), \[\w+\+0x{offset:x}\]", text)
+    return match.group(1) if match else None
+
+
+def _rip_usage_word(index: BodyIndex, row: dict[str, Any], register: str, tag: int) -> int | None:
+    """Read one unresolved IL2CPP usage cell loaded into a named register."""
+    if not re.fullmatch(
+        rf"mov {re.escape(register)}, \[rip[+-]0x[0-9a-f]+(?: => 0x[0-9a-f]+)?\]",
+        str(row.get("text") or ""),
+    ):
+        return None
+    raw = bytes.fromhex(str(row.get("bytes") or ""))
+    if len(raw) != 7:
+        return None
+    va = int(str(row.get("va") or "0"), 16)
+    cell = va + len(raw) + struct.unpack_from("<i", raw, 3)[0]
+    try:
+        word = index.pe.u64_at_va(cell)
+    except ValueError:
+        return None
+    return word if word <= 0xFFFFFFFF and word & 1 and word >> 29 == tag else None
+
+
+def _usage_method_name(index: BodyIndex, row: dict[str, Any]) -> str | None:
+    word = _rip_usage_word(index, row, "r8", 3)
+    if word is None:
+        return None
+    method_index = (word >> 1) & 0x0FFFFFFF
+    if method_index >= len(index.metadata.methods):
+        return None
+    method = index.metadata.methods[method_index]
+    if not 0 <= method.declaring_type < len(index.metadata.types):
+        return None
+    return (f"{index.metadata.type_full_name(index.metadata.types[method.declaring_type])}."
+            f"{index.metadata.string(method.name_index)}")
+
+
+def _usage_literal(index: BodyIndex, row: dict[str, Any]) -> str | None:
+    word = _rip_usage_word(index, row, "r8", 5)
+    if word is None:
+        return None
+    section = index.metadata.sections["stringLiteral"]
+    data_section = index.metadata.sections["stringLiteralData"]
+    literal_index = (word >> 1) & 0x0FFFFFFF
+    if literal_index >= section.size // 8:
+        return None
+    length, start = struct.unpack_from("<ii", index.metadata.buf, section.offset + literal_index * 8)
+    if length < 0 or start < 0 or start + length > data_section.size:
+        return None
+    return index.metadata.buf[data_section.offset + start:data_section.offset + start + length].decode("utf-8", "replace")
+
+
+def _virtual_method_slot(index: BodyIndex, symbol: str) -> int:
+    type_name, separator, method_name = symbol.rpartition(".")
+    if not separator or type_name not in index.types:
+        raise ClaimError(f"virtual method type missing: {symbol}")
+    methods = [
+        method for method in index.metadata.methods_for(index.types[type_name])
+        if index.metadata.string(method.name_index) == method_name
+    ]
+    if len(methods) != 1 or not methods[0].flags & 0x40 or methods[0].slot == 0xFFFF:
+        raise ClaimError(f"virtual method missing or ambiguous: {symbol}")
+    return methods[0].slot
+
+
+def _virtual_slot_helper(index: BodyIndex, pointer: int) -> bool:
+    """Recognize the selected IL2CPP helper's receiver/slot/argument dispatch."""
+    try:
+        size = index._extent(pointer)
+        if size > MAX_FOLLOWED_BYTES:
+            return False
+        data = index.pe.bytes_at_va(pointer, size)
+    except (KeyError, ValueError):
+        return False
+    # ecx is the vtable slot; rdx is the receiver; r8 is the property
+    # blackboard. Il2CppClass's 16-byte vtable entries start at +0x140.
+    prefix = bytes.fromhex("0f b7 f9 49 8b f0 48 8b 0a 48 8b da")
+    entry = bytes.fromhex("48 8d 47 14 48 c1 e0 04 48 03 03 4c 8b 08 4c 8b 40 08")
+    invoke = bytes.fromhex("48 8b d6 48 8b cb 41 ff d1")
+    first = data.find(prefix)
+    second = data.find(entry, first + len(prefix)) if first >= 0 else -1
+    third = data.find(invoke, second + len(entry)) if second >= 0 else -1
+    return first >= 0 and second >= 0 and third >= 0
+
+
+def _rsp_delta(rows: list[dict[str, Any]], position: int) -> int:
+    """Bytes by which the current RSP is below entry RSP before one row."""
+    delta = 0
+    for row in rows[:position]:
+        instruction = str(row.get("text") or "")
+        if re.fullmatch(r"push \w+", instruction):
+            delta += 8
+        elif re.fullmatch(r"pop \w+", instruction):
+            delta -= 8
+        elif match := re.fullmatch(r"sub rsp, (0x[0-9a-f]+|\d+)", instruction):
+            delta += int(match.group(1), 0)
+        elif match := re.fullmatch(r"add rsp, (0x[0-9a-f]+|\d+)", instruction):
+            delta -= int(match.group(1), 0)
+        elif _writes_register(row, "rsp"):
+            raise ClaimError(f"unhandled RSP write: {instruction}")
+    return delta
+
+
+def _named_direct_call(index: BodyIndex, row: dict[str, Any], symbol: str) -> int | None:
+    match = _CALL.fullmatch(str(row.get("text") or ""))
+    if match and symbol in index.names_of(int(match.group(2), 16)):
+        return int(match.group(2), 16)
+    return None
+
+
+def _constant_before_call(rows: list[dict[str, Any]], call_at: int, register: str) -> int | None:
+    """Trace a callee register backward through bounded constant and register moves."""
+    current = _REGISTER_ROOT.get(register, register)
+    volatile = {"rax", "rcx", "rdx", "r8", "r9", "r10", "r11"}
+    for row in reversed(rows[max(0, call_at - 80):call_at]):
+        instruction = str(row.get("text") or "")
+        if instruction.startswith("call ") and current in volatile:
+            return None
+        if not _writes_register(row, current):
+            continue
+        direct = re.fullmatch(r"mov (\w+), (-?(?:0x[0-9a-f]+|\d+))", instruction)
+        if direct and _REGISTER_ROOT.get(direct.group(1)) == current:
+            return int(direct.group(2), 0)
+        moved = re.fullmatch(r"mov (\w+), (\w+)", instruction)
+        if moved and _REGISTER_ROOT.get(moved.group(1)) == current:
+            source = _REGISTER_ROOT.get(moved.group(2))
+            if source is None:
+                return None
+            current = source
+            continue
+        zeroed = re.fullmatch(r"xor (\w+), (\w+)", instruction)
+        if zeroed and _REGISTER_ROOT.get(zeroed.group(1)) == current and zeroed.group(1) == zeroed.group(2):
+            return 0
+        return None
+    return None
+
+
+def _parameter_aliases_before_call(
+    index: BodyIndex, body: Body, call_at: int, parameter: str,
+) -> set[str]:
+    kind, source = index.parameter_location(body.pointer, body.symbol, parameter)
+    if kind != "register":
+        raise ClaimError(f"{body.symbol}.{parameter} is not a register parameter")
+    aliases = {_REGISTER_ROOT[str(source)]}
+    volatile = {"rax", "rcx", "rdx", "r8", "r9", "r10", "r11"}
+    for row in body.rows[:call_at]:
+        instruction = str(row.get("text") or "")
+        moved = re.fullmatch(r"mov (\w+), (\w+)", instruction)
+        if moved:
+            destination = _REGISTER_ROOT.get(moved.group(1))
+            source_register = _REGISTER_ROOT.get(moved.group(2))
+            if destination:
+                if source_register in aliases:
+                    aliases.add(destination)
+                else:
+                    aliases.discard(destination)
+        else:
+            for register in tuple(aliases):
+                if _writes_register(row, register):
+                    aliases.discard(register)
+        if instruction.startswith("call "):
+            aliases -= volatile
+    return aliases
+
+
 def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | None:
     """Return a bounded failure reason, or ``None`` when the claim holds."""
     rows = body.all_rows
     texts = _texts(rows)
+    if "callsAnonymousHelper" in claim:
+        spec = claim["callsAnonymousHelper"]
+        expected_calls = set(spec.get("helperCalls") or [])
+        expected_instructions = list(spec.get("helperMatches") or [])
+        for call_at, row in enumerate(body.rows):
+            match = re.fullmatch(r"call 0x([0-9a-f]+)", str(row.get("text") or ""))
+            if not match:
+                continue
+            pointer = int(match.group(1), 16)
+            if index.names_of(pointer) or pointer not in index.extents:
+                continue
+            size = index.extents[pointer] - pointer
+            fragments = index.chained_fragments.get(pointer, ())
+            if size <= 0 or size + sum(length for _start, length in fragments) > MAX_FOLLOWED_BYTES:
+                continue
+            helper = Body("<anonymous>", pointer, size, "", index._decode(pointer, size))
+            helper.fragment_rows = index.body_with_fragments(helper)[len(helper.rows):]
+            names = {name for _offset, name in index.callees(helper.all_rows)}
+            instructions = _texts(helper.all_rows)
+            if (not expected_calls <= names or any(
+                not any(re.fullmatch(pattern, instruction) for instruction in instructions)
+                for pattern in expected_instructions
+            )):
+                continue
+            if any(
+                _REGISTER_ROOT.get(register, register)
+                not in _parameter_aliases_before_call(index, body, call_at, parameter)
+                for parameter, register in (spec.get("argumentMap") or {}).items()
+            ):
+                continue
+            if any(
+                _constant_before_call(body.rows, call_at, register) != int(value)
+                for register, value in (spec.get("constantArguments") or {}).items()
+            ):
+                continue
+            return None
+        return (f"{body.symbol}: no anonymous call satisfies calls={sorted(expected_calls)} "
+                f"instructions={expected_instructions} arguments={spec.get('argumentMap') or {}} "
+                f"constants={spec.get('constantArguments') or {}}")
+    if "passesEnumMemberToCall" in claim:
+        spec = claim["passesEnumMemberToCall"]
+        member = index.enum_member_id(spec["enumType"], spec["member"])
+        for position, row in enumerate(body.rows):
+            pointer = _named_direct_call(index, row, spec["call"])
+            if pointer is None:
+                continue
+            kind, register = index.parameter_location(pointer, spec["call"], spec["parameter"])
+            if kind == "register" and _constant_before_call(body.rows, position, str(register)) == member:
+                return None
+        return f"{spec['call']}.{spec['parameter']} never receives {spec['enumType']}.{spec['member']}"
+    if "passesArgumentToCall" in claim:
+        spec = claim["passesArgumentToCall"]
+        source_kind, source = index.parameter_location(body.pointer, body.symbol, spec["fromParameter"])
+        if source_kind != "register":
+            return f"{body.symbol}.{spec['fromParameter']} is not a register argument"
+        aliases = {_REGISTER_ROOT[str(source)]}
+        volatile = {"rax", "rcx", "rdx", "r8", "r9", "r10", "r11"}
+        for row in body.rows:
+            target = _named_direct_call(index, row, spec["call"])
+            if target is not None:
+                kind, destination = index.parameter_location(target, spec["call"], spec["toParameter"])
+                if kind == "register" and _REGISTER_ROOT[str(destination)] in aliases:
+                    return None
+            instruction = str(row.get("text") or "")
+            moved = re.fullmatch(r"mov (\w+), (\w+)", instruction)
+            if moved:
+                destination = _REGISTER_ROOT.get(moved.group(1))
+                source_register = _REGISTER_ROOT.get(moved.group(2))
+                if destination:
+                    if source_register in aliases:
+                        aliases.add(destination)
+                    else:
+                        aliases.discard(destination)
+            elif _writes_register(row, "rsp"):
+                pass
+            else:
+                for register in tuple(aliases):
+                    if _writes_register(row, register):
+                        aliases.discard(register)
+            if instruction.startswith("call "):
+                aliases -= volatile
+        return f"{body.symbol}.{spec['fromParameter']} never reaches {spec['call']}.{spec['toParameter']}"
+    if "passesOutParameterToCall" in claim:
+        spec = claim["passesOutParameterToCall"]
+        for source_at, source_row in enumerate(body.rows):
+            source_pointer = _named_direct_call(index, source_row, spec["fromCall"])
+            if source_pointer is None:
+                continue
+            source_kind, source_register = index.parameter_location(
+                source_pointer, spec["fromCall"], spec["outParameter"])
+            if source_kind != "register":
+                continue
+            for preceding_at in range(max(0, source_at - 10), source_at):
+                preceding = body.rows[preceding_at]
+                slot = re.fullmatch(
+                    rf"lea {re.escape(str(source_register))}, \[rsp\+0x([0-9a-f]+)\]",
+                    str(preceding.get("text") or ""),
+                )
+                if slot is None:
+                    continue
+                offset = slot.group(1)
+                for target_at in range(source_at + 1, min(len(body.rows), source_at + 40)):
+                    target_pointer = _named_direct_call(index, body.rows[target_at], spec["toCall"])
+                    if target_pointer is None:
+                        continue
+                    target_kind, target_register = index.parameter_location(
+                        target_pointer, spec["toCall"], spec["inParameter"])
+                    if target_kind != "register":
+                        continue
+                    load = f"mov {target_register}, [rsp+0x{offset}]"
+                    if (_rsp_delta(body.rows, preceding_at) != _rsp_delta(body.rows, target_at)
+                            or any(
+                        re.fullmatch(rf"mov \[rsp\+0x{offset}\], .+", instruction)
+                        for instruction in _texts(body.rows[source_at + 1:target_at]))):
+                        continue
+                    for load_at in range(source_at + 1, target_at):
+                        if str(body.rows[load_at].get("text") or "") != load:
+                            continue
+                        if not any(_writes_register(other, str(target_register))
+                                   for other in body.rows[load_at + 1:target_at]):
+                            return None
+        return (f"{spec['fromCall']}.{spec['outParameter']} slot never reaches "
+                f"{spec['toCall']}.{spec['inParameter']}")
+    if "passesNestedFieldToCall" in claim:
+        spec = claim["passesNestedFieldToCall"]
+        parent = index.field_offset(spec["parentField"])
+        child = index.field_offset(spec["field"])
+        for call_at, row in enumerate(body.rows):
+            pointer = _named_direct_call(index, row, spec["call"])
+            if pointer is None:
+                continue
+            kind, entry_offset = index.parameter_location(pointer, spec["call"], spec["parameter"])
+            if kind != "stack":
+                continue
+            outgoing = int(entry_offset) - 8
+            for store_at in range(max(0, call_at - 40), call_at):
+                stored = re.fullmatch(
+                    rf"mov \[rsp\+0x{outgoing:x}\], (\w+)",
+                    str(body.rows[store_at].get("text") or ""),
+                )
+                if (stored is None or _rsp_delta(body.rows, store_at) != _rsp_delta(body.rows, call_at)
+                        or any(re.fullmatch(rf"mov \[rsp\+0x{outgoing:x}\], .+", instruction)
+                               for instruction in _texts(body.rows[store_at + 1:call_at]))):
+                    continue
+                value_register = stored.group(1)
+                for child_at in range(max(0, store_at - 50), store_at):
+                    loaded = re.fullmatch(
+                        rf"mov {re.escape(value_register)}, \[(\w+)\+0x{child:x}\]",
+                        str(body.rows[child_at].get("text") or ""),
+                    )
+                    if loaded is None or any(_writes_register(other, value_register)
+                                             for other in body.rows[child_at + 1:store_at]):
+                        continue
+                    parent_register = loaded.group(1)
+                    for parent_at in range(max(0, child_at - 80), child_at):
+                        if (_field_load(str(body.rows[parent_at].get("text") or ""), parent)
+                                == parent_register
+                                and not any(_writes_register(other, parent_register)
+                                            for other in body.rows[parent_at + 1:child_at])):
+                            return None
+        return f"{spec['field']} never reaches {spec['call']}.{spec['parameter']}"
+    if "forwardsStackParameter" in claim:
+        spec = claim["forwardsStackParameter"]
+        source_kind, entry_offset = index.parameter_location(body.pointer, body.symbol, spec["fromParameter"])
+        if source_kind != "stack":
+            return f"{body.symbol}.{spec['fromParameter']} is not a stack argument"
+        for call_at, row in enumerate(body.rows):
+            pointer = _named_direct_call(index, row, spec["call"])
+            if pointer is None:
+                continue
+            target_kind, target_offset = index.parameter_location(pointer, spec["call"], spec["toParameter"])
+            if target_kind != "stack":
+                continue
+            outgoing = int(target_offset) - 8
+            for load_at in range(max(0, call_at - 50), call_at):
+                incoming = int(entry_offset) + _rsp_delta(body.rows, load_at)
+                loaded = re.fullmatch(
+                    rf"mov (\w+), \[rsp\+0x{incoming:x}\]",
+                    str(body.rows[load_at].get("text") or ""),
+                )
+                if loaded is None:
+                    continue
+                register = loaded.group(1)
+                for store_at in range(load_at + 1, min(call_at, load_at + 5)):
+                    if (_rsp_delta(body.rows, store_at) != _rsp_delta(body.rows, call_at)
+                            or any(_writes_register(other, register)
+                                   for other in body.rows[load_at + 1:store_at])):
+                        continue
+                    if str(body.rows[store_at].get("text") or "") != f"mov [rsp+0x{outgoing:x}], {register}":
+                        continue
+                    if not any(re.fullmatch(rf"mov \[rsp\+0x{outgoing:x}\], .+", instruction)
+                               for instruction in _texts(body.rows[store_at + 1:call_at])):
+                        return None
+        return (f"{body.symbol}.{spec['fromParameter']} never reaches "
+                f"{spec['call']}.{spec['toParameter']}")
+    if "dispatchesVirtualMethod" in claim:
+        spec = claim["dispatchesVirtualMethod"]
+        base = spec["base"]
+        slot = _virtual_method_slot(index, base)
+        for override in spec["overrides"]:
+            actual = _virtual_method_slot(index, override)
+            if actual != slot:
+                return f"{override} slot {actual} differs from {base} slot {slot}"
+        immediate = {f"mov ecx, 0x{slot:x}", f"mov ecx, {slot}"}
+        for position, row in enumerate(body.rows):
+            call = _CALL.fullmatch(str(row.get("text") or ""))
+            if not call or call.group(1) != "call":
+                continue
+            window = _texts(body.rows[max(0, position - 18):position])
+            for receiver_at, receiver in enumerate(window):
+                receiver_load = re.fullmatch(r"mov rsi, \[rbx\+0x([0-9a-f]+)\]", receiver)
+                if not receiver_load:
+                    continue
+                receiver_offset = receiver_load.group(1)
+                if f"mov [rbx+0x{receiver_offset}], rax" not in _texts(body.rows[:position]):
+                    continue
+                for blackboard_at, blackboard in enumerate(window[receiver_at + 1:], receiver_at + 1):
+                    blackboard_load = re.fullmatch(r"mov r8, \[rbx\+0x([0-9a-f]+)\]", blackboard)
+                    if not blackboard_load or blackboard_load.group(1) == receiver_offset:
+                        continue
+                    tail = window[blackboard_at + 1:]
+                    if len(tail) != 2 or tail[0] not in immediate or tail[1] != "mov rdx, rsi":
+                        continue
+                    if _virtual_slot_helper(index, int(call.group(2), 16)):
+                        return None
+        return f"no instance-data/blackboard dispatch through {base} slot {slot}"
+    if "bindsLiteralToCallback" in claim:
+        spec = claim["bindsLiteralToCallback"]
+        literal, callback, assign_call = spec["literal"], spec["callback"], spec["assignCall"]
+        for assign_at, row in enumerate(rows):
+            match = _CALL.fullmatch(str(row.get("text") or ""))
+            if not match or assign_call not in index.names_of(int(match.group(2), 16)):
+                continue
+            for literal_at in range(max(0, assign_at - 8), assign_at):
+                if _usage_literal(index, rows[literal_at]) != literal:
+                    continue
+                for ctor_at in range(max(0, literal_at - 8), literal_at):
+                    ctor = _CALL.fullmatch(texts[ctor_at])
+                    if not ctor or not any(
+                        name.startswith("System.Action`1..ctor")
+                        for name in index.names_of(int(ctor.group(2), 16))
+                    ):
+                        continue
+                    if "mov r9, rsi" not in texts[ctor_at + 1:assign_at]:
+                        continue
+                    if any(_usage_method_name(index, rows[callback_at]) == callback
+                           for callback_at in range(max(0, ctor_at - 8), ctor_at)):
+                        return None
+        return f"{assign_call} does not bind literal {literal!r} to callback {callback}"
     if "calls" in claim:
         seen = index.callees(rows)
         names = [name for _offset, name in seen]
@@ -364,7 +904,7 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
             match = _CALL.fullmatch(str(row.get("text") or ""))
             if not match or target not in index.names_of(int(match.group(2), 16)):
                 continue
-            aliases = {"eax"}
+            aliases = {"rax", "eax"}
             for text in texts[position + 1:position + 12]:
                 moved = re.fullmatch(r"mov (\w+), (\w+)", text)
                 if moved and moved.group(2) in aliases:
@@ -382,6 +922,12 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
         prefix = claim["notCallsPrefix"]
         hits = sorted({name for _offset, name in index.callees(rows) if name.startswith(prefix)})
         return f"calls {hits}" if hits else None
+    if "returnsEnumMember" in claim:
+        spec = claim["returnsEnumMember"]
+        value = index.enum_member_id(spec["type"], spec["member"])
+        reason = check_claim(index, body, {"returnsConstant": value})
+        return (f"{spec['type']}.{spec['member']} ({value}): {reason}"
+                if reason else None)
     if "returnsConstant" in claim:
         value = int(claim["returnsConstant"])
         wanted = {f"mov eax, 0x{value:x}", f"mov eax, {value}"}
@@ -402,6 +948,67 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
         offset = index.field_offset(claim["readsField"])
         pattern = re.compile(rf"\[\w+\+0x{offset:x}\]")
         return None if any(pattern.search(text) and not text.startswith("lea ") for text in texts) else f"no read of +0x{offset:x}"
+    if "writesField" in claim:
+        offset = index.field_offset(claim["writesField"])
+        pattern = re.compile(rf"mov(?:sd|ss|ups|aps)? \[\w+\+0x{offset:x}\], (?:\w+|0x[0-9a-f]+)$")
+        return None if any(pattern.fullmatch(text) for text in texts) else f"no write of +0x{offset:x}"
+    if "loadsLiterals" in claim:
+        found = loaded_literals(CallGraph(index.image), body.pointer, body.size)
+        missing = sorted(set(claim["loadsLiterals"]) - found)
+        return f"missing string literals {missing}" if missing else None
+    if "loadsFloat32" in claim:
+        expected = struct.pack("<f", float(claim["loadsFloat32"]))
+        data = index.pe.bytes_at_va(body.pointer, body.size)
+        for offset in range(max(0, len(data) - 7)):
+            if data[offset:offset + 3] != b"\xf3\x0f\x10":
+                continue
+            if data[offset + 3] & 0xC7 != 0x05:
+                continue
+            displacement = struct.unpack_from("<i", data, offset + 4)[0]
+            constant_va = body.pointer + offset + 8 + displacement
+            try:
+                actual = index.pe.bytes_at_va(constant_va, 4)
+            except ValueError:
+                continue
+            if actual == expected:
+                return None
+        return f"no RIP-relative MOVSS loads Single {claim['loadsFloat32']!r}"
+    if "readsNestedField" in claim:
+        spec = claim["readsNestedField"]
+        parent = index.field_offset(spec["parentField"])
+        child = index.field_offset(spec["field"])
+        for position, row in enumerate(rows):
+            register = _field_load(str(row.get("text") or ""), parent)
+            if register is None:
+                continue
+            pattern = re.compile(rf"\[{re.escape(register)}\+0x{child:x}\]")
+            for following in rows[position + 1:position + 33]:
+                following_text = str(following.get("text") or "")
+                if following_text.startswith("call "):
+                    break
+                if pattern.search(following_text) and not following_text.startswith("lea "):
+                    return None
+                if _writes_register(following, register):
+                    break
+        return f"no read of {spec['field']} through {spec['parentField']}"
+    if "passesFieldToCall" in claim:
+        spec = claim["passesFieldToCall"]
+        offset = index.field_offset(spec["field"])
+        register = spec["register"]
+        target = spec["call"]
+        for position, row in enumerate(rows):
+            match = _CALL.fullmatch(str(row.get("text") or ""))
+            if not match or target not in index.names_of(int(match.group(2), 16)):
+                continue
+            for preceding in reversed(rows[max(0, position - 8):position]):
+                preceding_text = str(preceding.get("text") or "")
+                if preceding_text.startswith("call "):
+                    break
+                if _writes_register(preceding, register):
+                    if _field_load(preceding_text, offset) == register:
+                        return None
+                    break
+        return f"{target} never receives {spec['field']} in {register}"
     if "zeroArgumentAt" in claim:
         target, register = claim["zeroArgumentAt"]["call"], claim["zeroArgumentAt"]["register"]
         for position, row in enumerate(rows):
@@ -472,7 +1079,10 @@ def evaluate(index: BodyIndex, methods: dict[str, dict[str, Any]]) -> tuple[list
     failures: list[dict[str, Any]] = []
     for symbol, spec in methods.items():
         try:
-            body = index.body(spec["type"], spec["method"], spec.get("methodArguments"), spec.get("parameters"))
+            body = index.body(
+                spec["type"], spec["method"], spec.get("methodArguments"),
+                spec.get("parameters"), spec.get("parametersPrefix"), spec.get("classArguments"),
+            )
         except ClaimError as error:
             failures.append({"symbol": symbol, "claim": "resolve", "reason": str(error)})
             continue

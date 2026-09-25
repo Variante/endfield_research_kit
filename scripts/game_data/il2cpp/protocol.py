@@ -213,6 +213,12 @@ def constant_value(
     defaults: dict[int, tuple[int, int]],
     field: Any,
 ) -> int | None:
+    """Read a signed compressed Int32 default from metadata-only evidence.
+
+    This legacy helper cannot infer a default's primitive backing type from
+    metadata alone. Use ``native_enum_members`` for byte-backed enums when a
+    selected MetadataRegistration is available.
+    """
     default = defaults.get(field.index)
     if default is None:
         return None
@@ -227,6 +233,11 @@ def enum_members(
     defaults: dict[int, tuple[int, int]],
     type_name: str,
 ) -> list[dict[str, Any]]:
+    """Read metadata-only signed Int32 enum defaults.
+
+    Byte-backed enums require ``native_enum_members`` and selected native
+    primitive types; their raw byte IDs are not signed compressed Int32s.
+    """
     for type_def in metadata.types:
         if metadata.type_full_name(type_def) != type_name:
             continue
@@ -246,6 +257,71 @@ def enum_members(
             })
         return sorted(rows, key=lambda row: (row["id"], row["name"]))
     raise RuntimeError(f"metadata type not found: {type_name}")
+
+
+def native_enum_members(
+    metadata: Any,
+    defaults: dict[int, tuple[int, int]],
+    pe: Any,
+    registration: dict[str, Any],
+    type_name: str,
+) -> list[dict[str, Any]]:
+    """Decode Int32- or byte-backed enum defaults with selected native types.
+
+    The caller must authenticate ``pe`` and ``metadata`` as the same selected
+    installed build. Metadata default blobs do not identify their primitive
+    type by themselves; the MetadataRegistration type table does. Unsupported
+    backing types fail closed rather than passing through the Int32 decoder.
+    """
+    owner = next((row for row in metadata.types if metadata.type_full_name(row) == type_name), None)
+    if owner is None:
+        raise RuntimeError(f"metadata type not found: {type_name}")
+    fields = list(metadata.fields_for(owner))
+    backing = [row for row in fields if metadata.string(row.name_index) == "value__"]
+    if len(backing) != 1:
+        raise RuntimeError(f"enum value__ field differs: {type_name}")
+    type_table = int(registration["types"], 16)
+    type_count = int(registration["typesCount"])
+
+    def primitive(type_index: int) -> str:
+        if not 0 <= type_index < type_count:
+            raise RuntimeError(f"default primitive type index outside selected table: {type_name}:{type_index}")
+        type_va = pe.u64_at_va(type_table + type_index * 8)
+        if not type_va:
+            raise RuntimeError(f"missing selected primitive type: {type_name}:{type_index}")
+        return runtime_type_name(pe, metadata, type_va)
+
+    backing_type = primitive(backing[0].type_index)
+    if backing_type not in {"byte", "int"}:
+        raise RuntimeError(f"unsupported enum backing type: {type_name}:{backing_type}")
+    section = metadata.sections["fieldAndParameterDefaultValueData"]
+    rows: list[dict[str, Any]] = []
+    for field in fields:
+        name = metadata.string(field.name_index)
+        if name == "value__":
+            continue
+        default = defaults.get(field.index)
+        if default is None:
+            continue
+        default_type, data_index = default
+        if primitive(default_type) != backing_type:
+            raise RuntimeError(f"enum member default type differs: {type_name}.{name}")
+        offset = section.offset + data_index
+        if not section.offset <= offset < section.offset + section.size:
+            raise RuntimeError(f"enum member default offset outside blob: {type_name}.{name}")
+        if backing_type == "byte":
+            value = metadata.buf[offset]
+        else:
+            value, size = read_compressed_int32(metadata.buf, offset)
+            if offset + size > section.offset + section.size:
+                raise RuntimeError(f"enum member default exceeds blob: {type_name}.{name}")
+        rows.append({
+            "id": value,
+            "name": name,
+            "fieldIndex": field.index,
+            "token": f"0x{field.token:08x}",
+        })
+    return sorted(rows, key=lambda row: (row["id"], row["name"]))
 
 
 def runtime_type_field_offsets(

@@ -924,11 +924,12 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             1: "or",
             4: "and",
             5: "sub",
+            6: "xor",
             7: "cmp",
         }.get(group_op, f"group{group_op}")
         imm_text = f"-0x{-imm:x}" if imm < 0 else f"0x{imm:x}"
         write = None
-        if op_name in {"add", "sub", "and", "or"} and is_register_name(dst):
+        if op_name in {"add", "sub", "and", "or", "xor"} and is_register_name(dst):
             if op_name == "or" and imm == -1:
                 write = (dst, "-1")
             else:
@@ -1043,6 +1044,19 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
     if opcode == 0x0F and pos < len(data):
         op2 = data[pos]
         pos += 1
+        if op2 == 0x6E and 0x66 in prefixes and pos < len(data):
+            # MOVD/MOVQ xmm, r/m carries scalar condition targets into the
+            # Single comparator. Keep the typed field read visible to body
+            # claim checks instead of consuming it as isolated bytes.
+            modrm = data[pos]
+            pos += 1
+            mod, reg, rm = decode_modrm(modrm)
+            dst = xmm_name(reg | (rex_r << 3))
+            src, pos = rm_operand(
+                data, pos, mod, rm, rex_b,
+                width=width, start_va=start_va, offset=offset,
+            )
+            return result(f"{'movq' if rex_w else 'movd'} {dst}, {src}", (dst, src), pos)
         if 0x90 <= op2 <= 0x9F and pos < len(data):
             modrm = data[pos]
             pos += 1
