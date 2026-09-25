@@ -17,6 +17,7 @@ from scripts.webui.audio.semantics import audio_cue_native, identifiers, interac
 from scripts.webui.audio.semantics.context_utils import append_context as _append_context
 from scripts.webui.audio.semantics.context_utils import load_json
 from scripts.webui.audio.semantics.context_utils import normalize_posix
+from scripts.game_data.unity_store import UnityObjectRow, open_store, open_store_if_present
 
 
 NARRATIVE_AUDIO_TABLE_NAMES = (
@@ -190,9 +191,19 @@ def collect_remote_common_event_contexts(
     return dict(contexts)
 
 
-def _first_recovered_mono_behaviour(export_root: Path, stem: str) -> Path | None:
-    matches = sorted(ExportLayout(export_root).unity_type_dir("MonoBehaviour").glob(f"{stem}_p*.json"))
+def _first_recovered_mono_behaviour(export_root: Path, stem: str) -> UnityObjectRow | None:
+    """The first exported ``<stem>_p<PathID>.json`` MonoBehaviour in the Unity store."""
+    store = open_store_if_present(export_root)
+    if store is None:
+        return None
+    matches = store.rows("MonoBehaviour", f"{stem}_p*.json")
     return matches[0] if matches else None
+
+
+def _load_recovered_mono_behaviour(export_root: Path, row: UnityObjectRow | None) -> Any:
+    if row is None:
+        return {}
+    return open_store(export_root).read_json(row.type, row.name, {})
 
 
 def _inflate_object_index_scalars(scalars: Iterable[Any]) -> dict[str, Any]:
@@ -311,10 +322,10 @@ def collect_authored_runtime_config_contexts(
         }
         break
 
-    interactive_path = _first_recovered_mono_behaviour(export_root, "InteractiveAudioSetting")
-    interactive = load_json(interactive_path, {}) if interactive_path else {}
-    if isinstance(interactive, dict) and interactive_path is not None:
-        source = normalize_posix(interactive_path.relative_to(export_root))
+    interactive_row = _first_recovered_mono_behaviour(export_root, "InteractiveAudioSetting")
+    interactive = _load_recovered_mono_behaviour(export_root, interactive_row)
+    if isinstance(interactive, dict) and interactive_row is not None:
+        source = interactive_row.ref
         for row_index, row in enumerate(interactive.get("subTemplateList") or []):
             if not isinstance(row, dict):
                 continue
@@ -371,11 +382,11 @@ def collect_authored_runtime_config_contexts(
                     context["description"] = description
                 _append_context(contexts, seen, event_name, context)
 
-    global_path = _first_recovered_mono_behaviour(export_root, "AudioGlobalConfig")
-    global_config = load_json(global_path, {}) if global_path else {}
+    global_row = _first_recovered_mono_behaviour(export_root, "AudioGlobalConfig")
+    global_config = _load_recovered_mono_behaviour(export_root, global_row)
     global_provenance: dict[str, Any] = {}
     global_evidence = "exactSerializedAudioGlobalConfig"
-    if not isinstance(global_config, dict) or global_path is None:
+    if not isinstance(global_config, dict) or global_row is None:
         indexed_global_config = _audio_global_config_from_object_index(export_root)
         if indexed_global_config is not None:
             global_config, source, global_provenance = indexed_global_config
@@ -384,7 +395,7 @@ def collect_authored_runtime_config_contexts(
             global_config = {}
             source = ""
     else:
-        source = normalize_posix(global_path.relative_to(export_root))
+        source = global_row.ref
     if isinstance(global_config, dict) and source:
 
         def global_context_base() -> dict[str, Any]:
@@ -1185,9 +1196,9 @@ def collect_audio_global_control_semantics(
 
     cue_semantics = cue_semantics or collect_audio_cue_semantics(export_root)
     cue_definitions = cue_semantics.get("cueDefinitions") or {}
-    global_path = _first_recovered_mono_behaviour(export_root, "AudioGlobalConfig")
-    global_config = load_json(global_path, {}) if global_path else {}
-    source = normalize_posix(global_path.relative_to(export_root)) if global_path else ""
+    global_row = _first_recovered_mono_behaviour(export_root, "AudioGlobalConfig")
+    global_config = _load_recovered_mono_behaviour(export_root, global_row)
+    source = global_row.ref if global_row else ""
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     cue_refs: list[dict[str, Any]] = []

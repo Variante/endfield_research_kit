@@ -10,9 +10,7 @@ import hashlib
 import importlib
 import json
 import re
-import shutil
 import struct
-import subprocess
 import sys
 from scripts.webui.audio.semantics import identifiers
 from scripts.webui.audio.semantics import managed_literals
@@ -156,6 +154,7 @@ def native_unmapped_playback_entry(
 
 from scripts.repo_paths import REPO_ROOT
 from scripts.common import WEBUI_BUILD_DIR
+from scripts.game_data.unity_store import UnityObjectRow, UnityObjectStore, open_store_if_present
 
 ROOT = REPO_ROOT
 
@@ -3042,51 +3041,20 @@ def _iter_json_leaf_scalars(value: Any, path: str = "$") -> Iterable[tuple[str, 
     elif isinstance(value, (str, int)) and not isinstance(value, bool):
         yield path, value
 
-def _mono_audio_raw_json_paths(root: Path) -> Iterable[Path]:
-    """Locate the bounded raw objects whose JSON contains maintained fields."""
+def _mono_audio_raw_json_rows(store: UnityObjectStore) -> Iterable[UnityObjectRow]:
+    """Locate the bounded raw objects whose JSON contains maintained fields.
 
-    directories = [path for path in (root / "MonoBehaviour",) if path.is_dir()]
-    if not directories:
-        return
-    rg = shutil.which("rg")
-    if rg:
-        command = [rg, "--files-with-matches", "--fixed-strings", "--glob", "*.json"]
-        for pattern in MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS:
-            command.extend(("-e", pattern.split("._id", 1)[0]))
-        command.extend(str(path) for path in directories)
-        process = subprocess.Popen(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        assert process.stdout is not None
-        for line in process.stdout:
-            candidate = Path(line.strip())
-            if candidate.is_file():
-                yield candidate
-        process.stdout.close()
-        error = process.stderr.read() if process.stderr is not None else ""
-        if process.stderr is not None:
-            process.stderr.close()
-        return_code = process.wait()
-        if return_code not in (0, 1):
-            raise RuntimeError(
-                f"rg raw MonoBehaviour AudioId prefilter failed: "
-                f"{error.strip() or f'exit {return_code}'}"
-            )
-        return
-    patterns = tuple(value.encode("utf-8") for value in MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS)
-    for directory in directories:
-        for path in directory.glob("*.json"):
-            try:
-                data = path.read_bytes()
-            except OSError:
-                continue
-            if any(pattern in data for pattern in patterns):
-                yield path
+    One pass over the store's MonoBehaviour documents.  A maintained ``<field>._id``
+    path is serialized as a ``"<field>": {"_id": ...}`` pair, so the literal
+    searched for is the field name before ``._id``.
+    """
+
+    patterns = tuple(
+        value.split("._id", 1)[0].encode("utf-8") for value in MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS
+    )
+    for row, data in store.iter_documents("MonoBehaviour", "*.json"):
+        if any(pattern in data for pattern in patterns):
+            yield row
 
 def collect_mono_behaviour_audio_id_contexts(
     export_root: Path,
@@ -3100,7 +3068,7 @@ def collect_mono_behaviour_audio_id_contexts(
     """
 
     layout = ExportLayout(export_root)
-    root = layout.unity_dir
+    store = open_store_if_present(export_root)
     index_paths = [layout.object_index_dir(source) / "objects.jsonl.gz" for source in INSTALLED_LAYERS]
     # The cache lives in webui/data/_build, shared by every export root, so
     # the root itself is part of the key.
@@ -3112,9 +3080,10 @@ def collect_mono_behaviour_audio_id_contexts(
     } for path in index_paths if path.is_file())
     source_fingerprint.extend({
         "path": normalize_posix(path.relative_to(export_root)),
-        "kind": "directory",
+        "kind": "unityObjectStore",
+        "size": path.stat().st_size,
         "mtimeNs": path.stat().st_mtime_ns,
-    } for path in (root / "MonoBehaviour",) if path.is_dir())
+    } for path in (layout.unity_store_path,) if store is not None)
     event_hash_fingerprint = hashlib.sha256(
         "\n".join(f"{value & 0xFFFFFFFF:08x}" for value in sorted(current_wwise_event_hashes)).encode("ascii")
     ).hexdigest()
@@ -3416,33 +3385,32 @@ def collect_mono_behaviour_audio_id_contexts(
         except (OSError, TypeError, ValueError):
             incomplete_index_sources += 1
 
-    raw_paths: set[Path] = set()
+    raw_rows: dict[str, UnityObjectRow] = {}
     raw_fallback_reason = "not-needed-complete-object-index"
     for source_root, object_name, candidate_path_id in raw_object_candidates:
-        if not object_name:
+        if not object_name or store is None:
             continue
-        raw_path = (
-            root / "MonoBehaviour"
-            / f"{object_name}_p{candidate_path_id & ((1 << 64) - 1):016X}.json"
+        raw_row = store.row(
+            "MonoBehaviour", f"{object_name}_p{candidate_path_id & ((1 << 64) - 1):016X}.json"
         )
-        if raw_path.is_file():
-            raw_paths.add(raw_path)
+        if raw_row is not None:
+            raw_rows[raw_row.name] = raw_row
     if incomplete_index_sources or not complete_index_sources:
-        raw_paths.update(_mono_audio_raw_json_paths(root))
+        if store is not None:
+            raw_rows.update((row.name, row) for row in _mono_audio_raw_json_rows(store))
         raw_fallback_reason = (
             "published object index missing/incomplete; retained legacy JSON prefilter"
         )
-    for raw_path in sorted(raw_paths):
+    for raw_name in sorted(raw_rows, key=lambda name: (name.lower(), name)):
+        raw_row = raw_rows[raw_name]
         raw_candidate_files += 1
-        payload = load_json(raw_path, {})
+        payload = store.read_json(raw_row.type, raw_row.name, {}) if store is not None else {}
         if not isinstance(payload, dict):
             continue
         metadata = payload.get("$animestudio")
         metadata = metadata if isinstance(metadata, dict) else {}
-        try:
-            source_root = raw_path.relative_to(root).parts[0]
-        except (ValueError, IndexError):
-            source_root = "unknown"
+        # sourceRoot keeps its published value: the Unity type folder name.
+        source_root = raw_row.type
         serialized_file = str(metadata.get("sourceFile") or "")
         try:
             path_id = int(metadata.get("pathId") or 0)
@@ -3476,7 +3444,7 @@ def collect_mono_behaviour_audio_id_contexts(
                 "eventHash": event_hash,
                 "eventHex": f"0x{event_hash:08x}",
                 "sourceRoot": source_root,
-                "rawJsonSource": normalize_posix(raw_path.relative_to(export_root)),
+                "rawJsonSource": raw_row.ref,
                 "serializedFile": serialized_file,
                 "sourceOriginalPath": metadata.get("sourceOriginalPath"),
                 "sourceOffset": metadata.get("sourceOffset"),

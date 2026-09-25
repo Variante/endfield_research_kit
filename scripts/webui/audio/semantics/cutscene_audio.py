@@ -15,26 +15,30 @@ from scripts.webui.audio.semantics.context_utils import normalize_posix
 
 from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavailable
 from scripts.game_data.extraction.animestudio_index_io import iter_effective_objects
-from scripts.game_data.extraction.animestudio_index_io import raw_json_path_for_object
+from scripts.game_data.unity_store import UnityObjectRow, open_store, open_store_if_present, path_id_from_name
+from scripts.game_data.extraction.animestudio_index_io import indexed_object_row
 from scripts.common import WEBUI_BUILD_DIR
 from scripts.source_paths import ExportLayout
 
 def mono_behaviour_json_by_path_id(
     export_root: Path,
     wanted_path_ids: set[int] | None = None,
-) -> dict[int, Path]:
-    """Resolve raw object JSON paths for published path ids.
+) -> dict[int, UnityObjectRow]:
+    """Resolve the Unity store rows of published MonoBehaviour path ids.
 
-    Resolving a row costs one ``is_file`` probe, and the published index holds
-    every exported object, while each caller looks up only the handful of audio
-    playables it found in the asset map.  ``wanted_path_ids`` restricts the
-    probe to those ids; the entries returned for them are unchanged.
+    Each published index row is looked up once in the export's Unity object
+    store, while each caller needs only the handful of audio playables it found
+    in the asset map.  ``wanted_path_ids`` restricts the lookup to those ids.
+    An export without a Unity store resolves nothing.
     """
 
-    out: dict[int, Path] = {}
+    out: dict[int, UnityObjectRow] = {}
+    store = open_store_if_present(export_root)
+    if store is None:
+        return out
     try:
         # Both layers: cutscenes added by a hot update live only in Persistent.
-        for layer, row in iter_effective_objects(export_root):
+        for _layer, row in iter_effective_objects(export_root):
             identity = row.get("object") if isinstance(row.get("object"), dict) else {}
             try:
                 path_id = int(identity.get("pathId"))
@@ -42,40 +46,32 @@ def mono_behaviour_json_by_path_id(
                 continue
             if wanted_path_ids is not None and path_id not in wanted_path_ids:
                 continue
-            path = raw_json_path_for_object(export_root, layer, row)
-            if path is not None:
-                out[path_id] = path
+            found = indexed_object_row(store, row)
+            if found is not None:
+                out[path_id] = found
         return out
     except ObjectIndexUnavailable:
         pass
 
-    # Explicit compatibility path for old exports without a complete index.
-    root = (
-        ExportLayout(export_root).unity_type_dir("MonoBehaviour")
-    )
-    if not root.exists():
-        return out
-    for path in root.glob("*.json"):
-        stem = path.stem
-        marker = "_p"
-        if marker not in stem:
+    # Explicit compatibility path for exports without a complete index.
+    for found in store.rows("MonoBehaviour", "*.json"):
+        path_id = path_id_from_name(found.name)
+        if path_id is None:
             continue
-        hex_text = stem.rsplit(marker, 1)[-1]
-        try:
-            unsigned = int(hex_text, 16)
-        except ValueError:
-            continue
-        path_id = unsigned if unsigned < (1 << 63) else unsigned - (1 << 64)
         if wanted_path_ids is not None and path_id not in wanted_path_ids:
             continue
-        out[path_id] = path
+        out[path_id] = found
     return out
+
+
+def _playable_payload(export_root: Path, found: UnityObjectRow) -> Any:
+    return open_store(export_root).read_json(found.type, found.name)
 
 def collect_fmv_cutscene_audio_events(
     export_root: Path,
     language_info: dict[str, Any],
     fmv_attach_overrides: dict[str, str] | None = None,
-    by_path_id: dict[int, Path] | None = None,
+    by_path_id: dict[int, UnityObjectRow] | None = None,
 ) -> dict[str, list[str]]:
     """Recover FMV cutscene audio events from language-specific subtitle playables."""
     suffix = str(language_info.get("fmvSuffix") or "").lower()
@@ -130,10 +126,11 @@ def collect_fmv_cutscene_audio_events(
     cutscene_events: dict[str, list[str]] = defaultdict(list)
     seen: set[tuple[str, str]] = set()
     for path_id, container in event_path_ids.items():
-        path = by_path_id.get(path_id)
-        if not path:
+        found = by_path_id.get(path_id)
+        if found is None:
             continue
-        payload = load_json_strict(path, {})
+        payload = _playable_payload(export_root, found)
+        payload = payload if isinstance(payload, dict) else {}
         event_key = str(payload.get("_audioEventKey") or "").strip()
         if not event_key:
             continue
@@ -212,7 +209,7 @@ def collect_video_binding_audio_containers(export_root: Path) -> dict[str, str]:
 
 def collect_timeline_cutscene_audio_events(
     export_root: Path,
-    by_path_id: dict[int, Path] | None = None,
+    by_path_id: dict[int, UnityObjectRow] | None = None,
 ) -> dict[str, list[str]]:
     container_to_cutscene = collect_video_binding_audio_containers(export_root)
     if not container_to_cutscene:
@@ -243,10 +240,11 @@ def collect_timeline_cutscene_audio_events(
     cutscene_events: dict[str, list[str]] = defaultdict(list)
     seen: set[tuple[str, str]] = set()
     for path_id, container in event_path_ids.items():
-        path = by_path_id.get(path_id)
-        if not path:
+        found = by_path_id.get(path_id)
+        if found is None:
             continue
-        payload = load_json_strict(path, {})
+        payload = _playable_payload(export_root, found)
+        payload = payload if isinstance(payload, dict) else {}
         event_key = str(payload.get("_audioEventKey") or "").strip()
         if not event_key or event_key == "au_music_dlg_empty":
             continue
@@ -261,7 +259,7 @@ def collect_timeline_cutscene_audio_events(
 
 def collect_levelseq_cutscene_audio_events(
     export_root: Path,
-    by_path_id: dict[int, Path] | None = None,
+    by_path_id: dict[int, UnityObjectRow] | None = None,
 ) -> dict[str, list[str]]:
     asset_map = (
         ExportLayout(export_root).asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
@@ -302,10 +300,11 @@ def collect_levelseq_cutscene_audio_events(
     cutscene_events: dict[str, list[str]] = defaultdict(list)
     seen: set[tuple[str, str]] = set()
     for path_id, container in event_path_ids.items():
-        path = by_path_id.get(path_id)
-        if not path:
+        found = by_path_id.get(path_id)
+        if found is None:
             continue
-        payload = load_json_strict(path, {})
+        payload = _playable_payload(export_root, found)
+        payload = payload if isinstance(payload, dict) else {}
         event_key = str(payload.get("_audioEventKey") or "").strip()
         if not event_key or event_key == "au_music_dlg_empty":
             continue

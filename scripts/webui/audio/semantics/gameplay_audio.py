@@ -27,7 +27,8 @@ from scripts.webui.audio.semantics.play_sound_actions import (
 
 from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavailable
 from scripts.game_data.extraction.animestudio_index_io import iter_effective_layer_objects
-from scripts.game_data.extraction.animestudio_index_io import raw_json_path_for_object
+from scripts.game_data.unity_store import UnityObjectRow, UnityObjectStore, open_store, open_store_if_present
+from scripts.game_data.extraction.animestudio_index_io import indexed_object_row
 
 GAMEPLAY_INDEX_REL = Path("data/lang/{language}/gameplay/index.json")
 
@@ -71,13 +72,29 @@ ANIMATION_AUDIO_FUNCTIONS = frozenset({
     "OnCustomFootStep",
 })
 
-# Export-root-relative Unity type folders (layout v2: one effective tree).
-ANIMATOR_CONTROLLER_REL = Path("game/Unity/AnimatorController")
+# Unity object types read from the export's Unity store (game/Unity.sqlite).
+# The ``*_REL`` values are the ``game/Unity/<Type>`` reference prefixes the
+# published summaries name as their source roots.
+ANIMATOR_CONTROLLER_TYPE = "AnimatorController"
+ANIMATOR_CONTROLLER_REL = Path("game/Unity") / ANIMATOR_CONTROLLER_TYPE
 ANIMATOR_CONTROLLER_RELS = (ANIMATOR_CONTROLLER_REL,)
-ANIMATOR_OVERRIDE_CONTROLLER_REL = Path("game/Unity/AnimatorOverrideController")
+ANIMATOR_OVERRIDE_CONTROLLER_TYPE = "AnimatorOverrideController"
+ANIMATOR_OVERRIDE_CONTROLLER_REL = Path("game/Unity") / ANIMATOR_OVERRIDE_CONTROLLER_TYPE
 ANIMATOR_OVERRIDE_CONTROLLER_RELS = (ANIMATOR_OVERRIDE_CONTROLLER_REL,)
-ANIMATION_CLIP_REL = Path("game/Unity/AnimationClip")
+ANIMATION_CLIP_TYPE = "AnimationClip"
+ANIMATION_CLIP_REL = Path("game/Unity") / ANIMATION_CLIP_TYPE
 ANIMATION_CLIP_RELS = (ANIMATION_CLIP_REL,)
+
+
+def _store_with_type(export_root: Path, type_name: str) -> UnityObjectStore | None:
+    """The export's Unity store when it holds any ``type_name`` document, else None."""
+    store = open_store_if_present(export_root)
+    return store if store is not None and store.count(type_name) else None
+
+
+def _row_sort_key(row: UnityObjectRow) -> tuple[str, str]:
+    # The loose layout sorted case-insensitive Windows paths within one folder.
+    return (row.name.lower(), row.name)
 
 ANIMATOR_OVERRIDE_IDENTITY_RE = re.compile(
     r"(?:^|_)((?:eny|chr)_\d+_[^_]+)", re.IGNORECASE
@@ -162,11 +179,14 @@ def iter_json_strings(value: Any):
         for child in value:
             yield from iter_json_strings(child)
 
-def enemy_template_source_files(export_root: Path) -> dict[str, list[Path]]:
-    """Index EnemyData objects, preferring the published object index."""
+def enemy_template_source_files(export_root: Path) -> dict[str, list[UnityObjectRow]]:
+    """Index EnemyData objects in the Unity store, preferring the published object index."""
 
-    result: dict[str, list[Path]] = defaultdict(list)
-    seen: set[Path] = set()
+    result: dict[str, list[UnityObjectRow]] = defaultdict(list)
+    store = open_store_if_present(export_root)
+    if store is None:
+        return {}
+    seen: set[str] = set()
     index_ok = False
     for source in ("Persistent", "StreamingAssets"):
         try:
@@ -175,37 +195,33 @@ def enemy_template_source_files(export_root: Path) -> dict[str, list[Path]]:
                 if not name.lower().startswith("data_eny_"):
                     continue
                 identity = name.removeprefix("data_")
-                path = raw_json_path_for_object(export_root, source, row)
-                if path is not None and path.resolve() not in seen:
-                    seen.add(path.resolve())
-                    result[identity].append(path)
+                found = indexed_object_row(store, row)
+                if found is not None and found.ref not in seen:
+                    seen.add(found.ref)
+                    result[identity].append(found)
             index_ok = True
         except ObjectIndexUnavailable:
             continue
     if index_ok:
-        return {identity: sorted(paths) for identity, paths in sorted(result.items())}
+        return {identity: sorted(rows, key=_row_sort_key) for identity, rows in sorted(result.items())}
 
     # Explicit fallback when no published object index is available.
-    for root in (ExportLayout(export_root).unity_type_dir("MonoBehaviour"),):
-        if not root.exists():
+    for found in store.rows("MonoBehaviour", "data_eny_*_p*.json"):
+        if found.ref in seen:
             continue
-        for path in root.glob("data_eny_*_p*.json"):
-            resolved = path.resolve()
-            if resolved in seen:
-                continue
-            seen.add(resolved)
-            prefix, separator, suffix = path.stem.rpartition("_p")
-            if not separator or not suffix or not re.fullmatch(r"[0-9a-f]+", suffix, re.IGNORECASE):
-                continue
-            identity = prefix.removeprefix("data_")
-            result[identity].append(path)
-    return {identity: sorted(paths) for identity, paths in sorted(result.items())}
+        seen.add(found.ref)
+        prefix, separator, suffix = found.stem.rpartition("_p")
+        if not separator or not suffix or not re.fullmatch(r"[0-9a-f]+", suffix, re.IGNORECASE):
+            continue
+        identity = prefix.removeprefix("data_")
+        result[identity].append(found)
+    return {identity: sorted(rows, key=_row_sort_key) for identity, rows in sorted(result.items())}
 
 def enemy_template_skill_references(
     export_root: Path,
     enemies: list[dict[str, Any]],
     known_skill_ids: set[str],
-    source_files: dict[str, list[Path]] | None = None,
+    source_files: dict[str, list[UnityObjectRow]] | None = None,
 ) -> dict[str, dict[str, set[str]]]:
     """Return enemy -> SkillData ids recovered inside AbilitySystemData.
 
@@ -220,7 +236,7 @@ def enemy_template_skill_references(
 
     indexed_files = source_files if source_files is not None else enemy_template_source_files(export_root)
     result: dict[str, dict[str, set[str]]] = defaultdict(lambda: defaultdict(set))
-    seen_paths: set[Path] = set()
+    seen_paths: set[str] = set()
     for enemy in enemies:
         owner_id = str(enemy.get("id") or "").strip()
         if not owner_id:
@@ -231,12 +247,11 @@ def enemy_template_skill_references(
             if str(value or "").strip()
         }
         for identity in sorted(identities):
-            for path in indexed_files.get(identity) or []:
-                resolved = path.resolve()
-                if resolved in seen_paths:
+            for found in indexed_files.get(identity) or []:
+                if found.ref in seen_paths:
                     continue
-                seen_paths.add(resolved)
-                payload = load_json_strict(path, {})
+                seen_paths.add(found.ref)
+                payload = open_store(export_root).read_json(found.type, found.name)
                 references = ((payload.get("references") or {}).get("RefIds") or []) if isinstance(payload, dict) else []
                 matched: set[str] = set()
                 for reference in references:
@@ -252,10 +267,7 @@ def enemy_template_skill_references(
                     )
                 if not matched:
                     continue
-                try:
-                    source = normalize_posix(path.relative_to(export_root))
-                except ValueError:
-                    source = normalize_posix(path)
+                source = found.ref
                 for skill_id in matched:
                     result[owner_id][skill_id].add(source)
     return {
@@ -266,7 +278,7 @@ def enemy_template_skill_references(
 def enemy_template_animation_tokens(
     export_root: Path,
     enemies: list[dict[str, Any]],
-    source_files: dict[str, list[Path]] | None = None,
+    source_files: dict[str, list[UnityObjectRow]] | None = None,
 ) -> dict[str, dict[str, set[str]]]:
     """Return enemy -> animation actor tokens with exact source files."""
 
@@ -285,17 +297,13 @@ def enemy_template_animation_tokens(
             direct = ENEMY_ID_TOKEN_RE.match(identity)
             if direct:
                 result[owner_id][direct.group(1).lower()].add("EnemyTable identity")
-            seen_paths: set[Path] = set()
-            for path in indexed_files.get(identity) or []:
-                resolved = path.resolve()
-                if resolved in seen_paths:
+            seen_paths: set[str] = set()
+            for found in indexed_files.get(identity) or []:
+                if found.ref in seen_paths:
                     continue
-                seen_paths.add(resolved)
-                payload = load_json_strict(path, {})
-                try:
-                    source = normalize_posix(path.relative_to(export_root))
-                except ValueError:
-                    source = normalize_posix(path)
+                seen_paths.add(found.ref)
+                payload = open_store(export_root).read_json(found.type, found.name)
+                source = found.ref
                 for value in iter_json_strings(payload):
                     match = ENEMY_ANIM_CONFIG_RE.search(value)
                     if match:
@@ -483,8 +491,11 @@ def animation_clip_audio_events(data: bytes) -> tuple[str, list[dict[str, Any]]]
     finish()
     return clip_name, events
 
-def animation_clip_path_id(path: Path) -> int | None:
-    """Recover the signed Unity PathID encoded in an exported clip filename."""
+def animation_clip_path_id(path: PurePosixPath | Path) -> int | None:
+    """Recover the signed Unity PathID encoded in an exported object's file name.
+
+    ``path`` is a ``game/Unity/<Type>/<name>`` reference, or any path whose
+    last part is the exported name."""
 
     match = ANIMATION_CLIP_PATH_ID_SUFFIX_RE.search(path.stem)
     if not match:
@@ -495,12 +506,12 @@ def animation_clip_path_id(path: Path) -> int | None:
         return None
     return value - (1 << 64) if value >= (1 << 63) else value
 
-def animestudio_storage_root(path: Path) -> str:
-    """Return the storage partition of an exported Unity file.
+def animestudio_storage_root(path: PurePosixPath | Path) -> str:
+    """Return the storage partition of an exported Unity object reference.
 
-    The export keeps one effective game/Unity tree, so every exported file is
-    in the same partition; the empty key is that partition. A path that still
-    names an installed layer (a hand-made fixture) keeps that layer's key.
+    The export keeps one effective Unity store, so every exported object is in
+    the same partition; the empty key is that partition. A path that still
+    names an installed layer keeps that layer's key.
     """
 
     lowered = {part.lower(): part for part in path.parts}
@@ -629,8 +640,8 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
     serialized-file context can be resolved without ambiguity.
     """
 
-    roots = [export_root / rel for rel in ANIMATOR_CONTROLLER_RELS]
-    available_roots = [root for root in roots if root.is_dir()]
+    store = _store_with_type(export_root, ANIMATOR_CONTROLLER_TYPE)
+    available_roots = [ANIMATOR_CONTROLLER_REL] if store is not None else []
     by_clip_path_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
     by_clip_storage_path_id: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
     counts = {
@@ -639,9 +650,7 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
         "sourceRoots": [
             normalize_posix(rel) for rel in ANIMATOR_CONTROLLER_RELS
         ],
-        "availableSourceRoots": [
-            normalize_posix(root.relative_to(export_root)) for root in available_roots
-        ],
+        "availableSourceRoots": [normalize_posix(rel) for rel in available_roots],
         "filesScanned": 0,
         "filesWithDirectReferences": 0,
         "malformedFiles": 0,
@@ -661,15 +670,13 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
 
     seen_controllers: set[tuple[str, str, str]] = set()
     seen_references: set[tuple[int, str, str, str]] = set()
-    controller_paths = sorted(
-        (path for root in available_roots for path in root.glob("*.json")),
-        key=lambda value: normalize_posix(value.relative_to(export_root)).lower(),
-    )
-    for path in controller_paths:
+    # Every published list is sorted below, so the store's name order suffices.
+    for controller_row, data in store.iter_documents(ANIMATOR_CONTROLLER_TYPE, "*.json"):
+        path = PurePosixPath(controller_row.ref)
         counts["filesScanned"] += 1
         try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, ValueError):
+            payload = json.loads(data.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError):
             counts["malformedFiles"] += 1
             continue
         if not isinstance(payload, dict):
@@ -694,7 +701,7 @@ def collect_animation_controller_index(export_root: Path) -> dict[str, Any]:
         controller_key = (
             controller_source_file,
             str(controller_path_id) if isinstance(controller_path_id, int) else "",
-            normalize_posix(path.relative_to(export_root)),
+            controller_row.ref,
         )
         state_refs_by_slot = animator_controller_state_clip_refs(payload)
         file_contexts: dict[tuple[int, str], dict[str, Any]] = {}
@@ -819,10 +826,8 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
     join or live override activation.
     """
 
-    roots = [export_root / rel for rel in ANIMATOR_OVERRIDE_CONTROLLER_RELS]
-    available_roots = [root for root in roots if root.is_dir()]
-    clip_roots = [export_root / rel for rel in ANIMATION_CLIP_RELS]
-    controller_roots = [export_root / rel for rel in ANIMATOR_CONTROLLER_RELS]
+    store = _store_with_type(export_root, ANIMATOR_OVERRIDE_CONTROLLER_TYPE)
+    available_roots = [ANIMATOR_OVERRIDE_CONTROLLER_REL] if store is not None else []
     counts = {
         "status": "unavailable" if not available_roots else "complete",
         "sourceRoot": normalize_posix(ANIMATOR_OVERRIDE_CONTROLLER_REL),
@@ -919,15 +924,13 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
     # files within one VFS storage root, not over names. Ambiguous or missing
     # IDs remain visible but are excluded from stronger reachability claims.
     clip_paths_by_storage_id: dict[tuple[str, int], list[str]] = defaultdict(list)
-    for clip_root in clip_roots:
-        if clip_root.is_dir():
-            storage_root = animestudio_storage_root(clip_root)
-            for path in clip_root.glob("*.anim"):
-                clip_path_id = animation_clip_path_id(path)
-                if clip_path_id is None:
-                    continue
-                relative_path = normalize_posix(path.relative_to(export_root))
-                clip_paths_by_storage_id[(storage_root, clip_path_id)].append(relative_path)
+    storage_root = animestudio_storage_root(ANIMATION_CLIP_REL)
+    for clip_name in store.names(ANIMATION_CLIP_TYPE, "*.anim"):
+        clip_ref = PurePosixPath(ANIMATION_CLIP_REL.as_posix(), clip_name)
+        clip_path_id = animation_clip_path_id(clip_ref)
+        if clip_path_id is None:
+            continue
+        clip_paths_by_storage_id[(storage_root, clip_path_id)].append(clip_ref.as_posix())
     for paths in clip_paths_by_storage_id.values():
         paths.sort()
 
@@ -937,51 +940,48 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
     controller_paths_by_storage_id: dict[
         tuple[str, int], list[dict[str, Any]]
     ] = defaultdict(list)
-    for controller_root in controller_roots:
-        if controller_root.is_dir():
-            storage_root = animestudio_storage_root(controller_root)
-            for path in controller_root.glob("*.json"):
-                try:
-                    payload = json.loads(path.read_text(encoding="utf-8"))
-                except (OSError, UnicodeDecodeError, ValueError):
-                    continue
-                if not isinstance(payload, dict):
-                    continue
-                metadata = payload.get("$animestudio")
-                if not isinstance(metadata, dict) or metadata.get("type") != "AnimatorController":
-                    continue
-                controller_path_id = path_id(metadata.get("pathId"))
-                if controller_path_id is None:
-                    continue
-                context = {
-                    "name": str(payload.get("m_Name") or metadata.get("name") or path.stem),
-                    "sourcePath": normalize_posix(path.relative_to(export_root)),
-                    "sourceFile": str(metadata.get("sourceFile") or ""),
-                    "pathId": controller_path_id,
-                    "storageRoot": storage_root,
-                    "assetMapSources": list(asset_sources.get(
-                        (storage_root, "AnimatorController", controller_path_id), []
-                    )),
-                }
-                controller_paths_by_storage_id[
-                    (storage_root, controller_path_id)
-                ].append(context)
+    storage_root = animestudio_storage_root(ANIMATOR_CONTROLLER_REL)
+    for controller_row, data in store.iter_documents(ANIMATOR_CONTROLLER_TYPE, "*.json"):
+        path = PurePosixPath(controller_row.ref)
+        try:
+            payload = json.loads(data.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        metadata = payload.get("$animestudio")
+        if not isinstance(metadata, dict) or metadata.get("type") != "AnimatorController":
+            continue
+        controller_path_id = path_id(metadata.get("pathId"))
+        if controller_path_id is None:
+            continue
+        context = {
+            "name": str(payload.get("m_Name") or metadata.get("name") or path.stem),
+            "sourcePath": controller_row.ref,
+            "sourceFile": str(metadata.get("sourceFile") or ""),
+            "pathId": controller_path_id,
+            "storageRoot": storage_root,
+            "assetMapSources": list(asset_sources.get(
+                (storage_root, "AnimatorController", controller_path_id), []
+            )),
+        }
+        controller_paths_by_storage_id[
+            (storage_root, controller_path_id)
+        ].append(context)
 
     by_clip_path_id: dict[int, list[dict[str, Any]]] = defaultdict(list)
     by_clip_storage_path_id: dict[
         tuple[str, int], list[dict[str, Any]]
     ] = defaultdict(list)
     identity_tokens: set[str] = set()
-    override_paths = sorted(
-        (path for root in available_roots for path in root.glob("*.json")),
-        key=lambda value: normalize_posix(value.relative_to(export_root)).lower(),
-    )
-    for path in override_paths:
+    # Every published list is sorted below, so the store's name order suffices.
+    for override_row, data in store.iter_documents(ANIMATOR_OVERRIDE_CONTROLLER_TYPE, "*.json"):
+        path = PurePosixPath(override_row.ref)
         storage_root = animestudio_storage_root(path)
         counts["filesScanned"] += 1
         try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, ValueError):
+            payload = json.loads(data.decode("utf-8"))
+        except (UnicodeDecodeError, ValueError):
             counts["malformedFiles"] += 1
             continue
         if not isinstance(payload, dict) or not isinstance(payload.get("m_Clips"), list):
@@ -1073,7 +1073,7 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
                 counts["effectiveClipMissingReferences"] += 1
             context = {
                 "overrideName": override_name,
-                "overrideSourcePath": normalize_posix(path.relative_to(export_root)),
+                "overrideSourcePath": override_row.ref,
                 "overrideControllerPathId": controller_path_id,
                 "overrideAssetMapSource": override_source,
                 "controllerJoinStatus": controller_join_status,
@@ -1134,7 +1134,7 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
     }
 
 def animation_controller_contexts(
-    controller_index: dict[str, Any], path: Path
+    controller_index: dict[str, Any], path: PurePosixPath | Path
 ) -> list[dict[str, Any]]:
     """Return direct controller contexts for one exported AnimationClip."""
 
@@ -1145,7 +1145,7 @@ def animation_controller_contexts(
     return [dict(row) for row in contexts if isinstance(row, dict)]
 
 def animation_override_contexts(
-    override_index: dict[str, Any], path: Path
+    override_index: dict[str, Any], path: PurePosixPath | Path
 ) -> list[dict[str, Any]]:
     """Return corpus-unique override substitutions for one AnimationClip."""
 
@@ -1190,7 +1190,7 @@ def collect_gameplay_animation_audio(
     export_root: Path,
     entries: list[dict[str, Any]],
     enemies: list[dict[str, Any]],
-    enemy_source_files: dict[str, list[Path]] | None = None,
+    enemy_source_files: dict[str, list[UnityObjectRow]] | None = None,
 ) -> dict[str, Any]:
     """Collect exact AnimationClip audio callbacks with bounded actor ownership."""
 
@@ -1212,7 +1212,6 @@ def collect_gameplay_animation_audio(
                 "ownershipSources": sorted(sources),
             })
 
-    roots = [export_root / rel for rel in ANIMATION_CLIP_RELS]
     owners: dict[tuple[str, str], dict[str, Any]] = {}
     unowned_events: dict[str, list[dict[str, Any]]] = defaultdict(list)
     controller_index_data = collect_animation_controller_index(export_root)
@@ -1232,113 +1231,110 @@ def collect_gameplay_animation_audio(
     unowned_clips = 0
     owned_callback_rows = 0
     unowned_callback_rows = 0
-    for root in roots:
-        if not root.exists():
+    # One streamed pass keeps only each clip's parsed callbacks; the clips are
+    # then visited in the case-insensitive name order the evidence lists keep.
+    clip_store = open_store_if_present(export_root)
+    parsed_clips: list[tuple[UnityObjectRow, tuple[str, list[dict[str, Any]]] | None]] = []
+    if clip_store is not None:
+        for pattern in ("A_actor_*.anim", "A_monster_*.anim"):
+            for clip_row, data in clip_store.iter_documents(ANIMATION_CLIP_TYPE, pattern):
+                has_audio = b"functionName: PostAudio" in data or b"functionName: OnCustomFootStep" in data
+                parsed_clips.append((clip_row, animation_clip_audio_events(data) if has_audio else None))
+    parsed_clips.sort(key=lambda item: _row_sort_key(item[0]))
+    for clip_row, parsed in parsed_clips:
+        path = PurePosixPath(clip_row.ref)
+        scanned_clips += 1
+        filename_clip_name = ANIMATION_CLIP_HASH_SUFFIX_RE.sub("", path.stem)
+        filename_match = ANIMATION_ACTOR_RE.match(filename_clip_name)
+        matched_owners = (
+            token_owners.get(
+                (filename_match.group(1).lower(), filename_match.group(2).lower())
+            ) or []
+            if filename_match
+            else []
+        )
+        if parsed is None:
             continue
-        candidate_paths = sorted([
-            *root.glob("A_actor_*.anim"),
-            *root.glob("A_monster_*.anim"),
-        ])
-        for path in candidate_paths:
-            scanned_clips += 1
-            filename_clip_name = ANIMATION_CLIP_HASH_SUFFIX_RE.sub("", path.stem)
-            filename_match = ANIMATION_ACTOR_RE.match(filename_clip_name)
-            matched_owners = (
-                token_owners.get(
-                    (filename_match.group(1).lower(), filename_match.group(2).lower())
-                ) or []
-                if filename_match
-                else []
-            )
-            try:
-                data = path.read_bytes()
-            except OSError:
-                continue
-            if b"functionName: PostAudio" not in data and b"functionName: OnCustomFootStep" not in data:
-                continue
-            clip_name, clip_events = animation_clip_audio_events(data)
-            if not clip_events:
-                continue
-            clip_kind = animation_clip_action_kind(clip_name)
-            clip_context = animation_clip_context(clip_name)
-            controller_contexts = animation_controller_contexts(controller_index, path)
-            clip_reachability = (
-                "directAnimatorController" if controller_contexts else "unresolved"
-            )
-            override_contexts = animation_override_contexts(override_index, path)
-            override_reachability = animation_override_reachability_status(override_contexts)
-            if controller_contexts:
-                controller_reachable_clips += 1
-                controller_reachable_callback_rows += len(clip_events)
-            else:
-                controller_unresolved_clips += 1
-                controller_unresolved_callback_rows += len(clip_events)
-            if override_reachability != "unresolved":
-                override_reachable_clips += 1
-                override_reachable_callback_rows += len(clip_events)
-            else:
-                override_unresolved_clips += 1
-                override_unresolved_callback_rows += len(clip_events)
-            try:
-                clip_source = normalize_posix(path.relative_to(export_root))
-            except ValueError:
-                clip_source = normalize_posix(path)
-            base_evidence = {
-                "kind": "animationClipEvent",
-                "clip": clip_name,
-                "clipSource": clip_source,
-                "actionKind": clip_kind,
-                "clipContext": clip_context,
-                "clipReachability": clip_reachability,
-                "animatorControllerCount": len(controller_contexts),
-                "animatorControllerContexts": controller_contexts,
-                "overrideReachability": override_reachability,
-                "animatorOverrideCount": len(override_contexts),
-                "animatorOverrideContexts": override_contexts,
-            }
-            if matched_owners:
-                matched_clips += 1
-                owned_callback_rows += len(clip_events)
-                for owner in matched_owners:
-                    owner_key = (owner["ownerKind"], owner["ownerId"])
-                    record = owners.setdefault(owner_key, {
-                        **owner,
-                        "events": defaultdict(list),
-                    })
-                    for event in clip_events:
-                        authored_event_id = str(event.get("eventId") or "").strip()
-                        event_key = authored_event_id.lower()
-                        if not event_key:
-                            continue
-                        record["events"][event_key].append({
-                            **base_evidence,
-                            "authoredEventId": authored_event_id,
-                            "eventIndex": event.get("index"),
-                            "time": event.get("time"),
-                            "function": event.get("function"),
-                            "floatParameter": event.get("floatParameter"),
-                            "intParameter": event.get("intParameter"),
-                        })
-            else:
-                unowned_clips += 1
-                unowned_callback_rows += len(clip_events)
+        clip_name, clip_events = parsed
+        if not clip_events:
+            continue
+        clip_kind = animation_clip_action_kind(clip_name)
+        clip_context = animation_clip_context(clip_name)
+        controller_contexts = animation_controller_contexts(controller_index, path)
+        clip_reachability = (
+            "directAnimatorController" if controller_contexts else "unresolved"
+        )
+        override_contexts = animation_override_contexts(override_index, path)
+        override_reachability = animation_override_reachability_status(override_contexts)
+        if controller_contexts:
+            controller_reachable_clips += 1
+            controller_reachable_callback_rows += len(clip_events)
+        else:
+            controller_unresolved_clips += 1
+            controller_unresolved_callback_rows += len(clip_events)
+        if override_reachability != "unresolved":
+            override_reachable_clips += 1
+            override_reachable_callback_rows += len(clip_events)
+        else:
+            override_unresolved_clips += 1
+            override_unresolved_callback_rows += len(clip_events)
+        clip_source = clip_row.ref
+        base_evidence = {
+            "kind": "animationClipEvent",
+            "clip": clip_name,
+            "clipSource": clip_source,
+            "actionKind": clip_kind,
+            "clipContext": clip_context,
+            "clipReachability": clip_reachability,
+            "animatorControllerCount": len(controller_contexts),
+            "animatorControllerContexts": controller_contexts,
+            "overrideReachability": override_reachability,
+            "animatorOverrideCount": len(override_contexts),
+            "animatorOverrideContexts": override_contexts,
+        }
+        if matched_owners:
+            matched_clips += 1
+            owned_callback_rows += len(clip_events)
+            for owner in matched_owners:
+                owner_key = (owner["ownerKind"], owner["ownerId"])
+                record = owners.setdefault(owner_key, {
+                    **owner,
+                    "events": defaultdict(list),
+                })
                 for event in clip_events:
                     authored_event_id = str(event.get("eventId") or "").strip()
                     event_key = authored_event_id.lower()
                     if not event_key:
                         continue
-                    unowned_events[event_key].append({
+                    record["events"][event_key].append({
                         **base_evidence,
                         "authoredEventId": authored_event_id,
-                        "ownerStatus": "unresolved",
-                        "actorKindToken": filename_match.group(1).lower() if filename_match else "",
-                        "actorIdentityToken": filename_match.group(2).lower() if filename_match else "",
                         "eventIndex": event.get("index"),
                         "time": event.get("time"),
                         "function": event.get("function"),
                         "floatParameter": event.get("floatParameter"),
                         "intParameter": event.get("intParameter"),
                     })
+        else:
+            unowned_clips += 1
+            unowned_callback_rows += len(clip_events)
+            for event in clip_events:
+                authored_event_id = str(event.get("eventId") or "").strip()
+                event_key = authored_event_id.lower()
+                if not event_key:
+                    continue
+                unowned_events[event_key].append({
+                    **base_evidence,
+                    "authoredEventId": authored_event_id,
+                    "ownerStatus": "unresolved",
+                    "actorKindToken": filename_match.group(1).lower() if filename_match else "",
+                    "actorIdentityToken": filename_match.group(2).lower() if filename_match else "",
+                    "eventIndex": event.get("index"),
+                    "time": event.get("time"),
+                    "function": event.get("function"),
+                    "floatParameter": event.get("floatParameter"),
+                    "intParameter": event.get("intParameter"),
+                })
 
     event_names = {
         event_key

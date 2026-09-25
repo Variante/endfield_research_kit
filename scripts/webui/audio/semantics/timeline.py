@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import gzip
 import json
-import os
 import re
 from scripts.game_data.extraction.animestudio_index_io import is_effective_row
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
@@ -22,6 +21,7 @@ from scripts.webui.audio.semantics.context_utils import append_context as _appen
 from scripts.webui.audio.semantics.context_utils import load_json as load_json
 from scripts.webui.audio.semantics.context_utils import normalize_posix as normalize_posix
 from scripts.source_paths import ExportLayout
+from scripts.game_data.unity_store import open_store_if_present, path_id_from_name
 
 AUDIO_MUSIC_ACTION_TYPE_LABELS = {
     0: "DIALOG_MUSIC",
@@ -616,16 +616,16 @@ def merge_timeline_audio_ownership(
 def _timeline_raw_mono_payloads(
     export_root: Path,
     identities: Iterable[tuple[Any, Any]],
-) -> dict[tuple[str, int], tuple[dict[str, Any], Path] | None]:
-    """Bulk-load only requested raw MonoBehaviour identities.
+) -> dict[tuple[str, int], tuple[dict[str, Any], str] | None]:
+    """Load only requested raw MonoBehaviour identities from the Unity store.
 
-    A per-identity ``Path.glob`` is prohibitively expensive on the large
-    Persistent directory.  Enumerate each source directory once and parse
-    JSON only when its path-ID suffix is one of the requested identities.
+    Each ``(serialized file, PathID)`` identity is one indexed store lookup;
+    a document is accepted only when its exported name encodes the same
+    PathID and its ``$animestudio`` envelope repeats both halves of the
+    identity.  The value pairs the payload with its ``game/Unity`` reference.
     """
 
     wanted: set[tuple[str, int]] = set()
-    suffixes: set[str] = set()
     for serialized_file, path_id in identities:
         serialized = str(serialized_file or "").strip()
         try:
@@ -635,54 +635,33 @@ def _timeline_raw_mono_payloads(
         if not serialized:
             continue
         wanted.add((serialized, numeric_path_id))
-        suffixes.add(f"{numeric_path_id & ((1 << 64) - 1):016X}")
-    cache: dict[tuple[str, int], tuple[dict[str, Any], Path] | None] = {
+    cache: dict[tuple[str, int], tuple[dict[str, Any], str] | None] = {
         identity: None for identity in wanted
     }
     if not wanted:
         return cache
-    for source in ("game",):
-        raw_root = ExportLayout(export_root).unity_type_dir("MonoBehaviour")
-        if not raw_root.is_dir():
-            continue
-        try:
-            entries = os.scandir(raw_root)
-        except OSError:
-            continue
-        with entries:
-            for entry in entries:
-                if not entry.is_file() or not entry.name.lower().endswith(".json"):
+    store = open_store_if_present(export_root)
+    if store is None:
+        return cache
+    for identity in sorted(wanted):
+        serialized, numeric_path_id = identity
+        for found in store.rows_by_path_id(numeric_path_id, serialized):
+            if found.type != "MonoBehaviour" or not found.name.lower().endswith(".json"):
+                continue
+            if path_id_from_name(found.name) != numeric_path_id:
+                continue
+            payload = store.read_json(found.type, found.name, {})
+            metadata = payload.get("$animestudio") if isinstance(payload, dict) else None
+            if not isinstance(metadata, dict):
+                continue
+            if str(metadata.get("sourceFile") or "") != serialized:
+                continue
+            try:
+                if int(metadata.get("pathId")) != numeric_path_id:
                     continue
-                stem = entry.name[:-5]
-                if "_p" not in stem:
-                    continue
-                suffix = stem.rsplit("_p", 1)[-1].upper()
-                if suffix not in suffixes:
-                    continue
-                try:
-                    unsigned = int(suffix, 16)
-                except ValueError:
-                    continue
-                numeric_path_id = (
-                    unsigned if unsigned < (1 << 63) else unsigned - (1 << 64)
-                )
-                path = Path(entry.path)
-                payload = load_json(path, {})
-                metadata = payload.get("$animestudio") if isinstance(payload, dict) else None
-                if not isinstance(metadata, dict):
-                    continue
-                identity = (
-                    str(metadata.get("sourceFile") or ""),
-                    numeric_path_id,
-                )
-                if identity not in wanted:
-                    continue
-                try:
-                    if int(metadata.get("pathId")) != numeric_path_id:
-                        continue
-                except (TypeError, ValueError):
-                    continue
-                cache[identity] = (payload, path)
+            except (TypeError, ValueError):
+                continue
+            cache[identity] = (payload, found.ref)
     return cache
 
 def enrich_timeline_audio_ownership_from_raw_json(
@@ -747,7 +726,7 @@ def enrich_timeline_audio_ownership_from_raw_json(
         )
         track_loaded = cache.get(track_identity)
         if track_loaded:
-            track_payload, track_path = track_loaded
+            track_payload, track_ref = track_loaded
             clips = track_payload.get("m_Clips") if isinstance(track_payload, dict) else None
             try:
                 clip_index = int(row.get("timelineClipIndex"))
@@ -783,9 +762,7 @@ def enrich_timeline_audio_ownership_from_raw_json(
                         result["authoredEventNameEvidence"] = (
                             "exactTimelineDisplayNameHashEqualsSerializedAudioId"
                         )
-                result["timelineTrackRawJsonPath"] = normalize_posix(
-                    track_path.relative_to(export_root)
-                )
+                result["timelineTrackRawJsonPath"] = track_ref
                 if (
                     result.get("timelineClipStartSec") is not None
                     and result.get("timelineClipDurationSec") is not None
@@ -806,7 +783,7 @@ def enrich_timeline_audio_ownership_from_raw_json(
         )
         playable_loaded = cache.get(playable_identity)
         if playable_loaded:
-            playable_payload, playable_path = playable_loaded
+            playable_payload, playable_ref = playable_loaded
             for source_key, output_key in playable_fields:
                 value = playable_payload.get(source_key) if isinstance(playable_payload, dict) else None
                 if value is not None:
@@ -825,9 +802,7 @@ def enrich_timeline_audio_ownership_from_raw_json(
                         or f"unknown({trigger_on_skip})"
                     )
             result["audioPlayableControlEvidence"] = "exactSerializedAudioPlayableFields"
-            result["audioPlayableRawJsonPath"] = normalize_posix(
-                playable_path.relative_to(export_root)
-            )
+            result["audioPlayableRawJsonPath"] = playable_ref
             stats["timelineRawPlayableControls"] += 1
         else:
             stats["timelineRawPlayablePayloadMissing"] += 1

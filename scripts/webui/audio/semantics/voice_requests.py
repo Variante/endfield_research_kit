@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.webui.audio.semantics.context_utils import append_context as _append_context
-from scripts.webui.audio.semantics.context_utils import normalize_posix as _normalize_posix
+from scripts.game_data.unity_store import open_store_if_present
 from scripts.webui.audio.semantics.native_evidence import (
     ANIMATION_VOICE_TRIGGER_MAPPING_ID,
     NATIVE_VOICE_TRIGGER_MAPPING_ID,
@@ -16,9 +16,9 @@ from scripts.webui.audio.semantics.native_evidence import (
 )
 from scripts.webui.audio.semantics import native_callsite_rederivation
 
-ANIMATION_VOICE_CLIP_RELS = (
-    Path("game/Unity/AnimationClip"),
-)
+# The Unity store type whose exported ``.anim`` YAML documents carry the
+# TriggerVoice callbacks (``game/Unity/AnimationClip/<name>`` references).
+ANIMATION_VOICE_CLIP_TYPE = "AnimationClip"
 
 ANIMATION_VOICE_CLIP_RE = re.compile(
     r"^A_(?P<kind>actor|monster)_(?P<token>[^_]+)_", re.IGNORECASE
@@ -179,90 +179,86 @@ def collect_animation_voice_trigger_contexts(
 
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
-    for rel_root in ANIMATION_VOICE_CLIP_RELS:
-        root = export_root / rel_root
-        if not root.is_dir():
+    store = open_store_if_present(export_root)
+    clip_documents = (
+        store.iter_documents(ANIMATION_VOICE_CLIP_TYPE, "A_*.anim") if store is not None else ()
+    )
+    for clip_row, data in clip_documents:
+        clip_match = ANIMATION_VOICE_CLIP_RE.match(clip_row.stem)
+        if clip_match is None:
             continue
-        for path in sorted(root.glob("A_*.anim"), key=lambda item: item.name):
-            clip_match = ANIMATION_VOICE_CLIP_RE.match(path.stem)
-            if clip_match is None:
+        if b"functionName: TriggerVoice" not in data:
+            continue
+        prefix = "chr" if clip_match.group("kind").casefold() == "actor" else "eny"
+        identity_token = clip_match.group("token").casefold()
+        source_path = clip_row.ref
+        source_layer = (
+            "Persistent" if "/Persistent/" in source_path else "StreamingAssets"
+        )
+        for row in _animation_voice_trigger_rows(data):
+            trigger_key = str(row.get("triggerKey") or "").strip().casefold()
+            candidates = aliases.get((prefix, identity_token, trigger_key)) or []
+            candidates_by_name = {
+                str(alias.get("name") or "").strip(): alias
+                for alias in candidates
+                if str(alias.get("name") or "").strip()
+            }
+            if not candidates_by_name:
                 continue
-            try:
-                data = path.read_bytes()
-            except OSError:
-                continue
-            if b"functionName: TriggerVoice" not in data:
-                continue
-            prefix = "chr" if clip_match.group("kind").casefold() == "actor" else "eny"
-            identity_token = clip_match.group("token").casefold()
-            source_path = _normalize_posix(path.relative_to(export_root))
-            source_layer = (
-                "Persistent" if "/Persistent/" in source_path else "StreamingAssets"
+            owner_candidate_ids = sorted(
+                match.group("owner")
+                for event_name in candidates_by_name
+                if (match := ANIMATION_VOICE_EVENT_RE.fullmatch(event_name)) is not None
             )
-            for row in _animation_voice_trigger_rows(data):
-                trigger_key = str(row.get("triggerKey") or "").strip().casefold()
-                candidates = aliases.get((prefix, identity_token, trigger_key)) or []
-                candidates_by_name = {
-                    str(alias.get("name") or "").strip(): alias
-                    for alias in candidates
-                    if str(alias.get("name") or "").strip()
-                }
-                if not candidates_by_name:
+            for event_name, alias in sorted(candidates_by_name.items()):
+                owner_match = ANIMATION_VOICE_EVENT_RE.fullmatch(event_name)
+                if owner_match is None:
                     continue
-                owner_candidate_ids = sorted(
-                    match.group("owner")
-                    for event_name in candidates_by_name
-                    if (match := ANIMATION_VOICE_EVENT_RE.fullmatch(event_name)) is not None
-                )
-                for event_name, alias in sorted(candidates_by_name.items()):
-                    owner_match = ANIMATION_VOICE_EVENT_RE.fullmatch(event_name)
-                    if owner_match is None:
-                        continue
-                    shared_owner = len(owner_candidate_ids) > 1
-                    _append_context(contexts, seen, event_name, {
-                        "kind": "animationVoiceTrigger",
-                        "confidence": (
-                            "exactSharedIdentityTokenCandidate" if shared_owner else "direct"
-                        ),
-                        "semanticRole": "authoredAnimationVoiceResponseTrigger",
-                        "playbackPlacementStatus": "exactAnimationVoiceTriggerCompatibleDefinition",
-                        "triggerBindingStatus": (
-                            "exactAnimationOwnerTokenTriggerKeyAndAudioDialogEventIdentity"
-                        ),
-                        "ownerKind": "character" if prefix == "chr" else "enemy",
-                        "ownerId": owner_match.group("owner"),
-                        "ownerCandidateIds": owner_candidate_ids,
-                        "animationOwnerCandidateCount": len(owner_candidate_ids),
-                        "animationOwnershipScope": (
-                            "sharedIdentityToken" if shared_owner else "singleDefinitionIdentityToken"
-                        ),
-                        "identityToken": identity_token,
-                        "triggerKey": trigger_key,
-                        "eventName": event_name,
-                        "eventHash": alias.get("eventHash"),
-                        "eventNameEvidence": alias.get("evidence"),
-                        "clip": path.stem,
-                        "clipSource": source_path,
-                        "sourceLayer": source_layer,
-                        "eventIndex": row.get("eventIndex"),
-                        "time": row.get("time"),
-                        "function": row.get("function"),
-                        "intParameter": row.get("intParameter"),
-                        "floatParameter": row.get("floatParameter"),
-                        "nativeMappingId": ANIMATION_VOICE_TRIGGER_MAPPING_ID,
-                        "runtimeRoute": (
-                            "AnimationClip TriggerVoice -> AnimatorMono.TriggerVoice -> "
-                            "VoiceManager.ResponseOnEntity -> VoiceResponseProcessor -> "
-                            "VoiceSpeakChannelProcessor._PlayVoice -> VoicePlayer.PlayVoice"
-                        ),
-                        "runtimeActivationStatus": "animationPlaybackAndLiveResponseSelectionUnobserved",
-                        "runtimeSelectionStatus": "speakerCooldownProbabilityToneAndLiveChoiceUnobserved",
-                        "triggerRequestEvidence": [
-                            "exactUnityAnimationEventTriggerVoiceArguments",
-                            "exactAnimationClipAndVoiceDefinitionIdentityToken",
-                            "fingerprintLockedCurrentBuildAnimatorMonoNativeForwarder",
-                            "exactAudioDialogPathHashEqualsVoiceIdAndWwiseEventId",
-                        ],
-                        **animation_route,
-                    })
+                shared_owner = len(owner_candidate_ids) > 1
+                _append_context(contexts, seen, event_name, {
+                    "kind": "animationVoiceTrigger",
+                    "confidence": (
+                        "exactSharedIdentityTokenCandidate" if shared_owner else "direct"
+                    ),
+                    "semanticRole": "authoredAnimationVoiceResponseTrigger",
+                    "playbackPlacementStatus": "exactAnimationVoiceTriggerCompatibleDefinition",
+                    "triggerBindingStatus": (
+                        "exactAnimationOwnerTokenTriggerKeyAndAudioDialogEventIdentity"
+                    ),
+                    "ownerKind": "character" if prefix == "chr" else "enemy",
+                    "ownerId": owner_match.group("owner"),
+                    "ownerCandidateIds": owner_candidate_ids,
+                    "animationOwnerCandidateCount": len(owner_candidate_ids),
+                    "animationOwnershipScope": (
+                        "sharedIdentityToken" if shared_owner else "singleDefinitionIdentityToken"
+                    ),
+                    "identityToken": identity_token,
+                    "triggerKey": trigger_key,
+                    "eventName": event_name,
+                    "eventHash": alias.get("eventHash"),
+                    "eventNameEvidence": alias.get("evidence"),
+                    "clip": clip_row.stem,
+                    "clipSource": source_path,
+                    "sourceLayer": source_layer,
+                    "eventIndex": row.get("eventIndex"),
+                    "time": row.get("time"),
+                    "function": row.get("function"),
+                    "intParameter": row.get("intParameter"),
+                    "floatParameter": row.get("floatParameter"),
+                    "nativeMappingId": ANIMATION_VOICE_TRIGGER_MAPPING_ID,
+                    "runtimeRoute": (
+                        "AnimationClip TriggerVoice -> AnimatorMono.TriggerVoice -> "
+                        "VoiceManager.ResponseOnEntity -> VoiceResponseProcessor -> "
+                        "VoiceSpeakChannelProcessor._PlayVoice -> VoicePlayer.PlayVoice"
+                    ),
+                    "runtimeActivationStatus": "animationPlaybackAndLiveResponseSelectionUnobserved",
+                    "runtimeSelectionStatus": "speakerCooldownProbabilityToneAndLiveChoiceUnobserved",
+                    "triggerRequestEvidence": [
+                        "exactUnityAnimationEventTriggerVoiceArguments",
+                        "exactAnimationClipAndVoiceDefinitionIdentityToken",
+                        "fingerprintLockedCurrentBuildAnimatorMonoNativeForwarder",
+                        "exactAudioDialogPathHashEqualsVoiceIdAndWwiseEventId",
+                    ],
+                    **animation_route,
+                })
     return dict(contexts)
