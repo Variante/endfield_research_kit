@@ -113,7 +113,8 @@ export_full/
     Table/ Json/ Video/       final VFS files (the client's `Data/` prefix dropped)
     Terrain/ Lua/             only when the export scope includes them
     Audio/<LANG|shared>/      decoded Wwise audio
-    Unity/<Type>/             decoded Unity objects, one folder per type
+    Unity.sqlite              every decoded Unity object document (JSON, .anim)
+    Unity/<Type>/             converted Unity media (PNG, OBJ, FBX), one folder per type
   meta/
     <Layer>/…                 per-layer VFS index, asset map, object index,
                               asset status, export manifest
@@ -125,17 +126,21 @@ client:
 
 | Part | Files | Size |
 | --- | --- | --- |
-| `game/Unity` | ~1.9 M | ~94 GB |
+| `game/Unity.sqlite` | 1 (~1.7 M objects) | ~5 GB |
+| `game/Unity` media | ~0.2 M | ~64 GB |
 | `game/Audio` | ~93 K | ~30 GB |
 | `game/Video` | ~600 | ~6 GB |
 | `game/Json` | ~95 K | ~0.8 GB |
 | `game/Table` | ~700 | ~0.3 GB |
 | `meta` | ~120 | ~3 GB |
-| **Total** | **~2 M** | **~135 GB** |
+| **Total** | **~0.4 M** | **~110 GB** |
 
 Budget roughly double that during a run: AnimeStudio stages into
 `tmp/game_data/export/` (which doubles as its per-asset reuse cache) and only
-then publishes into `game/` as hardlinks. Generated browser data in
+then publishes into `game/`: media as hardlinks, object documents into
+`Unity.sqlite`. An export saved before that store existed (layout v2) is
+converted once with `python -m scripts.game_data.extraction.pack_unity_store
+--export-root <folder>`. Generated browser data in
 `webui/data/` adds a few GB more.
 
 Time and memory, measured on a desktop with 8 AnimeStudio workers (the

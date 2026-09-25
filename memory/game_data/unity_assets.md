@@ -38,6 +38,7 @@ Asset modes, from narrowest to broadest, are `--focused-assets`,
 Primary outputs:
 
 ```text
+<export root>/game/Unity.sqlite
 <export root>/game/Unity/<Type>/
 <export root>/game/Audio/
 webui/data/assets/index.json

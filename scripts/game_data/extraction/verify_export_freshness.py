@@ -24,6 +24,7 @@ if __package__ in {None, ""}:
 
 from scripts.common import ROOT, native_evidence_required, read_json, rel_path as slash
 from scripts.source_paths import ExportLayout, ExportLayoutError
+from scripts.game_data.unity_store import open_store_if_present
 from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_GAME_ROOT,
     DEFAULT_OUTPUT,
@@ -36,7 +37,8 @@ from scripts.game_data.extraction.export_full_from_game import (
 
 DEFAULT_SUMMARY = DEFAULT_REPORTS / "export_full_summary.json"
 # Published game data every WebUI build needs, and the per-layer metadata
-# that proves it. Unity types are single-tree; asset maps stay per layer.
+# that proves it. Unity types are single-tree (their object documents are
+# rows of game/Unity.sqlite, their media loose files); asset maps stay per layer.
 REQUIRED_GAME_DIRS = ("Table", "Json")
 REQUIRED_UNITY_TYPES = ("TextAsset", "MonoBehaviour")
 
@@ -101,6 +103,26 @@ def output_dir_status(path: Path, *, exact_count: bool = False) -> dict[str, Any
     }
 
 
+def unity_type_status(layout: ExportLayout, type_name: str, *, exact_count: bool = False) -> dict[str, Any]:
+    """One Unity type's published output: its store rows plus its loose media files.
+
+    Store rows are always counted exactly (one indexed query); the loose
+    media folder follows ``exact_count`` like every other output folder.
+    """
+    store = open_store_if_present(layout.root)
+    row_count = store.count(type_name) if store is not None else 0
+    media = output_dir_status(layout.unity_type_dir(type_name), exact_count=exact_count)
+    return {
+        "path": slash(layout.unity_type_dir(type_name)),
+        "storePath": slash(layout.unity_store_path),
+        "exists": row_count > 0 or media["exists"],
+        "storeRowCount": row_count,
+        "mediaFileCount": media["fileCount"],
+        "fileCount": row_count + media["fileCount"],
+        "fileCountExact": media["fileCountExact"],
+    }
+
+
 def required_output_status(output_root: Path, sources: tuple[str, ...], *, exact_counts: bool = False) -> list[dict[str, Any]]:
     layout = ExportLayout(output_root)
     rows: list[dict[str, Any]] = []
@@ -114,7 +136,7 @@ def required_output_status(output_root: Path, sources: tuple[str, ...], *, exact
         rows.append({
             "source": "game",
             "kind": f"game/Unity/{type_name}",
-            **output_dir_status(layout.unity_type_dir(type_name), exact_count=exact_counts),
+            **unity_type_status(layout, type_name, exact_count=exact_counts),
         })
     for source in sources:
         rows.append({
@@ -249,7 +271,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--full-output-counts",
         action="store_true",
-        help="Count every file in required export output dirs instead of using the fast non-empty check.",
+        help=(
+            "Count every file in required export output dirs instead of using the fast non-empty check. "
+            "Unity object documents are always counted exactly as game/Unity.sqlite rows."
+        ),
     )
     return parser.parse_args(argv)
 

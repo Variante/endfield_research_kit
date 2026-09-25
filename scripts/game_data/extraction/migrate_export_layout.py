@@ -1,4 +1,4 @@
-"""Convert a layout-v1 export root to layout v2 in place.
+"""Convert a layout-v1 export root to layout v2 in place (then pack_unity_store makes it v3).
 
 v1 kept both installed layers side by side (``structured/<Layer>``,
 ``recovered/AnimeStudio-cli/<Layer>``) and mixed extraction metadata, run
@@ -42,7 +42,7 @@ if __package__ in {None, ""}:
     raise SystemExit("Run as: python -m scripts.game_data.extraction.migrate_export_layout")
 
 from scripts.repo_paths import REPO_ROOT
-from scripts.source_paths import INSTALLED_LAYERS, ExportLayout, ExportLayoutError
+from scripts.source_paths import EXPORT_LAYOUT_PACK_COMMAND, EXPORT_LAYOUT_SCHEMA_V2, INSTALLED_LAYERS, ExportLayout, ExportLayoutError
 from scripts.game_data.extraction.unity_overlay import (
     EFFECTIVE,
     NO_IDENTITY_REASON,
@@ -402,7 +402,7 @@ def execute(root: Path, quarantine: Path, moves: list[Move]) -> None:
     manifest = quarantine / MANIFEST_NAME
     if manifest.exists():
         raise MigrationError(f"{manifest} exists; roll back or remove the previous migration first")
-    layout.begin_write(migratedFrom="v1", quarantineRoot=str(quarantine))
+    layout.begin_write(schema=EXPORT_LAYOUT_SCHEMA_V2, migratedFrom="v1", quarantineRoot=str(quarantine))
     with manifest.open("a", encoding="utf-8") as handle:
         for index, move in enumerate(moves, 1):
             src, dst = Path(move.src), Path(move.dst)
@@ -421,7 +421,7 @@ def execute(root: Path, quarantine: Path, moves: list[Move]) -> None:
     leftovers = [name for name in V1_TOP_LEVEL if (root / name).exists()]
     if leftovers:
         raise MigrationError(f"v1 folders still hold files after migration: {leftovers}")
-    layout.finish_write(migratedFrom="v1", quarantineRoot=str(quarantine), migratedAt=int(time.time()))
+    layout.finish_write(schema=EXPORT_LAYOUT_SCHEMA_V2, migratedFrom="v1", quarantineRoot=str(quarantine), migratedAt=int(time.time()))
 
 
 def _remove_empty_tree(path: Path) -> None:
@@ -499,6 +499,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         execute(root, quarantine, planner.moves)
         print(f"migrated {len(planner.moves)} entries; quarantine at {quarantine}")
+        print(f"next, pack its Unity objects (layout v3): {EXPORT_LAYOUT_PACK_COMMAND} --export-root \"{root}\"")
         return 0
     except (MigrationError, OverlayError, ExportLayoutError) as exc:
         print(f"migrate_export_layout: {exc}", file=sys.stderr)

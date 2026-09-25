@@ -104,11 +104,12 @@ file-regex filters. Audio defaults to direct lossless FLAC: the CLI pipes PCM
 from the pinned repo-local vgmstream decoder into its in-process FLAC encoder,
 without an intermediate WAV file or `ffmpeg`.
 
-## Export root layout (v2)
+## Export root layout (v3)
 
 `ExportLayout` (`scripts/source_paths.py`) owns every export path. A root is
 `game/` (final, exactly decoded data: `Table Json Video Terrain Lua` with the
-VFS `Data/` prefix dropped, `Audio/<LANG|shared>`, `Unity/<Type>`) plus
+VFS `Data/` prefix dropped, `Audio/<LANG|shared>`, the Unity object store
+`Unity.sqlite`, and converted Unity media under `Unity/<Type>`) plus
 per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_manifest,renderer_index}`,
 `meta/cab_map`, and `meta/extraction/{failures,incremental}`. `layout.json`
 (`state` writing|complete) gates every reader.
@@ -124,9 +125,25 @@ per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_ma
   effective (`animestudio_index_io.EffectiveObjectRows`), counting every
   `object` row for its integrity check. Slots match by (chunk file name,
   offset); the catalogue loader fails closed if one name denotes two chunks.
+- v3 differs from v2 only in how Unity output is published. Loose files made
+  every consumer pay for directory enumeration and cold small-file reads
+  (about 2.8 ms per MonoBehaviour cold, against about 20 us per row scanned
+  from SQLite), so the object documents -- `.json` dumps and `.anim` clips,
+  the overwhelming majority of files -- go into `game/Unity.sqlite`
+  (`scripts/game_data/unity_store.py`): one row per exported file, keyed by
+  (type folder, exported file name), holding the exact bytes zlib-compressed
+  with their SHA256 and indexed header columns (object name, PathID, CAB,
+  script PathID). The file name is kept so `game/Unity/<Type>/<name>` remains
+  every report's provenance reference; `serve.py` answers it from the store.
+  Media stays loose because the browser opens it by path. There is no loose
+  fallback: a v2 root fails `require()` with the pack command, and a writer
+  refuses to publish into one. `pack_unity_store.py` converts a v2 root in
+  place (verify every row, then delete; resumable; `--unpack` reverses it).
 - Staging (also the per-asset reuse cache), filters and index parts live under
-  `tmp/game_data/export/<root>-<hash>/`; `game/Unity` is a hardlink mirror,
-  synced per type only when every installed layer finished that type's item
+  `tmp/game_data/export/<root>-<hash>/` and stay one file per object, because
+  AnimeStudio writes files and the per-asset reuse depends on them. Publishing
+  syncs object documents into the store by (size, mtime) and mirrors media as
+  hardlinks, per type only when every installed layer finished that type's item
   in this run, never after a failed command or a failed stage item; the
   structured tree is published only by a run that dumped the effective layer.
   Catalogues, skip lists and the dump layer always follow the installed

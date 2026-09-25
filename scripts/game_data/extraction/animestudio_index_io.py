@@ -1,8 +1,9 @@
 """Shared readers for published AnimeStudio object indexes.
 
 The exporter owns index production.  Consumers use this module to make the
-published merged index the first source and to keep the exported
-game/Unity/<Type> JSON as an explicit, diagnosable fallback.
+published merged index the first source and resolve an indexed object to
+its exported document, a row of the export's Unity object store
+(``game/Unity.sqlite``, see scripts/game_data/unity_store.py).
 """
 
 from __future__ import annotations
@@ -14,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
+from scripts.game_data.unity_store import UnityObjectRow, UnityObjectStore
 from scripts.game_data.extraction.unity_overlay import chunk_slot_key, effective_chunk_slot_keys
 
 
@@ -193,11 +195,11 @@ def iter_effective_objects(export_root: Path) -> Iterator[tuple[str, dict[str, A
             yield layer, row
 
 
-def raw_json_path_for_object(export_root: Path, source: str, row: dict[str, Any]) -> Path | None:
-    """Resolve the exported JSON file for an indexed object.
+def indexed_document_key(row: dict[str, Any]) -> tuple[str, str] | None:
+    """The ``(type, file name)`` an indexed object is exported as, or None.
 
-    The export keeps one effective Unity tree, so ``source`` no longer selects
-    a folder; it is kept so callers can still report which index row matched.
+    The exporter names each object document ``<name>_p<unsigned PathID hex>.json``
+    in its type folder, and the Unity object store keys the row by that name.
     """
 
     identity = row.get("object") if isinstance(row.get("object"), dict) else {}
@@ -208,11 +210,14 @@ def raw_json_path_for_object(export_root: Path, source: str, row: dict[str, Any]
         return None
     if not name:
         return None
-    path = (
-        ExportLayout(export_root).unity_type_dir(str(row.get("type") or "MonoBehaviour"))
-        / f"{name}_p{path_id & ((1 << 64) - 1):016X}.json"
-    )
-    return path if path.is_file() else None
+    return str(row.get("type") or "MonoBehaviour"), f"{name}_p{path_id & ((1 << 64) - 1):016X}.json"
+
+
+def indexed_object_row(store: UnityObjectStore, row: dict[str, Any]) -> UnityObjectRow | None:
+    """The store row of an indexed object, or None when it has no identity or no document."""
+
+    key = indexed_document_key(row)
+    return store.row(*key) if key is not None else None
 
 
 def iter_gzip_jsonl_objects(

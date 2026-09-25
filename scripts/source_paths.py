@@ -10,14 +10,18 @@ from typing import Any
 from scripts.repo_paths import REPO_ROOT
 
 # ---------------------------------------------------------------------------
-# Export root layout v2
+# Export root layout v3
 #
 # An export root holds exactly two roles:
 #
 #   game/   final, exactly decoded game data, one tree = what the client loads
 #           (Persistent overlaid on StreamingAssets). Flat: native VFS names
 #           with the leading ``Data/`` dropped, plus one folder per decoded
-#           family (Audio, Unity).
+#           family (Audio, Unity). v3 publishes the exported Unity object
+#           documents (.json, .anim) into game/Unity.sqlite
+#           (scripts/game_data/unity_store.py); game/Unity/<Type>/ keeps only
+#           converted media (.png, .obj, .fbx, ...). v2 kept every Unity
+#           object as a loose file.
 #   meta/   indexes and provenance that describe game/. Never game data.
 #           Per installed layer (meta/<Layer>/...), because each index,
 #           asset map and fingerprint describes one physical root, and the
@@ -28,9 +32,12 @@ from scripts.repo_paths import REPO_ROOT
 # root is built by ExportLayout; do not join export-root segments by hand.
 # ---------------------------------------------------------------------------
 
-EXPORT_LAYOUT_SCHEMA = "endfield.export-layout.v2"
+EXPORT_LAYOUT_SCHEMA = "endfield.export-layout.v3"
+EXPORT_LAYOUT_SCHEMA_V2 = "endfield.export-layout.v2"
 EXPORT_LAYOUT_FILE = "layout.json"
 EXPORT_LAYOUT_MIGRATE_COMMAND = "python -m scripts.game_data.extraction.migrate_export_layout"
+EXPORT_LAYOUT_PACK_COMMAND = "python -m scripts.game_data.extraction.pack_unity_store"
+UNITY_STORE_FILE = "Unity.sqlite"
 
 # The installed roots, in overlay order: a later layer overrides an earlier one.
 INSTALLED_LAYERS: tuple[str, ...] = ("StreamingAssets", "Persistent")
@@ -136,7 +143,13 @@ class ExportLayout:
         return self.game / "Unity"
 
     def unity_type_dir(self, type_name: str) -> Path:
+        """Loose converted media of one Unity type; object documents are in the store."""
         return self.unity_dir / type_name
+
+    @property
+    def unity_store_path(self) -> Path:
+        """game/Unity.sqlite: every exported Unity object document (layout v3)."""
+        return self.game / UNITY_STORE_FILE
 
     def game_file(self, logical_path: str) -> Path:
         return self.game.joinpath(*game_relative_path(logical_path).parts)
@@ -202,7 +215,7 @@ class ExportLayout:
         return payload
 
     def require(self) -> "ExportLayout":
-        """Fail closed unless this root is a v2 root whose last write completed."""
+        """Fail closed unless this root is a v3 root whose last write completed."""
         if not self.root.is_dir():
             raise ExportLayoutError(f"export root does not exist: {self.root}")
         marker = self.read_marker()
@@ -210,6 +223,11 @@ class ExportLayout:
             raise ExportLayoutError(
                 f"{self.root} has no {EXPORT_LAYOUT_FILE}; it predates layout v2. "
                 f"Run: {EXPORT_LAYOUT_MIGRATE_COMMAND} --export-root \"{self.root}\""
+            )
+        if marker.get("schema") == EXPORT_LAYOUT_SCHEMA_V2:
+            raise ExportLayoutError(
+                f"{self.root} is a layout-v2 root: its Unity objects are loose files. "
+                f"Pack them into {UNITY_STORE_FILE} with: {EXPORT_LAYOUT_PACK_COMMAND} --export-root \"{self.root}\""
             )
         if marker.get("schema") != EXPORT_LAYOUT_SCHEMA:
             raise ExportLayoutError(
@@ -223,16 +241,36 @@ class ExportLayout:
             )
         return self
 
-    def begin_write(self, **fields: Any) -> None:
-        """Mark the root as being rewritten. Writers call this first."""
-        self._publish_marker(EXPORT_LAYOUT_STATE_WRITING, fields)
+    def require_schema(self, schema: str) -> "ExportLayout":
+        """Fail closed unless this root is complete and declares exactly ``schema``."""
+        marker = self.read_marker()
+        if marker is None or marker.get("schema") != schema or marker.get("state") != EXPORT_LAYOUT_STATE_COMPLETE:
+            found = None if marker is None else (marker.get("schema"), marker.get("state"))
+            raise ExportLayoutError(f"{self.root} is not a complete {schema} root (found {found!r})")
+        return self
 
-    def finish_write(self, **fields: Any) -> None:
+    def begin_write(self, *, schema: str = EXPORT_LAYOUT_SCHEMA, upgrade_from_v2: bool = False, **fields: Any) -> None:
+        """Mark the root as being rewritten. Writers call this first.
+
+        A writer of the current layout refuses a root still in layout v2, so an
+        export into it never leaves loose v2 objects under a v3 marker; the
+        packer and the v1 migration pass ``schema`` explicitly.
+        """
+        if schema == EXPORT_LAYOUT_SCHEMA and not upgrade_from_v2:
+            marker = self.read_marker() if self.root.is_dir() else None
+            if marker is not None and marker.get("schema") == EXPORT_LAYOUT_SCHEMA_V2:
+                raise ExportLayoutError(
+                    f"{self.root} is a layout-v2 root; pack it before writing into it: "
+                    f"{EXPORT_LAYOUT_PACK_COMMAND} --export-root \"{self.root}\""
+                )
+        self._publish_marker(EXPORT_LAYOUT_STATE_WRITING, fields, schema)
+
+    def finish_write(self, *, schema: str = EXPORT_LAYOUT_SCHEMA, **fields: Any) -> None:
         """Mark the root complete. Writers call this last, after game/ and meta/."""
-        self._publish_marker(EXPORT_LAYOUT_STATE_COMPLETE, fields)
+        self._publish_marker(EXPORT_LAYOUT_STATE_COMPLETE, fields, schema)
 
-    def _publish_marker(self, state: str, fields: dict[str, Any]) -> None:
-        payload = {"schema": EXPORT_LAYOUT_SCHEMA, "state": state, **fields}
+    def _publish_marker(self, state: str, fields: dict[str, Any], schema: str = EXPORT_LAYOUT_SCHEMA) -> None:
+        payload = {"schema": schema, "state": state, **fields}
         self.root.mkdir(parents=True, exist_ok=True)
         tmp = self.layout_file.with_name(self.layout_file.name + ".tmp")
         tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -244,7 +282,7 @@ class ExportLayout:
 # the WebUI resolves each label through the sourceRoots map built from these.
 # ---------------------------------------------------------------------------
 
-ASSET_SOURCE_UNITY = "Unity"  # game/Unity: decoded Unity objects and conversions
+ASSET_SOURCE_UNITY = "Unity"  # game/Unity: converted Unity media (object documents are in Unity.sqlite)
 ASSET_SOURCE_GAME = "Game"  # game/: final VFS files (Table, Json, Video, ...)
 # Folders directly under game/ that other asset sources own. A walker of the
 # Game source must prune them, or every Unity object and decoded audio file is
@@ -269,5 +307,11 @@ def resolve_asset_source_roots(export_root: Path) -> list[tuple[str, Path]]:
 
 
 def resolve_material_source_roots(export_root: Path) -> list[tuple[str, Path]]:
-    unity_dir = ExportLayout(export_root).unity_dir
-    return [(ASSET_SOURCE_UNITY, unity_dir)] if unity_dir.exists() else []
+    """The Unity source whose object documents (Material JSON, ...) the asset index reads.
+
+    The path is the logical root of the ``Unity/<Type>/<name>`` refs; the
+    documents themselves are rows of game/Unity.sqlite (layout v3), so the
+    source exists only when the store does.
+    """
+    layout = ExportLayout(export_root)
+    return [(ASSET_SOURCE_UNITY, layout.unity_dir)] if layout.unity_store_path.is_file() else []

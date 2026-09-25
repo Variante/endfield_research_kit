@@ -484,6 +484,46 @@ Every export records build-step timings and a process-tree benchmark under
 `reports/export/`. The Combat builder rejects stale graph inputs and publishes
 a degraded reason instead of using them as direct evidence.
 
+### Unity object store (layout v3)
+
+The exporter publishes every exported Unity object document (`.json` and the
+`.anim` clips, about 1.7 M files) into one SQLite file,
+`<export root>/game/Unity.sqlite`, instead of loose files; converted media
+(PNG, OBJ, FBX) stays under `game/Unity/<Type>/` because the browser opens it
+by path. `scripts/game_data/unity_store.py` owns the format and the only
+reader: builders call `UnityObjectStore.for_export(root)` and query by type
+plus a file-name glob, by object name, or by PathID. Rows keep the exported
+file name and exact bytes, so `game/Unity/<Type>/<name>` stays the provenance
+reference, and `serve.py` still answers those URLs from the store. Nothing
+falls back to loose files: a v2 root, or a v3 root with no store, fails closed.
+
+A layout-v2 root (a saved previous export, for example) is converted in
+place. The pack re-hashes every row before it deletes a loose file, resumes
+after an interruption, and `--unpack` restores the v2 tree. A file the disk
+cannot read stops the pack before anything is deleted, with every such file
+listed in the work dir; `--accept-unreadable` is the explicit decision to
+record them as lost (moved to a quarantine, listed in the store's
+`unreadableAtPack` meta row) and finish:
+
+```bat
+python -m scripts.game_data.extraction.pack_unity_store --export-root export_full_1d5d1 --dry-run
+python -m scripts.game_data.extraction.pack_unity_store --export-root export_full_1d5d1
+```
+
+For ad-hoc study, the store CLI lists, prints, extracts and runs SQL, with
+`inflate(data)` (the document text) and `doc(data, '$.path')` registered:
+
+```bat
+python -m scripts.game_data.unity_store stats
+python -m scripts.game_data.unity_store ls MonoBehaviour "data_chr_*"
+python -m scripts.game_data.unity_store sql "SELECT name, doc(data, '$.m_Name') FROM objects WHERE type='TextAsset' LIMIT 5"
+python -m scripts.game_data.unity_store extract MonoBehaviour "DynamicScene*" --out tmp\study\dyn
+```
+
+The `objects` table carries `type, name, object_name, path_id, source_file`
+(the CAB) and `script_path_id` columns, all indexed; any other SQLite client
+can read it, and only the document body needs `zlib` to inflate.
+
 ## Main builders
 
 | Area | Entry point | Main output |
@@ -1219,7 +1259,9 @@ the cached text: refresh the previous-export baseline afterwards.
 The default scan covers WebUI-facing exported text plus image, model, video,
 and decoded audio assets. `--text-only` omits all assets, `--no-audio` keeps
 other assets, `--exact` hashes contents, and `--full-export-scan` is for broad
-audits only. The published feed keeps every matching changed entry by default;
+audits only. A broad scan expands `game/Unity.sqlite` into one entry per stored
+document at its `game/Unity/<Type>/<name>` path, fingerprinted by the row's
+SHA256, so both export roots must be layout v3. The published feed keeps every matching changed entry by default;
 `--sample-limit N` is an opt-in diagnostic cap, while `0` remains unlimited.
 Only an individual oversized text diff preview is bounded; that does not omit
 the update entry itself.
@@ -1268,7 +1310,8 @@ current roster as entirely new. The sidecar does not alter recovery or grouping.
 Pruning is destructive. Preview byte-identical files in the previous export
 with `.\build_updates.bat --prune-old --dry-run`; run without `--dry-run` only
 when intentionally cleaning that saved previous export. The guard rejects the
-current export and repository root.
+current export and repository root, and the prune never touches a Unity object
+store.
 
 ## Native evidence and source graph
 

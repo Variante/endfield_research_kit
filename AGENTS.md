@@ -534,10 +534,12 @@ Setup and export internals:
 
 Browser data inputs and outputs:
 
-- Active inputs are the export root's `game/` tree (layout v2, see
+- Active inputs are the export root's `game/` tree (layout v3, see
   `memory/game_data/extraction_pipeline.md`): `game/Table`, `game/Json`,
-  `game/Video`, `game/Audio`, and decoded Unity objects under
-  `game/Unity/<Type>/`, plus generated data under `webui/data/`. Builder
+  `game/Video`, `game/Audio`, the decoded Unity object documents in
+  `game/Unity.sqlite` (read only through `scripts/game_data/unity_store.py`,
+  never as loose files), and converted Unity media under `game/Unity/<Type>/`,
+  plus generated data under `webui/data/`. Builder
   evidence and comparison inputs go to `webui/data/_build/`, which is neither
   served nor packaged.
 - Generated browser outputs include `webui/data/manifest.json`,
