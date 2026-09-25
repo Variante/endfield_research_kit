@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import base64
-import binascii
 import json
 import hashlib
 import os
@@ -51,26 +49,9 @@ VIDEO_EXTENSIONS = {
     ".ogv",
     ".usm",
 }
-JSON_EXTENSIONS = {
-    ".json",
-}
-JSON_SCRIPT_SEARCH_CHAR_LIMIT = 6000
-JSON_SCRIPT_SCAN_PREFIX_BYTES = 8192
-JSON_SCRIPT_SEARCH_MAX_FILE_BYTES = 5_000_000
 ASSET_HASH_HEADER_BYTES = 4096
 ASSET_HASH_CHUNK_SIZE = 1024 * 1024
-BASE64_TEXT_RE = re.compile(r"^[A-Za-z0-9+/]+={0,2}$")
 
-BROWSER_JSON_TYPE_DIRS = {
-    "AnimatorController",
-    "AnimatorOverrideController",
-    "AvatarMask",
-    "Material",
-    "MonoScript",
-    "PlayableDirector",
-    "PreloadData",
-    "TextAsset",
-}
 ASSET_SINGLE_PREFIX_RE = re.compile(r"^[A-Za-z]_")
 ASSET_LOD_SUFFIX_RE = re.compile(r"(?:[_-])lod\d+$", re.IGNORECASE)
 MATERIAL_TEXTURE_SUFFIXES = (
@@ -318,101 +299,12 @@ def _browser_asset_kind_for_suffix(
     *,
     include_regular_assets: bool = True,
     include_media: bool = True,
-    include_json: bool = True,
 ) -> str:
     if include_regular_assets and suffix in ASSET_KIND_BY_EXT:
         return ASSET_KIND_BY_EXT[suffix]
     if include_media and suffix in VIDEO_EXTENSIONS:
         return "video"
-    if include_json and suffix in JSON_EXTENSIONS:
-        return "json"
     return ""
-
-
-def _looks_like_base64_text(value: str) -> bool:
-    compact = re.sub(r"\s+", "", value or "")
-    return len(compact) >= 8 and len(compact) % 4 != 1 and bool(BASE64_TEXT_RE.fullmatch(compact))
-
-
-def _is_mostly_readable_text(value: str) -> bool:
-    if not value:
-        return False
-    checked = 0
-    bad = 0
-    for ch in value[:4096]:
-        checked += 1
-        code = ord(ch)
-        if code == 0xFFFD or (code < 32 and ch not in "\n\r\t"):
-            bad += 1
-    return checked > 0 and bad / checked <= 0.04
-
-
-def _normalize_decoded_script_text(value: str) -> str:
-    cleaned = (value or "").replace("\x00", "").strip()
-    if not cleaned or not _is_mostly_readable_text(cleaned):
-        return ""
-    return cleaned[:JSON_SCRIPT_SEARCH_CHAR_LIMIT]
-
-
-def _decode_script_value(value: Any) -> str:
-    if isinstance(value, str):
-        if _looks_like_base64_text(value):
-            compact = re.sub(r"\s+", "", value)
-            remainder = len(compact) % 4
-            if remainder:
-                compact += "=" * (4 - remainder)
-            try:
-                raw = base64.b64decode(compact, validate=True)
-                return _normalize_decoded_script_text(raw.decode("utf-8", errors="replace"))
-            except (binascii.Error, UnicodeError, ValueError):
-                return ""
-        return _normalize_decoded_script_text(value)
-
-    if isinstance(value, list) and value and all(isinstance(item, int) and 0 <= item <= 255 for item in value):
-        return _normalize_decoded_script_text(bytes(value).decode("utf-8", errors="replace"))
-
-    return ""
-
-
-def _iter_m_script_values(value: Any):
-    if isinstance(value, dict):
-        for key, item in value.items():
-            if key == "m_Script":
-                yield item
-            else:
-                yield from _iter_m_script_values(item)
-    elif isinstance(value, list):
-        for item in value:
-            yield from _iter_m_script_values(item)
-
-
-def _decoded_m_script_search_text(data: bytes) -> str:
-    """Searchable decoded ``m_Script`` text of one exported JSON document."""
-    if len(data) > JSON_SCRIPT_SEARCH_MAX_FILE_BYTES:
-        return ""
-    if "m_Script" not in data[:JSON_SCRIPT_SCAN_PREFIX_BYTES].decode("utf-8", errors="ignore"):
-        return ""
-    try:
-        payload = json.loads(data.decode("utf-8", errors="ignore"))
-    except json.JSONDecodeError:
-        return ""
-
-    chunks: list[str] = []
-    total = 0
-    for value in _iter_m_script_values(payload):
-        decoded = _decode_script_value(value)
-        if not decoded:
-            continue
-        chunks.append(decoded)
-        total += len(decoded)
-        if total >= JSON_SCRIPT_SEARCH_CHAR_LIMIT:
-            break
-
-    if not chunks:
-        return ""
-    compact = re.sub(r"\s+", " ", " ".join(chunks)).strip()
-    return compact[:JSON_SCRIPT_SEARCH_CHAR_LIMIT]
-
 
 
 def _file_sha256(path: Path) -> str:
@@ -514,17 +406,8 @@ def _image_dimensions(path: Path) -> tuple[int, int] | None:
     return None
 
 
-def _add_duplicate_candidate_hashes(
-    entries: list[dict],
-    paths_by_rel: dict[str, Path],
-    sha256_by_rel: dict[str, str] | None = None,
-) -> None:
-    """Mark same-size, same-header candidates with their SHA256 (``h``).
-
-    Store documents have no file; their recorded SHA256 (``sha256_by_rel``)
-    stands in for both the header signature and the file hash.
-    """
-    known = sha256_by_rel or {}
+def _add_duplicate_candidate_hashes(entries: list[dict], paths_by_rel: dict[str, Path]) -> None:
+    """Mark same-size, same-header candidates with their SHA256 (``h``)."""
     coarse_counts: Counter[tuple[str, str, int]] = Counter()
     for entry in entries:
         rel = str(entry.get("r") or "")
@@ -538,13 +421,10 @@ def _add_duplicate_candidate_hashes(
         coarse_key = (str(entry.get("k") or ""), Path(rel).suffix.lower(), int(entry.get("s") or 0))
         if coarse_counts[coarse_key] <= 1:
             continue
-        if rel in known:
-            key = (*coarse_key, f"sha256:{known[rel]}")
-        else:
-            path = paths_by_rel.get(rel)
-            if not path:
-                continue
-            key = (*coarse_key, _header_signature(path))
+        path = paths_by_rel.get(rel)
+        if not path:
+            continue
+        key = (*coarse_key, _header_signature(path))
         header_keys[rel] = key
         header_counts[key] += 1
 
@@ -552,9 +432,6 @@ def _add_duplicate_candidate_hashes(
         rel = str(entry.get("r") or "")
         key = header_keys.get(rel)
         if not key or header_counts[key] <= 1:
-            continue
-        if rel in known:
-            entry["h"] = known[rel]
             continue
         path = paths_by_rel.get(rel)
         if path:
@@ -590,7 +467,6 @@ class AssetScanResult:
                 "image": self.counts["image"],
                 "model": self.counts["model"],
                 "video": self.counts["video"],
-                "json": self.counts["json"],
             },
             "entries": self.asset_entries,
             "relations": self.relations,
@@ -629,12 +505,12 @@ def scan_exported_media_assets(
     obj_rels_by_source_base: dict[tuple[str, str], list[str]] = defaultdict(list)
     obj_rels_by_base: dict[str, list[str]] = defaultdict(list)
     asset_paths_by_rel: dict[str, Path] = {}
-    document_sha256_by_rel: dict[str, str] = {}
 
     asset_roots = resolve_asset_source_roots(export_root)
-    # Unity object documents (Material, TextAsset, ...) are rows of the
-    # export's Unity store; material_roots names the logical root their
-    # ``Unity/<Type>/<name>`` refs belong to.
+    # Unity object documents are rows of the export's Unity store and are
+    # browsed on the Data page, not listed here. Material rows are still read
+    # for the Material -> texture relations; material_roots names the logical
+    # root their ``Unity/Material/<name>`` refs belong to.
     material_roots = resolve_material_source_roots(export_root)
     unity_store = open_store_if_present(export_root) if material_roots else None
     media_root_labels = {source: rel_path(path, root) for source, path in asset_roots}
@@ -650,7 +526,6 @@ def scan_exported_media_assets(
         path: Path,
         include_regular_assets: bool = True,
         include_media: bool = True,
-        include_json: bool = True,
     ) -> None:
         nonlocal material_like_image_count
         suffix = path.suffix.lower()
@@ -658,7 +533,6 @@ def scan_exported_media_assets(
             suffix,
             include_regular_assets=include_regular_assets,
             include_media=include_media,
-            include_json=include_json,
         )
         if not kind:
             return
@@ -730,31 +604,7 @@ def scan_exported_media_assets(
                     source=source,
                     source_root=source_root,
                     path=base_dir / filename,
-                    include_json=False,
                 )
-
-    for source, _source_root in material_roots:
-        if unity_store is None:
-            continue
-        for type_name in sorted(BROWSER_JSON_TYPE_DIRS):
-            rows = [row for row in unity_store.rows(type_name) if Path(row.name).suffix.lower() in JSON_EXTENSIONS]
-            for row in sorted(rows, key=lambda item: item.name):
-                asset_rel = f"{source}/{type_name}/{row.name}"
-                logical = _logical_export_stem(asset_rel, Path(row.name).stem)
-                if logical is None:
-                    continue
-                _stem, path_id = logical
-                entry = {"k": "json", "r": asset_rel, "s": row.size}
-                if path_id:
-                    entry["pid"] = path_id
-                if row.size <= JSON_SCRIPT_SEARCH_MAX_FILE_BYTES:
-                    script_search = _decoded_m_script_search_text(unity_store.read_bytes(type_name, row.name))
-                    if script_search:
-                        entry["sx"] = script_search
-                asset_entries.append(entry)
-                document_sha256_by_rel[asset_rel] = row.sha256
-                counts["total"] += 1
-                counts["json"] += 1
 
     relations: dict[str, dict] = {}
     material_count = 0
@@ -867,10 +717,10 @@ def scan_exported_media_assets(
                             "rel": model_rel,
                         })
 
-    _add_duplicate_candidate_hashes(asset_entries, asset_paths_by_rel, document_sha256_by_rel)
+    _add_duplicate_candidate_hashes(asset_entries, asset_paths_by_rel)
     _add_duplicate_candidate_hashes(video_entries, asset_paths_by_rel)
 
-    count_keys = ("total", "image", "model", "video", "json")
+    count_keys = ("total", "image", "model", "video")
     return AssetScanResult(
         asset_entries=asset_entries,
         video_entries=video_entries,
