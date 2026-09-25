@@ -148,6 +148,20 @@ const shown = facets.filter();               // or facets.filter(list) / facets.
   contain commas) for groups that declare `param`; `snapshot()` /
   `restore(snapshot)` round-trip a plain `{ groupId: [values] }` object for
   storage.
+- Every list page uses it: Story (`app_tree.js`), Assets, Gameplay,
+  Characters, Audio, Text, Updates, and the Data page. Page conventions:
+  - chip counts are dataset totals (`countMode: "total"`) on every page, as
+    before the shared model; the Data page's store groups carry server
+    counts;
+  - search stays outside `predicate`, so typing never recounts chips (Audio
+    media alone is ~90 K records); each page applies its search after
+    `facets.filter()`, and ranking stays page-owned;
+  - `values()` must not return `""`: an empty value is dropped, so a page
+    that needs one maps it to a sentinel (Assets uses `"(root)"`);
+  - a union across groups (Gameplay's per-kind type groups) is written as a
+    `match` that reads the other groups' state;
+  - Map's layer checkboxes and Recovery are not filter groups and do not use
+    it.
 
 Migrating a page replaces its per-group `Set`s, `buildChips` calls, hand-rolled
 filter tests, count maps, badge updates and reset code with one `create()`
