@@ -1,7 +1,6 @@
-/* Decoded Data Inspector.
-   Left pane reuses the shared list-page shell (sidebar header, `.filters`
-   sections, splitters, virtualized list, pager) so it matches Story, Assets,
-   Audio and Gameplay. Right pane is the general annotated-structure viewer. */
+/* Data page: the Files/SQL shell (`.data-page-*`, `#data-files-*`) plus the
+   decoded-record rows and the general annotated-structure viewer
+   (`.data-inspector-*`) it renders. */
 
 #data-inspector-app,
 .data-inspector-shell {
@@ -15,77 +14,11 @@
   background: var(--bg);
 }
 
-/* ---------------------------------------------------------------- sidebar -- */
-
-#data-inspector-left {
-  display: flex;
-  flex: 0 0 auto;
-  flex-direction: column;
-  width: 430px;
-  min-width: 300px;
-  overflow: hidden;
-  background: var(--bg-2);
-}
-
-#data-inspector-left > header {
-  padding: 14px 16px 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-#data-inspector-left h1 {
-  margin: 0 0 4px;
-  font-size: 16px;
-  font-weight: 600;
-}
-
-#data-inspector-stats,
-#data-inspector-list-meta,
 .data-inspector-row-path,
 .data-inspector-row-summary,
 .data-inspector-empty-list {
   color: var(--muted);
   font-size: 12px;
-}
-
-#data-inspector-reset {
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1.2;
-}
-
-#data-inspector-reset:hover {
-  color: var(--text);
-  border-color: var(--muted);
-}
-
-#data-inspector-filter-panel {
-  overflow: auto;
-}
-
-#data-inspector-list-meta {
-  padding: 6px 16px;
-  border-bottom: 1px solid var(--border);
-}
-
-#data-inspector-list-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-#data-inspector-list-spacer {
-  width: 1px;
-}
-
-#data-inspector-list {
-  position: absolute;
-  inset: 0 0 auto;
 }
 
 .data-inspector-row {
@@ -235,13 +168,6 @@
 }
 
 /* ------------------------------------------------------------ detail pane -- */
-
-#data-inspector-right {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  overflow: auto;
-}
 
 .data-inspector-empty {
   padding: 28px;
@@ -543,16 +469,6 @@
   margin-top: 5px;
   overflow-wrap: anywhere;
   font: 650 14px/1.45 var(--mono, ui-monospace, Consolas, monospace);
-}
-
-.data-inspector-fact-unit {
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 500;
-}
-
-.data-inspector-fact.is-collection {
-  background: rgba(var(--accent-rgb), .04);
 }
 
 /* -------------------------------------------------------------- structure -- */
@@ -860,8 +776,6 @@
 
 /* ---- scalar value tokens ---- */
 
-.json-key { color: var(--accent); }
-.json-shape { color: var(--muted); }
 .json-string { color: #4f8a3c; }
 .json-string.is-empty { color: var(--muted); font-style: italic; }
 .json-number { color: #a25b18; }
@@ -1476,28 +1390,6 @@
 
   .data-inspector-shell {
     flex-direction: column;
-  }
-
-  #data-inspector-left {
-    width: 100%;
-    min-width: 0;
-    overflow: visible;
-    border-bottom: 1px solid var(--border);
-  }
-
-  #data-inspector-filter-panel {
-    overflow: visible;
-  }
-
-  #data-inspector-list-wrap {
-    flex: none;
-    min-height: 260px;
-    max-height: 44vh;
-  }
-
-  #data-inspector-splitter,
-  #data-inspector-filter-splitter {
-    display: none;
   }
 
   .data-inspector-detail-header,
