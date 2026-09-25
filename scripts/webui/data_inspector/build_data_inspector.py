@@ -14,6 +14,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import struct
 from typing import Any, Callable, Iterable
 
 if __package__ in {None, ""}:
@@ -22,7 +23,7 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.data_inspector.build_data_inspector"
     )
 
-from scripts.common import OUT_DIR, require_export_layout
+from scripts.common import OUT_DIR, ROOT, check_installed_native_inputs, require_export_layout
 from scripts.game_data.animation_config_binary import (
     AnimationConfigFramingError,
     frame_animation_config,
@@ -58,6 +59,10 @@ from scripts.game_data.levelconfig_binary import (
     LevelConfigDecodeError,
     decode_level_config,
 )
+from scripts.game_data.leveldata_binary import (
+    LevelDataTopLevelFramingError,
+    frame_leveldata_named_prefix,
+)
 from scripts.game_data.matrix_shockwave_binary import (
     MatrixShockWaveDecodeError,
     decode_matrix_shockwave_table,
@@ -66,6 +71,9 @@ from scripts.game_data.memorypack.npc_montage import (
     NpcMontageFramingError,
     frame_npc_montage,
 )
+from scripts.game_data.memorypack.buff_actions import Unsupported
+from scripts.game_data.memorypack.derived_plans import SKILLDATA_TYPE, load_registry
+from scripts.game_data.memorypack.derived_values import decode_file, find_identifier
 from scripts.game_data.memorypack.tables import (
     BAMBOO_RAFT_TASK_TABLE_REL,
     DIALOG_ID_TABLE_REL,
@@ -79,6 +87,7 @@ from scripts.game_data.navmesh_binary import (
 )
 from scripts.game_data.teleport_validation_binary import (
     TeleportValidationDecodeError,
+    decode_teleport_validation_json_table,
     decode_teleport_validation_table,
 )
 from scripts.source_paths import ExportLayout, configured_export_root
@@ -88,6 +97,7 @@ from scripts.webui.data_inspector.contract import (
     publish_root_index,
     source_descriptor,
 )
+from scripts.webui.data_inspector.buff_action_receipts import load_receipt_records
 
 
 DATASET_IDS = (
@@ -96,12 +106,15 @@ DATASET_IDS = (
     "animator-controller",
     "animator-override-controller",
     "level-config",
+    "level-data",
+    "skill-data",
+    "buff-action-receipts",
     "char-interact-perform",
     "navmesh",
     "level-mount-point",
     "config-table",
 )
-PUBLISHER_REVISION = 5
+PUBLISHER_REVISION = 9
 _HASH_KEY = re.compile(r"(?:hash|id)$", re.IGNORECASE)
 _SKIP_HASH_KEYS = {"m_pathid", "m_fileid", "pathid", "fileid"}
 
@@ -117,6 +130,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Publish only this dataset; repeat for more than one (default: all).",
     )
     parser.add_argument("--shard-size", type=int, default=20)
+    parser.add_argument(
+        "--buff-action-receipts-report", type=Path,
+        default=ROOT / "reports/animestudio/buff_action_receipts_current_latest.json",
+    )
+    parser.add_argument(
+        "--buff-corpus-report", type=Path,
+        default=ROOT / "reports/animestudio/buffdata_current_latest.json",
+    )
     parser.add_argument("--force", action="store_true", help="Rebuild unchanged datasets.")
     return parser.parse_args(argv)
 
@@ -318,6 +339,263 @@ def _level_config_record(path: Path, export_root: Path) -> dict[str, Any]:
         )
 
 
+def _level_data_record(path: Path, export_root: Path) -> dict[str, Any]:
+    """Publish the maintained LevelData reader's exact or bounded result.
+
+    A decoded spline is stored geometry. Its presence does not establish a
+    movement route, scene instance, or runtime traversal.
+    """
+    relative = path.relative_to(export_root).as_posix()
+    tags = ["level", "leveldata", "memorypack"]
+    try:
+        decoded = frame_leveldata_named_prefix(path.read_bytes())
+    except (OSError, LevelDataTopLevelFramingError, ValueError) as exc:
+        return _error_record(path, export_root, "application/octet-stream", tags, exc)
+
+    status = _reader_status(decoded, "bounded_partial")
+    fields = decoded.get("fields") if isinstance(decoded.get("fields"), dict) else {}
+    splines = fields.get("splines") if isinstance(fields.get("splines"), dict) else {}
+    open_field = decoded.get("openField") if isinstance(decoded.get("openField"), dict) else {}
+    spline_count = splines.get("count") if isinstance(splines.get("count"), int) else None
+    spline_rows = splines.get("rows") if isinstance(splines.get("rows"), list) else None
+    knot_counts = [
+        row.get("knots", {}).get("count") if isinstance(row, dict)
+        and isinstance(row.get("knots"), dict) else None
+        for row in spline_rows or []
+    ]
+    knot_count = sum(knot_counts) if (
+        spline_count is not None and spline_count >= 0
+        and spline_rows is not None and len(spline_rows) == spline_count
+        and all(type(count) is int and count >= 0 for count in knot_counts)
+    ) else None
+    facts = {
+        "level": path.parent.name,
+        "closedFieldCount": len(decoded.get("closedFields") or []),
+        "serializedMemberCount": decoded.get("serializedMemberCount"),
+        "openField": open_field.get("name"),
+        "bytesConsumed": decoded.get("bytesConsumed"),
+    }
+    if spline_count is not None:
+        facts["splineCount"] = spline_count
+    if knot_count is not None:
+        facts["knotCount"] = knot_count
+    return {
+        "id": relative,
+        "title": f"{path.parent.name} / {path.stem}",
+        "status": status,
+        "summary": _summary_text((
+            f"fields={facts['closedFieldCount']}/{facts['serializedMemberCount']}",
+            f"splines={spline_count}" if spline_count is not None else "",
+            f"knots={knot_count}" if knot_count is not None and spline_count else "",
+            f"open={facts['openField']}" if facts["openField"] else "",
+        )),
+        "tags": [
+            *tags, status,
+            *(["has-splines"] if spline_count and spline_count > 0 else []),
+            *(["has-knots"] if knot_count and knot_count > 0 else []),
+        ],
+        "source": _source(path, export_root, "application/octet-stream"),
+        "facts": facts,
+        "payload": decoded,
+        "payloadKind": "reader",
+    }
+
+
+def _skill_data_reference_targets(paths: Iterable[Path], export_root: Path) -> dict[str, list[str]]:
+    """Index exact filename stems; duplicates stay ambiguous, never guessed."""
+    targets: dict[str, list[str]] = defaultdict(list)
+    for path in paths:
+        targets[path.stem].append(path.relative_to(export_root).as_posix())
+    return dict(targets)
+
+
+def _skill_data_stored_references(
+    value: dict[str, Any], targets: dict[str, list[str]],
+) -> list[dict[str, Any]]:
+    """Walk nested actions once, projecting only exact-tag/type authored IDs."""
+    max_depth = 64
+    max_nodes = 250_000
+    references: list[dict[str, Any]] = []
+    stack: list[tuple[Any, str, int, bool]] = [(value, "", 0, False)]
+    nodes = 0
+    while stack:
+        node, path, depth, skip_projected_ids = stack.pop()
+        nodes += 1
+        if nodes > max_nodes or depth > max_depth:
+            raise ValueError(
+                f"SkillData stored-reference traversal limit at {path or '<root>'}: "
+                f"nodes={nodes}/{max_nodes}, depth={depth}/{max_depth}"
+            )
+        if isinstance(node, dict):
+            exact_action = node.get("$tag") == 0x000E and (
+                node.get("$type") == "Beyond.Gameplay.Core.AllowNextSkillAction+Data"
+            )
+            data = node.get("$value") if exact_action else None
+            allowed = data.get("allowedSkillIdList") if isinstance(data, dict) else None
+            if isinstance(allowed, list):
+                for id_index, stored_id in enumerate(allowed):
+                    if not isinstance(stored_id, str) or not stored_id:
+                        continue
+                    matches = targets.get(stored_id, [])
+                    references.append({
+                        "kind": "storedAllowedSkillId",
+                        "sourcePath": f"{path}.$value.allowedSkillIdList[{id_index}]",
+                        "storedId": stored_id,
+                        "targetDatasetId": "skill-data",
+                        "targetRecordId": matches[0] if len(matches) == 1 else None,
+                        "targetState": (
+                            "present" if len(matches) == 1 else
+                            "ambiguous" if matches else "absent"
+                        ),
+                    })
+            for key, child in reversed(list(node.items())):
+                if skip_projected_ids and key == "allowedSkillIdList":
+                    continue
+                child_path = f"{path}.{key}" if path else str(key)
+                stack.append((child, child_path, depth + 1, exact_action and key == "$value"))
+        elif isinstance(node, list):
+            for index in range(len(node) - 1, -1, -1):
+                stack.append((node[index], f"{path}[{index}]", depth + 1, False))
+    return references
+
+
+def _skill_data_direct_action_types(value: dict[str, Any]) -> list[dict[str, Any]] | None:
+    """Count direct stored action unions without assigning runtime behavior.
+
+    Nested branch actions remain in the reader payload, but are outside this
+    inventory. An unfamiliar container shape withholds the whole projection.
+    """
+    group = value.get("actionGroupData")
+    if not isinstance(group, dict):
+        return None
+    timeline = group.get("timelineActions")
+    passive = group.get("passiveEventActions")
+    if not isinstance(timeline, list) or not isinstance(passive, list):
+        return None
+    counts: dict[tuple[int, str], list[int]] = defaultdict(lambda: [0, 0])
+
+    def add_actions(actions: Any, lane: int) -> bool:
+        if not isinstance(actions, list):
+            return False
+        for action in actions:
+            if not isinstance(action, dict):
+                return False
+            tag, name = action.get("$tag"), action.get("$type")
+            if type(tag) is not int or not isinstance(name, str) or not name:
+                return False
+            counts[(tag, name)][lane] += 1
+        return True
+
+    for slot in timeline:
+        sequence = slot.get("_sequenceActionData") if isinstance(slot, dict) else None
+        if not isinstance(sequence, dict) or not add_actions(sequence.get("actionData"), 0):
+            return None
+    for event in passive:
+        groups = event.get("actions") if isinstance(event, dict) else None
+        if not isinstance(groups, list):
+            return None
+        for action_group in groups:
+            if not isinstance(action_group, dict) or not add_actions(action_group.get("actionData"), 1):
+                return None
+    return [
+        {
+            "tag": tag,
+            "type": name,
+            "timelineOccurrences": lanes[0],
+            "passiveEventOccurrences": lanes[1],
+        }
+        for (tag, name), lanes in sorted(counts.items(), key=lambda item: (item[0][1], item[0][0]))
+    ]
+
+
+def _skill_data_record(
+    path: Path, export_root: Path, *, registry: Any, definition: int,
+    reference_targets: dict[str, list[str]] | None = None,
+) -> dict[str, Any]:
+    """Publish stored SkillData values only after whole-file and id agreement.
+
+    The selected generated wrapper supplies member names and scalar types. A
+    stored action, tag, or field name does not establish its runtime execution.
+    """
+    relative = path.relative_to(export_root).as_posix()
+    tags = ["gameplay", "skilldata", "memorypack"]
+    try:
+        raw = path.read_bytes()
+        value, reached = decode_file(raw, definition, registry, source=path.name)
+        if reached != len(raw):
+            raise ValueError(f"whole-file cursor {reached}/{len(raw)}")
+        if find_identifier(value) != path.stem:
+            raise ValueError(
+                f"stored identifier does not match exported filename {path.stem!r}"
+            )
+        if not isinstance(value, dict):
+            raise ValueError("SkillData root is not a named record")
+        group = value.get("actionGroupData")
+        group = group if isinstance(group, dict) else {}
+        timeline = group.get("timelineActions")
+        passive = group.get("passiveEventActions")
+        timeline_count = len(timeline) if isinstance(timeline, list) else None
+        passive_count = len(passive) if isinstance(passive, list) else None
+        direct_actions = _skill_data_direct_action_types(value)
+        facts = {
+            "skillId": value["skillId"],
+            "storedMemberCount": len(value),
+            "wholeFileCursorExact": True,
+            "identifierMatchesFilename": True,
+            "bytesConsumed": reached,
+            "timelineActionCount": timeline_count,
+            "passiveEventActionCount": passive_count,
+            "directStoredActionInventoryAvailable": direct_actions is not None,
+            "evidenceBoundary": (
+                "structuralOnly: selected native generated-wrapper member values "
+                "and nested union assignments; exact whole-file cursor and "
+                "exported-filename identifier; stored data only"
+            ),
+        }
+        if direct_actions is not None:
+            facts["directStoredActionOccurrenceCount"] = sum(
+                row["timelineOccurrences"] + row["passiveEventOccurrences"]
+                for row in direct_actions
+            )
+            facts["directStoredActionTypes"] = direct_actions
+        references = _skill_data_stored_references(value, reference_targets or {})
+        record = {
+            "id": relative,
+            "title": path.stem,
+            "status": "structural_only",
+            "summary": _summary_text((
+                f"members={len(value)}",
+                f"timeline actions={timeline_count}" if timeline_count is not None else "",
+                f"passive events={passive_count}" if passive_count is not None else "",
+            )),
+            "tags": [
+                *tags, "structural_only",
+                *(["has-timeline-actions"] if timeline_count else []),
+                *(["has-passive-events"] if passive_count else []),
+            ],
+            "source": _source(path, export_root, "application/octet-stream"),
+            "facts": facts,
+            "payload": value,
+            "payloadKind": "reader",
+        }
+        if direct_actions is not None:
+            record["searchTerms"] = sorted({row["type"] for row in direct_actions})
+        if references:
+            record["references"] = {
+                "evidenceBoundary": (
+                    "Stored AllowNextSkillAction.allowedSkillIdList strings from the "
+                    "selected native generated-wrapper value decode. A target is linked "
+                    "only by exact SkillData filename-stem match in this export; "
+                    "no runtime skill transition is observed."
+                ),
+                "items": references,
+            }
+        return record
+    except (OSError, Unsupported, ValueError, IndexError, struct.error,
+            UnicodeDecodeError, KeyError, TypeError) as exc:
+        return _error_record(path, export_root, "application/octet-stream", tags, exc)
+
+
 def _char_interact_perform_record(path: Path, export_root: Path) -> dict[str, Any]:
     relative = path.relative_to(export_root).as_posix()
     tags = ["npc", "char-interact", "memorypack"]
@@ -449,6 +727,10 @@ def _teleport_validation(data: bytes) -> Any:
     return decode_teleport_validation_table(data)
 
 
+def _teleport_validation_json(data: bytes) -> Any:
+    return decode_teleport_validation_json_table(data)
+
+
 def _dialog_id_table(data: bytes) -> Any:
     return decode_dialog_id_table_memorypack(DIALOG_ID_TABLE_REL, data, len(data))
 
@@ -470,7 +752,7 @@ CONFIG_TABLE_READERS: dict[str, tuple[Callable[[bytes], Any], str, str]] = {
     "GameplayConfig/GuideTeleportValidationDataTable.json": (
         _teleport_validation, "teleport-validation", "gameplay"),
     "GameplayConfig/LevelScriptTeleportValidationDataTable.json": (
-        _teleport_validation, "teleport-validation", "gameplay"),
+        _teleport_validation_json, "teleport-validation", "gameplay"),
     "GameplayConfig/MapTeleportValidationDataTable.json": (
         _teleport_validation, "teleport-validation", "gameplay"),
     "GameplayConfig/AetherEnergyLockConfigTable.json": (
@@ -491,6 +773,14 @@ CONFIG_TABLE_READERS: dict[str, tuple[Callable[[bytes], Any], str, str]] = {
     "Interactive/InteractiveTable.json": (
         decode_interactive_table, "interactive-table", "gameplay"),
 }
+
+# Config tables the client ships as plaintext UTF-8 JSON rather than as a
+# serialized payload. Their bytes are the readable source, so the record must
+# say so instead of presenting the file as an opaque binary blob.
+JSON_TEXT_CONFIG_TABLES = frozenset({
+    "GameplayConfig/LevelScriptTeleportValidationDataTable.json",
+})
+
 
 _TABLE_ERRORS = (
     OSError,
@@ -519,7 +809,11 @@ def _config_table_record(path: Path, export_root: Path) -> dict[str, Any]:
             "source": _source(path, export_root, "application/octet-stream"),
         }
     reader, kind, lane = entry
+    json_text = json_relative in JSON_TEXT_CONFIG_TABLES
+    media_type = "application/json" if json_text else "application/octet-stream"
     tags = ["config-table", kind, lane]
+    if json_text:
+        tags.append("json-text")
     try:
         decoded = reader(path.read_bytes())
         if decoded is None:
@@ -551,13 +845,13 @@ def _config_table_record(path: Path, export_root: Path) -> dict[str, Any]:
                 f"entries={decoded.get('entryCount')}" if decoded.get("entryCount") is not None else "",
             )) or kind,
             "tags": [*tags, status],
-            "source": _source(path, export_root, "application/octet-stream"),
+            "source": _source(path, export_root, media_type),
             "facts": facts,
             "payload": decoded,
             "payloadKind": "reader",
         }
     except _TABLE_ERRORS as exc:
-        return _error_record(path, export_root, "application/octet-stream", tags, exc)
+        return _error_record(path, export_root, media_type, tags, exc)
 
 
 def _walk(value: Any, path: str = "") -> Iterable[tuple[str, str, Any]]:
@@ -808,6 +1102,33 @@ def _input_signature(root: Path, selector: Callable[[Path], list[Path]]) -> dict
     }
 
 
+def _skill_data_plan() -> tuple[Any | None, int | None, dict[str, str], str]:
+    """Resolve the selected native plan before publishing or reusing SkillData."""
+    gate = check_installed_native_inputs()
+    signature = {
+        "gameAssemblySha256": gate.gameassembly_sha256,
+        "metadataSha256": gate.metadata_sha256,
+        "nativeStatus": gate.status,
+    }
+    if not gate.validated:
+        return None, None, signature, gate.detail or gate.status
+    try:
+        registry, audit = load_registry(
+            gameassembly=gate.gameassembly, metadata=gate.metadata,
+        )
+        signature["planStatus"] = str(audit.get("status") or "unavailable")
+        if audit.get("status") != "validated":
+            return None, None, signature, f"selected SkillData plan {signature['planStatus']}"
+        definition = registry.named_roots.get(SKILLDATA_TYPE)
+        if definition is None:
+            return None, None, signature, "selected SkillData root plan missing"
+        return registry, definition, signature, ""
+    except (OSError, ValueError, RuntimeError, KeyError, IndexError,
+            TypeError, struct.error) as exc:
+        signature["planStatus"] = "unavailable"
+        return None, None, signature, f"selected SkillData plan: {type(exc).__name__}: {exc}"
+
+
 def _reusable_descriptor(
     out_dir: Path,
     dataset_id: str,
@@ -903,6 +1224,30 @@ def main(argv: list[str] | None = None) -> int:
             _level_config_record,
             _all_json,
         ),
+        "level-data": (
+            "Level data",
+            "Exact and bounded LevelData fields, including stored spline geometry when reached; "
+            "no runtime traversal is implied.",
+            layout.json_dir / "LevelData",
+            _level_data_record,
+            _all_json,
+        ),
+        "skill-data": (
+            "Skill data",
+            "Selected-native SkillData member values, shown only after an exact whole-file "
+            "decode and stored-id match; no runtime action is implied.",
+            layout.json_dir / "SkillData",
+            _skill_data_record,
+            _all_json,
+        ),
+        "buff-action-receipts": (
+            "Buff action receipts",
+            "Authenticated CreateBuff and FinishBuffAdvanced action spans and wrapper fields; "
+            "the enclosing BuffData schema remains partial.",
+            layout.json_dir / "BuffData",
+            None,
+            _all_json,
+        ),
         "char-interact-perform": (
             "Character interact performances",
             "Complete CharInteractPerform frames: the typed action union, per-type counts, "
@@ -947,14 +1292,48 @@ def main(argv: list[str] | None = None) -> int:
         available = root.is_dir()
         diagnostic = "" if available else f"missing source directory: {root}"
         input_signature = _input_signature(root, selector)
-        descriptor = None if args.force else _reusable_descriptor(
+        skill_registry = None
+        skill_definition = None
+        buff_receipt_records = None
+        if dataset_id == "skill-data" and available:
+            skill_registry, skill_definition, native_signature, native_diagnostic = _skill_data_plan()
+            input_signature["selectedNative"] = native_signature
+            if skill_definition is None:
+                available = False
+                diagnostic = native_diagnostic
+        if dataset_id == "buff-action-receipts" and available:
+            try:
+                buff_receipt_records, receipt_signature = load_receipt_records(
+                    args.buff_action_receipts_report, args.buff_corpus_report,
+                    args.export_root,
+                )
+                input_signature["authenticatedReceipts"] = receipt_signature
+            except (OSError, ValueError, KeyError, TypeError,
+                    json.JSONDecodeError) as exc:
+                available = False
+                diagnostic = f"Buff action receipts unavailable: {type(exc).__name__}: {exc}"
+        descriptor = None if args.force or not available else _reusable_descriptor(
             args.out_dir, dataset_id, input_signature, args.shard_size
         )
         if descriptor is not None:
             descriptors.append(descriptor)
             print(f"{dataset_id}: reused {descriptor['recordCount']} unchanged records")
             continue
-        records = _build_records(root, args.export_root, reader, selector) if available else []
+        if available and dataset_id == "skill-data":
+            skill_paths = list(selector(root))
+            reference_targets = _skill_data_reference_targets(skill_paths, args.export_root)
+            records = [
+                _skill_data_record(
+                    path, args.export_root,
+                    registry=skill_registry, definition=skill_definition,
+                    reference_targets=reference_targets,
+                )
+                for path in skill_paths
+            ]
+        elif available and dataset_id == "buff-action-receipts":
+            records = buff_receipt_records
+        else:
+            records = _build_records(root, args.export_root, reader, selector) if available else []
         descriptor = publish_dataset(
             args.out_dir,
             dataset_id=dataset_id,
@@ -964,7 +1343,13 @@ def main(argv: list[str] | None = None) -> int:
             provenance={
                 "exportLayout": "endfield.export-layout.v2",
                 "sourceRoot": root.relative_to(args.export_root).as_posix(),
-                "reader": f"{reader.__module__}.{reader.__name__}",
+                "reader": (
+                    "scripts.game_data.memorypack.derived_values.decode_file"
+                    if dataset_id == "skill-data" else
+                    "scripts.game_data.memorypack.buff_action_receipt_corpus"
+                    if dataset_id == "buff-action-receipts" else
+                    f"{reader.__module__}.{reader.__name__}"
+                ),
                 "publisherRevision": PUBLISHER_REVISION,
                 "inputSignature": input_signature,
             },

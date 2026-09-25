@@ -9,16 +9,18 @@ Characters, Gameplay, Audio, Assets, Text, and Updates.
 
 Publishers cover two kinds of source. Families with a maintained
 `scripts/game_data/` reader -- `AnimationConfig`, NPC montages, `LevelConfig`,
-`CharInteractPerformCfgs`, `NavMesh`, `LevelMountPoint`, and the exact
+`LevelData`, `SkillData`, `CharInteractPerformCfgs`, `NavMesh`, `LevelMountPoint`, and the exact
 single-instance config tables -- publish that reader's own result. Already
 decoded Unity JSON -- AnimatorController and AnimatorOverrideController -- is
 not copied wholesale: the builder publishes selected facts plus a mounted
 `/export_full/` source link, and the browser loads a bounded raw preview only
 on request.
 
-Each adapter routes a file to the same reader
-`scripts.game_data.jsondata_corpus` routes it to, so the inspector and the
-corpus gate cannot disagree about which reader owns a family.
+The single-schema adapters route files to the same readers as
+`scripts.game_data.jsondata_corpus`. SkillData uses a separate selected-native
+generated-wrapper value reader: it publishes only after its own EOF and
+identifier checks, and the independent SkillData VFS corpus remains the owner
+of the narrower reviewed timeline-action framing claims.
 
 The page is a general viewer, not a per-decoder layout: the frontend is taught
 no decoder-specific schema, and every semantic it shows is recovered from the
@@ -37,6 +39,16 @@ classification the publisher did not record.
 The right pane shows scalar `facts` as quick-scan cards, then renders
 everything the record published -- `facts` and `payload` both, as two labelled
 roots -- in one annotated tree that preserves the publisher's own structure.
+When a publisher supplies `references`, a separate section shows each stored
+identifier and its exact source-field path. The SkillData publisher traverses
+nested action values, including fail/succeed branches and options, and requires
+the exact `AllowNextSkillAction` tag and type at each reference owner. Repeated
+IDs at different source paths remain separate authored occurrences. Each item
+names a target dataset
+and record only after a filename-stem match; the browser checks that the target
+is present in the loaded catalog before offering navigation. An absent or
+ambiguous match remains a labelled non-link. The relation's publisher boundary
+is displayed above the list, and these links make no runtime-use claim.
 
 The two roots are different in kind, and the page must not label one as if it
 contained the other. `facts` is the WebUI publisher adapter's own projection;
@@ -44,12 +56,21 @@ for an already-decoded JSON source it can hold far *more* than `payload`,
 because the adapter computed it from the whole raw file. `payload` is what the
 publisher republished of the decoder's output: the maintained reader's complete
 result only when that reader produced it, and otherwise a selected part of an
-already-decoded source whose mounted raw file stays authoritative. The page
-tells the two apart generically, by whether the payload reports its own
-`status`/`schemaStatus` -- a payload that does came from a maintained
-`scripts/game_data/` reader -- so no dataset id is hardcoded in the frontend. A
-publisher that republishes a projection under `payload` must therefore not
-report a framing status it did not establish.
+already-decoded source whose mounted raw file stays authoritative. The required
+`payloadKind` declares which one it is. A maintained reader's own
+`status`/`schemaStatus` reports its framing when present; a reader that returns
+values and a cursor leaves validation in the record status and publisher facts.
+For such value-only readers, the header shows a fully consumed file only when
+`facts.wholeFileCursorExact` is true and its `bytesConsumed` equals the source
+size. An `evidenceBoundary` in publisher facts appears in the header as a
+**publisher** boundary; it is never presented as a decoder claim. A decoder's
+own payload boundary takes precedence when both are present.
+No dataset id is hardcoded in the frontend. A publisher that republishes a
+projection under `payload` must not report a framing status it did not
+establish.
+Only the decoder payload root receives framing chips. A publisher fact may quote
+`bytesConsumed` or `serializedMemberCount` for quick scanning, but the facts
+projection did not itself consume those bytes or deserialize those members.
 
 Semantics are layered onto that structure by shape alone:
 
@@ -95,24 +116,80 @@ with a raw JSON source link.
 | `animator-controller` | Selected projection from the complete AnimeStudio JSON: layer/state/transition counts, condition tuples and occurrence counts, controller hashes grouped by source field, string table, idle-related names, curve fields, and compact object metadata. `Open raw source` is the complete JSON. |
 | `animator-override-controller` | Controller reference, override/null counts, AnimeStudio metadata, and every original/override clip reference. `Open raw source` is the complete JSON. |
 | `level-config` | Complete `decode_level_config` result: level identity and `idNum`, map id, seamless/dimension flags, level-data path hashes, and level grids. |
+| `level-data` | `frame_leveldata_named_prefix` result for each source file: named exact fields and byte boundaries where reached, an explicit open field and opaque remainder elsewhere, and stored spline rows when their collection is decoded. Quick facts show the owning level folder, closed-field count, stop field, and spline/knot counts only when those rows were reached; `has-splines` and `has-knots` tags make positive files searchable. The decoded spline shape does not establish a movement route or runtime traversal. |
+| `skill-data` | The selected build's `derived_values.decode_file` values for each exported SkillData file. A record is `structural_only` only when the native plan validates, the read cursor reaches EOF, and the stored `skillId` equals the exported filename; a failed file remains visible as `decode_error`. The status keeps nested union assignments at their structural evidence tier even with an exact cursor. The header shows the publisher's whole-file check and its structural-only boundary; quick facts and filters expose stored timeline/passive-event counts. `AllowNextSkillAction` (`0x000E`) rows, including those nested inside other action values, contribute stored `allowedSkillIdList` references with exact field paths. A unique filename-stem match opens another SkillData Inspector record; absent or duplicate matches stay unlinked. This is authored storage, not an observed skill transition. |
+| `buff-action-receipts` | Optional, report-backed projections for BuffData files with selected `0x0092` CreateBuff or `0x00B4` FinishBuffAdvanced action receipts. Each record is `bounded_partial` and contains only authenticated action byte spans and generated-wrapper field names. The source file, nested values, unlisted actions, and complete BuffData schema are not decoded by this dataset. |
+
 | `char-interact-perform` | Complete `decode_char_interact_complete_frame` result: the typed action union with per-type counts, audio actions, and the schema/union contract ids that name them. A file the complete frame rejects falls back to `frame_char_interact_prefix` and is published as a bounded row, never dropped. |
 | `navmesh` | Per-level `decode_luna_area` and `decode_navmesh_state_container` results, framed to EOF. A NavMesh filename neither reader routes stays visible as `unsupported`. |
 | `level-mount-point` | Validated `decode_level_mount_points` trees: sub-root types, node and mount-point counts, teleports, and tree depth. |
 | `config-table` | Single-instance config tables that each have their own exact reader: teleport validation, `DialogIdTable`, aether-energy locks, matrix shockwave beats, gold coins, bamboo-raft tasks, mission areas, sub-game instances, the world-entity registry, and `InteractiveTable`. |
+
+SkillData catalog entries also carry optional `searchTerms` for the type names
+of direct action unions in `timelineActions[*]._sequenceActionData.actionData`
+and `passiveEventActions[*].actions[*].actionData`. The detail publisher facts
+group each exact stored tag/type pair and count its timeline and passive-event
+occurrences separately. If either array shape differs, the optional inventory
+is withheld as a whole; the decoded record remains available. Nested branch
+actions are outside these counts and remain in the payload tree. The sidebar
+search uses the catalog terms without loading detail shards. These are stored
+union assignments, not observed action execution or verified runtime timing.
+The detail's collapsed term section uses those same publisher terms as exact,
+same-dataset filters. When the publisher also supplies a complete
+`directStoredActionTypes` inventory, it shows each stored union tag and this
+record's timeline/passive occurrence counts beside the type. The separate
+`records` number counts catalog records that carry the term, never occurrences
+or observed uses. Nested branch actions remain outside that inventory.
+Selecting a term clears other list facets so the matching records are visible;
+editing the search box returns to the normal regex search. A record without the
+validated inventory keeps the generic Catalog terms view. The frontend does
+not interpret the term's schema or promote its evidence tier.
+
+For a record with that complete direct-action inventory, the detail also lists
+each direct stored action at its decoded `timelineActions` or
+`passiveEventActions` array indices, alongside its exact field path and union
+tag. The frontend checks the payload's type/tag counts against the publisher's
+inventory before offering locations; a changed or incomplete shape withholds
+the list. Selecting one expands its exact node in the annotated structure.
+These are array positions in stored values, not observed execution order or
+timing; nested branch actions remain outside this direct-action list.
+
+The Buff action receipt dataset is published only when the selected receipt
+report matches the current Buff VFS corpus report byte-for-byte by digest,
+the report's input and source identity sets agree, both selected native
+contracts match the installed `GameAssembly.dll`, `global-metadata.dat`, and
+`UnityPlayer.dll`, and every Buff source identity still matches its exported
+logical bytes. Missing or changed evidence marks the dataset unavailable and
+publishes no cached records. A record's collapsed span list locates each
+verified wrapper in the projected tree by byte range; its fields retain the
+reader's exact names and ranges. The list makes no claim about nested field
+semantics, whole-file ownership, runtime execution, or trigger order.
 
 A family is published here only when a maintained reader already owns it. The
 adapter never softens that reader: status comes from the reader's own
 `schemaStatus`/`status`, a reader that fails closed on an unsupported variant
 produces a visible `decode_error` row carrying its reason, and a file no reader
 routes is published as `unsupported` rather than omitted. The current corpus
-has exactly one such fail-closed row,
-`GameplayConfig/LevelScriptTeleportValidationDataTable.json` ("table member
-count changed"); it is evidence of build drift in that one table, not a bug in
-the adapter, and it must not be made to disappear by widening the reader.
+publishes no such fail-closed row.
+
+`GameplayConfig/LevelScriptTeleportValidationDataTable.json` is the one
+teleport-validation table the client ships unserialized, as indented UTF-8 JSON
+while its four siblings are MemoryPack. Its earlier `decode_error` ("table
+member count changed") was a plaintext file dispatched to the binary reader,
+never build drift. It now routes to `decode_teleport_validation_json_table`,
+which proves the same ten row members, publishes the same row shape, and mounts
+as `application/json`. A second container always gets its own reader here, never
+a widened one.
 
 Families deliberately still absent: LipSync has an exact reader but needs the
-paged-catalog extension first, and LevelData, LevelScriptData, BuffData and
-SkillData are bounded/partial rather than fully understood. Terrain, Streaming,
+paged-catalog extension first, and LevelScriptData and complete BuffData
+remain bounded/partial rather than fully understood. SkillData is included from the
+selected native generated-wrapper plan only while that plan validates; missing
+or mismatched native inputs publish an unavailable dataset with a diagnostic,
+never cached rows from a previous build. The source signature includes the
+selected native input hashes, so a client change cannot silently reuse old
+SkillData shards. LevelData is included with its per-file exact or partial status
+and open boundary visible. Terrain, Streaming,
 irradiance volumes and BundleManifest decode to anonymous ranges with no
 per-record identity worth browsing.
 
@@ -127,10 +204,16 @@ are under `payload.fields.montages`, `payload.fields.syncGroupCurves`, and
 ```bat
 python -m scripts.webui.data_inspector.build_data_inspector
 python -m scripts.webui.data_inspector.build_data_inspector --dataset animation-config
+python -m scripts.webui.data_inspector.build_data_inspector --dataset level-data
+python -m scripts.webui.data_inspector.build_data_inspector --dataset skill-data
+python -m scripts.webui.data_inspector.build_data_inspector --dataset buff-action-receipts
 python -m scripts.webui.data_inspector.build_data_inspector --force
 ```
 
-The normal post-Story build graph runs the first command. A relative-path,
+The normal post-Story build graph runs the first command. Buff action receipts
+are optional: the dataset requires the current generated Buff corpus and action
+receipt reports under `reports/animestudio/`; explicit report paths are available
+through `--buff-corpus-report` and `--buff-action-receipts-report`. A relative-path,
 size, and modification-time signature reuses unchanged generated shards; this
 is a build cache, not game-data evidence. `--force` bypasses it. The stored
 signature must be compared through `contract.json_safe`, because publication
@@ -179,6 +262,7 @@ Each record has these common fields:
 | `facts` | optional selected domain values for quick review |
 | `payload` | optional decoder output, republished as the publisher received it |
 | `payloadKind` | required with `payload`: `reader` or `projection` (see below) |
+| `references` | optional publisher projection: `evidenceBoundary` plus `items[]` with `kind`, `sourcePath`, `storedId`, `targetDatasetId`, `targetRecordId` (null if unresolved), and `targetState` (`present`, `absent`, or `ambiguous`); only a present target found in the loaded catalog becomes a link |
 | `diagnostic` | bounded failure detail when decoding did not succeed |
 
 All output is strict, browser-safe JSON. Integers outside JavaScript's exact
@@ -236,9 +320,8 @@ current file counts belong in `reports/animestudio/`, not here.
 
 | Candidate | Owning reader | Why it is worth publishing |
 | --- | --- | --- |
-| LevelData | `leveldata_binary` | closes a 43-field schema plus camera poses, environment volumes, patrol/attract/waypoint graphs; the richest structure the annotated tree would show |
 | LevelScriptData | `levelscript_binary` | the Story activation carrier; a named terminal suffix with weaker earlier framing, so `bounded_partial` rows would be visible as such |
-| BuffData, SkillData | `memorypack.buff*`, `memorypack.skill*` | the gameplay lane's two open families; publishing the partial cursor and its opaque ranges is exactly what the tree's framing/opaque markers are for |
+| Complete BuffData | `memorypack.buff*` | the gameplay lane's open Buff family; the receipt dataset exposes two action wrapper interiors but not the reader's partial root cursor or opaque ranges |
 | SpawnerConfig, Interactive, AtmosphericNpcData, LevelScriptTemplateData, MapConfig, UILevelMapLoadConfig, GPUISystemConfig, MissionRuntimeAsset | their matching `scripts/game_data/*_binary.py` / `*_json.py` readers | mid-size families with maintained readers and no page of their own |
 | LipSync | `memorypack.lipsync` | an exact 15-member reader through EOF, but by far the largest JsonData family; it needs the paged-catalog extension below before it can be published |
 | StringPathHash, FacBoneTRS | `extend_data_binary` | the global source-path catalog and facial-bone data; self-bounded, and useful for resolving path hashes seen in other records |

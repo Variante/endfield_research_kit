@@ -27,13 +27,23 @@ The builder never re-decodes bytes and never reads the installed client.
    remains the authority for the block list; a focused test compares it.
 3. `memory/game_data/README.md` supplies the four level names and questions
    (the `## The four levels` table), parsed rather than copied.
+4. The export's AnimeStudio asset maps (`meta/<Layer>/asset_map/`) supply one
+   entry per mapped Unity object: source chunk, PathID and type. The export's
+   own VFS index (`meta/<Layer>/vfs_index/`) assigns each chunk to its block,
+   so a chunk added by a client update after the payload profile still
+   resolves. Layers are read Persistent first and an object is keyed by
+   (type, PathID), so a bundle Persistent replaces is counted once. The
+   declarations' `unityObjectTypes` give each type its four stages; a family
+   opts in with `objectTypes: true`.
 
 Every input is fail-closed: a missing file, unexpected `schema`, malformed
 profile row, unknown raw block id or changed exporter name, a level table that
 is not 1..4, an ambiguous family pattern, a stage citing a missing source or an
 unknown evidence limit, a level stronger than the one below it, or level 4
-declared `closed` all abort the build. A path matching no declared family is
-kept as `Other / unclassified` with all four levels `notAssessed`.
+declared `closed` all abort the build, as do a missing asset map or VFS index
+and an asset-map chunk no VFS index assigns to a declared block. A path matching no declared family is
+kept as `Other / unclassified` with all four levels `notAssessed`; so is an
+asset-map type with no declaration.
 
 ## Primary generated outputs
 
@@ -41,11 +51,13 @@ kept as `Other / unclassified` with all four levels `notAssessed`.
 webui/data/recovery/index.json
 ```
 
-One compact v4 payload: `levels`, `stageStates`, `lanes` (id and label),
+One compact v5 payload: `levels`, `stageStates`, `lanes` (id and label),
 `evidenceLimits`, `sources`, and `vfs` with `totals` and `blocks[]`. Each
 block carries its measured tally and its `families[]`; each family carries its
-measured tally with sample paths, its path pattern, and four declared stages.
-Chunk names are counted (`containerChunks`) but not listed.
+measured tally with sample paths, its path pattern, and four declared stages;
+the Unity bundle family also carries `objectTypes[]`, each with a measured
+object count and four declared stages. Chunk names are counted
+(`containerChunks`) but not listed.
 
 ## Evidence boundary
 
@@ -58,16 +70,54 @@ Chunk names are counted (`containerChunks`) but not listed.
   `closed` means the stated boundary is closed, `partial` that only selected
   records or fields are, and `open`/`notAssessed` keep the gap visible. No
   family can claim L4 closed. A stage is not a fraction of files or bytes.
+- IFix patch L3 names the current opcodes and selected operand routes through
+  authenticated file-VM code, including frame slots, exception records, and
+  uniquely resolved external signatures. Its L4 identifies declared fix
+  targets and conditional VM invoker flow only. A patch load, dispatch, and
+  resulting behavior still lack a runtime receipt; both stages remain partial.
+- DynamicStreaming `fb_version.bytes` has its own stages. The authenticated
+  current corpus closes its version-root framing, and selected native accessors
+  name the root and entry fields. The same-scene IdComp join and the native
+  version-ban route support only a partial L4 reading: the route has build and
+  branch guards, and the page makes no claim about a live phase, selected
+  file, or ban result.
+- DynamicStreaming `fb_init` and `fb_streaming` now have partial L3/L4 stages.
+  The selected route stores their paths separately, requests two streams,
+  and resolves their ready buffers to separate FlatBuffer roots. At the same
+  ordinal, a selected consumer passes the second-root field-six row's ID vector
+  and first-root field-seven row's descriptors and nested blob to a native
+  builder. Its signed ID/stride loop copies count-times-stride byte segments;
+  the authenticated pair corpus independently confirms exact blob tiling.
+  Descriptor meanings, chosen VFS files, and live activation remain open.
+- IV room files now have a partial L4 stage. The selected ready-buffer handler
+  checks their magic, reads the stored header structure and copies grid-cell
+  count times 8 or 16 bytes; the current files fit the 16-byte branch. The
+  path builder appends a formatted room name to the supplied root directory.
+  The copied allocation reaches a callback, command binding, and virtual
+  dispatch request sized by cell count. The two finite triples have only an
+  inferred bounds role, and record fields, live root value, selected file,
+  GPU execution and texture format remain open.
+- Terrain `LAYER_C/D/N` now has partial L4 stages. Selected native paths
+  conditionally carry the grouped path-result handles to owner-local resources
+  bound to `_ConeMaps`, `_Splats`, and `_Normals`, respectively. This replaces
+  the former page claim that no `LAYER_C` consumer was identified. The named
+  render-property route does not identify stored pixel channels, managed
+  `VirtualTextureRenderer` fields, shader sampling, or which installed file a
+  live scene selected.
 - Bar widths use `log10(1 + 100 × value / smallest nonzero value)` normalized
   across segments so every observed block stays visible; tooltips give the
   untransformed value and true share. The bar describes inventory, never
   recovery coverage.
+- Object counts cover only the types AnimeStudio's asset map lists; GameObject,
+  Transform, renderer components and other unmapped types do not appear, so the
+  counts are not a full census of a bundle's objects. The asset-map scan adds
+  about a minute to the build.
 - Evidence limits (`evidenceLimits`) record a disconfirmed route or a runtime
   observation gap, not a completion queue; they do not rule out future static
   evidence.
 - Reports under `reports/` are local-only; `sources` records each input's size
   and mtime, and the page shows an explicit missing or schema-mismatch state
-  when `index.json` is absent or not v4.
+  when `index.json` is absent or not v5.
 
 ## Focused refresh
 

@@ -105,6 +105,7 @@ def _catalog_entry(record: dict[str, Any], shard: str) -> dict[str, Any]:
         "status": str(record.get("status") or "unknown"),
         "summary": str(record.get("summary") or ""),
         "tags": [str(value) for value in record.get("tags") or [] if str(value)],
+        "searchTerms": [str(value) for value in record.get("searchTerms") or [] if str(value)],
         "sourcePath": str(source.get("path") or ""),
         "shard": shard,
     }

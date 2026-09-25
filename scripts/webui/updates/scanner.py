@@ -15,6 +15,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Iterable
 
+from scripts.webui.decoded_payloads import render_decoded_payload
+
 
 TEXT_EXTENSIONS = {
     ".bat",
@@ -38,6 +40,15 @@ READ_CHUNK_SIZE = 1024 * 1024
 PROGRESS_EVERY_FILES = 5000
 TEXT_DIFF_MAX_BYTES = 256 * 1024
 TEXT_DIFF_MAX_LINES = 240
+
+# What the stored diffable text of a file is. A ``.json`` name means nothing
+# about the bytes here: most of the export's Json tree is serialized, so the
+# form is decided by the content and by whether a maintained reader owns it.
+TEXT_KIND_PLAIN = "plain"            # the file's own UTF-8 text
+TEXT_KIND_DECODED_WHOLE = "decoded_whole_file"  # a reader that read every byte
+TEXT_KIND_DECODED_PARTIAL = "decoded_partial"   # a reader bounded to part of it
+TEXT_KIND_BINARY = "binary"          # serialized, and no reader routes it
+TEXT_KIND_TOO_LARGE = "binary_too_large"  # serialized, and over the diff limit
 DEFAULT_HASH_WORKERS = max(2, min(8, (os.cpu_count() or 4)))
 
 
@@ -50,6 +61,7 @@ class SnapshotRow:
     line_count: int | None
     extension: str
     text_content: str | None = None
+    text_kind: str | None = None
 
 
 @dataclasses.dataclass(slots=True)
@@ -65,6 +77,7 @@ class PendingFile:
     old_digest: str | None
     old_line_count: int | None
     old_text_content: str | None
+    old_text_kind: str | None = None
 
 
 @dataclasses.dataclass(slots=True)
@@ -80,6 +93,8 @@ class ScannedFile:
     old_digest: str | None
     old_line_count: int | None
     old_text_content: str | None
+    text_kind: str | None = None
+    old_text_kind: str | None = None
 
 
 @dataclasses.dataclass(slots=True)
@@ -94,6 +109,8 @@ class ChangeEntry:
     new_line_count: int | None = None
     text_diff: list[str] | None = None
     text_diff_truncated: bool = False
+    text_kind: str | None = None
+    text_diff_note: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         payload = {
@@ -110,10 +127,14 @@ class ChangeEntry:
             payload["size_delta"] = self.new_size - self.old_size
         if self.old_line_count is not None and self.new_line_count is not None:
             payload["line_delta"] = self.new_line_count - self.old_line_count
+        if self.text_kind and self.text_kind != TEXT_KIND_PLAIN:
+            payload["text_kind"] = self.text_kind
         if self.text_diff:
             payload["text_diff"] = self.text_diff
             if self.text_diff_truncated:
                 payload["text_diff_truncated"] = True
+        if self.text_diff_note:
+            payload["text_diff_note"] = self.text_diff_note
         return payload
 
 
@@ -212,6 +233,7 @@ class ChangeAccumulator:
                 new_line_count=scanned.line_count,
                 text_diff=text_diff,
                 text_diff_truncated=text_diff_truncated,
+                text_kind=scanned.text_kind,
             ),
         )
 
@@ -233,6 +255,8 @@ class ChangeAccumulator:
             new_line_count=scanned.line_count,
             text_diff=text_diff,
             text_diff_truncated=text_diff_truncated,
+            text_kind=scanned.text_kind,
+            text_diff_note=modified_diff_note(scanned, text_diff),
         )
         self._remember_sample(self.modified_examples, entry)
         self._remember_line_change(entry)
@@ -244,6 +268,7 @@ class ChangeAccumulator:
         old_size: int,
         old_line_count: int | None,
         old_text_content: str | None = None,
+        old_text_kind: str | None = None,
     ) -> None:
         self.deleted_count += 1
         self.deleted_by_extension[display_extension(extension)] += 1
@@ -262,6 +287,7 @@ class ChangeAccumulator:
                 old_line_count=old_line_count,
                 text_diff=text_diff,
                 text_diff_truncated=text_diff_truncated,
+                text_kind=old_text_kind,
             ),
         )
 
@@ -319,6 +345,49 @@ def is_text_extension(extension: str) -> bool:
     return extension.lower() in TEXT_EXTENSIONS
 
 
+def textual_form(rel_path: str, raw: bytes) -> tuple[str | None, str]:
+    """Return the diffable text for one file's bytes, and which form it is.
+
+    A serialized payload has no readable text of its own. Rendering it with
+    replacement characters and diffing that produces mojibake, so a payload a
+    maintained reader owns is rendered through that reader instead, and one no
+    reader owns gets no text at all.
+    """
+
+    try:
+        return raw.decode("utf-8-sig"), TEXT_KIND_PLAIN
+    except UnicodeDecodeError:
+        pass
+    decoded = render_decoded_payload(rel_path, raw)
+    if decoded is None:
+        return None, TEXT_KIND_BINARY
+    kind = (
+        TEXT_KIND_DECODED_WHOLE
+        if decoded.coverage == "whole_file"
+        else TEXT_KIND_DECODED_PARTIAL
+    )
+    return decoded.text, kind
+
+
+def modified_diff_note(scanned: "ScannedFile", text_diff: list[str] | None) -> str | None:
+    """Say why a changed file shows no diff, when the reason is not obvious.
+
+    A serialized payload can change in bytes a reader does not cover, or in
+    bytes no reader reads at all. Either way the file did change, so the page
+    must say what it is not showing instead of leaving an empty panel.
+    """
+
+    if text_diff:
+        return None
+    if scanned.text_kind == TEXT_KIND_BINARY:
+        return "binary_no_reader"
+    if scanned.text_kind == TEXT_KIND_TOO_LARGE:
+        return "binary_too_large"
+    if scanned.text_kind in (TEXT_KIND_DECODED_WHOLE, TEXT_KIND_DECODED_PARTIAL):
+        return "decoded_identical"
+    return None
+
+
 def build_text_diff(
     old_text: str | None,
     new_text: str | None,
@@ -343,10 +412,13 @@ def build_text_diff(
     return diff or None, False
 
 
-def scan_file(path: str, count_lines: bool, capture_text: bool) -> tuple[str, int | None, str | None]:
+def scan_file(
+    path: str, count_lines: bool, capture_text: bool, rel_path: str
+) -> tuple[str, int | None, str | None, str | None]:
     digest = hashlib.blake2b(digest_size=16)
     line_count = 0
     last_byte: bytes | None = None
+    has_nul = False
     text_chunks: list[bytes] | None = [] if capture_text else None
     with open(path, "rb") as handle:
         while True:
@@ -359,12 +431,27 @@ def scan_file(path: str, count_lines: bool, capture_text: bool) -> tuple[str, in
             if count_lines:
                 line_count += chunk.count(b"\n")
                 last_byte = chunk[-1:]
+                has_nul = has_nul or b"\x00" in chunk
     if count_lines and last_byte is not None and last_byte != b"\n":
         line_count += 1
-    text_content = None
-    if text_chunks is not None:
-        text_content = b"".join(text_chunks).decode("utf-8-sig", errors="replace")
-    return digest.hexdigest(), (line_count if count_lines else None), text_content
+    if not count_lines:
+        return digest.hexdigest(), None, None, None
+    if text_chunks is None:
+        # Over the diff size limit, so the bytes were never held. A NUL still
+        # proves the file is not text, so its stray line feeds are not reported
+        # as lines and the page can say why there is no diff -- the size, not a
+        # missing reader.
+        if has_nul:
+            return digest.hexdigest(), None, None, TEXT_KIND_TOO_LARGE
+        return digest.hexdigest(), line_count, None, None
+    text_content, kind = textual_form(rel_path, b"".join(text_chunks))
+    if text_content is None:
+        return digest.hexdigest(), None, None, kind
+    if kind != TEXT_KIND_PLAIN:
+        # "Lines" must describe the text actually diffed, not the payload's
+        # stray line-feed bytes, or a decoded diff and its line delta disagree.
+        line_count = len(text_content.splitlines())
+    return digest.hexdigest(), line_count, text_content, kind
 
 
 def should_ignore_path(rel_path: str, ignored_exact_paths: set[str], ignored_dir_prefixes: tuple[str, ...]) -> bool:
@@ -466,13 +553,16 @@ def ensure_database_schema(conn: sqlite3.Connection) -> None:
             digest TEXT NOT NULL,
             line_count INTEGER,
             extension TEXT NOT NULL,
-            text_content TEXT
+            text_content TEXT,
+            text_kind TEXT
         )
         """
     )
     columns = {row[1] for row in conn.execute("PRAGMA table_info(files)")}
     if "text_content" not in columns:
         conn.execute("ALTER TABLE files ADD COLUMN text_content TEXT")
+    if "text_kind" not in columns:
+        conn.execute("ALTER TABLE files ADD COLUMN text_kind TEXT")
     conn.commit()
 
 
@@ -487,7 +577,8 @@ def prepare_scan_table(conn: sqlite3.Connection) -> None:
             digest TEXT NOT NULL,
             line_count INTEGER,
             extension TEXT NOT NULL,
-            text_content TEXT
+            text_content TEXT,
+            text_kind TEXT
         )
         """
     )
@@ -498,8 +589,8 @@ def batch_insert_rows(conn: sqlite3.Connection, rows: list[SnapshotRow]) -> None
         return
     conn.executemany(
         """
-        INSERT INTO files_scan (path, size, mtime_ns, digest, line_count, extension, text_content)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO files_scan (path, size, mtime_ns, digest, line_count, extension, text_content, text_kind)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             (
@@ -510,6 +601,7 @@ def batch_insert_rows(conn: sqlite3.Connection, rows: list[SnapshotRow]) -> None
                 row.line_count,
                 row.extension,
                 row.text_content,
+                row.text_kind,
             )
             for row in rows
         ],
@@ -528,12 +620,18 @@ def process_pending_batch(
 
     insert_rows: list[SnapshotRow] = []
     future_map = {
-        executor.submit(scan_file, item.full_path, item.count_lines, item.capture_text): item
+        executor.submit(
+            scan_file,
+            item.full_path,
+            item.count_lines,
+            item.capture_text,
+            item.rel_path,
+        ): item
         for item in pending_batch
     }
     for future in concurrent.futures.as_completed(future_map):
         item = future_map[future]
-        digest, line_count, text_content = future.result()
+        digest, line_count, text_content, text_kind = future.result()
         scanned = ScannedFile(
             rel_path=item.rel_path,
             size=item.size,
@@ -546,6 +644,8 @@ def process_pending_batch(
             old_digest=item.old_digest,
             old_line_count=item.old_line_count,
             old_text_content=item.old_text_content,
+            text_kind=text_kind,
+            old_text_kind=item.old_text_kind,
         )
         insert_rows.append(
             SnapshotRow(
@@ -556,6 +656,7 @@ def process_pending_batch(
                 line_count=line_count,
                 extension=item.extension,
                 text_content=text_content,
+                text_kind=text_kind,
             )
         )
         if item.old_digest is None:
@@ -569,9 +670,12 @@ def process_pending_batch(
     pending_batch.clear()
 
 
-def read_old_row(select_cursor: sqlite3.Cursor, rel_path: str) -> tuple[int, int, str, int | None, str, str | None] | None:
+def read_old_row(
+    select_cursor: sqlite3.Cursor, rel_path: str
+) -> tuple[int, int, str, int | None, str, str | None, str | None] | None:
     row = select_cursor.execute(
-        "SELECT size, mtime_ns, digest, line_count, extension, text_content FROM files WHERE path = ?",
+        "SELECT size, mtime_ns, digest, line_count, extension, text_content, text_kind "
+        "FROM files WHERE path = ?",
         (rel_path,),
     ).fetchone()
     if row is None:
@@ -583,13 +687,17 @@ def read_old_row(select_cursor: sqlite3.Cursor, rel_path: str) -> tuple[int, int
         (None if row[3] is None else int(row[3])),
         str(row[4]),
         None if row[5] is None else str(row[5]),
+        None if row[6] is None else str(row[6]),
     )
 
 
-def find_deleted_rows(conn: sqlite3.Connection) -> Iterable[tuple[str, int, str, int | None, str, str | None]]:
+def find_deleted_rows(
+    conn: sqlite3.Connection,
+) -> Iterable[tuple[str, int, str, int | None, str, str | None, str | None]]:
     return conn.execute(
         """
-        SELECT files.path, files.size, files.digest, files.line_count, files.extension, files.text_content
+        SELECT files.path, files.size, files.digest, files.line_count, files.extension,
+               files.text_content, files.text_kind
         FROM files
         LEFT JOIN files_scan ON files.path = files_scan.path
         WHERE files_scan.path IS NULL
@@ -637,6 +745,10 @@ def change_entry_from_dict(payload: dict[str, object]) -> ChangeEntry:
         else int(payload["new_line_count"]),
         text_diff=list(payload.get("text_diff") or []) or None,
         text_diff_truncated=bool(payload.get("text_diff_truncated")),
+        text_kind=None if payload.get("text_kind") is None else str(payload["text_kind"]),
+        text_diff_note=(
+            None if payload.get("text_diff_note") is None else str(payload["text_diff_note"])
+        ),
     )
 
 
@@ -819,9 +931,23 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                     accumulator.note_scan()
                     old_row = read_old_row(select_cursor, rel_path)
                     if old_row is not None:
-                        old_size, old_mtime_ns, old_digest, old_line_count, old_extension, old_text_content = old_row
+                        (
+                            old_size,
+                            old_mtime_ns,
+                            old_digest,
+                            old_line_count,
+                            old_extension,
+                            old_text_content,
+                            old_text_kind,
+                        ) = old_row
                         should_capture_text = is_text_extension(extension) and size <= TEXT_DIFF_MAX_BYTES
-                        has_cached_text = not should_capture_text or old_text_content is not None
+                        # A payload with no diffable text is still fully
+                        # scanned: the recorded kind, not the text, says so.
+                        has_cached_text = (
+                            not should_capture_text
+                            or old_text_content is not None
+                            or old_text_kind is not None
+                        )
                         if size == old_size and mtime_ns == old_mtime_ns and has_cached_text:
                             accumulator.note_reused_metadata_match()
                             unchanged_rows.append(
@@ -833,6 +959,7 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                                     line_count=old_line_count,
                                     extension=old_extension,
                                     text_content=old_text_content,
+                                    text_kind=old_text_kind,
                                 )
                             )
                             if len(unchanged_rows) >= config.hash_batch_size:
@@ -845,6 +972,7 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                         old_digest = None
                         old_line_count = None
                         old_text_content = None
+                        old_text_kind = None
 
                     is_text = is_text_extension(extension)
                     pending_batch.append(
@@ -860,6 +988,7 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                             old_digest=old_digest,
                             old_line_count=old_line_count,
                             old_text_content=old_text_content,
+                            old_text_kind=old_text_kind,
                         )
                     )
                     if len(pending_batch) >= config.hash_batch_size:
@@ -870,13 +999,22 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                 batch_insert_rows(conn, unchanged_rows)
                 process_pending_batch(pending_batch, conn, accumulator, executor)
 
-                for rel_path, old_size, old_digest, old_line_count, extension, old_text_content in find_deleted_rows(conn):
+                for (
+                    rel_path,
+                    old_size,
+                    old_digest,
+                    old_line_count,
+                    extension,
+                    old_text_content,
+                    old_text_kind,
+                ) in find_deleted_rows(conn):
                     accumulator.record_deleted(
                         rel_path,
                         extension,
                         int(old_size),
                         None if old_line_count is None else int(old_line_count),
                         old_text_content,
+                        old_text_kind,
                     )
 
                 conn.execute("DROP TABLE files")

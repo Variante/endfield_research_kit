@@ -4777,127 +4777,379 @@ body.is-resizing-filter * {
   border-top: 1px solid var(--border);
 }
 
-
-.gameplay-section summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
+.gameplay-section-title {
+  margin: 0 0 10px;
   color: var(--accent);
-  cursor: pointer;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  list-style: none;
-  user-select: none;
-}
-
-.gameplay-section summary::-webkit-details-marker {
-  display: none;
-}
-
-.gameplay-section summary::before {
-  content: "+";
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  border: 1px solid rgba(var(--fg-rgb), 0.18);
-  border-radius: 4px;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1;
-}
-
-.gameplay-section[open] summary::before {
-  content: "-";
-}
-
-.gameplay-section:not([open]) summary {
-  margin-bottom: 0;
 }
 
 .gameplay-section-body {
   min-width: 0;
 }
 
-/* Active-skill table: one row per playable skill (Normal Attack / Skill /
-   Ultimate / Combo), each split into a description / level+buffs+cost /
-   projectiles column. */
-.gameplay-active-skill-table {
+/* Character skills: one card per playable skill (Normal Attack / Skill /
+   Ultimate / Combo). The header carries the level slider; the description
+   sits beside the selected level's values, then flat damage/projectile
+   tables. Each card is the only container; its parts are separated by rules. */
+/* Character Data / Loadout switch and the loadout calculator. */
+.gameplay-view-switch {
+  display: inline-flex;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 3px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  overflow: hidden;
 }
 
-.gameplay-projectile-coverage-note {
-  margin: 0;
-  padding: 8px 14px;
-  border-bottom: 1px solid var(--border);
-  background: rgba(var(--accent-rgb), 0.045);
+.gameplay-view-switch-button {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
   color: var(--muted);
-  font-size: 10px;
-  line-height: 1.45;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.gameplay-projectile-no-template {
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.4;
+.gameplay-view-switch-button.is-active {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
 }
 
-.gameplay-active-skill-header,
-.gameplay-active-skill-row {
+.gameplay-loadout {
   display: grid;
-  grid-template-columns: minmax(300px, 1.35fr) minmax(260px, 1fr) minmax(240px, 0.9fr);
-  gap: 18px;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
 }
 
-.gameplay-active-skill-header {
-  padding: 10px 16px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
-  background: rgba(var(--fg-rgb), 0.03);
-  border-bottom: 1px solid var(--border);
+.gameplay-loadout-controls {
+  display: grid;
+  gap: 12px;
 }
 
-.gameplay-active-skill-row {
-  padding: 18px 16px;
+.gameplay-loadout-block {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   background: var(--bg-3);
 }
 
-.gameplay-active-skill-row + .gameplay-active-skill-row {
-  border-top: 1px solid var(--border);
+.gameplay-loadout-block-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
 }
 
-.gameplay-active-skill-desc,
-.gameplay-active-skill-levels,
-.gameplay-active-skill-projectiles {
+.gameplay-loadout-slider {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+}
+
+.gameplay-loadout-slider input {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.gameplay-loadout-fixed {
+  font-size: 12px;
+}
+
+.gameplay-loadout-block select {
+  width: 100%;
   min-width: 0;
 }
 
-.gameplay-active-skill-desc > .gameplay-group-title-wrap {
-  margin-bottom: 4px;
+.gameplay-loadout-slot {
+  display: grid;
+  gap: 4px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.08);
 }
 
-.gameplay-active-skill-desc > .gameplay-description {
-  margin-top: 8px;
+.gameplay-loadout-slot-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
 }
 
-.gameplay-active-skill-levels .gameplay-level-table,
-.gameplay-active-skill-levels .gameplay-level-slider-wrap {
-  margin-top: 0;
+.gameplay-loadout-lines {
+  display: grid;
+  gap: 4px;
+  padding-left: 8px;
+  border-left: 2px solid rgba(var(--accent-rgb), 0.2);
 }
 
-.gameplay-level-pane.gameplay-active-skill-pane {
+.gameplay-loadout-warn {
+  color: var(--accent);
+}
+
+.gameplay-loadout-suits {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.gameplay-loadout-suits .is-active {
+  color: var(--text);
+}
+
+.gameplay-loadout-stats tr.is-changed td b {
+  color: var(--accent);
+}
+
+.gameplay-loadout-stats td div {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+@media (max-width: 900px) {
+  .gameplay-loadout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Potential/passive effect rows the description does not state. */
+.gameplay-effect-list ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.gameplay-effect-list li small {
+  margin-left: 4px;
+  color: var(--muted);
+}
+
+/* A value substituted into an authored description at the selected level. */
+.gameplay-desc-value {
+  color: var(--accent);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.gameplay-skill-notes {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.gameplay-skill-blocks {
+  display: grid;
+  gap: 12px;
+}
+
+.gameplay-skill-block {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-3);
+}
+
+.gameplay-skill-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.gameplay-skill-block-title {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+.gameplay-skill-block-title strong {
+  font-size: 14px;
+}
+
+.gameplay-skill-type {
+  margin-left: 8px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.gameplay-skill-block-head .gameplay-level-slider-control {
+  flex: 0 1 320px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.gameplay-skill-level-single {
+  color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+
+.gameplay-skill-block-levels .gameplay-level-pane {
+  display: grid;
+  gap: 10px;
   grid-template-columns: minmax(0, 1fr);
+  padding: 0;
 }
 
-.gameplay-active-skill-col-label {
+.gameplay-skill-level-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.gameplay-skill-level-footer .gameplay-blackboard {
+  margin: 0;
+}
+
+.gameplay-action-table td:first-child {
+  width: 1%;
+}
+
+.gameplay-action-value {
+  display: inline-block;
+  margin-right: 10px;
+  white-space: nowrap;
+}
+
+.gameplay-action-value b,
+.gameplay-action-table td > div > b {
+  font-weight: 600;
+}
+
+.gameplay-action-table td > div small {
+  display: inline;
+}
+
+.gameplay-inline-count {
+  color: var(--muted);
+}
+
+.gameplay-skill-block-levels .gameplay-level-pane[hidden] {
   display: none;
+}
+
+.gameplay-skill-part {
+  min-width: 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(var(--fg-rgb), 0.09);
+}
+
+.gameplay-skill-part-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.gameplay-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.gameplay-skill-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.gameplay-skill-table th,
+.gameplay-skill-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(var(--fg-rgb), 0.07);
+  text-align: left;
+  vertical-align: top;
+}
+
+.gameplay-skill-table th {
+  color: var(--muted);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.gameplay-skill-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.gameplay-skill-table td small {
+  display: block;
+  color: var(--muted);
+}
+
+.gameplay-skill-table code {
+  overflow-wrap: anywhere;
+}
+
+.gameplay-skill-unit {
+  white-space: nowrap;
+}
+
+.gameplay-projectile-name strong {
+  display: block;
+  text-transform: capitalize;
+}
+
+.gameplay-projectile-name .gameplay-projectile-status {
+  margin-top: 3px;
+  font-size: 10px;
+}
+
+.gameplay-projectile-effect + .gameplay-projectile-effect {
+  margin-top: 2px;
+}
+
+.gameplay-projectile-effect b {
+  color: var(--muted);
+}
+
+.gameplay-projectile-effect small {
+  display: inline;
+}
+
+.gameplay-skill-table tr:has(+ .gameplay-projectile-technical) td {
+  border-bottom: 0;
+}
+
+.gameplay-projectile-technical td {
+  padding-top: 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.gameplay-projectile-technical span {
+  display: inline-block;
+  margin-right: 12px;
+}
+
+.gameplay-projectile-unassigned {
+  margin-top: 12px;
+}
+
+@media (max-width: 760px) {
+  .gameplay-skill-block-head .gameplay-level-slider-control {
+    flex-basis: 100%;
+  }
 }
 
 .gameplay-section h2 {
@@ -4920,7 +5172,6 @@ body.is-resizing-filter * {
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 10px;
 }
-
 
 .gameplay-equipment-property-grid {
   display: grid;
@@ -5035,15 +5286,14 @@ body.is-resizing-filter * {
   background: rgba(var(--accent-rgb), 0.08);
 }
 
-.gameplay-buff-card summary {
+.gameplay-buff-card-head {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 10px;
   align-items: baseline;
-  cursor: pointer;
 }
 
-.gameplay-buff-card summary span,
+.gameplay-buff-card-head span,
 .gameplay-buff-source,
 .gameplay-evidence-note {
   font-size: 12px;
@@ -5066,8 +5316,9 @@ body.is-resizing-filter * {
   font-size: 9px;
 }
 
-.gameplay-buff-action-technical > summary {
-  cursor: pointer;
+.gameplay-buff-action-technical > b {
+  display: block;
+  margin-bottom: 4px;
 }
 
 .gameplay-skill-title,
@@ -5161,11 +5412,18 @@ body.is-resizing-filter * {
   padding: 10px;
 }
 
+/* The description already shows every value: give it the full width. */
+.gameplay-level-pane.is-text-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.gameplay-level-row.is-text-only {
+  grid-template-columns: 46px minmax(0, 1fr);
+}
+
 .gameplay-level-pane[hidden] {
   display: none;
 }
-
-
 
 .gameplay-wiki-link {
   text-decoration: none;
@@ -5323,12 +5581,6 @@ body.is-resizing-filter * {
   background: rgba(var(--accent-rgb), 0.035);
   color: var(--muted);
   font-size: 12px;
-}
-
-.gameplay-guidance > summary {
-  cursor: pointer;
-  color: var(--text);
-  font-weight: 700;
 }
 
 .gameplay-guidance > p {
@@ -5724,8 +5976,7 @@ body.is-resizing-filter * {
   color: var(--muted);
 }
 
-.gameplay-skill-evidence-summary,
-.gameplay-skill-projectiles {
+.gameplay-skill-evidence-summary {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -5750,129 +6001,6 @@ body.is-resizing-filter * {
   color: var(--text);
 }
 
-.gameplay-skill-projectiles {
-  margin-top: 7px;
-}
-
-.gameplay-projectile-inline {
-  display: block;
-  flex: 1 1 230px;
-  min-width: 0;
-  max-width: 100%;
-  border: 1px solid rgba(var(--accent-rgb), 0.2);
-  border-radius: 8px;
-  background: rgba(var(--accent-rgb), 0.035);
-  overflow: hidden;
-}
-
-.gameplay-projectile-inline > summary {
-  display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
-  gap: 5px 7px;
-  padding: 8px 9px;
-  cursor: pointer;
-  list-style: none;
-}
-
-.gameplay-projectile-inline > summary::-webkit-details-marker {
-  display: none;
-}
-
-.gameplay-projectile-inline > summary::before {
-  content: "+";
-  grid-column: 1;
-  grid-row: 1;
-  color: var(--muted);
-  font-weight: 800;
-}
-
-.gameplay-projectile-inline[open] > summary::before {
-  content: "-";
-}
-
-.gameplay-projectile-friendly-name {
-  grid-column: 2;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 750;
-  text-transform: capitalize;
-}
-
-.gameplay-projectile-inline > summary > .gameplay-projectile-status {
-  grid-column: 3;
-}
-
-.gameplay-projectile-summary-chips {
-  grid-column: 2 / -1;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-
-.gameplay-projectile-summary-chips small {
-  padding: 2px 5px;
-  border-radius: 99px;
-  background: rgba(var(--fg-rgb), 0.065);
-  color: var(--muted);
-  font-size: 9px;
-}
-
-.gameplay-projectile-body {
-  display: grid;
-  gap: 8px;
-  padding: 8px 9px 10px;
-  border-top: 1px solid rgba(var(--fg-rgb), 0.09);
-  background: var(--bg-3);
-}
-
-.gameplay-projectile-overview {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 6px;
-  padding: 7px;
-  border: 1px solid rgba(var(--fg-rgb), 0.08);
-  border-radius: 6px;
-  background: rgba(var(--fg-rgb), 0.025);
-}
-
-.gameplay-projectile-overview strong {
-  color: var(--text);
-  font-size: 10px;
-  white-space: nowrap;
-}
-
-.gameplay-projectile-overview span {
-  color: var(--muted);
-  font-size: 10px;
-  line-height: 1.4;
-}
-
-.gameplay-projectile-inline-details {
-  display: grid;
-  gap: 4px;
-}
-
-.gameplay-projectile-inline-details > span {
-  display: grid;
-  grid-template-columns: minmax(72px, 0.45fr) minmax(0, 1fr);
-  gap: 6px;
-  align-items: baseline;
-  font-size: 10px;
-}
-
-.gameplay-projectile-inline-details b {
-  color: var(--muted);
-  font-weight: 700;
-}
-
-.gameplay-projectile-inline-details code {
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-
 .gameplay-projectile-audio {
   display: grid;
   gap: 5px;
@@ -5883,7 +6011,7 @@ body.is-resizing-filter * {
 }
 
 .gameplay-projectile-audio > header,
-.gameplay-projectile-audio-phase > summary {
+.gameplay-projectile-audio-phase > header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -5891,7 +6019,7 @@ body.is-resizing-filter * {
 }
 
 .gameplay-projectile-audio > header span,
-.gameplay-projectile-audio-phase > summary span,
+.gameplay-projectile-audio-phase > header span,
 .gameplay-projectile-audio > p,
 .gameplay-projectile-audio-phase > p {
   color: var(--muted);
@@ -5909,8 +6037,7 @@ body.is-resizing-filter * {
   border-top: 1px solid rgba(var(--fg-rgb), 0.08);
 }
 
-.gameplay-projectile-audio-phase > summary {
-  cursor: pointer;
+.gameplay-projectile-audio-phase > header {
   font-size: 10px;
 }
 
@@ -6110,8 +6237,8 @@ body.is-resizing-filter * {
   font-size: 9px;
 }
 
-.gameplay-sfx-technical > summary {
-  cursor: pointer;
+.gameplay-sfx-technical > b {
+  display: block;
 }
 
 .gameplay-sfx-technical code,
@@ -6129,44 +6256,6 @@ body.is-resizing-filter * {
   font-size: 9px;
   white-space: normal;
   overflow-wrap: anywhere;
-}
-
-.gameplay-projectile-technical {
-  border-top: 1px dashed rgba(var(--fg-rgb), 0.14);
-  padding-top: 6px;
-}
-
-.gameplay-projectile-technical > summary {
-  cursor: pointer;
-  color: var(--muted);
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.gameplay-projectile-technical .gameplay-projectile-inline-details {
-  margin-top: 6px;
-}
-
-.gameplay-projectile-unassigned {
-  margin-top: 10px;
-  padding: 9px 11px;
-  border: 1px dashed rgba(var(--accent-rgb), 0.34);
-  border-radius: 7px;
-  background: rgba(var(--accent-rgb), 0.035);
-}
-
-.gameplay-projectile-unassigned > summary {
-  cursor: pointer;
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 750;
-}
-
-.gameplay-projectile-unassigned > p {
-  margin: 7px 0 2px;
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.45;
 }
 
 .gameplay-talent-table {
@@ -6320,30 +6409,6 @@ body.is-resizing-filter * {
     width: 100%;
   }
 
-  .gameplay-active-skill-header {
-    display: none;
-  }
-
-  .gameplay-active-skill-row {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
-
-  .gameplay-active-skill-levels,
-  .gameplay-active-skill-projectiles {
-    padding-top: 10px;
-    border-top: 1px dashed rgba(var(--fg-rgb), 0.16);
-  }
-
-  .gameplay-active-skill-col-label {
-    display: block;
-    margin-bottom: 6px;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-  }
 }
 /* ------- Updates view ------- */
 #updates-app {
@@ -8279,6 +8344,7 @@ body:not(.show-debug) .story-order-remove-from-mission {
 .reference-raw-label,
 .gameplay-detail-wiki-link,
 .gameplay-section h2,
+.gameplay-section-title,
 .gameplay-level-num,
 .updates-detail-link,
 .updates-detail-panel h2,

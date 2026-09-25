@@ -261,6 +261,7 @@
 }
 
 .mr-layer-actions button:hover { border-color: var(--muted); color: var(--text); }
+.mr-layer-actions button[aria-pressed="true"] { border-color: var(--mr-story); color: var(--text); background: color-mix(in srgb, var(--mr-story) 12%, transparent); }
 
 /* Mission rows are a list to pick from, not a stack of cards: no box, no fill,
    one line each. Only the picked row is tinted. */
@@ -847,6 +848,13 @@
 }
 .mr-model-layer-row input[type="checkbox"] { margin: 0; accent-color: var(--mr-control-accent); }
 .mr-model-layer-row input[type="range"] { width: 100%; min-width: 0; accent-color: var(--mr-control-accent); }
+.mr-terrain-byte-note {
+  margin: 0;
+  padding: 2px 0 0 22px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
 
 .mr-axis {
   padding: 0 4px;

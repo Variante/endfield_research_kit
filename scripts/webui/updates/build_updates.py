@@ -375,10 +375,14 @@ def normalized_entry(status: str, raw: dict[str, Any], *, domain: str = "game") 
     ):
         if raw.get(key) is not None:
             entry[key] = raw[key]
+    if raw.get("text_kind"):
+        entry["text_kind"] = raw["text_kind"]
     if raw.get("text_diff"):
         entry["text_diff"] = raw["text_diff"]
         if raw.get("text_diff_truncated"):
             entry["text_diff_truncated"] = True
+    if raw.get("text_diff_note"):
+        entry["text_diff_note"] = raw["text_diff_note"]
     return entry
 
 

@@ -2,8 +2,8 @@
   const FILTER_PANEL_STORAGE_KEY = "gameplay_filters_collapsed";
   const COLLAPSED_KINDS_STORAGE_KEY = "gameplay_collapsed_kinds";
   const LEVEL_FRACTION_STORAGE_KEY = "gameplay_level_fraction";
-  const GAMEPLAY_DATA_VERSION = "20260814-gp13";
-  const GAMEPLAY_INTEGRATION_VERSION = "20260813-projectile-audio1";
+  const GAMEPLAY_DATA_VERSION = "20260924-gp14";
+  const GAMEPLAY_INTEGRATION_VERSION = "20260924-projectile-effect-enums1";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const GAMEPLAY_INLINE_AUDIO_LIMIT = 20;
   const GENDER_VARIANT_STORAGE_KEY = "webui_gender_variant";
@@ -360,10 +360,9 @@
     });
   }
 
-  function section(title, body, opts = {}) {
+  function section(title, body) {
     if (!body) return "";
-    const open = opts.open === false ? "" : " open";
-    return `<details class="gameplay-section"${open}><summary><span>${escapeHtml(title)}</span></summary><div class="gameplay-section-body">${body}</div></details>`;
+    return `<section class="gameplay-section"><h3 class="gameplay-section-title">${escapeHtml(title)}</h3><div class="gameplay-section-body">${body}</div></section>`;
   }
 
   function storyWikiKeys(entry) {
@@ -415,6 +414,135 @@
     const textValue = String(value || "").trim();
     if (!textValue) return "";
     return `<p class="gameplay-description">${escapeHtml(textValue).replace(/\n/g, "<br>")}</p>`;
+  }
+
+  // Authored descriptions carry `{key}`, `{key:0.0%}` or a small arithmetic
+  // expression over keys (`{1-dmg_taken_down:0%}`). The builder renders them
+  // once; rendering here lets the text follow the selected level. Mirrors
+  // render_description in scripts/webui/gameplay/base_data.py, except that
+  // fixed-decimal specs (`0.0`, `0.##`) are honoured instead of `%.6g`.
+  const DESC_PLACEHOLDER_RE = /\{([^}:]+)(?::([^}]+))?\}/g;
+
+  function descriptionValueMap(...sources) {
+    const values = new Map();
+    const set = (key, value) => {
+      if (key === undefined || key === null || key === "" || value === undefined || value === null || value === "") return;
+      const name = String(key);
+      if (!values.has(name)) values.set(name, value);
+      if (!values.has(name.toLowerCase())) values.set(name.toLowerCase(), value);
+    };
+    for (const source of sources) {
+      if (Array.isArray(source)) source.forEach((item) => set(item?.key, item?.value));
+      else if (source && typeof source === "object") Object.entries(source).forEach(([key, value]) => set(key, value));
+    }
+    return values;
+  }
+
+  function lookupDescriptionValue(name, values) {
+    const key = String(name || "").trim();
+    if (values.has(key)) return { key, value: values.get(key) };
+    if (values.has(key.toLowerCase())) return { key, value: values.get(key.toLowerCase()) };
+    return null;
+  }
+
+  // Recursive-descent evaluator for + - * / and parentheses over numbers and
+  // value keys. Returns null when any key is missing or non-numeric.
+  function evaluateDescriptionExpression(expr, values) {
+    const direct = lookupDescriptionValue(expr, values);
+    if (direct) return { value: direct.value, keys: [direct.key] };
+    const tokens = String(expr).match(/\d+(?:\.\d+)?|[A-Za-z_][\w.\\]*|[-+*/()]/g) || [];
+    if (tokens.join("") !== String(expr).replace(/\s+/g, "")) return { value: null, keys: [] };
+    const keys = [];
+    let index = 0;
+    const primary = () => {
+      const token = tokens[index++];
+      if (token === undefined) return null;
+      if (token === "(") {
+        const value = additive();
+        return tokens[index++] === ")" ? value : null;
+      }
+      if (token === "-" || token === "+") {
+        const value = primary();
+        return value === null ? null : token === "-" ? -value : value;
+      }
+      if (/^\d/.test(token)) return Number(token);
+      const found = lookupDescriptionValue(token, values);
+      const number = found ? Number(found.value) : NaN;
+      if (!found || typeof found.value === "boolean" || !Number.isFinite(number)) return null;
+      keys.push(found.key);
+      return number;
+    };
+    const multiplicative = () => {
+      let value = primary();
+      while (value !== null && (tokens[index] === "*" || tokens[index] === "/")) {
+        const op = tokens[index++];
+        const right = primary();
+        if (right === null || (op === "/" && right === 0)) return null;
+        value = op === "*" ? value * right : value / right;
+      }
+      return value;
+    };
+    const additive = () => {
+      let value = multiplicative();
+      while (value !== null && (tokens[index] === "+" || tokens[index] === "-")) {
+        const op = tokens[index++];
+        const right = multiplicative();
+        if (right === null) return null;
+        value = op === "+" ? value + right : value - right;
+      }
+      return value;
+    };
+    const value = additive();
+    return index === tokens.length && value !== null ? { value, keys } : { value: null, keys: [] };
+  }
+
+  function formatDescriptionValue(value, spec) {
+    if (typeof value !== "number" || !Number.isFinite(value)) return String(value);
+    const format = String(spec || "").trim();
+    const decimals = (format.match(/\.([0#]+)/) || [])[1] || "";
+    const fixed = (number) => {
+      const out = number.toFixed(decimals.length);
+      // `#` digits are optional: trim trailing zeros they allow.
+      return decimals.includes("#") ? String(Number(out)) : out;
+    };
+    if (format.includes("%")) return `${fixed(value * 100)}%`;
+    if (/^0(?:\.[0#]+)?$/.test(format)) return fixed(value);
+    return Number.isInteger(value) ? String(value) : String(Number(value.toPrecision(6)));
+  }
+
+  // Returns the description HTML with each substituted value highlighted, and
+  // the value keys the text consumed. When the frontend cannot resolve a
+  // placeholder the builder's rendered text is used as-is.
+  function renderTemplateDescription(template, values, fallback = "") {
+    const source = String(template || "").trim();
+    if (!source || !source.includes("{")) return { html: renderDescription(fallback || source), used: new Set() };
+    const used = new Set();
+    let unresolved = 0;
+    let html = "";
+    let last = 0;
+    for (const match of source.matchAll(DESC_PLACEHOLDER_RE)) {
+      html += escapeHtml(source.slice(last, match.index));
+      last = match.index + match[0].length;
+      const result = evaluateDescriptionExpression(match[1], values);
+      if (result.value === null) {
+        unresolved += 1;
+        html += escapeHtml(match[0]);
+        continue;
+      }
+      result.keys.forEach((key) => used.add(key));
+      html += `<span class="gameplay-desc-value" title="${escapeHtml(match[1].trim())}">${escapeHtml(formatDescriptionValue(result.value, match[2]))}</span>`;
+    }
+    html += escapeHtml(source.slice(last));
+    const fallbackText = String(fallback || "").trim();
+    if (unresolved && fallbackText && !fallbackText.includes("{")) return { html: renderDescription(fallbackText), used: new Set() };
+    return { html: `<p class="gameplay-description">${html.replace(/\n/g, "<br>")}</p>`, used };
+  }
+
+  // Blackboard chips minus the keys the description already shows; debug
+  // mode keeps every chip.
+  function renderUnusedBlackboard(items, used) {
+    if (STATE.showDebug || !used?.size) return renderBlackboard(items);
+    return renderBlackboard((items || []).filter((item) => !used.has(String(item?.key || ""))));
   }
 
   function renderBlackboard(items) {
@@ -750,12 +878,21 @@
     </article>`;
   }
 
+  function skillLevelDescription(level) {
+    return renderTemplateDescription(
+      level.descriptionTemplate,
+      descriptionValueMap(level.blackboard, { costValue: level.costValue, coolDown: level.coolDown }),
+      level.description,
+    );
+  }
+
   function renderLevelPane(level, active, costRow) {
-    const values = [renderBlackboard(level.blackboard), renderSubDesc(level.subDesc)].filter(Boolean).join("");
+    const description = skillLevelDescription(level);
+    const values = [renderUnusedBlackboard(level.blackboard, description.used), renderSubDesc(level.subDesc)].filter(Boolean).join("");
     const cost = renderUpgradeCost(costRow);
-    return `<div class="gameplay-level-pane" data-level-label="${escapeHtml(levelLabel(level))}"${active ? "" : " hidden"}>
-      <div class="gameplay-level-effect">${renderDescription(level.description) || `<span class="muted">-</span>`}</div>
-      <div class="gameplay-level-values">${values || `<span class="muted">-</span>`}</div>
+    return `<div class="gameplay-level-pane${values ? "" : " is-text-only"}" data-level-label="${escapeHtml(levelLabel(level))}"${active ? "" : " hidden"}>
+      <div class="gameplay-level-effect">${description.html || `<span class="muted">-</span>`}</div>
+      ${values ? `<div class="gameplay-level-values">${values}</div>` : ""}
       ${cost}
     </div>`;
   }
@@ -775,12 +912,13 @@
       </div>`;
     }
     return `<div class="gameplay-level-table">${levels.map((level) => {
-      const values = [renderBlackboard(level.blackboard), renderSubDesc(level.subDesc)].filter(Boolean).join("");
+      const description = skillLevelDescription(level);
+      const values = [renderUnusedBlackboard(level.blackboard, description.used), renderSubDesc(level.subDesc)].filter(Boolean).join("");
       const cost = renderUpgradeCost(levelUpForLevel(level, levelUpRows));
-      return `<div class="gameplay-level-row">
+      return `<div class="gameplay-level-row${values ? "" : " is-text-only"}">
         <div class="gameplay-level-num">${escapeHtml(formatValue(level.level || ""))}</div>
-        <div class="gameplay-level-effect">${renderDescription(level.description) || `<span class="muted">-</span>`}</div>
-        <div class="gameplay-level-values">${values || `<span class="muted">-</span>`}</div>
+        <div class="gameplay-level-effect">${description.html || `<span class="muted">-</span>`}</div>
+        ${values ? `<div class="gameplay-level-values">${values}</div>` : ""}
         ${cost}
       </div>`;
     }).join("")}</div>`;
@@ -808,12 +946,13 @@
     const attr = talent.attributeModifier && Object.keys(talent.attributeModifier).length
       ? renderBlackboard(Object.entries(talent.attributeModifier).map(([key, value]) => ({ key, value })))
       : "";
+    const description = renderTemplateDescription(talent.descriptionTemplate, descriptionValueMap(talent.blackboard), talent.description);
     return `<article class="gameplay-skill-card">
       <header>
         <div class="gameplay-skill-title">${escapeHtml(talent.title || talent.id || "")}</div>
         <div class="gameplay-skill-meta">${escapeHtml([talent.id, meta].filter(Boolean).join(" / "))}</div>
       </header>
-      ${renderDescription(talent.description)}
+      ${description.html}
       ${attr}
     </article>`;
   }
@@ -831,7 +970,95 @@
     return renderMaterialChips(items);
   }
 
-  function renderTalentLevelCell(level, groupTitle, groupKind) {
+  // Skill ids a potential/passive effect targets carry no table name; name
+  // them from the character's own skill groups and passive talents.
+  function characterSkillNames(entry) {
+    const names = new Map();
+    for (const group of entry?.skillGroups || []) {
+      for (const skill of group.skills || []) if (skill?.id) names.set(skill.id, group.name || group.id);
+      if (group.id) names.set(group.id, group.name || group.id);
+    }
+    for (const group of entry?.talentGroups || []) {
+      for (const level of group.levels || []) {
+        for (const ref of level.effectRefs || []) {
+          if (ref?.type === "skill" && ref.id && !names.has(ref.id)) names.set(ref.id, group.title || level.title || ref.id);
+        }
+      }
+    }
+    return names;
+  }
+
+  const EFFECT_OPERATION_SYMBOLS = { Add: "+", Multiply: "×", Overwrite: "=" };
+  const EFFECT_PARAM_LABEL_KEYS = { CostValue: "effectParamCost", CoolDown: "cooldown", CoolDownDisplay: "cooldown", MaxChargeTime: "effectParamMaxCharge" };
+
+  // `has_potential1`, `potential_3`, `talent_1`... set to 1: a switch the
+  // target skill reads to enable a branch, not a quantity.
+  function isEffectSwitch(row) {
+    return /^(?:has_)?(?:potential|talent)_?\d*$/i.test(String(row.key || "")) && Number(row.value) === 1;
+  }
+
+  function effectOperationText(row, value) {
+    const symbol = EFFECT_OPERATION_SYMBOLS[row.operationName];
+    if (symbol === "+") return Number(row.value) < 0 ? value : `+${value}`;
+    return symbol ? `${symbol} ${value}` : `(${formatValue(row.operation)}) ${value}`;
+  }
+
+  function renderEffectRow(row, skillNames, used = new Set()) {
+    const target = row.skillId ? `<b title="${escapeHtml(row.skillId)}">${escapeHtml(skillNames.get(row.skillId) || row.skillId)}</b>` : "";
+    let body = "";
+    if (row.kind === "attribute") {
+      const spec = (String(row.valueFormat || "").match(/\{value(?::([^}]+))?\}/) || [])[1] || "";
+      const value = formatDescriptionValue(Number(row.value), spec);
+      body = `<b>${escapeHtml(row.attrName || row.attrTypeName || `attr ${row.attrType}`)}</b> ${escapeHtml(Number(row.value) < 0 ? value : `+${value}`)}`;
+    } else if (row.kind === "skillBlackboard") {
+      body = isEffectSwitch(row)
+        ? `${target} ${escapeHtml(text("effectEnableSwitch"))} <code>${escapeHtml(row.key)}</code>`
+        : `${target} <code>${escapeHtml(row.key)}</code> ${escapeHtml(effectOperationText(row, formatValue(row.value)))}`;
+    } else if (row.kind === "skillParam") {
+      const labelKey = EFFECT_PARAM_LABEL_KEYS[row.paramName];
+      const label = (labelKey ? text(labelKey) : "") || row.paramName || `param ${row.paramType}`;
+      body = `${target} ${escapeHtml(label)} ${escapeHtml(effectOperationText(row, formatValue(row.value)))}`;
+    } else if (row.kind === "passiveSkill") {
+      body = `${escapeHtml(text("effectAddPassive"))} ${target}`;
+    } else if (row.kind === "buff") {
+      body = `${escapeHtml(text("effectAddBuff"))} <code>${escapeHtml(row.buffId)}</code>`;
+    }
+    const paramRows = (row.kind === "passiveSkill" || row.kind === "buff")
+      ? (row.blackboard || []).filter((item) => STATE.showDebug || !used.has(String(item?.key || "")))
+      : [];
+    const params = paramRows.length
+      ? ` <small>${escapeHtml(paramRows.map((item) => `${item.key} ${formatValue(item.value)}`).join(" · "))}</small>`
+      : "";
+    const condition = (row.conditions || []).length ? ` <small>${escapeHtml(text("effectCondition"))}: ${escapeHtml(row.conditions.join(", "))}</small>` : "";
+    const debug = STATE.showDebug
+      ? ` <small class="muted">${escapeHtml([row.modifyTypeName || `modifyType ${row.modifyType}`, row.operationName, row.modifierTypeName, row.attrTypeName].filter(Boolean).join(" · "))}</small>`
+      : "";
+    return `<li>${body}${params}${condition}${debug}</li>`;
+  }
+
+  // Effects the description does not already state. Attribute rows are
+  // stated when the text reads their native name (`{Wisd}`); blackboard and
+  // param rows when it reads their key. Debug mode lists every row.
+  function renderTalentEffects(record, used, skillNames) {
+    const rows = (record?.effects || []).filter((row) => {
+      if (STATE.showDebug) return true;
+      if (row.kind === "attribute") return !used.has(String(row.attrTypeName || ""));
+      if (row.kind === "skillBlackboard") return !used.has(String(row.key || ""));
+      // A passive skill the talent itself grants is the talent: list it only
+      // when it carries a value the text does not show.
+      if (row.kind === "passiveSkill") return (row.blackboard || []).some((item) => !used.has(String(item?.key || "")));
+      if (row.kind === "skillParam") {
+        const aliases = { CostValue: ["costvalue", "costValue"], CoolDown: ["coolDown", "cooldown", "cd"] }[row.paramName] || [];
+        return !aliases.some((key) => used.has(key));
+      }
+      return true;
+    });
+    if (!rows.length) return "";
+    const title = STATE.showDebug ? text("effectsAll") : text("effectsOther");
+    return `<div class="gameplay-effect-list"><div class="gameplay-subheading">${escapeHtml(title)}</div><ul>${rows.map((row) => renderEffectRow(row, skillNames, used)).join("")}</ul></div>`;
+  }
+
+  function renderTalentLevelCell(level, groupTitle, groupKind, skillNames = new Map()) {
     const title = level.name || (level.title !== groupTitle ? level.title : "") || `${text("level")} ${formatValue(level.level || "")}`;
     const coordinate = sourceCoordinate(level.source);
       const meta = [
@@ -850,17 +1077,21 @@
       ? renderBlackboard(Object.entries(level.attributeModifier).map(([key, value]) => ({ key, value })))
       : "";
     const required = renderRequiredItems(level.requiredItem || []);
-    const values = [renderBlackboard(level.blackboard), attr].filter(Boolean).join("");
+    const description = renderTemplateDescription(level.descriptionTemplate, descriptionValueMap(level.blackboard), level.description);
+    const effects = Array.isArray(level.effects)
+      ? renderTalentEffects(level, description.used, skillNames)
+      : renderUnusedBlackboard(level.blackboard, description.used);
+    const values = [effects, attr].filter(Boolean).join("");
     return `<div class="gameplay-talent-level">
       <div class="gameplay-talent-level-title">${icon}<span>${escapeHtml(title)}</span></div>
       <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
-      ${renderDescription(level.description)}
+      ${description.html}
       ${values}
       ${required ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${required}` : ""}
     </div>`;
   }
 
-  function renderTalentGroupRow(group) {
+  function renderTalentGroupRow(group, skillNames) {
     if (!group) return "";
     const levels = group.levels || [];
     const meta = [talentKindLabel(group.kind), group.rank ? `${text("rank")} ${formatValue(group.rank)}` : "", group.id]
@@ -874,16 +1105,16 @@
           <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
         </div>
       </header>
-      <div class="gameplay-talent-levels">${levels.map((level) => renderTalentLevelCell(level, group.title, group.kind)).join("")}</div>
+      <div class="gameplay-talent-levels">${levels.map((level) => renderTalentLevelCell(level, group.title, group.kind, skillNames)).join("")}</div>
     </article>`;
   }
 
-  function renderTalentGroups(groups) {
+  function renderTalentGroups(groups, skillNames = new Map()) {
     // Breakthrough and attribute nodes belong to the removed character-growth
     // surface. Keep actual passive/factory talents in the native talent table.
     const rows = (groups || [])
       .filter((group) => !["upgrade", "attribute"].includes(String(group?.kind || "")))
-      .map(renderTalentGroupRow)
+      .map((group) => renderTalentGroupRow(group, skillNames))
       .filter(Boolean);
     return rows.length ? `<div class="gameplay-talent-table">${rows.join("")}</div>` : "";
   }
@@ -1037,10 +1268,9 @@
     return (skill.levels || []).find((level) => level && String(level.level) === wanted) || null;
   }
 
-  // Buff numbers live on each sub-skill's per-level entry (blackboard keys
-  // and subDesc labels). A group's visible action is a merge of every
-  // sub-skill sharing that level number, deduped so repeated keys (the same
-  // scale re-declared on a follow-up hit) only show once.
+  // Cooldown and subDesc labels describe the whole skill group, so they stay
+  // as chips above the action table. Blackboard keys belong to one sub-skill
+  // and are shown on that sub-skill's action row instead.
   function collectGroupLevelChips(group, levelValue) {
     const seen = new Set();
     const chips = [];
@@ -1055,13 +1285,6 @@
           chips.push(`<span class="gameplay-value-chip"><b>${escapeHtml(text("cooldown"))}</b>${escapeHtml(`${formatValue(cooldown)} ${text("secondsShort")}`)}</span>`);
         }
       }
-      for (const item of level.blackboard || []) {
-        if (!item || !item.key) continue;
-        const key = `bb ${item.key} ${item.value}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        chips.push(`<span class="gameplay-value-chip"><b>${escapeHtml(item.key)}</b>${escapeHtml(formatValue(item.value))}</span>`);
-      }
       for (const item of level.subDesc || []) {
         if (!item || !(item.label || item.value)) continue;
         const key = `sub ${item.label} ${item.value}`;
@@ -1073,30 +1296,295 @@
     return chips.length ? `<div class="gameplay-blackboard">${chips.join("")}</div>` : "";
   }
 
-  function renderActiveSkillLevelPane(group, levelValue, active) {
-    const values = collectGroupLevelChips(group, levelValue);
-    const cost = renderUpgradeCost(levelUpForLevel({ level: levelValue }, group.levelUp || []));
-    return `<div class="gameplay-level-pane gameplay-active-skill-pane" data-level-label="${escapeHtml(levelLabel({ level: levelValue }))}"${active ? "" : " hidden"}>
-      ${values || `<span class="muted">-</span>`}
-      ${cost}
-    </div>`;
+  // The group description reads the sub-skills' values at one level, first
+  // occurrence of each key in sub-skill order (as the builder aggregates).
+  function activeSkillGroupDescription(group, levelValue) {
+    const items = [];
+    const seen = new Set();
+    for (const skill of group.skills || []) {
+      for (const item of levelForSkill(skill, levelValue)?.blackboard || []) {
+        if (!item?.key || seen.has(item.key)) continue;
+        seen.add(item.key);
+        items.push(item);
+      }
+    }
+    return renderTemplateDescription(group.descriptionTemplate, descriptionValueMap(items), group.description).html;
   }
 
+  function renderActiveSkillLevelPane(group, levelValue, active, actions) {
+    const description = activeSkillGroupDescription(group, levelValue);
+    const chips = collectGroupLevelChips(group, levelValue);
+    const table = renderActiveSkillActionTable(actions, levelValue);
+    const cost = renderUpgradeCost(levelUpForLevel({ level: levelValue }, group.levelUp || []));
+    const footer = chips || cost ? `<div class="gameplay-skill-level-footer">${chips}${cost}</div>` : "";
+    return `<div class="gameplay-level-pane gameplay-active-skill-pane" data-level-label="${escapeHtml(levelLabel({ level: levelValue }))}"${active ? "" : " hidden"}>${description}${table}${footer || (table || description ? "" : `<span class="muted">-</span>`)}</div>`;
+  }
+
+  // Returns the level slider (placed in the skill header) and the per-level
+  // value panes separately; the skill card carries `data-level-card`, so the
+  // slider drives panes anywhere inside it.
+  // Returns the level slider (placed in the skill header) and the per-level
+  // panes separately; the skill card carries `data-level-card`, so the slider
+  // drives panes anywhere inside it.
   function renderActiveSkillLevels(group) {
     const levels = sortedSkillLevelsForGroup(group);
-    const label = `<div class="gameplay-active-skill-col-label">${escapeHtml(text("level"))}</div>`;
-    if (!levels.length) return `<div class="gameplay-active-skill-levels">${label}<span class="muted">-</span></div>`;
-    const body = levels.length === 1
-      ? `<div class="gameplay-level-table">${renderActiveSkillLevelPane(group, levels[0], true)}</div>`
-      : `<div class="gameplay-level-slider-wrap" data-level-card>
-        <div class="gameplay-level-slider-control">
+    if (!levels.length) return { control: "", panes: "" };
+    const actions = activeSkillActions(group);
+    const control = levels.length === 1
+      ? `<span class="gameplay-skill-level-single">${escapeHtml(levelLabel({ level: levels[0] }))}</span>`
+      : `<div class="gameplay-level-slider-control">
           <span>${escapeHtml(text("selectedLevel"))}</span>
           <input class="gameplay-level-slider" type="range" min="0" max="${levels.length - 1}" step="1" value="0" aria-label="${escapeHtml(text("selectedLevel"))}">
           <output class="gameplay-level-slider-output">${escapeHtml(levelLabel({ level: levels[0] }))}</output>
-        </div>
-        <div class="gameplay-level-panes">${levels.map((level, index) => renderActiveSkillLevelPane(group, level, index === 0)).join("")}</div>
-      </div>`;
-    return `<div class="gameplay-active-skill-levels">${label}${body}</div>`;
+        </div>`;
+    const panes = levels.map((level, index) => renderActiveSkillLevelPane(group, level, index === 0, actions)).join("");
+    return { control, panes };
+  }
+
+  function skillDamageEnum(value) {
+    if (!value || !Number.isInteger(value.value)) return "";
+    return value.name
+      ? `${value.name} (${formatValue(value.value)})`
+      : formatValue(value.value);
+  }
+
+  function skillDamageOperand(value) {
+    if (!value || typeof value !== "object") return "";
+    const mode = value.useBlackboardKey
+      ? `${text("skillDamageBlackboardKey")}: ${value.blackboardKey || "?"}`
+      : text("skillDamageLiteral");
+    return `${mode}; ${text("skillDamageStoredValue")}: ${formatValue(value.value)}`;
+  }
+
+  function skillDamageCalculation(value) {
+    if (!value) return "";
+    const type = String(value.type || "").split(".").pop();
+    const members = Object.entries(value.enums || {})
+      .map(([key, member]) => `${key}=${skillDamageEnum(member)}`);
+    const operands = Object.entries(value.operands || {})
+      .map(([key, operand]) => `${key}=[${skillDamageOperand(operand)}]`);
+    const scalars = Object.entries(value.scalars || {})
+      .map(([key, scalar]) => `${key}=${formatValue(scalar)}`);
+    return [type, `tag=${formatValue(value.tag)}`, ...members, ...operands, ...scalars]
+      .filter(Boolean).join(", ");
+  }
+
+  // Authored Blackboard keys on a DamageUnit, in stored order: the attack
+  // scale plus any keyed operand of its attack/poise calculation. A route may
+  // bypass some of these keys; this list is only for displaying setup values.
+  function skillDamageUnitKeys(unit) {
+    const keys = [];
+    const add = (operand) => {
+      if (operand?.useBlackboardKey && operand.blackboardKey && !keys.includes(operand.blackboardKey)) keys.push(operand.blackboardKey);
+    };
+    add(unit.atkScale);
+    for (const calculation of [unit.atkCalculation, unit.poiseCalculation]) {
+      for (const operand of Object.values(calculation?.operands || {})) add(operand);
+    }
+    return keys;
+  }
+
+  function skillDamageUnitDebugText(unit) {
+    return [
+      [text("skillDamageAttribute"), skillDamageEnum(unit.damageAttributeType)],
+      [text("skillDamageType"), skillDamageEnum(unit.damageType)],
+      [text("skillDamageSimpleCalculation"), typeof unit.simpleCalculation === "boolean" ? String(unit.simpleCalculation) : ""],
+      [text("skillDamageTakeAtkSnapshot"), typeof unit.takeAtkSnapshot === "boolean" ? String(unit.takeAtkSnapshot) : ""],
+      [text("skillDamageAttackScale"), skillDamageOperand(unit.atkScale || {})],
+      [text("skillDamageAttackCalculation"), skillDamageCalculation(unit.atkCalculation)],
+      [text("skillDamagePoiseCalculation"), skillDamageCalculation(unit.poiseCalculation)],
+      [text("skillDamageVisualImportance"), skillDamageEnum(unit.damageVisualImportance)],
+      [text("skillDamageImmunitySetting"), skillDamageEnum(unit.ignoreDamageImmuneLevel)],
+      [text("skillDamageDecorationMask"), Number.isInteger(unit.damageDecorateMask)
+        ? `${formatValue(unit.damageDecorateMask)} (0x${unit.damageDecorateMask.toString(16)})` : ""],
+      [text("source"), unit.sourcePath || ""],
+    ].filter(([, value]) => value).map(([label, value]) => `${label}: ${value}`).join(" · ");
+  }
+
+  // One action per sub-skill: its authored DamageUnits and the projectiles
+  // assigned to it. Group-level projectile matches without a sub-skill owner
+  // form a trailing action with no sub-skill.
+  function activeSkillActions(group) {
+    const damageValidated = STATE.index?.skillDamageEvidence?.status === "validated";
+    const catalog = damageValidated ? STATE.index?.skillDamageUnits || {} : {};
+    const skills = group.skills?.length
+      ? group.skills
+      : (group.actionSkillIds || []).map((id) => ({ id: String(id || "") })).filter((skill) => skill.id);
+    const siblingSkillIds = skills.map((skill) => skill?.id).filter(Boolean);
+    const assigned = new Set();
+    const actions = skills.map((skill) => {
+      const projectiles = [];
+      for (const row of projectilesForSkill(skill, siblingSkillIds)) {
+        const id = String(row.projectile?.id || "");
+        if (!id || assigned.has(id)) continue;
+        assigned.add(id);
+        projectiles.push(row);
+      }
+      const record = catalog[skill?.id];
+      const units = record?.status === "exact" ? record.units || [] : [];
+      const damageMissing = damageValidated && !!skill?.id && record?.status !== "exact";
+      return { skill, units, projectiles, damageMissing };
+    });
+    // A projectile matched only by the group's family identifier has no
+    // sub-skill in this group's skill list; name its row after the
+    // projectile's own action token and mark the ownership as inferred.
+    const inferred = new Map();
+    for (const row of projectilesForSkillGroupUnassigned(group, assigned)) {
+      const token = String(row.projectile?.id || "").replace(/^(?:data_)?projectile_/, "").replace(/^chr_\d+_[^_]+_/, "");
+      if (!inferred.has(token)) inferred.set(token, { skill: null, label: token, inferred: true, units: [], projectiles: [], damageMissing: false });
+      inferred.get(token).projectiles.push(row);
+    }
+    actions.push(...inferred.values());
+    return actions;
+  }
+
+  function renderActionDamage(action, level) {
+    const values = new Map((level?.blackboard || []).filter((item) => item?.key).map((item) => [item.key, item.value]));
+    const lines = new Map();
+    for (const unit of action.units) {
+      const keys = skillDamageUnitKeys(unit);
+      const kind = [unit.damageType?.name, unit.damageAttributeType?.name].filter(Boolean).join(" ") || text("skillDamageUnit");
+      const amounts = keys.length
+        ? keys.map((key) => `${key} ${values.has(key) ? formatValue(values.get(key)) : `(${text("skillDamageKeyMissing")})`}`)
+        : [Number(unit.atkScale?.value) ? formatValue(unit.atkScale.value) : ""].filter(Boolean);
+      const atkScaleCalculation = unit.atkCalculation?.type === "Beyond.Gameplay.Core.AtkScaleCalculation";
+      const breakingAttackCalculation = unit.atkCalculation?.type === "Beyond.Gameplay.Core.BreakingAttackCalculation";
+      const normalRoute = STATE.index?.skillDamageRouteEvidence?.status === "validated"
+        && unit.takeAtkSnapshot === false
+        && unit.damageAttributeType?.name === "Hp";
+      const formula = normalRoute && unit.simpleCalculation === true
+        ? ["skillSimpleDamageFormula", "skillSimpleDamageFormulaBoundary"]
+        : normalRoute && unit.simpleCalculation === false
+          && atkScaleCalculation && STATE.index?.skillDamageAtkScaleEvidence?.status === "validated"
+          ? ["skillAtkScaleFormula", "skillAtkScaleFormulaBoundary"]
+          : normalRoute && unit.simpleCalculation === false
+            && breakingAttackCalculation && STATE.index?.skillDamageBreakingAttackEvidence?.status === "validated"
+            ? ["skillBreakingAttackFormula", "skillBreakingAttackFormulaBoundary"] : null;
+      const poiseCalculation = unit.poiseCalculation;
+      const poiseFormula = poiseCalculation?.type === "Beyond.Gameplay.Core.DefiniteValueCalculation"
+        && STATE.index?.skillDamagePoiseRouteEvidence?.status === "validated"
+        && STATE.index?.skillDamageDefiniteValueEvidence?.status === "validated"
+        ? poiseCalculation.scalars?.applyScale === false
+          ? ["skillPoiseDefiniteValueFormula", "skillPoiseDefiniteValueFormulaBoundary"]
+          : poiseCalculation.scalars?.applyScale === true
+            ? ["skillPoiseDefiniteValueScaledFormula", "skillPoiseDefiniteValueFormulaBoundary"]
+            : null
+        : null;
+      const evaluator = [
+        formula ? ["skillAtkScaleFormulaLabel", ...formula] : null,
+        poiseFormula ? ["skillPoiseFormulaLabel", ...poiseFormula] : null,
+      ].filter(Boolean)
+        .map(([labelKey, expressionKey, boundaryKey]) =>
+          `<small class="muted" title="${escapeHtml(text(boundaryKey))}">${escapeHtml(`${text(labelKey)}: ${text(expressionKey)}`)}</small>`)
+        .join("<br>");
+      const label = `<b>${escapeHtml(kind)}</b>${amounts.length ? ` ${escapeHtml(amounts.join(" · "))}` : ""}${evaluator ? `<br>${evaluator}` : ""}`;
+      lines.set(label, (lines.get(label) || 0) + 1);
+    }
+    const body = [...lines].map(([label, count]) => `<div>${label}${count > 1 ? ` <small class="gameplay-inline-count">×${count}</small>` : ""}</div>`).join("");
+    if (body) return body;
+    return action.damageMissing ? `<span class="muted">${escapeHtml(text("skillDamageFileUnavailable"))}</span>` : "";
+  }
+
+  function renderActionOtherValues(action, level) {
+    const used = new Set(action.units.flatMap(skillDamageUnitKeys));
+    return (level?.blackboard || [])
+      .filter((item) => item?.key && !used.has(item.key))
+      .map((item) => `<span class="gameplay-action-value"><b>${escapeHtml(item.key)}</b> ${escapeHtml(formatValue(item.value))}</span>`)
+      .join("");
+  }
+
+  function renderActionProjectiles(action) {
+    return action.projectiles.map((match) => {
+      const projectile = match?.projectile || match;
+      const lifetime = projectile?.lifetime || {};
+      const speed = projectileScalarText((projectile?.movement?.modes || [])[0]?.speed);
+      const facts = [
+        speed ? `${text("projectileSpeed")} ${speed}` : "",
+        projectileScalarText(lifetime.finishDistance) ? `${text("projectileDistanceShort")} ${projectileScalarText(lifetime.finishDistance)}` : "",
+        projectileScalarText(lifetime.finishDuration) ? `${text("projectileLifetimeShort")} ${projectileScalarText(lifetime.finishDuration)}` : "",
+        projectileHitLimitText(projectile?.targeting?.maxHitCount) ? `${text("projectileHitsShort")} ${projectileHitLimitText(projectile.targeting.maxHitCount)}` : "",
+      ].filter(Boolean).join(" · ");
+      const partial = projectile?.confidence?.byteComplete ? "" : ` <span class="gameplay-projectile-status">${escapeHtml(text("projectilePartial"))}</span>`;
+      return `<div><b>${escapeHtml(projectileFriendlyName(projectile))}</b>${partial}${facts ? ` <small>${escapeHtml(facts)}</small>` : ""}</div>`;
+    }).join("");
+  }
+
+  function renderActiveSkillActionTable(actions, levelValue) {
+    const rows = [];
+    for (const action of actions) {
+      const level = action.skill ? levelForSkill(action.skill, levelValue) : null;
+      const damage = renderActionDamage(action, level);
+      const other = renderActionOtherValues(action, level);
+      const projectiles = renderActionProjectiles(action);
+      if (!damage && !other && !projectiles) continue;
+      const name = action.skill
+        ? `<code title="${escapeHtml(action.skill.id)}">${escapeHtml(String(action.skill.id).replace(/^chr_\d+_[^_]+_/, ""))}</code>`
+        : `<code>${escapeHtml(action.label || "-")}</code> <span class="gameplay-status-badge is-partial" title="${escapeHtml(text("skillActionInferredNote"))}">${escapeHtml(text("skillActionInferred"))}</span>`;
+      rows.push(`<tr><td class="gameplay-skill-unit">${name}</td><td>${damage || "-"}</td><td>${other || "-"}</td><td>${projectiles || "-"}</td></tr>`);
+      if (STATE.showDebug && (action.units.length || action.projectiles.length)) {
+        const facts = [
+          ...action.units.map((unit, index) => `<span><b>${escapeHtml(text("skillDamageUnit"))} ${index + 1}</b> <code>${escapeHtml(skillDamageUnitDebugText(unit))}</code></span>`),
+          ...action.projectiles.map((match) => renderProjectileDebugFacts(match)),
+        ].join("");
+        rows.push(`<tr class="gameplay-projectile-technical"><td colspan="4">${facts}</td></tr>`);
+      }
+    }
+    if (!rows.length) return "";
+    const head = `<tr><th>${escapeHtml(text("skillAction"))}</th><th>${escapeHtml(text("skillDamage"))}${STATE.index?.skillDamageEvidence?.status === "validated" ? renderEvidenceBadge("recoveryExact", "skillDamageBoundary") : ""}</th><th>${escapeHtml(text("skillOtherValues"))}</th><th>${escapeHtml(text("projectiles"))}</th></tr>`;
+    return `<div class="gameplay-table-scroll"><table class="gameplay-skill-table gameplay-action-table">${head}${rows.join("")}</table></div>`;
+  }
+
+  function renderSkillDamageAvailability() {
+    const evidence = STATE.index?.skillDamageEvidence || {};
+    if (evidence.status === "validated") return "";
+    return `<p class="muted">${escapeHtml(text("skillDamageUnavailable"))}</p>`;
+  }
+
+  // Evidence notes shared by every skill card, stated once above them.
+  function renderCharacterSkillNotes(character) {
+    const damage = STATE.index?.skillDamageEvidence?.status === "validated" ? text("skillDamageBoundary") : "";
+    const damageCatalog = STATE.index?.skillDamageUnits || {};
+    const routeValidated = STATE.index?.skillDamageRouteEvidence?.status === "validated";
+    const hasDamageUnits = (character?.skillGroups || []).some((group) =>
+      (group.skills || []).some((skill) => (damageCatalog[skill?.id]?.units || []).length));
+    const routeUnavailable = hasDamageUnits && !routeValidated
+      ? text("skillDamageRouteUnavailable") : "";
+    const hasAtkScaleCalculation = (character?.skillGroups || []).some((group) =>
+      (group.skills || []).some((skill) =>
+        (damageCatalog[skill?.id]?.units || []).some((unit) =>
+          unit.simpleCalculation === false && unit.takeAtkSnapshot === false
+          && unit.atkCalculation?.type === "Beyond.Gameplay.Core.AtkScaleCalculation")));
+    const atkScaleUnavailable = routeValidated && hasAtkScaleCalculation
+      && STATE.index?.skillDamageAtkScaleEvidence?.status !== "validated"
+      ? text("skillAtkScaleFormulaUnavailable") : "";
+    const hasBreakingAttackCalculation = (character?.skillGroups || []).some((group) =>
+      (group.skills || []).some((skill) =>
+        (damageCatalog[skill?.id]?.units || []).some((unit) =>
+          unit.simpleCalculation === false && unit.takeAtkSnapshot === false
+          && unit.atkCalculation?.type === "Beyond.Gameplay.Core.BreakingAttackCalculation")));
+    const breakingAttackUnavailable = routeValidated && hasBreakingAttackCalculation
+      && STATE.index?.skillDamageBreakingAttackEvidence?.status !== "validated"
+      ? text("skillBreakingAttackFormulaUnavailable") : "";
+    const hasPoiseDefiniteValue = (character?.skillGroups || []).some((group) =>
+      (group.skills || []).some((skill) =>
+        (damageCatalog[skill?.id]?.units || []).some((unit) =>
+          unit.poiseCalculation?.type === "Beyond.Gameplay.Core.DefiniteValueCalculation")));
+    const poiseFormulaUnavailable = hasPoiseDefiniteValue
+      && (STATE.index?.skillDamagePoiseRouteEvidence?.status !== "validated"
+        || STATE.index?.skillDamageDefiniteValueEvidence?.status !== "validated")
+      ? text("skillPoiseFormulaUnavailable") : "";
+    const effectsNamed = STATE.integration.projectiles?.effectConfigEnumEvidence?.status === "validated";
+    const notes = [
+      text("projectileCoverageNote"),
+      damage,
+      routeUnavailable,
+      atkScaleUnavailable,
+      breakingAttackUnavailable,
+      poiseFormulaUnavailable,
+      // Effect setup only appears in the debug rows.
+      STATE.showDebug ? [text("projectileEffectStoredNote"), effectsNamed ? "" : text("projectileEffectEnumUnavailable")].filter(Boolean).join(" ") : "",
+    ].filter(Boolean);
+    return `${renderSkillDamageAvailability()}<ul class="gameplay-skill-notes">${notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>`;
   }
   // Potential-unlock keepsake photos (levels 1/3/5) are wide, cinematic
   // illustrations rather than square icons, and each one carries an authored
@@ -1127,6 +1615,7 @@
   }
 
   function renderCharacterPotentials(entry) {
+    const skillNames = characterSkillNames(entry);
     const potentialRows = (entry.potentials && entry.potentials.levels || []).map((row) => {
       const coordinate = sourceCoordinate(row.source);
       const meta = [
@@ -1135,7 +1624,10 @@
         coordinate ? `${text("dataCoordinate")}: ${coordinate}` : "",
       ].filter(Boolean).join(" / ");
       const required = renderRequiredItems(row.requiredItem || []);
-      const values = renderBlackboard(row.blackboard || []);
+      const description = renderTemplateDescription(row.descriptionTemplate, descriptionValueMap(row.blackboard), row.description);
+      const values = Array.isArray(row.effects)
+        ? renderTalentEffects(row, description.used, skillNames)
+        : renderUnusedBlackboard(row.blackboard || [], description.used);
       const alt = row.name || entry.title || entry.id;
       const visiblePictures = filterEndministratorVariant(row.pictures, entry, (picture) => picture?.id);
       const pictures = renderPotentialPictures(visiblePictures, alt);
@@ -1143,7 +1635,7 @@
       return `<div class="gameplay-talent-level">
         <div class="gameplay-talent-level-title">${escapeHtml(row.name || `${text("potential")} ${formatValue(row.level === undefined || row.level === null ? "" : row.level)}`)}</div>
         ${meta ? `<div class="gameplay-skill-meta">${escapeHtml(meta)}</div>` : ""}
-        ${renderDescription(row.description)}
+        ${description.html}
         ${values}
         ${pictures ? `<div class="gameplay-subheading">${escapeHtml(text("potentialPictures"))}</div>${pictures}` : ""}
         ${topicImages ? `<div class="gameplay-subheading">${escapeHtml(text("potentialCardTopic"))}</div>${topicImages}` : ""}
@@ -1218,6 +1710,29 @@
     const name = value.name || value.enumType || "";
     const numeric = value.value === null || value.value === undefined ? "" : formatValue(value.value);
     return [name, numeric && name ? `(${numeric})` : numeric].filter(Boolean).join(" ");
+  }
+
+  function projectileEffectEnumText(field, value) {
+    const numeric = projectileEnumText(value);
+    if (!numeric) return "";
+    const dataset = STATE.integration.projectiles || {};
+    const name = dataset.effectConfigEnumEvidence?.status === "validated"
+      ? dataset.effectConfigEnums?.[field]?.[String(value)]
+      : "";
+    return name ? `${name} (${numeric})` : numeric;
+  }
+
+  function projectileEffectRows(projectile) {
+    const effects = projectile?.effects || {};
+    const rows = Object.entries(effects.lists || {}).flatMap(([slot, values]) =>
+      (Array.isArray(values) ? values : [])
+        .filter((effect) => effect && effect.effectName)
+        .map((effect) => ({ slot, effect })),
+    );
+    if (effects.showAlertEffect && effects.alert?.effectName) {
+      rows.push({ slot: "alert", effect: effects.alert });
+    }
+    return rows;
   }
 
   function projectileVectorText(value) {
@@ -1337,8 +1852,7 @@
     const phases = soundRows.map((row) => {
       const phaseLabel = text(`projectileSound_${row.field}`);
       const candidates = row.audio.map((audio, index) => `<div class="gameplay-projectile-audio-candidate"><audio controls preload="none" src="${escapeHtml(audio.src)}"></audio><small>${escapeHtml(`${text("projectileAudioCandidate")} ${index + 1} · ${audio.mediaId || "-"}`)}</small></div>`).join("");
-      const open = row.audio.length > 0 && row.audio.length <= GAMEPLAY_INLINE_AUDIO_LIMIT ? " open" : "";
-      return `<details class="gameplay-projectile-audio-phase"${open}><summary><strong>${escapeHtml(phaseLabel)}</strong><span>${escapeHtml(row.audio.length ? `${row.audio.length} ${text("projectilePlayableCandidates")}` : text("projectileSoundUnlinked"))}</span></summary>${candidates || `<p>${escapeHtml(text("projectileSoundUnlinkedNote"))}</p>`}</details>`;
+      return `<div class="gameplay-projectile-audio-phase"><header><strong>${escapeHtml(phaseLabel)}</strong><span>${escapeHtml(row.audio.length ? `${row.audio.length} ${text("projectilePlayableCandidates")}` : text("projectileSoundUnlinked"))}</span></header>${candidates || `<p>${escapeHtml(text("projectileSoundUnlinkedNote"))}</p>`}</div>`;
     }).join("");
     return `<section class="gameplay-projectile-audio"><header><strong>${escapeHtml(text("projectileAudio"))}</strong><span>${escapeHtml(`${playable.reduce((total, row) => total + row.audio.length, 0)} ${text("projectilePlayableCandidates")}`)}</span></header><p${sidecarUnavailable ? ' class="gameplay-integration-note is-warning" role="status"' : ""}>${escapeHtml(text(sidecarUnavailable ? "projectileAudioUnavailable" : "projectileAudioNote"))}</p>${phases}</section>`;
   }
@@ -1654,7 +2168,7 @@
       const evidenceIds = gameplaySoundSkillIds(event);
       const clips = event.sourceAnimationClips || [];
       const trigger = (event.evidence || []).map((row) => row?.triggerKey).find(Boolean) || "";
-      const technical = STATE.showDebug ? `<details class="gameplay-sfx-technical"><summary>${escapeHtml(text("projectileTechnical"))}</summary><code class="gameplay-sfx-event-id">${escapeHtml(event.id || "")}</code>${evidenceIds.length ? `<code>${escapeHtml(evidenceIds.join(" / "))}</code>` : ""}${clips.length ? `<code>${escapeHtml(clips.join(" / "))}</code>` : ""}${trigger ? `<code>${escapeHtml(trigger)}</code>` : ""}<a data-gameplay-audio-event href="${escapeHtml(gameplayAudioEventHref(event.id))}">${escapeHtml(text("openInAudio"))}</a></details>` : "";
+      const technical = STATE.showDebug ? `<div class="gameplay-sfx-technical"><b>${escapeHtml(text("projectileTechnical"))}</b><code class="gameplay-sfx-event-id">${escapeHtml(event.id || "")}</code>${evidenceIds.length ? `<code>${escapeHtml(evidenceIds.join(" / "))}</code>` : ""}${clips.length ? `<code>${escapeHtml(clips.join(" / "))}</code>` : ""}${trigger ? `<code>${escapeHtml(trigger)}</code>` : ""}<a data-gameplay-audio-event href="${escapeHtml(gameplayAudioEventHref(event.id))}">${escapeHtml(text("openInAudio"))}</a></div>` : "";
       const possibleCount = audio.length || Number(event.possibleMediaCount || event.playableCandidates || 0);
       const roots = Number(event.playRootCount || 0);
       const branch = roots ? `${roots} ${text("soundPlayBranches")}` : text("soundDirectMedia");
@@ -1878,7 +2392,9 @@
     return `${renderCharacterSkillSounds(entry)}${renderCharacterAnimationSounds(entry)}${nativeVoiceGroup}${authoredNamespaces}`;
   }
 
-  function renderCharacterProjectileCompact(match) {
+  // One table row per projectile; every attribute gets its own cell so a
+  // skill's projectiles share one container instead of nested cards.
+  function renderProjectileDebugFacts(match) {
     const projectile = match?.projectile || match;
     const lifetime = projectile?.lifetime || {};
     const collision = projectile?.collision || {};
@@ -1886,34 +2402,14 @@
     const filter = targeting.targetFilter || {};
     const movement = projectile?.movement || {};
     const modes = movement.modes || [];
-    const mode = modes[0] || {};
-    const effectNames = [...new Set(Object.values(projectile?.effects?.lists || {}).flat().map((effect) => effect?.effectName).filter(Boolean))];
+    const effectNames = [...new Set(projectileEffectRows(projectile).map(({ effect }) => effect.effectName))];
     const behaviorSkills = projectileBehaviorSkillIds(projectile);
     const matchedActions = match?.matchMethod === "skill-family-identifier"
       ? []
       : (match?.matched || []).filter((value) => String(value || "").includes("_"));
-    const summaryFacts = [
-      [text("projectileLifetimeShort"), projectileScalarText(lifetime.finishDuration)].filter(Boolean).join(" "),
-      [text("projectileDistanceShort"), projectileScalarText(lifetime.finishDistance)].filter(Boolean).join(" "),
-      [text("projectileHitsShort"), projectileHitLimitText(targeting.maxHitCount)].filter(Boolean).join(" "),
-    ].filter(Boolean);
-    const travelSummary = [
-      modes.map((item) => [item.key, projectileScalarText(item.speed) ? `${text("projectileSpeed")} ${projectileScalarText(item.speed)}` : ""].filter(Boolean).join(" · ")).filter(Boolean).join("; "),
-      lifetime.finishOnReach ? text("projectileFinishOnReach") : "",
-      lifetime.hitOnReach ? text("projectileHitOnReach") : "",
-    ].filter(Boolean).join(" · ");
-    const hitSummary = [
-      projectileFriendlyEnum(collision.shapeType),
-      targeting.allowHitSameTarget ? text("projectileRepeatHit") : text("projectileSingleHit"),
-      projectileFriendlyTagText(filter),
-    ].filter(Boolean).join(" · ");
-    const feedbackSummary = [
-      effectNames.length ? `${effectNames.length} ${text("projectileEffectRefs")}` : "",
-    ].filter(Boolean).join(" · ");
     const detailFacts = [
       matchedActions.length ? [text("projectileAction"), matchedActions.join(", ")] : null,
       [text("projectileAssignment"), projectileMatchMethodText(match?.matchMethod)],
-      [text("projectileLifetime"), [projectileScalarText(lifetime.finishDuration), projectileScalarText(lifetime.finishDistance), lifetime.finishOnReach ? text("projectileFinishOnReach") : "", lifetime.hitOnReach ? text("projectileHitOnReach") : ""].filter(Boolean).join(" / ")],
       [text("projectileMovement"), modes.map((item) => [item.key, projectileEnumText(item.moveType), projectileScalarText(item.speed), item.surroundCenterKey].filter(Boolean).join(" / ")).filter(Boolean).join("; ")],
       (movement.segments || []).length ? [text("projectileSegments"), (movement.segments || []).map((segment) => [segment.startPointKey, segment.moveModeId, segment.endPointKey, segment.skipHitAndBlockDetection ? text("projectileSkipCollision") : ""].filter(Boolean).join(" -> ")).join("; ")] : null,
       [text("projectileCollision"), [projectileEnumText(collision.shapeType), projectileScalarText(collision.radius), projectileVectorText(collision.extent)].filter(Boolean).join(" / ")],
@@ -1923,10 +2419,57 @@
       behaviorSkills.length ? [text("projectileBehaviorSkills"), behaviorSkills.join(", ")] : null,
       [text("source"), [projectile?.source?.root, projectile?.source?.assetName, projectile?.source?.pathId].filter(Boolean).join(" / ")],
     ].filter((row) => row && row[1]);
+    return `<span><b>${escapeHtml(projectileFriendlyName(projectile))}</b></span>${detailFacts.map(([label, value]) => `<span><b>${escapeHtml(label)}</b> <code>${escapeHtml(value)}</code></span>`).join("")}`;
+  }
+
+  function renderCharacterProjectileRow(match) {
+    const projectile = match?.projectile || match;
+    const lifetime = projectile?.lifetime || {};
+    const collision = projectile?.collision || {};
+    const targeting = projectile?.targeting || {};
+    const filter = targeting.targetFilter || {};
+    const movement = projectile?.movement || {};
+    const modes = movement.modes || [];
+    const effectRows = projectileEffectRows(projectile);
+    const travel = [
+      modes.map((item) => [item.key, projectileScalarText(item.speed) ? `${text("projectileSpeed")} ${projectileScalarText(item.speed)}` : ""].filter(Boolean).join(" · ")).filter(Boolean).join("; "),
+      lifetime.finishOnReach ? text("projectileFinishOnReach") : "",
+      lifetime.hitOnReach ? text("projectileHitOnReach") : "",
+    ].filter(Boolean).join(" · ");
+    const hit = [
+      projectileFriendlyEnum(collision.shapeType),
+      targeting.allowHitSameTarget ? text("projectileRepeatHit") : text("projectileSingleHit"),
+      projectileFriendlyTagText(filter),
+    ].filter(Boolean).join(" · ");
+    const effects = effectRows.map(({ slot, effect }) => {
+      const behavior = effect.behavior || {};
+      const facts = [
+        projectileEffectEnumText("fxType", effect.fxType),
+        projectileEffectEnumText("moveType", behavior.moveType),
+        projectileEffectEnumText("positionRef", behavior.positionRef),
+      ].filter(Boolean).join(" · ");
+      return `<div class="gameplay-projectile-effect"><b>${escapeHtml(slot)}</b> <code>${escapeHtml(effect.effectName)}</code>${facts ? ` <small>${escapeHtml(facts)}</small>` : ""}</div>`;
+    }).join("");
     const complete = projectile?.confidence?.byteComplete;
-    const overview = [travelSummary, hitSummary, feedbackSummary].filter(Boolean).join(" · ");
-    const technical = STATE.showDebug ? `<details class="gameplay-projectile-technical"><summary>${escapeHtml(text("projectileTechnical"))}</summary><div class="gameplay-projectile-inline-details">${detailFacts.map(([label, value]) => `<span><b>${escapeHtml(label)}</b><code>${escapeHtml(value)}</code></span>`).join("")}</div></details>` : "";
-    return `<details class="gameplay-projectile-inline"><summary><span class="gameplay-projectile-friendly-name">${escapeHtml(projectileFriendlyName(projectile))}</span><span class="gameplay-projectile-status${complete ? " is-complete" : ""}">${escapeHtml(complete ? text("projectileComplete") : text("projectilePartial"))}</span><span class="gameplay-projectile-summary-chips">${summaryFacts.map((fact) => `<small>${escapeHtml(fact)}</small>`).join("")}</span></summary><div class="gameplay-projectile-body">${overview ? `<div class="gameplay-projectile-overview"><strong>${escapeHtml(text("projectileBehaviorSummary"))}</strong><span>${escapeHtml(overview)}</span></div>` : ""}${technical}</div></details>`;
+    const cells = [
+      `<td class="gameplay-projectile-name"><strong>${escapeHtml(projectileFriendlyName(projectile))}</strong>${complete ? "" : `<span class="gameplay-projectile-status">${escapeHtml(text("projectilePartial"))}</span>`}</td>`,
+      `<td>${escapeHtml(projectileScalarText(lifetime.finishDuration) || "-")}</td>`,
+      `<td>${escapeHtml(projectileScalarText(lifetime.finishDistance) || "-")}</td>`,
+      `<td>${escapeHtml(projectileHitLimitText(targeting.maxHitCount) || "-")}</td>`,
+      `<td>${escapeHtml(travel || "-")}</td>`,
+      `<td>${escapeHtml(hit || "-")}</td>`,
+      `<td>${effects || "-"}</td>`,
+    ];
+    const technical = STATE.showDebug
+      ? `<tr class="gameplay-projectile-technical"><td colspan="${cells.length}">${renderProjectileDebugFacts(match)}</td></tr>`
+      : "";
+    return `<tr>${cells.join("")}</tr>${technical}`;
+  }
+
+  function renderProjectileTable(matches) {
+    const columns = ["projectiles", "projectileLifetimeShort", "projectileDistanceShort", "projectileHitsShort", "projectileTravel", "projectileHitRule", "projectileEffectSetup"];
+    const head = `<tr>${columns.map((key) => `<th>${escapeHtml(text(key))}</th>`).join("")}</tr>`;
+    return `<div class="gameplay-table-scroll"><table class="gameplay-skill-table gameplay-projectile-table">${head}${matches.map(renderCharacterProjectileRow).join("")}</table></div>`;
   }
 
   // One active skill (a skill group - Normal Attack / Skill / Ultimate /
@@ -1936,35 +2479,7 @@
   // right-hand column shows every projectile that belongs to this skill
   // exactly once.
   function projectilesForGroup(group) {
-    const assigned = new Set();
-    // The generated payload normally carries full skill rows. Keep the action
-    // ID as a safe fallback so a partial export cannot silently lose a
-    // projectile (or make its ownership appear to belong to another group).
-    const skills = group.skills?.length
-      ? group.skills
-      : (group.actionSkillIds || []).map((id) => ({ id: String(id || "") })).filter((skill) => skill.id);
-    const siblingSkillIds = skills.map((skill) => skill?.id).filter(Boolean);
-    const matched = [];
-    for (const skill of skills) {
-      for (const row of projectilesForSkill(skill, siblingSkillIds)) {
-        const id = String(row.projectile?.id || "");
-        if (!id || assigned.has(id)) continue;
-        assigned.add(id);
-        matched.push(row);
-      }
-    }
-    matched.push(...projectilesForSkillGroupUnassigned(group, assigned));
-    return matched;
-  }
-
-  function renderActiveSkillProjectiles(group) {
-    const label = `<div class="gameplay-active-skill-col-label">${escapeHtml(text("projectiles"))}</div>`;
-    const projectiles = projectilesForGroup(group);
-    if (!projectiles.length) {
-      return `<div class="gameplay-active-skill-projectiles">${label}<span class="gameplay-projectile-no-template">${escapeHtml(text("projectileNoTemplate"))}</span></div>`;
-    }
-    const chips = projectiles.map(renderCharacterProjectileCompact).join("");
-    return `<div class="gameplay-active-skill-projectiles">${label}<div class="gameplay-skill-projectiles">${chips}</div></div>`;
+    return activeSkillActions(group).flatMap((action) => action.projectiles);
   }
 
   function renderUnassignedCharacterProjectiles(entry) {
@@ -1977,7 +2492,7 @@
       .filter(({ projectile }) => !assigned.has(String(projectile?.id || "")))
       .map((row) => ({ ...row, matched: [], matchMethod: "ownership-unresolved" }));
     if (!unresolved.length) return "";
-    return `<details class="gameplay-projectile-unassigned"><summary>${escapeHtml(`${text("projectileOwnershipUnresolved")} (${unresolved.length})`)}</summary><p>${escapeHtml(text("projectileOwnershipUnresolvedNote"))}</p><div class="gameplay-skill-projectiles">${unresolved.map(renderCharacterProjectileCompact).join("")}</div></details>`;
+    return `<div class="gameplay-skill-part gameplay-projectile-unassigned"><div class="gameplay-skill-part-title">${escapeHtml(`${text("projectileOwnershipUnresolved")} (${unresolved.length})`)}</div><p class="muted">${escapeHtml(text("projectileOwnershipUnresolvedNote"))}</p>${renderProjectileTable(unresolved)}</div>`;
   }
 
   // Small debug-only combat-log evidence badge folded into the description
@@ -1994,17 +2509,9 @@
     return `<div class="gameplay-skill-evidence-summary"><span class="gameplay-skill-evidence-chip"><b>${escapeHtml(text("skillCombat"))}</b>${formatNumber(edges.length)} / ${formatNumber(direct)} ${escapeHtml(text("directEvidence"))}</span></div>`;
   }
 
-  // Active-skill table: one row per skill group (Normal Attack / Skill /
-  // Ultimate / Combo, i.e. the character's playable active skills, as
-  // opposed to passive talents). Column 1 is the authored description,
-  // column 2 is the selected level's buff numbers and upgrade cost. Debug mode
-  // Column 3 keeps the useful projectile summary visible in normal mode;
-  // debug-only identifiers and ownership evidence stay inside each card.
-  function renderActiveSkillTableHeader() {
-    const columns = [text("description"), text("level"), text("projectiles")];
-    return `<div class="gameplay-active-skill-header" aria-hidden="true">${columns.map((label) => `<span>${escapeHtml(label)}</span>`).join("")}</div>`;
-  }
-
+  // One card per skill group (Normal Attack / Skill / Ultimate / Combo):
+  // header with the level slider, the description, then the selected level's
+  // action table (damage, values, projectiles per sub-skill) and cost.
   function renderActiveSkillRow(group, character) {
     const skillType = characterSkillIconType(group);
     const elementToken = String(character?.element || "").trim().toLowerCase();
@@ -2016,16 +2523,19 @@
       skillType,
       className: elementClass,
     });
-    const meta = [group.typeLabel, group.id, group.iconId ? `${text("iconId")}: ${group.iconId}` : ""].filter(Boolean).join(" / ");
-    return `<article class="gameplay-active-skill-row">
-      <div class="gameplay-active-skill-desc">
-        <div class="gameplay-group-title-wrap">${groupIcon}<div class="gameplay-group-title">${escapeHtml(group.name || group.id || "")}</div></div>
-        <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
-        ${renderActiveSkillCombatMeta(group, character)}
-        ${renderDescription(group.description)}
-      </div>
-      ${renderActiveSkillLevels(group)}
-      ${renderActiveSkillProjectiles(group)}
+    const meta = [group.id, group.iconId ? `${text("iconId")}: ${group.iconId}` : ""].filter(Boolean).join(" / ");
+    const levels = renderActiveSkillLevels(group);
+    return `<article class="gameplay-skill-block" data-level-card>
+      <header class="gameplay-skill-block-head">
+        ${groupIcon}
+        <div class="gameplay-skill-block-title">
+          <strong>${escapeHtml(group.name || group.id || "")}</strong>${group.typeLabel ? `<span class="gameplay-skill-type">${escapeHtml(group.typeLabel)}</span>` : ""}
+          <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
+        </div>
+        ${levels.control}
+      </header>
+      ${renderActiveSkillCombatMeta(group, character)}
+      ${levels.panes ? `<div class="gameplay-skill-block-levels">${levels.panes}</div>` : renderDescription(group.description)}
     </article>`;
   }
 
@@ -2063,7 +2573,7 @@
     ].filter(Boolean);
     const skillRows = (variantEntry.skillGroups || []).map((group) => renderActiveSkillRow(group, variantEntry)).join("");
     const unresolvedProjectiles = renderUnassignedCharacterProjectiles(variantEntry);
-    const talentGroups = renderTalentGroups(entry.talentGroups || []);
+    const talentGroups = renderTalentGroups(entry.talentGroups || [], characterSkillNames(entry));
     const talentCards = (entry.talents || []).map(renderTalentCard).join("");
     const characterAssets = renderCharacterAssetStrip(entry);
     const variantControl = renderEndministratorVariantControl(entry);
@@ -2071,7 +2581,7 @@
       facts,
       body: [
         section(text("characterAssets"), `${variantControl}${characterAssets}`),
-        section(text("characterSkills"), skillRows || unresolvedProjectiles ? `${skillRows ? `<div class="gameplay-active-skill-table${STATE.showDebug ? " is-debug" : ""}">${renderActiveSkillTableHeader()}<details class="gameplay-guidance"><summary>${escapeHtml(text("projectileCoverageHelp"))}</summary><p>${escapeHtml(text("projectileCoverageNote"))}</p></details>${skillRows}</div>` : ""}${unresolvedProjectiles}` : ""),
+        section(text("characterSkills"), skillRows || unresolvedProjectiles ? `${renderCharacterSkillNotes(variantEntry)}${skillRows ? `<div class="gameplay-skill-blocks">${skillRows}</div>` : ""}${unresolvedProjectiles}` : ""),
         section(text("talents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : "")),
         section(text("characterBreakthroughs"), renderCharacterBreakthroughs(entry)),
         section(text("characterPotentials"), renderCharacterPotentials(entry)),
@@ -2288,10 +2798,18 @@
     if (settings.targetGroupKey) parts.push(`group=${settings.targetGroupKey}`);
     if (settings.targetContextKey) parts.push(`context=${settings.targetContextKey}`);
     if (settings.ownerContextKey) parts.push(`owner=${settings.ownerContextKey}`);
-    if (Number.isFinite(Number(settings.targetSource))) parts.push(`source=${formatValue(settings.targetSource)}`);
-    if (Number.isFinite(Number(settings.target))) parts.push(`target=${formatValue(settings.target)}`);
-    if (Number.isFinite(Number(settings.selectorOwner))) parts.push(`selector=${formatValue(settings.selectorOwner)}`);
-    if (Number.isFinite(Number(settings.selectorDirection))) parts.push(`direction=${formatValue(settings.selectorDirection)}`);
+    let missingEnumName = false;
+    for (const [field, label] of [
+      ["targetSource", "source"], ["target", "target"],
+      ["selectorOwner", "selector owner"], ["selectorDirection", "direction"],
+      ["centerType", "center"],
+    ]) {
+      if (!Number.isInteger(settings[field])) continue;
+      const name = settings[`${field}Name`];
+      if (!name) missingEnumName = true;
+      parts.push(`${label}=${name ? `${name} (${formatValue(settings[field])})` : formatValue(settings[field])}`);
+    }
+    if (missingEnumName) parts.push(text("buffTargetEnumUnavailable"));
     return parts.join(", ");
   }
 
@@ -2351,7 +2869,7 @@
       ...buffActionDebugStats(summary.decoded),
     ].filter((item) => item.value !== undefined && item.value !== null && item.value !== "");
     if (!pairs.length) return "";
-    return `<details class="gameplay-buff-action-technical"><summary>${escapeHtml(text("buffActionTechnical"))}</summary>${renderChipPairs(pairs)}</details>`;
+    return `<div class="gameplay-buff-action-technical"><b>${escapeHtml(text("buffActionTechnical"))}</b>${renderChipPairs(pairs)}</div>`;
   }
 
   function buffDecodedActions(sequence) {
@@ -2661,7 +3179,7 @@
     const record = buffRecord(id);
     const diffClass = highlight && highlight.has(id) ? " gameplay-diff" : "";
     if (!record || record.evidenceStatus === "unresolved") {
-      return `<details class="gameplay-buff-card${diffClass}"><summary><code>${escapeHtml(id)}</code>${renderEvidenceBadge("recoveryUnavailable", "buffDecodeUnavailable", "unresolved")}</summary><p class="muted">${escapeHtml(text("buffDecodeUnavailable"))}</p></details>`;
+      return `<article class="gameplay-buff-card${diffClass}"><header class="gameplay-buff-card-head"><code>${escapeHtml(id)}</code>${renderEvidenceBadge("recoveryUnavailable", "buffDecodeUnavailable", "unresolved")}</header><p class="muted">${escapeHtml(text("buffDecodeUnavailable"))}</p></article>`;
     }
     const stacking = record.stacking || {};
     const stackingLabel = text(BUFF_STACKING_LABEL_KEYS[stacking.stackingTypeName] || "buffStackUnknown");
@@ -2703,6 +3221,9 @@
       duration ? { label: text("buffDuration"), value: Number(duration.value) < 0 ? text("buffLifeInfinity") : `${formatValue(duration.value)} ${text("secondsShort")}` } : null,
       { label: text("buffStackingType"), value: stackingLabel },
       { label: text("buffIdentifierType"), value: stacking.identifierTypeName === "StackingKey" ? text("buffIdentifierStackingKey") : text("buffIdentifierId") },
+      typeof stacking.stackingKey === "string" && stacking.stackingKey
+        ? { label: text("buffStoredStackingKey"), value: JSON.stringify(stacking.stackingKey) }
+        : null,
       Number(stacking.maxStackCnt) > 0 ? { label: text("buffMaxStack"), value: stacking.maxStackCnt } : null,
       Number(stacking.priority) !== 0 || stacking.usePriorityKey ? { label: text("buffPriority"), value: stacking.usePriorityKey ? `${stacking.priorityKey} (${formatValue(stacking.priority)})` : stacking.priority } : null,
       Number(trigger.value) >= 0 || trigger.useBlackboardKey ? { label: text("buffTriggerInterval"), value: blackboardValue(trigger) } : null,
@@ -2728,8 +3249,8 @@
     const flags = Object.entries(record.flags || {})
       .filter(([, value]) => value)
       .map(([key]) => ({ label: text(BUFF_FLAG_LABEL_KEYS[key] || key), value: text("enabled") }));
-    return `<details class="gameplay-buff-card${diffClass}">
-      <summary><code>${escapeHtml(id)}</code>${renderEvidenceBadge(summaryStatusKey, summaryStatusDetail, summaryStatusTone)}${hint ? `<span>${escapeHtml(text("buffIdentifierHint"))}: ${escapeHtml(hint)}</span>` : ""}</summary>
+    return `<article class="gameplay-buff-card${diffClass}">
+      <header class="gameplay-buff-card-head"><code>${escapeHtml(id)}</code>${renderEvidenceBadge(summaryStatusKey, summaryStatusDetail, summaryStatusTone)}${hint ? `<span>${escapeHtml(text("buffIdentifierHint"))}: ${escapeHtml(hint)}</span>` : ""}</header>
       ${renderChipPairs(facts)}
       ${abilityEventActions}
       ${abilityEventActionCount > 0 || hasActionGroup ? `<div class="gameplay-evidence-status-row">${renderEvidenceBadge(actionStatusKey, actionBoundaryKey, actionStatusTone)}</div>` : ""}
@@ -2739,13 +3260,13 @@
       ${flags.length ? renderBuffSubheading("buffFlags") + renderChipPairs(flags) : ""}
       ${refs ? renderBuffSubheading("buffReferences") + refs : ""}
       ${STATE.showDebug && record.source?.path ? `<p class="gameplay-buff-source muted">${escapeHtml(text("source"))}: ${escapeHtml(record.source.path)}</p>` : ""}
-    </details>`;
+    </article>`;
   }
 
   function renderBuffCards(ids, opts = {}) {
     const rows = [...new Set((ids || []).filter(Boolean))].map((id) => renderBuffCard(id, opts.highlight));
     if (!rows.length) return "";
-    return `<details class="gameplay-guidance gameplay-buff-guidance"><summary>${escapeHtml(text("buffEvidenceHelp"))}</summary><p>${escapeHtml(text("buffEvidenceBoundary"))}</p></details><div class="gameplay-buff-grid">${rows.join("")}</div>`;
+    return `<div class="gameplay-guidance gameplay-buff-guidance"><p>${escapeHtml(text("buffEvidenceBoundary"))}</p></div><div class="gameplay-buff-grid">${rows.join("")}</div>`;
   }
 
   function enemyModifierPairs(source) {
@@ -3031,7 +3552,12 @@
       { label: text("persistentBuff"), value: use.isPersistentBuff ? "true" : "" },
       { label: text("stackKey"), value: use.stackingKey },
     ]) : "";
-    return [renderDescription(use.description), details].filter(Boolean).join("");
+    const rendered = renderTemplateDescription(
+      use.descriptionTemplate,
+      descriptionValueMap(...actions.flatMap((action) => [action?.buffBlackboard, action?.skillBlackboard]), { duration: use.duration }),
+      use.description,
+    );
+    return [rendered.html, details].filter(Boolean).join("");
   }
 
   function renderItemActions(entry) {
@@ -3508,10 +4034,10 @@
     const rootId = combatRootForEntry(entry);
     if (!rootId) return "";
     const edges = combatEdgesFromRoot(rootId);
-    if (!edges.length) return section(text("combatLinks"), `<p class="gameplay-integration-empty">${escapeHtml(text("noCombatLinks"))}</p>`, { open: false });
+    if (!edges.length) return section(text("combatLinks"), `<p class="gameplay-integration-empty">${escapeHtml(text("noCombatLinks"))}</p>`);
     const direct = edges.filter((edge) => edge.confidence === "direct").length;
     const body = `<div class="gameplay-integration-summary"><span>${formatNumber(edges.length)} ${escapeHtml(text("combatLinks"))}</span><span>${formatNumber(direct)} ${escapeHtml(text("directEvidence"))}</span><span>${formatNumber(edges.length - direct)} ${escapeHtml(text("inferredEvidence"))}</span></div>${edges.map(renderCombatEdge).join("")}`;
-    return section(text("combatLinks"), body, { open: true });
+    return section(text("combatLinks"), body);
   }
 
   function projectileTokenMatches(value, token) {
@@ -3679,7 +4205,7 @@
       const source = projectile.source || {};
       return `<article class="gameplay-projectile-card"><header><div><strong>${escapeHtml(projectileDisplayName(projectile))}</strong><code>${escapeHtml(projectile.id || "")}</code></div><span class="gameplay-projectile-status${complete ? " is-complete" : ""}">${escapeHtml(complete ? text("projectileComplete") : text("projectilePartial"))}</span></header><div class="gameplay-projectile-facts">${facts.map(([label, value]) => `<span><b>${escapeHtml(label)}</b><code>${escapeHtml(value)}</code></span>`).join("")}</div><div class="gameplay-integration-evidence"><code>${escapeHtml([source.root, source.assetName, source.pathId].filter(Boolean).join(" / "))}</code></div></article>`;
     }).join("");
-    return section(`${text("projectiles")} (${matches.length})`, `<div class="gameplay-projectile-grid">${cards}</div>`, { open: true });
+    return section(`${text("projectiles")} (${matches.length})`, `<div class="gameplay-projectile-grid">${cards}</div>`);
   }
 
   function renderIntegratedSections(entry) {
@@ -3867,13 +4393,48 @@
       wikiSlot.innerHTML = wiki;
       wikiSlot.hidden = !wiki;
     }
-    const integrated = renderIntegratedSections(entry);
-    gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${integrated}`;
+    // Playable characters switch between their data and the loadout
+    // calculator; other kinds have only the data view.
+    const isCharacter = entry.kind === "character" && (entry.attributeRows || []).length > 0;
+    const view = isCharacter && STATE.characterView === "loadout" ? "loadout" : "info";
+    const body = view === "loadout"
+      ? window.WebUI.gameplayLoadout.render(entry, loadoutHelpers())
+      : `${rendered.body || ""}${renderIntegratedSections(entry)}`;
+    gp$("#gameplay-detail-body").innerHTML = `${isCharacter ? renderCharacterViewSwitch(view) : ""}${body}`;
     bindGameplayMediaPlayers(detail);
     bindIntegratedLinks(detail);
     bindLevelSliders(detail);
     bindVariantSwitches(detail);
+    detail.querySelectorAll("[data-character-view]").forEach((button) => {
+      button.addEventListener("click", () => {
+        if (STATE.characterView === button.dataset.characterView) return;
+        STATE.characterView = button.dataset.characterView;
+        renderDetail(entry);
+      });
+    });
+    if (view === "loadout") window.WebUI.gameplayLoadout.bind(detail, entry, loadoutHelpers());
     syncLocateCurrentButton();
+  }
+
+  function renderCharacterViewSwitch(view) {
+    const button = (key, label) => `<button type="button" role="tab" class="gameplay-view-switch-button${view === key ? " is-active" : ""}" aria-selected="${view === key}" data-character-view="${key}">${escapeHtml(text(label))}</button>`;
+    return `<div class="gameplay-view-switch" role="tablist">${button("info", "characterInfoView")}${button("loadout", "characterLoadoutView")}</div>`;
+  }
+
+  function loadoutHelpers() {
+    return {
+      STATE,
+      index: STATE.index || {},
+      entries: STATE.entries || [],
+      text,
+      escapeHtml,
+      formatValue,
+      formatNumber,
+      formatDescriptionValue,
+      renderMaterialChips,
+      renderEvidenceBadge,
+      goldItem: goldCurrencyItem,
+    };
   }
 
   function renderListNote(message) {

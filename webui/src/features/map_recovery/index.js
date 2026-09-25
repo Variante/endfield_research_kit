@@ -12,7 +12,7 @@
   const ENTITY_SCALE_MAX = 3;
   const ENTITY_SCALE_STEP = 1.25;
   const POINT_HEIGHT_SLICE_COUNT = 32;
-  const MAP_ASSET_VERSION = "20260823-map112";
+  const MAP_ASSET_VERSION = "20260924-map113";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const MAP_RAIL_OFFSET = 72; // keep the map's visual centre clear of the left rail
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
@@ -59,11 +59,12 @@
     kinds: new Set(),
     subKinds: new Set(),
     mapLayers: new Set(), // raw UILevelMapLoadConfig tier ids in the loaded region
-    modelLayers: new Set(["elevation", "surface", "water", "points"]),
-    layerOpacities: { minimap: 1, elevation: 1, surface: 1, water: 1, points: 0.82 },
+    modelLayers: new Set(["terrain", "elevation", "surface", "water", "points"]),
+    layerOpacities: { minimap: 1, terrain: 1, elevation: 1, surface: 1, water: 1, points: 0.82 },
     showMinimap: true,
     showQuests: false,
     storyOnly: false,
+    mapMarkOnly: false,
     mission: "", // "" means every mission this level hosts
     missionPhase: "", // exact questId from an NPC dialog attachment; never inferred order
     bound: false,
@@ -119,6 +120,7 @@
   const svgEl = () => root()?.querySelector(".mr-canvas");
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
+  const isTerrainBytePreview = (underlay) => underlay?.status === "terrain_height_grid_diagnostic";
   const pointHeightMasks = () => state.modelBackgrounds
     .map((row) => row.pointCloudOverlay?.sampleSet || row.pointCloudOverlay?.heightMask)
     .filter((row) => row?.src && Number.isFinite(Number(row.elevationRange?.min)) && Number.isFinite(Number(row.elevationRange?.max)));
@@ -217,8 +219,13 @@
   const modelLayerControlsHtml = () => {
     const hasMinimap = state.backgrounds.some((row) => row.sourceKind === "minimap");
     if (!state.modelBackgrounds.length && !hasMinimap) return "";
+    const underlays = [...state.backgrounds, ...state.modelBackgrounds]
+      .map((row) => row.elevationUnderlay)
+      .filter((row) => row?.src);
+    const hasTerrainPreview = underlays.some(isTerrainBytePreview);
     const rows = [
-      ["elevation", "modelElevation", [...state.backgrounds, ...state.modelBackgrounds].some((row) => row.elevationUnderlay?.src)],
+      ["terrain", "terrainBytePreview", hasTerrainPreview],
+      ["elevation", "modelElevation", underlays.some((row) => !isTerrainBytePreview(row))],
       ["surface", "modelSurface", state.modelBackgrounds.some((row) => row.status !== "inferred_registry_point_cloud_preview")],
       ["water", "modelWater", state.modelBackgrounds.some((row) => row.waterOverlay?.src)],
       ["points", "modelPoints", state.modelBackgrounds.some((row) => row.pointCloudOverlay?.src)],
@@ -231,7 +238,7 @@
       const opacity = Math.round((state.layerOpacities[id] ?? 1) * 100);
       const text = t(label);
       return `<div class="mr-model-layer-row"><input type="checkbox" data-map-display-layer="${id}" aria-label="${esc(text)}" ${checked ? "checked" : ""}><span>${esc(text)}</span><input type="range" min="0" max="100" step="1" value="${opacity}" data-map-layer-opacity="${id}" aria-label="${esc(`${text} ${t("layerOpacity")}`)}" title="${opacity}%"></div>`;
-    }).join("")}</fieldset>`;
+    }).join("")}${hasTerrainPreview ? `<p class="mr-terrain-byte-note">${esc(t("terrainBytePreviewBoundary"))}</p>` : ""}</fieldset>`;
   };
   KIND_LABELS.en.empty_slot = "Unresolved empty slots";
   KIND_LABELS.zh.empty_slot = "\u672a\u89e3\u6790\u7a7a\u69fd";
@@ -491,6 +498,8 @@
       minimapLayer: "In-game minimap",
       modelSurface: "Color textures",
       modelElevation: "Grayscale elevation",
+      terrainBytePreview: "Terrain _H byte preview",
+      terrainBytePreviewBoundary: "This grayscale preview combines each two-byte _H texel as a little-endian integer. The game's scalar height decode, value ordering, and world-Y scale are unresolved.",
       modelWater: "Recovered water",
       modelPoints: "Colored point cloud",
       fit: "Fit",
@@ -507,6 +516,12 @@
       noNodes: "No plotted nodes for current layers.",
       questPoints: "quest points",
       entityMarkers: "markers",
+      authoredMapMarks: "Authored map marks",
+      mapMarksOnLevel: "registry-linked marks shown in this level",
+      registryLinkedMarks: "registry-linked in the source corpus",
+      sceneLinkedMarks: "with a direct authored scene",
+      unmatchedRegistryMarks: "authored marks without a registry ID/position join",
+      unplacedMapMarks: "authored marks without a direct scene",
       pinnedFiles: "pinned files",
       exactNpcs: "exact NPCs",
       storyNodes: "nodes with dialog",
@@ -525,6 +540,7 @@
       layersAll: "All",
       layersNone: "None",
       layersStory: "With dialog",
+      layersMapMarks: "Authored marks",
       layerSelectionHint: "The overview starts as a clean geographic map. Enable quests, dialog markers, or other layers when needed.",
       loadError: "Map recovery data could not be loaded",
       retry: "Retry",
@@ -545,6 +561,10 @@
       kind: "Kind",
       identity: "Identity",
       detailId: "detailId",
+      mapMarkTemplate: "Authored map mark",
+      mapMarkGroup: "Map mark group key",
+      mapMarkDefaultVisible: "Authored default visible",
+      mapMarkEvidence: "Authored map mark evidence",
       interaction: "Interaction",
       evidenceField: "Evidence",
       storyKey: "Story key",
@@ -646,6 +666,8 @@
       minimapLayer: "游戏小地图",
       modelSurface: "彩色贴图",
       modelElevation: "灰度高程",
+      terrainBytePreview: "Terrain _H 字节预览",
+      terrainBytePreviewBoundary: "此灰度预览将每个 _H 纹素的两个字节按小端整数合并。游戏的标量高度解码、数值顺序及世界 Y 比例尚未证实。",
       modelWater: "恢复水体",
       modelPoints: "彩色点云",
       fit: "适配",
@@ -661,6 +683,12 @@
       noNodes: "当前图层没有可绘制节点。",
       questPoints: "任务点",
       entityMarkers: "实体标记",
+      authoredMapMarks: "配置地图标记",
+      mapMarksOnLevel: "本关卡已显示的实体关联标记",
+      registryLinkedMarks: "源数据中与实体关联",
+      sceneLinkedMarks: "另有直接场景关联",
+      unmatchedRegistryMarks: "未与实体 ID 和位置同时关联的配置标记",
+      unplacedMapMarks: "缺少直接场景关联的配置标记",
       pinnedFiles: "关联文件",
       exactNpcs: "精确 NPC",
       storyNodes: "含剧情节点",
@@ -679,6 +707,7 @@
       layersAll: "全选",
       layersNone: "全不选",
       layersStory: "含剧情",
+      layersMapMarks: "配置标记",
       questRoute: "任务路线",
       gridFit: "底图网格拟合",
       gridFitOf: "／共",
@@ -695,6 +724,10 @@
       kind: "类型",
       identity: "标识",
       detailId: "detailId",
+      mapMarkTemplate: "地图标记模板",
+      mapMarkGroup: "地图标记分组键",
+      mapMarkDefaultVisible: "配置默认可见",
+      mapMarkEvidence: "配置地图标记证据",
       interaction: "交互状态",
       evidenceField: "证据",
       storyKey: "剧情键",
@@ -789,6 +822,10 @@
         [t("kind"), node.kind],
         [t("identity"), node.identity],
         [t("detailId"), node.detailId],
+        [t("mapMarkTemplate"), node.mapMark?.templateId],
+        [t("mapMarkGroup"), node.mapMark?.groupKey],
+        [t("mapMarkDefaultVisible"), node.mapMark ? String(node.mapMark.defaultVisible) : ""],
+        [t("mapMarkEvidence"), node.mapMark?.evidence],
         [t("interaction"), node.interactionStatus],
         [t("documentTitle"), node.documentTitle],
         [t("storyKey"), node.storyKey],
@@ -1775,6 +1812,7 @@
       .filter((row) => matchesMission(row) || (state.kinds.has(row.kind) && state.subKinds.has(row.subKind || row.kind)))
       .filter((row) => matchesMission(row) || inMapLayer(row))
       .filter((row) => matchesMission(row) || !state.storyOnly || Number(row.storyCount || 0) > 0)
+      .filter((row) => !state.mapMarkOnly || !!row.mapMark)
       .map((row) => ({
         ...row,
         type: "marker",
@@ -1977,8 +2015,9 @@
           ? ` transform="rotate(90 ${(x + w / 2).toFixed(2)} ${(y + h / 2).toFixed(2)})"`
           : "";
         const geometry = `x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${w.toFixed(2)}" height="${h.toFixed(2)}"${orientation}`;
-        const underlay = state.modelLayers.has("elevation") && bg.elevationUnderlay?.src
-          ? `<image class="mr-bg-image mr-bg-elevation" filter="url(#mr-elevation-opaque-alpha)" href="data/map_recovery/${esc(bg.elevationUnderlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} elevation`)}</title></image>`
+        const underlayKind = isTerrainBytePreview(bg.elevationUnderlay) ? "terrain" : "elevation";
+        const underlay = state.modelLayers.has(underlayKind) && bg.elevationUnderlay?.src
+          ? `<image class="mr-bg-image mr-bg-${underlayKind}" filter="url(#mr-elevation-opaque-alpha)" href="data/map_recovery/${esc(bg.elevationUnderlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} ${t(underlayKind === "terrain" ? "terrainBytePreview" : "modelElevation")}`)}</title></image>`
           : "";
         const pointSrc = bg.pointCloudOverlay?.src || "";
         const mainIsPointCloud = bg.status === "inferred_registry_point_cloud_preview";
@@ -2001,7 +2040,7 @@
         const points = state.modelLayers.has("points") && visiblePointSrc
           ? `<image class="mr-bg-image mr-bg-point-cloud" href="${esc(pointUrl)}"${heightAttrs} ${geometry} style="opacity:${layerOpacity("points")}"><title>${esc(`${bg.levelId} point cloud`)}</title></image>`
           : "";
-        if (part === "elevation") return underlay;
+        if (part === "terrain" || part === "elevation") return part === underlayKind ? underlay : "";
         if (part === "base") return surface;
         if (part === "water") return water;
         if (part === "points") return points;
@@ -2027,13 +2066,19 @@
       ...modelOverlayRects,
       ...bgRects.filter(({ bg }) => bg.elevationUnderlay?.src),
     ].map((rect) => [elevationRectKey(rect), rect])).values()];
+    const terrainImages = elevationRects.map((rect) => modelImages(rect, rect.overMinimap, "terrain")).join("");
     const elevationImages = elevationRects.map((rect) => modelImages(rect, rect.overMinimap, "elevation")).join("");
-    // Elevation PNGs use translucent edge pixels. Normalize every materially
-    // covered source pixel to opaque before composing sibling screens so an overlap
-    // replaces the previous value instead of accumulating a darker shade.
-    // The user's opacity is then applied once to the completed elevation set.
+    // Diagnostic Terrain and geometry elevation PNGs can both have translucent
+    // edges. Compose each set separately so toggling one does not relabel or
+    // change the other; normalize overlaps before applying user opacity.
+    const underlayFilter = terrainImages || elevationImages
+      ? `<defs><filter id="mr-elevation-opaque-alpha" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer></filter></defs>`
+      : "";
+    const terrainLayer = terrainImages
+      ? `<g class="mr-bg-terrain-layer" style="opacity:${layerOpacity("terrain")}">${terrainImages}</g>`
+      : "";
     const elevationLayer = elevationImages
-      ? `<defs><filter id="mr-elevation-opaque-alpha" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer></filter></defs><g class="mr-bg-elevation-layer" style="opacity:${layerOpacity("elevation")}">${elevationImages}</g>`
+      ? `<g class="mr-bg-elevation-layer" style="opacity:${layerOpacity("elevation")}">${elevationImages}</g>`
       : "";
     const modelBaseImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "base")).join("");
     const waterImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "water")).join("");
@@ -2046,7 +2091,7 @@
       ? `<defs><filter id="mr-water-union-alpha" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 0.6588235"/></feComponentTransfer></filter></defs><g class="mr-bg-water-union" filter="url(#mr-water-union-alpha)" style="opacity:${layerOpacity("water")}">${waterImages}</g>`
       : "";
     const pointImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "points")).join("");
-    const backgroundImages = `${minimapLayer}${elevationLayer}${modelBaseImages}${waterUnion}${pointImages}`;
+    const backgroundImages = `${minimapLayer}${underlayFilter}${terrainLayer}${elevationLayer}${modelBaseImages}${waterUnion}${pointImages}`;
     // Level display names describe gameplay scenes, not geographic ownership
     // of the whole (overlapping) map-screen rectangle. Location labels come
     // from the map UI's own staticElements text anchors instead. Keep them as
@@ -2203,6 +2248,7 @@
         <button type="button" data-map-layers="all">${esc(t("layersAll"))}</button>
         <button type="button" data-map-layers="none">${esc(t("layersNone"))}</button>
         <button type="button" data-map-layers="story">${esc(t("layersStory"))}</button>
+        ${(data.markers || []).some((row) => row.mapMark) ? `<button type="button" data-map-layers="marks" aria-pressed="${state.mapMarkOnly}">${esc(t("layersMapMarks"))}</button>` : ""}
       </div>
       <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
       <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer" style="--mr-chip:${QUEST_COLOR}"><input type="checkbox" data-map-quests ${state.showQuests ? "checked" : ""}><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>${esc(kindLabel("quest"))}<span class="mr-layer-count">${data.questPoints.length}</span></label>` : ""}${layerControls}</div>
@@ -2212,6 +2258,16 @@
     const unresolvedSlots = data.unresolvedTriggerSlots || { count: 0 };
     const unplaced = data.unplacedStories || { count: 0 };
     const unplacedActions = data.unplacedActionTargets || { count: 0 };
+    const mapMarkCoverage = data.mapMarkCoverage || {};
+    const mapMarkEvidence = ["validated", "partial"].includes(mapMarkCoverage.status)
+      ? `<details><summary>${esc(t("authoredMapMarks"))} (${Number(mapMarkCoverage.publishedMarksInLevel || 0)})</summary>
+          <p class="mr-note"><b>${Number(mapMarkCoverage.publishedMarksInLevel || 0)}</b> / <b>${Number(mapMarkCoverage.registryLinkedNodesInLevel || 0)}</b> ${esc(t("mapMarksOnLevel"))};
+          <b>${Number(mapMarkCoverage.registryLinkedMarks || 0)}</b> / <b>${Number(mapMarkCoverage.authoredMarks || 0)}</b> ${esc(t("registryLinkedMarks"))};
+          <b>${Number(mapMarkCoverage.directSceneMarks || 0)}</b> ${esc(t("sceneLinkedMarks"))};
+          <b>${Number(mapMarkCoverage.withoutRegistryLinkMarks || 0)}</b> ${esc(t("unmatchedRegistryMarks"))};
+          <b>${Number(mapMarkCoverage.withoutDirectSceneMarks || 0)}</b> ${esc(t("unplacedMapMarks"))}.</p>
+          <p class="mr-note">${esc(mapMarkCoverage.boundary || "")}</p></details>`
+      : "";
     const bg = data.renderBackground || {};
     const surfaceEvidence = bg.surfaceEvidence && typeof bg.surfaceEvidence === "object" ? bg.surfaceEvidence : null;
     const surfaceAccuracy = surfaceEvidence?.accuracy
@@ -2305,6 +2361,7 @@
           ${sceneBlock}
           ${bg.gridFit ? `<p class="mr-note">${esc(t("gridFit"))}: <b>${Math.round((bg.gridFit.coverage || 0) * 100)}%</b> ${esc(t("gridFitOf"))} ${bg.gridFit.samplePoints} ${esc(t("gridFitMarkers"))} — <code>origin ${bg.gridFit.originX}, ${bg.gridFit.originZ}</code> / <code>${bg.gridFit.baseCellSize}m</code></p>` : ""}
           <p class="mr-note">${esc(data.npcCoverage?.boundary || "")}</p>
+          ${mapMarkEvidence}
           ${unplaced.count
             ? `<details><summary>${esc(`${t("unplacedStories")} (${unplaced.count})`)}</summary>
                 <p class="mr-note">${esc(unplaced.boundary || "")}</p>
@@ -2370,6 +2427,7 @@
     host.querySelectorAll("[data-map-mission]").forEach((button) => button.addEventListener("click", () => {
       state.mission = button.dataset.mapMission || "";
       state.missionPhase = "";
+      state.mapMarkOnly = false;
       // A selected mission always exposes its complete footprint, regardless
       // of the ordinary marker and floor filters.
       state.pendingFit = true;
@@ -2395,6 +2453,7 @@
       event.currentTarget.title = `${Math.round(opacity * 100)}%`;
       const selector = {
         minimap: ".mr-bg-minimap-layer",
+        terrain: ".mr-bg-terrain-layer",
         elevation: ".mr-bg-elevation-layer",
         surface: ".mr-bg-model-surface",
         water: ".mr-bg-water-union",
@@ -2442,9 +2501,15 @@
     host.querySelectorAll("[data-map-layers]").forEach((button) => button.addEventListener("click", () => {
       const mode = button.dataset.mapLayers;
       const kinds = state.map?.facets?.kinds || {};
-      const keep = ([kind, info]) => (mode === "all" ? true : mode === "story" ? info.storyCount > 0 : false);
+      const markKinds = new Set((state.map?.markers || []).filter((row) => row.mapMark).map((row) => row.kind));
+      const keep = ([kind, info]) => (mode === "all" ? true : mode === "story" ? info.storyCount > 0 : mode === "marks" ? markKinds.has(kind) : false);
       state.storyOnly = mode === "story";
+      state.mapMarkOnly = mode === "marks";
       state.showQuests = mode === "all";
+      if (state.mapMarkOnly) {
+        state.mission = "";
+        state.missionPhase = "";
+      }
       state.kinds = new Set(Object.entries(kinds).filter(keep).map(([kind]) => kind));
       state.subKinds = allSubKinds(state.map);
       render();
@@ -2943,10 +3008,11 @@
     const hasMinimapBase = state.backgrounds.some((background) => background.sourceKind === "minimap");
     state.showMinimap = true;
     state.modelLayers = state.modelBackgrounds.length
-      ? new Set(hasMinimapBase ? ["points"] : ["elevation", "surface", "water", "points"])
+      ? new Set(hasMinimapBase ? ["points"] : ["terrain", "elevation", "surface", "water", "points"])
       : new Set();
     resetPointHeightRange();
     state.storyOnly = false;
+    state.mapMarkOnly = false;
     state.mission = state.map.defaultMission || "";
     state.missionPhase = "";
     state.transform = { x: 0, y: 0, scale: 1 };

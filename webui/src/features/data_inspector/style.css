@@ -224,6 +224,8 @@
 
 .data-inspector-status.is-unsupported,
 .data-inspector-chip.is-status-unsupported,
+.data-inspector-status.is-structural_only,
+.data-inspector-chip.is-status-structural_only,
 .data-inspector-status.is-bounded_partial,
 .data-inspector-status.is-bounded_partial_ambiguous,
 .data-inspector-chip.is-status-bounded_partial {
@@ -301,6 +303,169 @@
   margin-right: 8px;
   color: #6f53a8;
   font-weight: 700;
+}
+
+.data-inspector-catalog-terms > summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.data-inspector-catalog-terms > summary span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.data-inspector-catalog-term-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  max-height: 260px;
+  margin-top: 12px;
+  overflow: auto;
+}
+
+.data-inspector-catalog-term-list button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-2);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.data-inspector-catalog-term-list button:hover {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.data-inspector-catalog-term-list button.is-action-term {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+}
+
+.data-inspector-catalog-term-list code {
+  overflow-wrap: anywhere;
+}
+
+.data-inspector-catalog-term-list span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.data-inspector-action-occurrences > summary {
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.data-inspector-action-occurrences > summary span {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.data-inspector-action-occurrences ol {
+  display: grid;
+  gap: 6px;
+  max-height: 340px;
+  margin: 12px 0 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.data-inspector-action-occurrences li {
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-2);
+}
+
+.data-inspector-action-occurrences li > button {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px 10px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.data-inspector-action-occurrences li > button:hover code {
+  color: var(--accent-text);
+  text-decoration: underline;
+}
+
+.data-inspector-action-occurrences li > button span,
+.data-inspector-action-source {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.data-inspector-action-source {
+  display: block;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+}
+
+.data-inspector-references ul {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.data-inspector-reference {
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+
+.data-inspector-reference > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 7px;
+}
+
+.data-inspector-reference code {
+  overflow-wrap: anywhere;
+}
+
+.data-inspector-reference small,
+.data-inspector-reference-state {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.data-inspector-reference small {
+  display: block;
+  margin-top: 5px;
+}
+
+.data-inspector-reference button {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.data-inspector-reference button:hover {
+  border-color: var(--accent);
 }
 
 .data-inspector-chip-row {
@@ -623,6 +788,13 @@
 .data-inspector-branch.is-hit > summary {
   background: rgba(var(--accent-rgb), .1);
   border-radius: 4px;
+}
+
+.data-inspector-leaf.is-located,
+.data-inspector-branch.is-located > summary {
+  background: rgba(var(--accent-rgb), .18);
+  border-radius: 4px;
+  outline: 1px solid var(--accent);
 }
 
 .data-inspector-leaf.is-elided {

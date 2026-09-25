@@ -26,6 +26,21 @@ the page paginates that complete set. `--sample-limit N` is only an explicit
 diagnostic cap, with `0` meaning unlimited. Oversized per-file text diff
 previews remain bounded independently and do not remove their update entries.
 
+A `.json` name says nothing about a file's bytes: most of the export's
+`game/Json` tree is serialized MemoryPack, and only a minority is UTF-8 text.
+The diffed text is therefore decided by content, never by extension. Plain text
+is its own diff; a serialized payload is rendered through the maintained
+`scripts.game_data` reader that owns it, routed in
+`scripts.webui.decoded_payloads`; a payload no reader routes, or one over the
+diff size limit, gets no text at all. Each file records which of those it is,
+so the page can name the reader, mark a bounded reader's view as partial, and
+explain an empty panel instead of showing replacement characters. Two rules
+keep that honest: "lines" count the text actually diffed, not stray line-feed
+bytes inside a payload, and an unchanged decoded view of a changed file is
+reported as a change outside the reader's coverage, never as no change.
+Changing the routing or a reader's coverage changes the cached text, so refresh
+the previous-export baseline afterwards.
+
 Path identity is supplemented by two fail-closed relocation joins. Unity
 exports with generated `_p<PathID>` suffixes are paired only when their stable
 kind, extension, and suffix-stripped path are one-to-one. Unmatched decoded
@@ -67,6 +82,10 @@ modification. This keeps add/delete rows meaningful in the same sort mode.
 - A recognized relocation proves export identity under its recorded matching
   rule; it does not prove that the underlying game event or semantic owner is
   unchanged.
+- A decoded diff proves only what its reader covers. A whole-file reader
+  bounds the change exactly; a bounded reader does not, and a change it cannot
+  see is reported rather than hidden. The rendering is evidence about the
+  payload, never a source file the game ships.
 - Both complete roots are mandatory. There is no first-run installed-VFS mode.
 - Character tags fail closed when either `CharacterTable` is missing or
   invalid, including invalid overlays and tables without valid character rows;
@@ -90,3 +109,6 @@ python -m scripts.webui.updates.build_updates --refresh-previous-export-baseline
 - Keep focused roots synchronized with actual WebUI consumers.
 - Preserve deterministic categories when exported layouts evolve.
 - Keep pruning guards fail-closed and independently tested.
+- LevelScriptData is the largest changed family and its reader is bounded, so
+  most of its entries currently report an identical decoded view. Widening that
+  reader is what turns those rows into real diffs.

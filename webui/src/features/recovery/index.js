@@ -1,14 +1,16 @@
 // Recovery progress page.
 //
-// Renders webui/data/recovery/index.json (schema endfield.recovery-progress.v4):
+// Renders webui/data/recovery/index.json (schema endfield.recovery-progress.v5):
 // a log-scaled volume bar per VFS block, then a tree of VFS blocks whose leaves
 // are the declared logical-file types, each with its four L1-L4 stage states.
+// A type that carries Unity objects lists its object types, measured from the
+// export's asset maps, one level deeper.
 //
 // Volumes are measured; stages are declared readings of the cited memory
 // topic. There is no progress score, and bar width never means "understood".
 (() => {
   const DATA_URL = "data/recovery/index.json";
-  const SCHEMA = "endfield.recovery-progress.v4";
+  const SCHEMA = "endfield.recovery-progress.v5";
 
   const TEXTS = {
     zh: {
@@ -27,6 +29,9 @@
       states: "状态",
       selectFamily: "选择一类文件查看各层级的证据与来源。",
       files: "文件",
+      objects: "对象",
+      objectTypes: "Unity 对象类型",
+      objectTypesNote: "对象数来自导出的资源映射，按 (类型, PathID) 去重；只含 AnimeStudio 映射的类型。",
       chunks: "chunk",
       noFiles: "本地概况中无文件",
       avail_absent: "未安装",
@@ -60,6 +65,9 @@
       states: "States",
       selectFamily: "Select a file type to see its evidence and sources per level.",
       files: "files",
+      objects: "objects",
+      objectTypes: "Unity object types",
+      objectTypesNote: "Object counts come from the export's asset maps, de-duplicated by (type, PathID); only the types AnimeStudio maps are listed.",
       chunks: "chunks",
       noFiles: "no files in the local profile",
       avail_absent: "not installed",
@@ -108,7 +116,7 @@
     locale: "zh",
     metric: "bytes",
     collapsed: new Set(), // blocks start open so every type's state is visible
-    selected: null, // { block, family }
+    selected: null, // { block, family, type? }
     status: null,
   };
 
@@ -372,53 +380,62 @@
     return item;
   }
 
-  function renderFamily(payload, block, family) {
-    const item = el("li");
-    const button = el("button", `recovery-family${family.declared ? "" : " is-other"}`);
+  function isSelected(block, family, type = null) {
+    const selected = STATE.selected;
+    return selected?.block === block.enumName && selected?.family === family.id && (selected?.type || null) === type;
+  }
+
+  function selectable(className, key, payload) {
+    const button = el("button", className);
     button.type = "button";
-    button.setAttribute(
-      "aria-pressed",
-      String(STATE.selected?.block === block.enumName && STATE.selected?.family === family.id),
-    );
-    const label = el("span", "recovery-family-name", localized(family, "label"));
-    if (!family.declared) label.appendChild(el("span", "recovery-avail", t("unclassified")));
-    button.appendChild(label);
-    button.appendChild(el("span", "recovery-size", sizeLine(family.measured)));
-    button.appendChild(stageStrip(family.stages, payload.levels));
+    button.setAttribute("aria-pressed", String(isSelected(...key)));
     button.addEventListener("click", () => {
-      STATE.selected = { block: block.enumName, family: family.id };
-      document.querySelectorAll(".recovery-family[aria-pressed='true']").forEach((node) => {
+      const [block, family, type] = key;
+      STATE.selected = { block: block.enumName, family: family.id, type: type || null };
+      document.querySelectorAll(".recovery-tree [aria-pressed='true']").forEach((node) => {
         node.setAttribute("aria-pressed", "false");
       });
       button.setAttribute("aria-pressed", "true");
       const detail = document.querySelector(".recovery-detail");
       if (detail) fillDetail(payload, detail);
     });
+    return button;
+  }
+
+  function renderFamily(payload, block, family) {
+    const item = el("li");
+    const button = selectable(`recovery-family${family.declared ? "" : " is-other"}`, [block, family], payload);
+    const label = el("span", "recovery-family-name", localized(family, "label"));
+    if (!family.declared) label.appendChild(el("span", "recovery-avail", t("unclassified")));
+    button.appendChild(label);
+    button.appendChild(el("span", "recovery-size", sizeLine(family.measured)));
+    button.appendChild(stageStrip(family.stages, payload.levels));
     item.appendChild(button);
+
+    if (family.objectTypes?.length) {
+      const list = el("ul", "recovery-object-types");
+      list.setAttribute("aria-label", t("objectTypes"));
+      for (const type of family.objectTypes) {
+        const row = el("li");
+        const typeButton = selectable(
+          `recovery-family recovery-object-type${type.declared ? "" : " is-other"}${type.measured.objects ? "" : " is-empty"}`,
+          [block, family, type.id],
+          payload,
+        );
+        typeButton.appendChild(el("span", "recovery-family-name", type.id));
+        typeButton.appendChild(el("span", "recovery-size", `${num(type.measured.objects)} ${t("objects")}`));
+        typeButton.appendChild(stageStrip(type.stages, payload.levels));
+        row.appendChild(typeButton);
+        list.appendChild(row);
+      }
+      item.appendChild(list);
+    }
     return item;
   }
 
-  function fillDetail(payload, detail) {
-    detail.textContent = "";
-    const block = payload.vfs.blocks.find((row) => row.enumName === STATE.selected?.block);
-    const family = block?.families.find((row) => row.id === STATE.selected?.family);
-    if (!family) {
-      detail.appendChild(el("p", "recovery-note", t("selectFamily")));
-      return;
-    }
-    const measured = family.measured || {};
-    detail.appendChild(el("h3", null, localized(family, "label")));
-    detail.appendChild(
-      el(
-        "p",
-        "recovery-note",
-        `${block.enumName} · ${sizeLine(measured)}${measured.containerChunks ? ` · ${num(measured.containerChunks)} ${t("chunks")}` : ""}`,
-      ),
-    );
-    detail.appendChild(el("p", null, family.declared ? localized(family, "description") : t("unclassifiedNote")));
-
+  function stageList(payload, stagesData) {
     const stages = el("ol", "recovery-stage-list");
-    for (const stage of family.stages || []) {
+    for (const stage of stagesData || []) {
       const level = payload.levels.find((row) => row.level === stage.level);
       const info = stateInfo(stage.state);
       const row = el("li", `is-${stage.state}`);
@@ -444,7 +461,40 @@
       }
       stages.appendChild(row);
     }
-    detail.appendChild(stages);
+    return stages;
+  }
+
+  function fillDetail(payload, detail) {
+    detail.textContent = "";
+    const block = payload.vfs.blocks.find((row) => row.enumName === STATE.selected?.block);
+    const family = block?.families.find((row) => row.id === STATE.selected?.family);
+    if (!family) {
+      detail.appendChild(el("p", "recovery-note", t("selectFamily")));
+      return;
+    }
+    const type = STATE.selected.type && (family.objectTypes || []).find((row) => row.id === STATE.selected.type);
+    if (type) {
+      detail.appendChild(el("h3", null, type.id));
+      detail.appendChild(
+        el("p", "recovery-note", `${block.enumName} · ${localized(family, "label")} · ${num(type.measured.objects)} ${t("objects")}`),
+      );
+      detail.appendChild(el("p", null, localized(type, "description")));
+      detail.appendChild(stageList(payload, type.stages));
+      detail.appendChild(el("p", "recovery-note", t("objectTypesNote")));
+      return;
+    }
+    const measured = family.measured || {};
+    detail.appendChild(el("h3", null, localized(family, "label")));
+    detail.appendChild(
+      el(
+        "p",
+        "recovery-note",
+        `${block.enumName} · ${sizeLine(measured)}${measured.containerChunks ? ` · ${num(measured.containerChunks)} ${t("chunks")}` : ""}`,
+      ),
+    );
+    detail.appendChild(el("p", null, family.declared ? localized(family, "description") : t("unclassifiedNote")));
+
+    detail.appendChild(stageList(payload, family.stages));
 
     if (family.pathRegex) {
       const pattern = el("p", "recovery-note");

@@ -29,6 +29,16 @@ coverage live under `reports/assets/map_recovery/`.
 - Story-to-point links require an exact trigger/action/slot, NPC attachment, or
   authored pin join. Mission context, sibling actions, filename similarity,
   and proximity are diagnostics only.
+- Exact `LevelMapMark.basicData.markInstId` and equal decoded position attach
+  authored map-mark template and default-visibility data to an existing
+  `WorldEntityRegistry` node. A narrower subset has an independent unique
+  `LevelShortIdTable.sceneName` join and may show authored scene evidence.
+  Registry-only annotations do not claim an authored scene from the registry's
+  id bucket. The Map payload reports both joins and per-level coverage; it
+  does not plot unmatched marks by numeric group key or claim live visibility
+  or discovery. The `Authored marks` filter shows only existing nodes carrying
+  this annotation and keeps the selected authored floor constraint, so it does
+  not manufacture nodes for the unmatched set.
 - Map01/Map02 and config-proven shared scenes stitch only through published
   region contracts. Dungeons and danger maps remain independent.
 - Minimap, elevation, material surface, water, and point samples retain their
@@ -82,11 +92,18 @@ coverage live under `reports/assets/map_recovery/`.
   alpha-composites them from low to high. A bounded height filter omits
   excluded slabs, so removing an upper layer reveals co-projected geometry
   below it instead of retaining the upper layer's raster coverage.
-- Exported Terrain `_H` records provide a faster independent elevation layer.
-  The builder indexes only the validated finest Map01/Map02 grids, decodes only
+- Exported Terrain `_H` records provide an independent diagnostic byte preview.
+  The current authenticated Terrain corpus confirms the same 65-by-65,
+  two-byte-texel header shape for every `_H` tile.
+  The builder indexes only the validated finest Map01/Map02 grids, reads only
   cells intersecting the selected level's authored world rectangle, and reuses
-  unchanged PNGs through source sidecars. The layer preserves relative uint16
-  relief but claims no absolute world-Y scale and no no-data sentinel.
+  unchanged PNGs through source sidecars. Each stored texel is two bytes; the
+  preview combines them little-endian solely to form grayscale contrast. The
+  selected native format identifies two-channel texels, but no scalar height
+  decode, relative relief ordering, absolute world-Y scale, or no-data sentinel
+  has been proved. Map gives this preview its own control and leaves
+  mesh-derived grayscale elevation separate. The native format evidence and
+  remaining consumer join are in [`../game_data/world_terrain.md`](../game_data/world_terrain.md).
 - Water requires both authored minimap water pixels and exact WaterData scene
   evidence. Packed flowmaps alone are not coverage.
 - Levels without in-game minimaps retain an exact registry/quest transform

@@ -53,6 +53,11 @@ from scripts.webui.story.level_bindings import (
     decode_leveldata_npc_patrol_list,
 )
 from scripts.game_data.levelscript_binary import decode_levelscript_binary_summary
+from scripts.game_data.map_mark_relations import (
+    DEFAULT_CORPUS as MAP_MARK_CORPUS,
+    DEFAULT_FILES as MAP_MARK_CORPUS_FILES,
+    audit as audit_map_mark_relations,
+)
 from scripts.game_data.cutscene_case_resolution_native import (
     load_cutscene_case_resolution_contract,
 )
@@ -90,6 +95,8 @@ ANIMESTUDIO_ASSET_MAP_REL = (
 )
 MODEL_ROOT_REL = export_rel_path(EXPORT_LAYOUT.unity_type_dir("Mesh"))
 MAP_MARK_TEMP_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "MapMarkTempTable.json")
+LEVEL_MAP_MARK_REL = f"{GAMEPLAY_CONFIG}/LevelMapMark.json"
+LEVEL_SHORT_ID_REL = f"{GAMEPLAY_CONFIG}/LevelShortIdTable.json"
 MODEL_TABLE_REL = f"{GAMEPLAY_CONFIG}/ModelTable.json"
 SPACESHIP_CONST_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "SpaceshipConst.json")
 FACTORY_BUILDING_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "FactoryBuildingTable.json")
@@ -170,6 +177,9 @@ STRONG_RELATIONS = {
     "story_map_pin",
     "story_world_narrative",
     "script_action_target_source",
+    "authored_map_mark",
+    "authored_map_mark_scene",
+    "authored_map_mark_template",
 }
 
 # Within one strength band the list is ordered by how specific the file is to
@@ -183,6 +193,9 @@ RELATION_ORDER = [
     "story_map_pin",
     "story_world_narrative",
     "script_action_target_source",
+    "authored_map_mark",
+    "authored_map_mark_scene",
+    "authored_map_mark_template",
     "placement_source",
     "story_quest_anchor",
     "story_proximity",
@@ -4830,6 +4843,79 @@ def _facets(markers: list[dict], quest_points: list[dict], missions: list[str]) 
     }
 
 
+def _attach_authored_map_marks(markers: list[dict], level_id: str, map_mark_audit: dict | None) -> dict:
+    """Join authored data to existing nodes by exact ID and position only."""
+    scene_by_mark = {
+        row["markInstId"]: row["sceneName"]
+        for row in (map_mark_audit or {}).get("sceneLinkedMarks", [])
+    }
+    direct_map_marks = [mark_id for mark_id, scene in scene_by_mark.items() if scene == level_id]
+    registry_nodes = {
+        row["identity"]: row for row in markers
+        if row.get("registryBacked") and str(row.get("identity") or "").startswith("world:")
+    }
+    registry_candidates = [
+        row for row in (map_mark_audit or {}).get("registryLinkedMarks", [])
+        if f"world:{row['markInstId']}" in registry_nodes
+    ]
+    published = direct_published = scene_conflicts = 0
+    for authored in registry_candidates:
+        authored_scene = scene_by_mark.get(authored["markInstId"])
+        if authored_scene is not None and authored_scene != level_id:
+            scene_conflicts += 1
+            continue
+        node = registry_nodes.get(f"world:{authored['markInstId']}")
+        if node.get("position") != authored["position"]:
+            continue
+        node["mapMark"] = {
+            "groupKey": authored["groupKey"],
+            "templateId": authored["templateId"],
+            "defaultVisible": authored["defaultVisible"],
+            "visibilityType": authored["visibilityType"],
+            "evidence": (
+                "exact LevelMapMark instance ID -> LevelShortIdTable sceneName; "
+                "position agrees with WorldEntityRegistry" if authored_scene else
+                "exact LevelMapMark instance ID and position agree with this WorldEntityRegistry node; "
+                "no authored scene assignment"
+            ),
+        }
+        authored_sources = [
+            _related(LEVEL_MAP_MARK_REL, "authored_map_mark", "exact map-mark instance ID and position"),
+            _related(MAP_MARK_TEMP_REL, "authored_map_mark_template", "exact template ID and markInfoId"),
+        ]
+        if authored_scene:
+            authored_sources.append(_related(
+                LEVEL_SHORT_ID_REL, "authored_map_mark_scene", "same instance ID under this sceneName"
+            ))
+            direct_published += 1
+        node["relatedFiles"] = _sorted_related(_merge_related(
+            authored_sources,
+            node.get("relatedFiles") or [],
+        ))
+        published += 1
+    return {
+        "status": (
+            "unavailable" if not map_mark_audit
+            else "validated" if (published == len(registry_candidates) and
+                                      direct_published == len(direct_map_marks) and
+                                      scene_conflicts == 0)
+            else "partial"
+        ),
+        "authoredMarks": (map_mark_audit or {}).get("counts", {}).get("marks", 0),
+        "registryLinkedMarks": (map_mark_audit or {}).get("counts", {}).get("registryLinkedMarks", 0),
+        "withoutRegistryLinkMarks": (map_mark_audit or {}).get("counts", {}).get("withoutRegistryLinkMarks", 0),
+        "directSceneMarks": (map_mark_audit or {}).get("counts", {}).get("sceneLinkedMarks", 0),
+        "withoutDirectSceneMarks": (map_mark_audit or {}).get("counts", {}).get("withoutDirectSceneMarks", 0),
+        "registryLinkedNodesInLevel": len(registry_candidates),
+        "directSceneMarksInLevel": len(direct_map_marks),
+        "publishedMarksInLevel": published,
+        "unpublishedLinkedMarksInLevel": len(registry_candidates) - published,
+        "unpublishedDirectSceneMarksInLevel": len(direct_map_marks) - direct_published,
+        "sceneConflictsInLevel": scene_conflicts,
+        "boundary": "Exact ID and position annotate existing registry nodes; only the LevelShortIdTable subset has an authored scene. Authored default visibility does not establish live state.",
+    }
+
+
 def build_level(
     level_id: str,
     id_num: int | None,
@@ -4840,6 +4926,7 @@ def build_level(
     teleports: list[dict],
     reading_by_level: dict[str, dict[str, list[dict]]],
     names: dict[str, str] | None = None,
+    map_mark_audit: dict | None = None,
 ) -> dict:
     """Recover one level from its own exact evidence.
 
@@ -4917,6 +5004,9 @@ def build_level(
         language,
     ))
     markers.extend(_teleport_markers(level_id, teleports, attachment_index, language))
+
+    # The authored scene join augments registry markers; it does not add nodes.
+    map_mark_coverage = _attach_authored_map_marks(markers, level_id, map_mark_audit)
 
     # The map UI config is also the authority for map floors/overlays.  Join
     # exact marker transforms to its tier rectangles before sorting/publishing
@@ -5051,6 +5141,7 @@ def build_level(
         "coordinateSystem": "Unity world X/Y/Z; map projection uses X/Z with +Z upward",
         "questPoints": sorted(quest_points, key=lambda row: (str(row.get("missionId") or ""), str(row["questId"]))),
         "markers": sorted(markers, key=lambda row: (row["kind"], row["identity"])),
+        "mapMarkCoverage": map_mark_coverage,
         "npcCoverage": {
             "exactProxyCount": len(entities.get("npc") or []),
             "boundary": (
@@ -5632,6 +5723,13 @@ def build_all(language: str, only: set[str] | None = None) -> list[dict]:
         catalog.setdefault(trigger_level_id, None)
     names = _level_names(language)
     entities_by_level = _registry_by_level(registry, catalog)
+    try:
+        map_mark_audit = audit_map_mark_relations(
+            EXPORT_LAYOUT.root / "game", MAP_MARK_CORPUS, MAP_MARK_CORPUS_FILES
+        )
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"map recovery: authored map marks unavailable: {exc}")
+        map_mark_audit = None
     teleports = _teleports_by_level()
     reading_by_level = _reading_receivers_by_level(_reading_receiver_index(language))
 
@@ -5696,7 +5794,8 @@ def build_all(language: str, only: set[str] | None = None) -> list[dict]:
                 "runtimeAsset": None,
             }]
         payload = build_level(
-            level_id, id_num, language, registry, entities, digests, level_teleports, reading_by_level, names
+            level_id, id_num, language, registry, entities, digests, level_teleports,
+            reading_by_level, names, map_mark_audit,
         )
         if not payload["markers"] and not payload["questPoints"]:
             continue

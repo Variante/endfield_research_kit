@@ -375,3 +375,15 @@
   .recovery-families { padding-left: 10px; }
   .recovery-family-name { flex-basis: 100%; }
 }
+
+/* Unity object types nested under a bundle file type. */
+.recovery-object-types {
+  list-style: none;
+  margin: 0 0 4px 18px;
+  padding: 0 0 0 8px;
+  border-left: 1px dashed var(--border);
+}
+
+.recovery-object-type { font-size: 12px; padding-top: 3px; padding-bottom: 3px; }
+.recovery-object-type .recovery-family-name { font-family: var(--mono); font-size: 11.5px; }
+.recovery-object-type.is-empty { opacity: 0.6; }

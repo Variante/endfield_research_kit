@@ -10,6 +10,9 @@ declared logical-file families with their four per-level stages.
 * Family path patterns and stages are declared in ``recovery_declarations.json``
   beside this module, each stage citing the memory topic it reads.
 * The four level definitions are read from ``memory/game_data/README.md``.
+* Under the Unity bundle family, objects per Unity type are measured from the
+  export's AnimeStudio asset maps, joined to their block through the export's
+  VFS index; each type's stages are declared like a family's.
 
 There is no progress score: a stage is a state with a stated boundary, never a
 number, and "framed and named" is never published as "understood".
@@ -35,16 +38,21 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.recovery.build_recovery"
     )
 
-from scripts.common import OUT_DIR, REPORTS_DIR, ROOT, write_canonical_json
+from scripts.common import EXPORT_LAYOUT, OUT_DIR, REPORTS_DIR, ROOT, write_canonical_json
+from scripts.source_paths import ExportLayout
 from scripts.repo_paths import REPO_ROOT
 
-SCHEMA = "endfield.recovery-progress.v4"
-DECLARATIONS_SCHEMA = "endfield.recovery-progress-declarations.v3"
+SCHEMA = "endfield.recovery-progress.v5"
+DECLARATIONS_SCHEMA = "endfield.recovery-progress-declarations.v4"
 
 DECLARATIONS_PATH = Path(__file__).resolve().parent / "recovery_declarations.json"
 MEMORY_INDEX_PATH = REPO_ROOT / "memory" / "game_data" / "README.md"
 VFS_PROFILE_PATH = REPORTS_DIR / "animestudio" / "vfs_payload_profile_files_latest.jsonl.gz"
 DEFAULT_OUTPUT = OUT_DIR / "recovery" / "index.json"
+
+# Installed layers in overlay order: Persistent replaces StreamingAssets, so an
+# object present in both is counted once, from Persistent.
+ASSET_MAP_LAYERS = ("Persistent", "StreamingAssets")
 
 # The profiler's row statuses (EndfieldVfsCorpusClassifier), mapped to what they
 # mean for local availability. Only "profiled" rows had their payload read from
@@ -112,6 +120,7 @@ def load_declarations(path: Path = DECLARATIONS_PATH) -> dict[str, Any]:
         "familySets",
         "vfsBlocks",
         "unreachableFromStaticData",
+        "unityObjectTypes",
     ):
         if key not in payload:
             raise RecoveryInputError(f"recovery declarations are missing {key!r}: {path}")
@@ -349,6 +358,7 @@ def resolve_vfs_blocks(
                 "pathRegex": pattern_text,
                 "stagesFrom": raw_family.get("stagesFrom"),
                 "stages": stages,
+                "objectTypes": raw_family.get("objectTypes") is True,
                 "_pattern": pattern,
             }
             by_id[family_id] = family
@@ -368,6 +378,44 @@ def resolve_vfs_blocks(
             }
         )
     return blocks
+
+
+def resolve_object_types(
+    declarations: dict[str, Any], *, repo_root: Path = REPO_ROOT
+) -> dict[str, dict[str, Any]]:
+    """Validate the declared Unity object types and their four stages each."""
+    states = _resolve_stage_states(declarations)
+    elimination_ids = {
+        item.get("id")
+        for item in declarations["unreachableFromStaticData"].get("items", [])
+        if isinstance(item, dict)
+    }
+    entries = declarations["unityObjectTypes"].get("entries")
+    if not isinstance(entries, list) or not entries:
+        raise RecoveryInputError("unityObjectTypes has no entries list")
+    types: dict[str, dict[str, Any]] = {}
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise RecoveryInputError("a unityObjectTypes entry is not an object")
+        type_id = _require_text(entry, "id", "a unityObjectTypes entry")
+        where = f"Unity object type {type_id!r}"
+        if type_id in types:
+            raise RecoveryInputError(f"{where} is declared twice")
+        types[type_id] = {
+            "id": type_id,
+            "declared": True,
+            "description": _require_text(entry, "description", where),
+            "descriptionZh": _require_text(entry, "descriptionZh", where),
+            "stages": _resolve_stages(
+                entry.get("stages"),
+                templates=declarations["stageTemplates"],
+                states=states,
+                elimination_ids=elimination_ids,
+                repo_root=repo_root,
+                where=where,
+            ),
+        }
+    return types
 
 
 def _classify_path(block: dict[str, Any], virtual_path: str) -> str:
@@ -600,6 +648,94 @@ def read_vfs_profile(path: Path, blocks: list[dict[str, Any]]) -> dict[str, Any]
     return {"total": total, "blocks": block_tally, "families": family_tally}
 
 
+_JSON_STRING = r'"((?:[^"\\]|\\.)*)"'
+_CHUNK_BLOCK_RE = re.compile(r'^\s*"blockTypeValue": (\d+),?$')
+_CHUNK_NAME_RE = re.compile(r'^\s*"fileName": ' + _JSON_STRING + r',?$')
+_MAP_SOURCE_RE = re.compile(r'^\s*"Source": ' + _JSON_STRING + r',?$')
+_MAP_PATH_ID_RE = re.compile(r'^\s*"PathID": (-?\d+),?$')
+_MAP_TYPE_RE = re.compile(r'^\s*"Type": ' + _JSON_STRING + r',?$')
+
+
+def _layer_files(directory: Path, pattern: str, what: str) -> list[Path]:
+    files = sorted(directory.glob(pattern))
+    if not files:
+        raise RecoveryInputError(f"{what} is missing: {directory / pattern}")
+    return files
+
+
+def read_chunk_blocks(export_root: Path) -> dict[str, int]:
+    """Map each .chk name in the export's VFS index to its raw block id.
+
+    The index is the one written by the same export as the asset maps, so a
+    chunk added by a client update after the payload profile still resolves.
+    A chunk-level ``fileName`` follows its ``blockTypeValue``; file rows use
+    ``name``, so a line scan keeps the 380 MB index out of memory.
+    """
+    chunks: dict[str, int] = {}
+    for layer in ASSET_MAP_LAYERS:
+        directory = ExportLayout(export_root).vfs_index_dir(layer)
+        for path in _layer_files(directory, "*_vfs_index.json", f"{layer} VFS index"):
+            raw_id = None
+            with path.open(encoding="utf-8") as handle:
+                for line in handle:
+                    block = _CHUNK_BLOCK_RE.match(line)
+                    if block:
+                        raw_id = int(block.group(1))
+                        continue
+                    name = _CHUNK_NAME_RE.match(line)
+                    if name and name.group(1).lower().endswith(".chk"):
+                        if raw_id is None:
+                            raise RecoveryInputError(f"chunk {name.group(1)} has no block id: {path}")
+                        chunks[name.group(1).upper()] = raw_id
+    if not chunks:
+        raise RecoveryInputError(f"no .chk chunks found in the VFS indexes under {export_root}")
+    return chunks
+
+
+def read_asset_map_types(export_root: Path, blocks: list[dict[str, Any]]) -> dict[str, Any]:
+    """Count Unity objects per block and type from the export's asset maps.
+
+    Each entry names its source chunk, PathID and Unity type. Layers are read
+    in overlay order and an object is keyed by (type, PathID) -- PathIDs are
+    measured unique across the export -- so a bundle that Persistent replaces
+    is not counted twice. The asset map lists only the types AnimeStudio maps;
+    GameObject, Transform and renderer components are not in it.
+    """
+    by_raw = {block["rawId"]: block["enumName"] for block in blocks}
+    chunk_blocks = read_chunk_blocks(export_root)
+    seen: set[tuple[str, int]] = set()
+    counts: Counter[tuple[str, str]] = Counter()
+    for layer in ASSET_MAP_LAYERS:
+        directory = ExportLayout(export_root).asset_map_dir(layer)
+        for path in _layer_files(directory, "*.json", f"{layer} asset map"):
+            source = path_id = None
+            with path.open(encoding="utf-8") as handle:
+                for lineno, line in enumerate(handle, start=1):
+                    if match := _MAP_SOURCE_RE.match(line):
+                        source = re.split(r"[\\/]+", match.group(1))[-1].upper()
+                    elif match := _MAP_PATH_ID_RE.match(line):
+                        path_id = int(match.group(1))
+                    elif match := _MAP_TYPE_RE.match(line):
+                        if source is None or path_id is None:
+                            raise RecoveryInputError(
+                                f"asset map entry at line {lineno} has no Source or PathID: {path}"
+                            )
+                        key = (match.group(1), path_id)
+                        if key not in seen:
+                            seen.add(key)
+                            raw_id = chunk_blocks.get(source)
+                            if raw_id is None or raw_id not in by_raw:
+                                raise RecoveryInputError(
+                                    f"asset map entry at line {lineno} names chunk {source}, "
+                                    f"which no VFS index assigns to a declared block: {path}"
+                                )
+                            counts[(by_raw[raw_id], match.group(1))] += 1
+                        source = path_id = None
+    if not counts:
+        raise RecoveryInputError(f"the asset maps under {export_root} list no objects")
+    return {"counts": counts}
+
+
 def _source_row(path: Path, role: str) -> dict[str, Any]:
     stat = path.stat()
     try:
@@ -616,9 +752,46 @@ def _source_row(path: Path, role: str) -> dict[str, Any]:
     }
 
 
+def _publish_object_types(
+    block_name: str,
+    declared: dict[str, dict[str, Any]],
+    asset_types: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Declared types at their measured count, plus any undeclared type seen."""
+    counts = {
+        type_id: objects
+        for (name, type_id), objects in asset_types["counts"].items()
+        if name == block_name
+    }
+    rows = []
+    for type_id in sorted(set(declared) | set(counts)):
+        entry = declared.get(type_id) or {
+            "id": type_id,
+            "declared": False,
+            "description": "An asset-map type with no declaration, so no stage is claimed.",
+            "descriptionZh": "没有声明的资源映射类型，因此不声明任何阶段。",
+            "stages": [
+                {
+                    "level": level,
+                    "state": "notAssessed",
+                    "text": "No declaration covers this type.",
+                    "textZh": "没有声明覆盖此类型。",
+                    "source": None,
+                    "eliminations": [],
+                }
+                for level in (1, 2, 3, 4)
+            ],
+        }
+        rows.append({**entry, "measured": {"evidence": "measured", "objects": counts.get(type_id, 0)}})
+    rows.sort(key=lambda row: (-row["measured"]["objects"], row["id"]))
+    return rows
+
+
 def _publish_blocks(
     blocks: list[dict[str, Any]],
     measured: dict[str, Any],
+    object_types: dict[str, dict[str, Any]],
+    asset_types: dict[str, Any],
 ) -> list[dict[str, Any]]:
     """Join declared blocks and families to their measured tallies.
 
@@ -645,6 +818,11 @@ def _publish_blocks(
                     "stagesFrom": family["stagesFrom"],
                     "stages": family["stages"],
                     "measured": family_tally.publish(samples=True),
+                    **(
+                        {"objectTypes": _publish_object_types(name, object_types, asset_types)}
+                        if family["objectTypes"]
+                        else {}
+                    ),
                 }
             )
         other = measured["families"].get((name, OTHER_FAMILY_ID))
@@ -701,6 +879,7 @@ def build_payload(
     declarations_path: Path = DECLARATIONS_PATH,
     memory_index_path: Path = MEMORY_INDEX_PATH,
     vfs_profile_path: Path = VFS_PROFILE_PATH,
+    export_root: Path | None = None,
     generated_at: str | None = None,
     repo_root: Path = REPO_ROOT,
 ) -> dict[str, Any]:
@@ -713,8 +892,11 @@ def build_payload(
         declarations, lane_ids=set(lane_entries), repo_root=repo_root
     )
     stage_states = _resolve_stage_states(declarations)
+    object_types = resolve_object_types(declarations, repo_root=repo_root)
+    export_root = EXPORT_LAYOUT.root if export_root is None else export_root
     measured = read_vfs_profile(vfs_profile_path, vfs_blocks)
-    blocks = _publish_blocks(vfs_blocks, measured)
+    asset_types = read_asset_map_types(export_root, vfs_blocks)
+    blocks = _publish_blocks(vfs_blocks, measured, object_types, asset_types)
 
     return {
         "schema": SCHEMA,
@@ -724,6 +906,11 @@ def build_payload(
             _source_row(vfs_profile_path, "installedCorpus"),
             _source_row(declarations_path, "declarations"),
             _source_row(memory_index_path, "levelIndex"),
+            *(
+                _source_row(path, f"assetMap{layer}")
+                for layer in ASSET_MAP_LAYERS
+                for path in sorted(ExportLayout(export_root).asset_map_dir(layer).glob("*.json"))
+            ),
         ],
         "levels": levels,
         "stageStates": list(stage_states.values()),
@@ -788,6 +975,8 @@ def main(argv: list[str] | None = None) -> int:
                 print(
                     f"  {block['enumName']}/{family['id']}: {family['measured']['files']:,} files; {stages}"
                 )
+                for row in family.get("objectTypes", []):
+                    print(f"    {row['id']}: {row['measured']['objects']:,} objects")
     return 0
 
 

@@ -10,7 +10,9 @@ import argparse
 import ast
 import gzip
 import json
+import math
 import re
+import struct
 import sys
 import time
 import zlib
@@ -19,7 +21,9 @@ from typing import Any
 
 from scripts.common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
 from scripts.game_data.memorypack.buff import buff_gameplay_semantics
+from scripts.game_data.attribute_formula_native import load_attribute_formula
 from scripts.game_data.il2cpp import protocol as il2cpp
+from scripts.webui.gameplay import loadout_data
 from scripts.game_data.extraction.animestudio_index_io import is_effective_row
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
@@ -126,6 +130,9 @@ NATIVE_MODIFIER_ENUM_TYPES = {
     "abilityEvents": "Beyond.Gameplay.Core.AbilitySystem+Event",
     "skillCooldownFunctionTypes": "Beyond.Gameplay.Core.SetSkillCdAtOnce+FunctionType",
     "skillTypeMasks": "Beyond.Gameplay.SkillTypeMask",
+    "potentialModifyTypes": "Beyond.GEnums.PotentialModifyType",
+    "skillParamModifyTypes": "Beyond.GEnums.SkillParamModifyType",
+    "modifiableSkillParams": "Beyond.GEnums.ModifiableSkillParam",
 }
 STAT_ATTR_KEYS = {
     1: "hp",
@@ -879,14 +886,24 @@ def first_i18n_text(i18n: dict[str, Any], fallback_i18n: dict[str, Any], *nodes:
 def format_template_value(value: Any, spec: str) -> str:
     number = float(value) if isinstance(value, (int, float)) else None
     if number is not None and spec:
+        # C#-style custom numeric format: `0` digits are fixed, `#` digits are
+        # optional and trimmed. The WebUI renders the same specs per level.
+        spec = spec.strip()
+        match = re.search(r"\.([0#]+)", spec)
+        digits = match.group(1) if match else ""
+
+        def fixed(amount: float) -> str:
+            out = f"{amount:.{len(digits)}f}"
+            if "#" in digits and "." in out:
+                out = out.rstrip("0").rstrip(".")
+            return out
+
         if "%" in spec:
-            decimals = 0
-            match = re.search(r"\.(\d+)", spec)
-            if match:
-                decimals = len(match.group(1))
-            return f"{number * 100:.{decimals}f}%"
+            return f"{fixed(number * 100)}%"
         if spec == "0":
             return str(int(round(number)))
+        if re.fullmatch(r"0(?:\.[0#]+)?", spec):
+            return fixed(number)
     if isinstance(value, float):
         if value.is_integer():
             return str(int(value))
@@ -1452,6 +1469,45 @@ def load_native_gameplay_semantics() -> dict[str, Any]:
                 str(row["id"]): str(row["name"])
                 for row in il2cpp.enum_members(metadata, defaults, type_name)
             }
+        # TargetSettings names need more than an enum lookup: prove that the
+        # selected runtime field types agree with the selected serialized plan.
+        try:
+            from scripts.game_data.il2cpp.native_image import NativeImage
+            from scripts.game_data.memorypack.derived_plans import load_registry
+            from scripts.game_data.memorypack.target_settings_corpus import (
+                selected_enum_fields,
+                target_definition,
+            )
+
+            registry, plan_gate = load_registry(
+                gameassembly=gate.gameassembly, metadata=gate.metadata,
+            )
+            if plan_gate.get("status") != "validated":
+                raise ValueError(
+                    "selected TargetSettings plan unavailable: "
+                    + str(plan_gate.get("status") or "unknown")
+                )
+            enum_names, _audit = selected_enum_fields(
+                NativeImage(gate.gameassembly, gate.metadata, label="gameplay-target-settings"),
+                registry,
+                target_definition(registry),
+            )
+            result["targetSettingsEnums"] = {
+                field: {str(value): name for value, name in names.items()}
+                for field, names in enum_names.items()
+            }
+            result["targetSettingsEnumEvidence"] = {
+                "status": "validated",
+                "boundary": (
+                    "selected native field-to-enum types and serialized plan; "
+                    "names describe stored TargetSettings values, not runtime target selection"
+                ),
+            }
+        except Exception as exc:
+            result["targetSettingsEnumEvidence"] = {
+                "status": "unavailable",
+                "detail": f"{type(exc).__name__}: {exc}",
+            }
         evidence["coverage"] = (
             "current attribute-modifier, ability-event, skill-cooldown function, "
             "and skill-type enum constants"
@@ -1467,6 +1523,361 @@ def load_native_gameplay_semantics() -> dict[str, Any]:
             "detail": f"{type(exc).__name__}: {exc}",
         })
         return {"evidence": evidence}
+
+
+def load_atk_scale_evidence(gameassembly: Path, metadata: Path) -> dict[str, Any]:
+    """Keep only the selected native evaluator's public evidence boundary."""
+
+    try:
+        from scripts.game_data.memorypack.atk_scale_native import audit
+
+        result = audit(gameassembly=gameassembly, metadata=metadata)
+        if result.get("status") != "validated":
+            return {"status": result.get("status") or "unavailable",
+                    "detail": result.get("detail") or "selected native audit unavailable"}
+        boundary = result.get("evidenceBoundary") or {}
+        if not isinstance(boundary.get("direct"), str) or not isinstance(
+            boundary.get("conditional"), str
+        ):
+            raise ValueError("selected AtkScale audit boundary missing")
+        return {
+            "status": "validated",
+            "source": "selected AtkScaleCalculation.Evaluate native audit",
+            "direct": boundary["direct"],
+            "conditional": boundary["conditional"],
+        }
+    except (OSError, ValueError, RuntimeError, KeyError, IndexError,
+            TypeError, struct.error) as exc:
+        return {"status": "unavailable", "detail": f"{type(exc).__name__}: {exc}"}
+
+
+def load_breaking_attack_evidence(gameassembly: Path, metadata: Path) -> dict[str, Any]:
+    """Keep only the selected BreakingAttack evaluator's public boundary."""
+
+    try:
+        from scripts.game_data.memorypack.breaking_attack_native import audit
+
+        result = audit(gameassembly=gameassembly, metadata=metadata)
+        if result.get("status") != "validated":
+            return {"status": result.get("status") or "unavailable",
+                    "detail": result.get("detail") or "selected native audit unavailable"}
+        boundary = result.get("evidenceBoundary") or {}
+        if not isinstance(boundary.get("direct"), str) or not isinstance(
+            boundary.get("conditional"), str
+        ):
+            raise ValueError("selected BreakingAttack audit boundary missing")
+        return {
+            "status": "validated",
+            "source": "selected BreakingAttackCalculation.Evaluate native audit",
+            "direct": boundary["direct"],
+            "conditional": boundary["conditional"],
+        }
+    except (OSError, ValueError, RuntimeError, KeyError, IndexError,
+            TypeError, struct.error) as exc:
+        return {"status": "unavailable", "detail": f"{type(exc).__name__}: {exc}"}
+
+
+def load_damage_action_route_evidence(gameassembly: Path, metadata: Path) -> dict[str, Any]:
+    """Keep only the selected normal-entity branch audit's public boundary."""
+
+    try:
+        from scripts.game_data.memorypack.damage_action_route_native import audit
+
+        result = audit(gameassembly=gameassembly, metadata=metadata)
+        if result.get("status") != "validated":
+            return {"status": result.get("status") or "unavailable",
+                    "detail": result.get("detail") or "selected native audit unavailable"}
+        boundary = result.get("evidenceBoundary") or {}
+        if not isinstance(boundary.get("direct"), str) or not isinstance(
+            boundary.get("conditional"), str
+        ):
+            raise ValueError("selected DamageAction route audit boundary missing")
+        return {
+            "status": "validated",
+            "source": "selected DamageAction normal-entity route native audit",
+            "direct": boundary["direct"],
+            "conditional": boundary["conditional"],
+        }
+    except (OSError, ValueError, RuntimeError, KeyError, IndexError,
+            TypeError, struct.error) as exc:
+        return {"status": "unavailable", "detail": f"{type(exc).__name__}: {exc}"}
+
+
+def load_damage_action_poise_route_evidence(gameassembly: Path, metadata: Path) -> dict[str, Any]:
+    """Keep only the selected stored-Poise-calculation route boundary."""
+
+    try:
+        from scripts.game_data.memorypack.damage_action_poise_route_native import audit
+
+        result = audit(gameassembly=gameassembly, metadata=metadata)
+        if result.get("status") != "validated":
+            return {"status": result.get("status") or "unavailable",
+                    "detail": result.get("detail") or "selected native audit unavailable"}
+        boundary = result.get("evidenceBoundary") or {}
+        if not isinstance(boundary.get("direct"), str) or not isinstance(
+            boundary.get("conditional"), str
+        ):
+            raise ValueError("selected Poise route audit boundary missing")
+        return {
+            "status": "validated",
+            "source": "selected DamageAction Poise route native audit",
+            "direct": boundary["direct"],
+            "conditional": boundary["conditional"],
+        }
+    except (OSError, ValueError, RuntimeError, KeyError, IndexError,
+            TypeError, struct.error) as exc:
+        return {"status": "unavailable", "detail": f"{type(exc).__name__}: {exc}"}
+
+
+def load_definite_value_evidence(gameassembly: Path, metadata: Path) -> dict[str, Any]:
+    """Keep only the selected DefiniteValue evaluator's public boundary."""
+
+    try:
+        from scripts.game_data.memorypack.definite_value_native import audit
+
+        result = audit(gameassembly=gameassembly, metadata=metadata)
+        if result.get("status") != "validated":
+            return {"status": result.get("status") or "unavailable",
+                    "detail": result.get("detail") or "selected native audit unavailable"}
+        boundary = result.get("evidenceBoundary") or {}
+        if not isinstance(boundary.get("direct"), str) or not isinstance(
+            boundary.get("conditional"), str
+        ):
+            raise ValueError("selected DefiniteValue audit boundary missing")
+        return {
+            "status": "validated",
+            "source": "selected DefiniteValueCalculation.Evaluate native audit",
+            "direct": boundary["direct"],
+            "conditional": boundary["conditional"],
+        }
+    except (OSError, ValueError, RuntimeError, KeyError, IndexError,
+            TypeError, struct.error) as exc:
+        return {"status": "unavailable", "detail": f"{type(exc).__name__}: {exc}"}
+
+
+def load_skill_damage_context() -> dict[str, Any]:
+    """Select the current SkillData plan and DamageUnit enum field types."""
+
+    gate = check_installed_native_inputs()
+    evidence = {"status": gate.status, "detail": gate.detail}
+    if not gate.validated:
+        return {"evidence": evidence, "atkScaleEvidence": evidence.copy(),
+                "breakingAttackEvidence": evidence.copy(), "routeEvidence": evidence.copy(),
+                "poiseRouteEvidence": evidence.copy(), "definiteValueEvidence": evidence.copy()}
+    atk_scale_evidence = load_atk_scale_evidence(gate.gameassembly, gate.metadata)
+    breaking_attack_evidence = load_breaking_attack_evidence(
+        gate.gameassembly, gate.metadata,
+    )
+    route_evidence = load_damage_action_route_evidence(gate.gameassembly, gate.metadata)
+    poise_route_evidence = load_damage_action_poise_route_evidence(
+        gate.gameassembly, gate.metadata,
+    )
+    definite_value_evidence = load_definite_value_evidence(gate.gameassembly, gate.metadata)
+    try:
+        from scripts.game_data.il2cpp.native_image import NativeImage
+        from scripts.game_data.memorypack.damage_unit_corpus import (
+            CALCULATION_ENUM_FIELDS,
+            DAMAGE_UNIT_TYPE,
+            ENUM_FIELDS,
+            damage_unit_definition,
+        )
+        from scripts.game_data.memorypack.derived_plans import (
+            SKILLDATA_TYPE,
+            load_registry,
+        )
+        from scripts.game_data.memorypack.target_settings_corpus import selected_enum_fields
+
+        registry, plan_gate = load_registry(
+            gameassembly=gate.gameassembly, metadata=gate.metadata,
+        )
+        if plan_gate.get("status") != "validated":
+            raise ValueError(f"selected SkillData plan {plan_gate.get('status')}")
+        root = registry.named_roots.get(SKILLDATA_TYPE)
+        if root is None:
+            raise ValueError("selected SkillData root plan missing")
+        image = NativeImage(gate.gameassembly, gate.metadata, label="gameplay-skill-damage")
+        damage_definition = damage_unit_definition(registry)
+        damage_enums, _audit = selected_enum_fields(
+            image, registry, damage_definition,
+            owner_type=DAMAGE_UNIT_TYPE, enum_fields=ENUM_FIELDS,
+        )
+        calculation_enums = {}
+        for type_name, fields in CALCULATION_ENUM_FIELDS.items():
+            definitions = [definition for definition, name in registry.wrapped_names.items()
+                           if name == type_name and definition in registry.plans]
+            if len(definitions) != 1:
+                raise ValueError(f"selected calculation plan count {type_name}: {len(definitions)}")
+            calculation_enums[type_name], _audit = selected_enum_fields(
+                image, registry, definitions[0], owner_type=type_name, enum_fields=fields,
+            )
+        return {
+            "evidence": {
+                "status": "validated",
+                "boundary": (
+                    "selected native field types and exact whole-record SkillData plans; "
+                    "authored values only, without evaluated damage or action execution"
+                ),
+            },
+            "registry": registry,
+            "root": root,
+            "damageDefinition": damage_definition,
+            "damageEnums": damage_enums,
+            "calculationEnums": calculation_enums,
+            "atkScaleEvidence": atk_scale_evidence,
+            "breakingAttackEvidence": breaking_attack_evidence,
+            "routeEvidence": route_evidence,
+            "poiseRouteEvidence": poise_route_evidence,
+            "definiteValueEvidence": definite_value_evidence,
+            "cache": {},
+        }
+    except Exception as exc:
+        return {
+            "evidence": {"status": "unavailable", "detail": f"{type(exc).__name__}: {exc}"},
+            "atkScaleEvidence": atk_scale_evidence,
+            "breakingAttackEvidence": breaking_attack_evidence,
+            "routeEvidence": route_evidence,
+            "poiseRouteEvidence": poise_route_evidence,
+            "definiteValueEvidence": definite_value_evidence,
+        }
+
+
+def build_skill_damage_catalog(
+    export_root: Path, skill_ids: set[str], context: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Project only exact, identifier-matched SkillData DamageUnit records."""
+
+    context = context or {}
+    if (context.get("evidence") or {}).get("status") != "validated":
+        return {}
+    from scripts.game_data.memorypack.buff_actions import Unsupported
+    from scripts.game_data.memorypack.derived_values import decode_file, find_identifier
+    from scripts.game_data.memorypack.target_settings_corpus import walk_targets
+
+    registry = context["registry"]
+    root = context["root"]
+    damage_definition = context["damageDefinition"]
+    damage_enums = context["damageEnums"]
+    calculation_enums = context["calculationEnums"]
+    cache = context["cache"]
+    source_root = ExportLayout(export_root).json_dir / "SkillData"
+    catalog = {}
+    for skill_id in sorted(skill_ids):
+        if not re.fullmatch(r"[A-Za-z0-9_]+", skill_id):
+            catalog[skill_id] = {"status": "invalid-id", "units": []}
+            continue
+        path = source_root / f"{skill_id}.json"
+        cache_key = str(path)
+        if cache_key in cache:
+            catalog[skill_id] = cache[cache_key]
+            continue
+        if not path.is_file():
+            record = {"status": "missing", "units": []}
+        else:
+            try:
+                raw = path.read_bytes()
+                value, reached = decode_file(raw, root, registry, source=path.name)
+                if reached != len(raw) or find_identifier(value) != skill_id:
+                    raise ValueError(
+                        f"whole-record-or-identifier mismatch: {reached}/{len(raw)}"
+                    )
+                units = []
+                for source_path, unit, _context in walk_targets(
+                    value, registry, root, damage_definition,
+                ):
+                    if unit is None:
+                        continue
+                    projected = {"sourcePath": source_path}
+                    for route_field in ("simpleCalculation", "takeAtkSnapshot"):
+                        stored_route = unit.get(route_field)
+                        if type(stored_route) is not bool:
+                            raise ValueError(
+                                f"unplanned {route_field}={stored_route!r} at {source_path}"
+                            )
+                        projected[route_field] = stored_route
+                    for field, names in damage_enums.items():
+                        stored = unit.get(field)
+                        if type(stored) is not int or stored not in names:
+                            raise ValueError(f"unmapped {field}={stored!r} at {source_path}")
+                        projected[field] = {"value": stored, "name": names[stored]}
+                    scale = unit.get("atkScale")
+                    if (not isinstance(scale, dict)
+                            or set(scale) != {"blackboardKey", "useBlackboardKey", "value"}
+                            or type(scale["useBlackboardKey"]) is not bool
+                            or not isinstance(scale["blackboardKey"], (str, type(None)))
+                            or type(scale["value"]) not in (int, float)
+                            or not math.isfinite(scale["value"])):
+                        raise ValueError(f"unplanned atkScale at {source_path}")
+                    projected["atkScale"] = {
+                        key: scale.get(key)
+                        for key in ("blackboardKey", "useBlackboardKey", "value")
+                    }
+                    mask = unit.get("damageDecorateMask")
+                    if type(mask) is not int or abs(mask) > 2**53 - 1:
+                        raise ValueError(f"unplanned damageDecorateMask at {source_path}")
+                    projected["damageDecorateMask"] = mask
+                    for field in ("atkCalculation", "poiseCalculation"):
+                        calculation = unit.get(field)
+                        if calculation is None:
+                            projected[field] = None
+                            continue
+                        if (not isinstance(calculation, dict)
+                                or set(calculation) != {"$tag", "$type", "$value"}
+                                or type(calculation.get("$tag")) is not int
+                                or not isinstance(calculation.get("$type"), str)):
+                            raise ValueError(f"unplanned {field} at {source_path}")
+                        type_name = calculation["$type"]
+                        selected_fields = calculation_enums.get(type_name) or {}
+                        payload = calculation.get("$value")
+                        projected_calculation = {
+                            "type": type_name, "tag": calculation["$tag"],
+                            "enums": {}, "operands": {}, "scalars": {},
+                        }
+                        if not isinstance(payload, dict):
+                            raise ValueError(f"unplanned {field} payload at {source_path}")
+                        for enum_field, names in selected_fields.items():
+                            stored = payload.get(enum_field)
+                            if type(stored) is not int or stored not in names:
+                                raise ValueError(
+                                    f"unmapped {field}.{enum_field}={stored!r} at {source_path}"
+                                )
+                            projected_calculation["enums"][enum_field] = {
+                                "value": stored, "name": names[stored],
+                            }
+                        for operand_name, operand in payload.items():
+                            if operand_name in selected_fields:
+                                continue
+                            if isinstance(operand, dict) and set(operand) == {
+                                "blackboardKey", "useBlackboardKey", "value",
+                            }:
+                                raw_value = operand["value"]
+                                if (type(operand["useBlackboardKey"]) is not bool
+                                        or not isinstance(operand["blackboardKey"], (str, type(None)))
+                                        or type(raw_value) not in (int, float)
+                                        or not math.isfinite(raw_value)):
+                                    raise ValueError(
+                                        f"unplanned {field}.{operand_name} operand at {source_path}"
+                                    )
+                                projected_calculation["operands"][operand_name] = {
+                                    "blackboardKey": operand["blackboardKey"],
+                                    "useBlackboardKey": operand["useBlackboardKey"],
+                                    "value": raw_value,
+                                }
+                            elif type(operand) is bool:
+                                projected_calculation["scalars"][operand_name] = operand
+                            else:
+                                raise ValueError(
+                                    f"unprojected {field}.{operand_name} at {source_path}"
+                                )
+                        projected[field] = projected_calculation
+                    units.append(projected)
+                record = {"status": "exact", "units": units}
+            except (OSError, Unsupported, ValueError, KeyError, IndexError,
+                    TypeError, RecursionError, RuntimeError, struct.error) as exc:
+                record = {"status": "unavailable", "units": [],
+                          "detail": f"{type(exc).__name__}: {exc}"}
+        cache[cache_key] = record
+        catalog[skill_id] = record
+    return catalog
 
 
 def collect_gameplay_buff_ids(value: Any) -> list[str]:
@@ -1562,6 +1973,38 @@ def enrich_buff_native_action_names(
                 visit_action_item(item)
 
 
+def enrich_buff_target_settings_names(
+    record: dict[str, Any], native_semantics: dict[str, Any] | None,
+) -> None:
+    """Label only exact TargetSettings objects under a validated enum join."""
+    native_semantics = native_semantics or {}
+    if (native_semantics.get("targetSettingsEnumEvidence") or {}).get("status") != "validated":
+        return
+    enum_fields = native_semantics.get("targetSettingsEnums") or {}
+
+    def visit(value: Any) -> None:
+        if isinstance(value, list):
+            for item in value:
+                visit(item)
+            return
+        if not isinstance(value, dict):
+            return
+        if (
+            value.get("status") == "exact"
+            and value.get("semanticStatus") == "exact-target-settings-selector-data"
+        ):
+            for field, names in enum_fields.items():
+                stored = value.get(field)
+                if isinstance(stored, int) and not isinstance(stored, bool):
+                    name = names.get(str(stored))
+                    if name:
+                        value[f"{field}Name"] = name
+        for child in value.values():
+            visit(child)
+
+    visit(record.get("abilityEventActions") or [])
+
+
 def build_gameplay_buff_catalog(
     export_root: Path,
     buff_ids: list[str],
@@ -1597,6 +2040,7 @@ def build_gameplay_buff_catalog(
             }
         enrich_buff_native_modifier_names(record, native_semantics)
         enrich_buff_native_action_names(record, native_semantics)
+        enrich_buff_target_settings_names(record, native_semantics)
         enrich_buff_gameplay_tag_details(record, gameplay_tag_registry)
         record["source"] = {"kind": source, "path": rel_path(path)}
         catalog[buff_id] = record
@@ -2147,6 +2591,7 @@ def character_potential_payload(char_id: str, tables: dict[str, Any], item_table
             "description": render_description(desc_template, blackboard) if desc_template else "",
             "descriptionTemplate": clean_text(desc_template),
             "blackboard": blackboard,
+            "effects": potential_effect_rows(effect if isinstance(effect, dict) else {}, tables, i18n, fallback_i18n),
             "requiredItem": item_ids_counts_payload(item.get("itemIds"), item.get("itemCnts"), item_table, i18n, fallback_i18n),
             "unlockCardTopicItem": normalize_id(item.get("unlockCardTopicItem")),
             "unlockCharPictureItemList": [normalize_id(value) for value in item.get("unlockCharPictureItemList") or [] if normalize_id(value)],
@@ -2190,7 +2635,8 @@ def potential_effect_blackboard(effect: dict[str, Any]) -> list[dict[str, Any]]:
 
         attr_mod = row.get("attrModifier") if isinstance(row.get("attrModifier"), dict) else {}
         attr_type = int_value(attr_mod.get("attrType"))
-        if attr_type is not None:
+        # Type 0 marks the unused sub-object every dataList row carries.
+        if attr_type:
             attr_value = attr_mod.get("attrValue")
             append_value(f"attr_{attr_type}", attr_value)
             append_value(f"{attr_type},0", attr_value)
@@ -2199,12 +2645,127 @@ def potential_effect_blackboard(effect: dict[str, Any]) -> list[dict[str, Any]]:
 
         skill_param = row.get("skillParamModifier") if isinstance(row.get("skillParamModifier"), dict) else {}
         param_type = int_value(skill_param.get("paramType"))
-        if param_type is not None:
+        if param_type:
             param_value = skill_param.get("paramValue")
             append_value(f"param_{param_type}", param_value)
             for param_key in SKILL_PARAM_BLACKBOARD_KEYS.get(param_type, ()):
                 append_value(param_key, param_value)
     return values
+
+def attribute_show_config(attr_type: int, modifier_type: Any, tables: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> dict[str, Any]:
+    """The game's own display name and value format for one attribute modifier."""
+
+    row = (tables.get("AttributeShowConfigTable.json") or {}).get(str(attr_type)) or {}
+    options = [item for item in (row.get("list") or []) if isinstance(item, dict)] if isinstance(row, dict) else []
+    match = next((item for item in options if item.get("attributeModifier") == modifier_type), None) or (options[0] if options else {})
+    return {
+        "name": clean_text(i18n_text(i18n, match.get("name"), fallback_i18n)) if match else "",
+        "valueFormat": normalize_id(match.get("valueFormat")) if match else "",
+    }
+
+
+def potential_effect_rows(effect: dict[str, Any], tables: dict[str, Any], i18n: dict[str, Any], fallback_i18n: dict[str, Any]) -> list[dict[str, Any]]:
+    """One row per PotentialTalentEffectTable dataList entry.
+
+    `kind` comes from the one populated sub-object; on the whole installed
+    table it agrees 1:1 with the row's `modifyType` (PotentialModifyType), so
+    it does not depend on a native enum join. Native names are attached later
+    by `enrich_potential_effect_names` under the selected-build gate. Target
+    skills carry no SkillPatchTable name; the page names them from the
+    character's own skill groups and talents.
+    """
+
+    rows: list[dict[str, Any]] = []
+    for row in effect.get("dataList") or []:
+        if not isinstance(row, dict):
+            continue
+        base = {"modifyType": row.get("modifyType")}
+        conditions = [normalize_id(value) for value in row.get("activeCondition") or [] if normalize_id(value)]
+        if conditions:
+            base["conditions"] = conditions
+        attach_skill = row.get("attachSkill") if isinstance(row.get("attachSkill"), dict) else {}
+        attach_buff = row.get("attachBuff") if isinstance(row.get("attachBuff"), dict) else {}
+        bb_mod = row.get("skillBbModifier") if isinstance(row.get("skillBbModifier"), dict) else {}
+        attr_mod = row.get("attrModifier") if isinstance(row.get("attrModifier"), dict) else {}
+        skill_param = row.get("skillParamModifier") if isinstance(row.get("skillParamModifier"), dict) else {}
+        if normalize_id(attach_skill.get("skillId")):
+            skill_id = normalize_id(attach_skill.get("skillId"))
+            rows.append({**base, "kind": "passiveSkill", "skillId": skill_id,
+                         "blackboard": normalize_blackboard(attach_skill.get("blackboard"))})
+        elif normalize_id(attach_buff.get("buffId")):
+            rows.append({**base, "kind": "buff", "buffId": normalize_id(attach_buff.get("buffId")),
+                         "blackboard": normalize_blackboard(attach_buff.get("blackboard"))})
+        elif normalize_id(bb_mod.get("bbKey")):
+            skill_id = normalize_id(bb_mod.get("skillId"))
+            value = bb_mod.get("stringValue") if bb_mod.get("stringValue") not in (None, "") else bb_mod.get("floatValue")
+            rows.append({**base, "kind": "skillBlackboard", "skillId": skill_id,
+                         "key": normalize_id(bb_mod.get("bbKey")), "value": value, "operation": bb_mod.get("modifyType")})
+        elif int_value(attr_mod.get("attrType")):
+            attr_type = int_value(attr_mod.get("attrType"))
+            show = attribute_show_config(attr_type, attr_mod.get("modifierType"), tables, i18n, fallback_i18n)
+            rows.append({**base, "kind": "attribute", "attrType": attr_type, "attrName": show["name"],
+                         "valueFormat": show["valueFormat"], "modifierType": attr_mod.get("modifierType"),
+                         "modifyAttributeType": attr_mod.get("modifyAttributeType"), "value": attr_mod.get("attrValue")})
+        elif int_value(skill_param.get("paramType")):
+            skill_id = normalize_id(skill_param.get("skillId"))
+            rows.append({**base, "kind": "skillParam", "skillId": skill_id,
+                         "paramType": int_value(skill_param.get("paramType")), "value": skill_param.get("paramValue"),
+                         "operation": skill_param.get("modifyType")})
+    return rows
+
+
+def enrich_potential_effect_names(characters: list[dict[str, Any]], native_semantics: dict[str, Any] | None) -> None:
+    """Attach selected-build enum names to potential/passive effect rows.
+
+    `SkillParamModifyType` names the skill blackboard/param `operation`; the
+    config bean's field types are not declared in the DummyDll set, so this is
+    conditional on that join, corroborated by the description wording (Add:
+    "+x", Multiply: "x times the original", Overwrite: absolute values).
+    Attribute rows also expose their native `AttributeType` name as a value
+    key, which the description templates use (`{CriticalRate:0%}`).
+    """
+
+    native_semantics = native_semantics or {}
+    if (native_semantics.get("evidence") or {}).get("status") != "validated":
+        return
+    kinds = native_semantics.get("potentialModifyTypes") or {}
+    operations = native_semantics.get("skillParamModifyTypes") or {}
+    params = native_semantics.get("modifiableSkillParams") or {}
+    attributes = native_semantics.get("attributeTypes") or {}
+    modifiers = native_semantics.get("modifierTypes") or {}
+
+    def enrich(record: dict[str, Any]) -> None:
+        effects = record.get("effects") or []
+        if not effects:
+            return
+        blackboard = record.setdefault("blackboard", [])
+        keys = {str(item.get("key")) for item in blackboard if isinstance(item, dict)}
+        for row in effects:
+            row["modifyTypeName"] = kinds.get(str(row.get("modifyType")))
+            if "operation" in row:
+                row["operationName"] = operations.get(str(row.get("operation")))
+            if row.get("kind") == "skillParam":
+                row["paramName"] = params.get(str(row.get("paramType")))
+            if row.get("kind") == "attribute":
+                name = attributes.get(str(row.get("attrType")))
+                row["attrTypeName"] = name
+                row["modifierTypeName"] = modifiers.get(str(row.get("modifierType")))
+                if name and name not in keys:
+                    keys.add(name)
+                    blackboard.append({"key": name, "value": row.get("value")})
+        template = record.get("descriptionTemplate") or ""
+        if template and "{" in str(record.get("description") or ""):
+            record["description"] = render_description(template, blackboard)
+
+    for character in characters:
+        for row in (character.get("potentials") or {}).get("levels") or []:
+            enrich(row)
+        for group in character.get("talentGroups") or []:
+            for level in group.get("levels") or []:
+                enrich(level)
+        for talent in character.get("talents") or []:
+            enrich(talent)
+
 
 def potential_effect_refs(effect: dict[str, Any]) -> list[dict[str, str]]:
     refs: list[dict[str, str]] = []
@@ -2324,6 +2885,7 @@ def build_talent_level_payload(
             "description": render_description(desc_template, blackboard) if desc_template else "",
             "descriptionTemplate": clean_text(desc_template),
             "blackboard": blackboard,
+            "effects": potential_effect_rows(effect if isinstance(effect, dict) else {}, tables, i18n, fallback_i18n),
             "breakStage": passive.get("breakStage"),
             "iconId": normalize_id(passive.get("iconId")),
             "talentEffectId": effect_id,
@@ -3185,6 +3747,8 @@ def build_language_payload(
     export_root: Path | None = None,
     native_semantics: dict[str, Any] | None = None,
     runtime_tag_capture: Path | None = None,
+    skill_damage_context: dict[str, Any] | None = None,
+    attribute_formula: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     fallback_i18n = load_merged_table(table_roots, f"I18nTextTable_{fallback_language}.json", {})
     i18n = fallback_i18n if language == fallback_language else load_merged_table(table_roots, f"I18nTextTable_{language}.json", fallback_i18n)
@@ -3221,6 +3785,8 @@ def build_language_payload(
         "DomainDataTable.json",
         "CharBreakNodeTable.json",
         "PotentialTalentEffectTable.json",
+        "AttributeShowConfigTable.json",
+        "BattleConst.json",
         "SpaceshipCharSkillTable.json",
         "SpaceshipSkillTable.json",
         "EnemyTable.json",
@@ -3244,6 +3810,27 @@ def build_language_payload(
     weapons = build_weapon_entries(tables, i18n, fallback_i18n)
     equipment = build_equipment_entries(tables, i18n, fallback_i18n)
     characters = build_character_entries(tables, i18n, fallback_i18n)
+    enrich_potential_effect_names(characters, native_semantics)
+    character_skill_ids = {
+        str(skill.get("id"))
+        for character in characters
+        for group in character.get("skillGroups") or []
+        for skill in group.get("skills") or []
+        if skill.get("id")
+    }
+    skill_damage_units = build_skill_damage_catalog(
+        export_root or table_roots[0][1].parents[2],
+        character_skill_ids,
+        skill_damage_context,
+    )
+    skill_attribute_modifiers = loadout_data.apply_loadout_data(
+        weapons, equipment, characters, tables, attribute_values,
+        export_root or table_roots[0][1].parents[2], skill_damage_context,
+    )
+    attribute_calculation = loadout_data.attribute_calculation_payload(
+        tables, lambda node: clean_text(i18n_text(i18n, node, fallback_i18n)),
+        native_semantics, attribute_formula,
+    )
     enemies = build_enemy_entries(
         tables,
         i18n,
@@ -3283,6 +3870,27 @@ def build_language_payload(
         "gameplayTagRegistry": gameplay_tag_registry,
         "currencyItems": currency_items,
         "buffs": buffs,
+        "skillDamageUnits": skill_damage_units,
+        "attributeCalculation": attribute_calculation,
+        "skillAttributeModifiers": skill_attribute_modifiers,
+        "skillDamageEvidence": (skill_damage_context or {}).get("evidence") or {
+            "status": "unavailable", "detail": "selected SkillData plans were not loaded",
+        },
+        "skillDamageAtkScaleEvidence": (skill_damage_context or {}).get("atkScaleEvidence") or {
+            "status": "unavailable", "detail": "selected AtkScale native audit was not loaded",
+        },
+        "skillDamageBreakingAttackEvidence": (skill_damage_context or {}).get("breakingAttackEvidence") or {
+            "status": "unavailable", "detail": "selected BreakingAttack native audit was not loaded",
+        },
+        "skillDamageRouteEvidence": (skill_damage_context or {}).get("routeEvidence") or {
+            "status": "unavailable", "detail": "selected DamageAction route native audit was not loaded",
+        },
+        "skillDamagePoiseRouteEvidence": (skill_damage_context or {}).get("poiseRouteEvidence") or {
+            "status": "unavailable", "detail": "selected DamageAction Poise route native audit was not loaded",
+        },
+        "skillDamageDefiniteValueEvidence": (skill_damage_context or {}).get("definiteValueEvidence") or {
+            "status": "unavailable", "detail": "selected DefiniteValue native audit was not loaded",
+        },
         "buffEvidence": {
             "status": "partial-memorypack-semantics",
             "coverage": (
@@ -3300,6 +3908,10 @@ def build_language_payload(
         "nativeEvidence": (native_semantics or {}).get("evidence") or {
             "status": "not-requested",
             "detail": "native modifier enum meanings were not loaded",
+        },
+        "targetSettingsEnumEvidence": (native_semantics or {}).get("targetSettingsEnumEvidence") or {
+            "status": "unavailable",
+            "detail": "selected TargetSettings enum meanings were not loaded",
         },
         "counts": {
             "entries": len(entries),
@@ -3351,6 +3963,14 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     native_semantics = load_native_gameplay_semantics()
+    skill_damage_context = load_skill_damage_context()
+    attribute_formula = load_attribute_formula()
+    if attribute_formula.get("status") != "validated":
+        print(
+            "Gameplay attribute formula skipped: "
+            + str(attribute_formula.get("status")) + " " + str(attribute_formula.get("detail") or ""),
+            file=sys.stderr,
+        )
     if (native_semantics.get("evidence") or {}).get("status") != "validated":
         print(
             "Gameplay native modifier semantics skipped: "
@@ -3373,6 +3993,8 @@ def main(argv: list[str] | None = None) -> int:
             args.export_root,
             native_semantics,
             args.runtime_tag_capture,
+            skill_damage_context,
+            attribute_formula,
         )
         out_path = args.out_dir / code / "gameplay" / "index.json"
         write_json(out_path, payload)

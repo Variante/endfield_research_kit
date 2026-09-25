@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.recovery-progress-declarations.v3",
+  "schema": "endfield.recovery-progress-declarations.v4",
   "_note": "Declarations for the Recovery page. Everything here is a DECLARATION, not a measurement: no generated report under reports/ carries it, so the builder cannot derive it. Each entry states its own 'why' or cites its source. Measured figures never appear in this file -- they are read from the VFS payload profile named in scripts/webui/recovery/build_recovery.py and are marked evidence=measured in the published payload.",
 
   "lanes": {
@@ -107,6 +107,20 @@
 
   "stageTemplates": {
     "_why": "Level-1 statements that hold for every family located through the authenticated VFS metadata. Reused by reference so the same claim is not restated in slightly different words per family.",
+    "l1UnityObject": {
+      "level": 1,
+      "state": "closed",
+      "text": "Each object is listed in the export's asset map by source chunk, bundle offset and PathID; the CABMap names its container.",
+      "textZh": "每个对象在导出的资源映射中以来源 chunk、包内偏移和 PathID 列出；CABMap 给出其所属容器。",
+      "source": "memory/game_data/containers_cabmap.md"
+    },
+    "l2UnityObject": {
+      "level": 2,
+      "state": "closed",
+      "text": "Read through its serialized TypeTree by AnimeStudio; exported Unity types are already in a decoded or standard format, so no binary framing remains.",
+      "textZh": "由 AnimeStudio 依据序列化类型树读取；导出的 Unity 类型已是解码或标准格式，不再有待恢复的二进制帧结构。",
+      "source": "memory/game_data/unity_assets.md"
+    },
     "l1VfsLocated": {
       "level": 1,
       "state": "closed",
@@ -200,6 +214,7 @@
         "description": "Hash-named Unity asset bundles: models, materials, textures, prefabs, scenes, MonoBehaviours.",
         "descriptionZh": "以哈希命名的 Unity 资源包：模型、材质、贴图、预制体、场景、MonoBehaviour。",
         "pathRegex": "Data/Bundles/Windows/[^/]+/[^/]+\\.ab",
+        "objectTypes": true,
         "stages": [
           {
             "level": 1,
@@ -218,8 +233,8 @@
           {
             "level": 3,
             "state": "partial",
-            "text": "Serialized objects read through their type trees. MonoBehaviour fields are classified per field (measured below); many game classes still have no class-specific signal.",
-            "textZh": "序列化对象通过类型树读取。MonoBehaviour 字段逐字段分类（下文实测）；许多游戏类仍没有类特异信号。",
+            "text": "Serialized objects read through their type trees. Per-type states are listed beneath this family.",
+            "textZh": "序列化对象通过类型树读取。各类型状态列在此家族之下。",
             "source": "memory/game_data/unity_assets.md"
           },
           {
@@ -227,6 +242,286 @@
             "state": "partial",
             "text": "Object identity and selected asset-to-entity bindings carry explicit provenance. Exporting an object does not prove live prefab composition, selected variant, or placement.",
             "textZh": "对象身份与部分资源到实体的绑定带有明确来源。导出对象并不证明实际的预制体组合、所选变体或摆放。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      }
+    ]
+  },
+
+  "unityObjectTypes": {
+    "_why": "The Unity types the export's asset maps list inside the bundle blocks. Object counts are measured from those maps; each type's stages are declared readings of the cited topic. The asset map lists only the types AnimeStudio maps, so GameObject, Transform and renderer components do not appear here.",
+    "entries": [
+      {
+        "id": "MonoBehaviour",
+        "description": "Game scripts' serialized data: UI, Timeline, gameplay and scene components.",
+        "descriptionZh": "游戏脚本的序列化数据：UI、Timeline、玩法与场景组件。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "template": "l2UnityObject"
+          },
+          {
+            "level": 3,
+            "state": "partial",
+            "text": "Every object decodes against an exact TypeTree and its class is named through the MonoScript catalog. Field meaning is measured per field; many game classes still show no class-specific signal.",
+            "textZh": "每个对象都按精确类型树解码，类名经 MonoScript 目录命名。字段含义逐字段实测；许多游戏类仍没有类特异信号。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "Timeline clip fields, UIImage asset paths and table-key string fields bind at scale. Which classes a page consumes, and when a class runs, stay open.",
+            "textZh": "Timeline 片段字段、UIImage 资源路径和表键字符串字段可大规模绑定。页面实际消费哪些类、类何时运行仍未解决。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      },
+      {
+        "id": "AnimationClip",
+        "description": "Animation clips.",
+        "descriptionZh": "动画片段。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "template": "l2UnityObject"
+          },
+          {
+            "level": 3,
+            "state": "closed",
+            "text": "Exported as YAML with its position, rotation and scale curves and keyframes.",
+            "textZh": "以 YAML 导出，包含位置、旋转、缩放曲线与关键帧。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "Timeline PlayableAsset m_Clip fields bind clips at scale; activation and controller execution are not proven.",
+            "textZh": "Timeline PlayableAsset 的 m_Clip 字段可大规模绑定片段；激活与控制器执行未被证明。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      },
+      {
+        "id": "Animator",
+        "description": "Animator components and their controllers.",
+        "descriptionZh": "Animator 组件及其控制器。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "template": "l2UnityObject"
+          },
+          {
+            "level": 3,
+            "state": "closed",
+            "text": "Exported as JSON; m_Controller decodes as layers, state machines, transitions, blend trees, parameters and m_TOSData paths.",
+            "textZh": "以 JSON 导出；m_Controller 解码为层、状态机、过渡、混合树、参数与 m_TOSData 路径。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "The controller-to-clip chain closes at the serialized-object tier; runtime state selection is not observed.",
+            "textZh": "控制器到片段的链条在序列化对象层级闭合；运行时状态选择未被观测。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      },
+      {
+        "id": "Texture2D",
+        "description": "Textures.",
+        "descriptionZh": "贴图。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "template": "l2UnityObject"
+          },
+          {
+            "level": 3,
+            "state": "partial",
+            "text": "Decoded to PNG. Native mip chains are validated for BC5 and BC7 in targeted native-payload export; other formats keep raw bytes with an unvalidated layout.",
+            "textZh": "解码为 PNG。定向原生载荷导出中 BC5 与 BC7 的 mip 链经过校验；其他格式保留原始字节，布局未校验。",
+            "source": "memory/game_data/extraction_pipeline.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "Material-to-texture links exist but rest on a global PathID match the export cannot check, because Material carries no provenance.",
+            "textZh": "材质到贴图的链接存在，但依赖无法核验的全局 PathID 匹配，因为 Material 不携带来源信息。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      },
+      {
+        "id": "Mesh",
+        "description": "Meshes.",
+        "descriptionZh": "网格。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "template": "l2UnityObject"
+          },
+          {
+            "level": 3,
+            "state": "closed",
+            "text": "Exported as FBX.",
+            "textZh": "以 FBX 导出。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "Renderable asset-entity grouping covers many models; runtime prefab assembly and entity-to-renderable ownership remain open.",
+            "textZh": "可渲染资源实体分组覆盖许多模型；运行时预制体组装与实体到渲染体的归属仍未解决。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      },
+      {
+        "id": "Material",
+        "description": "Materials.",
+        "descriptionZh": "材质。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "template": "l2UnityObject"
+          },
+          {
+            "level": 3,
+            "state": "closed",
+            "text": "Exported as JSON with its shader and texture references.",
+            "textZh": "以 JSON 导出，包含其着色器与贴图引用。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "Its texture links rest on an uncheckable global PathID match; keyword, pass and queue selection and runtime overrides are open.",
+            "textZh": "其贴图链接依赖无法核验的全局 PathID 匹配；关键字、Pass、队列选择与运行时覆盖仍未解决。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      },
+      {
+        "id": "Sprite",
+        "description": "UI sprites.",
+        "descriptionZh": "UI 精灵图。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "template": "l2UnityObject"
+          },
+          {
+            "level": 3,
+            "state": "closed",
+            "text": "Exported as an image.",
+            "textZh": "以图像导出。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "UIImage.m_Sprite is filled in most UIImage objects and names its container; runtime display is not proven.",
+            "textZh": "UIImage.m_Sprite 在大多数 UIImage 对象中被填充并指向其容器；运行时显示未被证明。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      },
+      {
+        "id": "TextAsset",
+        "description": "Text and binary assets embedded in bundles.",
+        "descriptionZh": "包内嵌的文本与二进制资源。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "template": "l2UnityObject"
+          },
+          {
+            "level": 3,
+            "state": "notAssessed",
+            "text": "Exported as JSON; no topic records a reading of the payload bytes it carries.",
+            "textZh": "以 JSON 导出；没有主题记录其所携带载荷字节的解读。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 4,
+            "state": "notAssessed",
+            "text": "No consumer is recorded.",
+            "textZh": "没有记录到消费者。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      },
+      {
+        "id": "Shader",
+        "description": "Shaders.",
+        "descriptionZh": "着色器。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "template": "l2UnityObject"
+          },
+          {
+            "level": 3,
+            "state": "partial",
+            "text": "AnimeStudio's ShaderRecovery reads shader containers, bytecode sidecars and metadata; container coverage and semantic fixtures are still being expanded.",
+            "textZh": "AnimeStudio 的 ShaderRecovery 读取着色器容器、字节码附件与元数据；容器覆盖与语义夹具仍在扩展。",
+            "source": "memory/game_data/extraction_pipeline.md"
+          },
+          {
+            "level": 4,
+            "state": "open",
+            "text": "Extraction preserves recoverable metadata; it does not prove renderer ownership, selected variants or final lighting.",
+            "textZh": "提取保留可恢复的元数据；不证明渲染器归属、所选变体或最终光照。",
+            "source": "memory/game_data/extraction_payload_boundaries.md"
+          }
+        ]
+      },
+      {
+        "id": "Font",
+        "description": "Fonts.",
+        "descriptionZh": "字体。",
+        "stages": [
+          {
+            "template": "l1UnityObject"
+          },
+          {
+            "level": 2,
+            "state": "notAssessed",
+            "text": "Fonts are not exported, and no topic records reading them.",
+            "textZh": "字体未被导出，也没有主题记录对其的读取。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 3,
+            "state": "notAssessed",
+            "text": "Not assessed.",
+            "textZh": "未评估。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 4,
+            "state": "notAssessed",
+            "text": "Not assessed.",
+            "textZh": "未评估。",
             "source": "memory/game_data/unity_assets.md"
           }
         ]
@@ -367,15 +662,15 @@
               {
                 "level": 3,
                 "state": "partial",
-                "text": "The selected native Instruction layout and Code enum name every opcode in the current spans; call, branch, field, string and return operands are joined to file tables. The delegate path and other operands stay uninterpreted.",
-                "textZh": "所选原生 Instruction 布局与 Code 枚举为当前区段的每个操作码命名；调用、分支、字段、字符串与返回操作数已连接到文件表。委托构造路径与其他操作数尚未解释。",
+                "text": "The selected native Instruction layout and Code enum name every current opcode. Authenticated VM paths join call, branch, field, string and return operands to file rows; frame slots and exception records are decoded, and current external signatures resolve uniquely. Other operand paths remain open.",
+                "textZh": "所选原生 Instruction 布局与 Code 枚举为当前每个操作码命名。已验证的虚拟机路径将调用、分支、字段、字符串与返回操作数连接到文件记录；栈帧槽位和异常记录已解码，当前外部方法签名可唯一解析。其他操作数路径仍未解决。",
                 "source": "memory/game_data/ifix_patch.md"
               },
               {
                 "level": 4,
                 "state": "partial",
-                "text": "Authored replacement targets and control-flow edges are established. Whether a patch ran, and its effect, needs an authenticated load and dispatch receipt.",
-                "textZh": "已确立编写时的替换目标与控制流边。补丁是否运行及其效果需要已认证的加载与分派回执。",
+                "text": "Fix records identify declared replacement targets. Selected VM paths establish authored control flow and a conditional external-invoker result path. Whether a patch loaded, ran, or changed behavior needs an authenticated runtime receipt.",
+                "textZh": "修补记录标识声明的替换目标。所选虚拟机路径确立了编写时的控制流及有条件的外部调用结果路径。补丁是否加载、运行或改变行为仍需要已认证的运行时记录。",
                 "source": "memory/game_data/ifix_patch.md",
                 "eliminations": ["runtime-consumer-questions"]
               }
@@ -582,30 +877,30 @@
             "id": "iv-room",
             "label": "IV room region (regionIv_room_*.bytes)",
             "labelZh": "IV 房间区域（regionIv_room_*.bytes）",
-            "description": "Unpacked room region volumes: a small header, a bounding box, grid dimensions, and probe records.",
-            "descriptionZh": "未打包的房间区域体积：小型头部、包围盒、网格尺寸与探针记录。",
+            "description": "Unpacked room region files: a fixed header, two finite triples, three grid dimensions, and opaque 16-byte records.",
+            "descriptionZh": "未打包的房间区域文件：定长头部、两组三元有限数值、三个网格维度及未解读的 16 字节记录。",
             "pathRegex": "Data/IrradianceVolume/.+/regionIv_room_[^/]+\\.bytes",
             "stages": [
               { "template": "l1VfsLocated" },
               {
                 "level": 2,
                 "state": "closed",
-                "text": "Region framing is exact: header plus nx*ny*nz fixed-size probe records equals the file length in every current file.",
-                "textZh": "区域帧结构精确：在当前每个文件中，头部加 nx*ny*nz 个定长探针记录恰好等于文件长度。",
+                "text": "Region framing is exact: the 44-byte header plus nx*ny*nz opaque 16-byte records equals the file length in every current file.",
+                "textZh": "区域帧结构精确：在当前每个文件中，44 字节头部加 nx*ny*nz 个未解读的 16 字节记录恰好等于文件长度。",
                 "source": "memory/game_data/world_irradiance.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Bounding box and grid dimensions are confirmed independently by a constant probe density. The probe record's own fields are not named.",
-                "textZh": "包围盒与网格尺寸由恒定的探针密度独立确认。探针记录自身的字段尚未命名。",
+                "text": "The selected native room handler checks magic 0x1000 and reads a header-size word, two 12-byte triples, and three grid dimensions. The current tuples are consistent with bounds, but their axes and the record fields are not named.",
+                "textZh": "所选原生房间处理器检查 0x1000 魔数，并读取头部长度、两组 12 字节三元值和三个网格维度。当前三元值与边界端点相符，但坐标轴和记录字段尚未命名。",
                 "source": "memory/game_data/world_irradiance.md"
               },
               {
                 "level": 4,
-                "state": "open",
-                "text": "No renderer consumer is recorded.",
-                "textZh": "没有记录渲染消费者。",
+                "state": "partial",
+                "text": "Selected native code appends the formatted room name to a supplied root directory and copies 8 or 16 bytes per grid cell from a ready buffer. The copied allocation reaches a callback, native command binding, and virtual dispatch request sized by cell count. The live root, selected file, record fields, GPU execution, and texture format remain open.",
+                "textZh": "所选原生代码将格式化的房间文件名附加到给定根路径的目录，并从就绪缓冲区按网格单元复制每单元 8 或 16 字节。复制结果的内存描述符进入回调、原生命令绑定，以及按网格单元数确定规模的虚拟分派请求。实际根路径、选用文件、记录字段、GPU 执行及纹理格式仍未解决。",
                 "source": "memory/game_data/world_irradiance.md"
               }
             ]
@@ -810,16 +1105,16 @@
               },
               {
                 "level": 3,
-                "state": "open",
-                "text": "No field-level contract is recorded for the auxiliary roots.",
-                "textZh": "辅助根没有记录字段级契约。",
-                "source": "memory/game_data/README.md"
+                "state": "partial",
+                "text": "At the same ordinal, a selected consumer takes the second-root field-six row's field-zero UInt32 IDs and the first-root field-seven row's field-three 8-byte descriptors plus field-four nested bytes. The authenticated pair corpus confirms ID partitioning and exact blob tiling; descriptor meanings and whole-root closure remain open.",
+                "textZh": "所选消费路径用同一序号取第二个根第六字段行的第零字段 UInt32 ID，以及第一个根第七字段行的第三字段 8 字节描述符和第四字段内嵌字节。已认证的成对数据确认 ID 分组及字节块精确铺满；描述符含义与整个根的完整解读仍未解决。",
+                "source": "memory/game_data/world_dynamic_streaming.md"
               },
               {
                 "level": 4,
-                "state": "open",
-                "text": "The native loader names the fb_init, fb_streaming and fb_version paths, which is a file-selection route, not a meaning.",
-                "textZh": "原生加载器命名了 fb_init、fb_streaming 与 fb_version 路径；这是文件选择路径，不是含义。",
+                "state": "partial",
+                "text": "The selected allocator stores both paths separately and resolves two ready buffers to paired roots. A native builder reads each descriptor's signed ID and stride, then copies count-times-stride bytes from the blob per descriptor. This conditional route does not identify the chosen VFS files, descriptor meanings, or live activation.",
+                "textZh": "所选分配器分别存储两条路径，并把两个就绪缓冲区解析为成对的根。原生构建器读取每个描述符的有符号 ID 和步长，再按每个描述符复制“数量×步长”字节。该条件路径未确定实际选用的 VFS 文件、描述符含义或实时激活。",
                 "source": "memory/game_data/world_dynamic_streaming.md"
               }
             ]
@@ -840,7 +1135,31 @@
             "description": "Per-scene version/ban set named by DynamicSceneVersionBanSet.",
             "descriptionZh": "由 DynamicSceneVersionBanSet 命名的各场景版本/禁用集合。",
             "pathRegex": "Data/DynamicStreaming/.+/fb_version\\.bytes",
-            "stagesFrom": "ds-aux-init"
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "The selected-width reader joins every current file to the VFS ledger and closes its root, Entries count word and fixed-width entry vector through EOF.",
+                "textZh": "所选宽度读取器将当前每个文件关联到 VFS 台账，并把根、Entries 计数字及定宽条目向量精确解析至 EOF。",
+                "source": "memory/game_data/world_dynamic_streaming.md"
+              },
+              {
+                "level": 3,
+                "state": "closed",
+                "text": "Selected-build accessors name the complete root as Entries, Major and Minor; each fixed-width entry contains UInt64 Id and Int32 Version plus alignment padding.",
+                "textZh": "所选版本的访问器将完整根命名为 Entries、Major 和 Minor；每条定宽记录包含 UInt64 Id、Int32 Version 与对齐填充。",
+                "source": "memory/game_data/world_dynamic_streaming.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "Current entry Ids join same-scene indexed IdComp.UniqueId values. A selected native route conditionally selects later-version Ids for a ban set; live phase, file selection and ban results remain unobserved.",
+                "textZh": "当前条目 Id 可关联到同场景已索引的 IdComp.UniqueId。所选原生路径有条件地将较新版本的 Id 选入禁用集合；实际阶段、文件选择与禁用结果均未观测到。",
+                "source": "memory/game_data/world_dynamic_streaming.md",
+                "eliminations": ["runtime-consumer-questions"]
+              }
+            ]
           }
         ]
       },
@@ -1646,11 +1965,10 @@
               },
               {
                 "level": 4,
-                "state": "open",
-                "text": "The recorded consumer was disconfirmed on re-test; no current static evidence names one.",
-                "textZh": "此前记录的消费者在复测中被推翻；目前没有静态证据指明消费者。",
-                "source": "memory/game_data/world_terrain.md",
-                "eliminations": ["layer-c-consumer"]
+                "state": "partial",
+                "text": "The selected native route conditionally copies the C path-result handle to an owner-local resource bound as _ConeMaps. The stored pixel meaning, managed texture-field join, shader sampling and live file selection remain unresolved.",
+                "textZh": "所选原生路径有条件地把 C 路径结果句柄复制到绑定为 _ConeMaps 的所有者局部资源。存储像素的含义、托管纹理字段关联、着色器采样与实际文件选择仍未解决。",
+                "source": "memory/game_data/world_terrain.md"
               }
             ]
           },
@@ -1679,10 +1997,10 @@
               },
               {
                 "level": 4,
-                "state": "open",
-                "text": "D/N path meaning, texture-array ownership and final rendering are unresolved.",
-                "textZh": "D/N 路径含义、贴图数组归属与最终渲染均未解决。",
-                "source": "memory/game_data/extraction_payload_boundaries.md"
+                "state": "partial",
+                "text": "The selected native route conditionally copies D and N path-result handles to owner-local resources bound as _Splats and _Normals. The stored pixel meaning, managed texture-field join, shader sampling and live file selection remain unresolved.",
+                "textZh": "所选原生路径有条件地把 D、N 路径结果句柄复制到绑定为 _Splats、_Normals 的所有者局部资源。存储像素的含义、托管纹理字段关联、着色器采样与实际文件选择仍未解决。",
+                "source": "memory/game_data/world_terrain.md"
               }
             ]
           }
@@ -1728,19 +2046,9 @@
   },
 
   "unreachableFromStaticData": {
-    "_why": "These are reviewed evidence limits from the owning memory topics. One previously proposed LAYER_C consumer was disconfirmed; runtime-selected outcomes require observation. Neither entry proves that all future static routes are impossible.",
-    "_whyZh": "这些边界来自所属记忆主题的复核：先前提出的一条 LAYER_C 消费者路径已被推翻；运行时选中的结果需要观测。两项都不表示将来不可能找到其他静态证据。",
+    "_why": "This reviewed evidence limit concerns runtime-selected outcomes. It does not imply that further static routes are impossible.",
+    "_whyZh": "这条已审查的证据边界涉及运行时选中的结果，并不表示无法再找到其他静态路径。",
     "items": [
-      {
-        "id": "layer-c-consumer",
-        "lane": "world",
-        "level": 4,
-        "title": "The consumer of terrain LAYER_C",
-        "titleZh": "地形 LAYER_C 的消费者",
-        "detail": "The array is decoded end to end, but the recorded answer for what reads it was disconfirmed on re-test. No current static evidence names a consumer.",
-        "detailZh": "该数组已完整解码，但此前记录的消费者结论在复测中被推翻，目前没有静态证据指明消费者。",
-        "owner": "memory/game_data/world_terrain.md"
-      },
       {
         "id": "runtime-consumer-questions",
         "lane": "cross_lane",

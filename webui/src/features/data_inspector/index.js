@@ -51,6 +51,7 @@
     selectedRecord: null,
     selectedEntry: null,
     query: "",
+    catalogTerm: "",
     sort: "path",
     filters: {
       datasets: new Set(),
@@ -92,6 +93,7 @@
       named_exact: ["Complete named decode", "完整命名解码"],
       named_exact_frame: ["Complete framed decode", "完整分帧解码"],
       exact: ["Exact decode", "精确解码"],
+      structural_only: ["Whole-file structural decode", "整文件结构解码"],
       "exact-current-complete": ["Exact and complete for this build", "对该版本精确且完整"],
       decoded_unity_json: ["Unity JSON decoded", "Unity JSON 已解析"],
       bounded_partial: ["Partial decode", "部分解码"],
@@ -148,7 +150,8 @@
   }
 
   function buildSearchText(entry) {
-    return [entry.id, entry.title, entry.status, entry.summary, entry.sourcePath, entry._folder, ...(entry.tags || [])]
+    return [entry.id, entry.title, entry.status, entry.summary, entry.sourcePath, entry._folder,
+      ...(entry.tags || []), ...(entry.searchTerms || [])]
       .join("\n").toLocaleLowerCase();
   }
 
@@ -263,6 +266,7 @@
     const container = state.container;
     $("#data-inspector-q", container)?.addEventListener("input", (event) => {
       state.query = event.target.value;
+      state.catalogTerm = "";
       applyFilters({ resetScroll: true });
     });
     $("#data-inspector-sort", container)?.addEventListener("change", (event) => {
@@ -471,6 +475,7 @@
 
   function resetFilters() {
     state.query = "";
+    state.catalogTerm = "";
     state.sort = "path";
     state.filters.datasets.clear();
     state.filters.statuses.clear();
@@ -492,7 +497,11 @@
       if (state.filters.statuses.size && !state.filters.statuses.has(entry.status)) return false;
       if (state.filters.folders.size && !state.filters.folders.has(entry._folder)) return false;
       if (state.filters.tags.size && !(entry.tags || []).some((tag) => state.filters.tags.has(tag))) return false;
-      return window.WebUI.queryMatches(entry._search, tokens);
+      if (state.catalogTerm) return (entry.searchTerms || []).includes(state.catalogTerm);
+      // Union type names contain `+`, which queryMatches treats as a regex
+      // operator. Keep regex search, while accepting an exact literal term.
+      return entry._search.includes(state.query.trim().toLocaleLowerCase())
+        || window.WebUI.queryMatches(entry._search, tokens);
     });
     sortFiltered();
     state.pager?.setTotal(state.filtered.length);
@@ -833,12 +842,12 @@
     if (!open) {
       const token = `di-${++lazySequence}`;
       lazyValues.set(token, { entry, path, parent, depth });
-      return `<details class="data-inspector-branch ${rowClasses(entry)}" data-lazy-token="${token}">
+      return `<details class="data-inspector-branch ${rowClasses(entry)}" data-path="${esc(path)}" data-lazy-token="${token}">
         <summary><button class="data-inspector-fold" type="button" aria-expanded="false">+</button>${head}</summary>
         <div class="data-inspector-children"></div>
       </details>`;
     }
-    return `<details class="data-inspector-branch ${rowClasses(entry)}" open>
+    return `<details class="data-inspector-branch ${rowClasses(entry)}" data-path="${esc(path)}" open>
       <summary><button class="data-inspector-fold" type="button" aria-expanded="true">−</button>${head}</summary>
       <div class="data-inspector-children">${children
         .map((child) => nodeHtml(child, `${path}.${child.key}`, value, depth + 1))
@@ -964,8 +973,9 @@
   //             raw file.
   //   `payload` is what the publisher republished of the decoder's output. It
   //             is the maintained reader's complete result only when that
-  //             reader produced it, which it signals by carrying its own
-  //             framing status; otherwise it is a selected part of an
+  //             reader produced it; some readers report a framing status in
+  //             that result, while others return values and a cursor for the
+  //             publisher to verify. Otherwise it is a selected part of an
   //             already-decoded source and the mounted raw file stays
   //             authoritative.
   //
@@ -994,6 +1004,8 @@
     }
     if (record.payload !== undefined && record.payload !== null && typeof record.payload === "object") {
       const framed = payloadFromMaintainedReader(record);
+      const payloadReportsFraming = typeof record.payload.schemaStatus === "string"
+        || typeof record.payload.status === "string";
       roots.push({
         key: "payload",
         value: record.payload,
@@ -1001,9 +1013,12 @@
           ? ui("Decoder result", "解码器结果")
           : ui("Republished source fields", "转载的源字段"),
         note: framed
-          ? ui(
+          ? payloadReportsFraming ? ui(
             "the maintained reader's own result, with the framing status it reported",
             "维护中读取器自身的结果，附其报告的分帧状态",
+          ) : ui(
+            "maintained reader values; the record status and facts show the publisher's validation",
+            "维护中读取器的值；记录状态和事实列出发布器的验证结果",
           )
           : ui(
             "a selected part of an already-decoded source; the raw source stays authoritative",
@@ -1024,9 +1039,13 @@
   // A root is a normal branch row carrying its own explanatory note.
   function rootNodeHtml(root) {
     const children = childEntries(root.value, root.key, null);
-    // The header already carries the evidence boundary in full, so the root row
-    // does not repeat a truncated copy of it.
-    const chips = chipsHtml(annotations(root.value, root.key).filter((chip) => chip.cls !== "is-boundary"));
+    // `facts` is a publisher projection. A scalar such as bytesConsumed may
+    // quote the reader, but the projection itself did not consume those bytes
+    // or deserialize that many members. Framing chips belong to payload only.
+    // The header already carries that payload's evidence boundary in full.
+    const chips = root.key === "payload"
+      ? chipsHtml(annotations(root.value, root.key).filter((chip) => chip.cls !== "is-boundary"))
+      : "";
     const head = `<span class="data-inspector-root-label">${esc(root.label)}</span>`
       + `<span class="data-inspector-rawkey">${esc(root.key)}</span>`
       + `<span class="data-inspector-shape">${esc(shapeText(root.value))}</span>${chips}`
@@ -1094,6 +1113,32 @@
       .forEach((node) => setBranchOpen(node, open, { recursive: true }));
   }
 
+  function locateDecodedField(path) {
+    if (!path?.startsWith("payload.")) return;
+    state.treeQuery = "";
+    state.treeView = "semantic";
+    const query = $("#data-inspector-tree-q", state.container);
+    if (query) query.value = "";
+    state.container.querySelectorAll("[data-tree-view]").forEach((button) => {
+      const active = button.dataset.treeView === "semantic";
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", String(active));
+    });
+    renderTree();
+    const host = $("#data-inspector-tree", state.container);
+    const parts = path.split(".");
+    let node = null;
+    for (let length = 2; length <= parts.length; length += 1) {
+      const prefix = parts.slice(0, length).join(".");
+      node = [...host.querySelectorAll("[data-path]")]
+        .find((candidate) => candidate.dataset.path === prefix);
+      if (!node) return;
+      if (node.matches("details.data-inspector-branch")) setBranchOpen(node, true);
+    }
+    node?.classList.add("is-located");
+    node?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   // ----------------------------------------------------------- detail render --
 
   // Scalars only: a collection's contents belong in the structure tree, where
@@ -1118,12 +1163,224 @@
       </section>`;
   }
 
+  // Catalog terms are publisher-supplied search labels. Keep the relation exact
+  // and within its dataset; a shared term does not establish a runtime edge.
+  function catalogTermsHtml(entry, record) {
+    const terms = [...new Set((entry.searchTerms || [])
+      .filter((term) => typeof term === "string" && term.trim()))];
+    if (!terms.length) return "";
+    const publishedActions = record?.facts?.directStoredActionTypes;
+    const actionRows = Array.isArray(publishedActions)
+      && publishedActions.every((row) => row && typeof row === "object"
+        && Number.isInteger(row.tag) && row.tag >= 0
+        && typeof row.type === "string" && terms.includes(row.type)
+        && Number.isInteger(row.timelineOccurrences) && row.timelineOccurrences >= 0
+        && Number.isInteger(row.passiveEventOccurrences) && row.passiveEventOccurrences >= 0)
+      && terms.every((term) => publishedActions.some((row) => row.type === term))
+      ? publishedActions : null;
+    const counts = countValues(
+      state.records.filter((record) => record._datasetId === entry._datasetId),
+      (record) => new Set(record.searchTerms || []),
+    );
+    const buttons = terms.map((term) => {
+      const label = term.includes(".") ? term.slice(term.lastIndexOf(".") + 1) : term;
+      const occurrences = actionRows?.filter((row) => row.type === term) || [];
+      const details = occurrences.map((row) =>
+        `0x${row.tag.toString(16).padStart(4, "0")} · ${ui("timeline", "时间轴")} ${formatNumber(row.timelineOccurrences)}`
+        + ` · ${ui("passive", "被动")} ${formatNumber(row.passiveEventOccurrences)}`,
+      ).join("; ");
+      return `<button type="button" class="${details ? "is-action-term" : ""}" data-inspector-catalog-term="${esc(term)}" title="${esc(term)}">
+        <code>${esc(label)}</code>${details ? `<span>${esc(details)}</span>` : ""}
+        <span>${esc(ui("records", "记录"))} ${esc(formatNumber(counts.get(term) || 0))}</span>
+      </button>`;
+    }).join("");
+    return `<details class="data-inspector-section data-inspector-catalog-terms">
+      <summary>${esc(actionRows
+        ? ui("Direct stored action types", "直接存储的动作类型")
+        : ui("Catalog terms", "目录检索词"))} <span>(${esc(formatNumber(terms.length))})</span></summary>
+      <p class="data-inspector-description">${esc(ui(
+        actionRows
+          ? "Tags and occurrence counts are from this record's direct timeline and passive-event arrays. Nested branch actions are excluded. Select a type to find catalog records with that exact type; these are stored assignments, not observed execution."
+          : "Publisher-supplied terms. Select one to find records in this data family with the same exact term; counts are catalog records, not observed uses.",
+        actionRows
+          ? "标记和出现次数来自此记录中直接的时间轴及被动事件数组，不包括嵌套分支动作。选择类型可查找目录中具有相同精确类型的记录；这些是存储的赋值，不代表实际执行。"
+          : "发布器提供的检索词。选择一项可查找同一数据族中具有相同词的记录；数量指目录记录，不代表实际使用次数。",
+      ))}</p>
+      <div class="data-inspector-catalog-term-list">${buttons}</div>
+    </details>`;
+  }
+
+  // The publisher's direct-action inventory establishes the allowed shape and
+  // counts. Recheck it against the payload before offering a path into the
+  // tree, so a stale or differently shaped projection cannot point elsewhere.
+  function directActionOccurrences(record) {
+    const facts = record.facts;
+    const group = record.payload?.actionGroupData;
+    if (facts?.directStoredActionInventoryAvailable !== true
+        || !Array.isArray(facts.directStoredActionTypes)
+        || !group || !Array.isArray(group.timelineActions)
+        || !Array.isArray(group.passiveEventActions)) return null;
+    const rows = [];
+    const counts = new Map();
+    const append = (actions, lane, indices, sourcePrefix, treePrefix) => {
+      if (!Array.isArray(actions)) return false;
+      for (let index = 0; index < actions.length; index += 1) {
+        const action = actions[index];
+        if (!action || typeof action !== "object" || Array.isArray(action)
+            || !Number.isInteger(action.$tag) || action.$tag < 0
+            || typeof action.$type !== "string" || !action.$type) return false;
+        const key = `${action.$tag}\n${action.$type}`;
+        const pair = counts.get(key) || [0, 0];
+        pair[lane] += 1;
+        counts.set(key, pair);
+        rows.push({
+          lane,
+          indices: [...indices, index],
+          tag: action.$tag,
+          type: action.$type,
+          sourcePath: `${sourcePrefix}[${index}]`,
+          treePath: `${treePrefix}.${index}`,
+        });
+      }
+      return true;
+    };
+    for (let slot = 0; slot < group.timelineActions.length; slot += 1) {
+      const sequence = group.timelineActions[slot]?._sequenceActionData;
+      if (!sequence || !append(sequence.actionData, 0, [slot],
+        `actionGroupData.timelineActions[${slot}]._sequenceActionData.actionData`,
+        `payload.actionGroupData.timelineActions.${slot}._sequenceActionData.actionData`)) return null;
+    }
+    for (let event = 0; event < group.passiveEventActions.length; event += 1) {
+      const actionGroups = group.passiveEventActions[event]?.actions;
+      if (!Array.isArray(actionGroups)) return null;
+      for (let actionGroup = 0; actionGroup < actionGroups.length; actionGroup += 1) {
+        if (!append(actionGroups[actionGroup]?.actionData, 1, [event, actionGroup],
+          `actionGroupData.passiveEventActions[${event}].actions[${actionGroup}].actionData`,
+          `payload.actionGroupData.passiveEventActions.${event}.actions.${actionGroup}.actionData`)) return null;
+      }
+    }
+    if (counts.size !== facts.directStoredActionTypes.length) return null;
+    const seen = new Set();
+    for (const fact of facts.directStoredActionTypes) {
+      const key = `${fact.tag}\n${fact.type}`;
+      const pair = counts.get(key);
+      if (seen.has(key) || !pair || pair[0] !== fact.timelineOccurrences
+          || pair[1] !== fact.passiveEventOccurrences) return null;
+      seen.add(key);
+    }
+    if (Number.isInteger(facts.directStoredActionOccurrenceCount)
+        && rows.length !== facts.directStoredActionOccurrenceCount) return null;
+    return rows;
+  }
+
+  function directActionOccurrencesHtml(record) {
+    const rows = directActionOccurrences(record);
+    if (!rows?.length) return "";
+    const items = rows.map((row) => {
+      const location = row.lane === 0
+        ? `${ui("timeline slot", "时间轴槽位")} ${row.indices[0] + 1} · ${ui("action", "动作")} ${row.indices[1] + 1}`
+        : `${ui("passive event", "被动事件")} ${row.indices[0] + 1} · ${ui("group", "组")} ${row.indices[1] + 1} · ${ui("action", "动作")} ${row.indices[2] + 1}`;
+      const name = row.type.includes(".") ? row.type.slice(row.type.lastIndexOf(".") + 1) : row.type;
+      return `<li><button type="button" data-inspector-action-path="${esc(row.treePath)}"
+        title="${esc(row.type)}"><span>${esc(location)}</span><code>${esc(name)}</code>
+        <span>0x${esc(row.tag.toString(16).padStart(4, "0"))}</span></button>
+        <code class="data-inspector-action-source">${esc(row.sourcePath)}</code></li>`;
+    }).join("");
+    return `<details class="data-inspector-section data-inspector-action-occurrences">
+      <summary>${esc(ui("Direct stored action locations", "直接存储的动作位置"))} <span>(${esc(formatNumber(rows.length))})</span></summary>
+      <p class="data-inspector-description">${esc(ui(
+        "Positions and tags come from this record's decoded arrays. Select an occurrence to locate that exact field in the structure. Array position does not establish execution order or timing; nested branch actions are excluded.",
+        "位置和标记来自此记录的解码数组。选择一项可定位到结构中的确切字段。数组位置不代表执行顺序或时间；不包括嵌套分支动作。",
+      ))}</p>
+      <ol>${items}</ol>
+    </details>`;
+  }
+
+  // A Buff receipt describes a byte span inside a partial source file. Recheck
+  // the projected boundaries before offering a shortcut into the tree.
+  function buffActionReceiptsHtml(record) {
+    const facts = record.facts;
+    const spans = record.payload?.actionReceipts;
+    if (record.payloadKind !== "projection" || record.status !== "bounded_partial"
+        || facts?.wholeBuffDataExact !== false
+        || facts?.recursiveNamedSchemaExact !== false
+        || !Number.isInteger(facts?.verifiedActionSpanCount)
+        || !Array.isArray(spans) || spans.length !== facts.verifiedActionSpanCount
+        || !spans.length) return "";
+    const valid = spans.every((span) => span && typeof span === "object"
+      && [0x0092, 0x00B4].includes(span.tag)
+      && typeof span.typeName === "string" && span.typeName
+      && Number.isInteger(span.startOffset) && span.startOffset >= 0
+      && Number.isInteger(span.endOffset) && span.endOffset > span.startOffset
+      && span.wholeActionByteSpanExact === true
+      && span.recursiveNamedSchemaExact === false
+      && span.wholeBuffDataExact === false
+      && Number.isInteger(span.memberCount)
+      && Array.isArray(span.namedFields)
+      && span.namedFields.length === span.memberCount);
+    if (!valid) return "";
+    const rows = spans.map((span, index) => {
+      const name = span.typeName.includes(".")
+        ? span.typeName.slice(span.typeName.lastIndexOf(".") + 1) : span.typeName;
+      return `<li><button type="button" data-inspector-action-path="payload.actionReceipts.${index}"
+        title="${esc(span.typeName)}"><code>${esc(name)}</code>
+        <span>0x${esc(span.tag.toString(16).padStart(4, "0"))}</span>
+        <span>${esc(ui("bytes", "字节"))} ${esc(span.startOffset)}–${esc(span.endOffset)}</span></button></li>`;
+    }).join("");
+    return `<details class="data-inspector-section data-inspector-action-occurrences">
+      <summary>${esc(ui("Verified Buff action spans", "已验证的 Buff 动作片段"))} <span>(${esc(formatNumber(spans.length))})</span></summary>
+      <p class="data-inspector-description">${esc(ui(
+        "Each listed wrapper has an exact byte span and named fields in this stored BuffData file. Select one to inspect its fields. Nested values and the enclosing BuffData schema remain partial; no runtime use is implied.",
+        "每个列出的包装层在此 BuffData 文件中都有精确字节范围和命名字段。选择一项可查看字段。嵌套值及整个 BuffData 结构仍不完整，不能据此推断运行时使用。",
+      ))}</p><ol>${rows}</ol>
+    </details>`;
+  }
+
+  // Publishers may attach exact source-field references separately from the
+  // decoder payload. Resolve their targets against the loaded catalog before
+  // offering navigation; a stored identifier alone is never a runtime edge.
+  function referencesHtml(record) {
+    const references = record.references;
+    const items = references && Array.isArray(references.items) ? references.items : [];
+    if (!items.length) return "";
+    const rows = items.map((reference) => {
+      const target = reference.targetState === "present"
+        ? state.records.find((entry) => (
+          entry._datasetId === reference.targetDatasetId
+          && entry.id === reference.targetRecordId
+        ))
+        : null;
+      const result = target
+        ? `<button type="button" data-inspector-reference-key="${esc(target._key)}">${esc(ui(
+          "Open matching record", "打开匹配记录",
+        ))}</button>`
+        : `<span class="data-inspector-reference-state">${esc(reference.targetState === "ambiguous"
+          ? ui("Multiple filename matches; link withheld", "文件名存在多个匹配项，未提供链接")
+          : reference.targetState === "absent"
+            ? ui("No matching file in this export", "当前导出中无匹配文件")
+            : ui("Target absent from the Inspector catalog", "检查器目录中缺少目标记录"))}</span>`;
+      return `<li class="data-inspector-reference">
+        <div><code>${esc(reference.storedId || "")}</code>${result}</div>
+        <small><code>${esc(reference.sourcePath || "")}</code></small>
+      </li>`;
+    }).join("");
+    const boundary = typeof references.evidenceBoundary === "string" ? references.evidenceBoundary : "";
+    return `<section class="data-inspector-section data-inspector-references">
+      <h3>${esc(ui("Stored references", "存储的引用"))}</h3>
+      ${boundary ? `<p class="data-inspector-boundary"><span>${esc(ui(
+        "Publisher evidence boundary", "发布器证据边界",
+      ))}</span>${esc(boundary)}</p>` : ""}
+      <ul>${rows}</ul>
+    </section>`;
+  }
+
   // The eyebrow above already carries the data family and the decode status, and
   // a publisher's `tags` normally repeat both plus the schema status. A token is
   // shown once: anything already stated is dropped here rather than restated.
   function headerMetaHtml(record, entry) {
     const source = record.source || {};
     const payload = record.payload && typeof record.payload === "object" ? record.payload : null;
+    const facts = record.facts && typeof record.facts === "object" ? record.facts : null;
     const chips = [];
     const seen = new Set([record.status, entry._datasetId, entry._datasetTitle]
       .filter(Boolean).map((value) => String(value).toLocaleLowerCase()));
@@ -1134,9 +1391,18 @@
       chips.push(chip);
     };
 
-    const consumed = payload && Number.isFinite(Number(payload.bytesConsumed))
+    const readerConsumed = payload?.bytesConsumed != null && Number.isFinite(Number(payload.bytesConsumed))
       ? Number(payload.bytesConsumed)
       : null;
+    // Value-only readers leave EOF validation in the publisher facts. Only use
+    // that cursor when the publisher explicitly says it reached EOF; a generic
+    // bytesConsumed fact could describe a bounded prefix instead.
+    const publisherConsumed = facts?.wholeFileCursorExact === true
+      && facts.bytesConsumed != null
+      && Number.isFinite(Number(facts.bytesConsumed))
+      ? Number(facts.bytesConsumed)
+      : null;
+    const consumed = readerConsumed ?? publisherConsumed;
     if (source.bytes !== undefined) {
       // One size chip: a reader that consumed the whole file is worth stating,
       // but not as a second chip holding the same number.
@@ -1160,13 +1426,20 @@
     return chipsHtml(chips);
   }
 
-  // The decoder's own evidence boundary is prose, not a token: it gets a line of
-  // its own instead of being squeezed into the chip row.
+  // A decoder boundary takes precedence. Value-only decoders may put the
+  // publisher's narrower validation boundary in facts; label its origin.
   function evidenceBoundaryHtml(record) {
     const payload = record.payload;
-    const boundary = payload && typeof payload === "object" ? payload.evidenceBoundary : "";
+    const decoderBoundary = payload && typeof payload === "object" ? payload.evidenceBoundary : "";
+    const publisherBoundary = record.facts && typeof record.facts === "object"
+      ? record.facts.evidenceBoundary : "";
+    const fromPublisher = !(typeof decoderBoundary === "string" && decoderBoundary);
+    const boundary = fromPublisher ? publisherBoundary : decoderBoundary;
     if (!boundary || typeof boundary !== "string") return "";
-    return `<p class="data-inspector-boundary"><span>${esc(ui("Evidence boundary", "证据边界"))}</span>${esc(boundary)}</p>`;
+    const label = fromPublisher
+      ? ui("Publisher evidence boundary", "发布器证据边界")
+      : ui("Evidence boundary", "证据边界");
+    return `<p class="data-inspector-boundary"><span>${esc(label)}</span>${esc(boundary)}</p>`;
   }
 
   function renderDetail() {
@@ -1198,6 +1471,10 @@
           ${record.diagnostic ? `<section class="data-inspector-diagnostic">
             <h3>${esc(ui("Decode diagnostic", "解码诊断"))}</h3><pre>${esc(record.diagnostic)}</pre></section>` : ""}
           ${highlightsHtml(record.facts)}
+          ${catalogTermsHtml(entry, record)}
+          ${directActionOccurrencesHtml(record)}
+          ${buffActionReceiptsHtml(record)}
+          ${referencesHtml(record)}
           <section class="data-inspector-section data-inspector-structure">
             <div class="data-inspector-structure-head">
               <div>
@@ -1247,6 +1524,29 @@
 
   function bindDetailEvents(record, source) {
     const container = state.container;
+    container.querySelectorAll("[data-inspector-catalog-term]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const term = button.dataset.inspectorCatalogTerm;
+        if (!term || !state.selectedEntry) return;
+        state.catalogTerm = term;
+        state.query = term;
+        state.filters.datasets.clear();
+        state.filters.datasets.add(state.selectedEntry._datasetId);
+        state.filters.statuses.clear();
+        state.filters.folders.clear();
+        state.filters.tags.clear();
+        const search = $("#data-inspector-q", container);
+        if (search) search.value = term;
+        buildFilterChips();
+        applyFilters({ resetScroll: true });
+      });
+    });
+    container.querySelectorAll("[data-inspector-action-path]").forEach((button) => {
+      button.addEventListener("click", () => locateDecodedField(button.dataset.inspectorActionPath));
+    });
+    container.querySelectorAll("[data-inspector-reference-key]").forEach((button) => {
+      button.addEventListener("click", () => navigateToReference(button.dataset.inspectorReferenceKey));
+    });
     $("#data-inspector-tree-q", container)?.addEventListener("input", (event) => {
       state.treeQuery = event.target.value;
       renderTree();
@@ -1364,6 +1664,18 @@
       if (state.selectedKey !== key) return;
       host.innerHTML = `<div class="data-inspector-empty is-error">${esc(error.message)}</div>`;
     }
+  }
+
+  function navigateToReference(key) {
+    if (!state.records.some((entry) => entry._key === key)) return;
+    if (!state.filtered.some((entry) => entry._key === key)) resetFilters();
+    const index = state.filtered.findIndex((entry) => entry._key === key);
+    if (index >= 0) state.pager?.showIndex(index);
+    applyFilters({ resetPage: false });
+    const row = state.rows.find(({ entry }) => entry._key === key);
+    const wrap = $("#data-inspector-list-wrap", state.container);
+    if (row && wrap) wrap.scrollTop = row.top;
+    selectRecord(key);
   }
 
   // ------------------------------------------------------------------ load ---

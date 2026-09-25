@@ -146,6 +146,47 @@ Gameplay: header toggle plus reset, collapsible `.filter-section` chip groups
 virtualized list, a pager, and a pane splitter. Dataset catalogs are merged
 into one searchable list without loading detail shards; full exported Unity
 JSON is fetched from `/export_full/` only when requested.
+The debug-only `level-data` dataset uses the maintained LevelData reader to
+show each file's exact or bounded status, open-field boundary, and stored spline
+rows where decoded; it makes no movement or runtime-use claim.
+The debug-only `skill-data` dataset shows the selected native generated-wrapper
+values for exported SkillData files. It reports an exact file cursor only after
+the read reaches EOF and its stored skill ID matches the filename; unavailable
+native evidence leaves the dataset unavailable. Stored actions and member names
+do not establish runtime execution. The `structural_only` status retains the
+weaker evidence tier of nested union assignments even when the file cursor is
+exact. Its detail header shows the publisher's whole-file check and labels the
+structural-only boundary as a publisher claim, separate from decoder boundaries.
+Stored `AllowNextSkillAction.allowedSkillIdList` IDs, including nested action
+values, appear as authored references with their exact source paths. The
+Inspector links an ID to another SkillData record only when it
+uniquely matches an exported filename stem; missing or ambiguous matches stay
+visible without a link. These links do not assert a runtime skill transition.
+The sidebar also searches exact stored action type names from the direct
+timeline and passive-event action arrays. The detail's publisher facts count
+those type/tag pairs by array; unfamiliar array shapes withhold this optional
+inventory. Nested branch actions remain visible in the decoded structure but
+are not included in the direct-action counts. An action's presence is stored
+configuration, not evidence that it executes in play.
+When a record publishes catalog search terms, its detail shows a collapsed list
+of terms with same-dataset record counts. SkillData records with a complete
+direct-action inventory also show each stored union tag and separate timeline
+and passive-event occurrence counts for that record; nested branch actions are
+excluded. Selecting a term filters the sidebar by exact term, and editing search
+resumes the ordinary regex search. Record counts and stored occurrences do not
+establish runtime action use.
+The same validated inventory offers a collapsed list of direct action
+occurrences, with decoded array indices and field paths. Selecting an occurrence
+opens that exact node in the annotated structure. The list follows stored array
+positions only; it does not establish execution order or timing.
+The optional `buff-action-receipts` dataset shows selected CreateBuff and
+FinishBuffAdvanced wrapper fields at authenticated byte spans in exported
+BuffData files. It appears only when the receipt report, current Buff corpus
+report, installed native hashes, and exported source bytes agree. Its records
+are explicitly partial; the collapsed span list locates a wrapper in the
+structure without claiming a complete BuffData decode, nested semantics, or
+runtime action use. Missing or stale reports leave this debug dataset
+unavailable.
 
 The detail pane is one general decoded-record viewer rather than a
 per-decoder layout. Scalar `facts` are quick-scan cards; everything the record
@@ -169,7 +210,8 @@ The two structure roots are labelled by provenance, from the record's required
 `payloadKind`: a `reader` payload is a maintained `scripts/game_data` reader's
 own result, while a `projection` payload was assembled by the publisher from an
 already-decoded source whose mounted raw file stays authoritative. `facts` is
-always the publisher's own projection and can hold more than `payload` does.
+always the publisher's own projection and can hold more than `payload` does;
+only the reader payload root carries framing chips.
 
 ### Ownership rules that are easy to get wrong
 
@@ -291,23 +333,95 @@ Gameplay owns character progression, equipment, enemies, skills, projectiles,
 and assets. Audio sidecars are deliberately not attached to this page while
 their ownership model is under review.
 
+- Detail content is flat: sections, Buff cards, evidence notes, and
+  debug-only technical blocks render open with no `<details>` folding. Only
+  the sidebar kind groups, the filter panel, and audio lists longer than the
+  inline limit stay collapsible.
+- Each character active skill is one card: a header with the level slider,
+  the description, then the selected level's action table and cost. The table
+  has one row per sub-skill with its DamageUnits (type, attribute, and stored
+  blackboard keys resolved to the selected level's values),
+  its remaining blackboard values, and its assigned projectiles (speed,
+  distance, time, hits). A projectile matched only by the group's family
+  identifier (no sub-skill in the group's skill list) gets its own row named
+  after the projectile's action token and marked inferred. Enum numbers,
+  calculations, effect setup, and source paths appear only in debug rows.
+  Evidence notes shared by all skills are stated once above the cards.
+- Playable characters have a Data / Loadout switch. Loadout picks the
+  character level (with break stage) and potential, a weapon of the
+  character's weapon type with its level, potential and skill levels, and one
+  body, one hand and two accessory pieces, each attribute line with its own
+  enhancement slider (lines sharing an `attrIndex` move together; a line with
+  one value at every step is shown fixed). It shows
+  cumulative upgrade cost and final attributes with per-source breakdowns,
+  computed from `attributeCalculation`; without a validated formula it shows
+  the gate status and computes nothing. Attributes whose native hooks are not
+  modelled are not displayed.
+- Descriptions with a `descriptionTemplate` (skill groups, weapon and
+  equipment skill levels, talents, potentials, item use) are rendered in the
+  browser from the selected level's values, so the text follows the level
+  slider. Substituted values are highlighted, and value chips the text already
+  shows are hidden outside debug mode. A placeholder the browser cannot
+  resolve falls back to the builder's rendered `description`.
 - Exact `chr_NNNN_token` namespaces are published even without a
   `CharacterTable` row, labeled namespace-only, leaving availability,
   progression, runtime use, and playable status unproven.
 - Enemy level selectors show only authored level points; missing levels are not
   interpolated. Positive authored skill cooldowns are shown at the selected
   skill level.
+- Character active skills resolve authored `DamageUnit` rows from directly
+  referenced, whole-record SkillData. `gameplay/index.json` carries optional
+  `skillDamageEvidence` and `skillDamageUnits[skillId]`; selected native enum
+  names appear beside raw numbers only after the current plan and field types
+  validate. The page shows a missing-data note when this join is unavailable.
+  The rows describe serialized setup, not final damage or executed actions.
+  `skillDamageRouteEvidence` is a compact selected-native audit status for the
+  normal-entity DamageAction selector. With it validated, the authored
+  `simpleCalculation` and `takeAtkSnapshot` flags choose which conditional
+  expression can be shown on Hp units. Simple Hp rows with snapshot disabled
+  show the unit's resolved `atkScale` times attacker attribute-array element 2,
+  even if an evaluator subtype is also stored. Poise units retain their
+  authored operands without that Hp formula badge. A separate selected-native
+  `skillDamagePoiseRouteEvidence` joins nonnull stored `poiseCalculation` to
+  the intermediate `PoisePackData.calcResult`; together with
+  `skillDamageDefiniteValueEvidence`, it can show a conditional Poise
+  calculation-input expression, never an applied or displayed Poise amount.
+  `skillDamageAtkScaleEvidence` additionally
+  gates the `AtkScaleCalculation` expression only when simple calculation and
+  snapshot are both disabled. Stored level values are never substituted for
+  runtime blackboard results. An unavailable audit leaves raw setup visible.
+  `skillDamageBreakingAttackEvidence` separately gates a conditional
+  `BreakingAttackCalculation` expression on that same non-simple route. Its
+  hover detail preserves the
+  selected evaluator's Double attribute product, Single scale product,
+  Double-to-Single conversion, final Single multiplication, and widening to
+  Double. Stored level values are never substituted for runtime `GetValue`;
+  an unavailable audit leaves one skill-level note and the raw setup visible.
 - Enemy born-Buff cards expose exact BuffData lifecycle, stacking, trigger,
   keyed-value evidence, attribute modifiers, and applied tag ids. An unmapped
   ID keeps its raw value and explains on hover why the current serialized
-  registry did not resolve it.
+  registry did not resolve it. When the selected native evidence validates and
+  the exact-tail projection includes a nonempty serialized stacking key, the
+  card shows its quoted string. This is a stored field, not a computed runtime
+  stacking group.
 - Decoded action chains show the gated event name and decoded fields, including
   actions nested under If/Else branches and common `TargetSettings` fields even
   when the enclosing action is partial. Unresolved unions, selectors, and
   complex payloads stay visibly unresolved.
+- Exact Buff action `TargetSettings` summaries show selected native enum names
+  beside each stored numeric source, target, selector-owner, direction, and
+  center value when the current native field/plan join validates. Older data or
+  an unavailable join shows the raw numbers with an explicit missing-name note;
+  these labels do not identify the target chosen at runtime.
 - Projectile templates, spawned behavior, and playable-skill ownership remain
   separate relations. Audio event and media relationships are investigated on
   the Audio page and are not rendered in Gameplay.
+- Projectile cards list an authored effect setup by serialized list slot.
+  Stored effect type, movement, and position-reference integers gain selected
+  native enum names only when `webui/data/gameplay/projectiles.json` schema 5
+  carries validated `effectConfigEnums` and `effectConfigEnumEvidence`; an
+  unavailable join keeps numbers and shows a missing-name note. These labels
+  describe configuration, not runtime effect activation.
 - Native enum names, tag names, and gated event names disappear when the
   selected build gate does not validate; the authored rows remain.
 
@@ -326,6 +440,24 @@ Audio keeps four layers separate and claims only the available one:
 2. Wwise graph relation and possible media leaves;
 3. authored consumer/trigger context;
 4. observed runtime execution or selected branch.
+
+Audio Event details include exact SkillData/BuffData PlaySound contexts when
+the raw literal matches a selected HIRC Event object. They show an authored
+frame window only when the action has one; Buff and Ability event slots appear
+by their checked native enum names. The Gameplay sound sidecar also retains
+empty, outer-whitespace, and HIRC-unmatched action literals without Event
+links. These contexts do not assert branch execution, selected targets, or
+playback.
+
+Music Switch Event details show a searchable, paged list of authored type
+`0x0C` decision-tree leaves from `musicNodeEvidence`. Each row keeps the
+stored argument group/type and path key, leaf object ID, weight, probability,
+and same-bank ownership status. The view uses the existing lazy Event detail
+shards and shows at most 40 rows at once. A missing same-bank declaration is
+shown as a local join gap; the view does not select a runtime branch or claim
+audibility. The view requires one `pathKeys` entry per stored argument level;
+older detail shards with a root sentinel must be refreshed by the focused
+Audio HIRC build before this section appears.
 
 ### Layout and playback
 
@@ -372,6 +504,12 @@ IDs; `trigger_contexts.json` `mediaRefs` joins; non-playback Action payloads
 Seek, value/filter actions, exception buses, FX slot bypass); and the lazy,
 debug-only AudioCue AST. An unsupported tail stays visibly fail-closed with its
 offset and reason.
+Effect parameter names and values appear only for classes passing the selected
+native gate; other definitions keep raw class IDs, parameter lengths and hashes,
+and any exact plug-in media dependencies. The HIRC overview shows that gate's
+status and reviewed-class count beside the exact, partial, and opaque authored
+definition counts; an absent gate is marked unverified. These are serialized
+bank settings, with no live effect activation or DSP output claim.
 
 ### Status vocabulary
 
@@ -403,6 +541,12 @@ Rendered verbatim in details, search, and filters:
   numeric targets `0x1802`/`0x1804`.
 - AudioCue AST: `exprType`, `exprType=3`, `exprType=8`, `runtimeCueVariable`,
   `compositeOpaque`, `childrenLimit`.
+- Wwise action rows: `operation` (the masked high byte, which decides the body
+  layout and stays the grouping key) beside `actionTypeName`, the Wwise SDK
+  identifier for the whole serialized 16-bit action type. `actionTypeName` is
+  rendered with its `AkActionType_` prefix stripped, so one `stop` group now
+  shows `Stop_E`, `Stop_E_O` and `Stop_ALL` apart. A word the SDK enum does not
+  name shows no name rather than one fitted from the suffix pattern.
 
 ### Storage and degraded state
 
@@ -441,8 +585,18 @@ share an explicit transform.
   current default map, and compact counts.
 - `data/map_recovery/maps/<levelId>.json` owns markers, quest points, facets,
   mission/file evidence, minimap metadata, and one recovered render manifest.
-- `data/map_recovery/render/` owns generated minimap composites, elevation,
-  surface, point, height-mask, and water PNGs plus their manifests.
+- An existing registry marker may carry `mapMark` with its authored template,
+  group key, default visibility, visibility type, and ID-plus-position evidence.
+  A unique `LevelShortIdTable` match adds authored scene evidence to a subset.
+  `mapMarkCoverage` separates registry-linked annotations from direct scene
+  joins and reports unmatched counts; marks are not plotted from group keys.
+- `data/map_recovery/render/` owns generated minimap composites, optional
+  Terrain byte previews, mesh elevation, surface, point, height-mask, and water
+  PNGs plus their manifests.
+- An `elevationUnderlay` with status `terrain_height_grid_diagnostic` is the
+  Terrain `_H` byte preview. The browser routes it to a separate control from
+  mesh-derived grayscale elevation and shows the byte-composite boundary.
+  Its `valueRange` describes the preview's diagnostic composite, not world Y.
 - Shared-scene identity comes only from the directly addressed
   `LevelConfig/<levelId>.json` streaming path. Similar names are not evidence.
 - Streaming-instance sidecars use schema 2 and one `meshes` array per entity
@@ -460,8 +614,13 @@ share an explicit transform.
   columns; map status sits with the task column instead of a separate header
   panel, and the complete JSON/file inspector is also resizable.
 - The plain third column combines entity, quest, story, and mission filters
-  with minimap, elevation, surface, water, point, and point-height controls
+  with minimap, optional Terrain byte preview, elevation, surface, water,
+  point, and point-height controls
   without an inner layer container; there is no separate bottom filter dock.
+- `Authored marks` is a Map object-filter preset available when the loaded
+  map has exact ID-and-position `mapMark` annotations. It selects only those
+  registry nodes, clears mission and quest filters, and still respects authored
+  floor selection. Other presets or a mission selection leave this preset.
 - Each available raster layer occupies one row with a visibility checkbox and
   its own opacity slider. Layer opacity persists while switching maps and does
   not reset when that layer is temporarily hidden.
@@ -562,6 +721,14 @@ three-lane waveform view for the old envelope, new envelope, and their
 amplitude difference. The waveform uses the longer file as the shared timeline
 and does not require extra data in the Updates feed.
 
+Most exported `game/Json` files are serialized payloads, not text. An entry
+carries `text_kind` when its stored text is not the file's own: the detail view
+then titles the panel `Decoded diff`, names the reader that produced it, and
+marks a bounded reader's view as partial. `text_diff_note` explains a changed
+file with no diff -- an identical decoded view, a payload no reader routes, or
+one past the diff size limit -- instead of leaving the panel empty. A plain
+text file carries neither field and renders as before.
+
 When the builder proves that an exported-file relocation kept the same bytes
 or decoded FLAC PCM, it omits the path-only change from Updates. A stable Unity
 identity whose bytes also changed remains one `modified` item; its details show
@@ -592,7 +759,7 @@ shared green, gold, and red semantic palette as Character update badges.
 
 ## Recovery
 
-Recovery is a debug-only page at `#recovery` with two parts, read from the v4
+Recovery is a debug-only page at `#recovery` with two parts, read from the v5
 `data/recovery/index.json` payload.
 
 - A log-scaled VFS volume bar, by payload bytes or logical-file count. Hatched
@@ -604,6 +771,8 @@ Recovery is a debug-only page at `#recovery` with two parts, read from the v4
 - A tree of VFS blocks whose leaves are logical-file types (declared path
   families, plus `Other / unclassified` for unmatched paths). Blocks start
   open; each type row shows its file count, bytes and four L1–L4 state chips.
+  The Unity bundle type lists its Unity object types one level deeper, each
+  with its object count and its own four state chips.
   Selecting a type shows its per-level statements, cited sources, evidence
   limits, path pattern and sample paths beside the tree. One compact key above
   the tree names the levels and states. States are scoped declarations, not

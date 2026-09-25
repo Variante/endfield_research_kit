@@ -5,10 +5,10 @@ managed references (``ProjectileTemplateData`` and
 ``ProjectileComponentData``) the local AnimeStudio fork decoded through the
 serialized managed-reference TypeTree that ships inside the bundle.  That
 TypeTree names every field and the decode consumed the bounded payload
-exactly, so field order and values are exact.  What the TypeTree does not
-carry is meaning: enum members, Wwise event hashes, layer masks, and
-blackboard keys stay numeric here, because nothing in this builder has
-independently recovered their runtime names.
+exactly, so field order and values are exact. Its enum integers stay on each
+row. An optional selected-native join publishes EffectActionCfg enum names
+only when the installed pair, declaring fields, and all published values
+validate; it does not infer runtime use.
 
 Any other object shape is skipped and counted.  The retired hand-written
 decoders published inferred field names and partial tails; the exporter's
@@ -23,10 +23,11 @@ Examples:
 """
 
 from __future__ import annotations
-from scripts.common import EXPORT_LAYOUT
+from scripts.common import EXPORT_LAYOUT, check_installed_native_inputs
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -44,7 +45,7 @@ DEFAULT_INPUTS = (
     EXPORT_ROOT / "game/Unity/MonoBehaviour",
 )
 DEFAULT_OUTPUT = REPO_ROOT / "webui/data/gameplay/projectiles.json"
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 SOURCE_LABEL = "AnimeStudio exact managed-reference TypeTree decode"
 EFFECT_LIST_FIELDS = (
     ("main", "mainEffects"),
@@ -309,7 +310,7 @@ def effect_payload(value: Any) -> dict[str, Any]:
         confidence={
             "structure": "exact",
             "semantics": "qualified",
-            "note": "EffectActionCfg fields come from the serialized managed-reference TypeTree; enum members and mount-point ids stay numeric.",
+            "note": "EffectActionCfg fields come from the serialized managed-reference TypeTree; selected enum names are optional top-level enrichment and stored ids remain numeric.",
         },
     )
 
@@ -318,6 +319,104 @@ def effect_list_payload(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     return [effect_payload(item) for item in value if isinstance(item, dict)]
+
+
+def load_effect_config_enums() -> tuple[dict[str, dict[str, str]], dict[str, Any]]:
+    """Resolve selected EffectActionCfg field enums without changing raw rows."""
+    gate = check_installed_native_inputs()
+    evidence: dict[str, Any] = {
+        "status": gate.status,
+        "detail": gate.detail,
+        "source": "selected GameAssembly.dll + global-metadata.dat",
+    }
+    if not gate.validated:
+        return {}, evidence
+    try:
+        from scripts.game_data.il2cpp.native_image import NativeImage
+        from scripts.game_data.memorypack.derived_plans import load_registry
+        from scripts.game_data.memorypack.effect_config_corpus import (
+            EFFECT_TYPE, ENUM_FIELDS, effect_definition,
+        )
+        from scripts.game_data.memorypack.target_settings_corpus import selected_enum_fields
+
+        registry, plan_gate = load_registry(
+            gameassembly=gate.gameassembly, metadata=gate.metadata,
+        )
+        if plan_gate.get("status") != "validated":
+            raise ValueError(f"selected EffectActionCfg plan unavailable: {plan_gate.get('status')}")
+        names, _audit = selected_enum_fields(
+            NativeImage(gate.gameassembly, gate.metadata, label="projectile-effect-config"),
+            registry, effect_definition(registry),
+            owner_type=EFFECT_TYPE, enum_fields=ENUM_FIELDS,
+        )
+        evidence.update({
+            "status": "validated",
+            "nativeInputs": {
+                "GameAssembly.dll": gate.gameassembly_sha256,
+                "global-metadata.dat": gate.metadata_sha256,
+            },
+            "boundary": (
+                "selected native field-to-enum types and serialized plan; "
+                "names describe authored EffectActionCfg values, not spawned or active effects"
+            ),
+        })
+        return {
+            field: {str(value): name for value, name in members.items()}
+            for field, members in names.items()
+        }, evidence
+    except Exception as error:
+        evidence.update({
+            "status": "unavailable",
+            "detail": f"{type(error).__name__}: {error}",
+        })
+        return {}, evidence
+
+
+def validate_effect_config_enums(
+    entries: list[dict[str, Any]], enums: dict[str, dict[str, str]],
+) -> dict[str, Any]:
+    """Require every exported effect value to have a selected enum member."""
+    if not enums:
+        return {"status": "incomplete", "checkedConfigs": 0,
+                "failureCount": 1, "failureExamples": [{"gate": "empty-enum-fields"}]}
+    checked = 0
+    failure_count = 0
+    failures: list[dict[str, Any]] = []
+
+    def check(entry: dict[str, Any], slot: str, index: int, effect: dict[str, Any]) -> None:
+        nonlocal checked, failure_count
+        checked += 1
+        for field, members in enums.items():
+            value = effect.get(field) if field == "fxType" else (effect.get("behavior") or {}).get(field)
+            if type(value) is int and str(value) in members:
+                continue
+            failure_count += 1
+            if len(failures) < 12:
+                source = entry.get("source") or {}
+                failures.append({
+                    "gate": "selected-effect-enum-member",
+                    "projectile": entry.get("id"),
+                    "source": source.get("jsonPath"),
+                    "sourceSha256": source.get("rawDataSha256"),
+                    "slot": slot, "index": index, "field": field,
+                    "expectedCount": len(members),
+                    "expectedFirst": sorted(members, key=int)[:8],
+                    "actual": value,
+                })
+
+    for entry in entries:
+        effects = entry.get("effects") or {}
+        for slot, values in (effects.get("lists") or {}).items():
+            for index, effect in enumerate(values or []):
+                if not isinstance(effect, dict) or not effect:
+                    continue
+                check(entry, slot, index, effect)
+        alert = effects.get("alert")
+        if isinstance(alert, dict) and alert:
+            check(entry, "alert", 0, alert)
+    return {"status": "validated" if checked and not failure_count else "incomplete",
+            "checkedConfigs": checked, "failureCount": failure_count,
+            "failureExamples": failures}
 
 
 def source_label(path: Path) -> str:
@@ -614,6 +713,17 @@ def main(argv: list[str] | None = None) -> int:
         for reason, names in skipped.items()
         if reason in (SKIP_NOT_EXACT_TYPETREE, SKIP_REGISTRY_NOT_FULLY_DECODED)
     }
+    effect_enums, effect_enum_evidence = load_effect_config_enums()
+    if effect_enum_evidence["status"] == "validated":
+        checked = validate_effect_config_enums(entries, effect_enums)
+        effect_enum_evidence.update(checked)
+        if checked["status"] != "validated":
+            effect_enums = {}
+            first = (checked.get("failureExamples") or [{}])[0]
+            effect_enum_evidence["detail"] = (
+                f"projectile EffectActionCfg enum audit failed: "
+                f"{checked['failureCount']} field values; first {first}"
+            )
     output = {
         "schemaVersion": SCHEMA_VERSION,
         "source": SOURCE_LABEL,
@@ -633,10 +743,12 @@ def main(argv: list[str] | None = None) -> int:
             "uniqueAuthoredSkills": len(set(authored_skill_refs)),
         },
         "skippedFiles": {reason: sorted(names) for reason, names in sorted(non_exact_skips.items())},
+        "effectConfigEnums": effect_enums,
+        "effectConfigEnumEvidence": effect_enum_evidence,
         "confidence": {
             "structure": "exact" if entries and not non_exact_skips else ("mixed" if entries else "empty"),
             "semantics": "qualified",
-            "note": "Every published entry is an exact managed-reference TypeTree decode. Structural completeness does not imply recovered runtime enum/hash meanings or evaluated blackboard values.",
+            "note": "Every published entry is an exact managed-reference TypeTree decode. Selected EffectActionCfg enum names are optional and describe stored values; runtime effect behavior, event hashes, and evaluated blackboard values remain unresolved.",
         },
         "entries": entries,
     }
@@ -648,8 +760,10 @@ def main(argv: list[str] | None = None) -> int:
     print(
         f"projectiles: {len(entries)} entries from {scanned} candidate files "
         f"({', '.join(f'{reason}={len(names)}' for reason, names in sorted(skipped.items())) or 'no skips'}); "
-        f"wrote {args.output}",
+        f"effect-enums={effect_enum_evidence['status']}; wrote {args.output}",
     )
+    if effect_enum_evidence["status"] == "incomplete":
+        print(f"[projectiles.effect-config-enums] {effect_enum_evidence['detail']}", file=sys.stderr)
     if missing:
         print(f"missing input roots: {', '.join(missing)}")
     if args.require_exact and non_exact_skips:

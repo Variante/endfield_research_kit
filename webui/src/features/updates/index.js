@@ -41,6 +41,12 @@
       diffUnavailable: "\u65e0\u6cd5\u751f\u6210\u5dee\u5f02\u9884\u89c8\u3002",
       diffChanged: "\u7ea6 {percent} \u50cf\u7d20\u53d8\u5316",
       textDiff: "\u6587\u672c\u5dee\u5f02",
+      decodedDiff: "\u89e3\u7801\u540e\u5dee\u5f02",
+      decodedDiffWhole: "\u7531 {decoder} \u5b8c\u6574\u89e3\u7801\uff08\u975e\u6587\u672c\u6587\u4ef6\uff09\u3002",
+      decodedDiffPartial: "\u7531 {decoder} \u90e8\u5206\u89e3\u7801\uff1b\u672a\u89e3\u7801\u533a\u57df\u7684\u53d8\u5316\u4e0d\u4f1a\u663e\u793a\u3002",
+      decodedIdentical: "\u5b57\u8282\u5df2\u53d8\uff0c\u4f46\u89e3\u7801\u540e\u7684\u5185\u5bb9\u5b8c\u5168\u76f8\u540c\uff1a\u53d8\u5316\u5728\u5df2\u89e3\u7801\u8303\u56f4\u4e4b\u5916\u3002",
+      binaryNoReader: "\u4e8c\u8fdb\u5236\u8d1f\u8f7d\uff0c\u5c1a\u65e0\u5bf9\u5e94\u89e3\u7801\u5668\uff0c\u56e0\u6b64\u4e0d\u663e\u793a\u5dee\u5f02\u3002",
+      binaryTooLarge: "\u4e8c\u8fdb\u5236\u8d1f\u8f7d\u8d85\u8fc7\u5dee\u5f02\u5927\u5c0f\u9650\u5236\uff0c\u56e0\u6b64\u4e0d\u663e\u793a\u5dee\u5f02\u3002",
       decodedNote: "\u8bf4\u660e",
       decodedConfidence: "\u5339\u914d\u65b9\u5f0f",
       hash: "\u54c8\u5e0c",
@@ -124,6 +130,12 @@
       diffUnavailable: "Unable to build diff preview.",
       diffChanged: "About {percent} pixels changed",
       textDiff: "Text diff",
+      decodedDiff: "Decoded diff",
+      decodedDiffWhole: "Not a text file; decoded in full by {decoder}.",
+      decodedDiffPartial: "Not a text file; decoded in part by {decoder}. A change in bytes it does not read is not shown.",
+      decodedIdentical: "The bytes changed, but the decoded view is identical: the change is outside what the reader covers.",
+      binaryNoReader: "Binary payload with no maintained reader, so no diff is shown.",
+      binaryTooLarge: "Binary payload larger than the diff size limit, so no diff is shown.",
       hash: "Hash",
       sameHashFiles: "Same-hash files",
       diffTruncated: "Diff is long, so only the first lines are shown.",
@@ -811,9 +823,44 @@
     );
   }
 
+  // The first rendered line of a decoded payload names its reader, so the
+  // panel can say which decoder produced the text without a second field.
+  function decodedFrom(entry) {
+    const lines = Array.isArray(entry && entry.text_diff) ? entry.text_diff : [];
+    for (const line of lines) {
+      const match = /^[-+ ]?#\s+(scripts\.[\w.]+):/.exec(String(line || ""));
+      if (match) return match[1];
+    }
+    return "";
+  }
+
+  function diffNoteHtml(entry) {
+    const note = String(entry && entry.text_diff_note || "");
+    if (!note) return "";
+    const key = note === "binary_no_reader" ? "binaryNoReader"
+      : note === "binary_too_large" ? "binaryTooLarge"
+      : note === "decoded_identical" ? "decodedIdentical"
+      : "";
+    if (!key) return "";
+    return (
+      `<section class="updates-detail-panel updates-text-diff">` +
+        `<div class="updates-detail-note">${escapeHtml(updateText(key))}</div>` +
+      `</section>`
+    );
+  }
+
   function textDiffHtml(entry) {
     const lines = Array.isArray(entry && entry.text_diff) ? entry.text_diff : [];
-    if (!lines.length) return "";
+    if (!lines.length) return diffNoteHtml(entry);
+    const kind = String(entry && entry.text_kind || "plain");
+    const decoded = kind === "decoded_whole_file" || kind === "decoded_partial";
+    const title = decoded ? updateText("decodedDiff") : updateText("textDiff");
+    const decoderNote = decoded
+      ? `<div class="updates-detail-note">${escapeHtml(
+          updateText(kind === "decoded_partial" ? "decodedDiffPartial" : "decodedDiffWhole")
+            .replace("{decoder}", decodedFrom(entry) || "a maintained reader"),
+        )}</div>`
+      : "";
     const rows = lines.map((line) => {
       const value = String(line || "");
       let cls = "ctx";
@@ -828,8 +875,9 @@
       : "";
     return (
       `<section class="updates-detail-panel updates-text-diff">` +
-        `<h2>${escapeHtml(updateText("textDiff"))}</h2>` +
-        `<div class="updates-diff-code" role="region" aria-label="${escapeHtml(updateText("textDiff"))}">${rows}</div>` +
+        `<h2>${escapeHtml(title)}</h2>` +
+        decoderNote +
+        `<div class="updates-diff-code" role="region" aria-label="${escapeHtml(title)}">${rows}</div>` +
         note +
       `</section>`
     );
