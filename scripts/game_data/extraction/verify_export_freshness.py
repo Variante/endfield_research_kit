@@ -23,7 +23,8 @@ if __package__ in {None, ""}:
     )
 
 from scripts.common import ROOT, native_evidence_required, read_json, rel_path as slash
-from scripts.source_paths import ExportLayout, ExportLayoutError
+from scripts.source_paths import PACKED_GAME_DIRS, ExportLayout, ExportLayoutError, packed_game_dir
+from scripts.game_data.game_file_store import open_game_files_if_present
 from scripts.game_data.unity_store import open_store_if_present
 from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_GAME_ROOT,
@@ -38,7 +39,9 @@ from scripts.game_data.extraction.export_full_from_game import (
 DEFAULT_SUMMARY = DEFAULT_REPORTS / "export_full_summary.json"
 # Published game data every WebUI build needs, and the per-layer metadata
 # that proves it. Unity types are single-tree (their object documents are
-# rows of game/Unity.sqlite, their media loose files); asset maps stay per layer.
+# rows of game/Unity.sqlite, their media loose files); a game/ folder that holds
+# a packed folder (game/Json holds Json/LipSync) is counted as its loose files
+# plus its rows of game/GameFiles.sqlite; asset maps stay per layer.
 REQUIRED_GAME_DIRS = ("Table", "Json")
 REQUIRED_UNITY_TYPES = ("TextAsset", "MonoBehaviour")
 
@@ -66,7 +69,11 @@ def source_fingerprint_drift(source: str, current: dict[str, Any], exported: dic
     }
 
 
-def directory_has_file(path: Path) -> bool:
+def _skipped(path: str, skip_dirs: frozenset[str]) -> bool:
+    return os.path.normcase(os.path.abspath(path)) in skip_dirs
+
+
+def directory_has_file(path: Path, skip_dirs: frozenset[str] = frozenset()) -> bool:
     pending = [path]
     while pending:
         current = pending.pop()
@@ -76,7 +83,7 @@ def directory_has_file(path: Path) -> bool:
                     try:
                         if entry.is_file():
                             return True
-                        if entry.is_dir():
+                        if entry.is_dir() and not _skipped(entry.path, skip_dirs):
                             pending.append(Path(entry.path))
                     except OSError:
                         continue
@@ -85,15 +92,27 @@ def directory_has_file(path: Path) -> bool:
     return False
 
 
-def output_dir_status(path: Path, *, exact_count: bool = False) -> dict[str, Any]:
+def count_files(path: Path, skip_dirs: frozenset[str] = frozenset()) -> int:
+    count = 0
+    for dirpath, dirnames, filenames in os.walk(path):
+        if skip_dirs:
+            dirnames[:] = [name for name in dirnames if not _skipped(os.path.join(dirpath, name), skip_dirs)]
+        count += len(filenames)
+    return count
+
+
+def output_dir_status(
+    path: Path, *, exact_count: bool = False, skip_dirs: frozenset[str] = frozenset()
+) -> dict[str, Any]:
+    """A folder's existence and file count; ``skip_dirs`` (normcased absolute) are not walked."""
     exists = path.exists()
     file_count = 0
     file_count_exact = True
     if exists:
         if exact_count:
-            file_count = sum(1 for item in path.rglob("*") if item.is_file())
+            file_count = count_files(path, skip_dirs)
         else:
-            file_count = 1 if directory_has_file(path) else 0
+            file_count = 1 if directory_has_file(path, skip_dirs) else 0
             file_count_exact = False
     return {
         "path": slash(path),
@@ -123,6 +142,55 @@ def unity_type_status(layout: ExportLayout, type_name: str, *, exact_count: bool
     }
 
 
+def game_dir_status(layout: ExportLayout, folder: str, *, exact_count: bool = False) -> dict[str, Any]:
+    """One game/ folder's published files: loose files plus any packed rows under it.
+
+    A packed folder (``PACKED_GAME_DIRS``) at or under ``folder``, or holding
+    it, is read only from game/GameFiles.sqlite: its rows are always counted
+    exactly, and loose files on disk inside it are not counted, so the total
+    stays comparable with the loose count of an older layout. The loose part
+    follows ``exact_count`` like every other output folder.
+    """
+    folder = folder.replace("\\", "/").strip("/")
+    key = folder.casefold()
+    path = layout.game.joinpath(*folder.split("/"))
+    whole_packed = [
+        packed for packed in PACKED_GAME_DIRS
+        if packed.casefold() == key or packed.casefold().startswith(key + "/")
+    ]
+    inside_packed = packed_game_dir(folder)
+    if not whole_packed and inside_packed is None:
+        return output_dir_status(path, exact_count=exact_count)
+
+    store = open_game_files_if_present(layout.root)
+    row_count = 0
+    if store is not None:
+        if inside_packed is not None and inside_packed.casefold() != key:
+            row_count = sum(
+                1 for row in store.iter_rows(inside_packed)
+                if row.path.casefold().startswith(key + "/")
+            )
+        else:
+            row_count = sum(store.count(packed) for packed in whole_packed)
+    if inside_packed is not None:
+        loose = {"exists": False, "fileCount": 0, "fileCountExact": True}
+    else:
+        skip = frozenset(
+            os.path.normcase(os.path.abspath(layout.game.joinpath(*packed.split("/"))))
+            for packed in whole_packed
+        )
+        loose = output_dir_status(path, exact_count=exact_count, skip_dirs=skip)
+    return {
+        "path": slash(path),
+        "storePath": slash(layout.game_file_store_path),
+        "exists": row_count > 0 or loose["exists"],
+        "storeRowCount": row_count,
+        "looseFileCount": loose["fileCount"],
+        "fileCount": row_count + loose["fileCount"],
+        "fileCountExact": loose["fileCountExact"],
+    }
+
+
 def required_output_status(output_root: Path, sources: tuple[str, ...], *, exact_counts: bool = False) -> list[dict[str, Any]]:
     layout = ExportLayout(output_root)
     rows: list[dict[str, Any]] = []
@@ -130,7 +198,7 @@ def required_output_status(output_root: Path, sources: tuple[str, ...], *, exact
         rows.append({
             "source": "game",
             "kind": f"game/{folder}",
-            **output_dir_status(layout.game / folder, exact_count=exact_counts),
+            **game_dir_status(layout, folder, exact_count=exact_counts),
         })
     for type_name in REQUIRED_UNITY_TYPES:
         rows.append({
@@ -273,7 +341,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help=(
             "Count every file in required export output dirs instead of using the fast non-empty check. "
-            "Unity object documents are always counted exactly as game/Unity.sqlite rows."
+            "Unity object documents are always counted exactly as game/Unity.sqlite rows, "
+            "and packed game files (e.g. game/Json/LipSync) as game/GameFiles.sqlite rows."
         ),
     )
     return parser.parse_args(argv)

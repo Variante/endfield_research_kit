@@ -1,14 +1,26 @@
 """Stateful export-tree change scanner behind the Updates feed.
 
 Each run compares one export root with the snapshot cached in its state
-directory and records every added, modified and deleted file. Layout-v3 roots
-keep their Unity object documents in ``game/Unity.sqlite``; the scanner never
-fingerprints that database as one opaque file. It expands it into one virtual
-entry per row at the row's logical path ``game/Unity/<Type>/<name>``,
+directory and records every added, modified and deleted file. An export root
+packs two families of small files into SQLite stores (layout v4):
+
+* ``game/Unity.sqlite`` holds the Unity object documents; each row is
+  expanded at its logical path ``game/Unity/<Type>/<name>``;
+* ``game/GameFiles.sqlite`` holds every file under
+  ``scripts.source_paths.PACKED_GAME_DIRS`` (``Json/LipSync``); each row is
+  expanded at its own ``game/<path>``.
+
+The scanner never fingerprints either database as one opaque file, and never
+scans a store's SQLite sidecars. Each row becomes one virtual entry
 fingerprinted by the row's stored SHA256 and size, so a broad audit reports
-per-object changes exactly as it did for loose files. A row's bytes are read
-from the store only when a loose file of the same name would have been read:
-when the row is new or changed and has a text extension.
+per-file changes exactly as it did for loose files. A row's bytes are read
+from its store only when a loose file of the same name would have been read:
+when the row is new or changed and has a text extension. A ``.json`` row that
+holds binary MemoryPack (LipSync) is then classified by content like any loose
+file: no reader owns it, so it is recorded as ``binary`` with no diff text.
+
+A packed folder is read only from its store: loose files under a packed
+folder are not game data in a v4 root and are never scanned.
 """
 from __future__ import annotations
 
@@ -27,7 +39,9 @@ from collections import Counter
 from pathlib import Path
 from typing import Iterable, NamedTuple
 
+from scripts.game_data.game_file_store import GameFileStore
 from scripts.game_data.unity_store import STORE_FILE_NAME, UnityObjectStore, logical_ref
+from scripts.source_paths import GAME_FILE_STORE_FILE, PACKED_GAME_DIRS, packed_game_dir
 from scripts.webui.decoded_payloads import render_decoded_payload
 
 
@@ -63,32 +77,62 @@ TEXT_KIND_DECODED_PARTIAL = "decoded_partial"   # a reader bounded to part of it
 TEXT_KIND_BINARY = "binary"          # serialized, and no reader routes it
 TEXT_KIND_TOO_LARGE = "binary_too_large"  # serialized, and over the diff limit
 DEFAULT_HASH_WORKERS = max(2, min(8, (os.cpu_count() or 4)))
-# The export's Unity object store, relative to the export root, and the
-# SQLite sidecars that may sit beside it while a writer has it open. The
-# store is expanded into per-row entries; neither it nor a sidecar is ever
-# scanned as a file of its own.
+# The export's stores, relative to the export root, and the SQLite sidecars
+# that may sit beside one while a writer has it open. Each store is expanded
+# into per-row entries; neither a store nor a sidecar is ever scanned as a
+# file of its own.
 UNITY_STORE_RELATIVE_PATH = f"game/{STORE_FILE_NAME}"
 UNITY_STORE_UNITY_PREFIX = "game/Unity"
-_UNITY_STORE_SIDECAR_SUFFIXES = ("-journal", "-wal", "-shm")
+GAME_FILE_STORE_RELATIVE_PATH = f"game/{GAME_FILE_STORE_FILE}"
+EXPORT_STORE_RELATIVE_PATHS = (UNITY_STORE_RELATIVE_PATH, GAME_FILE_STORE_RELATIVE_PATH)
+_STORE_SIDECAR_SUFFIXES = ("-journal", "-wal", "-shm")
+# StoreRowRef.store values.
+STORE_UNITY = "unity"
+STORE_GAME_FILES = "game_files"
+
+
+def _is_store_or_sidecar(rel_path: str, store_rel_path: str) -> bool:
+    lower = normalize_relative_path(rel_path).lower()
+    base = store_rel_path.lower()
+    return lower == base or any(lower == base + suffix for suffix in _STORE_SIDECAR_SUFFIXES)
 
 
 def is_unity_store_relative_path(rel_path: str) -> bool:
     """True for ``game/Unity.sqlite`` and its SQLite sidecars (any case)."""
 
-    lower = normalize_relative_path(rel_path).lower()
-    base = UNITY_STORE_RELATIVE_PATH.lower()
-    return lower == base or any(lower == base + suffix for suffix in _UNITY_STORE_SIDECAR_SUFFIXES)
+    return _is_store_or_sidecar(rel_path, UNITY_STORE_RELATIVE_PATH)
+
+
+def is_export_store_relative_path(rel_path: str) -> bool:
+    """True for either export store (Unity.sqlite, GameFiles.sqlite) or a sidecar (any case)."""
+
+    return any(_is_store_or_sidecar(rel_path, store) for store in EXPORT_STORE_RELATIVE_PATHS)
+
+
+def is_packed_game_relative_path(rel_path: str) -> bool:
+    """True for an export-root path at or under a packed game folder (any case)."""
+
+    text = normalize_relative_path(rel_path).strip("/")
+    if not text.lower().startswith("game/"):
+        return False
+    return packed_game_dir(text[len("game/"):]) is not None
 
 
 class StoreRowRef(NamedTuple):
-    """Where a virtual scan entry's bytes live: one row of the Unity store."""
+    """Where a virtual scan entry's bytes live: one row of one export store.
+
+    For the Unity store ``type_name``/``name`` are the row's type and file
+    name; for the game-file store they are the packed folder and the path
+    inside it.
+    """
 
     type_name: str
     name: str
+    store: str = STORE_UNITY
 
 
 class ExportFileEntry(NamedTuple):
-    """One file to scan: a real file, or one Unity store row at its logical path."""
+    """One file to scan: a real file, or one store row at its logical path."""
 
     rel_path: str
     full_path: str
@@ -528,15 +572,52 @@ def finish_text_scan(
     return digest, line_count, text_content, kind
 
 
+@dataclasses.dataclass
+class ExportStores:
+    """The stores of one export root that the scanner expands (either may be absent)."""
+
+    unity: UnityObjectStore | None = None
+    game_files: GameFileStore | None = None
+
+    @classmethod
+    def open(cls, root: Path) -> "ExportStores":
+        """Open whichever stores the root has, each on its own read-only handle."""
+
+        unity_path = root / UNITY_STORE_RELATIVE_PATH
+        game_files_path = root / GAME_FILE_STORE_RELATIVE_PATH
+        stores = cls()
+        try:
+            stores.unity = UnityObjectStore(unity_path) if unity_path.is_file() else None
+            stores.game_files = GameFileStore(game_files_path) if game_files_path.is_file() else None
+        except BaseException:
+            stores.close()
+            raise
+        return stores
+
+    def read_row(self, row: StoreRowRef) -> bytes:
+        if row.store == STORE_GAME_FILES:
+            if self.game_files is None:
+                raise RuntimeError(f"game-file row {row.type_name}/{row.name} was queued without its store")
+            return self.game_files.read_bytes(f"{row.type_name}/{row.name}")
+        if self.unity is None:
+            raise RuntimeError(f"Unity row {row.type_name}/{row.name} was queued without its store")
+        return self.unity.read_bytes(row.type_name, row.name)
+
+    def close(self) -> None:
+        for store in (self.unity, self.game_files):
+            if store is not None:
+                store.close()
+
+
 def scan_store_row(
-    store: UnityObjectStore,
+    stores: ExportStores,
     row: StoreRowRef,
     digest: str,
     count_lines: bool,
     capture_text: bool,
     rel_path: str,
 ) -> tuple[str, int | None, str | None, str | None]:
-    """:func:`scan_file` for one Unity store row, whose SHA256 is already known.
+    """:func:`scan_file` for one store row, whose SHA256 is already known.
 
     The row's bytes are read only when a loose file would have been read past
     its digest: for a text extension, to count lines and capture diff text.
@@ -544,7 +625,7 @@ def scan_store_row(
 
     if not count_lines:
         return digest, None, None, None
-    data = store.read_bytes(row.type_name, row.name)
+    data = stores.read_row(row)
     return finish_text_scan(
         digest,
         rel_path,
@@ -598,13 +679,6 @@ def file_scan_entry(root: Path, path: Path) -> ExportFileEntry | None:
     return ExportFileEntry(rel_path, str(path), stat_result.st_size, stat_result.st_mtime_ns, extension)
 
 
-def open_unity_store(root: Path) -> UnityObjectStore | None:
-    """The export root's Unity object store, or None when it has none."""
-
-    path = root / UNITY_STORE_RELATIVE_PATH
-    return UnityObjectStore(path) if path.is_file() else None
-
-
 def unity_store_scope(rel_path: str) -> tuple[bool, str | None] | None:
     """Which store rows an include root covers, as ``(all_types, type_name)``.
 
@@ -644,7 +718,66 @@ def iter_unity_store_entries(
             size=int(row.size),
             mtime_ns=int(row.mtime_ns),
             extension=Path(name).suffix.lower(),
-            store_row=StoreRowRef(row_type, name),
+            store_row=StoreRowRef(row_type, name, STORE_UNITY),
+            store_digest=str(row.sha256),
+        )
+
+
+def game_file_store_scope(rel_path: str) -> list[tuple[str, str | None]] | None:
+    """Which game-file store rows an include root covers.
+
+    Returns ``[(packed folder, path prefix inside it or None), ...]``, or
+    ``None`` when the include root reaches no row. The export root, ``game``
+    and the store file cover every packed folder; an ancestor of a packed
+    folder (``game/Json``) or the folder itself covers that whole folder; a
+    path inside a packed folder (``game/Json/LipSync/Chinese``, or one file)
+    covers the rows at or under it. Matching is case-insensitive, as the
+    include root would be on disk.
+    """
+
+    lower = rel_path.lower()
+    if rel_path in ("", ".") or lower in ("game", GAME_FILE_STORE_RELATIVE_PATH.lower()):
+        return [(folder, None) for folder in PACKED_GAME_DIRS]
+    if not lower.startswith("game/"):
+        return None
+    inside_game = rel_path[len("game/"):].strip("/")
+    key = inside_game.casefold()
+    scopes: list[tuple[str, str | None]] = []
+    for folder in PACKED_GAME_DIRS:
+        folder_key = folder.casefold()
+        if key == folder_key or folder_key.startswith(key + "/"):
+            scopes.append((folder, None))
+        elif key.startswith(folder_key + "/"):
+            scopes.append((folder, inside_game[len(folder) + 1:]))
+    return scopes or None
+
+
+def iter_game_file_store_entries(
+    store: GameFileStore,
+    folder: str,
+    prefix: str | None,
+    ignored_exact_paths: set[str],
+    ignored_dir_prefixes: tuple[str, ...],
+) -> Iterable[ExportFileEntry]:
+    """One virtual entry per row of one packed folder, at its ``game/<path>``."""
+
+    prefix_key = None if prefix is None else prefix.casefold()
+    for row in store.iter_rows(folder):
+        inside = row.path[len(folder) + 1:]
+        if prefix_key is not None:
+            inside_key = inside.casefold()
+            if not (inside_key == prefix_key or inside_key.startswith(prefix_key + "/")):
+                continue
+        rel_path = row.ref
+        if should_ignore_path(rel_path, ignored_exact_paths, ignored_dir_prefixes):
+            continue
+        yield ExportFileEntry(
+            rel_path=rel_path,
+            full_path=str(store.path),
+            size=int(row.size),
+            mtime_ns=int(row.mtime_ns),
+            extension=Path(inside).suffix.lower(),
+            store_row=StoreRowRef(folder, inside, STORE_GAME_FILES),
             store_digest=str(row.sha256),
         )
 
@@ -655,13 +788,15 @@ def iter_export_files(
     ignored_dir_prefixes: tuple[str, ...],
     include_relative_paths: Iterable[str] = (),
     unity_store: UnityObjectStore | None = None,
+    game_file_store: GameFileStore | None = None,
 ) -> Iterable[ExportFileEntry]:
-    """Every file under the include roots, with the Unity store expanded.
+    """Every file under the include roots, with the export stores expanded.
 
-    ``game/Unity.sqlite`` and its SQLite sidecars are never yielded as files.
-    When ``unity_store`` is given, its rows are yielded at their logical
-    paths for every include root that covers them; without it the store is
-    simply skipped.
+    ``game/Unity.sqlite``, ``game/GameFiles.sqlite`` and their SQLite
+    sidecars are never yielded as files, and nothing on disk under a packed
+    game folder is walked. When a store is given, its rows are yielded at
+    their logical paths for every include root that covers them; without it
+    that store is simply skipped.
     """
 
     yielded_paths: set[str] = set()
@@ -674,7 +809,7 @@ def iter_export_files(
             if scan_entry is None:
                 continue
             rel_path = scan_entry.rel_path
-            if is_unity_store_relative_path(rel_path):
+            if is_export_store_relative_path(rel_path) or is_packed_game_relative_path(rel_path):
                 continue
             if should_ignore_path(rel_path, ignored_exact_paths, ignored_dir_prefixes):
                 continue
@@ -694,11 +829,13 @@ def iter_export_files(
             if entry.is_dir(follow_symlinks=False):
                 if should_ignore_path(rel_path, ignored_exact_paths, ignored_dir_prefixes):
                     continue
+                if is_packed_game_relative_path(rel_path):
+                    continue
                 stack.append(full_path)
                 continue
             if not entry.is_file(follow_symlinks=False):
                 continue
-            if is_unity_store_relative_path(rel_path):
+            if is_export_store_relative_path(rel_path) or is_packed_game_relative_path(rel_path):
                 continue
             if should_ignore_path(rel_path, ignored_exact_paths, ignored_dir_prefixes):
                 continue
@@ -709,14 +846,57 @@ def iter_export_files(
             extension = full_path.suffix.lower()
             yield ExportFileEntry(rel_path, str(full_path), stat_result.st_size, stat_result.st_mtime_ns, extension)
 
-    if unity_store is None:
-        return
-    if should_ignore_path(UNITY_STORE_RELATIVE_PATH, ignored_exact_paths, ignored_dir_prefixes):
-        return
+    include_rels = [try_relative_to(include_root, root) for include_root in include_roots]
+    if unity_store is not None and not should_ignore_path(
+        UNITY_STORE_RELATIVE_PATH, ignored_exact_paths, ignored_dir_prefixes
+    ):
+        yield from _iter_unity_scope_entries(
+            unity_store, include_rels, ignored_exact_paths, ignored_dir_prefixes, yielded_paths
+        )
+    if game_file_store is not None and not should_ignore_path(
+        GAME_FILE_STORE_RELATIVE_PATH, ignored_exact_paths, ignored_dir_prefixes
+    ):
+        yield from _iter_game_file_scope_entries(
+            game_file_store, include_rels, ignored_exact_paths, ignored_dir_prefixes, yielded_paths
+        )
+
+
+def _iter_game_file_scope_entries(
+    store: GameFileStore,
+    include_rels: list[str | None],
+    ignored_exact_paths: set[str],
+    ignored_dir_prefixes: tuple[str, ...],
+    yielded_paths: set[str],
+) -> Iterable[ExportFileEntry]:
+    scopes: list[tuple[str, str | None]] = []
+    for rel in include_rels:
+        for scope in (None if rel is None else game_file_store_scope(rel)) or ():
+            if scope not in scopes:
+                scopes.append(scope)
+    # A folder-wide scope covers every narrower scope of the same folder.
+    whole = {folder for folder, prefix in scopes if prefix is None}
+    scopes = [scope for scope in scopes if scope[1] is None or scope[0] not in whole]
+    for folder, prefix in sorted(scopes, key=lambda item: (item[0], item[1] or "")):
+        for store_entry in iter_game_file_store_entries(
+            store, folder, prefix, ignored_exact_paths, ignored_dir_prefixes
+        ):
+            # Overlapping include prefixes may reach the same row twice.
+            if store_entry.rel_path in yielded_paths:
+                continue
+            yielded_paths.add(store_entry.rel_path)
+            yield store_entry
+
+
+def _iter_unity_scope_entries(
+    unity_store: UnityObjectStore,
+    include_rels: list[str | None],
+    ignored_exact_paths: set[str],
+    ignored_dir_prefixes: tuple[str, ...],
+    yielded_paths: set[str],
+) -> Iterable[ExportFileEntry]:
     all_types = False
     type_names: list[str] = []
-    for include_root in include_roots:
-        rel = try_relative_to(include_root, root)
+    for rel in include_rels:
         scope = None if rel is None else unity_store_scope(rel)
         if scope is None:
             continue
@@ -806,15 +986,15 @@ def batch_insert_rows(conn: sqlite3.Connection, rows: list[SnapshotRow]) -> None
 def submit_pending_scan(
     executor: concurrent.futures.Executor,
     item: PendingFile,
-    unity_store: UnityObjectStore | None,
+    stores: ExportStores | None,
 ) -> concurrent.futures.Future:
     if item.store_row is None:
         return executor.submit(scan_file, item.full_path, item.count_lines, item.capture_text, item.rel_path)
-    if unity_store is None or item.store_digest is None:
-        raise RuntimeError(f"store row {item.rel_path} was queued without its Unity store")
+    if stores is None or item.store_digest is None:
+        raise RuntimeError(f"store row {item.rel_path} was queued without its store")
     return executor.submit(
         scan_store_row,
-        unity_store,
+        stores,
         item.store_row,
         item.store_digest,
         item.count_lines,
@@ -828,13 +1008,13 @@ def process_pending_batch(
     conn: sqlite3.Connection,
     accumulator: ChangeAccumulator,
     executor: concurrent.futures.Executor,
-    unity_store: UnityObjectStore | None = None,
+    stores: ExportStores | None = None,
 ) -> None:
     if not pending_batch:
         return
 
     insert_rows: list[SnapshotRow] = []
-    future_map = {submit_pending_scan(executor, item, unity_store): item for item in pending_batch}
+    future_map = {submit_pending_scan(executor, item, stores): item for item in pending_batch}
     for future in concurrent.futures.as_completed(future_map):
         item = future_map[future]
         digest, line_count, text_content, text_kind = future.result()
@@ -1124,10 +1304,10 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
     select_cursor = conn.cursor()
     unchanged_rows: list[SnapshotRow] = []
     pending_batch: list[PendingFile] = []
-    unity_store: UnityObjectStore | None = None
+    stores: ExportStores | None = None
 
     try:
-        unity_store = open_unity_store(root)
+        stores = ExportStores.open(root)
         with concurrent.futures.ThreadPoolExecutor(max_workers=config.workers) as executor:
             with conn:
                 for scan_entry in iter_export_files(
@@ -1135,7 +1315,8 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                     ignored_exact_paths,
                     ignored_dir_prefixes,
                     config.include_relative_paths,
-                    unity_store,
+                    stores.unity,
+                    stores.game_files,
                 ):
                     rel_path, full_path, size, mtime_ns, extension = scan_entry[:5]
                     accumulator.note_scan()
@@ -1211,12 +1392,12 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                         )
                     )
                     if len(pending_batch) >= config.hash_batch_size:
-                        process_pending_batch(pending_batch, conn, accumulator, executor, unity_store)
+                        process_pending_batch(pending_batch, conn, accumulator, executor, stores)
                     if accumulator.scanned_files % PROGRESS_EVERY_FILES == 0:
                         print_progress("scanned", accumulator.scanned_files, monotonic_start)
 
                 batch_insert_rows(conn, unchanged_rows)
-                process_pending_batch(pending_batch, conn, accumulator, executor, unity_store)
+                process_pending_batch(pending_batch, conn, accumulator, executor, stores)
 
                 for (
                     rel_path,
@@ -1240,8 +1421,8 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                 conn.execute("ALTER TABLE files_scan RENAME TO files")
     finally:
         conn.close()
-        if unity_store is not None:
-            unity_store.close()
+        if stores is not None:
+            stores.close()
 
     finished_at = dt.datetime.now(dt.timezone.utc).astimezone()
     payload = accumulator.to_dict(started_at, finished_at)

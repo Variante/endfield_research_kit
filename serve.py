@@ -13,8 +13,20 @@ Layout-v3 export roots keep every Unity object document (.json, .anim) in
 `game/Unity.sqlite` rather than under `game/Unity/<Type>/`. A request under one
 of the three export routes for a `.../Unity/<Type>/<name>` document that is not
 on disk is answered from the `Unity.sqlite` beside that `Unity/` folder, so
-published links to those documents keep working. The store is opened read-only
-per request and imported only when such a request arrives.
+published links to those documents keep working.
+
+Layout-v4 roots also pack every file under `PACKED_GAME_DIRS`
+(`scripts/source_paths.py`, e.g. `Json/LipSync`) into `game/GameFiles.sqlite`.
+A request under an export route for a missing file whose path below a `game/`
+folder lies inside a packed folder is answered from the `GameFiles.sqlite` in
+that `game/` folder, with the file's exact bytes. Its Content-Type follows the
+suffix, except that a `.json` file is `application/json` only when its bytes
+are UTF-8 text: LipSync `.json` files are binary MemoryPack and are served as
+`application/octet-stream`.
+
+Either store is opened read-only per request and imported only when such a
+request arrives; 304, HEAD and 404 behave as for files, and an unreadable
+store answers 500.
 """
 from __future__ import annotations
 
@@ -22,6 +34,7 @@ import email.utils
 import http.server
 import io
 import json
+import mimetypes
 import os
 import re
 import sys
@@ -46,6 +59,8 @@ UNITY_STORE_CONTENT_TYPES = {
     ".json": "application/json; charset=utf-8",
     ".anim": "text/plain; charset=utf-8",
 }
+GAME_FILE_STORE_FILE = "GameFiles.sqlite"
+BINARY_CONTENT_TYPE = "application/octet-stream"
 
 
 def read_paths_bat_value(name: str) -> str:
@@ -160,6 +175,66 @@ def read_unity_store_document(store: Path, type_name: str, name: str) -> bytes |
             return unity_store.read_bytes(type_name, name)
         except KeyError:
             return None
+
+
+def game_file_store_document(translated_path: str, served_root: str) -> tuple[Path, str] | None:
+    """``(store, game/-relative path)`` when a missing file is a packed game file.
+
+    ``translated_path`` is the filesystem path a request resolved to and
+    ``served_root`` the directory its route serves. The nearest ancestor at or
+    below ``served_root`` holding a ``GameFiles.sqlite`` is the ``game/``
+    folder; the path names a packed file when its path below that folder lies
+    strictly inside one of ``PACKED_GAME_DIRS`` and the file itself does not
+    exist. Whether the row exists is the store's answer, not this one.
+    """
+
+    path = Path(translated_path)
+    if not path.name or path.exists():
+        return None
+    from scripts.source_paths import packed_game_dir
+
+    root = os.path.normcase(os.path.abspath(served_root))
+    for game_dir in path.parents:
+        candidate = os.path.normcase(os.path.abspath(game_dir))
+        if candidate != root and not candidate.startswith(root.rstrip(os.sep) + os.sep):
+            return None
+        store = game_dir / GAME_FILE_STORE_FILE
+        if store.is_file():
+            relative = path.relative_to(game_dir).as_posix()
+            folder = packed_game_dir(relative)
+            if folder is None or len(relative) <= len(folder) + 1:
+                return None
+            return store, relative
+    return None
+
+
+def read_game_file_store_document(store: Path, relative: str) -> bytes | None:
+    """One packed file's exact bytes, or None when the store has no such row.
+
+    Imported on demand and opened read-only per call, like the Unity store.
+    """
+
+    from scripts.game_data.game_file_store import GameFileStore
+
+    with GameFileStore(store) as game_files:
+        try:
+            return game_files.read_bytes(relative)
+        except KeyError:
+            return None
+
+
+def game_file_content_type(name: str, data: bytes) -> str:
+    """The Content-Type for a packed file: by suffix, but ``.json`` only when UTF-8 text."""
+
+    suffix = Path(name).suffix.lower()
+    if suffix == ".json":
+        try:
+            data.decode("utf-8")
+        except UnicodeDecodeError:
+            return BINARY_CONTENT_TYPE
+        return "application/json; charset=utf-8"
+    guessed, _encoding = mimetypes.guess_type(name)
+    return guessed or BINARY_CONTENT_TYPE
 
 
 ERROR_PAGE_TEMPLATE = """<!doctype html>
@@ -391,8 +466,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if args and isinstance(args[0], str) and args[0].startswith(("4", "5")):
             super().log_message(fmt, *args)
 
-    def send_unity_store_head(self):
-        """Answer an export-route Unity document from the store.
+    def send_store_head(self):
+        """Answer an export-route file that lives in one of the export stores.
 
         Returns ``(handled, body)``. ``handled`` is False when the request is
         not a store document, so normal file serving applies; otherwise the
@@ -401,14 +476,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         request_path = urlsplit(self.path).path or "/"
         if not is_export_route(request_path):
             return False, None
-        document = unity_store_document(self.translate_path(self.path))
-        if document is None:
-            return False, None
-        store, type_name, name = document
+        translated = self.translate_path(self.path)
+        document = unity_store_document(translated)
+        if document is not None:
+            store, type_name, name = document
+            label = "Unity object store"
+            read = lambda: read_unity_store_document(store, type_name, name)  # noqa: E731
+            content_type = lambda data: UNITY_STORE_CONTENT_TYPES[Path(name).suffix.lower()]  # noqa: E731
+        else:
+            packed = game_file_store_document(translated, self.directory)
+            if packed is None:
+                return False, None
+            store, relative = packed
+            label = "Game file store"
+            read = lambda: read_game_file_store_document(store, relative)  # noqa: E731
+            content_type = lambda data: game_file_content_type(relative, data)  # noqa: E731
         try:
-            data = read_unity_store_document(store, type_name, name)
+            data = read()
         except Exception as exc:  # the store is unreadable or another schema
-            self.send_error(500, f"Unity object store unreadable: {exc}")
+            self.send_error(500, f"{label} unreadable: {exc}")
             return True, None
         if data is None:
             self.send_error(404, "File not found")
@@ -425,14 +511,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 self.end_headers()
                 return True, None
         self.send_response(200)
-        self.send_header("Content-type", UNITY_STORE_CONTENT_TYPES[Path(name).suffix.lower()])
+        self.send_header("Content-type", content_type(data))
         self.send_header("Content-Length", str(len(data)))
         self.send_header("Last-Modified", self.date_time_string(modified))
         self.end_headers()
         return True, io.BytesIO(data)
 
     def send_head(self):
-        handled, body = self.send_unity_store_head()
+        handled, body = self.send_store_head()
         if handled:
             return body
 
