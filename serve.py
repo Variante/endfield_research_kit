@@ -748,6 +748,9 @@ def main(argv: list[str] | None = None) -> None:
     argv = argv or sys.argv
     port = int(argv[1]) if len(argv) > 1 else DEFAULT_PORT
 
+    # The default listen backlog of 5 refuses connections on Windows when a page
+    # opens many requests at once (ERR_CONNECTION_REFUSED); allow a real burst.
+    http.server.ThreadingHTTPServer.request_queue_size = 256
     with http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler) as httpd:
         url = f"http://127.0.0.1:{port}/"
         print(
