@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import sqlite3
 import subprocess
 import time
 from dataclasses import asdict, dataclass
@@ -42,7 +43,7 @@ from scripts.game_data.extraction.animestudio_object_index import (
 from scripts.repo_paths import REPO_ROOT
 from scripts.source_paths import INSTALLED_LAYERS, PACKED_GAME_DIRS, ExportLayout, configured_export_root
 from scripts.game_data.extraction.unity_overlay import load_overlay_catalog, normalize_chunk_path
-from scripts.game_data.unity_store import UnityObjectStore, UnityObjectStoreWriter, is_store_file
+from scripts.game_data.unity_store import UnityObjectStore, UnityObjectStoreWriter, UnityStoreError, is_store_file
 from scripts.game_data.game_file_store import GameFileStoreWriter
 
 ROOT = REPO_ROOT
@@ -2222,6 +2223,7 @@ def clear_animestudio_stage_outputs(
             shutil.rmtree(target)
         elif target.exists():
             target.unlink()
+        remove_staged_document_stores(stage_root, animestudio_type_name(type_spec))
 
 
 def plan_animestudio_stage(
@@ -2888,6 +2890,87 @@ def animestudio_stage_dir(output_root: Path, source: str, stage: str) -> Path:
     return animestudio_source_root(output_root, source) / stage
 
 
+#: The stage whose AnimeStudio calls write their documents into a per-call
+#: SQLite store (``--document_store``) instead of one loose file per object.
+#: The store is the Unity object store format, so publishing merges it into
+#: ``game/Unity.sqlite`` with SQL. Convert keeps loose files: its per-asset
+#: reuse cache is file based.
+ANIMESTUDIO_DOCUMENT_STORE_STAGE = "json_by_type"
+ANIMESTUDIO_DOCUMENT_STORE_SUFFIX = ".sqlite"
+
+
+def animestudio_document_store_path(output_root: Path, source: str, type_specs: tuple[str, ...]) -> Path:
+    """The staged document store of one JSON call: ``<Type>.sqlite``, or a hashed name for a merged call."""
+    names = ordered_unique(tuple(animestudio_type_name(spec) for spec in type_specs))
+    if len(names) == 1:
+        stem = names[0]
+    else:
+        stem = "merged_" + stable_hash(list(names))[:12]
+    stage_dir = animestudio_stage_dir(output_root, source, ANIMESTUDIO_DOCUMENT_STORE_STAGE)
+    return stage_dir / f"{stem}{ANIMESTUDIO_DOCUMENT_STORE_SUFFIX}"
+
+
+def staged_document_stores(stage_dir: Path) -> dict[Path, dict[str, int]]:
+    """Every completed staged document store in a stage folder with its row count per type.
+
+    AnimeStudio renames ``<store>.partial`` to the store only when the export
+    finishes, so an interrupted call leaves nothing here. A store that is not
+    of the object-store schema raises (UnityStoreError).
+    """
+    if not stage_dir.is_dir():
+        return {}
+    stores: dict[Path, dict[str, int]] = {}
+    for path in sorted(stage_dir.glob(f"*{ANIMESTUDIO_DOCUMENT_STORE_SUFFIX}")):
+        if not path.is_file():
+            continue
+        store = UnityObjectStore(path)
+        try:
+            stores[path] = store.counts()
+        finally:
+            store.close()
+    return stores
+
+
+def remove_staged_document_stores(stage_dir: Path, type_name: str) -> list[Path]:
+    """Delete the staged stores that belong to ``type_name``: its own, and any merged store holding its rows."""
+    removed: list[Path] = []
+    if not stage_dir.is_dir():
+        return removed
+    for path in sorted(stage_dir.glob(f"*{ANIMESTUDIO_DOCUMENT_STORE_SUFFIX}*")):
+        if not path.is_file():
+            continue
+        stem = path.name.split(ANIMESTUDIO_DOCUMENT_STORE_SUFFIX, 1)[0]
+        owned = stem == type_name
+        if not owned and path.name.endswith(ANIMESTUDIO_DOCUMENT_STORE_SUFFIX):
+            try:
+                store = UnityObjectStore(path)
+                try:
+                    owned = store.count(type_name) > 0
+                finally:
+                    store.close()
+            except (UnityStoreError, sqlite3.Error):
+                owned = True  # unreadable staging is stale by definition
+        elif not owned:
+            owned = True  # a leftover .partial of any call is stale before a rerun
+        if owned:
+            path.unlink()
+            removed.append(path)
+    return removed
+
+
+def count_animestudio_stage_outputs(output_root: Path, source: str, stage: str) -> int:
+    """Loose output files plus staged document rows of one stage."""
+    stage_dir = animestudio_stage_dir(output_root, source, stage)
+    if not stage_dir.exists():
+        return 0
+    loose = sum(
+        1 for item in stage_dir.rglob("*")
+        if item.is_file() and ANIMESTUDIO_DOCUMENT_STORE_SUFFIX not in item.name
+    )
+    rows = sum(sum(counts.values()) for counts in staged_document_stores(stage_dir).values())
+    return loose + rows
+
+
 def animestudio_object_index_dir(output_root: Path, source: str) -> Path:
     return ExportLayout(output_root).object_index_dir(source)
 
@@ -3075,20 +3158,27 @@ def publish_unity_outputs(
 
     Staging already holds only effective objects (--skip_sources_file), so
     the publish is a plain union; on a same-name tie the later layer wins,
-    which is the same asset from the newer bundle. Object documents
-    (``is_store_file``: .json, .anim) are synced into ``game/Unity.sqlite``;
-    converted media is mirrored into ``game/Unity/<Type>`` as hardlinks. A
-    type is synced only when every installed layer ran the stage that exports
-    it (its staging stage folder exists; a layer may legitimately hold no
-    objects of the type), so a lost or partial staging cache never deletes
-    published data. With ``completed_types`` (the exporter passes it), every
-    installed layer must also have finished that type's item in this run; a
-    run that covered only some layers or types leaves the rest as published.
+    which is the same asset from the newer bundle. JSON documents arrive as
+    staged document stores (AnimeStudio ``--document_store``), which are
+    merged into ``game/Unity.sqlite`` with SQL (``merge_staged``: only rows
+    whose SHA256 changed are written) and deleted once published; loose
+    object documents (``is_store_file``: .json, .anim, from Convert) are
+    synced by (size, mtime); converted media is mirrored into
+    ``game/Unity/<Type>`` as hardlinks. A type is synced only when every
+    installed layer ran the stage that exports it (its staging stage folder
+    exists; a layer may legitimately hold no objects of the type), so a lost
+    or partial staging cache never deletes published data. With
+    ``completed_types`` (the exporter passes it), every installed layer must
+    also have finished that type's item in this run; a run that covered only
+    some layers or types leaves the rest as published.
     """
     layout = ExportLayout(output_root)
-    desired: dict[str, dict[str, os.DirEntry]] = {}
+    # Each type's staged sources in overlay order (layer, then stage): the
+    # loose files of a type folder, or a staged document store.
+    desired: dict[str, list[tuple[str, Any]]] = {}
     stage_of_type: dict[str, str] = {}
     staged_layers: dict[str, set[str]] = {}
+    staged_store_types: dict[Path, set[str]] = {}
     for layer in INSTALLED_LAYERS:
         for stage in UNITY_STAGING_STAGES:
             stage_dir = animestudio_stage_dir(output_root, layer, stage)
@@ -3099,10 +3189,16 @@ def publish_unity_outputs(
                 if not type_dir.is_dir():
                     continue
                 stage_of_type[type_dir.name] = stage
-                files = desired.setdefault(type_dir.name, {})
-                for entry in os.scandir(type_dir.path):
-                    if entry.is_file():
-                        files[entry.name] = entry
+                files = {entry.name: entry for entry in os.scandir(type_dir.path) if entry.is_file()}
+                desired.setdefault(type_dir.name, []).append(("files", files))
+            for store_path, type_counts in staged_document_stores(stage_dir).items():
+                staged_store_types[store_path] = set(type_counts)
+                for type_name in type_counts:
+                    stage_of_type[type_name] = stage
+                    type_sources = desired.setdefault(type_name, [])
+                    if any(kind == "store" and value.parent == stage_dir for kind, value in type_sources):
+                        raise UnityStoreError(f"{type_name} is staged by more than one document store under {stage_dir}")
+                    type_sources.append(("store", store_path))
     counts = {"linked": 0, "unchanged": 0, "removed": 0, "storeWritten": 0, "storeUnchanged": 0, "storeRemoved": 0}
     def missing_layers(type_name: str) -> list[str]:
         staged = staged_layers.get(stage_of_type[type_name], set())
@@ -3128,13 +3224,52 @@ def publish_unity_outputs(
         everywhere = set.intersection(*(set(completed_types.get(layer, set())) for layer in required_layers))
         for type_name in sorted(everywhere - set(stage_of_type)):
             if layout.unity_type_dir(type_name).is_dir() or type_name in store_types:
-                desired[type_name] = {}
+                desired[type_name] = []
+    loose_store_dir = animestudio_work_dir(output_root) / "publish_loose_documents"
     writer: UnityObjectStoreWriter | None = None
     try:
-        for type_name, files in sorted(desired.items()):
-            documents = {name: Path(entry.path) for name, entry in files.items() if is_store_file(name)}
-            media = {name: entry for name, entry in files.items() if not is_store_file(name)}
-            if documents or type_name in store_types:
+        for type_name, type_sources in sorted(desired.items()):
+            documents: dict[str, Path] = {}
+            media: dict[str, os.DirEntry] = {}
+            for kind, value in type_sources:
+                if kind != "files":
+                    continue
+                for name, entry in value.items():
+                    if is_store_file(name):
+                        documents[name] = Path(entry.path)
+                    else:
+                        media[name] = entry
+            if any(kind == "store" for kind, _ in type_sources):
+                # Merge in overlay order. A loose-document folder that shares
+                # the type (a debug Convert TextAsset beside its JSON store)
+                # is staged into a temporary store at its place in that order.
+                ordered: list[Path] = []
+                for index, (kind, value) in enumerate(type_sources):
+                    if kind == "store":
+                        ordered.append(value)
+                        continue
+                    loose = {name: Path(entry.path) for name, entry in value.items() if is_store_file(name)}
+                    if not loose:
+                        continue
+                    temporary = ensure_dir(loose_store_dir) / f"{animestudio_log_suffix(type_name)}_{index}.sqlite"
+                    if temporary.exists():
+                        temporary.unlink()
+                    with UnityObjectStoreWriter(temporary) as loose_writer:
+                        loose_writer.sync_type(type_name, loose, remove_missing=False)
+                    ordered.append(temporary)
+                if writer is None:
+                    writer = UnityObjectStoreWriter(layout.unity_store_path)
+                started = time.time()
+                synced = writer.merge_staged(type_name, ordered)
+                log(
+                    f"  merged {len(ordered)} staged store(s) into {layout.unity_store_path.name} for {type_name} "
+                    f"in {time.time() - started:.1f}s: written={synced['written']} "
+                    f"unchanged={synced['unchanged']} removed={synced['removed']}"
+                )
+                counts["storeWritten"] += synced["written"]
+                counts["storeUnchanged"] += synced["unchanged"]
+                counts["storeRemoved"] += synced["removed"]
+            elif documents or type_name in store_types:
                 if writer is None:
                     writer = UnityObjectStoreWriter(layout.unity_store_path)
                 synced = writer.sync_type(type_name, documents, remove_missing=True)
@@ -3166,11 +3301,24 @@ def publish_unity_outputs(
     finally:
         if writer is not None:
             writer.close()
+        if loose_store_dir.exists():
+            shutil.rmtree(loose_store_dir)
+    # A published staged store has no further use (JSON has no per-asset
+    # reuse), and keeping it would hold a second decoded copy of the store.
+    # Stores holding a type left as published stay until that type reruns.
+    published = set(desired)
+    removed_stores = 0
+    for store_path, type_names in staged_store_types.items():
+        if type_names <= published:
+            store_path.unlink()
+            removed_stores += 1
+    counts["stagedStoresRemoved"] = removed_stores
     log(
         f"  published game/Unity: {len(desired)} type(s), media linked={counts['linked']} "
         f"unchanged={counts['unchanged']} removed={counts['removed']}; "
         f"{layout.unity_store_path.name} written={counts['storeWritten']} "
-        f"unchanged={counts['storeUnchanged']} removed={counts['storeRemoved']}"
+        f"unchanged={counts['storeUnchanged']} removed={counts['storeRemoved']}; "
+        f"staged stores removed={removed_stores}"
     )
     return {"types": sorted(desired), "skippedIncompleteTypes": incomplete, **counts}
 
@@ -3286,6 +3434,8 @@ def refresh_animestudio_plan_output_counts(
     file_counts: dict[str, int] = {}
     marker_counts: dict[str, int] = {}
     stage_root = animestudio_stage_dir(output_root, source, stage)
+    # JSON documents are rows of the staged document stores, not files.
+    staged_stores = staged_document_stores(stage_root)
     for item in plan.get("items", []):
         type_spec = item.get("type_spec")
         if type_spec is None:
@@ -3301,10 +3451,24 @@ def refresh_animestudio_plan_output_counts(
             # direct listing so unrelated nested diagnostic files cannot inflate
             # the emitted asset count.
             files = [path for path in type_dir.iterdir() if path.is_file()]
-        file_counts[type_name] = len(files)
+        files = [path for path in files if ANIMESTUDIO_DOCUMENT_STORE_SUFFIX not in path.name]
+        stored = sum(counts.get(type_name, 0) for counts in staged_stores.values())
+        file_counts[type_name] = len(files) + stored
         marker_counts[type_name] = sum(
             1 for path in files if animestudio_is_marker_output_path(path, type_name)
         )
+        marker_suffixes = animestudio_convert_output_marker_suffixes(type_name)
+        if stored and marker_suffixes:
+            for store_path, counts in staged_stores.items():
+                if not counts.get(type_name):
+                    continue
+                store = UnityObjectStore(store_path)
+                try:
+                    marker_counts[type_name] += sum(
+                        1 for name in store.names(type_name) if name.lower().endswith(marker_suffixes)
+                    )
+                finally:
+                    store.close()
     plan["item_file_counts"] = file_counts
     plan["item_marker_file_counts"] = marker_counts
 
@@ -4179,6 +4343,22 @@ def run_animestudio_stage(
     if expanded_types:
         cmd.append("--types")
         cmd.extend(expanded_types)
+    # JSON documents go into one staged SQLite store per call, not loose files.
+    document_store: Path | None = None
+    if stage == ANIMESTUDIO_DOCUMENT_STORE_STAGE and export_type == "JSON":
+        document_store = animestudio_document_store_path(output_root, source, tuple(types))
+    elif (
+        secondary_export is not None
+        and secondary_export.stage == ANIMESTUDIO_DOCUMENT_STORE_STAGE
+        and secondary_export.export_type == "JSON"
+    ):
+        document_store = animestudio_document_store_path(output_root, source, tuple(secondary_export.types))
+    if document_store is not None:
+        ensure_dir(document_store.parent)
+        for stale_path in (document_store, document_store.with_name(document_store.name + ".partial")):
+            if stale_path.exists():
+                stale_path.unlink()
+        cmd.extend(["--document_store", str(document_store)])
     if secondary_export is not None:
         ensure_dir(secondary_export.output_path)
         cmd.extend([ANIMESTUDIO_SECONDARY_EXPORT_FLAGS["output"], str(secondary_export.output_path)])
@@ -5658,7 +5838,7 @@ def summarize_animestudio_source(
             counts = plan.get("item_file_counts")
             if isinstance(counts, dict) and counts:
                 return sum(int(value) for value in counts.values())
-        return count_files(animestudio_stage_dir(output_root, source, stage_name))
+        return count_animestudio_stage_outputs(output_root, source, stage_name)
 
     result: dict[str, Any] = {
         "root": str(animestudio_source_root(output_root, source)),

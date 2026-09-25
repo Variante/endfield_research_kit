@@ -148,11 +148,17 @@ per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_ma
   indexes, already streamed. `pack_export_stores.py` converts a v2 or v3 root
   in place (verify every row, then delete; resumable; an unreadable file stops
   it unless `--accept-unreadable` records the loss; `--unpack` reverses it).
-- Staging (also the per-asset reuse cache), filters and index parts live under
-  `tmp/game_data/export/<root>-<hash>/` and stay one file per object, because
-  AnimeStudio writes files and the per-asset reuse depends on them. Publishing
-  syncs object documents into the store by (size, mtime) and mirrors media as
-  hardlinks, per type only when every installed layer finished that type's item
+- Staging, filters and index parts live under
+  `tmp/game_data/export/<root>-<hash>/`. Convert staging (also the per-asset
+  reuse cache) stays one file per object because that reuse is file based.
+  JSON staging is one store per CLI call: AnimeStudio `--document_store`
+  writes each document as a row of the object-store format (exact bytes,
+  SHA256, the `describe_document` header columns), so about 1.45 M loose
+  staging files are never created. Publishing merges the layers' staged stores
+  into `Unity.sqlite` with SQL (later layer wins, only rows whose SHA256
+  changed are written) and deletes them; loose Convert documents are still
+  synced by (size, mtime). Media is mirrored as hardlinks. Both happen per type
+  only when every installed layer finished that type's item
   in this run, never after a failed command or a failed stage item; the
   structured tree is published only by a run that dumped the effective layer.
   Catalogues, skip lists and the dump layer always follow the installed

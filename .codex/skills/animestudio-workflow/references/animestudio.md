@@ -60,7 +60,18 @@ Important options:
 --dummy_dlls        Optional DummyDll folder for MonoBehaviour script schema recovery.
 --object_index_jsonl  Compact object/schema/MonoScript JSONL sidecar for binary-first joins.
 --filter_data       JSON list of source, offset, name, pathID, and type items.
+--document_store    SQLite file for the JSON target's .json/.anim documents.
 ```
+
+`--document_store` writes each document a JSON export target would have
+written to disk as a row of an `endfield.unity-object-store.v1` SQLite file
+(`scripts/game_data/unity_store.py`): key (type folder, file name), the exact
+file bytes zlib-compressed, their SHA256, and the header columns
+`describe_document` computes. No document file or folder is created; media,
+sidecars and Convert/Raw/Dump targets stay on disk, and the export manifest
+keeps the same logical paths. The store is built at `<file>.partial` and
+renamed only when the export completes. Without the option, output is
+byte-for-byte unchanged.
 
 `--object_index_jsonl` is opt-in and writes schema-v1 rows documented by
 `AnimeStudio.CLI\Resources\ObjectIndexSchemaV1.json`. Use a unique sidecar per
@@ -668,7 +679,8 @@ Stage outputs:
 export_full\meta\<Layer>\asset_map
 export_full\meta\<Layer>\export_manifest
 export_full\game\Unity\<Type>
-tmp\game_data\export\<root>-<hash>\animestudio\<Layer>\{convert_by_type,json_by_type}  (staging and reuse cache)
+tmp\game_data\export\<root>-<hash>\animestudio\<Layer>\convert_by_type\<Type>  (staging and reuse cache)
+tmp\game_data\export\<root>-<hash>\animestudio\<Layer>\json_by_type\<Type>.sqlite  (staged document store, deleted after publish)
 ```
 
 Story JSON types:

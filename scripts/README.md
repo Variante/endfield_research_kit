@@ -497,6 +497,16 @@ file name and exact bytes, so `game/Unity/<Type>/<name>` stays the provenance
 reference, and `serve.py` still answers those URLs from the store. Nothing
 falls back to loose files: an older root, or a root with no store, fails closed.
 
+`json_by_type` calls never write loose documents: each passes AnimeStudio
+`--document_store <staging>/<Layer>/json_by_type/<Type>.sqlite` (a merged call
+gets a `merged_<hash>.sqlite`), a staged store in the same format.
+`publish_unity_outputs` merges the layers' staged stores into
+`game/Unity.sqlite` with SQL (`UnityObjectStoreWriter.merge_staged`: later
+layer wins, only rows whose SHA256 changed are written, rows absent from the
+union are deleted) and then deletes them. Convert staging stays loose files
+because its per-asset reuse cache is file based; its documents are synced by
+(size, mtime) as before.
+
 Final VFS folders of many small files with few readers go the same way:
 every file under `PACKED_GAME_DIRS` (`scripts/source_paths.py`; currently
 `Json/LipSync`, about 74 K files) lives in `game/GameFiles.sqlite`, keyed by

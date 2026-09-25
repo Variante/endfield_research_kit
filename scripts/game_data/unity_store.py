@@ -632,6 +632,93 @@ class UnityObjectStoreWriter:
             )
         return {"written": written - unreadable, "unchanged": unchanged, "removed": removed, "unreadable": unreadable}
 
+    def merge_staged(self, type_name: str, staged: Iterable[Path], *, batch: int = 20000) -> dict[str, int]:
+        """Make one type's rows equal the union of that type's rows in ``staged`` stores, with SQL.
+
+        ``staged`` are store files of this schema (AnimeStudio ``--document_store``
+        output) in overlay order: on the same name (case-insensitive, like the
+        ``name`` column) a later store wins. Rows are copied as stored -- bytes,
+        hash and header columns -- so nothing is read back or recompressed. Only
+        rows whose SHA256 differs from the current row are written, rows of the
+        type absent from the union are deleted, and the counts match
+        :meth:`sync_type` (``written``/``unchanged``/``removed``).
+        """
+        paths = [Path(path) for path in staged]
+        if len(paths) > 8:
+            raise UnityStoreError(f"merge_staged attaches at most 8 stores at once; got {len(paths)} for {type_name}")
+        connection = self.connection
+        connection.commit()
+        aliases: list[str] = []
+        try:
+            for index, path in enumerate(paths):
+                if not path.is_file():
+                    raise UnityStoreError(f"staged store {path} does not exist")
+                alias = f"staged{index}"
+                connection.execute(f"ATTACH DATABASE ? AS {alias}", (str(path),))
+                aliases.append(alias)
+                found = connection.execute(f"SELECT value FROM {alias}.meta WHERE key='schema'").fetchone()
+                if not found or found[0] != self.schema:
+                    raise UnityStoreError(f"{path} declares schema {found[0] if found else None!r}; expected {self.schema!r}")
+            connection.execute(
+                "CREATE TEMP TABLE IF NOT EXISTS merge_pick ("
+                "name TEXT PRIMARY KEY COLLATE NOCASE, src INTEGER NOT NULL, rid INTEGER NOT NULL, "
+                "sha256 TEXT NOT NULL, unchanged INTEGER NOT NULL DEFAULT 0)"
+            )
+            connection.execute("CREATE INDEX IF NOT EXISTS temp.merge_pick_src ON merge_pick (src, rid)")
+            connection.execute("DELETE FROM temp.merge_pick")
+            for index, alias in enumerate(aliases):
+                connection.execute(
+                    f"INSERT INTO temp.merge_pick (name, src, rid, sha256) "
+                    f"SELECT name, ?, rowid, sha256 FROM {alias}.objects WHERE type=? "
+                    "ON CONFLICT (name) DO UPDATE SET src=excluded.src, rid=excluded.rid, sha256=excluded.sha256",
+                    (index, type_name),
+                )
+            connection.execute(
+                "UPDATE temp.merge_pick SET unchanged=1 WHERE EXISTS ("
+                "SELECT 1 FROM main.objects m WHERE m.type=? AND m.name=merge_pick.name AND m.sha256=merge_pick.sha256)",
+                (type_name,),
+            )
+            connection.commit()
+            picked = connection.execute("SELECT COUNT(*) FROM temp.merge_pick").fetchone()[0]
+            removed = connection.execute(
+                "DELETE FROM main.objects WHERE type=? AND name NOT IN (SELECT name FROM temp.merge_pick)",
+                (type_name,),
+            ).rowcount
+            connection.commit()
+            written = 0
+            for index, alias in enumerate(aliases):
+                low, high = connection.execute(
+                    "SELECT MIN(rid), MAX(rid) FROM temp.merge_pick WHERE src=? AND unchanged=0", (index,)
+                ).fetchone()
+                if low is None:
+                    continue
+                for start in range(low, high + 1, batch):
+                    before = connection.total_changes
+                    # The WHERE on the SELECT is what lets SQLite parse the upsert.
+                    connection.execute(
+                        "INSERT INTO main.objects (type, name, object_name, path_id, source_file, script_path_id, "
+                        "size, mtime_ns, sha256, data) "
+                        "SELECT o.type, p.name, o.object_name, o.path_id, o.source_file, o.script_path_id, "
+                        f"o.size, o.mtime_ns, o.sha256, o.data FROM temp.merge_pick p JOIN {alias}.objects o "
+                        "ON o.rowid = p.rid WHERE p.src=? AND p.unchanged=0 AND p.rid BETWEEN ? AND ? "
+                        "ON CONFLICT (type, name) DO UPDATE SET object_name=excluded.object_name, "
+                        "path_id=excluded.path_id, source_file=excluded.source_file, "
+                        "script_path_id=excluded.script_path_id, size=excluded.size, mtime_ns=excluded.mtime_ns, "
+                        "sha256=excluded.sha256, data=excluded.data WHERE excluded.sha256 <> objects.sha256",
+                        (index, start, start + batch - 1),
+                    )
+                    written += connection.total_changes - before
+                    connection.commit()
+            connection.execute("DELETE FROM temp.merge_pick")
+            connection.commit()
+        except BaseException:
+            connection.rollback()
+            raise
+        finally:
+            for alias in aliases:
+                connection.execute(f"DETACH DATABASE {alias}")
+        return {"written": written, "unchanged": int(picked) - written, "removed": removed, "unreadable": 0}
+
     def drop_type(self, type_name: str) -> int:
         cursor = self.connection.execute("DELETE FROM objects WHERE type=?", (type_name,))
         self.connection.commit()
