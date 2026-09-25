@@ -25,6 +25,9 @@
   const CHILD_CHUNK = 200;
   const EXPAND_ALL_BUDGET = 3000;
   const HEX_PREVIEW_BYTES = 512;
+  // Base64-looking strings up to this many characters are decoded as the
+  // tree renders them; longer ones keep a manual "decode base64" button.
+  const BASE64_AUTO_DECODE_CHARS = 1024 * 1024;
   const HEX_MORE_BYTES = 16384;
   const SEARCH_DEBOUNCE_MS = 300;
   const PANE_STORAGE_KEY = "data_inspector_sidebar_width";
@@ -1224,8 +1227,9 @@
   //
   // A plain tree of the document as stored: keys verbatim, lazy branches,
   // long arrays in chunks. The only affordances are shape-generic: exact
-  // 64-bit integers, a "find" action on PathID-like keys, and base64 decoding
-  // of long base64-looking strings.
+  // 64-bit integers, a "find" action on PathID-like keys, and automatic
+  // base64 decoding of base64-looking strings (text inline, binary as a
+  // collapsed hex dump, so a false positive stays out of the way).
 
   const tree = { nodes: new Map(), seq: 0 };
 
@@ -1289,11 +1293,15 @@
           `show all ${formatNumber(value.length)} chars`, `显示全部 ${formatNumber(value.length)} 个字符`,
         ))}</button>`);
       }
-      if (looksLikeBase64(value)) {
+      if (looksLikeBase64(value) && !autoDecodesBase64(value)) {
         actions.push(`<button type="button" class="data-page-inline-action" data-base64="${token}">${esc(ui("decode base64", "base64 解码"))}</button>`);
       }
     }
     return actions.join("");
+  }
+
+  function autoDecodesBase64(value) {
+    return typeof value === "string" && value.length <= BASE64_AUTO_DECODE_CHARS && looksLikeBase64(value);
   }
 
   function looksLikeBase64(value) {
@@ -1320,7 +1328,8 @@
 
   function nodeHtml(key, value, isIndex, depth) {
     if (!isBranch(value)) {
-      return `<div class="data-inspector-leaf">${keyLabel(key, isIndex)}<span class="data-inspector-value">${scalarHtml(key, value)}</span>${leafActions(key, value)}</div>`;
+      const leaf = `<div class="data-inspector-leaf">${keyLabel(key, isIndex)}<span class="data-inspector-value">${scalarHtml(key, value)}</span>${leafActions(key, value)}</div>`;
+      return autoDecodesBase64(value) ? leaf + decodedBase64Html(value, { auto: true }) : leaf;
     }
     const count = Array.isArray(value) ? value.length : Object.keys(value).length;
     const head = `${keyLabel(key, isIndex)}<span class="data-inspector-shape">${esc(shapeLabel(value))}</span>${previewHtml(value)}`;
@@ -1482,7 +1491,7 @@
     }
   }
 
-  function decodedBase64Html(value) {
+  function decodedBase64Html(value, { auto = false } = {}) {
     let bytes;
     try {
       const compact = value.replace(/\s+/g, "");
@@ -1491,6 +1500,8 @@
       bytes = new Uint8Array(binary.length);
       for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
     } catch (error) {
+      // A string that only looked like base64 is left as it is when decoding was automatic.
+      if (auto) return "";
       return `<div class="data-inspector-empty is-error">${esc(ui("Not valid base64", "不是有效的 base64"))}: ${esc(error.message)}</div>`;
     }
     let text = null;
@@ -1505,7 +1516,13 @@
       return `<div class="data-page-decoded">${label}<pre class="data-page-text data-page-inline-text">${esc(shown)}${
         shown.length < text.length ? esc(`\n… (${formatNumber(text.length - shown.length)} ${ui("more characters", "个字符未显示")})`) : ""}</pre></div>`;
     }
-    return `<div class="data-page-decoded">${label}<pre class="data-page-hex">${esc(hexDump(bytes.subarray(0, HEX_PREVIEW_BYTES)))}</pre></div>`;
+    const hex = `<pre class="data-page-hex">${esc(hexDump(bytes.subarray(0, HEX_PREVIEW_BYTES)))}</pre>`;
+    if (auto) {
+      return `<details class="data-page-decoded is-binary"><summary class="data-page-decoded-label">${esc(ui(
+        "Decoded base64 (binary)", "base64 解码结果（二进制）",
+      ))} · ${esc(formatBytes(bytes.length))}</summary>${hex}</details>`;
+    }
+    return `<div class="data-page-decoded">${label}${hex}</div>`;
   }
 
   // Where does this PathID occur? One indexed query over the Unity store,

@@ -1265,6 +1265,14 @@
   font-size: 11px;
 }
 
+.data-page-decoded.is-binary > summary {
+  cursor: pointer;
+}
+
+.data-page-decoded.is-binary:not([open]) > summary {
+  margin-bottom: 0;
+}
+
 .data-files-doc > .data-page-text,
 .data-files-doc > .data-page-hex {
   background: transparent;
