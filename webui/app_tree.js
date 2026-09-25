@@ -95,11 +95,6 @@ function entryShouldHideArchiveDuplicateStoryType(entry, dataType) {
   return !!missionType && dataType === missionType;
 }
 
-function entryMatchesTreeDataTypeFilters(entry, filters) {
-  if (!filters || !filters.size) return true;
-  return entryTreeDataTypes(entry).some((dataType) => filters.has(dataType));
-}
-
 function simTreeGroupInfo(entry) {
   if (!entry) return null;
   const actorId =
@@ -309,59 +304,79 @@ function formatLevelRef(ref) {
 }
 
 // ---------- filter UI ----------
-function filterSectionActiveCount(key) {
-  const filters = STATE.filters || createDefaultFilters();
-  switch (key) {
-    case "basic":
-      return filters.q ? 1 : 0;
-    case "kind":
-      return filters.kinds.size;
-    case "type":
-      return filters.dataTypes.size;
-    case "media":
-      return filters.media.size;
-    case "story-issue":
-      return filters.issues.size;
-    case "recovery-method":
-      return filters.recoveryMethods.size;
-    default:
-      return 0;
-  }
+// Story chip groups (WebUI.facets). Kind and storyline are OR within the
+// group; media, recovery issue and recovery method require every selected
+// value. Chip counts are totals over the loaded entries: neither the search
+// box nor the other groups narrow them.
+const storyFacets = window.WebUI.facets.create({
+  countMode: "total",
+  onChange: () => applyFilters(),
+  groups: [
+    {
+      id: "kind", container: "#kind-filter", section: "kind",
+      values: entryKindChipToken,
+      items: kindChipOrder,
+      label: (token) => kindMeta(token.slice(5)).name,
+      className: (token) => `kind-chip ${kindMeta(token.slice(5)).cls || ""}`.trim(),
+    },
+    {
+      id: "type", container: "#type-filter", section: "type",
+      values: entryTreeDataTypes,
+      items: () => presentFacetValues("type", compareDataTypeKeys),
+      label: dataTypeLabel,
+    },
+    {
+      id: "media", container: "#media-filter", section: "media", mode: "all",
+      values: entryMediaTypeFilterKeys,
+      items: () => presentFacetValues("media", MEDIA_TYPE_FILTER_KEYS),
+      label: mediaTypeFilterLabel,
+      className: "media-chip",
+    },
+    {
+      id: "issue", container: "#story-issue-filter", section: "story-issue", mode: "all",
+      values: entryStoryIssues,
+      items: () => presentFacetValues("issue", STORY_ISSUE_ORDER),
+      label: storyIssueLabel,
+    },
+    {
+      id: "method", container: "#recovery-method-filter", section: "recovery-method", mode: "all",
+      values: entryRecoveryMethods,
+      items: () => presentFacetValues("method", compareRecoveryMethodKeys),
+      label: recoveryMethodLabel,
+    },
+  ],
+});
+
+function entryKindChipToken(entry) {
+  const kind = entryGroupedKindKey(entry);
+  return kind && !shouldSuppressKindChip(kind) ? kindFilterToken(kind) : null;
 }
 
-function hasActiveStoryFilters() {
-  return !!(
-    filterSectionActiveCount("basic") ||
-    filterSectionActiveCount("kind") ||
-    filterSectionActiveCount("type") ||
-    filterSectionActiveCount("media") ||
-    filterSectionActiveCount("story-issue") ||
-    filterSectionActiveCount("recovery-method")
-  );
+// Values present in the loaded entries, in a fixed order (array) or by a
+// (a, b, countsObject) comparator.
+function presentFacetValues(id, order) {
+  const counts = storyFacets.counts(id);
+  if (Array.isArray(order)) return order.filter((value) => counts.has(value));
+  const byValue = Object.fromEntries(counts);
+  return Object.keys(byValue).sort((a, b) => order(a, b, byValue));
 }
 
-function syncFilterSectionActiveCounts() {
-  for (const section of $$("#filter-panel .filter-section[data-filter-section]")) {
-    const count = filterSectionActiveCount(section.dataset.filterSection || "");
-    const title = section.querySelector(".filter-section-toggle, .filter-section-title");
-    if (!title) continue;
-
-    let badge = title.querySelector(".filter-section-active-count");
-    if (!badge) {
-      badge = document.createElement("span");
-      badge.className = "filter-section-active-count";
-      badge.hidden = true;
-      const label = title.querySelector("span[id$='-label']");
-      if (label && label.nextSibling) title.insertBefore(badge, label.nextSibling);
-      else if (label) title.appendChild(badge);
-      else title.insertBefore(badge, title.firstChild);
-    }
-
-    badge.textContent = count ? `(${count})` : "";
-    badge.hidden = !count;
-    badge.setAttribute("aria-label", count ? `${count} active filters` : "");
-    section.classList.toggle("has-active-filters", !!count);
+// Kinds by display name, with CG right after video.
+function kindChipOrder() {
+  const name = (token) => kindMeta(token.slice(5)).name || formatStructuredLabel(token.slice(5));
+  const tokens = [...storyFacets.counts("kind").keys()]
+    .sort((a, b) => name(a).localeCompare(name(b), undefined, { numeric: true }));
+  const cg = tokens.indexOf("kind:cg");
+  if (cg >= 0 && tokens.includes("kind:video")) {
+    tokens.splice(cg, 1);
+    tokens.splice(tokens.indexOf("kind:video") + 1, 0, "kind:cg");
   }
+  return tokens;
+}
+
+// Re-derive the chips after the entries (or the UI locale) changed.
+function renderStoryFacets() {
+  storyFacets.invalidate().render(STATE.entries);
 }
 
 function preserveCurrentTreeExpansion() {
@@ -371,123 +386,6 @@ function preserveCurrentTreeExpansion() {
       STATE.expanded.add(row.path);
     }
   }
-}
-
-function buildKindChips() {
-  const kindCounts = countBy(STATE.entries, (e) => entryGroupedKindKey(e));
-  const kindKeys = Object.keys(kindCounts)
-    .filter((k) => !shouldSuppressKindChip(k))
-    .sort((a, b) => {
-      const aName = kindMeta(a).name || formatStructuredLabel(a);
-      const bName = kindMeta(b).name || formatStructuredLabel(b);
-      return aName.localeCompare(bName, undefined, { numeric: true });
-    });
-  const cgIndex = kindKeys.indexOf("cg");
-  const videoIndex = kindKeys.indexOf("video");
-  if (cgIndex >= 0 && videoIndex >= 0) {
-    kindKeys.splice(cgIndex, 1);
-    kindKeys.splice(kindKeys.indexOf("video") + 1, 0, "cg");
-  }
-  pruneFilterSet(STATE.filters.kinds, new Set(kindKeys.map(kindFilterToken)));
-  const items = kindKeys
-    .filter((k) => kindCounts[k])
-    .map((k) => {
-      const meta = kindMeta(k);
-      return {
-        value: kindFilterToken(k),
-        label: meta.name,
-        count: kindCounts[k],
-        className: `kind-chip ${meta.cls || ""}`.trim(),
-      };
-    });
-  window.WebUI.filters.buildChips("#kind-filter", items, {
-    active: STATE.filters.kinds,
-    prune: false,
-    onToggle: () => applyFilters(),
-  });
-}
-
-function buildDataTypeChips() {
-  const counts = {};
-  for (const entry of STATE.entries) {
-    for (const dataType of entryTreeDataTypes(entry)) {
-      counts[dataType] = (counts[dataType] || 0) + 1;
-    }
-  }
-  const dataTypeKeys = Object.keys(counts)
-    .filter(Boolean)
-    .sort((a, b) => compareDataTypeKeys(a, b, counts));
-  pruneFilterSet(STATE.filters.dataTypes, new Set(dataTypeKeys));
-  const items = dataTypeKeys
-    .filter((dataType) => counts[dataType])
-    .map((dataType) => ({ value: dataType, label: dataTypeLabel(dataType), count: counts[dataType] }));
-  window.WebUI.filters.buildChips("#type-filter", items, {
-    active: STATE.filters.dataTypes,
-    prune: false,
-    onToggle: () => applyFilters(),
-  });
-}
-
-function buildMediaChips() {
-  const counts = {};
-  for (const entry of STATE.entries) {
-    for (const mediaKey of entryMediaTypeFilterKeys(entry)) {
-      counts[mediaKey] = (counts[mediaKey] || 0) + 1;
-    }
-  }
-  const mediaKeys = MEDIA_TYPE_FILTER_KEYS.filter((key) => counts[key]);
-  pruneFilterSet(STATE.filters.media, new Set(mediaKeys));
-  const items = mediaKeys.map((mediaKey) => ({
-    value: mediaKey,
-    label: mediaTypeFilterLabel(mediaKey),
-    count: counts[mediaKey],
-  }));
-  window.WebUI.filters.buildChips("#media-filter", items, {
-    active: STATE.filters.media,
-    className: "media-chip",
-    prune: false,
-    onToggle: () => applyFilters(),
-  });
-}
-
-function buildStoryIssueChips() {
-  const counts = {};
-  for (const entry of STATE.entries) {
-    for (const code of new Set(entryStoryIssues(entry))) {
-      counts[code] = (counts[code] || 0) + 1;
-    }
-  }
-  const issueKeys = STORY_ISSUE_ORDER.filter((code) => counts[code]);
-  pruneFilterSet(STATE.filters.issues, new Set(issueKeys));
-  const items = issueKeys.map((code) => ({ value: code, label: storyIssueLabel(code), count: counts[code] }));
-  window.WebUI.filters.buildChips("#story-issue-filter", items, {
-    active: STATE.filters.issues,
-    prune: false,
-    onToggle: () => applyFilters(),
-  });
-}
-
-function buildRecoveryMethodChips() {
-  const counts = {};
-  for (const entry of STATE.entries) {
-    for (const method of new Set(entryRecoveryMethods(entry))) {
-      counts[method] = (counts[method] || 0) + 1;
-    }
-  }
-  const methodKeys = Object.keys(counts)
-    .filter(Boolean)
-    .sort((a, b) => compareRecoveryMethodKeys(a, b, counts));
-  pruneFilterSet(STATE.filters.recoveryMethods, new Set(methodKeys));
-  const items = methodKeys.map((method) => ({
-    value: method,
-    label: recoveryMethodLabel(method),
-    count: counts[method],
-  }));
-  window.WebUI.filters.buildChips("#recovery-method-filter", items, {
-    active: STATE.filters.recoveryMethods,
-    prune: false,
-    onToggle: () => applyFilters(),
-  });
 }
 
 const STORY_SORT_MODES = new Set(["natural", "story", "lines-desc", "lines-asc", "key"]);
@@ -905,11 +803,11 @@ function bindEvents() {
   $("#reset").addEventListener("click", () => {
     clearTimeout(qTimer);
     preserveCurrentTreeExpansion();
-    STATE.filters = createDefaultFilters();
+    STATE.filters.q = "";
     STATE.sortMode = "story";
     $("#q").value = "";
     syncStorySortControl();
-    $$(".chip.on").forEach((c) => c.classList.remove("on"));
+    storyFacets.reset({ silent: true });
     applyFilters();
   });
   $("#list-wrap").addEventListener("scroll", renderList);
@@ -1075,16 +973,10 @@ function bindEvents() {
 
 // ---------- filtering + tree build ----------
 function applyFilters() {
-  syncFilterSectionActiveCounts();
   syncStoryOrderEditor();
   const f = STATE.filters;
-  let out = STATE.entries;
-
-  if (f.kinds.size) out = out.filter((e) => entryMatchesKindFilters(e, f.kinds));
-  if (f.dataTypes.size) out = out.filter((e) => entryMatchesTreeDataTypeFilters(e, f.dataTypes));
-  if (f.media.size) out = out.filter((e) => entryMatchesMediaFilters(e, f.media));
-  if (f.issues.size) out = out.filter((e) => entryMatchesStoryIssueFilters(e, f.issues));
-  if (f.recoveryMethods.size) out = out.filter((e) => entryMatchesRecoveryMethodFilters(e, f.recoveryMethods));
+  window.WebUI.setFilterSectionActiveCount("basic", f.q ? 1 : 0);
+  let out = storyFacets.isFiltered() ? storyFacets.filter(STATE.entries) : STATE.entries;
   const tokens = window.WebUI.parseQuery(f.q);
   if (tokens.length) {
     if (typeof ensureStorySearchIndexLoaded === "function" && !STATE.storySearchLoaded) {

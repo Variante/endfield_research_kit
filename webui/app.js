@@ -94,7 +94,7 @@ const STATE = {
   optionOverridePayload: null,
   optionOverridePromise: null,
   expanded: new Set(),   // group paths the user opened
-  filters: createDefaultFilters(),
+  filters: { q: "" },     // search text; chip groups live in storyFacets (app_tree.js)
   sortMode: "story",
   showEmpty: false,
   showRaw: false,
@@ -126,17 +126,6 @@ const {
   relRequiresPathIdExportName,
 } = window.WebUI;
 const STORY_TRIGGERS = window.WebUIStoryTriggers;
-
-function createDefaultFilters() {
-  return {
-    q: "",
-    kinds: new Set(),
-    dataTypes: new Set(),
-    media: new Set(),
-    issues: new Set(),
-    recoveryMethods: new Set(),
-  };
-}
 
 function shouldHideLoadedEntry(entry) {
   return !!(entry && entry.omitSimDuplicate);
@@ -545,11 +534,7 @@ function setUiLocale(locale, { persist = true, refresh = true } = {}) {
 
   if (!refresh || !STATE.entries.length) return;
 
-  buildKindChips();
-  buildDataTypeChips();
-  buildMediaChips();
-  buildStoryIssueChips();
-  buildRecoveryMethodChips();
+  renderStoryFacets();
   applyFilters();
 
   if (STATE.selectedKey) {
@@ -3483,11 +3468,7 @@ async function switchLanguage(languageCode, { preserveSelection = true, requeste
       : null;
 
     $("#count").textContent = STATE.entries.length.toLocaleString();
-    buildKindChips();
-    buildDataTypeChips();
-    buildMediaChips();
-    buildStoryIssueChips();
-    buildRecoveryMethodChips();
+    renderStoryFacets();
     applyFilters();
     window.dispatchEvent(new CustomEvent("webui:language-changed", {
       detail: { language: info.code },
@@ -3529,11 +3510,7 @@ async function init() {
     void storyOrderPromise.then(() => {
       if (applyStoryOrderGroupingOverridesToEntries(STATE.entries)) {
         STATE.readingArchiveLinksByKey = buildReadingArchiveLinkIndex(STATE.entries);
-        buildKindChips();
-        buildDataTypeChips();
-        buildMediaChips();
-        buildStoryIssueChips();
-        buildRecoveryMethodChips();
+        renderStoryFacets();
         applyFilters();
       } else if (STATE.sortMode === "story") {
         rebuildTree({ resetScroll: false });
@@ -10469,15 +10446,6 @@ function stringifyTraceValue(value) {
 // then apply search-term highlight only to the human-visible text fragments.
 function highlight(text, q) {
   return renderGenderVariantHtml(text, q) || renderDisplayedTextHtml(text, q);
-}
-
-function countBy(arr, fn) {
-  const out = {};
-  for (const x of arr) {
-    const k = fn(x);
-    out[k] = (out[k] || 0) + 1;
-  }
-  return out;
 }
 
 installInlineTagDisplayModeGlobal();
