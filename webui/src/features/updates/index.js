@@ -204,11 +204,7 @@
     selectedPath: "",
     selectedEntry: null,
     pager: null,
-    filters: {
-      statuses: new Set(),
-      categories: new Set(),
-      extensions: new Set(),
-    },
+    facets: null,
     modelCache: new Map(),
   };
 
@@ -299,27 +295,6 @@
     return `${sign}${value.toFixed(decimals)} ${units[unit]}`;
   }
 
-  function countBy(items, keyFn) {
-    const counts = {};
-    for (const item of items || []) {
-      const key = keyFn(item);
-      counts[key] = (counts[key] || 0) + 1;
-    }
-    return counts;
-  }
-
-  function statusFilters() {
-    return UPDATE_STATE.filters.statuses;
-  }
-
-  function categoryFilters() {
-    return UPDATE_STATE.filters.categories;
-  }
-
-  function extensionFilters() {
-    return UPDATE_STATE.filters.extensions;
-  }
-
   function updateQuery() {
     const node = up$("#updates-q");
     return String(node && node.value || "").trim().toLowerCase();
@@ -405,12 +380,7 @@
     return out;
   }
   function matchesFilters(entry, tokens) {
-    const statuses = statusFilters();
-    const categories = categoryFilters();
-    const extensions = extensionFilters();
-    if (statuses.size && !statuses.has(entry.status)) return false;
-    if (categories.size && !categories.has(entry.category)) return false;
-    if (extensions.size && !extensions.has(normalizeExtension(entry.extension))) return false;
+    if (!updateFacets().matches(entry)) return false;
     if (tokens && tokens.length && !window.WebUI.queryMatches(entrySearchText(entry), tokens)) return false;
     return true;
   }
@@ -536,54 +506,34 @@
     renderUpdateList();
   }
 
-  function populateUpdateFilters() {
-    const entries = UPDATE_STATE.entries;
-    const statusCounts = countBy(entries, (entry) => String(entry.status || ""));
-    buildUpdateFilterChips(
-      "#updates-status-filter",
-      ["added", "modified", "deleted"].filter((status) => statusCounts[status]),
-      statusLabel,
-      UPDATE_STATE.filters.statuses,
-      statusCounts,
-    );
-
-    const categories = Array.from(new Set(entries.map((entry) => String(entry.category || "other")))).sort();
-    const extensions = Array.from(new Set(entries.map((entry) => normalizeExtension(entry.extension)))).sort();
-    buildUpdateFilterChips(
-      "#updates-category-filter",
-      categories,
-      categoryLabel,
-      UPDATE_STATE.filters.categories,
-      countBy(entries, (entry) => String(entry.category || "other")),
-    );
-    buildUpdateFilterChips(
-      "#updates-extension-filter",
-      extensions,
-      (value) => value,
-      UPDATE_STATE.filters.extensions,
-      countBy(entries, (entry) => normalizeExtension(entry.extension)),
-    );
-  }
-
-  function buildUpdateFilterChips(selector, values, labeler, activeSet, counts = {}) {
-    window.WebUI.filters.buildChips(selector, values, {
-      active: activeSet,
-      className: "updates-filter-chip",
-      label: labeler ? (value) => labeler(value) : undefined,
-      count: counts,
-      onToggle: () => {
+  function updateFacets() {
+    if (UPDATE_STATE.facets) return UPDATE_STATE.facets;
+    UPDATE_STATE.facets = window.WebUI.facets.create({
+      countMode: "total", // chip counts are dataset totals, as on every other page
+      groups: [
+        { id: "status", container: "#updates-status-filter", section: "updates-status",
+          values: (entry) => entry.status, label: statusLabel, order: ["added", "modified", "deleted"] },
+        { id: "category", container: "#updates-category-filter", section: "updates-category",
+          values: (entry) => String(entry.category || "other"), label: categoryLabel },
+        { id: "extension", container: "#updates-extension-filter", section: "updates-extension",
+          values: (entry) => normalizeExtension(entry.extension) },
+      ],
+      chipClassName: "updates-filter-chip",
+      onChange: () => {
         UPDATE_STATE.pager?.reset();
         applyUpdateFilters();
       },
     });
+    return UPDATE_STATE.facets;
+  }
+
+  function populateUpdateFilters() {
+    updateFacets().render(UPDATE_STATE.entries);
   }
 
   function syncFilterSectionActiveCounts() {
     window.WebUI.setFilterSectionActiveCounts?.({
       "updates-basic": updateQuery() ? 1 : 0,
-      "updates-status": UPDATE_STATE.filters.statuses.size,
-      "updates-category": UPDATE_STATE.filters.categories.size,
-      "updates-extension": UPDATE_STATE.filters.extensions.size,
       "updates-sort-section": sortMode() === "path" ? 0 : 1,
     });
   }
@@ -593,12 +543,8 @@
     if (q) q.value = "";
     const sort = up$("#updates-sort");
     if (sort) sort.value = "path";
-    UPDATE_STATE.filters.statuses.clear();
-    UPDATE_STATE.filters.categories.clear();
-    UPDATE_STATE.filters.extensions.clear();
     UPDATE_STATE.pager?.reset();
-    populateUpdateFilters();
-    applyUpdateFilters();
+    updateFacets().reset();
   }
 
   function applyUpdateFilters() {

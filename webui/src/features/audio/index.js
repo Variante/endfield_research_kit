@@ -733,7 +733,7 @@
     selected: null,
     query: "",
     sort: "purpose-priority",
-    filters: { categories: new Set(), contexts: new Set(), relations: new Set(), recovery: new Set(), scopes: new Set(), sources: new Set() },
+    facets: null,
     eventTaxonomyById: new Map(),
     gameParameterNameById: new Map(),
     detailCache: new Map(),
@@ -2055,80 +2055,53 @@
   function resetFilters({ render = true } = {}) {
     state.query = "";
     state.sort = "purpose-priority";
-    state.filters.categories.clear();
-    state.filters.contexts.clear();
-    state.filters.relations.clear();
-    state.filters.recovery.clear();
-    state.filters.scopes.clear();
-    state.filters.sources.clear();
+    audioFacets().reset({ silent: true });
     const search = $("#audio-q", state.container);
     if (search) search.value = "";
     syncSortControl();
-    if (render) {
-      buildFilterChips();
-      applyFilters({ resetScroll: true });
-    }
+    if (render) applyFilters({ resetScroll: true });
   }
 
-  function countValues(records, field) {
-    const counts = new Map();
-    for (const record of records || []) {
-      for (const value of new Set(asArray(record[field]).filter(Boolean))) counts.set(value, (counts.get(value) || 0) + 1);
-    }
-    return counts;
+  // Six chip groups over the current mode's records; the section ids and chip
+  // containers follow `audio-<id>` / `#audio-<id>-filter`.
+  function audioFacets() {
+    if (state.facets) return state.facets;
+    const group = (id, field, label) => ({
+      id,
+      container: `#audio-${id}-filter`,
+      section: `audio-${id}`,
+      values: (record) => record[field],
+      label: label || undefined,
+    });
+    state.facets = window.WebUI.facets.create({
+      countMode: "total", // chip counts are dataset totals, as on every other page
+      groups: [
+        group("category", "category", categoryLabel),
+        group("context", "contextTags", taxonomyLabel),
+        group("relation", "relationTags", taxonomyLabel),
+        group("recovery", "recoveryTags", recoveryLabel),
+        group("scope", "scope"),
+        group("source", "source"),
+      ],
+      chipClassName: "audio-filter-chip",
+      onChange: () => applyFilters({ resetScroll: true }),
+    });
+    return state.facets;
   }
 
   function buildFilterChips() {
-    const records = state.datasets[state.mode] || [];
-    const build = window.WebUI?.filters?.buildChips;
-    if (!build) return;
-    const groups = [
-      ["#audio-category-filter", "category", state.filters.categories, categoryLabel],
-      ["#audio-context-filter", "contextTags", state.filters.contexts, taxonomyLabel],
-      ["#audio-relation-filter", "relationTags", state.filters.relations, taxonomyLabel],
-      ["#audio-recovery-filter", "recoveryTags", state.filters.recovery, recoveryLabel],
-      ["#audio-scope-filter", "scope", state.filters.scopes, null],
-      ["#audio-source-filter", "source", state.filters.sources, null],
-    ];
-    for (const [selector, field, active, label] of groups) {
-      const counts = countValues(records, field);
-      const values = [...counts.keys()].filter(Boolean).sort((a, b) => (label ? label(a) : a).localeCompare(label ? label(b) : b, undefined, { numeric: true }));
-      build(selector, values, {
-        active,
-        count: counts,
-        className: "audio-filter-chip",
-        label: label || undefined,
-        onToggle: () => applyFilters({ resetScroll: true }),
-      });
-    }
-  }
-
-  function syncFilterCounts() {
-    window.WebUI?.setFilterSectionActiveCounts?.({
-      "audio-basic": state.query.trim() ? 1 : 0,
-      "audio-category": state.filters.categories.size,
-      "audio-context": state.filters.contexts.size,
-      "audio-relation": state.filters.relations.size,
-      "audio-recovery": state.filters.recovery.size,
-      "audio-scope": state.filters.scopes.size,
-      "audio-source": state.filters.sources.size,
-    });
+    audioFacets().render(state.datasets[state.mode] || []);
   }
 
   function applyFilters({ resetScroll = false, resetPage = resetScroll } = {}) {
     if (resetPage) state.pager?.reset();
     const records = state.datasets[state.mode] || [];
     const tokens = window.WebUI.parseQuery(state.query);
+    const facets = audioFacets();
     state.filtered = records.filter((record) => {
       const searchable = `${record.search}\n${normalizeLower(recordNote(record))}`;
       if (tokens.length && !window.WebUI.queryMatches(searchable, tokens)) return false;
-      if (state.filters.categories.size && !state.filters.categories.has(record.category)) return false;
-      if (state.filters.contexts.size && !record.contextTags.some((value) => state.filters.contexts.has(value))) return false;
-      if (state.filters.relations.size && !record.relationTags.some((value) => state.filters.relations.has(value))) return false;
-      if (state.filters.recovery.size && !record.recoveryTags.some((value) => state.filters.recovery.has(value))) return false;
-      if (state.filters.scopes.size && !state.filters.scopes.has(record.scope)) return false;
-      if (state.filters.sources.size && !state.filters.sources.has(record.source)) return false;
-      return true;
+      return facets.matches(record);
     }).sort((a, b) => {
       if (state.mode === "events" || state.sort === "purpose-priority") {
         const priority = { highest: 0, secondary: 1, resolved: 2, resolvedTerminal: 3 };
@@ -2158,7 +2131,7 @@
     $("#audio-shown", state.container).textContent = formatNumber(state.filtered.length);
     $("#audio-total", state.container).textContent = formatNumber(records.length);
     applyIndexHeader();
-    syncFilterCounts();
+    window.WebUI?.setFilterSectionActiveCounts?.({ "audio-basic": state.query.trim() ? 1 : 0 });
     renderList();
   }
 

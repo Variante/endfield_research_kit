@@ -99,8 +99,7 @@
     contentScanKey: "",
     contentScanToken: 0,
     loadingIndex: null,
-    activeGroup: "",
-    sourceFilters: new Set(),
+    facets: null,
     collapsedTablePrefixes: new Set(),
     pager: null,
     // Row id a maintained structured-field reference asked to focus after the
@@ -548,8 +547,7 @@
         REF_STATE.index = payload || {};
         REF_STATE.tables = aggregateReferenceTables(Array.isArray(payload && payload.tables) ? payload.tables : []);
         REF_STATE.loadingIndex = null;
-        buildReferenceGroupChips();
-        buildSourceChips();
+        renderReferenceFacets();
         renderReferenceList();
         window.WebUI.updateLoader("reference", 1);
         window.WebUI.hideLoader("reference");
@@ -569,7 +567,7 @@
     REF_STATE.tables = [];
     REF_STATE.selectedTable = null;
     REF_STATE.selectedPayload = null;
-    REF_STATE.activeGroup = "";
+    referenceFacets().reset({ silent: true, only: ["group"] });
     REF_STATE.tableCache.clear();
     REF_STATE.tableLoads.clear();
     REF_STATE.rawTextCache.clear();
@@ -607,75 +605,45 @@
     }
   }
 
-  function activeReferenceGroup() {
-    return String(REF_STATE.activeGroup || "");
-  }
-
-  function tableGroupCounts() {
-    const counts = new Map();
-    for (const table of REF_STATE.tables) {
-      const prefix = tablePrefix(table);
-      counts.set(prefix, (counts.get(prefix) || 0) + 1);
-    }
-    return counts;
-  }
-
-  function setReferenceGroupFilter(group) {
-    REF_STATE.activeGroup = String(group || "");
-    REF_STATE.pager?.reset();
-    buildReferenceGroupChips();
-    renderReferenceList();
-    renderReferenceRows();
-  }
-
-  function resetReferenceFilters() {
-    const q = ref$("#reference-q");
-    if (q) q.value = "";
-    REF_STATE.activeGroup = "";
-    REF_STATE.sourceFilters.clear();
-    clearTimeout(REF_STATE.contentScanTimer);
-    REF_STATE.contentScanTimer = 0;
-    REF_STATE.contentScanKey = "";
-    REF_STATE.contentScanToken += 1;
-    REF_STATE.pager?.reset();
-    buildReferenceGroupChips();
-    buildSourceChips();
-    renderReferenceList();
-    renderReferenceRows();
-  }
-
-  function buildReferenceGroupChips() {
-    const counts = tableGroupCounts();
-    if (REF_STATE.activeGroup && !counts.has(REF_STATE.activeGroup)) REF_STATE.activeGroup = "";
-    const items = [...counts.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([prefix, count]) => ({ value: prefix, label: prefix, count, title: prefix }));
-    window.WebUI.filters.buildChips("#reference-group-filter", items, {
-      active: activeReferenceGroup(),
-      single: true,
-      className: "reference-filter-chip reference-group-chip",
-      onToggle: (next) => setReferenceGroupFilter(next),
-    });
-  }
-
-  function buildSourceChips() {
-    const sources = new Map();
-    for (const table of REF_STATE.tables) {
-      sources.set(table.source || "", table.sourceLabel || table.source || "");
-    }
-    const items = [...sources.entries()]
-      .filter(([source]) => source)
-      .sort((a, b) => a[1].localeCompare(b[1]))
-      .map(([source, label]) => ({ value: source, label: label || source }));
-    window.WebUI.filters.buildChips("#reference-source-filter", items, {
-      active: REF_STATE.sourceFilters,
-      className: "reference-filter-chip",
-      onToggle: () => {
+  // Table-name prefix (single) and export source (multi) chips over the tables.
+  function referenceFacets() {
+    if (REF_STATE.facets) return REF_STATE.facets;
+    REF_STATE.facets = window.WebUI.facets.create({
+      countMode: "total", // chip counts are dataset totals, as on every other page
+      groups: [
+        { id: "group", container: "#reference-group-filter", section: "reference-group",
+          values: tablePrefix, title: (prefix) => prefix, single: true,
+          className: "reference-group-chip" },
+        { id: "source", container: "#reference-source-filter", section: "reference-source",
+          values: tableSourceKeys, label: sourceLabel },
+      ],
+      chipClassName: "reference-filter-chip",
+      onChange: () => {
         REF_STATE.pager?.reset();
         renderReferenceList();
         renderReferenceRows();
       },
     });
+    return REF_STATE.facets;
+  }
+
+  function sourceLabel(source) {
+    const table = REF_STATE.tables.find((entry) => entry.source === source);
+    return (table && table.sourceLabel) || source;
+  }
+
+  function renderReferenceFacets() {
+    referenceFacets().render(REF_STATE.tables);
+  }
+
+  function resetReferenceFilters() {
+    const q = ref$("#reference-q");
+    if (q) q.value = "";
+    clearTimeout(REF_STATE.contentScanTimer);
+    REF_STATE.contentScanTimer = 0;
+    REF_STATE.contentScanKey = "";
+    REF_STATE.contentScanToken += 1;
+    referenceFacets().reset();
   }
 
   function referenceQuery() {
@@ -684,7 +652,7 @@
   }
 
   function sourceFilters() {
-    return REF_STATE.sourceFilters;
+    return referenceFacets().active("source");
   }
 
   function sourceFilterKey(sources = sourceFilters()) {
@@ -774,9 +742,7 @@
   }
 
   function tableMatches(table, q, sources, sourceKey) {
-    const activeGroup = activeReferenceGroup();
-    if (activeGroup && tablePrefix(table) !== activeGroup) return false;
-    if (sources.size && !tableSourceKeys(table).some((source) => sources.has(source))) return false;
+    if (!referenceFacets().matches(table)) return false;
     if (!q) return true;
     return tableMetadataMatches(table, q) || tableContentMatches(table, q, sourceKey);
   }
@@ -853,8 +819,6 @@
   function syncReferenceFilterSectionActiveCounts() {
     window.WebUI.setFilterSectionActiveCounts?.({
       "reference-basic": referenceQuery() ? 1 : 0,
-      "reference-group": REF_STATE.activeGroup ? 1 : 0,
-      "reference-source": REF_STATE.sourceFilters.size,
     });
   }
 
@@ -1189,8 +1153,7 @@
 
   function refreshReference() {
     applyReferenceStrings();
-    buildReferenceGroupChips();
-    buildSourceChips();
+    renderReferenceFacets();
     renderReferenceList();
     renderReferenceRows();
     renderReferenceRaw(REF_STATE.selectedTable);
