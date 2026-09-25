@@ -6,8 +6,10 @@ build:
 1. Discover AnimeStudio CLI AssetMaps under the export's meta/<Layer>/asset_map.
 2. Select dialog Timeline asset folders in a general way (`dlgtl_*`, `f_dlgtl_*`,
    and `m_dlgtl_*` under gameplay/dialog/timeline).
-3. Read the published game/Unity/MonoBehaviour export through a targeted
-   reader that opens only Timeline roots and the objects they reference.
+3. Read the published MonoBehaviour documents from the export's Unity object
+   store (game/Unity.sqlite, addressed as game/Unity/MonoBehaviour/<name>)
+   through a targeted reader that opens only Timeline roots and the objects
+   they reference.
 4. Use a filtered AnimeStudio CLI `--filter_data` re-export, written under
    tmp/, only for focused diagnostics or when the full export has no
    recoverable Timeline tracks.
@@ -30,7 +32,6 @@ import os
 import re
 import shutil
 import subprocess
-import sys
 import time
 from collections import Counter, defaultdict, deque
 from concurrent.futures import ThreadPoolExecutor
@@ -42,14 +43,22 @@ from typing import Callable
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-from scripts.common import fast_glob_files
+from scripts.webui.story.unity_documents import (
+    document_count,
+    document_dir_present,
+    documents_by_path_id,
+    glob_documents,
+    read_document_bytes,
+    read_document_text,
+)
 
 from scripts.webui.story.story_keys import line_stem, timeline_stem_to_dialog_key
 from scripts.common import WEBUI_BUILD_DIR
 
 EXPORT_ROOT = EXPORT_LAYOUT.root
 # The focused CLI re-export is a disposable debugging aid; it never lives in
-# the export root. Normal runs read the published game/Unity/MonoBehaviour.
+# the export root. Normal runs read the published MonoBehaviour documents in
+# the export's Unity object store.
 DEFAULT_EXTRACT_DIR = EXPORT_LAYOUT.work_dir / "timeline_extract"
 DEFAULT_ORDER_OUT = WEBUI_BUILD_DIR / "story" / "timeline_line_orders.json"
 DEFAULT_DIALOG_REGISTRY = WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
@@ -255,9 +264,8 @@ def timeline_order_is_current(order_out: Path, maps: list[Path] | None = None) -
 
 def load_json(path: Path):
     try:
-        with path.open(encoding="utf-8-sig") as f:
-            return json.load(f)
-    except (OSError, json.JSONDecodeError) as exc:
+        return json.loads(read_document_text(path))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         log(f"skip {rel_path(path)}: {exc}")
         return None
 
@@ -273,7 +281,7 @@ def decode_json_string_fragment(value: str) -> str:
 def extract_monobehaviour_metadata(path: Path) -> dict | None:
     """Read just enough of a MonoBehaviour JSON file to build a lazy graph index."""
     try:
-        text = path.read_text(encoding="utf-8-sig", errors="replace")
+        text = read_document_text(path, errors="replace")
     except OSError as exc:
         log(f"skip {rel_path(path)}: {exc}")
         return None
@@ -1819,24 +1827,16 @@ def validate_timeline_sources_before_reset(chks: list[str]) -> None:
 
 
 def discover_full_monobehaviour_dirs(export_root: Path) -> list[Path]:
+    """The export's MonoBehaviour store directory when its object store has any."""
     mono_dir = ExportLayout(export_root).unity_type_dir("MonoBehaviour")
-    return [mono_dir] if mono_dir.is_dir() else []
+    return [mono_dir] if document_dir_present(mono_dir) else []
 
 
 def monobehaviour_dir_exceeds_scan_limit(mono_dir: Path, limit: int) -> bool:
     if limit <= 0:
         return False
-    count = 0
     try:
-        with os.scandir(mono_dir) as entries:
-            for entry in entries:
-                if not entry.is_file():
-                    continue
-                if not entry.name.lower().endswith(".json"):
-                    continue
-                count += 1
-                if count > limit:
-                    return True
+        return document_count(mono_dir, "*.json") > limit
     except OSError as exc:
         log(f"skip full MonoBehaviour size check for {rel_path(mono_dir)}: {exc}")
     return False
@@ -1857,15 +1857,14 @@ def load_targeted_full_monobehaviour_records(
     records_by_key: dict[tuple[str, int], dict] = {}
     children_by_parent: dict[tuple[str, int], list[dict]] = defaultdict(list)
     timeline_roots: dict[str, list[dict]] = defaultdict(list)
-    path_index: dict[str, list[Path]] = defaultdict(list)
     seed_paths: list[Path] = []
 
-    for path in sorted(mono_dir.glob("*.json")):
+    # Seeds come from one name query; referenced objects resolve lazily by
+    # PathID (the object store's index) instead of a full name listing.
+    for path in glob_documents(mono_dir, "*dlgtl_*.json"):
         stem = path.stem
-        suffix = path_id_suffix_from_stem(stem)
-        if not suffix:
+        if not path_id_suffix_from_stem(stem):
             continue
-        path_index[suffix].append(path)
         if "dlgtl_" not in stem or not is_timeline_root_seed_name(stem):
             continue
         timeline = timeline_name_from_record_name(strip_path_id_suffix(stem))
@@ -1910,7 +1909,7 @@ def load_targeted_full_monobehaviour_records(
         previous = records_by_key.get(key)
         if previous:
             return previous
-        for path in path_index.get(path_id_suffix(path_id), []):
+        for path in documents_by_path_id(mono_dir, path_id):
             record = ensure_record_path(path)
             if record and record["key"] == key:
                 return record
@@ -2056,7 +2055,7 @@ def recover_timeline_text_attachments(
     allowed_full_mono_roots = {
         str(path.resolve()).lower()
         for path in full_mono_roots
-        if path.is_dir()
+        if document_dir_present(path)
     }
     source_scan_pairs: list[tuple[str, Path, str]] = []
     missing_sources: set[str] = set()
@@ -2077,10 +2076,10 @@ def recover_timeline_text_attachments(
         if str(root_path or "")
     })
     for full_mono_root in full_mono_roots:
-        if not full_mono_root.is_dir():
+        if not document_dir_present(full_mono_root):
             continue
         if any(
-            fast_glob_files(full_mono_root, root_name)
+            glob_documents(full_mono_root, root_name)
             for root_name in missing_root_names
         ):
             # An empty source marker means that the exact Actor-root filename
@@ -2101,7 +2100,7 @@ def recover_timeline_text_attachments(
         try:
             mono_dir_key = str(mono_dir.resolve()).lower()
             if (
-                not mono_dir.is_dir()
+                not document_dir_present(mono_dir)
                 or (
                     extract_dir not in mono_dir.parents
                     and mono_dir_key not in allowed_full_mono_roots
@@ -2111,7 +2110,7 @@ def recover_timeline_text_attachments(
             asset_paths = sorted({
                 path
                 for type_name in playable_asset_type_names
-                for path in fast_glob_files(mono_dir, f"*{type_name}*.json")
+                for path in glob_documents(mono_dir, f"*{type_name}*.json")
             })
             track_paths = sorted({
                 path
@@ -2121,7 +2120,7 @@ def recover_timeline_text_attachments(
                     # object name ``Trunk`` in the export.
                     "Trunk_p*.json",
                 )
-                for path in fast_glob_files(mono_dir, pattern)
+                for path in glob_documents(mono_dir, pattern)
             })
         except OSError:
             continue
@@ -2134,22 +2133,15 @@ def recover_timeline_text_attachments(
             return metadata_cache[path]
 
         def matching_path(source_file: str, path_id: int) -> Path | None:
-            # Parent chains touch only a few dozen exact objects.  Ask NTFS for
-            # the serialized PathID suffix lazily instead of materializing an
-            # index for every MonoBehaviour in the source directory.
+            # Parent chains touch only a few dozen exact objects.  Resolve the
+            # serialized PathID lazily (the object store's PathID index, or the
+            # ``_p<PathID>`` file-name suffix in a filtered extraction) instead
+            # of materializing an index for every MonoBehaviour.
             #
             # These lookups resolve by PathID, not by name, so an export that
             # filtered MonoBehaviour output by name can silently lose them.
             # Record the misses instead of dropping the attachment quietly.
-            suffix = path_id_suffix(path_id)
-            patterns = [f"*_p{suffix}.json"]
-            if sys.platform != "win32" and suffix.lower() != suffix:
-                patterns.append(f"*_p{suffix.lower()}.json")
-            candidates = sorted({
-                path
-                for pattern in patterns
-                for path in fast_glob_files(mono_dir, pattern)
-            })
+            candidates = sorted(set(documents_by_path_id(mono_dir, path_id)))
             for candidate in candidates:
                 candidate_meta = metadata(candidate)
                 if (
@@ -2206,7 +2198,7 @@ def recover_timeline_text_attachments(
 
         def references_recovered_asset(path: Path) -> bool:
             try:
-                data = path.read_bytes()
+                data = read_document_bytes(path)
             except OSError:
                 return False
             return b'"m_Clips"' in data and any(
@@ -2932,8 +2924,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=int,
         default=TimelineRecoveryConfig.full_monobehaviour_scan_limit,
         help=(
-            "Skip full json_by_type/MonoBehaviour parsing when a source folder has "
-            "more JSON files than this; use 0 to disable the limit."
+            "Skip full MonoBehaviour parsing (the export's Unity object store) when it "
+            "holds more MonoBehaviour documents than this; use 0 to disable the limit."
         ),
     )
     parser.add_argument("--copy-to-webui", action="store_true", help="Also write webui/data/timeline_line_orders.json.")

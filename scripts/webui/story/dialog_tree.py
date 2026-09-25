@@ -32,6 +32,7 @@ from scripts.webui.story.context import (
     repo_rel,
 )
 from scripts.webui.story.scene_graph import _node_short_type
+from scripts.webui.story.unity_documents import document_exists, read_document_text
 from scripts.webui.story.story_keys import timeline_stem_to_dialog_key
 from scripts.webui.story.dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
@@ -389,7 +390,7 @@ def _load_dialog_tree_extra_config(tree_key: str) -> dict | None:
     result = None
     for base in ANIME_RESOURCE_DIRS:
         path = base / f"{tree_key}_extra_config.json"
-        if not path.exists():
+        if not document_exists(path):
             continue
         payload = _load_anime_resource_payload(path)
         if payload is None:
@@ -1436,7 +1437,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
     if tree_key in _DIALOG_TREE_SOURCE_CACHE:
         return _DIALOG_TREE_SOURCE_CACHE[tree_key]
     tree_path = _find_anime_tree_path(f"{tree_key}.json")
-    if not tree_path.exists():
+    if not document_exists(tree_path):
         _DIALOG_TREE_SOURCE_CACHE[tree_key] = None
         return None
     tree = _load_anime_resource_payload(tree_path)
@@ -1493,7 +1494,7 @@ def _load_dialog_tree_source(tree_key: str) -> dict | None:
             candidate_names.extend([f"f_{action_name}", f"m_{action_name}"])
         for candidate_name in candidate_names:
             action_path = _find_anime_tree_path(f"{candidate_name}.json")
-            if not action_path.exists():
+            if not document_exists(action_path):
                 continue
             rel_path = repo_rel(action_path)
             dedup = (action_name, rel_path)
@@ -2557,13 +2558,13 @@ def load_exact_dialog_tree_root_payload_alias(root_key: str) -> dict | None:
     story_key = scene_keys[0]
     source_path = _find_anime_tree_path(f"{root_key}.json")
     target_path = _find_anime_tree_path(f"{story_key}.json")
-    if not source_path.exists() or not target_path.exists():
+    if not document_exists(source_path) or not document_exists(target_path):
         _DIALOG_TREE_ROOT_PAYLOAD_ALIAS_CACHE[root_key] = None
         return None
 
     def decoded_script(path: Path, expected_name: str) -> bytes | None:
         try:
-            outer = json.loads(path.read_text(encoding="utf-8-sig"))
+            outer = json.loads(read_document_text(path))
             asset_name = str(
                 outer.get("Name") or outer.get("m_Name") or ""
             ).strip()

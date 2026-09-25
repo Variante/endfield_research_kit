@@ -33,7 +33,6 @@ from scripts.common import (
     read_json,
     rel_path,
     safe_key,
-    sha256_file,
     write_report_json,
     write_text_if_changed,
 )
@@ -42,6 +41,7 @@ from scripts.webui.story.anime_assets import (
     _load_anime_resource_payload,
     extract_dialog_tree_definition_evidence,
 )
+from scripts.webui.story.unity_documents import document_sha256, document_size
 from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path
 
 
@@ -77,7 +77,7 @@ class AuditError(RuntimeError):
 
 
 def _source_sha256(path: Path) -> str:
-    return sha256_file(path).upper()
+    return document_sha256(path).upper()
 
 
 def story_key_for_line(line_id: str) -> str:
@@ -398,9 +398,10 @@ def collect_profile_talk_classifications(
 
 
 def _source_row(path: Path) -> dict[str, Any]:
+    # DialogTree sources are object-store documents; tables are loose files.
     return {
         "path": rel_path(path),
-        "bytes": path.stat().st_size,
+        "bytes": document_size(path),
         "sha256": _source_sha256(path),
     }
 

@@ -9,7 +9,7 @@ import sys
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable
 
 from scripts.repo_paths import REPO_ROOT
 from scripts.source_paths import ExportLayout, ExportLayoutError
@@ -881,12 +881,34 @@ def guide_runtime_non_mission_content_keys(
     return found
 
 
+#: ``(size, uppercase SHA256)`` of a cited source, or None when it is absent.
+SourceDigest = Callable[[Path], "tuple[int, str] | None"]
+
+
+def file_source_digest(path: Path) -> tuple[int, str] | None:
+    """The default :data:`SourceDigest`: a loose file on disk."""
+    if not path.is_file():
+        return None
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return path.stat().st_size, digest.hexdigest().upper()
+
+
 def spaceship_story_non_mission_content_keys(
     report_path: Path = SPACESHIP_STORY_NON_MISSION_REPORT,
     *,
     source_root: Path = ROOT,
+    source_digest: SourceDigest = file_source_digest,
 ) -> dict[str, dict[str, Any]]:
-    """Load source-hash-checked operator-spacecraft Story classifications."""
+    """Load source-hash-checked operator-spacecraft Story classifications.
+
+    Cited sources include Unity object documents, which layout v3 keeps in the
+    export's object store rather than on disk; builders pass a store-aware
+    ``source_digest`` (``scripts.webui.story.unity_documents.document_digest``)
+    because this module cannot import the store.
+    """
     report_path = Path(report_path)
     report = read_json(report_path, {})
     evidence_boundary = (
@@ -914,19 +936,10 @@ def spaceship_story_non_mission_content_keys(
         expected_hash = safe_key(source.get("sha256")).upper()
         expected_bytes = source.get("bytes")
         path = Path(source_root) / Path(source_path)
-        if (
-            not source_path
-            or len(expected_hash) != 64
-            or not isinstance(expected_bytes, int)
-            or not path.is_file()
-            or path.stat().st_size != expected_bytes
-        ):
+        if not source_path or len(expected_hash) != 64 or not isinstance(expected_bytes, int):
             return {}
-        digest = hashlib.sha256()
-        with path.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                digest.update(chunk)
-        if digest.hexdigest().upper() != expected_hash:
+        found_digest = source_digest(path)
+        if found_digest is None or found_digest != (expected_bytes, expected_hash):
             return {}
         validated_source_paths.add(source_path)
 
@@ -1046,8 +1059,13 @@ def combined_non_mission_content_keys(
     guide_report_path: Path = GUIDE_RUNTIME_NON_MISSION_REPORT,
     export_summary_path: Path = EXPORT_FULL_SUMMARY,
     output_root: Path = EXPORT_ROOT,
+    source_digest: SourceDigest = file_source_digest,
 ) -> dict[str, dict[str, Any]]:
-    """Merge table-defined and exact runtime non-mission content."""
+    """Merge table-defined and exact runtime non-mission content.
+
+    ``source_digest`` checks the spaceship report's cited sources; see
+    :func:`spaceship_story_non_mission_content_keys`.
+    """
     found: dict[str, dict[str, Any]] = {
         key: {"evidenceKind": "authored_table", **row}
         for key, row in non_mission_content_keys(table_root).items()
@@ -1058,6 +1076,6 @@ def combined_non_mission_content_keys(
         output_root=output_root,
     ).items():
         found.setdefault(key, row)
-    for key, row in spaceship_story_non_mission_content_keys().items():
+    for key, row in spaceship_story_non_mission_content_keys(source_digest=source_digest).items():
         found.setdefault(key, row)
     return found

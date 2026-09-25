@@ -18,9 +18,11 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from scripts.common import EXPORT_LAYOUT, sha256_file
+from scripts.common import EXPORT_LAYOUT
 from scripts.repo_paths import REPO_ROOT
 from scripts.source_paths import ExportLayout, ExportLayoutError
+from scripts.game_data.unity_store import is_store_file, open_store_if_present
+from scripts.webui.story.unity_documents import document_exists, document_sha256
 
 
 _ORIGINAL_BINARY_NAMES = {"GameAssembly.dll", "global-metadata.dat"}
@@ -49,6 +51,7 @@ _FILE_SUFFIXES = {
 _BASENAME_INDEX_CACHE: dict[Path, dict[str, tuple[Path, ...]]] = {}
 _RESOLVED_PATH_CACHE: dict[Path, Path] = {}
 _CANDIDATE_PATHS_CACHE: dict[tuple[str, Path], list[Path]] = {}
+_STORE_TYPES_CACHE: dict[Path, tuple[str, ...]] = {}
 
 
 def _layout(root: Path) -> ExportLayout:
@@ -97,7 +100,27 @@ def _is_path_reference(reference: str) -> bool:
     )
 
 
+def _stored_basename_candidates(name: str, root: Path) -> list[Path]:
+    """Logical game/Unity/<Type>/<name> paths of stored documents with this exported name."""
+    if not is_store_file(name):
+        return []
+    layout = _layout(root)
+    store = open_store_if_present(layout.root)
+    if store is None:
+        return []
+    type_names = _STORE_TYPES_CACHE.get(store.path)
+    if type_names is None:
+        type_names = _STORE_TYPES_CACHE[store.path] = tuple(store.types())
+    return [
+        layout.unity_type_dir(type_name).resolve() / row.name
+        for type_name in type_names
+        for row in [store.row(type_name, name)]
+        if row is not None
+    ]
+
+
 def _basename_index(root: Path) -> dict[str, tuple[Path, ...]]:
+    """Loose files under game/ by lowercase name; stored Unity documents are looked up per name."""
     root_resolved = root.resolve()
     cached = _BASENAME_INDEX_CACHE.get(root_resolved)
     if cached is not None:
@@ -148,11 +171,13 @@ def _candidate_paths(reference: str, root: Path) -> list[Path]:
             pass
         if "/" not in reference:
             candidates.extend(_basename_index(root).get(reference.lower(), ()))
+            candidates.extend(_stored_basename_candidates(reference, root))
     out: list[Path] = []
     seen: set[Path] = set()
     for candidate in candidates:
         resolved = _resolved(candidate)
-        if resolved in seen or not resolved.is_file():
+        # A game/Unity/<Type>/<name> document exists when the object store has it.
+        if resolved in seen or not document_exists(resolved):
             continue
         seen.add(resolved)
         out.append(resolved)
@@ -188,7 +213,7 @@ def _kind_for_path(path: Path) -> str:
 
 
 def _sha256(path: Path) -> str:
-    return sha256_file(_resolved(path))
+    return document_sha256(_resolved(path))
 
 
 def _related_file(path: Path, *, reference: str, relation: str) -> dict[str, Any]:

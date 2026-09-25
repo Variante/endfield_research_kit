@@ -42,6 +42,11 @@ from scripts.game_data.levelscript_binary import (
 )
 from scripts.webui.story.anime_assets import recover_dialog_tree_definition_evidence
 from scripts.webui.story.mission_recovery import natural_key
+from scripts.webui.story.unity_documents import (
+    document_exists,
+    glob_documents,
+    read_document_bytes,
+)
 
 
 from scripts.webui.story.source_gap.data import (
@@ -153,13 +158,13 @@ def _literal_absence_census(
     """
     normalized_literals = sorted({safe_key(value) for value in literals} - {""})
     normalized_paths = sorted(
-        {path.resolve() for path in source_paths if path.is_file()},
+        {path.resolve() for path in source_paths if document_exists(path)},
         key=lambda path: natural_key(str(path)),
     )
     digest = hashlib.sha256()
     matches: dict[str, list[str]] = defaultdict(list)
     for path in normalized_paths:
-        payload = path.read_bytes()
+        payload = read_document_bytes(path)
         try:
             display_path = str(path.relative_to(ROOT)).replace("\\", "/")
         except ValueError:
@@ -2020,7 +2025,7 @@ def build_offline_exhaustion_index(
     actual_hashes = {
         # A missing source hashes to "" so it is reported as a mismatch and
         # deactivates the index, instead of aborting the whole validation.
-        name: _sha256_file(path) if isinstance(path, Path) and path.is_file() else ""
+        name: _sha256_file(path) if isinstance(path, Path) and document_exists(path) else ""
         for name, path in source_paths.items()
         if name in expected_hashes
     }
@@ -4504,7 +4509,7 @@ def build_offline_exhaustion_index(
                 )
                 continue
             text_assets = sorted(
-                cutscene_definition_root.glob(f"{story_key}_p*.json")
+                glob_documents(cutscene_definition_root, f"{story_key}_p*.json")
             )
             if text_assets:
                 generic_text_exclusions["textAssetCarrier"].append(story_key)
@@ -5503,8 +5508,9 @@ def build_offline_exhaustion_index(
         ))
         cutscene_matches = sorted(
             str(path.relative_to(ROOT)).replace("\\", "/")
-            for path in cutscene_definition_root.glob(
-                f"{definition_root_key}_p*.json"
+            for path in glob_documents(
+                cutscene_definition_root,
+                f"{definition_root_key}_p*.json",
             )
         )
         failures_before = len(text_only_dialog_validation_failures)
@@ -5903,7 +5909,7 @@ def build_offline_exhaustion_index(
             text_assets = sorted({
                 path
                 for key in authored_keys
-                for path in cutscene_definition_root.glob(f"{key}_p*.json")
+                for path in glob_documents(cutscene_definition_root, f"{key}_p*.json")
                 if "_extra_config_p" not in path.name
             })
             if text_assets:
@@ -6138,7 +6144,7 @@ def build_offline_exhaustion_index(
             text_assets = sorted(
                 path
                 for key in authored_keys
-                for path in cutscene_definition_root.glob(f"{key}_p*.json")
+                for path in glob_documents(cutscene_definition_root, f"{key}_p*.json")
             )
             if text_assets:
                 registered_table_dialog_exclusions["textAssetCarrier"].append(
@@ -6901,7 +6907,7 @@ def build_offline_exhaustion_index(
 
         mission_id = next(iter(missions))
         definition_paths = sorted(
-            cutscene_definition_root.glob(f"{story_key}_p*.json")
+            glob_documents(cutscene_definition_root, f"{story_key}_p*.json")
         )
         registry_id = str_timeline_ids.get(story_key)
         reverse_registry_value = timeline_ids.get(str(registry_id))

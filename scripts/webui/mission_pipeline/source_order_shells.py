@@ -6,7 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from scripts.common import sha256_file as _sha256_path
+# Cited original files include Unity object documents (object-store rows).
+from scripts.webui.story.unity_documents import document_exists, document_sha256 as _sha256_path
 
 from scripts.webui.mission_pipeline import story_order_projection
 
@@ -63,7 +64,7 @@ def _source_order_shell_related_files(
             # label as a materialized source-order attachment.
             return
         path = _resolve_report_source_path(source)
-        if not path.is_file():
+        if not document_exists(path):
             raise RuntimeError(
                 f"validator={validator} gate=relatedOriginalFile "
                 f"mission={order_row.get('mission') or '-'} expected=file "
@@ -210,7 +211,7 @@ def _story_branch_related_original_files(
         )):
             return
         path = _resolve_report_source_path(source)
-        if not path.is_file():
+        if not document_exists(path):
             raise RuntimeError(
                 f"validator={validator} gate=sourceFile "
                 f"mission={order_row.get('mission') or '-'} expected=file "
@@ -671,7 +672,7 @@ def _create_story_variant_aggregate_shell(
         pipeline_payload = _read_json(pipeline_path) if pipeline_path.is_file() else None
         original_source = str(((pipeline_payload or {}).get("mission") or {}).get("source") or "")
         original_path = _resolve_report_source_path(original_source) if original_source else Path()
-        if not original_source or not original_path.is_file():
+        if not original_source or not document_exists(original_path):
             raise RuntimeError(
                 f"validator={validator} gate=variantHasOriginalMissionRuntime "
                 f"mission={mission_id} variant={variant_id} expected=file actual={original_source or '-'} "

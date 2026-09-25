@@ -1,7 +1,6 @@
 """Publish hash-verified DialogTree definitions to exact quest observers."""
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from collections import defaultdict
@@ -14,6 +13,7 @@ from scripts.common import write_canonical_json as _write_json
 from scripts.common import read_json_strict as _read_json
 from scripts.common import repo_path as _repo_path
 from scripts.webui.mission_pipeline.quest_keys import natural_quest_key as _natural_quest_key
+from scripts.webui.story.unity_documents import document_exists, document_sha256
 
 ROOT = REPO_ROOT
 
@@ -95,12 +95,13 @@ def publish_quest_dialog_tree_definitions(
                     f"{sidecar_path} {scene_key}"
                 )
             source_path = (ROOT / source_file).resolve()
-            if not source_path.is_relative_to(ROOT) or not source_path.is_file():
+            # DialogTree TextAssets are Unity object documents in the export's store.
+            if not source_path.is_relative_to(ROOT) or not document_exists(source_path):
                 raise ValueError(
                     f"DialogTree evidence source is missing/outside repo: "
                     f"{sidecar_path} {scene_key} {source_file}"
                 )
-            actual_sha256 = hashlib.sha256(source_path.read_bytes()).hexdigest().upper()
+            actual_sha256 = document_sha256(source_path).upper()
             if actual_sha256 != source_sha256:
                 raise ValueError(
                     f"DialogTree evidence source hash mismatch: {sidecar_path} "

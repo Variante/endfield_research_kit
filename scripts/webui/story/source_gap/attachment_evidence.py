@@ -18,6 +18,7 @@ from scripts.webui.story.source_gap.contracts import STORY_BINDING_COVERAGE_SCHE
 from scripts.webui.story.level_bindings import _load_levelscript_binding_data
 from scripts.game_data.levelscript_binary import levelscript_action_map_membership
 from scripts.webui.story.mission_recovery import natural_key
+from scripts.webui.story.unity_documents import document_exists
 
 
 from scripts.webui.story.source_gap.data import (
@@ -830,7 +831,7 @@ def _classify_server_placeholder_story_boundary(
     if (
         not source_file
         or not source_file.replace("\\", "/").endswith(expected_source_suffix)
-        or not (ROOT / source_file).is_file()
+        or not document_exists(ROOT / source_file)
     ):
         failures.append({
             "gate": "mission_runtime_source",
@@ -860,7 +861,7 @@ def _classify_server_placeholder_story_boundary(
             path = safe_key(connection.get("file"))
             if (
                 not path
-                or not (ROOT / path).is_file()
+                or not document_exists(ROOT / path)
                 or not safe_key(connection.get("key"))
             ):
                 failures.append({

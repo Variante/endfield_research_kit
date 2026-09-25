@@ -16,6 +16,12 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from scripts.webui.story.unity_documents import (
+    document_dir_present,
+    glob_documents,
+    read_document_bytes,
+)
+
 
 def attach_post_playback_callserver_contracts(
     runtime_nodes: list[dict[str, Any]],
@@ -128,10 +134,13 @@ def build_level_sequence_textasset_index(
     """
     assets_by_id: dict[str, list[dict[str, Any]]] = defaultdict(list)
     failures: list[dict[str, Any]] = []
-    source_files = sorted(root.glob("levelseq_*.json")) if root.is_dir() else []
+    # ``root`` is normally game/Unity/TextAsset, served from the object store.
+    source_files = (
+        glob_documents(root, "levelseq_*.json") if document_dir_present(root) else []
+    )
     for source_path in source_files:
         try:
-            raw = source_path.read_bytes()
+            raw = read_document_bytes(source_path)
             outer = json.loads(raw.decode("utf-8-sig"))
             if not isinstance(outer, dict):
                 raise ValueError("outer JSON is not an object")

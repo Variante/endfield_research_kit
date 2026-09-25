@@ -62,6 +62,14 @@ from scripts.webui.story.level_bindings import (
 )
 from scripts.webui.story.level_bindings import _source_file_label as source_label
 from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
+from scripts.webui.story.unity_documents import (
+    document_dir_present,
+    document_exists,
+    document_sha256,
+    is_store_type_dir,
+    iter_document_bytes,
+    read_document_text,
+)
 
 
 ROOT = _REPO_ROOT
@@ -69,6 +77,7 @@ DEFAULT_PIPELINE_ROOT = ROOT / "webui" / "data" / "mission_pipeline"
 DEFAULT_TIMELINE_ORDERS = (
     WEBUI_BUILD_DIR / "story" / "timeline_line_orders.json"
 )
+# game/Unity/TextAsset: served from the export's Unity object store.
 DEFAULT_DIALOG_TREE_ROOT = (
     EXPORT_LAYOUT.unity_type_dir("TextAsset")
 )
@@ -151,7 +160,8 @@ def resolve_source(value: str) -> Path:
 
 
 def read_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8-sig"))
+    # game/Unity/<Type>/<name> documents are read from the export's object store.
+    return json.loads(read_document_text(path))
 
 
 def write_json(path: Path, payload: Any) -> None:
@@ -668,13 +678,13 @@ def _hash_source_rows(
     output: list[dict[str, Any]] = []
     for row in _dedupe_source_rows(rows):
         path = resolve_source(str(row["sourceFile"]))
-        if not path.is_file():
+        if not document_exists(path):
             raise AuditValidationError(
                 f"validator={validator} gate=relatedOriginalFile expected=file "
                 f"actual=missing source={path}"
             )
         if path not in cache:
-            cache[path] = sha256_file(path)
+            cache[path] = document_sha256(path)
         output.append({**row, "sourceFile": source_label(path), "sha256": cache[path]})
     return output
 
@@ -2127,7 +2137,7 @@ def _collect_dialog_tree_producers(
     endpoint_coverage: list[dict[str, Any]] = []
     for source_file in source_files:
         path = resolve_source(source_file)
-        if not path.is_file():
+        if not document_exists(path):
             raise AuditValidationError(
                 "validator=dialog_finish_branch_recovery gate=dialogTreeSource "
                 f"expected=file actual=missing source={path}"
@@ -2277,7 +2287,7 @@ def _collect_dialog_tree_corpus_coverage(
     runtime_defaults: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]]]:
     """Validate option routes and finish endpoints over every DialogTree."""
-    if not root.is_dir():
+    if not document_dir_present(root):
         raise AuditValidationError(
             "validator=dialog_finish_branch_recovery gate=dialogTreeCorpusRoot "
             f"expected=directory actual=missing source={root}"
@@ -2286,9 +2296,15 @@ def _collect_dialog_tree_corpus_coverage(
     finish_endpoint_sources: list[dict[str, Any]] = []
     validated_finish_endpoint_rows: list[dict[str, Any]] = []
     scanned_json_files = 0
-    for path in sorted(root.rglob("*.json")):
+    # One ordered pass over the object store (flat) or a loose corpus directory.
+    documents = (
+        iter_document_bytes(root, "*.json")
+        if is_store_type_dir(root)
+        else ((path, path.read_bytes()) for path in sorted(root.rglob("*.json")))
+    )
+    for path, data in documents:
         scanned_json_files += 1
-        outer = read_json(path)
+        outer = json.loads(data.decode("utf-8-sig"))
         if not isinstance(outer, dict) or not isinstance(outer.get("m_Script"), str):
             continue
         try:
@@ -4143,7 +4159,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--pipeline-root", type=Path, default=DEFAULT_PIPELINE_ROOT)
     parser.add_argument("--timeline-orders", type=Path, default=DEFAULT_TIMELINE_ORDERS)
-    parser.add_argument("--dialog-tree-root", type=Path, default=DEFAULT_DIALOG_TREE_ROOT)
+    parser.add_argument(
+        "--dialog-tree-root",
+        type=Path,
+        default=DEFAULT_DIALOG_TREE_ROOT,
+        help=(
+            "DialogTree TextAsset corpus. An export's game/Unity/TextAsset is read from its "
+            "Unity object store (default: the configured export); any other directory is "
+            "scanned recursively for loose *.json."
+        ),
+    )
     parser.add_argument(
         "--levelscript-root",
         type=Path,

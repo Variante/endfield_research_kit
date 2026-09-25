@@ -95,6 +95,7 @@ from scripts.webui.story.timeline_recovery import (
     recover_timeline_line_orders,
     timeline_order_is_current,
 )
+from scripts.webui.story.unity_documents import document_dir_present
 STORY_BUILD_DIR = WEBUI_BUILD_DIR / "story"
 STORY_SOURCE_LINKS_PATH = STORY_BUILD_DIR / "story_source_links.json"
 
@@ -108,10 +109,11 @@ NPC_PROXY_EX_PATH = GAMEPLAY_CONFIG_DIR / "NpcProxyExDataTable.json"
 NPC_PROXY_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "NpcProxyTable.json"
 ATMOS_CLUSTER_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "AtmosphericNpcClusterDataTable.json"
 FOCUS_MODE_INSTANCE_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "FocusModeInstanceTable.json"
+# game/Unity/<Type> directories served from the export's Unity object store.
 ANIME_RESOURCE_DIRS = [
     path
     for path in (EXPORT_LAYOUT.unity_type_dir("TextAsset"), EXPORT_LAYOUT.unity_type_dir("MonoBehaviour"))
-    if path.exists()
+    if document_dir_present(path)
 ]
 DEFAULT_LANGUAGE = "CN"
 BUILD_PROFILES = ("lean", "full")

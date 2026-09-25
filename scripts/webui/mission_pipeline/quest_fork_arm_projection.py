@@ -7,6 +7,7 @@ from typing import Any, Iterable
 
 from scripts.common import compact_dict as _compact_dict
 from scripts.common import sha256_file as _sha256_path
+from scripts.webui.story.unity_documents import document_exists, document_sha256
 
 
 from scripts.repo_paths import REPO_ROOT
@@ -176,14 +177,14 @@ def publish_quest_fork_arm_evidence(
                 str(source_path),
                 normalized,
             )
-        if not source_path.is_file():
+        if not document_exists(source_path):
             raise validation_failure(
                 "relatedOriginalFile",
                 "file",
                 str(source_path),
                 normalized,
             )
-        actual_hash = _sha256_path(source_path)
+        actual_hash = document_sha256(source_path)
         if expected_hash and actual_hash.upper() != expected_hash.upper():
             raise validation_failure(
                 "relatedOriginalFileHash",

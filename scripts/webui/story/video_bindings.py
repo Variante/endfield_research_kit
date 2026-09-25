@@ -36,7 +36,8 @@ This script joins:
     tmp/game_data/export/<root>/timeline_extract/*/MonoBehaviour/ when a focused
     Timeline re-export exists.
   - Every matching `BeyondFMVPlayableAsset*.json` / `Beyond FMV Track*.json`
-    under the story-scoped AnimeStudio `json_by_type/MonoBehaviour` export.
+    MonoBehaviour document in the export's Unity object store
+    (game/Unity.sqlite, addressed as game/Unity/MonoBehaviour/<name>).
   - The AssetEntries maps under
     <export root>/meta/{StreamingAssets,Persistent}/asset_map/
     keyed by PathID to recover each playable's `dlgtl_<scene>_sub_<n>` or
@@ -68,7 +69,13 @@ from typing import Any, Iterable
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-from scripts.common import fast_glob_files, path_id_export_base_stem
+from scripts.common import path_id_export_base_stem
+from scripts.webui.story.unity_documents import (
+    document_dir_present,
+    documents_by_path_id,
+    glob_documents,
+    read_document_text,
+)
 from scripts.common import EXPORT_LAYOUT
 
 
@@ -391,18 +398,18 @@ def _iter_timeline_mono_behaviour_dirs(extract_root: Path) -> Iterable[Path]:
 def _iter_mono_behaviour_dirs() -> Iterable[Path]:
     yield from _iter_timeline_mono_behaviour_dirs(TIMELINE_EXTRACT)
     for mb_dir in MONOBEHAVIOUR_DIRS:
-        if mb_dir.is_dir():
+        if document_dir_present(mb_dir):
             yield mb_dir
 
 
 def iter_playable_assets() -> Iterable[tuple[Path, dict[str, Any]]]:
     for mb_dir in _iter_mono_behaviour_dirs():
-        for p in fast_glob_files(mb_dir, "BeyondFMVPlayableAsset*.json"):
+        for p in glob_documents(mb_dir, "BeyondFMVPlayableAsset*.json"):
             base_stem = anime_export_base_stem(p)
             if not base_stem or not base_stem.startswith("BeyondFMVPlayableAsset"):
                 continue
             try:
-                payload = json.loads(p.read_text(encoding="utf-8"))
+                payload = json.loads(read_document_text(p))
             except (OSError, UnicodeDecodeError, json.JSONDecodeError):
                 continue
             if not isinstance(payload, dict):
@@ -412,11 +419,11 @@ def iter_playable_assets() -> Iterable[tuple[Path, dict[str, Any]]]:
 
 def iter_fmv_tracks() -> Iterable[tuple[Path, dict[str, Any]]]:
     for mb_dir in _iter_mono_behaviour_dirs():
-        paths = fast_glob_files(mb_dir, "Beyond FMV Track*.json")
-        paths.extend(fast_glob_files(mb_dir, "FMV_p*.json"))
+        paths = glob_documents(mb_dir, "Beyond FMV Track*.json")
+        paths.extend(glob_documents(mb_dir, "FMV_p*.json"))
         for p in sorted(set(paths)):
             try:
-                payload = json.loads(p.read_text(encoding="utf-8"))
+                payload = json.loads(read_document_text(p))
             except (OSError, UnicodeDecodeError, json.JSONDecodeError):
                 continue
             if isinstance(payload, dict):
@@ -434,10 +441,10 @@ def iter_fmv_definitions() -> Iterable[tuple[Path, dict[str, Any]]]:
             "m_cs_video_*.json",
             "fmv_*.json",
         ):
-            paths.extend(fast_glob_files(mb_dir, pattern))
+            paths.extend(glob_documents(mb_dir, pattern))
         for path in sorted(set(paths)):
             try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
+                payload = json.loads(read_document_text(path))
             except (OSError, UnicodeDecodeError, json.JSONDecodeError):
                 continue
             if not isinstance(payload, dict):
@@ -492,14 +499,6 @@ def load_fmv_numeric_ids() -> dict[str, list[int]]:
     }
 
 
-def _path_id_hex(path_id: Any) -> str:
-    try:
-        value = int(path_id)
-    except (TypeError, ValueError):
-        return ""
-    return f"{value & ((1 << 64) - 1):016X}"
-
-
 def _definition_resource_dirs(definition: dict[str, Any]) -> tuple[Path, ...]:
     # One effective Unity tree holds every definition's objects.
     return MONOBEHAVIOUR_DIRS
@@ -529,16 +528,15 @@ def collect_definition_timeline_evidence(
             return []
         cache_key = ("|".join(str(path) for path in resource_dirs), numeric_path_id)
         if cache_key not in cache:
-            suffix = _path_id_hex(numeric_path_id)
             found: list[tuple[Path, dict[str, Any]]] = []
             for resource_dir in resource_dirs:
-                for path in fast_glob_files(
+                for path in documents_by_path_id(
                     resource_dir,
-                    f"*_p{suffix}.json",
+                    numeric_path_id,
                 ):
                     try:
                         payload = json.loads(
-                            path.read_text(encoding="utf-8")
+                            read_document_text(path)
                         )
                     except (
                         OSError,

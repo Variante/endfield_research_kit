@@ -26,6 +26,7 @@ from scripts.game_data.levelscript_binary import (
     decode_levelscript_task_conditions,
 )
 from scripts.webui.story.mission_recovery import natural_key
+from scripts.webui.story.unity_documents import document_exists, glob_documents
 
 
 from scripts.webui.story.source_gap.data import (
@@ -890,7 +891,7 @@ def _generic_parent_dialog_level_context_facts(
                 },
             }
         dungeon_id, dungeon_row = dungeon_rows[0]
-        map_assets = sorted(text_asset_root.glob(f"{level_id}_p*.json"))
+        map_assets = glob_documents(text_asset_root, f"{level_id}_p*.json")
         map_asset_rows: list[dict[str, Any]] = []
         for map_asset in map_assets:
             payload = read_json(map_asset, {})
@@ -1892,7 +1893,7 @@ def _generic_dialog_timeline_definition_facts(
         and isinstance(source_roots, list)
         and bool(source_roots)
         and len(source_paths) == len(source_roots)
-        and all(path.is_file() for path in source_paths)
+        and all(document_exists(path) for path in source_paths)
     )
     if not valid:
         return None, {
@@ -1921,7 +1922,7 @@ def _generic_dialog_timeline_definition_facts(
                     if isinstance(timeline_row, dict) else None
                 ).__name__,
                 "sourceRoots": source_roots,
-                "existingSourceRoots": sum(path.is_file() for path in source_paths),
+                "existingSourceRoots": sum(document_exists(path) for path in source_paths),
             },
         }
     return {
@@ -2750,8 +2751,8 @@ def project_authored_story_content_keys(
             and safe_key(provenance.get("producer"))
             and provenance.get("gameDataEvidence") is False
             and valid_relative_source
-            and resolved_source.is_file()
-            and conversation_path.is_file()
+            and document_exists(resolved_source)
+            and document_exists(conversation_path)
             and safe_key(conversation.get("key")) == story_key
             and safe_key(conversation.get("mission")) == mission_id
             and conversation_provenance == provenance
@@ -2781,8 +2782,8 @@ def project_authored_story_content_keys(
                     "storyKind": story_kind,
                     "provenance": provenance,
                     "validRelativeSource": valid_relative_source,
-                    "sourceExists": resolved_source.is_file(),
-                    "conversationExists": conversation_path.is_file(),
+                    "sourceExists": document_exists(resolved_source),
+                    "conversationExists": document_exists(conversation_path),
                     "conversationKey": safe_key(
                         conversation.get("key")
                         if isinstance(conversation, dict) else ""

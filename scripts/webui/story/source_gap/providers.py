@@ -15,9 +15,9 @@ from scripts.webui.story.source_gap.foundation import (
     read_json,
     resolve_installed_native_inputs,
     safe_key,
-    sha256_file,
 )
 from scripts.webui.story.mission_recovery import natural_key
+from scripts.webui.story.unity_documents import document_exists, document_sha256
 from scripts.webui.story.story_keys import string_list as _string_list
 from scripts.webui.story.mission_assets import (
     mission_runtime_source_summary,
@@ -87,7 +87,7 @@ def _generic_registered_dialog_tree_definition_facts(
     )
     source_valid = (
         isinstance(source_path, Path)
-        and source_path.is_file()
+        and document_exists(source_path)
         and source_path.parent.name == "TextAsset"
         and source_path.name.startswith(f"{story_key}_p")
         and _sha256_file(source_path).upper() == source_sha256
@@ -595,7 +595,8 @@ def _generic_mission_npc_proxy_tracking_contexts(
     return contexts, failures
 
 def _sha256_file(path: Path) -> str:
-    return sha256_file(path).upper()
+    # Unity object documents are hashed from the object store's row.
+    return document_sha256(path).upper()
 
 def _configured_game_assembly_path() -> Path | None:
     return resolve_installed_native_inputs()[0]

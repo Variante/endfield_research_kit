@@ -41,6 +41,7 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
+from scripts.webui.story.unity_documents import document_digest
 from scripts.webui.story.animestudio_story_objects.reverse import story_root_playback_aliases
 from scripts.game_data.levelscript_binary import (
     compact_callserver_serialized_contract,
@@ -4779,7 +4780,7 @@ def build_story_binding_coverage(
     # cards can be classified even though their nominal buckets are not
     # MissionRuntime missions.
     non_mission_content = combined_non_mission_content_keys(
-        DEFAULT_TABLE_ROOT
+        DEFAULT_TABLE_ROOT, source_digest=document_digest
     )
     for key, evidence in non_mission_content.items():
         if (

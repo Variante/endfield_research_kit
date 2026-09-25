@@ -15,7 +15,6 @@ from pathlib import Path
 from scripts.source_paths import ASSET_SOURCE_GAME
 from scripts.common import (
     EXPORT_LAYOUT,
-    fast_glob_files,
     is_present,
     path_id_export_base_stem,
     path_id_export_path_id,
@@ -46,6 +45,12 @@ from scripts.webui.story.dialog_tree_routes import (
     recover_dialog_tree_option_routes,
 )
 from scripts.webui.story.story_keys import canonical_cutscene_key as mission_canonical_cutscene_key
+from scripts.webui.story.unity_documents import (
+    document_dir_present,
+    glob_documents,
+    read_document_bytes,
+    read_document_text,
+)
 
 
 _DIALOG_TREE_TYPE = "Beyond.Gameplay.DialogTree"
@@ -131,9 +136,9 @@ def _find_anime_tree_path(filename: str) -> Path:
     path = path_index.get(requested)
     if path is None and not requested.startswith(_ANIME_TREE_COMPLETE_MONO_PREFIXES):
         # PathID-preserving exports append ``_p<hex>`` to the authored stem.
-        # A prefix-constrained Win32 lookup lets NTFS find that exact asset in
-        # the million-file MonoBehaviour directory without rebuilding a full
-        # directory index. Filter by logical stem so prefix siblings cannot be
+        # A prefix-constrained object-store name query finds that exact asset
+        # among the million MonoBehaviour documents without rebuilding a full
+        # name index. Filter by logical stem so prefix siblings cannot be
         # selected accidentally.
         for candidate in _iter_anime_tree_files(f"{requested}*.json"):
             if (
@@ -165,15 +170,15 @@ def _find_anime_tree_path(filename: str) -> Path:
 def _anime_tree_files(pattern: str) -> tuple[Path, ...]:
     # A Story build asks for hundreds of exact authored object names in
     # addition to the broad dialog/Timeline families.  A small LRU repeatedly
-    # evicted those broad results and forced NTFS to search million-object
-    # MonoBehaviour folders again.  Export inputs are immutable for the life
-    # of one builder process, so retaining the compact path tuples is safe.
+    # evicted those broad results and forced the million-object MonoBehaviour
+    # name listing to be searched again.  Export inputs are immutable for the
+    # life of one builder process, so retaining the compact path tuples is safe.
     seen: set[str] = set()
     files: list[Path] = []
     for base in ANIME_RESOURCE_DIRS:
-        if not base.exists():
+        if not document_dir_present(base):
             continue
-        for path in fast_glob_files(base, pattern):
+        for path in glob_documents(base, pattern):
             if not _anime_tree_logical_stem(path):
                 continue
             if path.name in seen:
@@ -193,12 +198,12 @@ def _get_anime_tree_path_index() -> dict[str, Path]:
         index: dict[str, Path] = {}
         seen: set[str] = set()
         for base in ANIME_RESOURCE_DIRS:
-            if not base.exists():
+            if not document_dir_present(base):
                 continue
             # Dialog trees and their referenced TextAssets use arbitrary
             # authored names, so keep the complete (small) TextAsset index.
             # A current full MonoBehaviour export contains more than a million
-            # files; only dialog roots need prefix discovery there. Other
+            # documents; only dialog roots need prefix discovery there. Other
             # MonoBehaviour assets are resolved lazily by exact authored name
             # in ``_find_anime_tree_path`` below.
             patterns = (
@@ -207,7 +212,7 @@ def _get_anime_tree_path_index() -> dict[str, Path]:
                 else _ANIME_TREE_MONO_INDEX_PATTERNS
             )
             for pattern in patterns:
-                for path in fast_glob_files(base, pattern):
+                for path in glob_documents(base, pattern):
                     if path.name in seen:
                         continue
                     seen.add(path.name)
@@ -273,9 +278,8 @@ def _iter_related_dialog_tree_paths(conv_key: str):
 @lru_cache(maxsize=8192)
 def _load_anime_resource_payload(path: Path):
     try:
-        with path.open(encoding="utf-8-sig") as f:
-            payload = json.load(f)
-    except (OSError, json.JSONDecodeError):
+        payload = json.loads(read_document_text(path))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
         return None
 
     if not isinstance(payload, dict):
@@ -3262,8 +3266,7 @@ def _load_cutscene_subtitle_tracks() -> dict[str, list[dict]]:
         if not canonical_key:
             continue
         try:
-            with path.open(encoding="utf-8") as f:
-                raw = json.load(f)
+            raw = json.loads(read_document_bytes(path).decode("utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
         info = raw.get("$animestudio") if isinstance(raw, dict) else None
@@ -3280,8 +3283,7 @@ def _load_cutscene_subtitle_tracks() -> dict[str, list[dict]]:
     playable_text_ids: dict[int, list[str]] = {}
     for path in _iter_anime_tree_files("*SubtitlePlayableAsset*.json"):
         try:
-            with path.open(encoding="utf-8") as f:
-                raw = json.load(f)
+            raw = json.loads(read_document_bytes(path).decode("utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
         if not isinstance(raw, dict):
@@ -3300,8 +3302,7 @@ def _load_cutscene_subtitle_tracks() -> dict[str, list[dict]]:
         _iter_anime_tree_files("*Left Subtitle Track*.json"),
     ):
         try:
-            with path.open(encoding="utf-8") as f:
-                raw = json.load(f)
+            raw = json.loads(read_document_bytes(path).decode("utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
         if not isinstance(raw, dict):
@@ -3687,8 +3688,7 @@ def _load_cutscene_assets() -> dict[str, dict]:
         if not canonical_key:
             continue
         try:
-            with path.open(encoding="utf-8") as f:
-                raw = json.load(f)
+            raw = json.loads(read_document_bytes(path).decode("utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
 

@@ -1,6 +1,7 @@
 """Recover compact dialog Timeline action evidence for WebUI debug views.
 
-This consumes AnimeStudio MonoBehaviour JSON with
+This consumes AnimeStudio MonoBehaviour JSON (the export's Unity object store,
+or a focused CLI extraction directory) with
 `$animestudio.recoveredManagedReferences.RefIds`, follows
 `DialogMainFlowData` RID links to trunk line actions, and compares the recovered
 action-flow line sequence with the existing Timeline clip order.
@@ -20,7 +21,14 @@ from typing import Any, Iterable
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-from scripts.common import fast_glob_files
+from scripts.webui.story.unity_documents import (
+    document_dir_present,
+    document_exists,
+    glob_documents,
+    is_store_type_dir,
+    read_document_json,
+    read_document_text,
+)
 from scripts.webui.story.mission_recovery import load_json as read_json
 from scripts.webui.story.timeline_recovery import rel_path
 from scripts.common import WEBUI_BUILD_DIR
@@ -219,13 +227,14 @@ def enrich_level_event_marker_payload(
     path_id = int(marker.get("pathId") or 0)
     filename = f"{name}_p{path_id & ((1 << 64) - 1):016X}.json"
     object_path = unity_dir / "MonoBehaviour" / filename
-    row["markerObjectJson"] = rel_path(object_path) if object_path.is_file() else None
+    present = document_exists(object_path)
+    row["markerObjectJson"] = rel_path(object_path) if present else None
     row["timelineTimeSeconds"] = None
     row["retroactive"] = None
     row["emitOnce"] = None
-    if not object_path.is_file():
+    if not present:
         return
-    payload = read_json(object_path)
+    payload = read_document_json(object_path)
     row["timelineTimeSeconds"] = payload.get("m_Time")
     row["retroactive"] = payload.get("_Retroactive")
     row["emitOnce"] = payload.get("_EmitOnce")
@@ -445,16 +454,29 @@ def compact_action(ref: dict) -> dict:
 
 
 def iter_default_mono_roots(export_root: Path = EXPORT_ROOT) -> list[Path]:
+    """The export's MonoBehaviour documents: ``game/Unity/MonoBehaviour`` in its object store."""
     return [ExportLayout(export_root).unity_type_dir("MonoBehaviour")]
 
 
 def iter_mono_dirs(roots: list[Path]) -> list[Path]:
+    """MonoBehaviour document directories named by ``roots``.
+
+    A root may be an export root or its ``game/Unity/MonoBehaviour`` (both read
+    the export's object store), or a loose MonoBehaviour directory, or a parent
+    of loose ones, from a focused AnimeStudio CLI extraction.
+    """
     out: list[Path] = []
     seen: set[str] = set()
     for raw_root in roots:
         root = raw_root if raw_root.is_absolute() else ROOT / raw_root
         candidates: list[Path] = []
-        if root.is_dir() and root.name == "MonoBehaviour":
+        store_dir = ExportLayout(root).unity_type_dir("MonoBehaviour")
+        if is_store_type_dir(root):
+            if root.name == "MonoBehaviour" and document_dir_present(root):
+                candidates.append(root)
+        elif document_dir_present(store_dir):
+            candidates.append(store_dir)
+        elif root.is_dir() and root.name == "MonoBehaviour":
             candidates.append(root)
         elif (root / "MonoBehaviour").is_dir():
             candidates.append(root / "MonoBehaviour")
@@ -473,7 +495,7 @@ def iter_action_candidate_files(mono_dir: Path) -> list[Path]:
     paths: list[Path] = []
     seen: set[str] = set()
     for pattern in ("dlg_*timeline*.json", "f_dlg_*timeline*.json", "m_dlg_*timeline*.json"):
-        for path in fast_glob_files(mono_dir, pattern):
+        for path in glob_documents(mono_dir, pattern):
             key = str(path.resolve()).lower()
             if key in seen:
                 continue
@@ -734,7 +756,7 @@ def scan_action_entries(mono_roots: list[Path]) -> tuple[dict[str, list[dict]], 
                 continue
             candidate_file_count += 1
             try:
-                text = path.read_text(encoding="utf-8-sig", errors="replace")
+                text = read_document_text(path, errors="replace")
             except OSError:
                 continue
             if "recoveredManagedReferences" not in text or "DialogMainFlowData" not in text:
@@ -818,8 +840,9 @@ def build_timeline_action_evidence(
     line_orders_path: Path = DEFAULT_LINE_ORDERS,
     out_path: Path = DEFAULT_OUT,
     write: bool = True,
+    export_root: Path = EXPORT_ROOT,
 ) -> dict:
-    roots = mono_roots or iter_default_mono_roots(out_path.parents[0] if out_path.name else DEFAULT_RECOVERY_ROOT)
+    roots = mono_roots or iter_default_mono_roots(export_root)
     t0 = time.time()
     by_dialog, scan_meta = scan_action_entries(roots)
     availability = action_evidence_availability(scan_meta)
@@ -1013,7 +1036,16 @@ def build_conversation_action_debug(
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--export-root", type=Path, default=EXPORT_ROOT)
-    parser.add_argument("--mono-root", action="append", type=Path, help="MonoBehaviour directory or parent root to scan. May be repeated.")
+    parser.add_argument(
+        "--mono-root",
+        action="append",
+        type=Path,
+        help=(
+            "MonoBehaviour source to scan instead of the export's object store: an export root, "
+            "or a loose MonoBehaviour directory (or parent) from a focused AnimeStudio CLI "
+            "extraction. May be repeated."
+        ),
+    )
     parser.add_argument("--line-orders", type=Path, help="timeline_line_orders.json path.")
     parser.add_argument("--out", type=Path, help="Output timeline_action_evidence.json path.")
     args = parser.parse_args(argv)

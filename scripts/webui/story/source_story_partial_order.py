@@ -70,6 +70,11 @@ from scripts.webui.story.dialog_tree_control_flow import (
     recover_static_port_family_contract,
 )
 from scripts.webui.story.timeline_recovery import rel_path as _repo_path
+from scripts.webui.story.unity_documents import (
+    document_exists,
+    document_sha256,
+    read_document_text,
+)
 from scripts.common import EXPORT_LAYOUT
 from scripts.game_data.story_native_consumers_native import validated_group
 
@@ -292,7 +297,10 @@ def _dialog_tree_decode_source(path: Path | None) -> dict[str, Any] | None:
         return _DIALOG_TREE_BINARY_SOURCE_CACHE[cache_key]
     decoded: dict[str, Any] | None = None
     try:
-        wrapper = read_json(path, {})
+        try:
+            wrapper = json.loads(read_document_text(path))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            wrapper = {}
         encoded = wrapper.get("m_Script") if isinstance(wrapper, dict) else None
         if isinstance(encoded, str) and encoded.strip():
             candidate = json.loads(
@@ -433,12 +441,9 @@ def _source_file_sha256(path: Path) -> str:
     if cache_key in _SOURCE_FILE_SHA256_CACHE:
         return _SOURCE_FILE_SHA256_CACHE[cache_key]
     digest = ""
-    if path.is_file():
-        accumulator = hashlib.sha256()
-        with path.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(4 * 1024 * 1024), b""):
-                accumulator.update(chunk)
-        digest = accumulator.hexdigest().upper()
+    # DialogTree TextAssets and Timeline tracks are object-store documents.
+    if document_exists(path):
+        digest = document_sha256(path).upper()
     _SOURCE_FILE_SHA256_CACHE[cache_key] = digest
     return digest
 
@@ -2424,7 +2429,7 @@ def _dialog_tree_cross_story_conditional_edges(
             len(routes) == 1
             and len(source_candidates) == 1
             and source_path is not None
-            and source_path.is_file()
+            and document_exists(source_path)
             and source_payload is not None
             and game_assembly_sha256 == contract["gameAssemblySha256"]
             and safe_key(row.get("nativeMappingId"))
@@ -2694,7 +2699,7 @@ def _dialog_tree_local_conditional_branches(
                 valid = (
                     bool(source_file)
                     and source_path is not None
-                    and source_path.is_file()
+                    and document_exists(source_path)
                     and source_payload is not None
                     and game_assembly_sha256 == contract["gameAssemblySha256"]
                     and len(outcomes) == 2
@@ -2994,7 +2999,7 @@ def _dialog_tree_local_branch_nodes(
                     "allTargetsNamed": bool(targets) and all(targets),
                 }
                 valid = (
-                    source_path.is_file()
+                    document_exists(source_path)
                     and source_payload is not None
                     and game_assembly_sha256 == contract["gameAssemblySha256"]
                     and safe_key(node.get("$type")) == branch_node_type
@@ -3258,7 +3263,7 @@ def _dialog_tree_local_if_nodes(
                     })
                     continue
                 valid = (
-                    source_path.is_file()
+                    document_exists(source_path)
                     and source_payload is not None
                     and game_assembly_sha256 == contract["gameAssemblySha256"]
                     and safe_key(node.get("$type")) == node_type

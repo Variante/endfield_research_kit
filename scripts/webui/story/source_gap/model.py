@@ -39,6 +39,7 @@ from scripts.webui.story.anime_assets import (
     recover_dialog_tree_prime_reachable_carriers_for_parent,
 )
 from scripts.webui.story.mission_recovery import natural_key
+from scripts.webui.story.unity_documents import document_digest, document_exists
 
 
 from scripts.webui.story.source_gap.data import (
@@ -176,7 +177,7 @@ def _validate_general_tracked_proxy_flow_context(
         and row.get("npcProxyExRows") == current_ex_rows
         and registrations_valid
         and source_files == expected_source_files
-        and all((ROOT / source_file).is_file() for source_file in source_files)
+        and all(document_exists(ROOT / source_file) for source_file in source_files)
         and row.get("storyBinding") is True
         and row.get("ownership") is False
         and row.get("questActivation") is False
@@ -3228,7 +3229,7 @@ def _closed_exact_composed_root_playback_isolated_scenes(
                     "sourceSha256": {
                         source_file: _sha256_file(ROOT / source_file)
                         for source_file in source_files
-                        if (ROOT / source_file).is_file()
+                        if document_exists(ROOT / source_file)
                     },
                     "expected": {
                         "manifestKey": scene_key,
@@ -3335,7 +3336,7 @@ def _closed_exact_connected_context_isolated_scenes(
         source_hashes = {
             source_file: _sha256_file(ROOT / source_file)
             for source_file in source_files
-            if (ROOT / source_file).is_file()
+            if document_exists(ROOT / source_file)
         }
         route = eligible_routes[0] if len(eligible_routes) == 1 else {}
         relation = safe_key(route.get("relation"))
@@ -3860,7 +3861,7 @@ def _generic_prime_reachable_dialog_dependency_facts(
         }
     source_path = ROOT / source_files[0]
     source_valid = (
-        source_path.is_file()
+        document_exists(source_path)
         and source_path.parent.name == "TextAsset"
         and source_path.name.startswith(
             f"{parent_story_key}_p{source_path_ids[0]}"
@@ -3882,7 +3883,7 @@ def _generic_prime_reachable_dialog_dependency_facts(
                 ),
             },
             "actual": {
-                "exists": source_path.is_file(),
+                "exists": document_exists(source_path),
                 "parentDirectory": source_path.parent.name,
                 "filename": source_path.name,
             },
@@ -3927,7 +3928,7 @@ def _generic_prime_reachable_dialog_dependency_facts(
 @lru_cache(maxsize=1)
 def _current_game_assembly_sha256_for_validation() -> str:
     path = _configured_game_assembly_path()
-    return _sha256_file(path).upper() if path.is_file() else ""
+    return _sha256_file(path).upper() if document_exists(path) else ""
 
 def _generic_registered_dialog_non_owning_context_facts(
     row: Any,
@@ -4015,7 +4016,7 @@ def _generic_registered_dialog_non_owning_context_facts(
     if (
         len(source_files) < int(contract["minimumSourceFiles"])
         or len(source_files) != len(set(source_files))
-        or not all(path.is_file() for path in source_paths)
+        or not all(document_exists(path) for path in source_paths)
     ):
         return None, {
             "validator": validator,
@@ -4031,7 +4032,7 @@ def _generic_registered_dialog_non_owning_context_facts(
             "actual": {
                 "sourceFiles": source_files,
                 "sourceExists": {
-                    value: path.is_file()
+                    value: document_exists(path)
                     for value, path in zip(source_files, source_paths)
                 },
             },
@@ -5065,7 +5066,7 @@ def _closed_exact_runtime_config_isolated_scenes(
                 export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                 "GameplayConfig/NpcProxyExDataTable.json",
             )
-            if (ROOT / value).is_file()
+            if document_exists(ROOT / value)
         ]
         closed.append({
             "sceneKey": scene_key,
@@ -6720,7 +6721,7 @@ def _exact_cross_owner_levelscript_quest_playback(
             f"/LevelScriptData/{actual['levelId']}/{actual['scriptId']}.json"
         )
         and source_path is not None
-        and source_path.is_file()
+        and document_exists(source_path)
         and isinstance(actual["headerLocalId"], int)
         and not isinstance(actual["headerLocalId"], bool)
         and isinstance(actual["actionLocalId"], int)
@@ -6743,7 +6744,7 @@ def _exact_cross_owner_levelscript_quest_playback(
         "sourcePaths": [source_file] if source_file else [],
         "sourceSha256": (
             {source_file: _sha256_file(source_path)}
-            if source_path is not None and source_path.is_file()
+            if source_path is not None and document_exists(source_path)
             else {}
         ),
         "expected": {
@@ -6866,7 +6867,7 @@ def _exact_cross_owner_dialog_tree_narrative_context(
         "sourceSha256": {
             source_file: _sha256_file(ROOT / source_file)
             for source_file in source_paths
-            if (ROOT / source_file).is_file()
+            if document_exists(ROOT / source_file)
         },
         "expected": {
             "relation": "dialog_tree_narrative_action",
@@ -6915,7 +6916,7 @@ def build_gap_report(
     project_authored_status: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     non_mission_content = (
-        combined_non_mission_content_keys(table_root)
+        combined_non_mission_content_keys(table_root, source_digest=document_digest)
         if table_root is not None
         else {}
     )
@@ -7133,7 +7134,7 @@ def build_gap_report(
                 source_sha256 = {
                     source_file: _sha256_file(ROOT / source_file)
                     for source_file in source_files
-                    if (ROOT / source_file).is_file()
+                    if document_exists(ROOT / source_file)
                 }
                 companion = {
                     **connection,
