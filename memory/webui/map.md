@@ -33,6 +33,10 @@ coverage live under `reports/assets/map_recovery/`.
   authored map-mark template and default-visibility data to an existing
   `WorldEntityRegistry` node. A narrower subset has an independent unique
   `LevelShortIdTable.sceneName` join and may show authored scene evidence.
+  This annotation requires a current JsonData corpus receipt, which the normal
+  WebUI export does not rebuild. After an installed-game refresh, regenerate
+  the VFS audit and its BuffData, SkillData, and JsonData corpus gates before
+  rebuilding Map if the receipt no longer matches the exported JSON bytes.
   Registry-only annotations do not claim an authored scene from the registry's
   id bucket. The Map payload reports both joins and per-level coverage; it
   does not plot unmatched marks by numeric group key or claim live visibility
