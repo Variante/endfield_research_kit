@@ -6,6 +6,12 @@
 //     read through the local server's read-only /api/stores API
 //     (scripts/webui/data_inspector/store_browser.py); a row's bytes are
 //     fetched from its own /export_* URL, exactly like any exported file;
+//   * the loose decoded files under game/ that no other page shows (tables,
+//     JsonData, Lua, Terrain, converted Shader/Font/TextAsset), listed by the
+//     same API as the `loose` source; it has no SQL;
+//   * the undecoded final VFS files under raw/ (Streaming, DynamicStreaming,
+//     IV, ExtendData, IFixPatch, the bundle manifest), the `undecoded` source,
+//     whose rows are always shown as a hex dump;
 //   * the generated decoded datasets (webui/data/data_inspector), whose
 //     catalog, matching and record viewer live in index.js
 //     (WebUI.decodedInspector).
@@ -13,7 +19,7 @@
 // WebUI.facets chips. A source is listed when its source chip or any of its
 // group chips is on, or when nothing is selected at all; within a listed
 // source, selected groups narrow it and no selected group means all of them.
-// The list is the listed sources in order (Unity, packed files, decoded),
+// The list is the listed sources in order (Unity, packed, loose, undecoded, decoded),
 // paged as one sequence. Decode status, source folder and tag filters apply to
 // decoded records and are shown only while decoded datasets are selected.
 //
@@ -28,7 +34,9 @@
 (() => {
   const API_PREFIX = "/api/stores";
   const MODES = ["files", "sql"];
-  const STORE_SOURCES = ["unity", "game-files"];
+  const STORE_SOURCES = ["unity", "game-files", "loose", "undecoded"];
+  // File sources list files on disk rather than rows of a SQLite store.
+  const FILE_SOURCES = ["loose", "undecoded"];
   const SOURCES = [...STORE_SOURCES, "decoded"];
   const DECODED_FILTER_GROUPS = ["status", "folder", "tag"];
   const MAX_API_ROWS = 1000;
@@ -166,6 +174,8 @@
   function sourceLabel(id) {
     if (id === "unity") return ui("Unity objects", "Unity 对象");
     if (id === "game-files") return ui("Packed game files", "打包的游戏文件");
+    if (id === "loose") return ui("Loose export files", "独立导出文件");
+    if (id === "undecoded") return ui("Undecoded files", "未解码文件");
     if (id === "decoded") return ui("Decoded datasets", "解码数据集");
     return id;
   }
@@ -232,7 +242,7 @@
   function modeSwitchHtml(active) {
     const labels = { files: ui("Files", "文件"), sql: "SQL" };
     const titles = {
-      files: ui("Browse export-store rows and decoded datasets", "浏览导出存储中的行与解码数据集"),
+      files: ui("Browse export-store rows, loose export files and decoded datasets", "浏览导出存储中的行、独立导出文件与解码数据集"),
       sql: ui("Run one read-only SQL statement over a store", "对存储执行一条只读 SQL 语句"),
     };
     return `<div class="data-page-modes" role="tablist" aria-label="${esc(ui("Data page mode", "数据页模式"))}">${MODES
@@ -252,8 +262,8 @@
       return `${esc(ui("The export stores could not be read:", "无法读取导出存储："))}<br><code>${esc(probe.error)}</code>`;
     }
     return `${esc(forFiles ? ui(
-      "Export-store rows (game/Unity.sqlite, game/GameFiles.sqlite) are read through the local server's store API, which a static package does not have; only the decoded datasets are listed. Start the WebUI from the repository with",
-      "导出存储中的行（game/Unity.sqlite、game/GameFiles.sqlite）通过本地服务器的存储 API 读取，静态包中没有该 API，因此仅列出解码数据集。请在仓库中运行",
+      "Export-store rows (game/Unity.sqlite, game/GameFiles.sqlite) and loose export files are read through the local server's store API, which a static package does not have; only the decoded datasets are listed. Start the WebUI from the repository with",
+      "导出存储中的行（game/Unity.sqlite、game/GameFiles.sqlite）与独立导出文件通过本地服务器的存储 API 读取，静态包中没有该 API，因此仅列出解码数据集。请在仓库中运行",
     ) : ui(
       "SQL reads the export's SQLite stores (game/Unity.sqlite, game/GameFiles.sqlite) through the local server's store API, which a static package does not have. Start the WebUI from the repository with",
       "SQL 模式通过本地服务器的存储 API 读取导出的 SQLite 存储（game/Unity.sqlite、game/GameFiles.sqlite），静态包中没有该 API。请在仓库中运行",
@@ -371,7 +381,7 @@
       || link.tags.length || link.name || link.query || link.inspect);
   }
 
-  // `unity:MonoBehaviour`, `game-files:Json/LipSync` and `decoded:<dataset>`
+  // `unity:MonoBehaviour`, `game-files:Json/LipSync`, `loose:Lua`, `undecoded:Streaming` and `decoded:<dataset>`
   // name their source. An unqualified group (the older single-store form)
   // belongs to the link's store, or to whichever store has a group of that
   // name.
@@ -382,7 +392,7 @@
       if (!snapshot[source].includes(group)) snapshot[source].push(group);
     };
     for (const raw of link.groups) {
-      const match = raw.match(/^(unity|game-files|decoded):(.+)$/);
+      const match = raw.match(/^(unity|game-files|loose|undecoded|decoded):(.+)$/);
       if (match) {
         add(match[1], match[2]);
         continue;
@@ -562,6 +572,8 @@
         },
         storeGroup("unity"),
         storeGroup("game-files"),
+        storeGroup("loose"),
+        storeGroup("undecoded"),
         {
           id: "decoded",
           container: '[data-source-chips="decoded"]',
@@ -977,7 +989,8 @@
       const lostTitle = lost.slice(0, 20).map((item) => (item && typeof item === "object"
         ? `${[item.type, item.name].filter(Boolean).join("/") || item.path || ""}${item.error ? `: ${item.error}` : ""}`
         : String(item))).join("\n");
-      meta = `<code>${esc(entry.file || entry.id)}</code> · ${esc(formatBytes(entry.bytes))} · ${esc(formatNumber(entry.rows))} ${esc(ui("rows", "行"))}`;
+      const unit = FILE_SOURCES.includes(id) ? ui("files", "个文件") : ui("rows", "行");
+      meta = `<code>${esc(entry.file || entry.id)}</code> · ${esc(formatBytes(entry.bytes))} · ${esc(formatNumber(entry.rows))} ${esc(unit)}`;
       if (lost.length) {
         extra = `<span class="data-inspector-chip is-warn" title="${esc(lostTitle)}">${esc(formatNumber(lost.length))} ${esc(ui("unreadable at pack, not stored", "打包时不可读，未存入"))}</span>`;
       }
@@ -1434,8 +1447,9 @@
     const unity = store === "unity";
     const cards = [
       factCard(ui("Size", "大小"), `${esc(formatBytes(row.size))}<span class="data-inspector-alt-form">${esc(formatNumber(row.size))} B</span>`),
-      factCard("SHA-256", `<code class="data-page-hash">${esc(row.sha256 || "")}</code>`, { wide: true }),
     ];
+    // Loose files are not hashed by the listing; the stores record a SHA-256 per row.
+    if (row.sha256) cards.push(factCard("SHA-256", `<code class="data-page-hash">${esc(row.sha256)}</code>`, { wide: true }));
     if (unity) {
       if (row.objectName) cards.push(factCard(ui("Object name", "对象名称"), `<code>${esc(row.objectName)}</code>`));
       if (row.pathId != null) {
@@ -1449,7 +1463,8 @@
         cards.push(factCard(ui("Script PathID", "脚本 PathID"), `<code>${esc(row.scriptPathId)}</code>${findPathIdButton(row.scriptPathId)}`));
       }
     } else {
-      cards.push(factCard(ui("Packed folder", "打包目录"), `<code>${esc(group)}</code>`));
+      const folderLabel = FILE_SOURCES.includes(store) ? ui("Folder", "目录") : ui("Packed folder", "打包目录");
+      cards.push(factCard(folderLabel, `<code>${esc(group)}</code>`));
     }
     host.innerHTML = `
       <article class="data-inspector-record data-files-record">
@@ -1469,7 +1484,7 @@
         </header>
         <div class="data-inspector-detail-body">
           <section class="data-inspector-section">
-            <h3>${esc(ui("Store row", "存储行"))}</h3>
+            <h3>${esc(FILE_SOURCES.includes(store) ? ui("Export file", "导出文件") : ui("Store row", "存储行"))}</h3>
             <div class="data-inspector-facts data-files-facts">${cards.join("")}</div>
           </section>
           <section class="data-inspector-section data-inspector-structure">
@@ -1572,7 +1587,9 @@
     });
   }
 
-  function classify(bytes, complete, name) {
+  function classify(bytes, complete, name, { undecoded = false } = {}) {
+    // Undecoded files are shown as bytes even when they happen to be text.
+    if (undecoded) return { kind: "binary", undecoded: true };
     let text = null;
     try {
       text = new TextDecoder("utf-8", { fatal: true }).decode(bytes, { stream: !complete });
@@ -1602,11 +1619,14 @@
     files.doc = { key, status: "loading", full };
     renderDocument();
     try {
-      const limit = full || size <= FULL_FETCH_BYTES ? Infinity : PREFIX_FETCH_BYTES;
+      const undecoded = !!selected.row.binary;
+      // A hex dump shows a prefix, so an undecoded file never needs more.
+      const limit = undecoded ? Math.min(size || PREFIX_FETCH_BYTES, PREFIX_FETCH_BYTES)
+        : full || size <= FULL_FETCH_BYTES ? Infinity : PREFIX_FETCH_BYTES;
       const { bytes, complete } = await readBytes(selected.row.url, { limit });
       if (token !== files.docToken) return;
       files.doc = { key, status: "ready", bytes, complete, showAllText: false, hexBytes: HEX_PREVIEW_BYTES,
-        ...classify(bytes, complete, selected.row.name) };
+        ...classify(bytes, complete, selected.row.name, { undecoded }) };
     } catch (error) {
       if (token !== files.docToken) return;
       files.doc = { key, status: "error", error: error.message };
@@ -1642,7 +1662,10 @@
         : ui("Load whole document", "加载完整文档"))}</button>`
       : "";
     if (doc.kind === "binary") {
-      note.textContent = `${formatBytes(size)} · ${ui("binary (not UTF-8 text)", "二进制（非 UTF-8 文本）")}${partial}`;
+      const kindText = doc.undecoded
+        ? ui("undecoded, shown as bytes", "未解码，按字节显示")
+        : ui("binary (not UTF-8 text)", "二进制（非 UTF-8 文本）");
+      note.textContent = `${formatBytes(size)} · ${kindText}${partial}`;
       const shown = doc.bytes.subarray(0, doc.hexBytes);
       const more = doc.bytes.length > shown.length && doc.hexBytes < HEX_MORE_BYTES;
       host.innerHTML = `<pre class="data-page-hex">${esc(hexDump(shown))}</pre>
@@ -2073,8 +2096,9 @@
     renderSqlPane();
   }
 
+  // Loose files have no SQLite behind them, so SQL offers only the stores.
   function sqlStores() {
-    return storesFor(sql.root);
+    return storesFor(sql.root).filter((entry) => entry.sql !== false);
   }
 
   function renderSqlPane() {

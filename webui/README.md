@@ -49,7 +49,7 @@ and the value of `document.body.dataset.activeView`.
 | Gameplay | `gameplay` | Characters, equipment, enemies, items, progression, skills, projectiles, and assets |
 | Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state |
 | Assets | `assets` | Exported images, models, video, and metadata |
-| Data | `data-inspector` | One Files list over the export stores (Unity documents, packed game files) and the decoded datasets, plus a SQL console |
+| Data | `data-inspector` | One Files list over the export stores (Unity documents, packed game files), the loose decoded export files no other page shows, and the decoded datasets, plus a SQL console |
 | Text | `reference` | Searchable localized table/reference rows |
 | Updates | `updates` | Exported game-data changes between two complete versions |
 
@@ -70,7 +70,7 @@ Gameplay, and any other unknown hash falls back to Story.
 | `?audio=` + `?audioKind=` | Audio record (`events` or a media shard) |
 | `?gameplay=` + `?gameplayId=` + `?entry=` | Gameplay list, item, and sub-entry |
 | `?inspectDataset=` + `?inspect=` | Data page, Files mode: the selected decoded record (dataset and record id) |
-| `?dataMode=` + `?dataRoot=` + `?dataStore=` + `?dataGroup=` + `?dataName=` (+ `?dataQ=`, `?dataField=`, `?dataStatus=`, `?dataFolder=`, `?dataTag=`, `?dataSort=`) | Data page mode (`files`, `sql`; the retired `decoded` opens `files`), export (`previous`, omitted for current), selected sources (repeated `dataStore`: `unity`, `game-files`, `decoded`), selected groups (repeated `dataGroup=<source>:<group>`; an unqualified group belongs to `dataStore`), the selected store row, search, and the repeated decoded filters and decoded order; build with `WebUI.dataPageUrl` / `dataPageUrlForRel` |
+| `?dataMode=` + `?dataRoot=` + `?dataStore=` + `?dataGroup=` + `?dataName=` (+ `?dataQ=`, `?dataField=`, `?dataStatus=`, `?dataFolder=`, `?dataTag=`, `?dataSort=`) | Data page mode (`files`, `sql`; the retired `decoded` opens `files`), export (`previous`, omitted for current), selected sources (repeated `dataStore`: `unity`, `game-files`, `loose`, `undecoded`, `decoded`), selected groups (repeated `dataGroup=<source>:<group>`; an unqualified group belongs to `dataStore`), the selected store row, search, and the repeated decoded filters and decoded order; build with `WebUI.dataPageUrl` / `dataPageUrlForRel` |
 
 Factory, World, Presentation, Progression, the standalone Combat & Projectiles
 page, and the Mission Pipeline page are retired; their useful progression,
@@ -207,14 +207,18 @@ matters. Schema changes must be coordinated with their frontend consumer.
 The Data page contract is documented in
 [`memory/webui/data_inspector.md`](../memory/webui/data_inspector.md). It has
 two modes, Files and SQL. Files is one list shell over every data source: the
-export stores, read through the local server's read-only `/api/stores`,
-`/api/stores/rows` and `/api/stores/sql` endpoints
+export stores and the loose decoded files under `game/` that no other page
+shows (the `loose` source), and the undecoded files under `raw/` (the
+`undecoded` source, always shown as a hex dump) -- neither has SQL -- read
+through the local server's
+read-only `/api/stores`, `/api/stores/rows` and `/api/stores/sql` endpoints
 (`scripts/webui/data_inspector/store_browser.py`), and the generated decoded
 datasets. Sources and their groups (Unity types, packed folders, datasets) are
 multi-select `WebUI.facets` chips: a source is listed when its source chip or
 any of its group chips is on, or when nothing is selected; selected groups
 narrow their source. The listed sources are paged as one sequence in the order
-Unity objects, packed game files, decoded records; `/api/stores/rows` takes
+Unity objects, packed game files, loose export files, undecoded files,
+decoded records; `/api/stores/rows` takes
 repeated `group=` parameters (none means the whole store), orders rows by
 `type, name`, and returns each row's `group`. The search matches store rows by
 the chosen field (name, or the Unity-only object name, PathID and CAB) and

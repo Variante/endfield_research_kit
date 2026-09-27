@@ -70,9 +70,12 @@ space and memory than the initial Story/Text setup.
   and playback evidence.
 - **Assets** browses exported images, videos, and models with their linked
   materials and recovered references.
-- **Data** is a file viewer and SQL console over the export itself: every
-  exported Unity object document (MonoBehaviour, TextAsset, Material,
-  AnimationClip, ...) and every packed game file (such as LipSync). Search by
+- **Data** is a file viewer and SQL console over every decoded export output
+  the other pages do not show: every Unity object document (MonoBehaviour,
+  TextAsset, Material, AnimationClip, ...), every packed game file (such as
+  LipSync), and the loose tables, JsonData, Lua, Terrain, shaders and fonts,
+  plus the files nothing decodes yet (streaming chunks, irradiance volumes,
+  extend data, patches), shown as bytes. Search by
   name, object name, PathID, or CAB; read JSON as a tree with base64 decoded
   inline; or query with read-only SQL. It also keeps the decoded datasets of
   the maintained binary readers.
