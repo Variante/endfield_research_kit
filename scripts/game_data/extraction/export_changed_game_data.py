@@ -46,12 +46,11 @@ from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_GAME_ROOT,
     DEFAULT_OUTPUT,
     DEFAULT_REPORTS,
-    FOCUSED_STRUCTURED_BLOCK_TYPES,
     SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL,
     SOURCES,
-    TERRAIN_HEIGHT_FILE_REGEX,
     collect_source_sizes,
 )
+from scripts.game_data.extraction.scope import FOCUSED_STRUCTURED_BLOCKS, TERRAIN_HEIGHT_FILE_REGEX
 
 
 SCHEMA_VERSION = 1
@@ -192,7 +191,7 @@ def _read_snapshot(path: Path) -> dict[str, Any]:
 def structured_steps(mode: str) -> list[dict[str, Any]]:
     if mode not in {"focused", "default"}:
         raise ChangedExportError("--changed-only supports focused or default structured mode, not debug")
-    steps = [{"name": "required", "blocks": tuple(FOCUSED_STRUCTURED_BLOCK_TYPES), "regexes": ()}]
+    steps = [{"name": "required", "blocks": FOCUSED_STRUCTURED_BLOCKS, "regexes": ()}]
     if mode == "default":
         steps.append({"name": "terrain_height", "blocks": ("terrain",), "regexes": (TERRAIN_HEIGHT_FILE_REGEX,)})
     return steps

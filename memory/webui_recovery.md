@@ -29,44 +29,65 @@ Choose the smallest workflow that owns the changed input:
 | Situation | Command |
 | --- | --- |
 | First setup | `.\setup.bat` |
-| Rebuild all generated views from current `export_full/` | `.\export.bat` |
-| Refresh installed-game Story/Table data, then rebuild | `.\export.bat --from-game` |
-| Refresh Story and assets in one extraction, then rebuild | `.\export.bat --from-game --with-assets` |
-| Apply changed installed VFS files locally, then rebuild every normal view | `.\export.bat --changed-only` |
-| Story is current; rebuild downstream views/assets/audio | `.\export_assets.bat` |
-| Story is current; refresh installed-game assets/audio first | `.\export_assets.bat --from-game` |
+| Rebuild every page from current `export_full/` | `.\export.bat` |
+| Rebuild only the pages a change affects | `.\export.bat map audio` |
+| Extract what every page reads, then build every page | `.\export.bat --from-game` |
+| Extract and build one page | `.\export.bat map --from-game` |
+| Lean Story/Text extraction (the setup path) | `.\export.bat story --from-game` |
+| Extract every structured block and Unity class | `.\export.bat debug --from-game` |
+| Apply changed installed VFS files locally, then rebuild every page | `.\export.bat --changed-only` |
 | Compare two complete exports for Updates | `.\build_updates.bat OLD NEW` |
 | Serve / package | `python serve.py` / `python -m scripts.webui.package` |
 
-Without `--from-game`, wrappers read the configured `export_full/` and first
-run `python -m scripts.game_data.extraction.verify_export_freshness`. Do not use `--from-game` for a
-data-only rebuild. When both Story and assets need extraction, prefer one
-`--from-game --with-assets` run over two AnimeStudio passes.
+`export.bat` is grouped by page and delegates to `python -m
+scripts.webui.export`. Do not use `--from-game` for a data-only rebuild.
 
-The canonical full flow is:
+**What a page needs is declared once, per build task, in
+`scripts/webui/pages.py`.** A task names the export inputs it `reads` (must
+exist and be current), the ones it reads when present (`optional`), the
+producer tasks it `needs`, and the tasks it follows when both run (`after`).
+A page is a set of root tasks; a run takes their closure over `needs`, extracts
+the union of those tasks' inputs, and checks exactly those inputs. So a
+single-page run neither extracts nor rebuilds another page's inputs, except the
+producers it cannot do without: Map, Characters and Gameplay include the Assets
+index. Audio reads Story, gameplay, projectile and Map-sidecar output as
+published instead of rebuilding them. `story` extracts text only (tables,
+JsonData, the Story Unity classes); the video override gate reports its stem
+checks as skipped when no video was exported. `story-media` is the same page
+with its media: it also extracts video, Texture2D, Sprite and the Audio inputs,
+publishes `story_media.json`, and runs the Audio build for voice lines.
+The Data page also serves every decodable output the other pages do not show
+(everything except their media), so an all-page extraction already equals
+`debug`, which extracts every structured block and Unity class.
+
+The flow is:
 
 1. Resolve paths from `endfield_paths.bat`, overridden by explicit flags.
-2. If requested, use AnimeStudio to refresh structured Story/Table inputs and
-   optionally asset/audio outputs.
-3. Refresh Story evidence and build localized Story and Text data.
-4. Run post-Story builders in dependency-safe phases: Map, Characters, the
-   Data page decoded datasets,
-   Gameplay/projectiles, optional Assets/audio, joined sidecars, curated source
-   graph, then graph consumers.
+2. With `--from-game`, export the plan's scope in one AnimeStudio run. Every
+   AnimeStudio run writes VFS indexes before the Unity overlay skip lists,
+   including first-time Story-only setup, and a run that exports MonoBehaviour
+   and PlayableDirector republishes the object index.
+3. Check that every input the plan reads came from the installed build: the
+   exporter stamps each published structured block, Unity class and the asset
+   maps (`meta/extraction/provenance.json`), so an output left over from an
+   earlier build fails the check and is named, while an absent optional input
+   only degrades its builder.
+4. Run the build graph: Story first where later tasks read it, then Map, Assets,
+   Characters, Gameplay, the curated source graph and its consumers, Audio and
+   the Data page's decoded datasets, each as soon as its edges succeed.
 5. Write step timings and process-tree memory benchmarks under
    `reports/export/`.
 
-`--webui-jobs N` limits post-Story concurrency and supplies Map's internal
-workers when assets are being reused; asset rebuilds keep Map serial while the
-asset converter owns the heavy disk/memory phase. `--asset-jobs N` limits
-AnimeStudio workers. `--focused-assets`, `--default-assets`, and
-`--debug-assets` select increasing extraction scope. Use
+`--webui-jobs N` bounds concurrent builders and supplies Map's internal
+workers. `--asset-jobs N` limits AnimeStudio workers. Use
 `--full-source-graph` only for exhaustive Unity object/PathID investigation.
+Story rewrites `lang/CN/conv` without Audio's links, so rebuild Audio after a
+Story-only build.
 
 `--changed-only` is a local refresh, not an Updates comparison. It runs the
-same complete Story, semantic-view, asset, audio-linking, graph, and
-graph-consumer publication path while reusing existing bundle-derived assets
-and decoded audio. Only changed structured VFS logical files are extracted; it
+same complete build of every page while reusing existing bundle-derived
+outputs, asset maps and decoded audio, which its freshness check reports as
+reused rather than current. Only changed structured VFS logical files are extracted; it
 neither calls the Updates builder nor advances any previous-export/Updates
 baseline. Its private VFS snapshot commits only after all publication stages
 succeed.

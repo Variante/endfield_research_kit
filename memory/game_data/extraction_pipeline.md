@@ -28,30 +28,37 @@ evidence needs a domain join or presentation contract.
 
 ## Production export
 
-| Goal | Command | AnimeStudio scope |
+| Goal | Command | Exported |
 | --- | --- | --- |
-| Refresh Story/Text | `.\export.bat --from-game` | structured focused dump, maps, broad Story JSON |
-| Refresh Story and assets together | `.\export.bat --from-game --with-assets` | one combined Story/asset pass |
-| Apply a local client delta without publishing Updates | `.\export.bat --changed-only` | changed focused VFS files, reuse bundle-derived outputs, all WebUI builders |
-| Refresh assets and CN audio only | `.\export_assets.bat --from-game` | skip structured Story, asset maps/conversion/JSON, VFS index, audio |
+| Text-only Story/Text refresh | `.\export.bat story --from-game` | Table and JsonData, maps, broad Story carrier JSON, object index; no media or audio |
+| One page's inputs | `.\export.bat map --from-game` | exactly what that page's build tasks read (`scripts/webui/pages.py`) |
+| Every page's inputs | `.\export.bat --from-game` | the union of the pages' inputs, in one AnimeStudio run; with the Data page's files that is everything |
+| Everything | `.\export.bat debug --from-game` | `scope.EVERYTHING`: every structured block and Unity class |
+| Apply a local client delta without publishing Updates | `.\export.bat --changed-only` | changed focused VFS files; bundle-derived outputs reused; every page built |
 
-`--structured-dump-mode` has three levels, each containing the one below.
-`focused` (the default) dumps what the WebUI pages consume: Table, JsonData,
-video and **Lua**. `default` adds the maintained Terrain height subset, about
-64 MiB of Terrain's 1.19 GB. `full` adds Terrain whole, Streaming,
-DynamicStreaming, IV, ExtendData, IFixPatch and the bundle manifest -- about
-6.4 GB more, read only by recovery work. Before `full` existed none of those
-blocks was reachable through the wrapper at all, which left a reproducible
-input depending on a hand-run bounded dump.
+An export is one `ExtractionScope` (`scripts/game_data/extraction/scope.py`):
+structured blocks plus Unity JSON and Convert classes, with the named levels as
+presets. Decoded blocks publish into `game/`. Streaming, DynamicStreaming, IV,
+ExtendData, IFixPatch and the bundle manifest have no decoder feeding the
+export, so they publish byte-for-byte into `raw/` (their own `source_paths`
+prefixes), for the Data page's byte view only; the recovery tools still stream
+them from the installed client. Blocks sharing a folder are dumped together.
+Bundles and audio packages are never dumped.
 
-Lua sits in the narrowest level on purpose: 1,339 files, ~16 MB decoded, and
-the Mission Pipeline already consumes the index built from plaintext Lua, so
-excluding it bought nothing and forced a separate extraction. The exporter
-decodes the base64+XXTEA wrapper itself and writes `game/Lua/<name>.lua`.
+Lua (1,339 files, ~16 MB decoded) is not a Story input: it ships with the Data
+page and every all-page run, and the Mission Pipeline consumes the index built
+from it. The exporter decodes the base64+XXTEA wrapper itself and writes
+`game/Lua/<name>.lua`.
 
-Raw asset bundles and audio packages are a **separate axis** -- the
-`--*-assets` scopes -- and no structured level carries them. (There is no
-`debug` structured mode; `debug` is an asset scope.)
+A run publishes only its scope, so the exporter stamps each published
+structured block, Unity class and the asset maps with the installed-layer
+fingerprints they came from (`meta/extraction/provenance.json`), and the
+freshness guard checks a build's declared inputs against those stamps rather
+than one export-wide fingerprint. A height-only Terrain dump drops a
+whole-Terrain stamp; a name-filtered class is stamped `partial`; outputs older
+than the file share its `default` stamp, the previous summary's fingerprint.
+MonoBehaviour and PlayableDirector are always selected together, because the
+object index is merged from one run's JSON jobs.
 
 Changed-only export keeps a private, export-root-local logical-file snapshot
 and compares decoded FileDataMd5 plus length/type/path/encryption identity. It
@@ -60,16 +67,11 @@ staged output set, and handles deletions explicitly. The first post-update run
 may seed the old side only from a certified VFS ledger whose input set and
 physical inventory bind to the previous export summary; otherwise it fails
 closed and requires a full export. Bundle-derived maps, objects, assets, and
-audio are refreshed broadly because a changed bundle does not prove safe
-per-output ownership. The snapshot commits only after the complete WebUI
+audio are not refreshed per changed file, because a changed bundle does not
+prove safe per-output ownership: changed-only reuses them, its build reports
+them as reused, and a page extraction refreshes them. The snapshot commits only after the complete WebUI
 pipeline succeeds, and this local mode never reads or writes Updates state.
 
-Asset modes are intentionally ordered:
-
-- `focused`: WebUI-referenced Texture2D media only.
-- `default`: WebUI-facing image/model/material/animation outputs and audio
-  callback ownership inputs.
-- `debug`: broad conversion and JSON types for investigation.
 
 After extraction, page builders consume `export_full/`; see
 [`webui_recovery.md`](../webui_recovery.md) for the complete publication flow.

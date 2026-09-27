@@ -34,10 +34,13 @@ The expected executable is
 
 Use repository wrappers for production workflows:
 
-- Story refresh: `export.bat --from-game`.
-- Story and assets together: `export.bat --from-game --with-assets`.
+- Every page's inputs, then every page: `export.bat --from-game`.
+- One or more pages: `export.bat map --from-game` (pages: story, text, map,
+  characters, gameplay, audio, assets, data). Each extracts only what its build
+  tasks read, as declared in `scripts/webui/pages.py`; `--show-plan` prints it.
+- Text-only first-time Story refresh: `export.bat story --from-game`.
+- Every structured block and Unity class: `export.bat debug --from-game`.
 - Local changed-file refresh with every normal WebUI builder: `export.bat --changed-only`.
-- Assets and CN audio only: `export_assets.bat --from-game`.
 - Updates publication from two complete exports: `build_updates.bat OLD NEW`.
 
 Use direct CLI calls only for targeted parity probes, extraction, or debugging.
@@ -65,7 +68,7 @@ when its Story JSON jobs run with `--animestudio-object-index`. The canonical
 combined command is:
 
 ```bat
-.\export.bat --from-game --with-assets
+.\export.bat --from-game
 ```
 
 AnimeStudio emits per-source `object_index/parts/`, and the wrapper publishes a
@@ -95,8 +98,8 @@ user after an independent raw-byte blind test. Give each agent a bounded task
 and separate scratch ownership. The main agent still reviews evidence, parser
 bounds, negative tests, and current-corpus gates before promoting results.
 
-Use `--focused-assets`, `--default-assets`, or `--debug-assets` from narrowest
-to broadest. Keep `--asset-jobs N` conservative relative to available RAM.
+Choose the narrowest page that covers the change; `debug` is the broadest
+export. Keep `--asset-jobs N` conservative relative to available RAM.
 Adjust worker count before changing shard count or exporter architecture.
 
 Preserve the measured scheduling model: map-filtered conversion may shard,

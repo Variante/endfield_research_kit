@@ -15,7 +15,7 @@ echo Usage: scripts\game_data\extraction\animestudio\setup_dotnet9.bat [-Channel
 echo.
 echo Installs a local .NET SDK for tools\AnimeStudio, defaulting to channel 9.0
 echo under tools\AnimeStudio\.dotnet. This wrapper is for maintaining the
-echo AnimeStudio CLI used by export_assets.bat and export.bat.
+echo AnimeStudio CLI used by export.bat.
 echo.
 echo Common examples:
 echo   scripts\game_data\extraction\animestudio\setup_dotnet9.bat

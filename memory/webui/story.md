@@ -26,8 +26,18 @@ inference into one confidence class.
    absence is a degraded trigger state, not a failed build.
 
 Primary outputs are `webui/data/manifest.json`,
-`webui/data/lang/<LANG>/index.json`, `conv/*.json`, `mission/*.json`, and
-`webui/data/assets/story_media.json`.
+`webui/data/lang/<LANG>/index.json`, `conv/*.json` and `mission/*.json`.
+
+The page has two export modes. `export.bat story` is text only: tables,
+JsonData and the Story Unity classes, with no image, video or audio extracted
+or built, and the page renders text when the media inputs are absent.
+`export.bat story-media` adds the media: the `story_media` task
+(`build_assets --publish story-media`) projects Story's inline, CG, BigLogo and
+remote-comm images and its videos onto the exported Texture2D, Sprite and video
+as `webui/data/assets/story_media.json`, and the Audio build attaches voice
+lines to `conv/*.json`. That rebuilds the Audio page too, because the voice
+links come from its one builder. A text-only Story rebuild drops those links
+until Audio runs again.
 
 ## Evidence boundary
 

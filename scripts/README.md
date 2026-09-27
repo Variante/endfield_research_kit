@@ -17,7 +17,7 @@ axis. A path appears under exactly one owner.
 
 | Line | Path | Responsibility |
 | --- | --- | --- |
-| **1. Game data** | `game_data/extraction/` | installed client to `export_full/`: the export and changed-file exporters, freshness guard, export benchmark, AnimeStudio object index, and `animestudio/` maintenance commands; never publishes page data |
+| **1. Game data** | `game_data/extraction/` | installed client to `export_full/`: the export and changed-file exporters, `scope.py` (the structured-block and Unity-class vocabulary an export selects), the freshness guard with its per-output provenance, export benchmark, AnimeStudio object index, and `animestudio/` maintenance commands; never publishes page data |
 | | `game_data/` | the exact framing readers, one per payload family (`irradiance_volume.py`, `extend_data_binary.py`, `bundle_manifest.py`, `ifix_patch.py`, `inverted_lz4.py`, `dynamic_streaming.py`, the serialized-gameplay `*_binary.py` readers, and the MemoryPack JsonData readers such as `levelconfig_binary.py`, `navmesh_binary.py`, `gpu_ui_binary.py`); the `*_corpus.py` current-corpus gates (`jsondata_corpus.py`, `gpu_ui_corpus.py`, `dynamic_stream_area_corpus.py`) and `jsondata_schema_coverage.py`; the `*_native.py` loaders and validators for the reviewed native facts the Story, Mission Pipeline, Map and recovery tools consume; `native_union_atlas.py`, which re-validates every union contract; `dummydll_metadata.py`, `levelscript_union_layouts.py` and `dependency_snapshot.py`; `media_resolver.py` (game-media naming) and `cabmap.py` (the CABMap container index and the `m_FileID` -> dependency-slot rule) |
 | | `game_data/codecs/` | all per-record LevelScript and LevelData byte decoding behind the `*_binary.py` readers, which keep only the file-level framing walk, the record dispatcher and the result assembly; includes `send_lua_event.py` for the one nested value the derived declaration cannot describe |
 | | `game_data/contracts/` | the reviewed contract JSON that every reader, loader and validator loads; `CONTRACTS_DIR` from the package is the only path anchor; git, not a pinned digest, owns each file's integrity |
@@ -44,7 +44,8 @@ axis. A path appears under exactly one owner.
 | | `game_data/il2cpp/body_claims.py` | name-addressed method bodies of the selected build (`BodyIndex`: short-name resolution, `.pdata` fragments, one level of unnamed helpers, iFix patch ids) and the claim kinds a reviewed contract states about them -- `calls`, `notCallsPrefix`, `comparesResult`, `readsField`, `storesConstant`, `returnsConstant`, `matches` -- evaluated on whichever build is installed |
 | | `game_data/story_native_consumers_native.py` | proves the Story builders' native claim groups and resolves their `cited` methods from `contracts/story_native_consumers.json`, caching the evaluation in `reports/story/recovery/story_native_consumers.json` keyed by the installed build and the contract bytes; a failed or `pendingReview` group publishes nothing |
 | | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp.native_image` |
-| **2. WebUI** | `webui/views.py`, `webui/package.py` | page-build orchestration, and packaging |
+| **2. WebUI** | `webui/export.py`, `webui/pages.py`, `webui/build_graph.py` | the `export.bat` entry point; the page registry, in which every build task declares what it reads from the export; the dependency-graph scheduler and timing report |
+| | `webui/package.py` | packaging |
 | | `webui/story/` | Story and Text page data plus shared Story evidence |
 | | `webui/story_recovery/` | Story audits, OCR ordering, runtime traces, candidate generation |
 | | `webui/mission_pipeline/` | standalone Mission Pipeline recovery (not a WebUI page) |
@@ -81,14 +82,15 @@ point run directly as a file exits with the `python -m` command to use instead.
 | Goal | Command |
 | --- | --- |
 | First-time Story/Text setup | `.\setup.bat` |
-| Rebuild from the current export | `.\export.bat` |
-| Refresh Story from the game | `.\export.bat --from-game` |
-| Refresh Story and assets together | `.\export.bat --from-game --with-assets` |
+| Rebuild every page from the current export | `.\export.bat` |
+| Rebuild named pages | `.\export.bat map audio` |
+| Extract what every page reads, then build | `.\export.bat --from-game` |
+| Extract and build one page | `.\export.bat map --from-game` |
+| Lean Story/Text extraction and build | `.\export.bat story --from-game` |
+| Extract every structured block and Unity class | `.\export.bat debug --from-game` |
 | Refresh changed local game files and all WebUI views, excluding Updates | `.\export.bat --changed-only` |
 | Story recovery loop | `python -m scripts.webui.story.build --languages CN --default-language CN` |
 | Mission Pipeline recovery (standalone, not WebUI) | `python -m scripts.webui.mission_pipeline.build_mission_pipeline_data --refresh-source-story-gap-queue` |
-| Rebuild post-Story views, assets, and CN audio | `.\export_assets.bat` |
-| Refresh assets/audio and rebuild post-Story views | `.\export_assets.bat --from-game` |
 | Compare exports for Updates | `.\build_updates.bat OLD NEW` |
 | Rebuild the Recovery progress page | `python -m scripts.webui.recovery.build_recovery` |
 | Serve or package | `python serve.py` / `python -m scripts.webui.package` |
@@ -410,79 +412,111 @@ script-schema recovery needs it.
 
 ## Export rules
 
-`export.bat` is the canonical Story, Text, Characters, Gameplay, and generated
-WebUI rebuild. It reads the current `export_full/` by default and runs
-`verify_export_freshness.py` before downstream builders. Use `--from-game` only
-when the extraction must be refreshed from the installed client.
+`export.bat` is grouped by page. It loads `endfield_paths.bat` and hands every
+argument to `python -m scripts.webui.export`; `--help` lists the options. The
+one source of truth for what a page needs is `scripts/webui/pages.py`: each
+build task declares the export inputs it `reads` (must exist and be current),
+the ones it reads when present (`optional`), the producer tasks it `needs`
+(pulled into a page run), and the tasks it runs `after` when both are in one
+build, and the inputs it `uses`: read when present but extracted only by
+another page (Story's narrative video), reported as reused when that page is not
+in the run. A page may also `serve` outputs it shows as files at browse time (the
+Data page: every decodable output except other pages' media, `PAGE_MEDIA`).
+A run of named pages takes the closure over `needs`; its extraction scope is
+the union of those tasks' inputs and the pages' served outputs, so a page run
+exports exactly what the page reads or shows. Served outputs are extracted but
+not freshness-checked. `--show-plan` prints the pages, tasks, extraction scope and
+freshness requirements without running anything.
 
-**Every wrapper prints its own option list**, so run `--help` for the flag
-surface. Only the behaviour `--help` does not give you is recorded here:
+| Target | Extracted with `--from-game` | Built |
+| --- | --- | --- |
+| `story` (`text`) | text only: Table, JsonData; TextAsset, MonoBehaviour, PlayableDirector JSON. Narrative video is read when another run extracted it (`uses`), reported as reused otherwise | Story and Text |
+| `story-media` | `story` plus video, Texture2D, Sprite, and the Audio inputs (animator-controller JSON, AnimationClip); CN audio decode | Story and Text, `story_media.json` (`build_assets --publish story-media`), Audio's voice links |
+| `map` | Table, JsonData, video, Terrain height grids; Material JSON; Texture2D, Mesh, Sprite, Animator | Map and the Assets index its render colours from |
+| `characters`, `assets` | Table, video; Material JSON; Texture2D, Mesh, Sprite, Animator | the page (Characters through the Assets index, `build_assets --publish index`) |
+| `gameplay` | Table, JsonData, video; MonoBehaviour, PlayableDirector, MonoScript, Material JSON; the Assets media | Gameplay, projectiles, source graph, combat, Assets index |
+| `audio` | Table, JsonData; MonoBehaviour, PlayableDirector, animator-controller JSON; AnimationClip; CN audio decode | Audio |
+| `data` | everything decodable except other pages' media: Table, JsonData, Lua, whole Terrain; every Unity JSON class; AnimationClip, Shader, Font, TextAsset | the Data page's decoded datasets; its file viewer serves the rest |
+| none, `all` | the union of the above, which with Data is everything | every page except Updates |
+| `debug` | every structured block and Unity class (`scope.EVERYTHING`) | every page except Updates |
 
-- `--changed-only` implies `--from-game --with-assets`. It compares focused
-  structured VFS logical files by decoded MD5, length, type, path and
-  encryption identity, applies only the delta, then runs the *complete* normal
-  WebUI build. It never touches Updates -- no baseline change, no entry. Its
-  private snapshot under
-  `<export root>/meta/extraction/incremental/` advances only
-  after every builder succeeds, so a late failure retries from the applied
-  files rather than needing an older audit snapshot.
-- `--story-only` and `--assets-only` are mutually exclusive.
-  `--assets-only` implies `--with-assets` and skips Story evidence, Story and
-  Text Tables; `export_assets.bat` is the thin wrapper that adds it.
-- `--skip-freshness` bypasses the guard for one run. It does not refresh stale
-  source data -- use it only when the existing export is known compatible.
-- `--webui-jobs N` also supplies the Map data/streaming worker count. A run
-  that rebuilds assets pins Map to one worker so it cannot contend with
-  image/model conversion for disk and memory.
+Behaviour `--help` does not give you:
+
+- Without `--from-game` the build checks, per output, that everything its tasks
+  read was extracted from the installed build (see *Export provenance* below);
+  a missing optional input only degrades its builder, but a present one from an
+  older build fails the run and names it. `--skip-freshness` bypasses the check
+  for one run without refreshing anything.
+- A page reads other pages' generated output (Story's `lang/CN`, the asset
+  index, the gameplay index) as published. `after` edges order those tasks
+  only when both run; Audio, for example, uses the existing Map streaming
+  sidecars and gameplay index rather than rebuilding them. Audio rewrites
+  Story's `conv` files, so after a Story-only build run `export.bat audio` to
+  reattach its links.
+- MonoBehaviour and PlayableDirector are always exported together, and every
+  run that exports them republishes the object index (`--animestudio-object-index`);
+  Story, Gameplay and Audio read it.
+- `--animestudio-story-monobehaviour-names` (the setup path) is accepted only
+  for a `story` run, and the exporter stamps that MonoBehaviour export as
+  partial, so a later Gameplay or Audio build refuses it.
+- `--changed-only` compares focused structured VFS logical files by decoded
+  MD5, length, type, path and encryption identity, applies only the delta,
+  then builds every page, reusing Unity outputs, asset maps and decoded audio
+  from the last full extraction. `--structured-dump-mode default` adds the
+  Terrain height grids to what it refreshes. It never touches Updates. Its
+  private snapshot under `<export root>/meta/extraction/incremental/` advances
+  only after every builder succeeds.
+- `--webui-jobs N` bounds concurrent builders and supplies Map's worker count;
+  `--asset-jobs N` (passed to the exporter) bounds AnimeStudio workers.
 - `--full-source-graph` adds exhaustive Unity-object/PathID work; the default
   graph carries only rows consumed by WebUI edges.
-- Asset scope runs narrowest to broadest: `--focused-assets` (WebUI-referenced
-  `Texture2D` only), `--default-assets` (WebUI-facing image/model/material/
-  animation output plus audio callback-ownership inputs), `--debug-assets`
-  (broad conversion and JSON for investigation).
-- Structured scope is a **separate axis** with three levels, each containing
-  the one below: `--structured-dump-mode focused` (default: Table, JsonData,
-  video, Lua), `default` (plus the Terrain height grids), `full` (plus Terrain
-  whole, Streaming, DynamicStreaming, IV, ExtendData, IFixPatch, bundle
-  manifest; about 6.4 GB more). No structured level carries raw bundles or
-  audio packages.
-- `--for story|map|pages|everything` sets both axes from one intent, because
-  almost nobody picks them independently. It fills only what the caller left
-  alone, so an explicit `--structured-dump-mode` or `--*-assets` still wins in
-  either order. `--show-scope` prints the resolved scopes and exits, which is
-  how to check a preset before paying for the run.
+- Any option the wrapper does not own is passed to `export_full_from_game.py`
+  and requires `--from-game`.
 
-  | `--for` | structured | assets |
-  | --- | --- | --- |
-  | `story` | `focused` | none |
-  | `map` | `default` | none |
-  | `pages` | `default` | `default` |
-  | `everything` | `full` | `debug` |
-
-  A page-to-input mapping could not be a single ladder: Map needs Terrain and
-  Streaming but no bundles, Assets needs bundles but no Terrain, and Story
-  needs neither. These four presets are the intents that actually occur, not a
-  derivation from a page list -- a page-to-input table would have to be kept in
-  lockstep with every builder's inputs.
-- The default asset scope includes AnimationClip conversion plus
-  AnimatorController and AnimatorOverrideController JSON. Controller JSON stays
-  on the broad dependency-loading path so cross-bundle PPtr targets are not
-  silently withheld.
-
-`setup.bat` runs `export.bat --from-game --story-only
+`setup.bat` runs `export.bat story --from-game
 --animestudio-story-monobehaviour-names` for its first-time Story build, then
-prints the optional asset and semantic-view follow-ups; `--no-serve` finishes
-without starting `serve.py`.
+prints the page follow-ups; `--no-serve` finishes without starting `serve.py`.
 
-`ENDFIELD_EXPORT_ROOT` reaches extraction as `--output` and builders as
-`--export-root`, so both halves of a run use one tree. Installed-game-only
-flags fail with an explanation when `--from-game` is absent rather than being
-dropped. Keep wrapper files CRLF: `cmd.exe` mis-resolves backward `goto` in
-LF-only batch files.
+`ENDFIELD_EXPORT_ROOT` reaches extraction as `--output` and builders through
+the environment, so both halves of a run use one tree. Keep wrapper files
+CRLF: `cmd.exe` mis-resolves backward `goto` in LF-only batch files.
 
 Every export records build-step timings and a process-tree benchmark under
 `reports/export/`. The Combat builder rejects stale graph inputs and publishes
 a degraded reason instead of using them as direct evidence.
+
+### Exporter scope
+
+`export_full_from_game.py` exports exactly one `scope.ExtractionScope`:
+`--structured BLOCK...` plus `--unity-json CLASS...`/`--unity-convert CLASS...`
+(the wrapper always passes these), or the presets for direct use:
+`--structured-dump-mode focused|default|full` (Table/JsonData/video/Lua, plus
+Terrain height grids, plus Terrain whole and the undecoded blocks) and
+`--animestudio-scope story|assets|all` with `--asset-mode focused|default|debug`.
+Decoded blocks publish into `game/`. The blocks no reader decodes into the
+export -- Streaming, DynamicStreaming, IV, ExtendData, IFixPatch and the bundle
+manifest (`scope.RAW_BLOCKS`, about 4.9 GB) -- publish byte-for-byte into
+`<export root>/raw/` (`source_paths.raw_relative_path`), where only the Data
+page shows them, as bytes; nothing builds from `raw/`. Blocks sharing a folder
+(video and audit-video, ExtendData and InitialExtendData, ...) are always
+dumped together, because a publish replaces the whole folder. Bundles and audio
+packages are never dumped. Convert always loads through the asset map; the
+JSON stage does only when no Story carrier (TextAsset, MonoBehaviour,
+PlayableDirector) is selected, and animator controllers always fall back to a
+broad load per call.
+
+### Export provenance
+
+A run exports only its scope and leaves everything else as published, so the
+exporter stamps each published structured block, Unity class and the asset
+maps with the installed-layer fingerprints it came from, in
+`<export root>/meta/extraction/provenance.json`. Outputs published before that
+file existed share its `default` stamp (the previous summary's structured
+fingerprint). `verify_export_freshness.py` checks named requirements against
+those stamps (`--require-structured`, `--require-unity`, `--require-asset-map`,
+`--accept-reused`; the page registry passes them through `verify(...)`); with
+none named it checks the Story/Text inputs. A class exported through a name
+filter is stamped `partial` and satisfies only builds that accept it.
 
 ### Export stores (layout v4)
 
@@ -563,7 +597,7 @@ both stores through `serve.py`'s read-only `/api/stores` endpoints
 | Extraction | `export_full_from_game.py` | `export_full/` |
 | Local logical-file delta | `export_changed_game_data.py` | changed structured files and private snapshot |
 | Export freshness | `verify_export_freshness.py` | validation result |
-| WebUI orchestration | `webui/views.py` | semantic page data |
+| WebUI orchestration | `webui/export.py` (page registry `webui/pages.py`) | extraction, freshness, and every page's data |
 | Story evidence | `webui/story/refresh_evidence.py` | `reports/story/` evidence |
 | Story links | `webui/story/source_links.py` | localized reference data |
 | Story | `webui/story/build.py` | `webui/data/lang/<LANG>/` |
@@ -968,22 +1002,12 @@ message IDs, and field offsets have one mutable source of truth.
 
 ### Wrapper selection
 
-Prefer `export.bat --from-game --with-assets` when Story and assets both need a
-fresh extraction; it folds the asset export into one AnimeStudio run. When
-generated Story is already current, `export_assets.bat --from-game` refreshes
-assets/audio and rebuilds map recovery, Characters, Gameplay/projectiles, the
-curated source graph, and combat relationships; plain `export_assets.bat`
-rebuilds the same post-Story views while reusing existing decoded assets and
-audio. Mission Pipeline is not one of those builders -- run its direct Python
+`export.bat assets --from-game` refreshes the Assets inputs and index;
+`export.bat audio --from-game` refreshes Audio's Unity inputs and decodes CN
+audio; without `--from-game` they rebuild from the current export and reuse
+decoded audio. `export.bat --from-game` does both for every page in one
+AnimeStudio run. Mission Pipeline is not a page -- run its direct Python
 command separately.
-
-`export_assets.bat` is a thin wrapper around `export.bat --assets-only`, so it
-shares one option parser, runs `verify_export_freshness.py`, and writes a
-benchmark under `reports/export/benchmarks/` with an `export_assets_` label.
-Asset-only installed-game extraction leaves structured Story/Table outputs
-untouched and preserves their previous source fingerprints, recording its own
-asset scan separately, so it cannot make stale Story data pass the freshness
-guard after a client update.
 
 ### AnimeStudio scheduling, DummyDlls, and managed-reference diagnostics
 

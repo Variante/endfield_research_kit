@@ -78,6 +78,19 @@ _GAME_NATIVE_PREFIXES: tuple[tuple[str, str], ...] = (
     ("Data/Video/", "Video"),
     ("Data/Terrain/", "Terrain"),
 )
+# Native VFS logical prefix -> folder under raw/: final VFS files no reader
+# decodes into the export. They are published byte-for-byte so the Data page
+# can show them as binary; nothing builds from raw/. Bundles and audio
+# packages are containers whose contents are decoded elsewhere and never come
+# here; `Data/Bundles/` carries only the bundle manifest the dump writes.
+_RAW_NATIVE_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("Data/Streaming/", "Streaming"),
+    ("Data/DynamicStreaming/", "DynamicStreaming"),
+    ("Data/IrradianceVolume/", "IrradianceVolume"),
+    ("Data/ExtendData/", "ExtendData"),
+    ("Data/IFixPatchOut/", "IFixPatchOut"),
+    ("Data/Bundles/", "Bundles"),
+)
 
 
 class ExportLayoutError(RuntimeError):
@@ -96,17 +109,28 @@ def configured_export_root() -> Path:
     return _repo_relative(Path(value or "export_full"))
 
 
-def game_relative_path(logical_path: str) -> PurePosixPath:
-    """Map a native VFS logical path (``Data/Json/x.json``) to its path under game/."""
+def _native_relative_path(
+    logical_path: str, prefixes: tuple[tuple[str, str], ...], what: str,
+) -> PurePosixPath:
     normalized = str(logical_path).replace("\\", "/")
     parts = [part for part in normalized.split("/") if part]
     if not parts or normalized.startswith("/") or ":" in parts[0] or ".." in parts or "." in parts:
         raise ExportLayoutError(f"VFS path is not a relative logical path: {logical_path}")
     normalized = "/".join(parts)
-    for prefix, folder in _GAME_NATIVE_PREFIXES:
+    for prefix, folder in prefixes:
         if normalized.lower().startswith(prefix.lower()) and len(normalized) > len(prefix):
             return PurePosixPath(folder, normalized[len(prefix):])
-    raise ExportLayoutError(f"VFS path is not a final game file: {logical_path}")
+    raise ExportLayoutError(f"VFS path is not {what}: {logical_path}")
+
+
+def game_relative_path(logical_path: str) -> PurePosixPath:
+    """Map a native VFS logical path (``Data/Json/x.json``) to its path under game/."""
+    return _native_relative_path(logical_path, _GAME_NATIVE_PREFIXES, "a final game file")
+
+
+def raw_relative_path(logical_path: str) -> PurePosixPath:
+    """Map an undecoded native VFS logical path (``Data/Streaming/x``) to its path under raw/."""
+    return _native_relative_path(logical_path, _RAW_NATIVE_PREFIXES, "an undecoded final file")
 
 
 @dataclass(frozen=True)
@@ -212,6 +236,20 @@ class ExportLayout:
     @property
     def extraction_incremental_dir(self) -> Path:
         return self.meta / "extraction" / "incremental"
+
+    # -- raw/ -----------------------------------------------------------------
+    @property
+    def raw(self) -> Path:
+        """Undecoded final VFS files, byte-for-byte (``raw_relative_path``)."""
+        return self.root / "raw"
+
+    def raw_file(self, logical_path: str) -> Path:
+        return self.raw.joinpath(*raw_relative_path(logical_path).parts)
+
+    @property
+    def extraction_provenance_path(self) -> Path:
+        """Which installed build each published structured block and Unity class came from."""
+        return self.meta / "extraction" / "provenance.json"
 
     # -- run intermediates (never inside the export root) --------------------
     @property

@@ -528,9 +528,9 @@ family leads, not a current denominator without a ledger rejoin. Do not treat Sk
 Use the payload-understanding report's current blocker/evidence pointers before
 adding another family-specific probe.
 
-`export_assets.bat --from-game` writes the lightweight bundle VFS index
-through `vfs-index`, then decodes CN audio through `audio` before relinking
-browser conversations.
+Every `export.bat PAGE --from-game` AnimeStudio run writes the lightweight
+bundle VFS index through `vfs-index`; the Audio page then decodes CN audio
+through `audio` before relinking browser conversations.
 
 The canonical post-Story map phase also runs
 `recover_map_streaming_instances.py --all-published-map-scenes` before map
@@ -555,27 +555,27 @@ Updates remains the separate `build_updates.bat OLD NEW` workflow.
 
 ## Wrapper Integration
 
-`export.bat --from-game` calls:
+`export.bat PAGE --from-game` calls the exporter with the page's explicit
+scope; `export.bat story --from-game` resolves to:
 
 ```bat
-python -m scripts.game_data.extraction.export_full_from_game --animestudio-scope story --animestudio-stages maps json_by_type
+python -m scripts.game_data.extraction.export_full_from_game --structured table json-data video audit-video lua --unity-json TextAsset MonoBehaviour PlayableDirector --animestudio-object-index
 ```
 
-Its structured VFS dump defaults to `--structured-dump-mode focused`, which dumps
-only `table`, `json-data`, and video blocks. This skips raw asset bundles
-(`Bundle`, `InitBundle`, and `BundleManifest`), audio PCK/media files, world
-streaming, dynamic streaming, irradiance volumes, extend-data bins, patch bytes,
-and Lua. `build_audio.py` streams Wwise bank metadata directly from VFS when
-relinking audio events.
-`--structured-dump-mode default` adds only Terrain `_H` height grids (not the
-larger `C/T/S/A/N` families) while keeping the same production exclusions; pass
-a bounded `AnimeStudio.CLI dump --block-type ...` into `tmp\` when diagnosing VFS
-coverage.
+Run `export.bat PAGE --from-game --show-plan` to see any page's scope. No
+scope dumps raw asset bundles (`Bundle`, `InitBundle`, `BundleManifest`), audio
+PCK/media files, world streaming, dynamic streaming, irradiance volumes,
+extend-data bins or patch bytes: they have no place in `game/`.
+`build_audio.py` streams Wwise bank metadata directly from VFS when relinking
+audio events. The Map page's `terrain-height` block adds only Terrain `_H`
+height grids (not the larger `C/T/S/A/N` families); `debug` takes Terrain
+whole. Pass a bounded `AnimeStudio.CLI dump --block-type ...` into `tmp\` when
+diagnosing VFS coverage.
 
 Pass an optional usable DummyDll folder to the story JSON export with:
 
 ```bat
-.\export.bat --from-game --animestudio-dummy-dlls path\to\DummyDll
+.\export.bat story --from-game --animestudio-dummy-dlls path\to\DummyDll
 ```
 
 Generate or refresh the preferred repo-local folder with:
@@ -635,13 +635,8 @@ validate. Missing, unverified,
 stale, invalid, or degraded paths warn and continue without DummyDlls instead
 of failing the export.
 
-`export_assets.bat --from-game` defaults to the default asset mode:
-
-```bat
-python -m scripts.game_data.extraction.export_full_from_game --skip-structured --animestudio-scope assets --animestudio-asset-mode default --animestudio-stages maps convert_by_type json_by_type
-```
-
-Full asset mode uses the MessagePack asset map for per-type stages when safe:
+The exporter's `default` asset level (`--animestudio-scope assets --asset-mode
+default`, the media classes the pages read) uses the MessagePack asset map for per-type stages when safe:
 each type worker loads only source bundles that contain that type, and
 AnimeStudio indexes matched map/filter rows once so it can jump to selected
 Endfield block offsets without re-scanning the full filter list for every file.
@@ -650,15 +645,15 @@ model/material/texture relations. Animator conversion stays on the broad path
 because FBX export may need related GameObject, Mesh, Material, and Texture2D
 dependencies.
 
-Pass `--focused-assets` to `export_assets.bat` or `--animestudio-asset-mode focused`
-for the lean WebUI-focused mode. That mode exports only WebUI-referenced
+Pass `--asset-mode focused` to the exporter directly for the lean
+WebUI-focused mode; no page run uses it. That mode exports only WebUI-referenced
 `Texture2D` media. It writes a generated name-filter file from current Story/Wiki
 media references, builds JSON plus MessagePack AnimeStudio maps, then loads the
 MessagePack map with `--map_op AssetMap,Load` so matching map rows seed bundle
 offset filtering.
 
-Pass `--debug-assets` to `export_assets.bat` or `--animestudio-asset-mode debug`
-for the exhaustive diagnostic mode. That mode restores the old broad conversion
+Run `export.bat debug --from-game` (or pass `--asset-mode debug` to the
+exporter) for the exhaustive diagnostic mode. That mode restores the old broad conversion
 set plus the default asset JSON set, then builds the normal complete Assets browser
 index from whatever files are browser-visible.
 
@@ -817,7 +812,8 @@ When fixing a suspected memory leak:
 3. Prefer `ReadInt32Count` with a realistic `minBytesPerItem`.
 4. For variable-length records, use the smallest conservative item size.
 5. Keep per-object failure local when possible so one malformed asset does not kill the full worker.
-6. Rebuild the CLI and rerun the smallest matching stage/type with `--animestudio-refresh-types`.
+6. Rebuild the CLI and rerun the smallest page that exports the matching class
+   (`export.bat PAGE --from-game --show-plan` shows each page's classes).
 
 ## Useful Searches
 
@@ -833,14 +829,14 @@ For parser or exporter edits:
 
 ```bat
 .\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI -NoRestore
-.\export.bat --from-game --asset-jobs 4 --animestudio-refresh-types StreamingAssets:json_by_type:MonoBehaviour
+.\export.bat story --from-game --asset-jobs 4
 ```
 
 For asset conversion edits:
 
 ```bat
 .\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI -NoRestore
-.\export_assets.bat --from-game --asset-jobs 4 --animestudio-refresh-types StreamingAssets:convert_by_type:Texture2D
+.\export.bat assets --from-game --asset-jobs 4
 ```
 
 Lower `--animestudio-jobs` if the targeted run exceeds available memory.

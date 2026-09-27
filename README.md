@@ -44,11 +44,13 @@ starting the server. When setup finishes, the **Story** and **Text** pages are
 ready to browse. The remaining pages are separate so the first useful build
 finishes sooner.
 
-For a complete refresh from the installed client, including exported media and
-CN audio, run this after setup:
+The other pages are built page by page, and each extracts only what it reads
+from the installed client. Build one of them, or all of them including
+exported media and CN audio, after setup:
 
 ```bat
-.\export.bat --from-game --with-assets
+.\export.bat map --from-game
+.\export.bat --from-game
 ```
 
 Asset decoding can take several hours and requires substantially more disk
@@ -79,24 +81,28 @@ space and memory than the initial Story/Text setup.
 
 ### Pages prepared by each command
 
-After a command succeeds, the named pages are ready or refreshed. Pages not
-listed keep their previously generated data.
+`export.bat` is grouped by page: name the pages to build (none means all of
+them). After a command succeeds, the named pages are ready or refreshed; pages
+not named keep their previously generated data.
 
 | Command | Pages ready or refreshed | What it uses |
 | --- | --- | --- |
 | `.\setup.bat` | **Story**, **Text** | Installed client; also builds AnimeStudio and starts the WebUI server by default |
-| `.\export.bat` | **Story**, **Text**, **Map**, **Characters**, **Gameplay**, **Data** | The current, freshness-checked export; existing Assets and Audio are unchanged |
-| `.\export.bat --from-game` | **Story**, **Text**, **Map**, **Characters**, **Gameplay**, **Data** | Refreshes structured data from the installed client first |
-| `.\export.bat --with-assets` | Every page except **Updates** | Reuses the current export and its existing media; also rebuilds Assets and relinks Audio |
-| `.\export.bat --with-assets --skip-freshness` | Every page except **Updates** | Same as above, but bypasses the export freshness guard for this run |
-| `.\export.bat --from-game --with-assets` | Every page except **Updates** | Complete installed-client refresh, including asset extraction and CN audio decoding |
-| `.\export_assets.bat` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets**, **Data** | Reuses current Story/Text and existing exported media |
-| `.\export_assets.bat --from-game` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets**, **Data** | Keeps Story/Text, but refreshes assets and CN audio from the installed client |
+| `.\export.bat` | Every page except **Updates** | The current export, after checking that every input the pages read is present and current |
+| `.\export.bat map audio` | **Map**, **Audio** | The same, for the named pages only |
+| `.\export.bat --from-game` | Every page except **Updates** | Extracts only what the pages read, decodes CN audio, then builds them |
+| `.\export.bat story --from-game` | **Story**, **Text** | Text only: tables, JsonData and the Story Unity classes; no image, video or audio |
+| `.\export.bat story-media --from-game` | **Story**, **Text**, **Audio** | Story with its images, videos and voice lines; decodes CN audio, so it also rebuilds Audio |
+| `.\export.bat map --from-game` | **Map**, **Assets** | Extracts Map's inputs and the asset index that colours its render |
+| `.\export.bat debug --from-game` | Every page except **Updates** | Extracts every supported structured block and Unity class, then builds every page |
+| `.\export.bat --changed-only` | Every page except **Updates** | Applies only changed structured files from the installed client and reuses exported media |
 | `.\build_updates.bat OLD NEW` | **Updates** | Compares two complete export folders |
 
-Asset-enabled commands without `--from-game` can only publish media already
-present in the current export. Use `--from-game` when that media has not yet
-been extracted or the installed client changed.
+The pages are `story` (with Text; `story-media` adds its images, videos and
+voice), `map`, `characters`, `gameplay`, `audio`, `assets` and `data`;
+`.\export.bat --help` lists what each one includes. A build without
+`--from-game` refuses inputs extracted from an older client build, and names
+the pages to re-extract.
 
 `python serve.py` serves whatever has already been generated; it does not build
 page data. The **Data** page's file viewer and SQL console are the exception:
@@ -133,7 +139,7 @@ export_full/
     cab_map/ extraction/      container map, failures, incremental state
 ```
 
-Rough size of a complete export (`--from-game --with-assets`), from the current
+Rough size of a complete export (`--from-game`), from the current
 client:
 
 | Part | Files | Size |
@@ -161,7 +167,7 @@ Time and memory, measured on a desktop with 8 AnimeStudio workers (the
 
 | Step | Time | Peak RAM |
 | --- | --- | --- |
-| `--from-game --with-assets` extraction | ~3-4 h | up to ~40 GB |
+| `--from-game` extraction of every page | ~3-4 h | up to ~40 GB |
 | Story build (`export.bat` without `--from-game`) | ~25 min | a few GB |
 | Post-Story pages (Gameplay, Characters, Map, source graph) | ~15 min | a few GB |
 | `build_updates.bat` between two exports | ~10 min | a few GB |

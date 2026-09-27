@@ -25,15 +25,16 @@ activation, or placement time.
 ## Refresh
 
 ```bat
-.\export.bat --from-game --with-assets
-.\export_assets.bat
-.\export_assets.bat --from-game
+.\export.bat assets --from-game
+.\export.bat --from-game
+.\export.bat debug --from-game
 python -m scripts.webui.assets.build_assets
 python tools\endfield_source_graph.py build
 ```
 
-Asset modes, from narrowest to broadest, are `--focused-assets`,
-`--default-assets`, and `--debug-assets`.
+A page run exports only the Unity classes its build tasks read
+(`scripts/webui/pages.py`); `debug` exports every class. The exporter's asset
+levels (`focused`, `default`, `debug`) remain presets for direct use.
 
 Primary outputs:
 

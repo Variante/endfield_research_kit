@@ -41,7 +41,17 @@ from scripts.game_data.extraction.animestudio_object_index import (
 
 
 from scripts.repo_paths import REPO_ROOT
-from scripts.source_paths import INSTALLED_LAYERS, PACKED_GAME_DIRS, ExportLayout, configured_export_root
+from scripts.source_paths import INSTALLED_LAYERS, PACKED_GAME_DIRS, ExportLayout, ExportLayoutError, configured_export_root
+from scripts.game_data.extraction.scope import (
+    OBJECT_INDEX_JSON_TYPES as ANIMESTUDIO_OBJECT_INDEX_TYPES,
+    STRUCTURED_BLOCKS,
+    STRUCTURED_LEVELS,
+    UNITY_CONVERT_TYPES,
+    UNITY_JSON_TYPES,
+    UNITY_LEVELS,
+    ExtractionScope,
+    structured_dump_steps,
+)
 from scripts.game_data.extraction.unity_overlay import load_overlay_catalog, normalize_chunk_path
 from scripts.game_data.unity_store import UnityObjectStore, UnityObjectStoreWriter, UnityStoreError, is_store_file
 from scripts.game_data.game_file_store import GameFileStoreWriter
@@ -58,42 +68,12 @@ SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL = {
     "Persistent": frozenset({"HGDownload", "Logs", "Temp"}),
 }
 ANIMESTUDIO_STAGES = ("maps", "convert_by_type", "json_by_type")
+#: Presets for direct use. `--animestudio-scope` picks the Story carriers, an
+#: asset level, or both; `--asset-mode` picks the asset level. The explicit
+#: `--unity-json`/`--unity-convert` selection replaces both.
 ANIMESTUDIO_SCOPES = ("story", "assets", "all")
 ANIMESTUDIO_ASSET_MODES = ("focused", "default", "debug")
-# Only final files are dumped. Raw VFS containers (bundles, audio PCKs, world
-# streaming chunks) are read in place by AnimeStudio and are never dumped.
-STRUCTURED_DUMP_MODES = ("focused", "default", "full")
-FOCUSED_STRUCTURED_BLOCK_TYPES = (
-    "table",
-    "json-data",
-    "video",
-    "audit-video",
-    # Lua is 1,339 files and about 16 MB decoded, which is noise beside the
-    # video in this same level, and it has a maintained consumer: the Mission
-    # Pipeline reads the index `scripts/webui/story/lua_consumer_references.py`
-    # builds from plaintext Lua. Leaving it out is what forced that refresh to
-    # be a separate hand-run extraction. The exporter already decodes the
-    # base64+XXTEA wrapper and writes `Lua/<name>.lua`.
-    "lua",
-)
-
-#: Everything else the structured dump can reach. These are recovery inputs
-#: rather than page inputs, and together they cost roughly 6.4 GB, so they sit
-#: behind their own level instead of being carried by every refresh. Before
-#: this level existed none of them was reachable through the wrapper at all --
-#: they needed a hand-run bounded CLI dump, which is a poor place to keep a
-#: reproducible input.
-FULL_STRUCTURED_BLOCK_TYPES = (
-    "terrain",
-    "streaming",
-    "dynamic-streaming",
-    "iv",
-    "extend-data",
-    "initial-extend-data",
-    "i-fix-patch",
-    "bundle-manifest",
-)
-TERRAIN_HEIGHT_FILE_REGEX = r"^Data/Terrain/PC/[^/]+/Terrain_[0-9]+_[0-9]+_[0-9]+_H\.bytes$"
+STRUCTURED_DUMP_MODES = tuple(STRUCTURED_LEVELS)
 ANIMESTUDIO_STAGE_MERGE_MODES = ("auto", "never", "aggressive")
 ANIMESTUDIO_STAGE_MERGE_PRIMARY_STAGE = "convert_by_type"
 ANIMESTUDIO_STAGE_MERGE_SECONDARY_STAGE = "json_by_type"
@@ -125,7 +105,6 @@ ANIMESTUDIO_LOGGER_FLAGS = ("Warning", "Error")
 ANIMESTUDIO_DEFAULT_JOBS = 8
 ANIMESTUDIO_DEFAULT_SHARDS = 16
 ANIMESTUDIO_DUMMY_DLL_ENV = "ANIMESTUDIO_DUMMY_DLLS"
-ANIMESTUDIO_OBJECT_INDEX_TYPES = frozenset({"MonoBehaviour", "PlayableDirector"})
 ANIMESTUDIO_OBJECT_INDEX_IDENTITY = "serialized-file-source-offset-pathid-v1"
 ANIMESTUDIO_OBJECT_INDEX_EXTERNAL_RESOLUTION = "unique-expected-cab-pathid-v1"
 ANIMESTUDIO_OBJECT_INDEX_SCALAR_POLICY = "identifier-and-state-v1"
@@ -202,66 +181,12 @@ ANIMESTUDIO_RESERVED_FILE_NAMES = frozenset(
     }
 )
 WINDOWS_INVALID_FILE_NAME_CHARS = frozenset('<>:"/\\|?*')
-# Asset maps for Endfield have no GameObject, AudioClip, VideoClip,
-# MovieTexture, or MiHoYoBinData entries, so the WebUI export skips them.
-ANIMESTUDIO_FULL_CONVERT_TYPES = (
-    "Texture2D:Both",
-    "Mesh:Both",
-    "Sprite:Both",
-    "Animator:Both",
-    # Audio semantics consumes serialized AnimationClip callbacks in the normal
-    # asset workflow; keeping this debug-only leaves authored Event requests
-    # unavailable after a production refresh.
-    "AnimationClip:Both",
-)
-ANIMESTUDIO_DEBUG_CONVERT_TYPES = (
-    "Texture2D:Both",
-    "Shader:Both",
-    "TextAsset:Both",
-    "Font:Both",
-    "Mesh:Both",
-    "Sprite:Both",
-    "Animator:Both",
-    "AnimationClip:Both",
-)
-ANIMESTUDIO_WEBUI_CONVERT_TYPES = (
-    "Texture2D:Both",
-)
-ANIMESTUDIO_STORY_JSON_TYPES = (
-    "TextAsset:Both",
-    "MonoBehaviour:Both",
-    "PlayableDirector:Both",
-)
-ANIMESTUDIO_FULL_JSON_TYPES = (
-    "Material:Both",
-    # These controller types provide authored clip reachability and override
-    # substitutions for AnimationClip audio callbacks.
-    "AnimatorController:Both",
-    "AnimatorOverrideController:Both",
-)
-ANIMESTUDIO_DEBUG_JSON_TYPES = (
-    "TextAsset:Both",
-    "MonoBehaviour:Both",
-    "Material:Both",
-    "AssetBundle:Both",
-    "IndexObject:Both",
-    "AnimatorController:Both",
-    "AnimatorOverrideController:Both",
-    "MonoScript:Both",
-    "PlayerSettings:Both",
-    "PlayableDirector:Both",
-    "ResourceManager:Both",
-    "SpriteAtlas:Both",
-    "NapAssetBundleIndexAsset:Both",
-    # PreloadData (Unity ClassID 150) exposes per-bundle asset-cohort PPtrs,
-    # useful for identifying which assets load together with each cutscene.
-    # AvatarMask (319) carries body-part transform masks per animation, which
-    # validates which body parts move during each cutscene. Both rely on the
-    # generic TypeTree fallback in AnimeStudio (no dedicated parser needed).
-    "PreloadData:Both",
-    "AvatarMask:Both",
-)
-ANIMESTUDIO_WEBUI_JSON_TYPES: tuple[str, ...] = ()
+# The exported Unity classes and their named levels live in `scope.py`. Every
+# class is exported from both the asset map and the loaded bundles (`:Both`).
+# The default level converts AnimationClip because Audio semantics consumes its
+# serialized callbacks, and exports AnimatorController/AnimatorOverrideController
+# JSON for the clip reachability and override substitutions of those callbacks.
+ANIMESTUDIO_TYPE_SPEC_SUFFIX = ":Both"
 # json_by_type types that may load through the generated asset map.
 #
 # Two conditions must hold, and matching object counts alone are NOT enough:
@@ -2041,57 +1966,6 @@ def animestudio_type_name(type_spec: str | None) -> str:
     return str(type_spec).split(":", 1)[0]
 
 
-def animestudio_known_asset_type_names() -> set[str]:
-    specs = (
-        ANIMESTUDIO_FULL_CONVERT_TYPES
-        + ANIMESTUDIO_DEBUG_CONVERT_TYPES
-        + ANIMESTUDIO_WEBUI_CONVERT_TYPES
-        + ANIMESTUDIO_FULL_JSON_TYPES
-        + ANIMESTUDIO_DEBUG_JSON_TYPES
-        + ANIMESTUDIO_WEBUI_JSON_TYPES
-    )
-    return {animestudio_type_name(spec).lower() for spec in specs}
-
-
-def normalize_animestudio_asset_type_filter(values: tuple[str, ...] | list[str]) -> set[str]:
-    selected = {
-        animestudio_type_name(value).lower()
-        for value in values
-        if str(value or "").strip()
-    }
-    known = animestudio_known_asset_type_names()
-    unknown = sorted(selected - known)
-    if unknown:
-        known_text = ", ".join(sorted(known))
-        raise SystemExit(
-            f"Unknown --animestudio-asset-types value(s): {', '.join(unknown)}. "
-            f"Known asset type names: {known_text}"
-        )
-    return selected
-
-
-def apply_animestudio_asset_type_filter(
-    stage_options: dict[str, dict[str, Any]],
-    selected_types: set[str],
-) -> None:
-    if not selected_types:
-        return
-    for stage in ("convert_by_type", "json_by_type"):
-        options = stage_options.get(stage)
-        if not options:
-            continue
-        filtered_types = tuple(
-            type_spec
-            for type_spec in options.get("types", ())
-            if animestudio_type_name(type_spec).lower() in selected_types
-        )
-        options["types"] = filtered_types
-        options["asset_type_filter"] = sorted(selected_types)
-        if not filtered_types:
-            options["asset_map_filter"] = False
-            options["webui_asset_filter"] = False
-
-
 def animestudio_log_suffix(item_name: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", item_name).strip("._") or "item"
 
@@ -2102,40 +1976,44 @@ def animestudio_stage_items(stage: str, types: tuple[str, ...]) -> list[tuple[st
     return [(type_spec, animestudio_type_name(type_spec)) for type_spec in types]
 
 
-def animestudio_stage_options_for_scope(scope: str, asset_mode: str = "focused") -> dict[str, dict[str, Any]]:
+def animestudio_type_specs(type_names: tuple[str, ...]) -> tuple[str, ...]:
+    return tuple(f"{name}{ANIMESTUDIO_TYPE_SPEC_SUFFIX}" for name in type_names)
+
+
+def preset_unity_scope(scope: str, asset_mode: str) -> ExtractionScope:
+    """The Unity selection an `--animestudio-scope`/`--asset-mode` preset names."""
     if scope == "story":
-        json_types = ANIMESTUDIO_STORY_JSON_TYPES
-        convert_types: tuple[str, ...] = ()
-    else:
-        if asset_mode == "focused":
-            asset_json_types = ANIMESTUDIO_WEBUI_JSON_TYPES
-            convert_types = ANIMESTUDIO_WEBUI_CONVERT_TYPES
-        elif asset_mode == "debug":
-            asset_json_types = ANIMESTUDIO_DEBUG_JSON_TYPES
-            convert_types = ANIMESTUDIO_DEBUG_CONVERT_TYPES
-        else:
-            asset_json_types = ANIMESTUDIO_FULL_JSON_TYPES
-            convert_types = ANIMESTUDIO_FULL_CONVERT_TYPES
-        if scope == "all":
-            json_types = ordered_unique(ANIMESTUDIO_STORY_JSON_TYPES + asset_json_types)
-        else:
-            json_types = asset_json_types
+        return UNITY_LEVELS["story"]
+    assets = UNITY_LEVELS[asset_mode]
+    return UNITY_LEVELS["story"] | assets if scope == "all" else assets
+
+
+def animestudio_stage_options(extraction: ExtractionScope) -> dict[str, dict[str, Any]]:
+    """Per-stage AnimeStudio options for one Unity selection.
+
+    Convert always loads through the asset map. JSON loads through it only when
+    no Story carrier is selected: Story TextAssets include DialogTree sources
+    the generated map does not list, and a map-filtered MonoBehaviour load loses
+    script names and cross-bundle PPtr targets, so any carrier keeps the whole
+    JSON stage on the broad load (the per-type TextAsset map filter still
+    applies there). Classes that must resolve across bundles
+    (`ANIMESTUDIO_ASSET_MAP_FILTER_UNSAFE_TYPES`) fall back to a broad load per
+    call either way.
+    """
+    convert_types = animestudio_type_specs(extraction.convert_classes)
+    json_types = animestudio_type_specs(extraction.json_classes)
     return {
         "maps": {"map_op": "Both", "map_type": "JSON,MessagePack"},
         "convert_by_type": {
             "export_type": "Convert",
             "types": convert_types,
-            "asset_map_filter": scope != "story" and bool(convert_types),
-            "webui_asset_filter": scope != "story" and asset_mode == "focused",
+            "asset_map_filter": bool(convert_types),
+            "webui_asset_filter": extraction.webui_textures_only,
         },
         "json_by_type": {
             "export_type": "JSON",
             "types": json_types,
-            # Story TextAssets include DialogTree sources that are not present in
-            # the generated asset map.  A combined Story+asset export must keep
-            # the JSON load broad just like the Story-only path; otherwise the
-            # build silently loses authored option anchors and branch routes.
-            "asset_map_filter": scope == "assets" and bool(json_types),
+            "asset_map_filter": bool(json_types) and not extraction.exports_story_carriers,
         },
     }
 
@@ -2375,14 +2253,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--structured-dump-mode",
         choices=STRUCTURED_DUMP_MODES,
-        default="focused",
+        default=None,
         help=(
-            "Each level contains the one below. `focused` dumps what the WebUI pages consume: "
-            "Table, JsonData, video and Lua. `default` adds the Terrain `_H` height grids map recovery "
-            "reads. `full` adds Terrain whole, Streaming, DynamicStreaming, IV, ExtendData, IFixPatch "
-            "and the bundle manifest, about 6.4 GB more. Raw asset bundles and audio packages are a "
-            "separate axis (--asset-mode); no structured level carries them, and raw containers are "
-            "never dumped."
+            "Structured preset; each level contains the one below. `focused` (the default) dumps "
+            "Table, JsonData, video and Lua. `default` adds the Terrain `_H` height grids map "
+            "recovery reads. `full` takes Terrain whole and adds the undecoded blocks (Streaming, "
+            "DynamicStreaming, IV, ExtendData, IFixPatch, the bundle manifest), published "
+            "byte-for-byte under raw/. Bundles and audio packages are never dumped."
+        ),
+    )
+    parser.add_argument(
+        "--structured",
+        nargs="+",
+        choices=STRUCTURED_BLOCKS,
+        metavar="BLOCK",
+        default=None,
+        help=(
+            "Dump exactly these structured blocks instead of a --structured-dump-mode preset: "
+            + ", ".join(STRUCTURED_BLOCKS)
+            + ". `terrain-height` is Terrain limited to its `_H` height grids."
         ),
     )
     parser.add_argument(
@@ -2466,32 +2355,46 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--animestudio-scope",
         choices=ANIMESTUDIO_SCOPES,
-        default="all",
+        default=None,
         help=(
-            "`story` exports only maps plus TextAsset/MonoBehaviour/PlayableDirector JSON. "
-            "`assets` uses --asset-mode to choose focused, default, or debug assets. "
-            "`all` combines story JSON with the selected asset mode."
+            "Unity preset. `story` exports the Story carriers (TextAsset, MonoBehaviour and "
+            "PlayableDirector JSON). `assets` exports the --asset-mode level. `all` (the default) "
+            "combines both."
         ),
     )
     parser.add_argument(
         "--asset-mode",
         dest="animestudio_asset_mode",
         choices=ANIMESTUDIO_ASSET_MODES,
-        default="focused",
+        default=None,
         help=(
-            "`focused` exports only browser-referenced Texture2D media by loading the AnimeStudio asset map "
-            "with generated name filters. `default` exports the normal image/model assets plus Material JSON. "
-            "`debug` exports the exhaustive conversion and JSON diagnostic sets."
+            "Asset level of the Unity preset. `focused` (the default) converts only the Texture2D "
+            "the generated WebUI references. `default` converts the image/model/animation media and "
+            "exports Material and animator-controller JSON. `debug` exports every class."
         ),
     )
     parser.add_argument(
-        "--animestudio-asset-types",
+        "--unity-json",
         nargs="+",
-        default=(),
+        choices=UNITY_JSON_TYPES,
+        metavar="CLASS",
+        default=None,
+        help="Export exactly these Unity classes as JSON instead of a Unity preset.",
+    )
+    parser.add_argument(
+        "--unity-convert",
+        nargs="+",
+        choices=UNITY_CONVERT_TYPES,
+        metavar="CLASS",
+        default=None,
+        help="Convert exactly these Unity classes instead of a Unity preset.",
+    )
+    parser.add_argument(
+        "--webui-textures-only",
+        action="store_true",
         help=(
-            "Limit asset-scope AnimeStudio convert/json stages to one or more Unity asset type names, "
-            "for example Sprite, Texture2D, Mesh, Animator, Material, Shader, or AnimationClip. "
-            "Maps still run when selected."
+            "With `--unity-convert Texture2D`, convert only the textures the generated WebUI "
+            "references (the `focused` asset level)."
         ),
     )
     parser.add_argument(
@@ -2630,7 +2533,48 @@ def parse_args() -> argparse.Namespace:
     args = parser.parse_args()
     if args.report_runs_to_keep < 0:
         parser.error("--report-runs-to-keep must be 0 or greater")
+    try:
+        args.extraction = resolve_extraction_scope(args)
+    except ValueError as exc:
+        parser.error(str(exc))
     return args
+
+
+def resolve_extraction_scope(args: argparse.Namespace) -> ExtractionScope:
+    """The one scope this run exports, from explicit selections or presets.
+
+    An explicit selection replaces its preset rather than narrowing it, so the
+    two spellings of one axis cannot be combined.
+    """
+    if args.structured is not None and args.structured_dump_mode is not None:
+        raise ValueError("choose --structured or --structured-dump-mode, not both")
+    explicit_unity = args.unity_json is not None or args.unity_convert is not None
+    if explicit_unity and (args.animestudio_scope is not None or args.animestudio_asset_mode is not None):
+        raise ValueError("choose --unity-json/--unity-convert or --animestudio-scope/--asset-mode, not both")
+    if args.webui_textures_only and not explicit_unity:
+        raise ValueError("--webui-textures-only needs --unity-convert Texture2D; the preset spelling is --asset-mode focused")
+    if args.skip_structured:
+        blocks: tuple[str, ...] = ()
+    elif args.structured is not None:
+        blocks = tuple(args.structured)
+    else:
+        blocks = STRUCTURED_LEVELS[args.structured_dump_mode or "focused"]
+    if explicit_unity:
+        unity = ExtractionScope.of(
+            json_types=args.unity_json or (),
+            convert_types=args.unity_convert or (),
+            webui_textures_only=args.webui_textures_only,
+        )
+    else:
+        unity = preset_unity_scope(args.animestudio_scope or "all", args.animestudio_asset_mode or "focused")
+    if args.skip_animestudio:
+        unity = ExtractionScope()
+    return ExtractionScope(
+        frozenset(blocks),
+        unity.json_types,
+        unity.convert_types,
+        unity.webui_textures_only,
+    )
 
 
 def ensure_dir(path: Path) -> Path:
@@ -2747,42 +2691,6 @@ def load_structured_incremental_manifest(
         if drift:
             raise ValueError(f"incremental structured manifest source drift for {source}: {drift}")
     return payload
-
-
-def structured_dump_steps(mode: str) -> list[dict[str, Any]]:
-    if mode not in STRUCTURED_DUMP_MODES:
-        raise ValueError(f"unsupported structured dump mode: {mode}")
-    steps = [
-        {
-            "name": "required",
-            "block_types": FOCUSED_STRUCTURED_BLOCK_TYPES,
-            "file_regexes": (),
-        },
-    ]
-    if mode == "default":
-        # Terrain's six equal-sized record families total roughly 1.1 GiB in
-        # the current build. Map recovery needs only the compact `_H` height
-        # grids (about 64 MiB), so keep the production dump proportional to its
-        # consumer instead of exporting C/T/S/A/N payloads speculatively.
-        steps.append(
-            {
-                "name": "terrain_height",
-                "block_types": ("terrain",),
-                "file_regexes": (TERRAIN_HEIGHT_FILE_REGEX,),
-            }
-        )
-    if mode == "full":
-        # `full` takes Terrain whole rather than stacking the height-only step,
-        # because a regex-filtered step and an unfiltered one over the same
-        # block would dump the height grids twice.
-        steps.append(
-            {
-                "name": "recovery",
-                "block_types": FULL_STRUCTURED_BLOCK_TYPES,
-                "file_regexes": (),
-            }
-        )
-    return steps
 
 
 def structured_dump_steps_for_source(steps: list[dict[str, Any]], source: str) -> list[dict[str, Any]]:
@@ -3129,10 +3037,10 @@ def animestudio_object_index_plan_is_relevant(
 
 def animestudio_object_index_is_enabled(
     requested: bool,
-    scope: str,
+    extraction: ExtractionScope,
     skip_animestudio: bool,
 ) -> bool:
-    return bool(requested and not skip_animestudio and scope in {"story", "all"})
+    return bool(requested and not skip_animestudio and extraction.exports_object_index_types)
 
 
 def invalidate_animestudio_object_index_commit_marker(
@@ -3169,19 +3077,36 @@ def _replace_tree(source: Path, target: Path, graveyard: Path) -> None:
 
 
 def publish_structured_dump(output_root: Path, layer: str) -> dict[str, Any]:
-    """Publish the effective structured dump into game/, dropping the VFS `Data/` prefix."""
+    """Publish the effective structured dump, dropping the VFS `Data/` prefix.
+
+    Decoded blocks go to game/; undecoded ones (Streaming, IV, ExtendData, ...)
+    go byte-for-byte to raw/. A folder with a place in neither stops the publish.
+    """
     layout = ExportLayout(output_root)
     staging = structured_output_dir(output_root, layer)
     staged_game_files = staging / "packed_game_files.sqlite"
     # Inside the export root: same volume as game/, so every move is a rename.
     graveyard = layout.root / ".publish-replaced"
     published: list[str] = []
+    published_raw: list[str] = []
     for entry in sorted(staging.iterdir()) if staging.is_dir() else []:
         if entry == staged_game_files and entry.is_file():
             continue
         if entry.name == "Data" and entry.is_dir():
             for data_entry in sorted(entry.iterdir()):
-                target = layout.game_file(f"Data/{data_entry.name}/x").parent
+                logical = f"Data/{data_entry.name}/x"
+                try:
+                    target = layout.game_file(logical).parent
+                except ExportLayoutError:
+                    try:
+                        target = layout.raw_file(logical).parent
+                    except ExportLayoutError:
+                        raise SystemExit(
+                            f"structured dump produced {data_entry}, which has no place in game/ or raw/"
+                        ) from None
+                    _replace_tree(data_entry, target, graveyard)
+                    published_raw.append(target.name)
+                    continue
                 _replace_tree(data_entry, target, graveyard)
                 published.append(target.name)
         elif entry.name in ("Table", "Lua") and entry.is_dir():
@@ -3201,8 +3126,11 @@ def publish_structured_dump(output_root: Path, layer: str) -> dict[str, Any]:
         staged_game_files.unlink()
     if graveyard.exists():
         shutil.rmtree(graveyard)
-    log(f"  published structured dump from {layer}: {', '.join(published) or 'nothing'}")
-    return {"layer": layer, "folders": published, "packed": packed}
+    log(
+        f"  published structured dump from {layer}: {', '.join(published) or 'nothing'}"
+        + (f"; undecoded into raw/: {', '.join(published_raw)}" if published_raw else "")
+    )
+    return {"layer": layer, "folders": published, "rawFolders": published_raw, "packed": packed}
 
 
 def pack_published_game_dirs(
@@ -3424,6 +3352,97 @@ def publish_unity_outputs(
         f"staged stores removed={removed_stores}"
     )
     return {"types": sorted(desired), "skippedIncompleteTypes": incomplete, **counts}
+
+
+EXTRACTION_PROVENANCE_SCHEMA = "endfield.export-provenance.v1"
+#: The source-fingerprint fields that decide whether an output is current.
+PROVENANCE_FINGERPRINT_FIELDS = ("files", "bytes", "latest_mtime_ns", "fingerprint")
+
+
+def provenance_stamp(source_sizes: dict[str, Any], run_id: str | None) -> dict[str, Any]:
+    return {
+        "run": run_id,
+        "sources": {
+            source: {field: (info or {}).get(field) for field in PROVENANCE_FINGERPRINT_FIELDS}
+            for source, info in sorted(source_sizes.items())
+        },
+    }
+
+
+def record_extraction_provenance(
+    output_root: Path,
+    *,
+    structured_blocks: tuple[str, ...],
+    unity_types: tuple[str, ...],
+    partial_unity_types: dict[str, str],
+    asset_map_refreshed: bool,
+    source_sizes: dict[str, Any],
+    previous_summary: dict[str, Any],
+    run_id: str,
+) -> dict[str, Any]:
+    """Record which installed build each output published by this run came from.
+
+    A run exports only its scope and leaves every other output as published, so
+    one whole-export fingerprint cannot say whether a given output is current.
+    Each structured block, Unity class and the asset maps carry their own stamp.
+    Outputs published before this file existed share the `default` stamp: the
+    previous summary's structured fingerprint, which was their only authority.
+    A class exported through a name filter is stamped `partial` with the reason,
+    so a build that needs the whole class can refuse it.
+    """
+    path = ExportLayout(output_root).extraction_provenance_path
+    try:
+        provenance = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        provenance = {}
+    if provenance.get("schema") != EXTRACTION_PROVENANCE_SCHEMA:
+        previous_sizes = previous_summary.get("source_sizes") or {}
+        provenance = {
+            "schema": EXTRACTION_PROVENANCE_SCHEMA,
+            "default": provenance_stamp(previous_sizes, previous_summary.get("report_run_id")) if previous_sizes else None,
+            "structured": {},
+            "unity": {},
+            "meta": {},
+        }
+    stamp = provenance_stamp(source_sizes, run_id)
+    structured = provenance.setdefault("structured", {})
+    for block in structured_blocks:
+        structured[block] = stamp
+    # A block shares its game/ folder with the other spelling of itself: whole
+    # Terrain includes the height grids, and a height-only dump replaces game/Terrain.
+    if "terrain" in structured_blocks:
+        structured["terrain-height"] = stamp
+    elif "terrain-height" in structured_blocks:
+        structured.pop("terrain", None)
+    unity = provenance.setdefault("unity", {})
+    for type_name in unity_types:
+        unity[type_name] = (
+            {**stamp, "partial": partial_unity_types[type_name]}
+            if type_name in partial_unity_types else stamp
+        )
+    if asset_map_refreshed:
+        provenance.setdefault("meta", {})["asset_map"] = stamp
+    ensure_dir(path.parent)
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(json.dumps(provenance, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
+    return {
+        "path": str(path),
+        "structured": list(structured_blocks),
+        "unity": list(unity_types),
+        "partial": dict(partial_unity_types),
+        "assetMap": asset_map_refreshed,
+    }
+
+
+def partial_unity_exports(args: argparse.Namespace, extraction: ExtractionScope) -> dict[str, str]:
+    """The classes this run exported only in part, with the filter that narrowed them."""
+    partial: dict[str, str] = {}
+    if args.animestudio_story_monobehaviour_names and "MonoBehaviour" in extraction.json_types:
+        partial["MonoBehaviour"] = "story MonoBehaviour name filter"
+    if extraction.webui_textures_only:
+        partial["Texture2D"] = "WebUI-referenced Texture2D names only"
+    return partial
 
 
 def effective_structured_layer(game_root: Path, sources: tuple[str, ...]) -> str:
@@ -6161,9 +6180,10 @@ def main() -> int:
     selected_sources = ordered_unique(args.sources)
     selected_animestudio_stages = ordered_unique(args.animestudio_stages)
     animestudio_object_index_requested = bool(args.animestudio_object_index)
+    extraction: ExtractionScope = args.extraction
     animestudio_object_index_enabled = animestudio_object_index_is_enabled(
         animestudio_object_index_requested,
-        args.animestudio_scope,
+        extraction,
         bool(args.skip_animestudio),
     )
     managed_reference_diagnostics_enabled = bool(args.animestudio_managed_reference_diagnostics)
@@ -6195,18 +6215,13 @@ def main() -> int:
             "at least one --animestudio-managed-reference-diagnostic-type"
         )
     if managed_reference_diagnostics_enabled and (
-        args.skip_animestudio or args.animestudio_scope not in {"story", "all"}
+        args.skip_animestudio or "MonoBehaviour" not in extraction.json_types
     ):
         raise SystemExit(
-            "--animestudio-managed-reference-diagnostics requires a Story or all-scope "
-            "AnimeStudio MonoBehaviour JSON export"
+            "--animestudio-managed-reference-diagnostics requires a MonoBehaviour JSON export"
         )
-    structured_dump_plan = structured_dump_steps(args.structured_dump_mode)
-    animestudio_stage_options = animestudio_stage_options_for_scope(args.animestudio_scope, args.animestudio_asset_mode)
-    animestudio_asset_type_filter = normalize_animestudio_asset_type_filter(tuple(args.animestudio_asset_types))
-    if animestudio_asset_type_filter and args.animestudio_scope == "story":
-        raise SystemExit("--animestudio-asset-types applies only to asset or all AnimeStudio scopes")
-    apply_animestudio_asset_type_filter(animestudio_stage_options, animestudio_asset_type_filter)
+    structured_dump_plan = structured_dump_steps(extraction.structured_blocks)
+    animestudio_stage_options = animestudio_stage_options(extraction)
     # Overlay skip lists need both layers' indexes even for Story-only exports.
     # A first-time Story export has no cached indexes to reuse.
     vfs_index_enabled = should_build_vfs_indexes(
@@ -6215,7 +6230,7 @@ def main() -> int:
     )
     webui_texture_name_filter: Path | None = None
     webui_texture_name_filter_signature: dict[str, Any] | None = None
-    if not args.skip_animestudio and args.animestudio_scope != "story" and args.animestudio_asset_mode == "focused":
+    if not args.skip_animestudio and extraction.webui_textures_only:
         webui_texture_name_filter, webui_texture_name_filter_signature = write_webui_texture_name_filter(output_root)
     if args.animestudio_jobs < 1:
         raise SystemExit("--asset-jobs must be at least 1")
@@ -6303,16 +6318,16 @@ def main() -> int:
     log(f"  selected sources: {', '.join(selected_sources)}")
     log(f"  structured export: {'disabled' if args.skip_structured else 'enabled'}")
     if not args.skip_structured:
-        log(f"  structured dump mode: {args.structured_dump_mode}")
+        log(f"  structured blocks: {', '.join(extraction.structured_blocks)}")
         log(f"  structured dump plan: {describe_structured_dump_steps(structured_dump_plan)}")
     log(f"  vfs index: {'enabled' if vfs_index_enabled else 'disabled'}")
     log("  raw vfs export: disabled")
     log(f"  animestudio export: {'disabled' if args.skip_animestudio else 'enabled'}")
-    log(f"  animestudio scope: {args.animestudio_scope}")
-    log(f"  animestudio asset mode: {args.animestudio_asset_mode}")
+    log(f"  animestudio JSON classes: {', '.join(extraction.json_classes) or 'none'}")
     log(
-        "  animestudio asset type filter: "
-        f"{', '.join(sorted(animestudio_asset_type_filter)) if animestudio_asset_type_filter else 'none'}"
+        "  animestudio Convert classes: "
+        f"{', '.join(extraction.convert_classes) or 'none'}"
+        f"{' (WebUI-referenced Texture2D names only)' if extraction.webui_textures_only else ''}"
     )
     log(f"  animestudio stages: {', '.join(selected_animestudio_stages)}")
     log(f"  animestudio type job mode: {args.animestudio_type_job_mode}")
@@ -6360,8 +6375,8 @@ def main() -> int:
         )
     if animestudio_object_index_requested and not animestudio_object_index_enabled:
         log(
-            "  animestudio object index ignored: asset-only scope cannot replace "
-            "the broad Story object index"
+            "  animestudio object index ignored: no MonoBehaviour or PlayableDirector "
+            "JSON is exported, so the Story object index cannot be replaced"
         )
     if webui_texture_name_filter is not None and webui_texture_name_filter_signature is not None:
         log(
@@ -6396,7 +6411,7 @@ def main() -> int:
                 output_root=output_root,
                 selected_sources=selected_sources,
                 current_source_sizes=source_sizes,
-                structured_dump_mode=args.structured_dump_mode,
+                structured_dump_mode=args.structured_dump_mode or "focused",
             )
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc
@@ -6430,9 +6445,9 @@ def main() -> int:
         "dummy_dlls_source": animestudio_dummy_dll_source,
         "dummy_dll_signature": animestudio_dummy_dll_signature,
         "game": ANIMESTUDIO_GAME,
-        "scope": args.animestudio_scope,
-        "asset_mode": args.animestudio_asset_mode,
-        "asset_type_filter": sorted(animestudio_asset_type_filter),
+        "json_types": list(extraction.json_classes),
+        "convert_types": list(extraction.convert_classes),
+        "webui_textures_only": extraction.webui_textures_only,
         "webui_texture_name_filter": str(webui_texture_name_filter) if webui_texture_name_filter else None,
         "webui_texture_name_filter_signature": webui_texture_name_filter_signature,
         "mono_behaviour_type_tree_priority": animestudio_mono_behaviour_type_tree_priority,
@@ -6607,7 +6622,8 @@ def main() -> int:
                 "returncode": (
                     current_structured_returncode if current_structured_returncode is not None else previous_structured.get("returncode")
                 ),
-                "dump_mode": args.structured_dump_mode,
+                "dump_mode": args.structured_dump_mode or ("custom" if args.structured is not None else "focused"),
+                "blocks": list(extraction.structured_blocks),
                 "dump_plan": describe_structured_dump_steps(source_structured_dump_plan),
                 "steps": structured_steps,
                 "block_types": sorted(
@@ -6711,7 +6727,6 @@ def main() -> int:
 
             carrier_refresh_will_run = (
                 not args.report_only
-                and args.animestudio_scope in {"story", "all"}
                 and animestudio_object_index_plan_is_relevant(
                     animestudio_stage_plans
                 )
@@ -6994,6 +7009,23 @@ def main() -> int:
                 tuple(layer for layer in INSTALLED_LAYERS if (game_root / layer / "VFS").is_dir()),
                 completed_types=unity_types_completed,
             )
+        refreshed_blocks: tuple[str, ...] = ()
+        if "structured" in publish_summary:
+            refreshed_blocks = extraction.structured_blocks
+        elif structured_incremental_manifest is not None:
+            refreshed_blocks = STRUCTURED_LEVELS[
+                str(structured_incremental_manifest.get("structuredDumpMode") or "focused")
+            ]
+        publish_summary["provenance"] = record_extraction_provenance(
+            output_root,
+            structured_blocks=refreshed_blocks,
+            unity_types=tuple((publish_summary.get("unity") or {}).get("types") or ()),
+            partial_unity_types=partial_unity_exports(args, extraction),
+            asset_map_refreshed=not args.skip_animestudio and "maps" in selected_animestudio_stages,
+            source_sizes=source_sizes,
+            previous_summary=previous_summary,
+            run_id=report_run_id,
+        )
 
     unresolved_dir = ensure_dir(ExportLayout(output_root).extraction_failures_dir)
     log(f"writing unresolved summaries to {unresolved_dir}")
@@ -7161,11 +7193,10 @@ def main() -> int:
     else:
         md_lines.append(f"- Executable: `{animestudio}`")
         md_lines.append(f"- Game: `{ANIMESTUDIO_GAME}`")
-        md_lines.append(f"- Scope: `{args.animestudio_scope}`")
-        md_lines.append(f"- Asset mode: `{args.animestudio_asset_mode}`")
+        md_lines.append(f"- JSON classes: `{', '.join(extraction.json_classes) or 'none'}`")
         md_lines.append(
-            "- Asset type filter: "
-            f"`{', '.join(sorted(animestudio_asset_type_filter)) if animestudio_asset_type_filter else 'none'}`"
+            f"- Convert classes: `{', '.join(extraction.convert_classes) or 'none'}`"
+            + (" (WebUI-referenced Texture2D names only)" if extraction.webui_textures_only else "")
         )
         md_lines.append(f"- Selected stages: `{', '.join(selected_animestudio_stages)}`")
         md_lines.append(f"- Type job mode: `{args.animestudio_type_job_mode}`")

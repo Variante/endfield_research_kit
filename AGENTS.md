@@ -300,8 +300,19 @@ what a reader of that file would still get wrong.
 - Pass `--from-game` only when the user explicitly asks to refresh
   `export_full/` from the installed client. `export.bat` reads the existing
   export by default.
-- Prefer `export.bat --from-game --with-assets` when Story and assets both need
-  an installed-game refresh; it runs one AnimeStudio pass instead of two.
+- `export.bat` is grouped by page: `export.bat [PAGE ...] [--from-game]`.
+  Name only the pages a change affects; with `--from-game` the run extracts
+  exactly what those pages read or show. `story` is the text-only Story/Text
+  export (tables, JsonData, the Story Unity classes; no image, video or
+  audio); `story-media` adds Story's images and videos (`story_media.json`)
+  and the voice lines the Audio build attaches, rebuilding Audio too; `data` serves every decodable output the other pages do not show, so
+  an all-page run extracts as much as `debug` (every structured block and
+  Unity class). `--show-plan` prints the tasks, scope and freshness
+  requirements without running anything.
+- What a page reads is declared once, per build task, in
+  `scripts/webui/pages.py`. A builder that starts reading a new export input
+  must add it to its task there, or page runs will neither extract it nor check
+  that it is current.
 - For a focused Mission Pipeline edit loop use the direct Python sequences in
   `.codex/skills/endfield-mission-pipeline-build/SKILL.md`. The wrapper no
   longer owns a Mission Pipeline scope.
@@ -313,11 +324,14 @@ what a reader of that file would still get wrong.
   `ENDFIELD_EXPORT_ROOT` defaults; explicit path flags still override it.
 - Installed-game-only options are rejected with an explanation when
   `--from-game` is absent, never silently dropped.
-- Asset-only extraction preserves the previous structured Story/Table source
-  fingerprints and records its asset scan separately. It must never make
-  untouched structured data appear fresh after a client update.
-- Reject `--animestudio-object-index` in any scope that skips Story evidence,
-  because such a scope cannot refresh its Story consumer report.
+- A page run leaves every output outside its scope as published. The exporter
+  stamps each published structured block, Unity class and the asset maps with
+  the installed build they came from (`meta/extraction/provenance.json`), and a
+  build refuses any input it reads that another build produced. Never widen a
+  stamp to outputs a run did not publish.
+- MonoBehaviour and PlayableDirector are exported together, and every run that
+  exports them republishes the object index; exporting one alone would publish
+  an index missing the other's rows.
 - `export.bat` does not refresh `webui/overrides/story_order.json`; active
   Story order is user-managed there, while OCR recovery writes proposals to
   `webui/data/story_order_ocr.json`.
@@ -463,13 +477,15 @@ Browser behavior:
 
 Export freshness:
 
-- `export.bat` runs `scripts/game_data/extraction/verify_export_freshness.py` before rebuilding
-  from an existing `export_full/`.
+- `export.bat` checks, before building, that every export input the selected
+  pages read exists (when required) and came from the installed build, using
+  `verify_export_freshness.verify` with the page registry's requirements.
 - Run `python -m scripts.game_data.extraction.verify_export_freshness` directly when checking the
-  guard, and pass `--game-root "...\Endfield_Data"` for non-default installs.
-- If freshness reports stale source roots, rerun
-  `.\export.bat --from-game` before Story or asset builders read
-  `export_full/`.
+  guard (`--require-structured`/`--require-unity` name what to check; the
+  default is the Story/Text inputs), and pass `--game-root "...\Endfield_Data"`
+  for non-default installs.
+- If it reports a stale or partial output, re-extract the named pages with
+  `.\export.bat PAGE --from-game` before building them.
 
 Setup and export internals:
 
@@ -480,40 +496,33 @@ Setup and export internals:
   `--fallback-assets <FALLBACK_ASSETS>`. `dump`, `stream`, and `vfs-index` accept repeated
   `--block-type` flags plus repeated `--file-regex` filters; `stream` exposes the
   same targeted VFS filtering for JSONL byte streaming.
-- **`--for story|map|pages|everything` is the one knob most callers should
-  use.** It sets the structured and asset scopes together from an intent, fills
-  only what the caller left unset, and is overridden by an explicit
-  `--structured-dump-mode` or `--*-assets` in either argument order.
-  `--show-scope` prints the resolved scopes and exits without exporting.
-  `story` -> focused/no assets, `map` -> default/no assets, `pages` ->
-  default/default, `everything` -> full/debug. The presets are intents, not a
-  derivation from a page list: the page-to-input mapping cross-cuts (Map wants
-  Terrain and no bundles, Assets wants bundles and no Terrain), so a single
-  linear level would force over-export and a page-to-input table would have to
-  track every builder's inputs.
-- `--structured-dump-mode` has three levels and each contains the one below.
-  **`focused`** is the default and dumps what the WebUI pages consume:
-  `table`, `json-data`, video and `lua`. **`default`** adds the Terrain height
-  grids map recovery reads, about 64 MiB of Terrain's 1.19 GB. **`full`** adds
-  Terrain whole, `streaming`, `dynamic-streaming`, `iv`, `extend-data`,
-  `i-fix-patch` and the bundle manifest -- roughly 6.4 GB more, and only
-  recovery work reads it. A local test pins the ladder and pins that
-  `export.bat` accepts exactly the modes Python defines.
-  Lua is in the narrowest level deliberately: it is ~16 MB decoded and the
-  Mission Pipeline already consumes the index built from it, so excluding it
-  only forced a separate hand-run extraction. The exporter decodes the
-  base64+XXTEA wrapper and writes `game/Lua/<name>.lua`.
-  Raw asset bundles and audio PCK/media are a **separate axis** -- the
-  `--*-assets` scopes and `export_assets.bat` -- and no structured level
-  carries them. `build_audio.py` streams Wwise bank metadata directly from VFS
-  when relinking audio events. Raw containers are still never dumped; probe
-  them with a bounded `AnimeStudio.CLI dump` into `tmp/`.
-- `export_assets.bat --from-game` (that is, `export.bat --assets-only
-  --from-game`) passes `--skip-structured`, writes a
-  lightweight VFS metadata index, runs WebUI-facing image/model/Material
-  export, and decodes CN audio before relinking.
-- `export.bat --from-game --with-assets` keeps the structured Story
-  refresh and folds the asset export into the same AnimeStudio run.
+- **Plain `export.bat` extracts nothing**; `--from-game` extracts the union of
+  the named pages' inputs (every page when none is named), and `debug` extracts
+  `scope.EVERYTHING`. The setup path is `export.bat story --from-game
+  --animestudio-story-monobehaviour-names`; that name filter is refused for
+  any other page, and the exporter stamps the MonoBehaviour export partial.
+- The extraction vocabulary lives in `scripts/game_data/extraction/scope.py`:
+  the decoded structured blocks that publish into `game/` (`table`,
+  `json-data`, `video`, `audit-video`, `lua`, `terrain-height`, `terrain`), the
+  undecoded blocks (`RAW_BLOCKS`) that publish byte-for-byte into `raw/`, and
+  the Unity JSON and Convert classes. `export_full_from_game.py` takes `--structured` and
+  `--unity-json`/`--unity-convert`, or the presets `--structured-dump-mode
+  focused|default|full` and `--animestudio-scope`/`--asset-mode`. A local test
+  pins the level ladder and that every offered block has a `game/` or `raw/`
+  folder. Streaming, DynamicStreaming, IV, ExtendData, IFixPatch and the
+  bundle manifest are undecoded: they go to `raw/` for the Data page's byte
+  view only, nothing builds from them, and the recovery tools still stream
+  them from the installed client with `AnimeStudio.CLI stream`. Bundles and
+  audio packages are never dumped.
+  Lua is not a Story input; it ships with the Data page (and every all-page
+  run). The Mission Pipeline consumes the index built from it, and the
+  exporter writes `game/Lua/<name>.lua` after removing the base64+XXTEA
+  wrapper.
+  `build_audio.py` streams Wwise bank metadata directly from VFS and decodes
+  CN audio itself when the Audio page runs with `--from-game`.
+- Every AnimeStudio extraction, including Story-only, writes current VFS
+  metadata indexes: Unity overlay skip lists require both installed layers even
+  on first setup.
 - `tools\DummyDll` is the preferred repo-local IL2CPP DummyDll root when
   optional script-schema recovery is wanted. Wrapper flags or
   `ANIMESTUDIO_DUMMY_DLLS` can supply it, but missing or stale DummyDll paths

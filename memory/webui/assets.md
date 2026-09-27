@@ -49,12 +49,13 @@ Primary outputs: `webui/data/assets/{index,table_owners,videos}.json`
 
 ```bat
 python -m scripts.webui.assets.build_assets
-.\export_assets.bat --from-game --focused-assets
-.\export_assets.bat --from-game --default-assets
+.\export.bat assets --from-game
+.\export.bat assets
 ```
 
-Use `--debug-assets` only for broad investigation. Prefer
-`.\export.bat --from-game --with-assets` when Story also needs refresh.
+The Assets page extracts Table, video, Material JSON and the Texture2D,
+Sprite, Mesh and Animator media. Use `.\export.bat debug --from-game` only for
+broad investigation; the index then also carries every debug class.
 
 ## Remaining gaps
 

@@ -133,19 +133,22 @@ if errorlevel 1 goto :failed
 
 echo.
 echo [setup 6/7] Exporting Story and Text Tables data from the installed game...
-echo [setup] Building Story and Text Tables only; all semantic views are a
+echo [setup] Building Story and Text Tables only; the other pages are a
 echo [setup] separate run so first-time setup reaches a browsable WebUI sooner.
-call .\export.bat --from-game --story-only --animestudio-story-monobehaviour-names --game-root "%GAME_ROOT%"
+call .\export.bat story --from-game --animestudio-story-monobehaviour-names --game-root "%GAME_ROOT%"
 if errorlevel 1 goto :failed
 
 echo.
 echo [setup 7/7] Optional follow-up steps for a fuller WebUI experience...
-echo [setup] Mission Pipeline, Characters, Gameplay, and the source graph were skipped by step 6.
-echo [setup] Build them from the export you just made (no re-export needed):
-echo [setup]   .\export.bat
-echo [setup] Asset media and CN audio export is optional and can take several hours.
-echo [setup] Run this later when you want Assets tab media and playable CN audio:
-echo [setup]   .\export_assets.bat --from-game
+echo [setup] Step 6 built Story and Text as text only: no image, video or audio.
+echo [setup] Add Story's images, videos and voice lines with:
+echo [setup]   .\export.bat story-media --from-game
+echo [setup] Map, Characters, Gameplay, Audio, Assets and Data were skipped by step 6.
+echo [setup] Each page extracts only what it reads; build one or all of them with:
+echo [setup]   .\export.bat map --from-game
+echo [setup]   .\export.bat --from-game
+echo [setup] Asset media and CN audio decoding can take several hours.
+echo [setup] Mission Pipeline is a separate recovery tool; see scripts\README.md.
 echo [setup] Updates requires two complete exports and is unavailable after
 echo [setup] this first export. After a later export, compare OLD and NEW with:
 echo [setup]   .\build_updates.bat OLD NEW
@@ -222,7 +225,7 @@ echo   2. initialize tools\AnimeStudio
 echo   3. install the pinned vgmstream audio decoder
 echo   4. build the AnimeStudio CLI
 echo   5. verify AnimeStudio VFS/audio commands
-echo   6. run export.bat --from-game --story-only with the lean
+echo   6. run export.bat story --from-game with the lean
 echo      Story MonoBehaviour name filter
 echo   7. print follow-up commands and start or reuse the WebUI server
 echo.
