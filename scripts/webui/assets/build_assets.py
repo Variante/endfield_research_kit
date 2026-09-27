@@ -37,6 +37,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "to AnimeStudio export scope, not index construction."
         ),
     )
+    parser.add_argument(
+        "--publish",
+        choices=("all", "index", "story-media"),
+        default="all",
+        help=(
+            "`index` writes the Assets page's index.json and table_owners.json; "
+            "`story-media` writes only the Story page's story_media.json (its "
+            "images and videos); `all` writes both."
+        ),
+    )
     return parser.parse_args(argv)
 
 
@@ -156,7 +166,7 @@ def main(argv: list[str] | None = None) -> None:
     # indexes.
     ASSET_DIR.mkdir(parents=True, exist_ok=True)
 
-    print(f"Building {args.mode} asset index from {EXPORT_ROOT}...")
+    print(f"Building {args.mode} asset index ({args.publish}) from {EXPORT_ROOT}...")
     asset_index_path = ASSET_DIR / "index.json"
     scan = scan_exported_media_assets(root=ROOT, export_root=EXPORT_ROOT)
     asset_payload, video_payload, story_payload, full_asset_payload = build_output_payloads(
@@ -165,6 +175,10 @@ def main(argv: list[str] | None = None) -> None:
         root=ROOT,
         export_root=EXPORT_ROOT,
     )
+    if args.publish in ("all", "story-media"):
+        report_story_media(write_story_media_payload(story_payload))
+    if args.publish == "story-media":
+        return
     write_json(asset_index_path, asset_payload)
     # Exact table-row ownership for the indexed assets. The scan is the full
     # index, not the focused Story/Wiki projection, so the sidecar describes
@@ -185,7 +199,6 @@ def main(argv: list[str] | None = None) -> None:
             f"{owner_counts.get('tables', 0)} tables)"
         ),
     )
-    story_media_stats = write_story_media_payload(story_payload)
     asset_stats, video_stats = _payload_stats(
         asset_payload,
         video_payload,
@@ -215,17 +228,22 @@ def main(argv: list[str] | None = None) -> None:
         ),
     )
     print("Video index:", f"{video_stats['videos']} videos (in-memory Story media input)")
+
+
+def report_story_media(stats: dict) -> None:
     print(
         "Story media index:",
         ASSET_DIR / "story_media.json",
         (
-            f"({story_media_stats['images']} images from {story_media_stats['imageIds']} ids "
-            f"plus {story_media_stats['storyFileImages']} Story image files "
-            f"({story_media_stats['cgImages']} CG; {story_media_stats['bigLogoImages']} BigLogo; "
-            f"{story_media_stats['remoteCommImages']} remote comm); "
-            f"{story_media_stats['videos']} videos from {story_media_stats['videoRefs']} refs)"
+            f"({stats['images']} images from {stats['imageIds']} ids "
+            f"plus {stats['storyFileImages']} Story image files "
+            f"({stats['cgImages']} CG; {stats['bigLogoImages']} BigLogo; "
+            f"{stats['remoteCommImages']} remote comm); "
+            f"{stats['videos']} videos from {stats['videoRefs']} refs)"
         ),
     )
+
+
 if __name__ == "__main__":
     try:
         main()

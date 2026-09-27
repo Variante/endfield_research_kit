@@ -26,8 +26,10 @@ other pages, not proof that an asset was used at runtime.
 5. Packaging may publish a compact normal-page media index and a complete
    resource index. Extract the resources archive last so the complete index wins.
 
-Primary outputs: `webui/data/assets/{index,story_media,table_owners,videos}.json`;
-Gameplay separately owns `gameplay_refs.json`.
+Primary outputs: `webui/data/assets/{index,table_owners,videos}.json`
+(`build_assets --publish index`); Story media owns `story_media.json`
+(`--publish story-media`, the `story_media` task) and Gameplay owns
+`gameplay_refs.json`.
 
 ## Evidence boundary
 
