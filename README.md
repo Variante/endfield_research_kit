@@ -107,6 +107,22 @@ voice), `map`, `characters`, `gameplay`, `audio`, `assets` and `data`;
 `--from-game` refuses inputs extracted from an older client build, and names
 the pages to re-extract.
 
+### What each page extracts
+
+The chart below shows what each page reads from the export and how the pages
+depend on each other. A page run extracts only its column. Map, Characters and
+Gameplay also build the Assets index. Pages that read Story's output use the
+published copy unless Story is built in the same run. Data shows every
+decodable output the other pages do not, so extracting every page (no page
+named) extracts everything, the same as `debug`. The page registry,
+[`scripts/webui/pages.py`](scripts/webui/pages.py), is the source of truth;
+`.\export.bat PAGE --from-game --show-plan` prints the same information for a
+run.
+
+<p align="center">
+  <img src="res/export_pages.svg" alt="Matrix of the structured blocks, Unity classes and indexes each export.bat page extracts, and a diagram of the page build dependencies" width="100%">
+</p>
+
 `python serve.py` serves whatever has already been generated; it does not build
 page data. The **Data** page's file viewer and SQL console are the exception:
 they query the export's `Unity.sqlite` and `GameFiles.sqlite` live through
