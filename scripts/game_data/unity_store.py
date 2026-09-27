@@ -632,7 +632,10 @@ class UnityObjectStoreWriter:
             )
         return {"written": written - unreadable, "unchanged": unchanged, "removed": removed, "unreadable": unreadable}
 
-    def merge_staged(self, type_name: str, staged: Iterable[Path], *, batch: int = 20000) -> dict[str, int]:
+    def merge_staged(
+        self, type_name: str, staged: Iterable[Path], *, batch: int = 20000,
+        remove_missing: bool = True,
+    ) -> dict[str, int]:
         """Make one type's rows equal the union of that type's rows in ``staged`` stores, with SQL.
 
         ``staged`` are store files of this schema (AnimeStudio ``--document_store``
@@ -640,7 +643,8 @@ class UnityObjectStoreWriter:
         ``name`` column) a later store wins. Rows are copied as stored -- bytes,
         hash and header columns -- so nothing is read back or recompressed. Only
         rows whose SHA256 differs from the current row are written, rows of the
-        type absent from the union are deleted, and the counts match
+        type absent from the union are deleted when ``remove_missing`` is true,
+        and the counts match
         :meth:`sync_type` (``written``/``unchanged``/``removed``).
         """
         paths = [Path(path) for path in staged]
@@ -680,11 +684,13 @@ class UnityObjectStoreWriter:
             )
             connection.commit()
             picked = connection.execute("SELECT COUNT(*) FROM temp.merge_pick").fetchone()[0]
-            removed = connection.execute(
-                "DELETE FROM main.objects WHERE type=? AND name NOT IN (SELECT name FROM temp.merge_pick)",
-                (type_name,),
-            ).rowcount
-            connection.commit()
+            removed = 0
+            if remove_missing:
+                removed = connection.execute(
+                    "DELETE FROM main.objects WHERE type=? AND name NOT IN (SELECT name FROM temp.merge_pick)",
+                    (type_name,),
+                ).rowcount
+                connection.commit()
             written = 0
             for index, alias in enumerate(aliases):
                 low, high = connection.execute(

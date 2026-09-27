@@ -126,6 +126,10 @@ per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_ma
   effective (`animestudio_index_io.EffectiveObjectRows`), counting every
   `object` row for its integrity check. Slots match by (chunk file name,
   offset); the catalogue loader fails closed if one name denotes two chunks.
+  Even a Story-only AnimeStudio run regenerates the lightweight VFS indexes
+  before writing skip lists. On a first export there is no earlier catalogue
+  to reuse, and the overlay cannot safely decide which Unity bundles are live
+  without both installed layers' indexes.
 - v3 and v4 differ from v2 only in which small files are published loose. Loose files made
   every consumer pay for directory enumeration and cold small-file reads
   (about 2.8 ms per MonoBehaviour cold, against about 20 us per row scanned
@@ -149,15 +153,23 @@ per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_ma
   in place (verify every row, then delete; resumable; an unreadable file stops
   it unless `--accept-unreadable` records the loss; `--unpack` reverses it).
 - Staging, filters and index parts live under
-  `tmp/game_data/export/<root>-<hash>/`. Convert staging (also the per-asset
-  reuse cache) stays one file per object because that reuse is file based.
-  JSON staging is one store per CLI call: AnimeStudio `--document_store`
-  writes each document as a row of the object-store format (exact bytes,
-  SHA256, the `describe_document` header columns), so about 1.45 M loose
-  staging files are never created. Publishing merges the layers' staged stores
-  into `Unity.sqlite` with SQL (later layer wins, only rows whose SHA256
-  changed are written) and deletes them; loose Convert documents are still
-  synced by (size, mtime). Media is mirrored as hardlinks. Both happen per type
+  `tmp/game_data/export/<root>-<hash>/`. Both JSON and Convert calls pass
+  AnimeStudio `--document_store`, which writes `.json` and `.anim` documents
+  directly into object stores (exact bytes, SHA256, and the
+  `describe_document` header columns). Successful Convert shard stores merge
+  into persistent per-layer, per-type staging stores; the per-asset cache
+  checks SQLite row size and timestamp instead of a loose document. The
+  first upgraded run reconverts old loose-only cache entries. JSON call stores
+  are disposable. Publishing merges the layers' staged stores into
+  `Unity.sqlite` with SQL (later layer wins, only rows whose SHA256 changed
+  are written), retains Convert stores for later cache hits, and removes JSON
+  call stores. The JsonData dump also passes
+  `--packed-game-store`: `Json/LipSync` rows go straight into a staged
+  `GameFiles.sqlite` format and are merged by SQL during structured publish,
+  without loose LipSync files. Changed-only extraction stages selected LipSync
+  rows into the same format and applies them through the game-file writer;
+  rollback keeps previous bytes in its process journal. Convert media remains
+  loose and is mirrored as hardlinks. Publication happens per type
   only when every installed layer finished that type's item
   in this run, never after a failed command or a failed stage item; the
   structured tree is published only by a run that dumped the effective layer.

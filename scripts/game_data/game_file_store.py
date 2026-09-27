@@ -212,6 +212,12 @@ class GameFileStoreWriter:
             raise UnityStoreError(f"{folder!r} is not one of PACKED_GAME_DIRS {PACKED_GAME_DIRS}")
         return self._engine.sync_type(folder, dict(files), remove_missing=remove_missing, progress=progress, strict=strict)
 
+    def merge_staged(self, folder: str, staged: list[Path]) -> dict[str, int]:
+        """Replace one packed folder from completed AnimeStudio stores without loose files."""
+        if folder not in PACKED_GAME_DIRS:
+            raise UnityStoreError(f"{folder!r} is not one of PACKED_GAME_DIRS {PACKED_GAME_DIRS}")
+        return self._engine.merge_staged(folder, staged)
+
     def row_stamp(self, game_path: str) -> tuple[int, int] | None:
         folder, name = _split(game_path)
         return self._engine.stamps(folder).get(name)

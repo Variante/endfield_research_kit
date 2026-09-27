@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 from contextlib import contextmanager
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Iterator
 
@@ -39,7 +40,7 @@ if __package__ in {None, ""}:
 
 from scripts.common import ROOT, read_json
 from scripts.source_paths import ExportLayout, ExportLayoutError, packed_game_dir
-from scripts.game_data.game_file_store import GameFileStoreWriter
+from scripts.game_data.game_file_store import GameFileStore, GameFileStoreWriter
 from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_ANIMESTUDIO,
     DEFAULT_GAME_ROOT,
@@ -446,38 +447,63 @@ def _regex_batches(rows: list[dict[str, Any]]) -> list[str]:
     return batches
 
 
+@dataclass(frozen=True)
+class StagedPackedFile:
+    store: Path
+    game_path: str
+
+
 def stage_changed_files(
     *, executable: Path, game_root: Path, source: str, rows: list[dict[str, Any]], stage: Path
-) -> dict[PurePosixPath, Path]:
+) -> dict[PurePosixPath, Path | StagedPackedFile]:
     primary = game_root / source
     fallback_name = "Persistent" if source == "StreamingAssets" else "StreamingAssets"
     fallback = game_root / fallback_name
     by_block: dict[str, list[dict[str, Any]]] = {}
     for row in rows:
         by_block.setdefault(str(row["blockName"]), []).append(row)
+    packed_stores: list[Path] = []
     for block, block_rows in sorted(by_block.items()):
         for pattern in _regex_batches(block_rows):
             command = [
                 str(executable), "dump", "-s", str(primary), "-o", str(stage),
                 "--block-type", block, "--file-regex", pattern, "--verify-md5",
             ]
+            if block == "JsonData":
+                packed_store = stage / f"_packed_{len(packed_stores)}.sqlite"
+                packed_stores.append(packed_store)
+                command.extend(["--packed-game-store", str(packed_store)])
             if fallback.is_dir():
                 command.extend(["--fallback-assets", str(fallback)])
             _run(command)
-    expected: dict[PurePosixPath, Path] = {}
+    packed_rows: dict[PurePosixPath, StagedPackedFile] = {}
+    for packed_store in packed_stores:
+        reader = GameFileStore(packed_store)
+        try:
+            for packed_row in reader.rows("Json/LipSync"):
+                relative = PurePosixPath("Data") / packed_row.path
+                if relative in packed_rows:
+                    raise ChangedExportError(f"multiple changed logical files map to {relative}")
+                packed_rows[relative] = StagedPackedFile(packed_store, packed_row.path)
+        finally:
+            reader.close()
+    expected: dict[PurePosixPath, Path | StagedPackedFile] = {}
     for row in rows:
         relative = output_relative_path(row)
         staged = stage.joinpath(*relative.parts)
         if relative in expected:
             raise ChangedExportError(f"multiple changed logical files map to {relative}")
-        if not staged.is_file():
+        if relative in packed_rows:
+            expected[relative] = packed_rows[relative]
+        elif staged.is_file():
+            expected[relative] = staged
+        else:
             raise ChangedExportError(f"changed logical file produced no expected output: {row['logicalId']} -> {relative}")
-        expected[relative] = staged
     actual = {
         PurePosixPath(item.relative_to(stage).as_posix())
         for item in stage.rglob("*")
-        if item.is_file()
-    }
+        if item.is_file() and item not in packed_stores
+    } | set(packed_rows)
     if actual != set(expected):
         extra = sorted(str(item) for item in actual - set(expected))[:8]
         missing = sorted(str(item) for item in set(expected) - actual)[:8]
@@ -501,8 +527,8 @@ class PublishJournal:
     def __init__(self) -> None:
         self._moved_backups: list[tuple[Path, Path]] = []
         self._published: list[Path] = []
-        # (store, game/-relative path, backup of its previous bytes or None)
-        self._store_changes: list[tuple[Path, str, Path | None]] = []
+        # (store, game/-relative path, previous bytes or None)
+        self._store_changes: list[tuple[Path, str, bytes | None]] = []
 
     def record_backup(self, backup_path: Path, destination: Path) -> None:
         self._moved_backups.append((backup_path, destination))
@@ -510,20 +536,20 @@ class PublishJournal:
     def record_publish(self, destination: Path) -> None:
         self._published.append(destination)
 
-    def record_store_change(self, store: Path, game_path: str, backup_path: Path | None) -> None:
-        """Record a packed file about to change: rollback restores ``backup_path`` or drops the row."""
-        self._store_changes.append((store, game_path, backup_path))
+    def record_store_change(self, store: Path, game_path: str, previous: bytes | None) -> None:
+        """Record a packed file about to change: rollback restores its bytes or drops the row."""
+        self._store_changes.append((store, game_path, previous))
 
     def roll_back(self) -> None:
         if self._store_changes:
-            by_store: dict[Path, list[tuple[str, Path | None]]] = {}
-            for store, game_path, backup_path in self._store_changes:
-                by_store.setdefault(store, []).append((game_path, backup_path))
+            by_store: dict[Path, list[tuple[str, bytes | None]]] = {}
+            for store, game_path, previous in self._store_changes:
+                by_store.setdefault(store, []).append((game_path, previous))
             for store, changes in by_store.items():
                 with GameFileStoreWriter(store) as writer:
-                    for game_path, backup_path in reversed(changes):
-                        if backup_path is not None:
-                            writer.put(game_path, backup_path.read_bytes())
+                    for game_path, previous in reversed(changes):
+                        if previous is not None:
+                            writer.put(game_path, previous)
                         else:
                             writer.delete(game_path)
             self._store_changes.clear()
@@ -540,7 +566,7 @@ def publish_transaction(
     *,
     output_root: Path,
     source: str,
-    staged: dict[PurePosixPath, Path],
+    staged: dict[PurePosixPath, Path | StagedPackedFile],
     deleted: list[dict[str, Any]],
     backup: Path,
     journal: PublishJournal | None = None,
@@ -555,7 +581,7 @@ def publish_transaction(
     layout = ExportLayout(output_root)
     destination_root = layout.game.resolve()
     destination_root.mkdir(parents=True, exist_ok=True)
-    actions: dict[PurePosixPath, Path | None] = dict(staged)
+    actions: dict[PurePosixPath, Path | StagedPackedFile | None] = dict(staged)
     for row in deleted:
         relative = output_relative_path(row)
         if relative in actions:
@@ -564,6 +590,7 @@ def publish_transaction(
     owned = journal is None
     active = PublishJournal() if journal is None else journal
     store_writer: GameFileStoreWriter | None = None
+    staged_readers: dict[Path, GameFileStore] = {}
     try:
         for relative, staged_path in sorted(actions.items(), key=lambda item: str(item[0])):
             try:
@@ -582,15 +609,17 @@ def publish_transaction(
                 current = store_writer.read_existing(game_path)
                 if staged_path is None and current is None:
                     continue
-                backup_path = None
-                if current is not None:
-                    backup_path = backup.joinpath(*relative.parts)
-                    backup_path.parent.mkdir(parents=True, exist_ok=True)
-                    backup_path.write_bytes(current)
-                active.record_store_change(layout.game_file_store_path, game_path, backup_path)
+                active.record_store_change(layout.game_file_store_path, game_path, current)
                 if staged_path is not None:
-                    store_writer.put(game_path, staged_path.read_bytes(), mtime_ns=staged_path.stat().st_mtime_ns)
-                    staged_path.unlink()
+                    if isinstance(staged_path, StagedPackedFile):
+                        reader = staged_readers.get(staged_path.store)
+                        if reader is None:
+                            reader = GameFileStore(staged_path.store)
+                            staged_readers[staged_path.store] = reader
+                        store_writer.put(game_path, reader.read_bytes(staged_path.game_path))
+                    else:
+                        store_writer.put(game_path, staged_path.read_bytes(), mtime_ns=staged_path.stat().st_mtime_ns)
+                        staged_path.unlink()
                 else:
                     store_writer.delete(game_path)
                 continue
@@ -606,6 +635,8 @@ def publish_transaction(
                 os.replace(destination, backup_path)
                 active.record_backup(backup_path, destination)
             if staged_path is not None:
+                if isinstance(staged_path, StagedPackedFile):
+                    raise ChangedExportError(f"packed staged row does not map to a packed path: {game_path}")
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 os.replace(staged_path, destination)
                 active.record_publish(destination)
@@ -619,6 +650,8 @@ def publish_transaction(
     finally:
         if store_writer is not None:
             store_writer.close()
+        for reader in staged_readers.values():
+            reader.close()
 
 
 def _snapshot_path(output_root: Path, source: str) -> Path:
@@ -718,7 +751,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     audit_seed: tuple[list[dict[str, Any]], str] | None = None
     with tempfile.TemporaryDirectory(prefix="changed-export-", dir=work_parent) as raw_work:
         work = Path(raw_work)
-        prepared: list[tuple[str, dict[PurePosixPath, Path], list[dict[str, Any]], list[dict[str, Any]]]] = []
+        prepared: list[tuple[str, dict[PurePosixPath, Path | StagedPackedFile], list[dict[str, Any]], list[dict[str, Any]]]] = []
         for source in SOURCES:
             current_rows, scan_summaries = scan_source(
                 executable=executable, game_root=game_root, source=source, mode=args.structured_dump_mode, work=work
@@ -757,7 +790,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
                 )
             changes = classify_changes(previous_rows, current_rows)
             changed_rows = changes["added"] + changes["modified"]
-            staged: dict[PurePosixPath, Path] = {}
+            staged: dict[PurePosixPath, Path | StagedPackedFile] = {}
             if changed_rows and not args.check:
                 stage = work / "stage" / source
                 stage.mkdir(parents=True, exist_ok=True)

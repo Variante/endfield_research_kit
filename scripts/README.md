@@ -497,25 +497,31 @@ file name and exact bytes, so `game/Unity/<Type>/<name>` stays the provenance
 reference, and `serve.py` still answers those URLs from the store. Nothing
 falls back to loose files: an older root, or a root with no store, fails closed.
 
-`json_by_type` calls never write loose documents: each passes AnimeStudio
-`--document_store <staging>/<Layer>/json_by_type/<Type>.sqlite` (a merged call
-gets a `merged_<hash>.sqlite`), a staged store in the same format.
-`publish_unity_outputs` merges the layers' staged stores into
-`game/Unity.sqlite` with SQL (`UnityObjectStoreWriter.merge_staged`: later
-layer wins, only rows whose SHA256 changed are written, rows absent from the
-union are deleted) and then deletes them. Convert staging stays loose files
-because its per-asset reuse cache is file based; its documents are synced by
-(size, mtime) as before.
+`json_by_type` and `convert_by_type` calls pass AnimeStudio `--document_store`:
+`.json` and `.anim` outputs go directly into SQLite. Convert shards merge
+successful call stores into persistent per-layer, per-type staging
+stores; the per-asset cache checks their row sizes and timestamps. Media such
+as PNG, OBJ and FBX stays loose. `publish_unity_outputs` merges the layers'
+staged stores into `game/Unity.sqlite` with SQL
+(`UnityObjectStoreWriter.merge_staged`: later layer wins, only rows whose
+SHA256 changed are written, rows absent from the completed type's union are
+deleted). JSON call stores are removed after publication; Convert stores stay
+in staging for cache reuse. The first run after this change reconverts cached
+Convert documents that existed only as loose files.
 
 Final VFS folders of many small files with few readers go the same way:
 every file under `PACKED_GAME_DIRS` (`scripts/source_paths.py`; currently
 `Json/LipSync`, about 74 K files) lives in `game/GameFiles.sqlite`, keyed by
-its game/-relative path. `scripts/game_data/game_file_store.py` owns it;
+its game/-relative path. The full structured dump passes AnimeStudio
+`--packed-game-store` for the JsonData step. LipSync bytes go directly into a
+staged store, which the publisher merges into `game/GameFiles.sqlite` with
+SQL; no loose LipSync tree is made. Older staged dumps still use the loose-file
+pack path. Changed-only updates also stage selected LipSync rows directly in
+SQLite, then apply them through the transactional game-file writer.
+`scripts/game_data/game_file_store.py` owns it;
 readers use `read_game_file`, `game_file_exists` and `iter_game_tree`, which
 answer packed paths from the store and every other path from disk, so a
-reader need not know which folders are packed. Both exporters (the full
-structured publish and the changed-only transaction) write packed folders
-into the store; the JsonData corpus gate, schema coverage, source graph and
+reader need not know which folders are packed. The JsonData corpus gate, schema coverage, source graph and
 Story provenance read LipSync from it. Add a folder to `PACKED_GAME_DIRS` only
 together with its readers.
 
