@@ -7356,6 +7356,9 @@ body.is-resizing-filter * {
 }
 
 .asset-model-stat {
+  /* A grid item defaults to min-width: auto, which lets one long value
+     (a mesh or LOD name) widen the card past its column into the next. */
+  min-width: 0;
   padding: 10px 12px;
   border-radius: 10px;
   background: rgba(var(--fg-rgb), 0.03);
@@ -7373,6 +7376,7 @@ body.is-resizing-filter * {
   margin-top: 4px;
   font-size: 14px;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 960px) {
