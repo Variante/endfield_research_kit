@@ -373,8 +373,15 @@ def validate_narrative_video_override_inputs(
     *,
     story_keys: Iterable[str],
     video_refs: Iterable[dict[str, Any]],
+    videos_exported: bool = True,
 ) -> dict[str, Any]:
-    """Require every rule target and video stem to exist in current inputs."""
+    """Require every rule target and video stem to exist in current inputs.
+
+    A text-only export (``export.bat story``) extracts no video at all. Then no
+    stem can be checked or applied, so the stem checks are skipped and the
+    result says so (``videoStemCheck``); a stem missing from videos that were
+    exported still fails. Target and audio-source keys are always checked.
+    """
     current_story_keys = {str(key) for key in story_keys if key}
     current_stems = {
         stem
@@ -404,7 +411,7 @@ def validate_narrative_video_override_inputs(
                     actual="missing",
                 )
             )
-        for stem in stems:
+        for stem in stems if videos_exported else ():
             if stem not in current_stems:
                 issues.append(
                     _issue(
@@ -445,6 +452,7 @@ def validate_narrative_video_override_inputs(
         "audioSources": audio_source_count,
         "storyKeys": len(current_story_keys),
         "videoStems": len(current_stems),
+        "videoStemCheck": "checked" if videos_exported else "skipped: no narrative video exported",
     }
 
 
@@ -461,8 +469,9 @@ def validate_narrative_video_override_application(
         "suppressInline": set(applied_suppress),
     }
     issues: list[dict[str, Any]] = []
+    videos_exported = input_validation.get("videoStemCheck", "checked") == "checked"
     for bucket, target_key, rule in overrides.iter_rules():
-        for stem in rule.get("stems") or []:
+        for stem in (rule.get("stems") or []) if videos_exported else ():
             if (target_key, stem) not in applied[bucket]:
                 issues.append(
                     _issue(

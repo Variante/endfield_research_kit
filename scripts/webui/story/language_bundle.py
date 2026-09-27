@@ -101,6 +101,7 @@ from scripts.webui.story.anime_assets import (
     _load_cutscene_assets,
     _load_cutscene_subtitle_tracks,
     _load_narrative_video_assets,
+    narrative_videos_exported,
     _quest_area_story_refs,
     _scene_ref_alias_candidates,
     recover_dialog_tree_left_subtitle_actions,
@@ -9436,6 +9437,7 @@ def build_language_bundle(
                     narrative_video_overrides,
                     story_keys=available_keys,
                     video_refs=narrative_video_assets,
+                    videos_exported=narrative_videos_exported(),
                 )
             )
         except NarrativeVideoOverrideValidationError as error:

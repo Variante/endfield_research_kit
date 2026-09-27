@@ -3540,6 +3540,11 @@ def _authoritative_scene_keys(kind: str, binding: dict) -> list[str]:
     return keys
 
 
+def narrative_videos_exported() -> bool:
+    """Whether this export carries narrative video at all; a text-only Story export has none."""
+    return any(True for kind_dir in ("Cutscene", "RemoteComm") for _root in _iter_narrative_video_roots(kind_dir))
+
+
 def _load_narrative_video_assets() -> list[dict]:
     global _NARRATIVE_VIDEO_CACHE
     if _NARRATIVE_VIDEO_CACHE is not None:
