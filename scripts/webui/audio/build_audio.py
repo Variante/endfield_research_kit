@@ -1195,17 +1195,6 @@ def audio_source_metadata(block: str, language: str, language_info: dict[str, st
     return metadata
 
 
-def combined_decode_source_block(storage_root: str, language: str, rel: str) -> str:
-    if storage_root == language:
-        return "voice"
-    source_bank = audio_path_tags_for_rel(rel).get("sourceBank")
-    return {
-        "initial": "initial-audio",
-        "audit": "audit-audio",
-        "hotfix": "hotfix-audio",
-    }.get(source_bank, "audio")
-
-
 def legacy_audio_source_metadata(rel: str, language: str, language_info: dict[str, str]) -> dict[str, str]:
     normalized = normalize_posix(rel).lower()
     if normalized.startswith("voice/"):
@@ -1894,6 +1883,43 @@ def event_bank_payloads(args: argparse.Namespace) -> list[tuple[str, bytes]]:
     # Bank PCKs are raw VFS containers: they are streamed from the installed
     # client and never dumped into the export root.
     return event_bank_payloads_from_vfs(args)
+
+
+def audio_export_categories(
+    event_names: set[str], package_payloads: list[tuple[str, bytes]],
+) -> dict[str, str]:
+    """Resolve known HIRC Event media before the decoder chooses disk paths."""
+    names_by_hash: dict[int, str] = {}
+    for name in sorted(event_names, key=lambda value: (value.lower(), value)):
+        names_by_hash.setdefault(fnv1_32(name.lower()), name)
+    categories: dict[str, str] = {}
+    for package_name, package_data in package_payloads:
+        try:
+            banks = iter_akpk_bank_payloads_from_bytes(package_data, package_name)
+        except ValueError:
+            continue
+        for _bank_id, bank_data in banks:
+            try:
+                bank_version = next((
+                    unpack_from("<I", body, 0)[0]
+                    for tag, body in iter_bnk_sections(bank_data)
+                    if tag == b"BKHD" and len(body) >= 4
+                ), None)
+                objects = parse_hirc_objects(bank_data)
+            except ValueError:
+                continue
+            for event_hash in sorted(objects):
+                if int(objects[event_hash].get("type") or 0) != 4:
+                    continue
+                category = event_audio_category(names_by_hash.get(event_hash))
+                if not category:
+                    continue
+                folder = wwise_folder_for_event_category(category)
+                traversal = traverse_hirc_event(event_hash, objects, bank_version=bank_version)
+                for media_id in traversal["sourceMediaIds"]:
+                    if 0 < int(media_id) <= 0xFFFFFFFF:
+                        categories.setdefault(str(media_id), folder)
+    return categories
 
 def collect_event_audio_index(
     event_names: set[str],
@@ -3178,13 +3204,6 @@ def load_cached_event_audio_index(
     return dict(event_audio_by_id), event_evidence
 
 
-def snapshot_audio_file_stats(source_root: Path) -> dict[str, tuple[int, int]]:
-    return {
-        rel: (stat.st_size, stat.st_mtime_ns)
-        for _path, rel, stat in scan_audio_files(source_root)
-    }
-
-
 def decode_jobs(args: argparse.Namespace) -> int:
     """Worker count for the WEM→FLAC decode pass."""
     requested = int(getattr(args, "decode_jobs", 0) or 0)
@@ -3200,6 +3219,8 @@ def run_audio_dumper_once(
     source_label: str,
     streaming_assets: Path,
     fallback_assets: Path | None,
+    category_map: Path,
+    source_manifest: Path,
 ) -> None:
     command = [
         str(args.audio_dumper),
@@ -3219,6 +3240,10 @@ def run_audio_dumper_once(
         # encoder, so the pass scales with the real core count.
         "--jobs",
         str(decode_jobs(args)),
+        "--category-map",
+        str(category_map),
+        "--source-manifest",
+        str(source_manifest),
     ]
     if shared_output_root is not None:
         command.extend(["--shared-output", str(shared_output_root)])
@@ -3233,6 +3258,7 @@ def run_audio_dumper(
     args: argparse.Namespace,
     language: str,
     language_info: dict[str, str],
+    categories: dict[str, str],
 ) -> dict[tuple[str, str], dict[str, str]]:
     if args.skip_decode:
         return {}
@@ -3266,61 +3292,55 @@ def run_audio_dumper(
             for source_label, streaming_assets, fallback_assets in audio_vfs_sources(args)
         ]
 
-    for pass_block, source_label, streaming_assets, fallback_assets in decode_passes:
-        storages = (
-            (SHARED_AUDIO_STORAGE, language)
-            if pass_block == "all"
-            else (storage_root_for_block(pass_block, language),)
-        )
-        output_root = (
-            args.audio_root / language
-            if pass_block in {"all", "voice"}
-            else args.audio_root / SHARED_AUDIO_STORAGE
-        )
-        shared_output_root = args.audio_root / SHARED_AUDIO_STORAGE if pass_block == "all" else None
-        dumper_language_info = (
-            language_info
-            if pass_block in {"all", "voice"}
-            else LANGUAGES[SHARED_AUDIO_LANGUAGE]
-        )
-        before_by_storage = {
-            storage_root: snapshot_audio_file_stats(args.audio_root / storage_root)
-            for storage_root in storages
+    with tempfile.TemporaryDirectory(prefix="audio-routing-") as temporary:
+        temporary_root = Path(temporary)
+        category_map = temporary_root / "categories.json"
+        category_map.write_text(json.dumps(categories, sort_keys=True), encoding="utf-8")
+        block_names = {
+            "audio": "audio", "initialaudio": "initial-audio",
+            "auditaudio": "audit-audio", "hotfixaudio": "hotfix-audio",
         }
-        run_audio_dumper_once(
-            args,
-            dumper_language_info,
-            output_root,
-            pass_block,
-            shared_output_root,
-            source_label,
-            streaming_assets,
-            fallback_assets,
-        )
-        for storage_root in storages:
-            after = snapshot_audio_file_stats(args.audio_root / storage_root)
-            changed = 0
-            for rel, stat in after.items():
-                if before_by_storage[storage_root].get(rel) == stat:
-                    continue
-                metadata_block = (
-                    combined_decode_source_block(storage_root, language, rel)
-                    if pass_block == "all"
-                    else pass_block
-                )
+        for index, (pass_block, source_label, streaming_assets, fallback_assets) in enumerate(decode_passes):
+            output_root = (
+                args.audio_root / language
+                if pass_block in {"all", "voice"}
+                else args.audio_root / SHARED_AUDIO_STORAGE
+            )
+            shared_output_root = args.audio_root / SHARED_AUDIO_STORAGE if pass_block == "all" else None
+            dumper_language_info = (
+                language_info
+                if pass_block in {"all", "voice"}
+                else LANGUAGES[SHARED_AUDIO_LANGUAGE]
+            )
+            source_manifest = temporary_root / f"source-{index}.json"
+            run_audio_dumper_once(
+                args, dumper_language_info, output_root, pass_block,
+                shared_output_root, source_label, streaming_assets, fallback_assets,
+                category_map, source_manifest,
+            )
+            records = json.loads(source_manifest.read_text(encoding="utf-8"))
+            if not isinstance(records, list):
+                raise RuntimeError(f"invalid audio source manifest: {source_manifest}")
+            counts: Counter[str] = Counter()
+            for record in records:
+                path = Path(str(record["path"])).resolve()
+                relative = path.relative_to(args.audio_root)
+                storage_root, *parts = relative.parts
+                if storage_root not in {language, SHARED_AUDIO_STORAGE} or not parts or not path.is_file():
+                    raise RuntimeError(f"audio source manifest has invalid output: {path}")
+                rel = normalize_posix(Path(*parts))
+                raw_block = str(record.get("block") or "").lower().replace("-", "")
+                metadata_block = "voice" if storage_root == language else block_names.get(raw_block)
+                if metadata_block is None:
+                    raise RuntimeError(f"audio source manifest has unknown block: {record.get('block')}")
                 metadata = audio_source_metadata(metadata_block, language, language_info)
                 metadata["storageRoot"] = storage_root
+                if rel.startswith("wwise/"):
+                    metadata["sourceBank"] = str(record.get("sourceBank") or "unknown")
                 source_by_rel[(storage_root, rel)] = metadata
-                changed += 1
-            summary_block = "voice" if storage_root == language else (
-                "audio" if pass_block == "all" else pass_block
-            )
-            summary_metadata = audio_source_metadata(summary_block, language, language_info)
-            print(
-                f"Audio source map [{source_label}]: {changed:,} files tagged as "
-                f"{summary_metadata['audioScope']} from {summary_metadata['sourceBlockLabel']} "
-                f"under {storage_root}"
-            )
+                counts[storage_root] += 1
+            for storage_root, count in sorted(counts.items()):
+                print(f"Audio source map [{source_label}]: {count:,} files written under {storage_root}")
     return source_by_rel
 
 
@@ -3590,22 +3610,6 @@ def link_conversation_audio(
 # metadata, but the exported browser-facing folders group by useful category:
 # wwise/<sfx|voice_events|music|ambience|ui|cues|unknown>/<id>.
 
-UNMAPPED_BANK_PRIORITY = ("main", "initial", "audit", "external", "hotfix")
-
-
-def unmapped_bank_for_pck_name(name: str) -> str:
-    lower = PurePosixPath(str(name).replace("\\", "/")).name.lower()
-    if "external_source" in lower:
-        return "external"
-    if lower.startswith("init"):
-        return "initial"
-    if lower.startswith("audit"):
-        return "audit"
-    if lower.startswith("hotfix"):
-        return "hotfix"
-    return "main"
-
-
 def event_audio_category(event_id: Any) -> str:
     name = str(event_id or "").strip().lower()
     for prefix, category in EVENT_CATEGORY_PREFIXES.items():
@@ -3654,18 +3658,48 @@ def prune_empty_audio_dirs(root: Path) -> int:
     return len(removed_dirs)
 
 
-def canonicalize_audio_layout(audio_root: Path, storage: str) -> dict[str, int]:
+def canonicalize_audio_layout(
+    audio_root: Path, storage: str, fresh_outputs: set[tuple[str, str]] | None = None,
+) -> dict[str, int]:
     """Move legacy decoded audio files into the browser-facing folder layout."""
     storage_root = audio_root / storage
     if not storage_root.exists():
         return {}
+    fresh_outputs = fresh_outputs or set()
     counts: dict[str, int] = defaultdict(int)
-    for path, rel, _stat in scan_audio_files(storage_root):
+    legacy_roots: list[Path] = []
+    direct_legacy_files: list[Path] = []
+    voice_root = storage_root / "voice"
+    if voice_root.is_dir():
+        for child in voice_root.iterdir():
+            if child.is_dir() and child.name.lower() not in {"story", "characters", "enemies", "other"}:
+                legacy_roots.append(child)
+            elif child.is_file() and child.suffix.lower() in AUDIO_EXTENSIONS:
+                direct_legacy_files.append(child)
+    unmapped_root = storage_root / "unmapped"
+    if unmapped_root.is_dir():
+        legacy_roots.append(unmapped_root)
+    wwise_root = storage_root / "wwise"
+    if wwise_root.is_dir():
+        final_folders = set(WWISE_EVENT_CATEGORY_BY_FOLDER) | {WWISE_UNKNOWN_FOLDER}
+        legacy_roots.extend(
+            child for child in wwise_root.iterdir()
+            if child.is_dir() and child.name.lower() not in final_folders
+        )
+    legacy_paths = [*direct_legacy_files, *(
+        path for root in legacy_roots for path, _rel, _stat in scan_audio_files(root)
+    )]
+    for path in legacy_paths:
+        rel = normalize_posix(path.relative_to(storage_root))
         canonical_rel = canonical_audio_rel(rel)
         if canonical_rel == rel:
             continue
         dest = audio_file_path(audio_root, storage, canonical_rel)
         if same_resolved_path(path, dest):
+            continue
+        if (storage, canonical_rel) in fresh_outputs and dest.is_file():
+            path.unlink()
+            counts["removedOld"] += 1
             continue
         dest.parent.mkdir(parents=True, exist_ok=True)
         if dest.exists():
@@ -3673,7 +3707,7 @@ def canonicalize_audio_layout(audio_root: Path, storage: str) -> dict[str, int]:
         else:
             counts["moved"] += 1
         path.replace(dest)
-    removed_dirs = prune_empty_audio_dirs(storage_root)
+    removed_dirs = prune_empty_audio_dirs(storage_root) if counts else 0
     if removed_dirs:
         counts["removedDirs"] = removed_dirs
     return dict(counts)
@@ -3690,9 +3724,8 @@ def regroup_unmapped_by_bank(
     flat = flat_unmapped_files(folder)
     if not flat:
         return {}, {}
-    # Known gap: the source bank of an unmapped media id comes from the PCK
-    # AKPK index, and PCKs are VFS containers that are not dumped. Until the
-    # audio decoder records each media file's PCK, these stay "unknown".
+    # Legacy flat files predate the CLI source manifest, so their PCK bank
+    # cannot be recovered from the file path alone.
     bank_map: dict[str, str] = {}
     counts: dict[str, int] = defaultdict(int)
     metadata_by_rel: dict[tuple[str, str], dict[str, str]] = {}
@@ -3721,8 +3754,10 @@ def regroup_unmapped_by_category(
     audio_by_id: dict[str, dict[str, Any]],
     event_entries: list[dict[str, Any]],
     language: str,
+    fresh_outputs: set[tuple[str, str]] | None = None,
 ) -> int:
     """Move event-resolved Wwise media into wwise/<category>/<id> and tag entries."""
+    fresh_outputs = fresh_outputs or set()
     media_category: dict[str, str] = {}
     entries_by_media: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for entry in event_entries:
@@ -3771,8 +3806,11 @@ def regroup_unmapped_by_category(
                 continue
             dst_path.parent.mkdir(parents=True, exist_ok=True)
             if not same_resolved_path(src_path, dst_path):
-                src_path.replace(dst_path)
-                moved += 1
+                if (storage, new_rel) in fresh_outputs and dst_path.is_file():
+                    src_path.unlink()
+                else:
+                    src_path.replace(dst_path)
+                    moved += 1
         new_src = served_audio_href(audio_root, webui_root, storage, new_rel)
         for entry in targets:
             entry["rel"] = new_rel
@@ -3945,94 +3983,6 @@ def build_audio(args: argparse.Namespace) -> int:
         if row.get("kind") == "luaPostEvent" and str(row.get("name") or "").strip()
     }
     stage.mark("luaAudioReferenceCache")
-    prior_source_by_rel = prior_source_metadata_by_rel(language_root, language)
-    stage.mark("priorSourceMetadata")
-    decoded_source_by_rel = run_audio_dumper(args, language, language_info)
-    stage.mark("decode")
-
-    for regroup_storage in (SHARED_AUDIO_STORAGE, language):
-        bank_counts, bank_metadata = regroup_unmapped_by_bank(args.audio_root, regroup_storage, args.export_root)
-        merge_source_metadata_by_rel(decoded_source_by_rel, bank_metadata)
-        if bank_counts:
-            summary = ", ".join(f"{bank}:{count:,}" for bank, count in sorted(bank_counts.items()))
-            print(f"Audio source-bank tagging [{regroup_storage}]: {summary}")
-
-    stage.mark("regroupUnmappedByBank")
-    prior_source_by_rel = canonicalized_source_metadata_by_rel(prior_source_by_rel)
-    decoded_source_by_rel = canonicalized_source_metadata_by_rel(decoded_source_by_rel)
-    for layout_storage in (SHARED_AUDIO_STORAGE, language):
-        layout_counts = canonicalize_audio_layout(args.audio_root, layout_storage)
-        moved = int(layout_counts.get("moved", 0))
-        replaced = int(layout_counts.get("replaced", 0))
-        removed_dirs = int(layout_counts.get("removedDirs", 0))
-        if moved or replaced or removed_dirs:
-            print(
-                f"Audio layout [{layout_storage}]: {moved:,} moved, "
-                f"{replaced:,} replaced, {removed_dirs:,} old empty folders removed"
-            )
-
-    stage.mark("canonicalizeAudioLayout")
-    audio_dialog_paths = find_audio_dialog_tables(args.export_root)
-    stage.mark("findAudioDialogTables")
-    shared_audio = collect_audio_files(
-        args.audio_root,
-        args.webui_root,
-        shared_root,
-        SHARED_AUDIO_STORAGE,
-        language,
-        language_info,
-        decoded_source_by_rel,
-        prior_source_by_rel,
-    )
-    language_audio = collect_audio_files(
-        args.audio_root,
-        args.webui_root,
-        language_root,
-        language,
-        language,
-        language_info,
-        decoded_source_by_rel,
-        prior_source_by_rel,
-    )
-    stage.mark("collectAudioFiles")
-    generic_audio = merge_audio_file_indexes(shared_audio, language_audio)
-    dialog_audio = build_dialog_audio_index(
-        audio_dialog_paths,
-        args.audio_root,
-        args.webui_root,
-        language_root,
-        language,
-        language_info,
-        ".flac",
-    )
-    # Normalize the logical media inventory before computing the Event-cache
-    # fingerprint. Otherwise the cache compares an unsuppressed physical scan
-    # with the suppressed inventory stored by the previous build and needlessly
-    # reparses every Wwise bank on every --skip-decode run.
-    stage.mark("buildDialogAudioIndex")
-    duplicate_suppression_stats = suppress_redundant_unknown_audio_occurrences(
-        args.audio_root,
-        generic_audio,
-        dialog_audio,
-        language,
-    )
-    if duplicate_suppression_stats["contentIdenticalUnknownOccurrencesSuppressed"]:
-        print(
-            "Audio index: suppressed "
-            f"{duplicate_suppression_stats['contentIdenticalUnknownOccurrencesSuppressed']:,} "
-            "byte-identical unknown-path duplicates"
-        )
-    if duplicate_suppression_stats["audioDialogExternalCopiesSuppressed"]:
-        print(
-            "Audio index: suppressed "
-            f"{duplicate_suppression_stats['audioDialogExternalCopiesSuppressed']:,} "
-            "exact AudioDialog external-id path copies"
-        )
-    stage.mark("suppressRedundantOccurrences")
-    audio_by_id = {**generic_audio, **dialog_audio}
-    media_inventory_fingerprint = event_media_inventory_fingerprint(audio_by_id)
-    stage.mark("mediaInventoryFingerprint")
-
     conv_dir = args.webui_root / "data" / "lang" / language / "conv"
     if not conv_dir.exists():
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
@@ -4104,6 +4054,7 @@ def build_audio(args: argparse.Namespace) -> int:
         conv_dir,
         audio_source_overrides,
     )
+    del cutscene_playable_json, cutscene_playable_ids
     cutscene_event_names = {
         str(event or "").strip()
         for events in cutscene_audio_events.values()
@@ -4140,6 +4091,102 @@ def build_audio(args: argparse.Namespace) -> int:
         )
         for event_hash in explicit_event_hashes
     }
+    if args.skip_decode:
+        export_categories = {}
+    else:
+        # Release raw PCK buffers before the parallel decoder allocates media.
+        export_categories = audio_export_categories(event_names, event_bank_payloads(args))
+        print(f"Audio export routing: {len(export_categories):,} media IDs assigned before decode")
+    stage.mark("prepareAudioExportRouting")
+    prior_source_by_rel = prior_source_metadata_by_rel(language_root, language)
+    stage.mark("priorSourceMetadata")
+    decoded_source_by_rel = run_audio_dumper(args, language, language_info, export_categories)
+    fresh_outputs = set(decoded_source_by_rel)
+    stage.mark("decode")
+
+    for regroup_storage in (SHARED_AUDIO_STORAGE, language):
+        bank_counts, bank_metadata = regroup_unmapped_by_bank(args.audio_root, regroup_storage, args.export_root)
+        merge_source_metadata_by_rel(decoded_source_by_rel, bank_metadata)
+        if bank_counts:
+            summary = ", ".join(f"{bank}:{count:,}" for bank, count in sorted(bank_counts.items()))
+            print(f"Audio source-bank tagging [{regroup_storage}]: {summary}")
+
+    stage.mark("regroupUnmappedByBank")
+    prior_source_by_rel = canonicalized_source_metadata_by_rel(prior_source_by_rel)
+    decoded_source_by_rel = canonicalized_source_metadata_by_rel(decoded_source_by_rel)
+    for layout_storage in (SHARED_AUDIO_STORAGE, language):
+        layout_counts = canonicalize_audio_layout(args.audio_root, layout_storage, fresh_outputs)
+        moved = int(layout_counts.get("moved", 0))
+        replaced = int(layout_counts.get("replaced", 0))
+        removed_dirs = int(layout_counts.get("removedDirs", 0))
+        if moved or replaced or removed_dirs:
+            print(
+                f"Audio layout [{layout_storage}]: {moved:,} moved, "
+                f"{replaced:,} replaced, {removed_dirs:,} old empty folders removed"
+            )
+
+    stage.mark("canonicalizeAudioLayout")
+    audio_dialog_paths = find_audio_dialog_tables(args.export_root)
+    stage.mark("findAudioDialogTables")
+    shared_audio = collect_audio_files(
+        args.audio_root,
+        args.webui_root,
+        shared_root,
+        SHARED_AUDIO_STORAGE,
+        language,
+        language_info,
+        decoded_source_by_rel,
+        prior_source_by_rel,
+    )
+    language_audio = collect_audio_files(
+        args.audio_root,
+        args.webui_root,
+        language_root,
+        language,
+        language,
+        language_info,
+        decoded_source_by_rel,
+        prior_source_by_rel,
+    )
+    stage.mark("collectAudioFiles")
+    generic_audio = merge_audio_file_indexes(shared_audio, language_audio)
+    dialog_audio = build_dialog_audio_index(
+        audio_dialog_paths,
+        args.audio_root,
+        args.webui_root,
+        language_root,
+        language,
+        language_info,
+        ".flac",
+    )
+    # Normalize the logical media inventory before computing the Event-cache
+    # fingerprint. Otherwise the cache compares an unsuppressed physical scan
+    # with the suppressed inventory stored by the previous build and needlessly
+    # reparses every Wwise bank on every --skip-decode run.
+    stage.mark("buildDialogAudioIndex")
+    duplicate_suppression_stats = suppress_redundant_unknown_audio_occurrences(
+        args.audio_root,
+        generic_audio,
+        dialog_audio,
+        language,
+    )
+    if duplicate_suppression_stats["contentIdenticalUnknownOccurrencesSuppressed"]:
+        print(
+            "Audio index: suppressed "
+            f"{duplicate_suppression_stats['contentIdenticalUnknownOccurrencesSuppressed']:,} "
+            "byte-identical unknown-path duplicates"
+        )
+    if duplicate_suppression_stats["audioDialogExternalCopiesSuppressed"]:
+        print(
+            "Audio index: suppressed "
+            f"{duplicate_suppression_stats['audioDialogExternalCopiesSuppressed']:,} "
+            "exact AudioDialog external-id path copies"
+        )
+    stage.mark("suppressRedundantOccurrences")
+    audio_by_id = {**generic_audio, **dialog_audio}
+    media_inventory_fingerprint = event_media_inventory_fingerprint(audio_by_id)
+    stage.mark("mediaInventoryFingerprint")
+
     cached_event_index = (
         load_cached_event_audio_index(
             language_root,
@@ -4326,7 +4373,7 @@ def build_audio(args: argparse.Namespace) -> int:
     })
     stage.mark("backfillEventSourceMetadata")
     category_moved = regroup_unmapped_by_category(
-        args.audio_root, args.webui_root, audio_by_id, event_entries, language
+        args.audio_root, args.webui_root, audio_by_id, event_entries, language, fresh_outputs
     )
     if category_moved:
         print(f"Audio layout: {category_moved:,} Wwise files filed under event-category folders")
@@ -4499,9 +4546,13 @@ def build_audio(args: argparse.Namespace) -> int:
         language=language,
         export_root=args.export_root,
         webui_root=args.webui_root,
-        metadata_path=metadata_path,
+        metadata_path=args.metadata.resolve() if args.metadata else metadata_path,
         gameassembly_path=args.game_root.parent / "GameAssembly.dll",
         cutscene_events=cutscene_audio_events,
+        runtime_trace_bundle=(
+            args.runtime_trace_bundle.resolve()
+            if args.runtime_trace_bundle is not None else None
+        ),
     )
 
     stage.mark("buildAudioSemanticData")
@@ -4528,6 +4579,42 @@ def build_audio(args: argparse.Namespace) -> int:
     return 0
 
 
+def build_audio_semantics_only(args: argparse.Namespace) -> int:
+    """Republish semantic Audio data from the authoritative decoded index."""
+    language = args.language.upper()
+    index_path = args.audio_root.resolve() / language / "index.json"
+    audio_index = load_json_strict(index_path, {})
+    if not isinstance(audio_index, dict) or not audio_index:
+        raise SystemExit(f"Audio index not found or invalid: {index_path}")
+    metadata_path = args.metadata
+    if metadata_path is None and args.game_root is not None:
+        candidate = args.game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat"
+        metadata_path = candidate if candidate.is_file() else None
+    payload = build_audio_semantic_data(
+        audio_index,
+        language=language,
+        export_root=args.export_root.resolve(),
+        webui_root=args.webui_root.resolve(),
+        metadata_path=metadata_path.resolve() if metadata_path else None,
+        gameassembly_path=(
+            (args.game_root.parent / "GameAssembly.dll").resolve()
+            if args.game_root is not None else None
+        ),
+        runtime_trace_bundle=(
+            args.runtime_trace_bundle.resolve()
+            if args.runtime_trace_bundle is not None else None
+        ),
+    )
+    print(
+        "Audio semantic WebUI data:"
+        f" {payload['counts']['wwiseEventObjectHashes']:,} Wwise Event objects"
+        f" ({payload['counts']['namedEvents']:,} authored names),"
+        f" {payload['counts']['decodedMedia']:,} media,"
+        f" {payload['counts']['runtimeSystems']:,} runtime systems"
+    )
+    return 0
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", choices=sorted(LANGUAGES), default="CN")
@@ -4537,6 +4624,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="all",
     )
     parser.add_argument("--skip-decode", action="store_true", help="Only rebuild the audio index and story links.")
+    parser.add_argument(
+        "--semantics-only", action="store_true",
+        help="Rebuild only Audio page semantics from the existing decoded Audio index.",
+    )
     parser.add_argument(
         "--refresh-hirc",
         action="store_true",
@@ -4565,7 +4656,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
             "dumper. Default: one per logical CPU."
         ),
     )
-    parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
+    parser.add_argument("--game-root", type=Path, default=None)
+    parser.add_argument("--metadata", type=Path, default=None)
+    parser.add_argument(
+        "--runtime-trace-bundle", type=Path, default=None,
+        help="Optional verified audio runtime-trace bundle for Event/media rows.",
+    )
     parser.add_argument("--streaming-assets", type=Path, default=None)
     parser.add_argument("--fallback-assets", type=Path, default=None)
     parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT_ROOT)
@@ -4577,10 +4673,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Decoded audio root containing shared and per-language folders. Default: <export-root>/game/Audio.",
     )
     args = parser.parse_args(argv)
-    if args.streaming_assets is None:
-        args.streaming_assets = args.game_root / "StreamingAssets"
-    if args.fallback_assets is None:
-        args.fallback_assets = args.game_root / "Persistent"
+    if args.semantics_only and (
+        args.skip_decode or args.refresh_hirc or args.refresh_lua_audio
+        or args.block != "all" or args.decode_jobs != 0
+        or args.streaming_assets is not None or args.fallback_assets is not None
+        or args.audio_dumper != DEFAULT_AUDIO_DUMPER
+    ):
+        parser.error("--semantics-only cannot be combined with decode or HIRC refresh options")
+    if args.game_root is None and not args.semantics_only:
+        args.game_root = DEFAULT_GAME_ROOT
+    if args.game_root is not None:
+        if args.streaming_assets is None:
+            args.streaming_assets = args.game_root / "StreamingAssets"
+        if args.fallback_assets is None:
+            args.fallback_assets = args.game_root / "Persistent"
     if args.audio_root is None:
         args.audio_root = ExportLayout(args.export_root).audio_dir
     if args.refresh_hirc and not args.skip_decode:
@@ -4591,4 +4697,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 if __name__ == "__main__":
     _args = parse_args()
     require_export_layout(_args.export_root)
-    raise SystemExit(build_audio(_args))
+    raise SystemExit(
+        build_audio_semantics_only(_args) if _args.semantics_only else build_audio(_args)
+    )

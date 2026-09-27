@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Build compact WebUI data for Endfield audio semantics.
+"""Internal publisher for compact Endfield Audio page semantics.
 
 The normal audio index under ``<export root>/game/Audio/<LANG>`` is the
-lossless recovery surface and can be tens of megabytes.  This builder keeps
+lossless recovery surface and can be tens of megabytes.  This publisher keeps
 that file authoritative, then publishes a compact overview plus lazy event and
 media shards for the Audio page.  Installed IL2CPP metadata is optional:
 when present, selected runtime-system types and members are validated against
@@ -11,7 +11,6 @@ the current binary metadata instead of being asserted from a stale snapshot.
 
 from __future__ import annotations
 
-import argparse
 import copy
 import hashlib
 import importlib.util
@@ -23,7 +22,6 @@ import re
 import shutil
 import struct
 import subprocess
-import sys
 import time
 from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
@@ -32,13 +30,11 @@ from typing import Any, Iterable
 
 if __package__ in {None, ""}:
     raise SystemExit(
-        "Run this maintained entry point as: "
-        "python -m scripts.webui.audio.build_audio_semantics"
+        "Run the Audio entry point as: "
+        "python -m scripts.webui.audio.build_audio --semantics-only"
     )
 
-from scripts.common import require_export_layout
 from scripts.source_paths import ExportLayout
-from scripts.common import EXPORT_LAYOUT
 
 from scripts.common import sha256_file as file_sha256
 from scripts.webui.audio.semantics import native_callsite_rederivation
@@ -82,13 +78,6 @@ AUDIO_RUNTIME_SELECTOR_GROUPS = build_contracts.AUDIO_RUNTIME_SELECTOR_GROUPS
 
 AUDIO_SEMANTIC_SCHEMA_VERSION = context_utils.AUDIO_SEMANTIC_SCHEMA_VERSION
 
-
-from scripts.repo_paths import REPO_ROOT
-
-ROOT = REPO_ROOT
-DEFAULT_EXPORT_ROOT = EXPORT_LAYOUT.root
-DEFAULT_WEBUI_ROOT = ROOT / "webui"
-DEFAULT_METADATA_REL = Path("il2cpp_data/Metadata/global-metadata.dat")
 
 CATEGORY_LABELS = {
     "sfx": "Sound effects",
@@ -2360,68 +2349,7 @@ def build_audio_semantic_data(
     return payload
 
 
-def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--language", default="CN")
-    parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT_ROOT)
-    parser.add_argument("--webui-root", type=Path, default=DEFAULT_WEBUI_ROOT)
-    parser.add_argument(
-        "--game-root",
-        type=Path,
-        default=None,
-        help=(
-            "Selected Endfield_Data root for the native evidence gate. If omitted, "
-            "native callsite/runtime claims remain unavailable."
-        ),
-    )
-    parser.add_argument("--metadata", type=Path, default=None)
-    parser.add_argument(
-        "--runtime-trace-bundle",
-        type=Path,
-        default=None,
-        help="Optional verified audio runtime-trace JSON bundle to project onto Event/media rows.",
-    )
-    args = parser.parse_args(argv)
-    if args.metadata is None and args.game_root is not None:
-        installed = args.game_root / DEFAULT_METADATA_REL
-        args.metadata = installed if installed.is_file() else None
-    return args
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = parse_args(argv)
-    require_export_layout(getattr(args, 'export_root', None))
-    language = str(args.language or "CN").upper()
-    index_path = ExportLayout(args.export_root).audio_dir / language / "index.json"
-    audio_index = load_json(index_path, {})
-    if not isinstance(audio_index, dict) or not audio_index:
-        raise SystemExit(f"Audio index not found or invalid: {index_path}")
-    payload = build_audio_semantic_data(
-        audio_index,
-        language=language,
-        export_root=args.export_root.resolve(),
-        webui_root=args.webui_root.resolve(),
-        metadata_path=args.metadata.resolve() if args.metadata else None,
-        gameassembly_path=(
-            (args.game_root.parent / "GameAssembly.dll").resolve()
-            if args.game_root is not None
-            else None
-        ),
-        runtime_trace_bundle=(
-            args.runtime_trace_bundle.resolve()
-            if args.runtime_trace_bundle is not None
-            else None
-        ),
-    )
-    print(
-        "Audio semantic WebUI data:"
-        f" {payload['counts']['wwiseEventObjectHashes']:,} Wwise Event objects"
-        f" ({payload['counts']['namedEvents']:,} authored names),"
-        f" {payload['counts']['decodedMedia']:,} media,"
-        f" {payload['counts']['runtimeSystems']:,} runtime systems"
-    )
-    return 0
-
-
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(
+        "Use python -m scripts.webui.audio.build_audio --semantics-only"
+    )

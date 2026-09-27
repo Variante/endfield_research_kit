@@ -12,7 +12,7 @@ and behavior contracts remain in [`../webui/README.md`](../webui/README.md).
 | Map | [`webui/map.md`](webui/map.md) | `scripts.webui.map.build_map_recovery_data` |
 | Characters | [`webui/characters.md`](webui/characters.md) | `scripts.webui.characters.build_character_data` |
 | Gameplay | [`webui/gameplay.md`](webui/gameplay.md) | `scripts.webui.gameplay.build_gameplay` |
-| Audio | [`webui/audio.md`](webui/audio.md) | `scripts.webui.audio.build_audio` and `scripts.webui.audio.build_audio_semantics` |
+| Audio | [`webui/audio.md`](webui/audio.md) | `scripts.webui.audio.build_audio` |
 | Assets | [`webui/assets.md`](webui/assets.md) | `scripts.webui.assets.build_assets` |
 | Text | [`webui/text.md`](webui/text.md) | `scripts.webui.story` |
 | Updates | [`webui/updates.md`](webui/updates.md) | `scripts.webui.updates.build_updates` |

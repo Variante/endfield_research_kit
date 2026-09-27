@@ -13,9 +13,13 @@ user research notes without modifying generated evidence.
 2. `scripts.webui.audio.build_audio` owns decode, Wwise bank indexing, event-to-media
    traversal, Story relinking, and Gameplay sound sidecars. Shared SFX/music is
    written once under `game/Audio/shared/`; language voice belongs under
-   `game/Audio/<LANG>/`.
-3. `scripts.webui.audio.build_audio_semantics` orchestrates semantic domains under
-   `scripts/webui/audio/semantics/` and publishes the compact page index/shards.
+   `game/Audio/<LANG>/`. Known HIRC Event categories are resolved before decode,
+   so AnimeStudio writes media into the final category folders. Its source
+   manifest preserves PCK bank provenance after the physical bank folders are
+   skipped. Only pre-existing legacy layouts and media whose category cannot be
+   established before decode need a later path correction.
+3. The same `build_audio` command invokes the semantic orchestrator under
+   `build_audio_semantics.py` and publishes the compact page index/shards.
 4. Optional verified runtime-trace bundles add only their matching observed
    request relation.
 5. `webui/overrides/audio_notes.json` stores searchable manual notes through
@@ -128,11 +132,11 @@ allowed to mean:
 ```bat
 python -m scripts.webui.audio.build_audio
 python -m scripts.webui.audio.build_audio --skip-decode --refresh-hirc
-python -m scripts.webui.audio.build_audio_semantics --language CN
+python -m scripts.webui.audio.build_audio --semantics-only --language CN
 ```
 
-Inspect `--help` for non-CN or targeted maintenance options. Do not duplicate
-audio logic in the semantic publisher or import either entry point as a helper.
+Inspect `--help` for non-CN or targeted maintenance options. The semantic
+publisher stays internal; put reusable evidence logic in its domain module.
 
 ## Remaining gaps
 

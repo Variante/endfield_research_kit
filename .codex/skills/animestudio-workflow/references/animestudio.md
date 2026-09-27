@@ -146,6 +146,12 @@ FLAKE encoder, without an intermediate WAV file. `setup_vgmstream.bat` installs
 the decoder under `tools/vgmstream/`; `ANIMESTUDIO_VGMSTREAM_CLI` remains an
 explicit override. Use `--format wav` or `--format wem` only when that
 compatibility output is explicitly required.
+`--category-map <JSON>` accepts a media-ID-to-folder map (`sfx`, `music`,
+`voice_events`, `cues`, `ambience`, or `ui`) and writes unmatched Wwise media to
+`wwise/unknown/`. AudioDialog voice paths are written in the final Story,
+character, enemy, or other voice folder. `--source-manifest <JSON>` records the
+written absolute paths, source blocks, and PCK bank tags for the wrapper; the
+wrapper supplies both options on every decode path.
 `vfs-index --jsonl` writes compact streaming metadata records while its default
 output remains the existing JSON document.
 `list` prints the known dumpable VFS block types. The WebUI wrappers default to this same

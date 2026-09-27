@@ -140,7 +140,8 @@ build-specific catalog across files:
 
 Audio code follows the same ownership boundary. `build_audio.py` owns decode,
 Wwise indexing, relinking, and Gameplay sidecars;
-`build_audio_semantics.py` owns orchestration and publication only; reusable
+`build_audio.py` is the single public Audio command, including semantic-only
+refreshes. `build_audio_semantics.py` owns orchestration and publication only; reusable
 semantic domains live under `scripts/webui/audio/semantics/`. Add logic to its
 domain owner instead of growing either entry point or importing the entry
 point as a helper library. Native claims must use the explicit selected
@@ -921,7 +922,8 @@ from that layout:
 - `scripts/webui/gameplay/build_gameplay.py` owns every Gameplay page dataset. Its stage modules
   sit beside it in `scripts/webui/gameplay/`, and its `asset-refs` stage is the sole
   writer of `webui/data/assets/gameplay_refs.json`.
-- `scripts/webui/audio/build_audio_semantics.py` is the Audio orchestrator/publisher;
+- `scripts/webui/audio/build_audio.py` is the Audio command;
+  `build_audio_semantics.py` is its internal semantic orchestrator/publisher;
   reusable Audio evidence owners live under `scripts/webui/audio/semantics/`.
 - `scripts/webui/story/lua_consumer_references.py` owns the canonical
   fingerprinted Lua consumer index that Mission Pipeline reads directly.

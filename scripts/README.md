@@ -575,8 +575,7 @@ both stores through `serve.py`'s read-only `/api/stores` endpoints
 | Decoded Data Inspector | `data_inspector/build_data_inspector.py` | generic catalogs and lazy decoded-record shards |
 | Gameplay | `build_gameplay.py` | Gameplay datasets |
 | Assets | `build_assets.py` | asset indexes and media lookup |
-| Audio | `build_audio.py` | decoded/relinked audio data |
-| Audio semantics | `build_audio_semantics.py` | compact Audio page evidence and shards |
+| Audio | `build_audio.py` | decoded/relinked audio plus compact semantic evidence and shards; `--semantics-only` refreshes the latter |
 | Audio HIRC structural gates | `webui/audio/semantics/hirc_action_corpus.py` | Action cursors and type `0x02` source prefixes under `reports/animestudio/` |
 | DynamicStreaming stream-area gate | `game_data/dynamic_stream_area_corpus.py` | `reports/animestudio/dynamic_stream_area_current_latest.{json,md}` |
 | DynamicStreaming main vector audit | `game_data/dynamic_main_native.py` | `reports/animestudio/dynamic_main_vector_native_latest.{json,md}` |
@@ -951,7 +950,7 @@ To publish a verified imported capture onto the Audio Event/media detail rows,
 rerun the semantic publisher with its JSON bundle:
 
 ```bat
-python -m scripts.webui.audio.build_audio_semantics --language CN --runtime-trace-bundle reports\story\recovery\audio_runtime_trace.json
+python -m scripts.webui.audio.build_audio --semantics-only --language CN --runtime-trace-bundle reports\story\recovery\audio_runtime_trace.json
 ```
 
 The projection requires the bundle's current schema, matching language, and
@@ -1039,7 +1038,12 @@ truncated, errored, or incomplete parts are not evidence.
 `build_audio.py` owns decode, Wwise bank/HIRC indexing, relinking, and the
 Gameplay sidecars. It writes shared SFX/music once under
 `<export root>/game/Audio/shared/` and language voice under
-`<export root>/game/Audio/<LANG>/`.
+`<export root>/game/Audio/<LANG>/`. Every wrapper that builds Audio uses this
+same decoder: it resolves known HIRC Event categories before extraction and
+passes the final `voice/` or `wwise/<category>/` path to AnimeStudio. The CLI
+returns a source manifest, so the builder does not rescan the tree to discover
+which files changed. Old `unmapped/` and voice layouts are migrated only when
+present; a newly decoded file does not pass through those folders.
 
 ```bat
 python -m scripts.webui.audio.build_audio
@@ -1132,12 +1136,14 @@ and the HIRC files beside it; do not restate a framing claim here.
 
 ### Audio semantics: orchestration and domain ownership
 
-`build_audio_semantics.py` is the thin orchestration/publishing surface for the
-Audio evidence page; page data changes only after a formal semantic rebuild
-(normally `export.bat`, or the targeted run below).
+`build_audio.py` is the single Audio command. Its normal run decodes/indexes
+media and publishes semantic page data in the same process. Use
+`--semantics-only` to republish from the existing decoded Audio index, including
+after importing a verified runtime trace. `build_audio_semantics.py` remains the
+internal semantic orchestrator/publisher.
 
 ```bat
-python -m scripts.webui.audio.build_audio_semantics --language CN
+python -m scripts.webui.audio.build_audio --semantics-only --language CN
 python -m scripts.webui.audio.semantics.play_sound_action_corpus
 python -m scripts.webui.audio.semantics.native_play_sound_string --gameassembly GA --metadata META
 ```
