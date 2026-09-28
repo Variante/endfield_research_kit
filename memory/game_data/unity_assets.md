@@ -22,6 +22,136 @@ The main gap is semantic binding. Exporting an object does not prove its live
 prefab composition, selected material variant, animation state, effect
 activation, or placement time.
 
+## Current overlay identity and AssetMap coverage
+
+The current VFS outer ledger verifies selected logical Bundle bytes, and its
+inner ledger verifies the Unity bundle structure. Joining the refreshed
+Persistent CABMap's source root, relative chunk path and offset to those
+verified logical-file spans gives every newly added or changed Bundle file one
+named CAB. This is an exact container-location join; a CABMap dependency still
+does not establish object ownership or runtime use. The framing and offset
+semantics live in `scripts/game_data/cabmap.py`. The current per-build
+counts and input hashes are in `reports/assets/bundle_asset_identity_20260927.json`.
+
+The Persistent AssetMap's recorded source chunks are selected by the current
+outer ledger, and every row's source offset falls inside a verified logical
+Bundle span. That is source containment, not a byte-level check of each mapped
+object. Some newly added bundles have no AssetMap row although their CABMap
+offsets and inner bundle structure verify. Treat those as AssetMap coverage
+gaps, never as empty containers. The StreamingAssets AssetMap also records the
+fallback initial-bundle chunk that the selected Persistent-root overlay does
+not enumerate. Other fallback rows can name a chunk still present in the
+selected ledger while their exact offset falls between the current logical
+Bundle spans after per-file replacement. Select fallback rows by exact source
+chunk **and offset containment** in a verified current Bundle span; chunk
+membership alone cannot promote the whole fallback AssetMap to current overlay
+evidence. The current row-level joins and disagreement counts are in
+`reports/animestudio/bundle_manifest_assetmap_join_20260927.json` and
+`reports/animestudio/bundle_manifest_streaming_assetmap_join_20260927.json`.
+
+The BundleManifest relation gives most exact path/physical Bundle disagreements
+a narrower explanation. For each selected AssetMap row, its source chunk and
+offset locate a verified logical Bundle, and the same source and offset join a
+CABMap record. The manifest's `AssetInfo.path` and `bundleIndex` identify the
+path's listed Bundle; the selected-build native validator proves the separate
+`Bundle.directDependencies`, `dependencies`, and
+`directReverseDependencies` list fields in
+`scripts/game_data/contracts/bundle_manifest_native.json`. Every Persistent
+disagreement and nearly every selected StreamingAssets disagreement places the
+physical Bundle in the listed Bundle's `directDependencies`, with the reciprocal
+reverse-list membership. Agreement rows have no self-dependency, and rows
+without an exact manifest path have no expected Bundle for this test. This is
+a verified Bundle-list relationship, not proof that the mapped Unity object
+belongs to, or is loaded through, either Bundle.
+The selected-build counts, source hashes, residual path/Bundles, and controls
+are in `reports/animestudio/bundle_manifest_assetmap_dependency_audit_20260927.json`;
+the CABMap framing and manifest parser are in `scripts/game_data/cabmap.py` and
+`scripts/game_data/bundle_manifest.py`.
+
+An independent full-corpus gate now joins each selected CABMap source position
+to its verified VFS Bundle and compares its external-CAB dependency targets
+with the manifest's `directDependencies`. Every projected external is present
+in the manifest direct list; a small named residual adds manifest-only edges.
+Unselected CAB targets are reported separately and keep an unresolved tier.
+The same
+gate proves the manifest's reverse list is the direct graph's inverse and its
+broader dependency list is the direct graph's transitive closure. This
+establishes stored container relationships, with no Unity object ownership or
+runtime load-order claim. The gate and current report are
+`scripts/game_data/bundle_cab_dependency_corpus.py` and
+`reports/animestudio/bundle_cab_dependency_corpus_current_20260927.json`.
+
+The selected native Bundle proxy loaders both call the named
+`RuntimeManifestBinary.TryGetBundleDirectDeps` accessor and later read a loop
+element before recursing. The reviewed manifest-native contract checks those
+static call sites. The manifest-only residual therefore belongs to a list the
+loader can consume, while its authoring cause remains unproved. Its dialog
+timeline prefab sources have manifest AssetInfo paths; the common target has
+no manifest AssetInfo row and no matching CAB external. A separate exception
+sweep locates the unresolved CAB external sources. The common
+`unity default resources` literal matches an installed serialized file and a
+UnityPlayer string. An independent object-identity gate strengthens this: a
+current-source-indexed MonoBehaviour `interactiveCollider` pointer reaches
+the CABMap's external slot for that name, and its target PathID exists only
+in the exact-name installed Resources file as the `Capsule` Mesh. This is an
+authored serialized target identity; Unity's runtime resolver binding still
+needs a selected native or live trace. The CAB-shaped name has no selected
+CABMap source or exact installed Resources filename. Its observed indexed
+pointer targets are absent from both installed Resources object tables, which
+rules those files out for those pointers without locating the missing CAB.
+The indexed references include non-null PlayableDirector assets and
+MonoBehaviour skybox and cloth fields, so the CAB name is more than an
+unused external-table entry.
+The object index covers only MonoBehaviour and PlayableDirector rows, so this
+negative does not cover every Unity class. Current source hashes, bounded
+examples, and missing witnesses are in
+`reports/animestudio/bundle_external_identity_current_20260927.json`; the
+reusable gate is `scripts/game_data/bundle_external_identity_corpus.py`.
+
+The apparent no-dependency fallback residual in that earlier full AssetMap is
+an exporter-label problem. For each selected `(source chunk, offset, CAB,
+type, PathID, hash, name)` identity, the physical Bundle's direct
+`AssetBundle.m_Container` preload span points locally to the same PathID but
+has a different authored key. Every corrected key maps to that physical Bundle
+in both the Persistent and StreamingAssets manifest `AssetInfo` rows. The
+earlier `StringCache.Get` in `tools/AnimeStudio/AnimeStudio/AssetMap.cs`
+interned by CRC32 alone and could substitute another path with the same CRC;
+exact ordinal-string interning removes that collision. A synthetic collision
+test, isolated pre-fix maps, and a targeted post-fix batch map recover the raw
+keys.
+A smaller UI subset's old full-map labels have a **different** CRC from the raw
+keys, so their historical mislabel mechanism remains open even though the
+targeted maps recover them too. The old full AssetMap is a historical output;
+its labels are not fresh evidence after the exporter change. The exact
+source-hash joins, collision split, fixed-batch checks, and two-manifest owner
+checks are in `reports/animestudio/bundle_manifest_residual_crc32_20260927.json`
+and `reports/animestudio/bundle_manifest_residual_corrected_owners_20260927.json`.
+The VFS input-set receipt fingerprints the CLI apphost but not its changed
+implementation assembly, so the targeted report also records the latter's
+hash to distinguish this exporter build.
+
+The entire no-AssetMap group was subsequently dumped from the selected root,
+with every file MD5 matching the current outer ledger. An isolated opt-in
+metadata map and direct JSON export agree for every recovered
+`(logical file, CAB, type, PathID)` object identity. Most are scene bundles
+carrying `AssetBundle`, `GameObject`, `Transform`, and `PlayableDirector`;
+the remainder carry controller or avatar objects, and one scene bundle has a
+second GameObject/Transform pair. Every direct `AssetBundle` contains one
+authored `m_Container` path, and its local PPtr resolves to a GameObject,
+AnimatorController, or Avatar in the same CAB. The paths identify level
+sequences, cutscene transitions, dialog timelines, UI model controllers, and
+one actor avatar at the authored-path tier; they do not prove runtime use.
+
+All six observed object classes are parse-only in the normal AnimeStudio CLI
+configuration. `AssetsHelper.BuildAssetMap` reads them but does not emit them
+as normal AssetMap rows, explaining the coverage gap without claiming empty
+bundles. The opt-in map's generic path scans serialized object metadata, but
+this check does not independently count raw Unity object table entries, so it
+does not prove that no other class exists in those bundles. Per-build class
+counts, identities, paths, source hashes, and the selected-type audit receipt
+remain in the generated report. Keep subsequent bindings at
+`(source root, CAB, PathID)` rather than matching a PathID globally.
+
 ## Refresh
 
 ```bat

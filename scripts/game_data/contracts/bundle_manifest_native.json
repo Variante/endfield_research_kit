@@ -1,0 +1,455 @@
+{
+  "schema": "endfield.bundle-manifest-native-contract.v4",
+  "status": "validated",
+  "evidenceBoundary": "direct",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "ownerType": {
+    "index": 31975,
+    "name": "Beyond.ManifestBinary.ManifestDataBinary",
+    "fieldOffsets": {
+      "bundles": 16,
+      "bundleInfoDictionary": 32,
+      "assetInfoDictionary": 64,
+      "m_assetInfoAddress": 152,
+      "m_bundleAddress": 160,
+      "m_bundleArrayAddress": 168
+    }
+  },
+  "bundleType": {
+    "index": 31963,
+    "name": "Beyond.ManifestBinary.ManifestDataBinary+Bundle",
+    "boxedValueHeaderBytes": 16,
+    "rowBytes": 48,
+    "fieldOffsets": {
+      "bundleIndex": 16,
+      "name": 20,
+      "dependencies": 24,
+      "directReverseDependencies": 28,
+      "directDependencies": 32,
+      "bundleFlags": 36,
+      "hashName": 40,
+      "hashVersion": 48,
+      "category": 56
+    },
+    "fieldTypes": {
+      "hashName": "long",
+      "hashVersion": "long"
+    }
+  },
+  "assetInfoType": {
+    "index": 31964,
+    "name": "Beyond.ManifestBinary.ManifestDataBinary+AssetInfo",
+    "boxedValueHeaderBytes": 16,
+    "valueBytes": 24,
+    "fieldOffsets": {
+      "pathHashHead": 16,
+      "path": 24,
+      "bundleIndex": 28,
+      "assetSize": 32
+    },
+    "fieldTypes": {
+      "pathHashHead": "long",
+      "bundleIndex": "int",
+      "assetSize": "int"
+    }
+  },
+  "rawAssetInfoBinaryType": {
+    "index": 32017,
+    "name": "Beyond.Resource.ManifestData+AssetInfoBinary",
+    "fieldOffsets": {
+      "path": 16,
+      "bundleIndex": 56,
+      "assetMemSize": 60
+    }
+  },
+  "refCompressStringType": {
+    "index": 31977,
+    "name": "Beyond.ManifestBinary.RefCompressString",
+    "boxedValueHeaderBytes": 16,
+    "fieldOffsets": {"length": 16, "head": 20}
+  },
+  "rawBundleType": {
+    "index": 32016,
+    "name": "Beyond.Resource.ManifestData+Bundle",
+    "fieldOffsets": {
+      "name": 24,
+      "deps": 48,
+      "directReverseDeps": 56,
+      "directDeps": 64,
+      "bundleFlags": 72,
+      "category": 76
+    }
+  },
+  "methods": [
+    [247827, "Beyond.ManifestBinary.ManifestDataBinary", "InitBinary", 52070912],
+    [247828, "Beyond.ManifestBinary.ManifestDataBinary", "TryGetBundleByIndex", 50578832],
+    [247852, "Beyond.ManifestBinary.ManifestDataBinary+Bundle", "Convert", 96205444],
+    [247821, "Beyond.ManifestBinary.ManifestDataBinary", "ToLow", 96222072],
+    [247823, "Beyond.ManifestBinary.ManifestDataBinary", "DecompressBrotli", 58857056],
+    [247835, "Beyond.ManifestBinary.ManifestDataBinary", "ValidCheck", 96222928],
+    [247844, "Beyond.ManifestBinary.ManifestDataBinary", "TryGetValue", 96222740],
+    [247846, "Beyond.ManifestBinary.ManifestDataBinary", "_TryGetValue", 50579328],
+    [247854, "Beyond.ManifestBinary.ManifestDataBinary+AssetInfo", "Convert", 96204016],
+    [247902, "Beyond.ManifestBinary.RefCompressString", "Init", 77382176],
+    [247903, "Beyond.ManifestBinary.RefCompressString", "ToString", 96231460],
+    [247897, "Beyond.ManifestBinary.ManifestDataBinary+IComparerLong", "GetHashCode", 77893984],
+    [247429, "Beyond.VFS.VirtualFileSystem", "GetBundlesAssetPathForBuildHash", 15659184],
+    [247862, "Beyond.ManifestBinary.ManifestDataBinary+HashCodeEx", "HashCodeEx4UTF16$BurstManaged", 96216748],
+    [247874, "Beyond.ManifestBinary.ManifestDataBinary+HashCodeEx+HashCodeEx4UTF16_00003AA1$BurstDirectCall", "Invoke", 15697344],
+    [247927, "Beyond.ManifestBinary.RuntimeManifestBinary", "TryGetBundleDirectDeps", 51920512],
+    [249300, "Beyond.Resource.Runtime.BundleLoader+Manager", "_LoadBundleProxySync", 51878048],
+    [249303, "Beyond.Resource.Runtime.BundleLoader+Manager", "_LoadBundleProxy", 51905968]
+  ],
+  "codeWindows": [
+    {
+      "role": "initializerSectionFlow",
+      "startRva": 52071225,
+      "endRva": 52071768,
+      "sha256": "32AF8E2F7DE14D257E0CDEB9AC787668C8D69058FA566D758EFE4BF2C43E5A8C",
+      "boundary": "exact"
+    },
+    {
+      "role": "bundleCopy",
+      "startRva": 50578899,
+      "endRva": 50578956,
+      "sha256": "DA339AAABC166BBFCB56B1370677805F8B9584AFC3EE7A10A7E01BE559C913D2",
+      "boundary": "exact"
+    },
+    {
+      "role": "arrayHelper",
+      "startRva": 77457040,
+      "endRva": 77457126,
+      "sha256": "A518BC5C873083462397B6BB11CCB776030DB17DBC3CAFAA83DD9672FF3F2E8A",
+      "boundary": "exact"
+    },
+    {
+      "role": "bundleDictionaryHelper",
+      "startRva": 77419168,
+      "endRva": 77419258,
+      "sha256": "A9C85E223C065ED963AE72A0611CE82069298751C211533D71C6E9D422030E45",
+      "boundary": "exact"
+    },
+    {
+      "role": "assetDictionaryHelper",
+      "startRva": 77419072,
+      "endRva": 77419162,
+      "sha256": "5B73F8CD4DF5C37D97256340C1E9A21BD6B8FDDC4AF926AC83C37EE8B0F39084",
+      "boundary": "exact"
+    },
+    {
+      "role": "bundleWriter",
+      "startRva": 96205444,
+      "endRva": 96206805,
+      "sha256": "6C1B81E6FAA77C924C16DB7E598CF5FFFC81E12A7BB320EE92CA84B0C3B8A300",
+      "boundary": "exact"
+    },
+    {
+      "role": "dependencyStringWrapper",
+      "startRva": 65814096,
+      "endRva": 65814176,
+      "sha256": "EE2CE6C4259AB7BE0AD39FDDAA985FDA0C08048900FD5EB5A9B2452B80892DB0",
+      "boundary": "exact"
+    },
+    {
+      "role": "utf16ManagedFallback",
+      "startRva": 96216748,
+      "endRva": 96216844,
+      "sha256": "3E4CA291B29402CF80FBD644176A93A613411FB0D808A98D28085DF4310B87B8",
+      "boundary": "exact"
+    },
+    {
+      "role": "utf16BurstInvokeEntry",
+      "startRva": 15697344,
+      "endRva": 15697417,
+      "sha256": "983199012CE00B665496605B110167849BEA454B30E2A7173CEB0EF66902A554",
+      "boundary": "exact"
+    },
+    {
+      "role": "assetInfoWriter",
+      "startRva": 96204016,
+      "endRva": 96204563,
+      "sha256": "41F4A91FD050B439768746F9FDD0D4758FF30751189E2EE1563CFB1538CB2E77",
+      "boundary": "exact"
+    },
+    {
+      "role": "assetPathLookup",
+      "startRva": 96222740,
+      "endRva": 96222927,
+      "sha256": "3BB8810AF4E3AF4D4E569B7910CE8B4D662601E647B36F380EEFC774C7E17D7F",
+      "boundary": "exact"
+    },
+    {
+      "role": "assetSlotSelector",
+      "startRva": 96202068,
+      "endRva": 96202227,
+      "sha256": "01815C2951A9F37079838A106135A7477F4CFED0DB7536485CC3C56ED1C96133",
+      "boundary": "exact"
+    },
+    {
+      "role": "assetValueLookup",
+      "startRva": 50579328,
+      "endRva": 50579398,
+      "sha256": "FB00F44C000A7AD2C5748B1330DE6FBF637047934DB418F8C97DB139CA71C8B9",
+      "boundary": "exact"
+    },
+    {
+      "role": "manifestValidCheck",
+      "startRva": 96222928,
+      "endRva": 96224009,
+      "sha256": "6EC7B4AE793FC030F8CEB64D726DE29763A077FD9022AA5C39E35DE6D28ECE3D",
+      "boundary": "exact"
+    },
+    {
+      "role": "bundleValueLookup",
+      "startRva": 138245604,
+      "endRva": 138245975,
+      "sha256": "F9DAF2513E17577B27D17A62EF60F68BF4B99379A651D092E5F461565BF7DF79",
+      "boundary": "exact"
+    },
+    {
+      "role": "refCompressStringInit",
+      "startRva": 77382176,
+      "endRva": 77382262,
+      "sha256": "8B5B866CA9CEF07DD6A31A47BA064CA72CFCF46A9691DF312785A6D10F726BB3",
+      "boundary": "exact"
+    },
+    {
+      "role": "refCompressStringToString",
+      "startRva": 96231460,
+      "endRva": 96231812,
+      "sha256": "A71E369C0ECCBA9FE48E7FD2CFEC45A2FC0C9237DE430201183B8BF399D25812",
+      "boundary": "exact"
+    },
+    {
+      "role": "longKeyComparer",
+      "startRva": 77893984,
+      "endRva": 77893988,
+      "sha256": "F75638FE0016CF82FADDFA60BF6DB21D3445DCB56700C1F3C0AAE5C3AA912F53",
+      "boundary": "exact"
+    }
+  ],
+  "sectionBindings": [
+    {
+      "table": "fixed-width-32",
+      "sourceAddressField": "m_assetInfoAddress",
+      "destinationField": "assetInfoDictionary",
+      "sourceStoreRva": 52071474,
+      "sourceLoadRva": 52071756,
+      "destinationLeaRva": 52071752,
+      "helperCallRva": 52071763,
+      "helperRole": "assetDictionaryHelper",
+      "rowDataBias": 4,
+      "boundary": "direct"
+    },
+    {
+      "table": "fixed-width-56",
+      "sourceAddressField": "m_bundleAddress",
+      "destinationField": "bundleInfoDictionary",
+      "sourceStoreRva": 52071491,
+      "sourceLoadRva": 52071644,
+      "destinationLeaRva": 52071640,
+      "helperCallRva": 52071651,
+      "helperRole": "bundleDictionaryHelper",
+      "rowDataBias": 4,
+      "boundary": "direct"
+    },
+    {
+      "table": "fixed-width-48",
+      "sourceAddressField": "m_bundleArrayAddress",
+      "destinationField": "bundles",
+      "sourceStoreRva": 52071508,
+      "sourceLoadRva": 52071544,
+      "destinationLeaRva": 52071529,
+      "helperCallRva": 52071551,
+      "helperRole": "arrayHelper",
+      "rowDataBias": 4,
+      "boundary": "direct"
+    }
+  ],
+  "bundleCopy": {
+    "strideRva": 50578916,
+    "sourceField": "bundles",
+    "sourcePointerBias": 8,
+    "sourceLoadRva": 50578925,
+    "rowBytes": 48,
+    "boundary": "direct"
+  },
+  "writer": {
+    "nameHash": {
+      "sourceField": "name",
+      "targetField": "hashName",
+      "sourceReadRva": 96205616,
+      "hashCallRva": 96205630,
+      "hashCalleeRva": 15659184,
+      "targetStoreRva": 96205639
+    },
+    "listBindings": [
+      {"sourceField": "deps", "targetField": "dependencies", "sourceReadRva": 96205883, "targetStoreRva": 96205880},
+      {"sourceField": "directReverseDeps", "targetField": "directReverseDependencies", "sourceReadRva": 96206097, "targetStoreRva": 96206094},
+      {"sourceField": "directDeps", "targetField": "directDependencies", "sourceReadRva": 96206311, "targetStoreRva": 96206308}
+    ],
+    "versionFold": {
+      "sourceField": "deps",
+      "initialField": "hashName",
+      "targetField": "hashVersion",
+      "sourceReadRva": 96206514,
+      "arrayReadRva": 96206534,
+      "dependencyNameReadRva": 96206597,
+      "dependencyNameHashCallRva": 96206601,
+      "dependencyNameHashCalleeRva": 65814096,
+      "multiplyRva": 96206606,
+      "xorRva": 96206610,
+      "targetStoreRva": 96206619,
+      "multiplier": 39,
+      "boundary": "direct"
+    }
+  },
+  "dependencyStringHash": {
+    "sourceField": "name",
+    "wrapperRole": "dependencyStringWrapper",
+    "wrapperCharDataLeaRva": 65814116,
+    "stringCharDataOffset": 20,
+    "wrapperBurstJumpRva": 65814150,
+    "burstInvokeRole": "utf16BurstInvokeEntry",
+    "managedFallbackRole": "utf16ManagedFallback",
+    "seedRva": 96216751,
+    "seed": 5381,
+    "laneMultiplyRva": 96216780,
+    "laneMultiplier": 33,
+    "finalMultiplyRva": 96216830,
+    "finalMultiplier": 1566083941,
+    "resultMaskRva": 96216762,
+    "resultMaskHex": "0x0FFFFFFFFFFFFFFF",
+    "emptyStringResult": 0,
+    "inputNormalization": "wrapper passes rawData.deps member name UTF-16 code units directly; managed fallback does no case folding; current dependency names have no ASCII uppercase witness",
+    "evidenceBoundary": "conditional"
+  },
+  "dictionarySections": [
+    {
+      "table": "fixed-width-32",
+      "destinationField": "assetInfoDictionary",
+      "slotBytes": 8,
+      "valueType": "assetInfoType",
+      "valueBytes": 24,
+      "keyField": "pathHashHead",
+      "pathField": "path",
+      "bundleIndexField": "bundleIndex",
+      "paddingBytes": 4,
+      "evidenceBoundary": "direct"
+    },
+    {
+      "table": "fixed-width-56",
+      "destinationField": "bundleInfoDictionary",
+      "slotBytes": 8,
+      "valueType": "bundleType",
+      "valueBytes": 48,
+      "keyField": "hashName",
+      "evidenceBoundary": "direct"
+    }
+  ],
+  "assetValueWriter": {
+    "sourceType": "rawAssetInfoBinaryType",
+    "sourcePathField": "path",
+    "targetPathHashField": "pathHashHead",
+    "targetPathField": "path",
+    "sourcePathReadRva": 96204140,
+    "toLowCallRva": 96204146,
+    "hashCallRva": 96204157,
+    "hashCalleeRva": 65814096,
+    "hashStoreRva": 96204162,
+    "pathStoreRva": 96204189,
+    "integerFields": [
+      {"sourceField": "bundleIndex", "targetField": "bundleIndex", "sourceReadRva": 96204396, "targetStoreRva": 96204403},
+      {"sourceField": "assetMemSize", "targetField": "assetSize", "sourceReadRva": 96204406, "targetStoreRva": 96204409}
+    ],
+    "evidenceBoundary": "direct"
+  },
+  "dictionaryReaders": {
+    "asset": {
+      "ownerField": "assetInfoDictionary",
+      "ownerDataField": "m_assetInfoAddress",
+      "pathLookupRole": "assetPathLookup",
+      "slotSelectorRole": "assetSlotSelector",
+      "valueLookupRole": "assetValueLookup",
+      "ownerLeaRva": 96222821,
+      "slotCallRva": 96222833,
+      "valueCallRva": 96222858,
+      "slotSelectorDivRva": 96202185,
+      "slotSelectorShiftRva": 96202188,
+      "slotSelectorBaseRva": 96202194,
+      "valueCountReadRva": 50579343,
+      "valueOffsetReadRva": 50579353,
+      "valueBaseReadRva": 50579356,
+      "keyCompareRva": 50579368,
+      "valueStrideRva": 50579386,
+      "evidenceBoundary": "direct"
+    },
+    "bundle": {
+      "ownerField": "bundleInfoDictionary",
+      "callerRole": "manifestValidCheck",
+      "valueLookupRole": "bundleValueLookup",
+      "ownerLeaRva": 96223476,
+      "arrayKeyLoadRva": 96223480,
+      "keyFieldOffsetSetRva": 96223489,
+      "lookupCallRva": 96223508,
+      "capacityReadRva": 138245789,
+      "slotDivRva": 138245799,
+      "slotShiftRva": 138245804,
+      "slotBaseRva": 138245810,
+      "slotCountReadRva": 138245822,
+      "valueBaseReadRva": 138245833,
+      "valueOffsetReadRva": 138245837,
+      "keyFieldOffsetReadRva": 138245884,
+      "keyCompareRva": 138245896,
+      "valueStrideRva": 138245904,
+      "evidenceBoundary": "direct"
+    }
+  },
+  "assetPathPayload": {
+    "referenceField": "path",
+    "lengthBytes": 4,
+    "terminatorHex": "0000",
+    "codec": "brotli",
+    "decodedEncoding": "utf-16-le",
+    "initRole": "refCompressStringInit",
+    "toStringRole": "refCompressStringToString",
+    "initLengthReadRva": 77382220,
+    "initBodyLeaRva": 77382243,
+    "initBodyStoreRva": 77382247,
+    "decompressCallRva": 96231689,
+    "evidenceBoundary": "conditional"
+  },
+  "runtimeDependencyConsumers": {
+    "accessorType": "Beyond.ManifestBinary.RuntimeManifestBinary",
+    "accessorMethod": "TryGetBundleDirectDeps",
+    "loaders": [
+      {
+        "type": "Beyond.Resource.Runtime.BundleLoader+Manager",
+        "method": "_LoadBundleProxySync",
+        "directDepsCallRva": 51879409,
+        "loopElementLoadRva": 51879670,
+        "loopElementLoadHex": "4C8B7CCA20",
+        "recursiveCallRva": 51879733
+      },
+      {
+        "type": "Beyond.Resource.Runtime.BundleLoader+Manager",
+        "method": "_LoadBundleProxy",
+        "directDepsCallRva": 51906659,
+        "loopElementLoadRva": 51906950,
+        "loopElementLoadHex": "4C8B7CCA20",
+        "recursiveCallRva": 51907040
+      }
+    ],
+    "evidenceBoundary": "direct",
+    "semanticLimit": "Static selected native accessor call, later loop-element read and self-recursion; this does not establish live branch execution or why the stored direct edges were authored."
+  },
+  "evidenceNotes": {
+    "table32And56": "Each section is a count, that many eight-byte (relative offset, count) slots, then that many values: AssetInfo uses 24 bytes and Bundle uses 48. Selected native readers use unsigned comparer-hash modulo capacity, the slot range and these value strides; current stored keys themselves map by unsigned key modulo capacity. Current file slots tile all values once; dictionary Bundle values join array Bundles by name and semantic fields except bundleIndex is zero in the dictionary. Asset path offsets reference Brotli UTF-16 strings that tile the terminal variable suffix, but path strings can repeat and no AssetMap/GUID ownership join follows from names alone. Source writer, native lookups and full current-file replay substantiate this layout; live gameplay lookup execution remains unresolved.",
+    "hashVersion": "Writer starts from hashName and folds rawData.deps name hashes with multiply 39 and XOR. The authenticated managed UTF-16 fallback reproduces every current row through the actual Burst call route; unseen strings and Burst case behavior remain conditional. Runtime comparisons remain unresolved.",
+    "execution": "Static selected-build initializer and accessor path. Both BundleLoader+Manager sync and async proxy loaders call the named direct-dependency accessor, then have a loop-element read and self-recursion; no live ref/out capture, branch execution or authored-edge cause established."
+  }
+}

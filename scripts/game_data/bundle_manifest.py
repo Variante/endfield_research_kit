@@ -7,8 +7,12 @@ size-delimited variable region with a repeated footer witness. The variable
 payload begins with a sequential anonymous record region; the 48-byte rows
 then index a second region with the same record grammar. Each record contains
 a length-prefixed UTF-16 fragment and three count-delimited 32-bit lists. This
-module only certifies those boundaries. Row fields, record values, ordering,
-ownership, and the terminal variable-region bytes remain semantically unnamed.
+module only certifies those boundaries. A separate selected-build native
+contract in ``bundle_manifest_native`` identifies the 48-byte Bundle row's
+fields, the 32/56-byte sections as split hash-slot and value arrays, and the
+terminal suffix as compressed AssetInfo paths. This framing reader does not
+depend on that contract. Cross-store asset identity and live lookup behavior
+remain unresolved.
 
 ``parse_bundle_manifest`` accepts the compressed ``.hgmmap`` bytes.  Use
 ``parse_decompressed_bundle_manifest`` only when a caller has already checked

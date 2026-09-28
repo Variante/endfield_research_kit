@@ -145,6 +145,7 @@ focused profile report with its own refresh command.
   stage should cite those topics rather than restate their numbers.
 - The block-type-to-lane map is a declaration that must be revisited whenever
   the VFS enum changes; the builder fails closed to force that.
-- BundleManifest has exact partial framing in
-  [`../game_data/extraction_payload_boundaries.md`](../game_data/extraction_payload_boundaries.md),
-  while its field ownership and value semantics remain open.
+- BundleManifest has exact framing and selected-build dictionary, Bundle-field,
+  and asset-path evidence in
+  [`../game_data/extraction_payload_boundaries.md`](../game_data/extraction_payload_boundaries.md).
+  Cross-store asset identity and live lookup remain open.
