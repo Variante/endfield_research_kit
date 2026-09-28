@@ -61,7 +61,10 @@ Type and method names, IL2CPP structure offsets and element-type tags stay in
 code because a client update does not change them.  The audit starts with
 ``native_gate``, which fails closed unless the installed client is the pinned
 build.  The ``context_audit_memorypack``/``_skilldata``/``_vfs`` stage modules
-still carry their own reviewed addresses.
+read their pins the same way, one ``pins`` section per report key; the
+SkillData reader methods, body windows, observer callsites and source lengths
+come from ``contracts/skill_cursor_observer_native.json``, which this audit
+requires to pin the same build.
 """
 from __future__ import annotations
 
@@ -84,7 +87,7 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.protocol import load_metadata_helper, load_native_mapper
 from scripts.game_data.il2cpp.context_audit_common import AUDIT_PINS, CONSUMER_WINDOWS, CORPUS_REPORT_RELATIVE, GA_SHA, MD_SHA, NATIVE_CONTRACT_PATH, ROOT, UNITY_SHA, native_gate, require, sha, sweep, validate_selected_method_spec
 from scripts.game_data.il2cpp.context_audit_memorypack import adapter_conversion_context, buff_action_read_order, buff_ifelse_forwarding, buff_ifelse_read_order, buff_sequence_read_order, buff_tag76_read_order, buff_union_routes, element_provider_state_flow, list_element_dispatch, list_element_null_probe, list_element_shared_context, list_element_value_flow, list_formatter_candidate, module_methods, nested_reader_context, reader_construction, reader_cursor_consumers, resource_carrier_consumers, serializer_return_consumers, skill_resource_context, wrapper_consumer
-from scripts.game_data.il2cpp.context_audit_skilldata import select_skilldata_terminal_branch_samples, skilldata_action_readers_from_locals, skilldata_action_union_c9_prefix_reader_evidence, skilldata_actiongroup_branch_sample_witness, skilldata_actiongroup_branch_static_alignment, skilldata_actiongroup_c9_nested_sequence_candidate_replay, skilldata_nested_branch_static_alignment, skilldata_positive_branch_reader_replay, skilldata_static_reader_order, skilldata_terminal_branch_sample_witness
+from scripts.game_data.il2cpp.context_audit_skilldata import IF_ELSE_TAG, OBSERVER_CONTRACT_PATH, select_skilldata_terminal_branch_samples, skilldata_action_readers_from_locals, skilldata_action_union_c9_prefix_reader_evidence, skilldata_actiongroup_branch_sample_witness, skilldata_actiongroup_branch_static_alignment, skilldata_actiongroup_c9_nested_sequence_candidate_replay, skilldata_nested_branch_static_alignment, skilldata_positive_branch_reader_replay, skilldata_static_reader_order, skilldata_terminal_branch_sample_witness
 from scripts.game_data.il2cpp.context_audit_vfs import file_stream_open, native_file_read, resolver_key_comparison, resolver_prefix_query, stream_carrier_consumer, stream_source_identity, unity_conversion_exports, unity_loader_conversion, unity_loader_input, unity_module_lookup, unity_path_return, unity_registration_forwarder, unity_registration_pair, vfs_block_cursor, vfs_block_file_source, vfs_block_transform, vfs_bytebuf_consumer, vfs_descriptor_path, vfs_descriptor_producer, vfs_format_item, vfs_path_carrier, vfs_path_format_context, vfs_path_literals, vfs_root_resolver, vfs_stream_consumer, vfs_stream_identity, vfs_string_carrier
 # Re-exported for scripts.game_data.memorypack.skill_timeline_cursor.
 from scripts.game_data.il2cpp.context_audit_skilldata import (
@@ -161,7 +164,7 @@ def audit():
                Path(__file__).with_name('context_audit_memorypack.py'),
                Path(__file__).with_name('context_audit_skilldata.py'),
                Path(__file__).with_name('context_audit_vfs.py'),
-               NATIVE_CONTRACT_PATH,
+               NATIVE_CONTRACT_PATH, OBSERVER_CONTRACT_PATH,
                mapper_path, catalog_path, ROOT / 'scripts/common.py',
                skill_terminal_path, skill_buff_path, skill_core_path, buff_actions_path,
                skill_sample_path, *terminal_branch_sample_paths,
@@ -1250,7 +1253,7 @@ def audit():
     buff_action_readers = skilldata_action_readers_from_locals(
         locals(), source=str(gate.gameassembly))
     verified_action_tags = set(buff_action_readers)
-    buff_action_prefixes = {0xC9: buff_c9_prefix_evidence}
+    buff_action_prefixes = {IF_ELSE_TAG: buff_c9_prefix_evidence}
     verified_action_prefix_tags = set(buff_action_prefixes)
     for reader in buff_action_readers.values():
         contract_path = Path(reader['contractPath']).resolve()

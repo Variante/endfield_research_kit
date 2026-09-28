@@ -69,7 +69,7 @@ SCHEMA = "endfieldCapture.skillDataCursorCapture.v2"
 OUTPUT_SCHEMA = "endfield.skillDataCursorVerification.v2"
 SKILL_REPORT_FORMAT = "animestudio-skilldata-current-vfs-corpus"
 OBSERVER_CONTRACT_PATH = CONTRACTS_DIR / "skill_cursor_observer_native.json"
-OBSERVER_CONTRACT_SCHEMA = "endfield.skill-cursor-observer-native.v1"
+OBSERVER_CONTRACT_SCHEMA = "endfield.skill-cursor-observer-native.v2"
 OBSERVER_CONTRACT_STATUS = "selected-build-native-only"
 # The maintained framer's member kinds for the one-member-wrapper terminal
 # (fields 43..47).  They describe the MemoryPack encoding, not one build; the
@@ -151,6 +151,14 @@ def load_observer_contract(path: Path = OBSERVER_CONTRACT_PATH) -> dict[str, Any
         _contract_int(value) and value > 0 for value in lengths
     ):
         raise invalid("receiptVerifierSourceLengths-invalid")
+    recorder_lengths = contract.get("recorderSelectedSourceLengths")
+    if not isinstance(recorder_lengths, list) or not recorder_lengths or not all(
+        _contract_int(value) and value > 0 for value in recorder_lengths
+    ):
+        raise invalid("recorderSelectedSourceLengths-invalid")
+    # A receipt can only carry a length the recorder admits.
+    if not set(lengths) <= set(recorder_lengths):
+        raise invalid("receiptVerifierSourceLengths-not-recorder-selected")
     terminal = [index for index, _kind in TERMINAL_MEMBER_KINDS]
     if indices[-len(terminal):] != terminal:
         raise invalid("terminal-fields-not-final-callsites")

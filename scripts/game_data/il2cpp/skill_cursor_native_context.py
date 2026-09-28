@@ -22,6 +22,13 @@ Build it with ``--corpus-report`` set to the unselected basis
 ``reports/animestudio/skill_cursor_native_context_current_latest.json``);
 ``--preflight`` revalidates an existing context, and with
 ``--capture-binding`` prints the input set and exact target source SHA-256.
+
+Pinned values.  The observer contract (``contracts/skill_cursor_observer_native.json``)
+holds every build- and corpus-locked value this module checks: reader method
+rows, body windows, observer callsites, receipt source lengths and the
+recorder's selected source lengths (the capture-target length allow-list,
+mirroring the EndfieldCapture SkillData provider).  The audit gates on that
+contract's ``nativeInputs`` and fails closed on ``missing`` or ``mismatched``.
 """
 
 from __future__ import annotations
@@ -42,17 +49,21 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.native_image import NativeImage
 from scripts.game_data.memorypack.corpus_gate import CensusGateError
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
+from scripts.game_data.memorypack.skill_cursor_receipt import load_observer_contract
 from scripts.repo_paths import REPO_ROOT
 
 
 SCHEMA = "endfield.skill-cursor-native-context.v1"
-CONTRACT_SCHEMA = "endfield.skill-cursor-observer-native.v1"
+CONTRACT_SCHEMA = "endfield.skill-cursor-observer-native.v2"
 CONTRACT_PATH = CONTRACTS_DIR / "skill_cursor_observer_native.json"
 TARGET_CONTRACT_PATH = CONTRACTS_DIR / "skill_cursor_capture_target.json"
 DEFAULT_CORPUS = REPO_ROOT / "reports/animestudio/skilldata_cursor_basis_latest.json"
 DEFAULT_CONTEXT = REPO_ROOT / "reports/animestudio/skill_cursor_native_context_current_latest.json"
 HEX64 = re.compile(r"^[0-9A-Fa-f]{64}$")
-RECORDER_SUPPORTED_SOURCE_LENGTHS = frozenset((424, 533, 561, 568, 1138))
+# The recorder's selected source lengths are corpus-locked declarations in the
+# observer contract, loaded through the receipt verifier's shape check.
+RECORDER_SUPPORTED_SOURCE_LENGTHS = frozenset(
+    load_observer_contract(CONTRACT_PATH)["recorderSelectedSourceLengths"])
 
 
 class NativeCursorContextError(ValueError):

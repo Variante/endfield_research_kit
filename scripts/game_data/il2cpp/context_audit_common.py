@@ -63,6 +63,15 @@ def decode_pins(value, path='pins'):
 AUDIT_PINS = decode_pins(NATIVE_CONTRACT['pins'])
 
 
+def consumer_window(start_rva):
+    """The one reviewed consumer window ``(start, end, sha256)`` starting at an RVA."""
+    rows = [row for row in CONSUMER_WINDOWS if row[0] == start_rva]
+    if len(rows) != 1:
+        raise ContextError(str(NATIVE_CONTRACT_PATH), start_rva,
+                           'one reviewed consumer window at this RVA', len(rows))
+    return rows[0]
+
+
 def sha(path):
     with Path(path).open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest().upper()

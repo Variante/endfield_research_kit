@@ -32,6 +32,21 @@ or null ``FF``) favors the earlier candidate conditionally on that route.
 The audit's terminal sample witnesses require an already selected corpus, so
 an all-unselected basis stops at its ``ambiguous`` boundary; that case goes
 through ``python -m scripts.game_data.il2cpp.skill_cursor_native_context``.
+
+Pinned values.  Nothing build-locked is written here.  The SkillData and
+ActionGroupData reader methods, body windows, the 47+2 observer callsites, the
+inline field and the receipt source lengths are read from
+``contracts/skill_cursor_observer_native.json`` (required to pin the audit's
+own build).  Everything else lives in ``contracts/il2cpp_context_audit_native.json``
+under ``pins``: ``selectedSkillDataReaderOrder`` for the reader-order evidence,
+and one section per helper named after it (``skilldataForceSyncReaderEvidence``)
+for facts only a helper checks.  Checks that re-verify stored report evidence
+read the owning section (:data:`READER_PINS`, :data:`SEQUENCE_PINS`,
+:data:`IFELSE_PINS`, :func:`consumer_window`) instead of restating it, and
+union tags are resolved by wrapper name from the pinned union routes
+(:func:`union_route`).  Field names, object field offsets and wire types stay
+here, as do the representative sample's byte offsets, which describe corpus
+layout rather than a native build.
 """
 from __future__ import annotations
 
@@ -48,8 +63,94 @@ from scripts.game_data.memorypack.buff import read_skill_toggle_buff_data
 from scripts.game_data.memorypack.buff import read_skill_ui_range_hint_data
 from scripts.game_data.il2cpp.context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
 from scripts.game_data.contracts import CONTRACTS_DIR
-from scripts.game_data.il2cpp.context_audit_common import CORPUS_REPORT_RELATIVE, require
+from scripts.game_data.il2cpp.context_audit_common import AUDIT_PINS, CORPUS_REPORT_RELATIVE, GA_SHA, MD_SHA, consumer_window, require
 from scripts.game_data.il2cpp.context_audit_memorypack import module_methods
+from scripts.game_data.memorypack.skill_cursor_receipt import OBSERVER_CONTRACT_PATH, load_observer_contract
+
+# The SkillData/ActionGroupData reader methods, body windows, observer
+# callsites, inline field and accepted receipt source lengths are the
+# skill-cursor observer contract's facts; this audit reads them there rather
+# than restating them.
+OBSERVER_CONTRACT = load_observer_contract()
+# Terminal fields 43..47: object layout (field name, wire type, object offset)
+# is structure and stays here; call, helper-target and store coordinates come
+# from the contracts (see terminal_tail_expectations).
+TERMINAL_TAIL_FIELDS = (
+    (43, 'switchToCenterBeforeCast', 'bool', 0xA5),
+    (44, 'tagDuringAttach', 'Beyond.Gameplay.Core.GameplayTagList', 0xB8),
+    (45, 'toggleBuffs',
+     'System.Collections.Generic.List`1<Beyond.Gameplay.Core.ToggleBuffData>', 0xD8),
+    (46, 'uiRangeHints',
+     'System.Collections.Generic.List`1<Beyond.Gameplay.Core.UIRangeHintData>', 0xC8),
+    (47, 'useAIExclusiveFrame', 'bool', 0x58),
+)
+
+
+# Sections of the audit contract whose facts the SkillData checks re-verify
+# on report evidence (a stored context report is checked against the build).
+READER_PINS = AUDIT_PINS['selectedSkillDataReaderOrder']
+SEQUENCE_PINS = AUDIT_PINS['selectedBuffSequenceReadOrder']
+IFELSE_PINS = AUDIT_PINS['selectedBuffIfElseReadOrder']
+LIST_FORMATTER_PINS = AUDIT_PINS['selectedListFormatterCandidate']
+
+
+def union_route(wrapper_suffix):
+    """The pinned AbilityActionData union route row for one wrapper type.
+
+    Rows are [tag, switchTargetRva, registeredTypeIndex, typeDefinition,
+    wrapperSuffix, initializerRva]; tags are resolved by wrapper name rather
+    than written as numbers.
+    """
+    rows = [row for row in AUDIT_PINS['selectedBuffUnionRoutes']['rows']
+            if row[4] == wrapper_suffix]
+    if len(rows) != 1:
+        raise ContextError('selectedBuffUnionRoutes', 0,
+                           f'one pinned union route for {wrapper_suffix}', len(rows))
+    return rows[0]
+
+
+PLAY_ANIMATION_TAG = union_route('PlayAnimationAction_PlayAnimationActionData')[0]
+IF_ELSE_TAG = union_route('IfElseAction_IfElseActionData')[0]
+INT_RESOURCE_HP_CHECK_TAG = union_route('IntResourceHpCheckAction_Data')[0]
+INT_RESOURCE_ON_HP_ZERO_TAG = union_route('IntResourceOnHpZeroAction_Data')[0]
+
+
+def timeline_instruction_pairs(rva_key):
+    """(rva, rawHex) of the pinned TimelineActionData instructions an RVA list selects."""
+    selected = set(READER_PINS[rva_key])
+    return {(rva, raw_hex) for rva, raw_hex, _role in READER_PINS['timelineReaderInstructions']
+            if rva in selected}
+
+
+def timeline_code_window(role_prefix):
+    """(startRva, endRva, sha256) of the one pinned timeline reader window with a role."""
+    rows = [tuple(row[:3]) for row in READER_PINS['timelineReaderCodeWindows']
+            if row[3].startswith(role_prefix)]
+    if len(rows) != 1:
+        raise ContextError('selectedSkillDataReaderOrder', 0,
+                           f'one pinned timeline reader window for {role_prefix}', len(rows))
+    return rows[0]
+
+
+def skill_reader_body_window():
+    """(rva, byteLength, sha256) of the observer contract's SkillData reader body."""
+    window = OBSERVER_CONTRACT['codeWindows'][1]
+    return (window['rva'], window['byteLength'], window['sha256'])
+
+
+def observer_field_sites():
+    """The observer contract's direct field callsites keyed by field index."""
+    return {row['fieldIndex']: row for row in OBSERVER_CONTRACT['fieldCallsites']}
+
+
+def terminal_tail_expectations():
+    """(index, field, wire type, offset, call RVA, target RVA, store RVA, store hex)."""
+    sites = observer_field_sites()
+    stores = {index: (rva, raw_hex) for index, rva, raw_hex
+              in AUDIT_PINS['selectedSkillDataReaderOrder']['terminalStores']}
+    return [(index, name, wire_type, offset, sites[index]['callInstructionRva'],
+             sites[index]['targetRva'], *stores[index])
+            for index, name, wire_type, offset in TERMINAL_TAIL_FIELDS]
 
 
 def skilldata_corpus_branch_evidence(corpus, *, source):
@@ -230,7 +331,7 @@ def skilldata_actiongroup_branch_sample_witness(
         require(actual_list_count, expected_list_count, source, 2)
 
     if verified_action_tags is None:
-        verified_action_tags = {0xD5, 0xD6}
+        verified_action_tags = {INT_RESOURCE_HP_CHECK_TAG, INT_RESOURCE_ON_HP_ZERO_TAG}
     if (not isinstance(verified_action_tags, (set, frozenset)) or
             any(type(tag) is not int or not 0 <= tag <= 0xFFFF
                 for tag in verified_action_tags)):
@@ -255,10 +356,10 @@ def skilldata_actiongroup_branch_sample_witness(
         def _action(self, depth, tag, width):
             if tag == 0xFF or tag in verified_action_tags:
                 return super()._action(depth, tag, width)
-            if tag == 0xC9 and tag in verified_action_prefix_tags:
+            if tag == IF_ELSE_TAG and tag in verified_action_prefix_tags:
                 start = self.pos
                 available = self.limit - self.pos
-                if (width != 1 or available < 2 or self.data[self.pos] != 0xC9 or
+                if (width != 1 or available < 2 or self.data[self.pos] != IF_ELSE_TAG or
                         self.data[self.pos + 1] != 8):
                     raise Unsupported(self.source, start,
                                       'non-null 0xC9 member-eight normal path',
@@ -647,33 +748,27 @@ def _skilldata_verified_byte_payload_reader(action_reader, shared_helper, *, sou
     """Join the two PlayAnimation payload callsites to the audited signed-length helper."""
     call_sites = action_reader.get('verifiedSourceReadCallSites')
     if not isinstance(call_sites, list):
-        raise ContextError(source, 0x115,
+        raise ContextError(source, PLAY_ANIMATION_TAG,
                            'verified PlayAnimation byte-payload source callsites', call_sites)
+    pins = AUDIT_PINS['skilldataVerifiedBytePayloadReader']
+    helper_rva = READER_PINS['readStringTargetRva']
     selected = [row for row in call_sites if isinstance(row, dict) and
                 row.get('readType') == 'byte-payload']
-    expected_sites = {
-        (4, 0x3777126, 0x2CA8700),
-        (14, 0x377730E, 0x2CA8700),
-    }
+    expected_sites = {(member, call_rva, helper_rva)
+                      for member, call_rva in pins['playAnimationPayloadSites']}
     actual_sites = {(row.get('memberIndex'), row.get('callInstructionRva'),
                      row.get('targetRva')) for row in selected}
-    require(actual_sites, expected_sites, source, 0x115)
-    require(len(selected), 2, source, 0x115)
+    require(actual_sites, expected_sites, source, PLAY_ANIMATION_TAG)
+    require(len(selected), 2, source, PLAY_ANIMATION_TAG)
 
     if not isinstance(shared_helper, dict):
-        raise ContextError(source, 0x2CA8700,
+        raise ContextError(source, helper_rva,
                            'independent current signed-length byte-payload helper audit',
                            shared_helper)
-    expected_windows = {
-        0x2CA8729: '488B43504863388B733083EE040F885C8CE30148834350048343400483434404897330',
-        0x2CA874C: '48634344488B4B18482BC8483BCF0F8C528CE30183FFFF743785FF7517',
-        0x2CA8780: '4533C08BD7488BCB488B5C2430488B7424384883C4205FE974020000',
-        0x2CA8A97: '4533C9448BC7488BD5488BCEE878F8FFFF488BE885FF7418',
-        0x2CA8AAF: '8B73302BF70F88B0A4F70148017B50017B40017B44897330',
-    }
+    expected_windows = dict(pins['helperWindows'])
     windows = shared_helper.get('windows')
     if not isinstance(windows, list):
-        raise ContextError(source, 0x2CA8700,
+        raise ContextError(source, helper_rva,
                            'independent byte-payload helper/consumer instruction windows', windows)
     actual_windows = {row.get('rva'): row.get('rawHex', '').upper()
                       for row in windows if isinstance(row, dict)}
@@ -681,23 +776,22 @@ def _skilldata_verified_byte_payload_reader(action_reader, shared_helper, *, sou
         require(actual_windows.get(rva), raw_hex, source, rva)
     helper_calls = shared_helper.get('orderedCalls')
     if not isinstance(helper_calls, list):
-        raise ContextError(source, 0x2CA8700,
+        raise ContextError(source, helper_rva,
                            'independent byte-payload helper consumer callsites', helper_calls)
-    expected_helper_calls = {(0x3D9BBE5, 0x2CA8700),
-                             (0x3D9BC37, 0x2CA8700)}
+    expected_helper_calls = {(call_rva, helper_rva) for call_rva in pins['helperConsumerCalls']}
     actual_helper_calls = {(row.get('rva'), row.get('targetRva'))
                            for row in helper_calls if isinstance(row, dict) and
-                           row.get('targetRva') == 0x2CA8700}
-    require(actual_helper_calls, expected_helper_calls, source, 0x2CA8700)
+                           row.get('targetRva') == helper_rva}
+    require(actual_helper_calls, expected_helper_calls, source, helper_rva)
     boundary = shared_helper.get('boundary')
     if (not isinstance(boundary, str) or 'signed DWORD' not in boundary or
             '-1 returns null' not in boundary or 'positive length' not in boundary):
-        raise ContextError(source, 0x2CA8700,
+        raise ContextError(source, helper_rva,
                            'bounded signed-length/null/positive payload consumer evidence', boundary)
     return {
-        'actionTag': 0x115,
+        'actionTag': PLAY_ANIMATION_TAG,
         'actionMemberCallSites': [dict(row) for row in selected],
-        'sharedHelperTargetRva': 0x2CA8700,
+        'sharedHelperTargetRva': helper_rva,
         'independentConsumerCallSites': [
             {'callInstructionRva': rva, 'targetRva': target}
             for rva, target in sorted(actual_helper_calls)],
@@ -829,13 +923,10 @@ def _skilldata_read_sequence_data_candidate(raw, start, hard_limit, *, source):
 
 
 def _skilldata_sequence_tail_windows(sequence_reader, *, source):
-    expected = {
-        0x39C6EA2: '488B43500FB6288B7B3083EF017911BA01000000488BCBE882B2100284C0750D48FF4350FF4340FF4344897B30',
-        0x39C6F07: '488B43500FB6288B7B3083EF017911BA01000000488BCBE81DB2100284C0750D48FF4350FF4340FF4344897B30',
-    }
+    expected = dict(AUDIT_PINS['skilldataSequenceTailWindows']['tailWindows'])
     windows = sequence_reader.get('windows')
     if not isinstance(windows, list):
-        raise ContextError(source, 0x39C6EA2,
+        raise ContextError(source, next(iter(expected)),
                            'SequenceActionData empty-list trailing byte read windows', windows)
     actual = {row.get('rva'): str(row.get('rawHex', '')).upper()
               for row in windows if isinstance(row, dict)}
@@ -856,7 +947,7 @@ def _skilldata_continue_play_animation_candidate(raw, start, hard_limit, *,
         raise ContextError(source, start,
                            'PlayAnimation member16 reader order after the shared fixed prefix',
                            root_read_order)
-    if (payload_helper_evidence.get('sharedHelperTargetRva') != 0x2CA8700 or
+    if (payload_helper_evidence.get('sharedHelperTargetRva') != READER_PINS['readStringTargetRva'] or
             payload_helper_evidence.get('providerSelection') != 'unobserved'):
         raise ContextError(source, start,
                            'current helper identity with runtime provider kept unobserved',
@@ -952,70 +1043,70 @@ def _skilldata_force_sync_reader_evidence(timeline_reader, *,
              force_sync_method_spec.get('index'),
              force_sync_method_spec.get('genericType', {}).get('typeDefinitionIndex'),
              force_sync_method_spec.get('genericType', {}).get('typeName')),
-            (3, 'forceSyncAnimData', 620038, 9198,
+            (3, 'forceSyncAnimData', READER_PINS['timelineForceSyncMethodSpecIndex'],
+             READER_PINS['forceSyncTypeDefinition'],
              'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData'),
-            source, 0x32CD16F)
+            source, READER_PINS['timelineForceSyncReadLoadRva'])
 
+    root_rva, root_end, root_sha = timeline_code_window('ForceSyncAnimData Deserialize:')
     force_reader = timeline_reader.get('forceSyncAnimDataReader')
     if not isinstance(force_reader, dict):
-        raise ContextError(source, 0x32CE4B0,
+        raise ContextError(source, root_rva,
                            'current ForceSyncAnimData selected-reader evidence',
                            force_reader)
     require((force_reader.get('typeDefinitionIndex'), force_reader.get('typeName')),
-            (9198, 'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData'),
-            source, 0x32CE4B0)
+            (READER_PINS['forceSyncTypeDefinition'],
+             'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData'),
+            source, root_rva)
 
     methods = timeline_reader.get('methods')
     if not isinstance(methods, list):
-        raise ContextError(source, 0x32CE4B0,
+        raise ContextError(source, root_rva,
                            'TimelineActionData/ForceSync reader module-token rows', methods)
     root_type = ('Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_'
                  'ForceSyncAnimDataForMemoryPack')
+    root_method_index = next(row[0] for row in READER_PINS['timelineReaderMethods']
+                             if row[1] == root_type)
     root_methods = [row for row in methods if isinstance(row, dict) and
-                    row.get('methodIndex') == 107909]
+                    row.get('methodIndex') == root_method_index]
     if len(root_methods) != 1:
-        raise ContextError(source, 0x32CE4B0,
+        raise ContextError(source, root_rva,
                            'one current ForceSyncAnimData root Deserialize method',
                            len(root_methods))
     root_method = root_methods[0]
     require((root_method.get('declaringType'), root_method.get('name'),
              root_method.get('image'), root_method.get('pointerVa')),
             (root_type, 'Deserialize', 'MemoryPack.Beyond.dll',
-             gameassembly_image_base + 0x32CE4B0), source, 0x32CE4B0)
+             gameassembly_image_base + root_rva), source, root_rva)
 
     windows = timeline_reader.get('codeWindows')
     if not isinstance(windows, list):
-        raise ContextError(source, 0x32CE4B0,
+        raise ContextError(source, root_rva,
                            'hash-pinned ForceSyncAnimData reader/formatter windows', windows)
-    expected_root_window = (
-        0x32CE4B0, 0x32CE75C,
-        '1FB17BEDE173176E0BC082E7C315267B6FC6F3CE76796DB90A627E9B0E9D7767')
+    expected_root_window = (root_rva, root_end, root_sha)
     matches = [row for row in windows if isinstance(row, dict) and
                (row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
                expected_root_window]
     if len(matches) != 1:
-        raise ContextError(source, 0x32CE4B0,
+        raise ContextError(source, root_rva,
                            'one exact ForceSyncAnimData root code window', matches)
 
-    expected_header_and_stores = {
-        (0x32CE57E, '4080FE04'),
-        (0x32CE5A9, '884610'),
-        (0x32CE5D9, '49894018'),
-    }
+    expected_header_and_stores = timeline_instruction_pairs('forceSyncHeaderAndStoreRvas')
+    header_rva = min(rva for rva, _raw_hex in expected_header_and_stores)
     reader_windows = force_reader.get('verifiedInstructionWindows')
     if not isinstance(reader_windows, list):
-        raise ContextError(source, 0x32CE57E,
+        raise ContextError(source, header_rva,
                            'ForceSync member-count and member-store instruction evidence',
                            reader_windows)
     actual_header_and_stores = {
         (row.get('rva'), str(row.get('rawHex', '')).upper())
         for row in reader_windows if isinstance(row, dict)
     }
-    require(actual_header_and_stores, expected_header_and_stores, source, 0x32CE57E)
+    require(actual_header_and_stores, expected_header_and_stores, source, header_rva)
 
     members = force_reader.get('serializedMembers')
     if not isinstance(members, list) or len(members) != 4:
-        raise ContextError(source, 0x32CE4B0,
+        raise ContextError(source, root_rva,
                            'four current ForceSyncAnimData serialized members', members)
     expected_members = [
         (0, 'forceSync', 0x10, 'bool'),
@@ -1026,88 +1117,91 @@ def _skilldata_force_sync_reader_evidence(timeline_reader, *,
     require([(row.get('serializedOrderIndex'), row.get('fieldName'),
               row.get('objectField', {}).get('fieldOffset'),
               row.get('objectField', {}).get('fieldType', {}).get('wireType'))
-             for row in members], expected_members, source, 0x32CE4B0)
+             for row in members], expected_members, source, root_rva)
     for row in members:
-        require(row.get('objectField', {}).get('typeDefinitionIndex'), 9198,
+        require(row.get('objectField', {}).get('typeDefinitionIndex'),
+                READER_PINS['forceSyncTypeDefinition'],
                 source, row.get('serializedOrderIndex'))
 
+    pins = AUDIT_PINS['skilldataForceSyncReaderEvidence']
     force_sync_reader = members[0].get('reader', {})
     montage_reader = members[1].get('reader', {})
     require((force_sync_reader.get('callInstructionRva'),
              force_sync_reader.get('callInstructionHex'),
              force_sync_reader.get('targetRva'), force_sync_reader.get('role')),
-            (0x32CE58E, 'E82DA39DFF', 0x2CA88C0, 'read forceSync boolean'),
-            source, 0x32CE58E)
+            (READER_PINS['forceSyncReadCallRva'], pins['forceSyncReadCallHex'],
+             READER_PINS['readBoolTargetRva'], 'read forceSync boolean'),
+            source, READER_PINS['forceSyncReadCallRva'])
     require((montage_reader.get('callInstructionRva'),
              montage_reader.get('callInstructionHex'),
              montage_reader.get('targetRva'), montage_reader.get('role')),
-            (0x32CE5B2, 'E849A19DFF', 0x2CA8700, 'read montageName string'),
-            source, 0x32CE5B2)
+            (READER_PINS['montageNameReadCallRva'], pins['montageNameReadCallHex'],
+             READER_PINS['readStringTargetRva'], 'read montageName string'),
+            source, READER_PINS['montageNameReadCallRva'])
 
     scalar_expectations = {
         'playbackSpeed': (
             'inline-float32', 4,
-            {(0x32CE635, 'F30F1030'), (0x32CE652, '4883435004'),
-             (0x32CE67B, 'F30F117024')}),
+            timeline_instruction_pairs('playbackSpeedInstructionRvas')),
         'targetFrame': (
             'inline-int32', 4,
-            {(0x32CE69A, '8B28'), (0x32CE6B5, '4883435004'),
-             (0x32CE6D8, '896820')}),
+            timeline_instruction_pairs('targetFrameInstructionRvas')),
     }
     for field_name, (kind, byte_width, expected_instructions) in scalar_expectations.items():
         reader = next(row for row in members if row.get('fieldName') == field_name).get('reader', {})
         require((reader.get('kind'), reader.get('byteWidth')),
-                (kind, byte_width), source, 0x32CE4B0)
+                (kind, byte_width), source, root_rva)
         instructions = reader.get('verifiedInstructions')
         if not isinstance(instructions, list):
-            raise ContextError(source, 0x32CE4B0,
+            raise ContextError(source, root_rva,
                                f'{field_name} inline source-cursor instructions', instructions)
         actual_instructions = {
             (row.get('rva'), str(row.get('rawHex', '')).upper())
             for row in instructions if isinstance(row, dict)
         }
-        require(actual_instructions, expected_instructions, source, 0x32CE4B0)
+        require(actual_instructions, expected_instructions, source, root_rva)
 
+    bool_helper_rva = READER_PINS['readBoolTargetRva']
+    string_helper_rva = READER_PINS['readStringTargetRva']
     shared_bool_reads = bool_helper_evidence.get('verifiedSharedHelperReads')
     if not isinstance(shared_bool_reads, list):
-        raise ContextError(source, 0x2CA88C0,
+        raise ContextError(source, bool_helper_rva,
                            'independent one-byte shared boolean-helper reader evidence',
                            shared_bool_reads)
-    expected_shared_bool_reads = {
-        (0x377410A, 0x2CA88C0, 1),
-        (0x37741A1, 0x2CA88C0, 1),
-    }
+    # The IfElse reader's one-byte reads through the shared boolean helper.
+    expected_shared_bool_reads = {tuple(row) for row in IFELSE_PINS['orderedCalls']
+                                  if row[1] == bool_helper_rva}
     actual_shared_bool_reads = {
         (row.get('callInstructionRva'), row.get('targetRva'),
          row.get('fastSerializedWidth'))
         for row in shared_bool_reads if isinstance(row, dict) and
-        row.get('targetRva') == 0x2CA88C0
+        row.get('targetRva') == bool_helper_rva
     }
     require(actual_shared_bool_reads, expected_shared_bool_reads,
-            source, 0x2CA88C0)
+            source, bool_helper_rva)
     require((payload_helper_evidence.get('sharedHelperTargetRva'),
              payload_helper_evidence.get('providerSelection')),
-            (0x2CA8700, 'unobserved'), source, 0x2CA8700)
+            (string_helper_rva, 'unobserved'), source, string_helper_rva)
 
     return {
-        'timelineForceSyncMethodSpecIndex': 620038,
-        'forceSyncTypeDefinitionIndex': 9198,
-        'forceSyncRootMethodIndex': 107909,
-        'forceSyncRootRva': 0x32CE4B0,
+        'timelineForceSyncMethodSpecIndex': READER_PINS['timelineForceSyncMethodSpecIndex'],
+        'forceSyncTypeDefinitionIndex': READER_PINS['forceSyncTypeDefinition'],
+        'forceSyncRootMethodIndex': root_method_index,
+        'forceSyncRootRva': root_rva,
         'forceSyncRootCodeWindow': dict(matches[0]),
         'memberCountHeader': 4,
         'serializedMembers': [
             {'serializedOrderIndex': index, 'fieldName': field_name,
              'byteWidth': (1 if index == 0 else None if index == 1 else 4),
-             'readerTargetRva': (0x2CA88C0 if index == 0 else
-                                 0x2CA8700 if index == 1 else None)}
+             'readerTargetRva': (bool_helper_rva if index == 0 else
+                                 string_helper_rva if index == 1 else None)}
             for index, field_name, _, _ in expected_members],
         'sharedOneByteHelperEvidence': {
-            'sourceRootRva': 0x3774060,
+            'sourceRootRva': IFELSE_PINS['rootRva'],
             'verifiedCallSites': [dict(row) for row in shared_bool_reads
-                                  if row.get('targetRva') == 0x2CA88C0],
+                                  if row.get('targetRva') == bool_helper_rva],
         },
-        'sharedSignedLengthPayloadHelperTargetRva': 0x2CA8700,
+        'sharedSignedLengthPayloadHelperTargetRva': string_helper_rva,
         'runtimeProviderSelection': 'unobserved',
     }
 
@@ -1216,45 +1310,52 @@ def _skilldata_read_following_timeline_action_data_prefix_candidate(
         payload_helper_evidence, bool_helper_evidence,
         gameassembly_image_base, source):
     """Replay the next timeline element through its first nested action tag."""
+    timeline_root_window = timeline_code_window('TimelineActionData Deserialize:')
     timeline_windows = timeline_reader.get('codeWindows')
     if not isinstance(timeline_windows, list) or not any(
             (row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
-            (0x32CCF70, 0x32CD277,
-             'CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688')
+            timeline_root_window
             for row in timeline_windows if isinstance(row, dict)):
-        raise ContextError(source, 0x32CCF70,
+        raise ContextError(source, timeline_root_window[0],
                            'hash-pinned current TimelineActionData root reader', timeline_windows)
     timeline_members = timeline_reader.get('serializedMembers')
     if not isinstance(timeline_members, list) or len(timeline_members) != 4:
         raise ContextError(source, start, 'four current TimelineActionData member readers',
                            timeline_members)
     end_frame = timeline_members[0].get('reader', {})
+    int32_helper_rva = READER_PINS['readInt32TargetRva']
     require((end_frame.get('callInstructionRva'), end_frame.get('callInstructionHex'),
              end_frame.get('targetRva'), end_frame.get('role')),
-            (0x32CD05E, 'E84DB69DFF', 0x2CA86B0, 'read endFrame int32'),
-            source, 0x32CD05E)
+            (READER_PINS['endFrameReadCallRva'],
+             AUDIT_PINS['skilldataReadFollowingTimelineActionDataPrefixCandidate']['endFrameReadCallHex'],
+             int32_helper_rva, 'read endFrame int32'),
+            source, READER_PINS['endFrameReadCallRva'])
+    # The member-count header check is the first pinned timeline reader instruction.
+    header_rva, header_hex, _header_role = READER_PINS['timelineReaderInstructions'][0]
     header_windows = timeline_reader.get('verifiedInstructionWindows')
     if not isinstance(header_windows, list):
-        raise ContextError(source, 0x32CD04E,
+        raise ContextError(source, header_rva,
                            'TimelineActionData member-count header instruction evidence',
                            header_windows)
     require(any((row.get('rva'), str(row.get('rawHex', '')).upper()) ==
-                (0x32CD04E, '4080FE04')
+                (header_rva, header_hex)
                 for row in header_windows if isinstance(row, dict)), True,
-            source, 0x32CD04E)
+            source, header_rva)
 
     shared_reads = bool_helper_evidence.get('verifiedSharedHelperReads')
     if not isinstance(shared_reads, list):
-        raise ContextError(source, 0x2CA86B0,
+        raise ContextError(source, int32_helper_rva,
                            'independent four-byte reader-helper evidence', shared_reads)
-    expected_end_frame_witness = (0x3774135, 0x2CA86B0, 4)
+    # The IfElse reader's first four-byte read through the shared int32 helper.
+    expected_end_frame_witness = next(tuple(row) for row in IFELSE_PINS['orderedCalls']
+                                      if row[1] == int32_helper_rva)
     actual_shared_reads = {
         (row.get('callInstructionRva'), row.get('targetRva'),
          row.get('fastSerializedWidth'))
         for row in shared_reads if isinstance(row, dict)
     }
     require(expected_end_frame_witness in actual_shared_reads, True,
-            source, 0x2CA86B0)
+            source, int32_helper_rva)
     _skilldata_sequence_tail_windows(sequence_reader, source=source)
 
     if start < 0 or hard_limit < start or hard_limit > len(raw):
@@ -1352,10 +1453,7 @@ def _skilldata_read_following_timeline_action_data_prefix_candidate(
         }
 
     start_frame = timeline_members[2].get('reader', {})
-    expected_start_frame = {
-        (53268774, '448B30'), (53268802, '4883435004'),
-        (53268807, '83434004'), (53268811, '83434404'),
-    }
+    expected_start_frame = timeline_instruction_pairs('startFrameInstructionRvas')
     actual_start_frame = {
         (row.get('rva'), str(row.get('rawHex', '')).upper())
         for row in start_frame.get('verifiedInstructions', [])
@@ -1418,19 +1516,19 @@ def _skilldata_continue_following_play_animation_candidate(
         gameassembly_image_base, source):
     """Continue a second TimelineActionData only for its exact 0x115 child path."""
     peek = following_timeline.get('firstActionUnionTagPeekOnly')
-    if not isinstance(peek, dict) or peek.get('tag') != 0x115 or peek.get('tagWidth') != 3:
+    if not isinstance(peek, dict) or peek.get('tag') != PLAY_ANIMATION_TAG or peek.get('tagWidth') != 3:
         raise ContextError(source, following_timeline.get('cursor', 0),
                            'non-consuming extended 0x115 child tag peek', peek)
     if following_timeline.get('timelineSequenceCount') != 1:
         raise ContextError(source, peek.get('offset', 0),
                            'one child in the second TimelineActionData SequenceActionData',
                            following_timeline.get('timelineSequenceCount'))
-    reader = action_readers.get(0x115)
+    reader = action_readers.get(PLAY_ANIMATION_TAG)
     if not isinstance(reader, dict):
         raise ContextError(source, peek['offset'],
                            'current 0x115 PlayAnimation selected reader', reader)
     union_evidence = skilldata_action_union_static_reader_evidence(
-        0x115, reader, buff_routes,
+        PLAY_ANIMATION_TAG, reader, buff_routes,
         gameassembly_image_base=gameassembly_image_base, source=source)
     root_member_count = union_evidence.get('rootMemberCount')
     root_read_order = union_evidence.get('rootAnonymousReadOrder')
@@ -1493,7 +1591,7 @@ def _skilldata_continue_following_play_animation_candidate(
     require((payload_helper_evidence.get('actionTag'),
              payload_helper_evidence.get('sharedHelperTargetRva'),
              payload_helper_evidence.get('providerSelection')),
-            (0x115, 0x2CA8700, 'unobserved'), source, start)
+            (PLAY_ANIMATION_TAG, READER_PINS['readStringTargetRva'], 'unobserved'), source, start)
     payload_helper = payload_helper_evidence
     play_animation = _skilldata_continue_play_animation_candidate(
         raw, position, hard_limit, action_start=start,
@@ -1591,12 +1689,7 @@ def _skilldata_continue_timeline_parent_candidate(raw, start, hard_limit, *,
         raise ContextError(source, position, 'four current TimelineActionData members',
                            timeline_members)
     start_frame = timeline_members[2].get('reader', {})
-    expected_start_frame_instructions = {
-        (53268774, '448B30'),
-        (53268802, '4883435004'),
-        (53268807, '83434004'),
-        (53268811, '83434404'),
-    }
+    expected_start_frame_instructions = timeline_instruction_pairs('startFrameInstructionRvas')
     instructions = start_frame.get('verifiedInstructions')
     if not isinstance(instructions, list):
         raise ContextError(source, position,
@@ -1766,7 +1859,7 @@ def skilldata_timeline_branch_static_alignment(
     require([row.get('serializedOrderIndex') for row in action_group_members],
             [0, 1], source, 1)
     require([row.get('readerMethodSpec', {}).get('index')
-             for row in action_group_members], [610662, 610915], source, 1)
+             for row in action_group_members], READER_PINS['listReadMethodSpecIndices'], source, 1)
     first_list_type = action_group_members[0].get('readerMethodSpec', {}).get('genericType', {})
     timeline_list_type = action_group_members[1].get('readerMethodSpec', {}).get('genericType', {})
     require((first_list_type.get('typeName'), first_list_type.get('elementTypeName')),
@@ -1775,12 +1868,12 @@ def skilldata_timeline_branch_static_alignment(
     require((timeline_list_type.get('typeName'), timeline_list_type.get('elementTypeName'),
              timeline_list_type.get('elementTypeDefinitionIndex')),
             ('System.Collections.Generic.List`1',
-             'Beyond.Gameplay.Core.TimelineAction+TimelineActionData', 9199), source, 6)
+             'Beyond.Gameplay.Core.TimelineAction+TimelineActionData',
+             READER_PINS['timelineActionTypeDefinition']), source, 6)
     action_group_windows = skilldata_reader_order.get('codeWindows')
     if not isinstance(action_group_windows, list) or not any(
             (row.get('rva'), row.get('byteLength'), row.get('sha256')) ==
-            (58581179, 2314,
-             'FEA359985EBF5DF75CC58D871469481F0F692B1768D84724FF5941D47CAD8132')
+            skill_reader_body_window()
             for row in action_group_windows):
         raise ContextError(source, 1, 'hash-pinned SkillData/ActionGroupData root reader window',
                            action_group_windows)
@@ -1788,12 +1881,8 @@ def skilldata_timeline_branch_static_alignment(
     if not isinstance(instructions, list):
         raise ContextError(source, 1, 'current SkillData and ActionGroupData header/store instructions',
                            instructions)
-    expected_instructions = {
-        (58581199, '4080FD30'),
-        (65273925, '4080FD02'),
-        (65273975, '48894118'),
-        (65274020, '48894110'),
-    }
+    expected_instructions = {(rva, raw_hex) for rva, raw_hex, _role
+                             in READER_PINS['instructionWindows']}
     actual_instructions = {(row.get('rva'), row.get('rawHex')) for row in instructions}
     require(expected_instructions <= actual_instructions, True, source, 1)
 
@@ -1801,21 +1890,22 @@ def skilldata_timeline_branch_static_alignment(
     if not isinstance(timeline, dict):
         raise ContextError(source, 10, 'current TimelineActionData native reader evidence', timeline)
     require((timeline.get('elementTypeDefinitionIndex'), timeline.get('elementTypeName')),
-            (9199, 'Beyond.Gameplay.Core.TimelineAction+TimelineActionData'), source, 10)
-    require(timeline.get('listReaderMethodSpec', {}).get('index'), 610915, source, 10)
+            (READER_PINS['timelineActionTypeDefinition'],
+             'Beyond.Gameplay.Core.TimelineAction+TimelineActionData'), source, 10)
+    require(timeline.get('listReaderMethodSpec', {}).get('index'),
+            READER_PINS['listReadMethodSpecIndices'][1], source, 10)
     timeline_methods = timeline.get('methods')
     if not isinstance(timeline_methods, list):
         raise ContextError(source, 10, 'TimelineActionData and ForceSync reader module/token rows',
                            timeline_methods)
     require(sorted(row.get('methodIndex') for row in timeline_methods),
-            [104653, 104654, 107909, 107910], source, 10)
+            sorted(row[0] for row in READER_PINS['timelineReaderMethods']), source, 10)
     timeline_windows = timeline.get('codeWindows')
     if not isinstance(timeline_windows, list):
         raise ContextError(source, 10, 'TimelineActionData hash-pinned reader windows',
                            timeline_windows)
     require(any((row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
-                (0x32CCF70, 0x32CD277,
-                 'CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688')
+                timeline_code_window('TimelineActionData Deserialize:')
                 for row in timeline_windows), True, source, 10)
     timeline_members = timeline.get('serializedMembers')
     if not isinstance(timeline_members, list) or len(timeline_members) != 4:
@@ -1826,11 +1916,12 @@ def skilldata_timeline_branch_static_alignment(
             source, 10)
     end_frame_reader = timeline_members[0].get('reader', {})
     require((end_frame_reader.get('targetRva'), end_frame_reader.get('role')),
-            (0x2CA86B0, 'read endFrame int32'), source, 11)
+            (READER_PINS['readInt32TargetRva'], 'read endFrame int32'), source, 11)
     sequence_method = timeline_members[1].get('readerMethodSpec', {})
     require((sequence_method.get('index'),
              sequence_method.get('genericType', {}).get('typeDefinitionIndex')),
-            (619962, 9202), source, 15)
+            (IFELSE_PINS['nestedMethodSpecIndex'], IFELSE_PINS['nestedTypeDefinition']),
+            source, 15)
     require((timeline_members[2].get('reader', {}).get('kind'),
              timeline_members[2].get('reader', {}).get('byteWidth')),
             ('inline-int32', 4), source, 0)
@@ -1838,20 +1929,19 @@ def skilldata_timeline_branch_static_alignment(
     sequence_window = sequence_reader.get('rootCodeWindow', {})
     require((sequence_reference.get('methodIndex'), sequence_reference.get('rootRva'),
              sequence_reference.get('rootCodeWindowSha256')),
-            (104346, 0x39C6AA0,
-             '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90'),
+            (SEQUENCE_PINS['methods'][0][0], SEQUENCE_PINS['rootRva'],
+             consumer_window(SEQUENCE_PINS['rootRva'])[2]),
             source, 15)
     require((sequence_window.get('startRva'), sequence_window.get('endRva'),
              sequence_window.get('sha256')),
-            (0x39C6AA0, 0x39C6FA7,
-             '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90'),
+            consumer_window(SEQUENCE_PINS['rootRva']),
             source, 15)
     sequence_methods = sequence_reader.get('methods')
     if not isinstance(sequence_methods, list):
         raise ContextError(source, 15, 'selected SequenceActionData reader module/token rows',
                            sequence_methods)
     sequence_root_methods = [row for row in sequence_methods
-                             if row.get('methodIndex') == 104346 and
+                             if row.get('methodIndex') == SEQUENCE_PINS['methods'][0][0] and
                              row.get('declaringType') ==
                              'Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack' and
                              row.get('name') == 'Deserialize' and
@@ -1860,17 +1950,18 @@ def skilldata_timeline_branch_static_alignment(
         raise ContextError(source, 15, 'one exact SequenceActionData root Deserialize method',
                            len(sequence_root_methods))
     require(sequence_root_methods[0].get('pointerVa'),
-            gameassembly_image_base + 0x39C6AA0, source, 15)
+            gameassembly_image_base + SEQUENCE_PINS['rootRva'], source, 15)
     sequence_windows = sequence_reader.get('windows')
     if not isinstance(sequence_windows, list):
         raise ContextError(source, 15, 'selected SequenceActionData header/count instruction',
                            sequence_windows)
+    header_rva, header_hex = SEQUENCE_PINS['windows'][2]
     sequence_header = [row for row in sequence_windows
-                       if row.get('rva') == 0x39C6B82]
+                       if row.get('rva') == header_rva]
     if len(sequence_header) != 1:
         raise ContextError(source, 15, 'one selected SequenceActionData member-three header check',
                            len(sequence_header))
-    require(sequence_header[0].get('rawHex'), '4080FE030F85DD030000', source, 0x39C6B82)
+    require(sequence_header[0].get('rawHex'), header_hex, source, header_rva)
 
     typed_prefix_ownership = [
         {'start': 0, 'end': 1, 'kind': 'SkillData.memberCount', 'value': 48},
@@ -1918,7 +2009,7 @@ def skilldata_timeline_branch_static_alignment(
                     'classification': 'candidate-null-union-only',
                     'parentCompleted': False,
                 }
-        elif tag != 0xC9 and (tag == 0x115 or tag in buff_action_readers):
+        elif tag != IF_ELSE_TAG and (tag == PLAY_ANIMATION_TAG or tag in buff_action_readers):
             reader = buff_action_readers.get(tag)
             if reader is None:
                 status = 'stopped-before-action-without-current-reader'
@@ -1935,7 +2026,7 @@ def skilldata_timeline_branch_static_alignment(
                                        'current selected action member read order',
                                        root_read_order)
                 common_prefix = ['byte', 'scalar32', 'scalar32', 'scalar32']
-                if tag == 0x115:
+                if tag == PLAY_ANIMATION_TAG:
                     require((root_member_count, root_read_order_key,
                              root_read_order[:4]),
                             (16, 'member16', common_prefix),
@@ -1948,8 +2039,8 @@ def skilldata_timeline_branch_static_alignment(
                                            'PlayAnimation SequenceActionData static type context',
                                            nested_contexts)
                     nested_sequence_contexts = [row for row in nested_contexts
-                                                if row.get('methodSpecIndex') == 619962 and
-                                                row.get('typeDefinition') == 9202 and
+                                                if row.get('methodSpecIndex') == IFELSE_PINS['nestedMethodSpecIndex'] and
+                                                row.get('typeDefinition') == IFELSE_PINS['nestedTypeDefinition'] and
                                                 row.get('typeName') ==
                                                 'Beyond.Gameplay.Core.SequenceActionData']
                     require(len(nested_sequence_contexts), 1, source,
@@ -1976,7 +2067,7 @@ def skilldata_timeline_branch_static_alignment(
                                    raw[header_offset] == root_member_count)
                     if not header_good:
                         status = ('stopped-before-play-animation-member-header'
-                                  if tag == 0x115 else
+                                  if tag == PLAY_ANIMATION_TAG else
                                   'stopped-before-action-member-header')
                         failure = {
                             'category': ('truncated' if header_offset >= len(raw)
@@ -1991,7 +2082,7 @@ def skilldata_timeline_branch_static_alignment(
                             {'start': start, 'end': header_offset,
                              'kind': 'AbilityActionData.union-tag'},
                             {'start': header_offset, 'end': position,
-                             'kind': ('PlayAnimationAction.memberCount' if tag == 0x115
+                             'kind': ('PlayAnimationAction.memberCount' if tag == PLAY_ANIMATION_TAG
                                       else 'AbilityActionData.root-memberCount')},
                         ]
                         next_field = None
@@ -2011,7 +2102,7 @@ def skilldata_timeline_branch_static_alignment(
                                     'remainingBytes': len(raw) - position,
                                 }
                                 break
-                            member_label = ('PlayAnimationAction' if tag == 0x115
+                            member_label = ('PlayAnimationAction' if tag == PLAY_ANIMATION_TAG
                                             else 'AbilityActionData')
                             prefix_rows.append({
                                 'start': position,
@@ -2024,10 +2115,10 @@ def skilldata_timeline_branch_static_alignment(
                         candidate_cursor = position
                         if next_field is not None:
                             status = ('truncated-play-animation-fixed-prefix'
-                                      if tag == 0x115 else
+                                      if tag == PLAY_ANIMATION_TAG else
                                       'truncated-action-fixed-prefix')
                             failure = {'category': 'truncated', **next_field}
-                        elif (tag == 0x115 and next_member_type == 'byte-payload'):
+                        elif (tag == PLAY_ANIMATION_TAG and next_member_type == 'byte-payload'):
                             payload_helper = _skilldata_verified_byte_payload_reader(
                                 reader, byte_payload_helper_evidence, source=source)
                             candidate_byte_payload_helper_evidence = payload_helper
@@ -2127,7 +2218,7 @@ def skilldata_timeline_branch_static_alignment(
                                     if (following_timeline.get('status') ==
                                             'stopped-before-following-timeline-sequence-action' and
                                             isinstance(following_tag, dict) and
-                                            following_tag.get('tag') == 0x115 and
+                                            following_tag.get('tag') == PLAY_ANIMATION_TAG and
                                             following_timeline.get('timelineSequenceCount') == 1):
                                         remaining_timeline_actions = (
                                             witness.get('timelineActionsListCount') - 1)
@@ -2218,9 +2309,9 @@ def skilldata_timeline_branch_static_alignment(
                                 }
                         elif next_member_type is not None:
                             status = ('stopped-before-play-animation-byte-payload'
-                                      if tag == 0x115 else
+                                      if tag == PLAY_ANIMATION_TAG else
                                       'stopped-before-action-variable-member')
-                            if tag == 0x115:
+                            if tag == PLAY_ANIMATION_TAG:
                                 prefix_stop = {
                                     'tag': tag, 'start': start, 'end': position,
                                     'memberHeader': root_member_count,
@@ -2256,7 +2347,7 @@ def skilldata_timeline_branch_static_alignment(
                                 'consumedUnionRecord': False,
                                 'classification': 'candidate-static-reader-member-sequence; provider unobserved',
                             }
-        elif tag == 0xC9:
+        elif tag == IF_ELSE_TAG:
             require(len(tag_routes), 1, source, union_peek['offset'])
             if not isinstance(c9_prefix_evidence, dict):
                 raise ContextError(source, union_peek['offset'],
@@ -2267,12 +2358,12 @@ def skilldata_timeline_branch_static_alignment(
                      c9_prefix_evidence.get('switchTargetRva'),
                      c9_prefix_evidence.get('typeDefinition'),
                      c9_prefix_evidence.get('wrapperName')),
-                    (0xC9, c9_route.get('switchTargetRva'), c9_route.get('typeDefinition'),
+                    (IF_ELSE_TAG, c9_route.get('switchTargetRva'), c9_route.get('typeDefinition'),
                      c9_route.get('wrapperName')), source, union_peek['offset'])
             require(c9_prefix_evidence.get('providerSelection'), 'unobserved', source,
                     union_peek['offset'])
             start = union_peek['offset']
-            if union_peek.get('tagWidth') != 1 or raw[start] != 0xC9:
+            if union_peek.get('tagWidth') != 1 or raw[start] != IF_ELSE_TAG:
                 raise ContextError(source, start, 'one-byte C9 union tag', union_peek)
             header_offset = start + 1
             header_good = header_offset < len(raw) and raw[header_offset] == 8
@@ -2542,67 +2633,65 @@ def skilldata_action_union_c9_prefix_reader_evidence(reader, buff_routes, *,
                                                        source):
     """Pin only the C9 member-eight scalar prefix before its generic children."""
     if not isinstance(reader, dict):
-        raise ContextError(source, 0xC9,
+        raise ContextError(source, IF_ELSE_TAG,
                            'current exact-build IfElse selected-reader evidence',
                            type(reader).__name__)
     route_rows = buff_routes.get('rows') if isinstance(buff_routes, dict) else None
     if not isinstance(route_rows, list):
-        raise ContextError(source, 0xC9, 'current AbilityActionData union route rows',
+        raise ContextError(source, IF_ELSE_TAG, 'current AbilityActionData union route rows',
                            route_rows)
-    matching_routes = [row for row in route_rows if row.get('tag') == 0xC9]
+    matching_routes = [row for row in route_rows if row.get('tag') == IF_ELSE_TAG]
     if len(matching_routes) != 1:
-        raise ContextError(source, 0xC9, 'one exact current C9 union route',
+        raise ContextError(source, IF_ELSE_TAG, 'one exact current C9 union route',
                            len(matching_routes))
     route = matching_routes[0]
     wrapper = ('Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_'
                'IfElseActionDataForMemoryPack')
-    require(route.get('switchTargetRva'), 0x390DA8A, source, 0xC9)
-    require(route.get('typeDefinition'), 16163, source, 0xC9)
-    require(route.get('wrapperName'), wrapper, source, 0xC9)
+    _tag, switch_target, registered_index, type_definition, _suffix, _init = union_route(
+        'IfElseAction_IfElseActionData')
+    require(route.get('switchTargetRva'), switch_target, source, IF_ELSE_TAG)
+    require(route.get('typeDefinition'), type_definition, source, IF_ELSE_TAG)
+    require(route.get('wrapperName'), wrapper, source, IF_ELSE_TAG)
     operands = route.get('operands')
     if not isinstance(operands, list):
-        raise ContextError(source, 0xC9, 'C9 registered type-usage operands', operands)
+        raise ContextError(source, IF_ELSE_TAG, 'C9 registered type-usage operands', operands)
     selected_operands = [row for row in operands
                          if row.get('usageTag') == 1 and
-                         row.get('registeredTypeIndex') == 106672]
-    require(len(selected_operands), 1, source, 0xC9)
+                         row.get('registeredTypeIndex') == registered_index]
+    require(len(selected_operands), 1, source, IF_ELSE_TAG)
 
     methods = reader.get('methods')
     if not isinstance(methods, list):
-        raise ContextError(source, 0xC9, 'IfElse selected reader method rows', methods)
+        raise ContextError(source, IF_ELSE_TAG, 'IfElse selected reader method rows', methods)
     selected_methods = [row for row in methods
-                        if row.get('methodIndex') == 120613 and
+                        if row.get('methodIndex') == IFELSE_PINS['methods'][0][0] and
                         row.get('declaringType') == wrapper and
                         row.get('name') == 'Deserialize']
     if len(selected_methods) != 1:
-        raise ContextError(source, 0xC9,
+        raise ContextError(source, IF_ELSE_TAG,
                            'one token/module-joined IfElse root Deserialize method',
                            len(selected_methods))
     method = selected_methods[0]
-    require(method.get('image'), 'MemoryPack.Beyond.dll', source, 0xC9)
+    require(method.get('image'), 'MemoryPack.Beyond.dll', source, IF_ELSE_TAG)
     pointer_va = method.get('pointerVa')
     if type(pointer_va) is not int:
-        raise ContextError(source, 0xC9, 'exact IfElse root reader pointer VA', pointer_va)
+        raise ContextError(source, IF_ELSE_TAG, 'exact IfElse root reader pointer VA', pointer_va)
     root_rva = pointer_va - gameassembly_image_base
-    require(root_rva, 0x3774060, source, 0xC9)
+    require(root_rva, IFELSE_PINS['rootRva'], source, IF_ELSE_TAG)
     root_window = reader.get('rootCodeWindow')
     if not isinstance(root_window, dict):
-        raise ContextError(source, 0xC9, 'hash-pinned complete IfElse reader code window',
+        raise ContextError(source, IF_ELSE_TAG, 'hash-pinned complete IfElse reader code window',
                            root_window)
     require((root_window.get('startRva'), root_window.get('endRva'),
              root_window.get('sha256')),
-            (0x3774060, 0x37742A8,
-             'AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8'),
-            source, 0xC9)
+            consumer_window(IFELSE_PINS['rootRva']),
+            source, IF_ELSE_TAG)
 
-    expected_windows = {
-        0x3774093:
-            '837B30010F8C089A6B01488B43500FB6288B733083EE010F880B9A6B0148FF4350FF4340FF43448973304080FDFF0F8482010000',
-        0x37740FA: '4080FD080F85D1996B01',
-    }
+    expected_windows = dict(
+        AUDIT_PINS['skilldataActionUnionC9PrefixReaderEvidence']['normalPathWindows'])
     windows = reader.get('windows')
     if not isinstance(windows, list):
-        raise ContextError(source, 0xC9, 'selected IfElse reader instruction windows', windows)
+        raise ContextError(source, IF_ELSE_TAG, 'selected IfElse reader instruction windows', windows)
     window_evidence = []
     for rva, expected_hex in expected_windows.items():
         matches = [row for row in windows if row.get('rva') == rva]
@@ -2620,54 +2709,47 @@ def skilldata_action_union_c9_prefix_reader_evidence(reader, buff_routes, *,
             'rawHex': actual_hex,
         })
 
-    expected_calls = [
-        (0x377410A, 0x2CA88C0, 1),
-        (0x3774135, 0x2CA86B0, 4),
-        (0x3774159, 0x2CA86B0, 4),
-        (0x377417D, 0x2CA86B0, 4),
-        (0x37741A1, 0x2CA88C0, 1),
-        (0x37741CA, 0x2DA5C90, None),
-        (0x37741F3, 0x2DA5C90, None),
-        (0x377421C, 0x2DA5C90, None),
-    ]
+    expected_calls = [tuple(row) for row in IFELSE_PINS['orderedCalls']]
     calls = reader.get('orderedCalls')
     if not isinstance(calls, list):
-        raise ContextError(source, 0xC9, 'selected IfElse ordered source-call rows', calls)
+        raise ContextError(source, IF_ELSE_TAG, 'selected IfElse ordered source-call rows', calls)
     actual_calls = [(row.get('rva'), row.get('targetRva'),
                      row.get('fastSerializedWidth')) for row in calls]
-    require(actual_calls, expected_calls, source, 0x377410A)
+    require(actual_calls, expected_calls, source, expected_calls[0][0])
 
-    expected_nested_operand_rvas = [0x37741BD, 0x37741E6, 0x377420F]
+    expected_nested_operand_rvas = IFELSE_PINS['nestedOperandLoads']
     nested_operands = reader.get('nestedOperands')
     if not isinstance(nested_operands, list):
-        raise ContextError(source, 0xC9, 'three exact nested generic type-usage rows',
+        raise ContextError(source, IF_ELSE_TAG, 'three exact nested generic type-usage rows',
                            nested_operands)
     require([row.get('rva') for row in nested_operands],
-            expected_nested_operand_rvas, source, 0xC9)
-    require(len({row.get('cellVa') for row in nested_operands}), 1, source, 0xC9)
-    require(len({row.get('usageRawHex') for row in nested_operands}), 1, source, 0xC9)
-    require(reader.get('nestedMethodSpecIndex'), 619962, source, 0xC9)
-    require(reader.get('nestedTypeDefinition'), 9202, source, 0xC9)
+            expected_nested_operand_rvas, source, IF_ELSE_TAG)
+    require(len({row.get('cellVa') for row in nested_operands}), 1, source, IF_ELSE_TAG)
+    require(len({row.get('usageRawHex') for row in nested_operands}), 1, source, IF_ELSE_TAG)
+    require(reader.get('nestedMethodSpecIndex'), IFELSE_PINS['nestedMethodSpecIndex'],
+            source, IF_ELSE_TAG)
+    require(reader.get('nestedTypeDefinition'), IFELSE_PINS['nestedTypeDefinition'],
+            source, IF_ELSE_TAG)
     require(reader.get('nestedTypeName'),
-            'Beyond.Gameplay.Core.SequenceActionData', source, 0xC9)
+            'Beyond.Gameplay.Core.SequenceActionData', source, IF_ELSE_TAG)
     instantiation = reader.get('nestedInstantiation')
     if not isinstance(instantiation, dict):
-        raise ContextError(source, 0xC9,
+        raise ContextError(source, IF_ELSE_TAG,
                            'exact nested SequenceActionData type instantiation',
                            instantiation)
     arguments = instantiation.get('arguments')
     if not isinstance(arguments, (list, tuple)) or len(arguments) != 1:
-        raise ContextError(source, 0xC9, 'one selected SequenceActionData type argument',
+        raise ContextError(source, IF_ELSE_TAG, 'one selected SequenceActionData type argument',
                            arguments)
     require(arguments[0].get('raw_type_record_hex'),
-            'F2230000000000000000120000000000', source, 0xC9)
+            IFELSE_PINS['nestedArgumentRawTypes'][0], source, IF_ELSE_TAG)
 
     return {
-        'tag': 0xC9,
+        'tag': IF_ELSE_TAG,
         'switchTargetRva': route['switchTargetRva'],
         'typeDefinition': route['typeDefinition'],
         'wrapperName': wrapper,
-        'registeredTypeIndex': 106672,
+        'registeredTypeIndex': registered_index,
         'methodIndex': method['methodIndex'],
         'rootMethodRva': root_rva,
         'rootCodeWindow': root_window,
@@ -2735,7 +2817,7 @@ def skilldata_actiongroup_c9_nested_sequence_candidate_replay(
             prefix_start < 0 or prefix_end <= prefix_start or prefix_end > hard_limit):
         raise ContextError(source, 0, 'C9 prefix range within current hardLimit',
                            [prefix_start, prefix_end, hard_limit])
-    require(prefix.get('tag'), 0xC9, source, prefix_start if type(prefix_start) is int else 0)
+    require(prefix.get('tag'), IF_ELSE_TAG, source, prefix_start if type(prefix_start) is int else 0)
     require(prefix.get('memberHeader'), 8, source,
             prefix_start + 1 if type(prefix_start) is int else 0)
     require(prefix.get('sourceReadWidthsAfterHeader'), [1, 4, 4, 4, 1], source,
@@ -2751,28 +2833,28 @@ def skilldata_actiongroup_c9_nested_sequence_candidate_replay(
     require(prefix.get('nextSourceReadOffset'), prefix_end, source, prefix_end)
     require(prefix.get('nextSourceReadConsumed'), False, source, prefix_end)
     require(prefix.get('remainingBytesOpaque'), True, source, prefix_end)
-    require(c9_prefix_reader.get('tag'), 0xC9, source, prefix_start)
+    require(c9_prefix_reader.get('tag'), IF_ELSE_TAG, source, prefix_start)
     require(c9_prefix_reader.get('memberHeader'), 8, source, prefix_start + 1)
     require(c9_prefix_reader.get('prefixSourceReadWidthsAfterHeader'),
             [1, 4, 4, 4, 1], source, prefix_start)
     require(c9_prefix_reader.get('prefixByteLengthIncludingTagAndMemberHeader'),
             16, source, prefix_start)
-    require(c9_prefix_reader.get('nestedSequenceMethodSpecIndex'), 619962, source, prefix_start)
-    require(c9_prefix_reader.get('nestedSequenceTypeDefinition'), 9202, source, prefix_start)
+    require(c9_prefix_reader.get('nestedSequenceMethodSpecIndex'),
+            IFELSE_PINS['nestedMethodSpecIndex'], source, prefix_start)
+    require(c9_prefix_reader.get('nestedSequenceTypeDefinition'),
+            IFELSE_PINS['nestedTypeDefinition'], source, prefix_start)
     require(c9_prefix_reader.get('nestedSequenceTypeName'),
             'Beyond.Gameplay.Core.SequenceActionData', source, prefix_start)
     require(c9_prefix_reader.get('providerSelection'), 'unobserved', source, prefix_start)
     c9_root = c9_prefix_reader.get('rootCodeWindow')
     require((c9_root.get('startRva'), c9_root.get('endRva'), c9_root.get('sha256'))
             if isinstance(c9_root, dict) else None,
-            (0x3774060, 0x37742A8,
-             'AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8'),
+            consumer_window(IFELSE_PINS['rootRva']),
             source, prefix_start)
-    expected_call_sites = [
-        {'rva': 0x37741CA, 'targetRva': 0x2DA5C90},
-        {'rva': 0x37741F3, 'targetRva': 0x2DA5C90},
-        {'rva': 0x377421C, 'targetRva': 0x2DA5C90},
-    ]
+    # The IfElse reader's three generic SequenceActionData calls (no fast width).
+    expected_call_sites = [{'rva': rva, 'targetRva': target}
+                           for rva, target, width in IFELSE_PINS['orderedCalls']
+                           if width is None]
     require(c9_prefix_reader.get('nestedSequenceCallSites'), expected_call_sites,
             source, prefix_start)
 
@@ -2782,7 +2864,7 @@ def skilldata_actiongroup_c9_nested_sequence_candidate_replay(
                            sequence_methods)
     selected_sequence_methods = [row for row in sequence_methods
                                  if isinstance(row, dict) and
-                                 row.get('methodIndex') == 104346 and
+                                 row.get('methodIndex') == SEQUENCE_PINS['methods'][0][0] and
                                  row.get('declaringType') ==
                                  'Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack' and
                                  row.get('name') == 'Deserialize' and
@@ -2796,12 +2878,11 @@ def skilldata_actiongroup_c9_nested_sequence_candidate_replay(
         raise ContextError(source, prefix_end,
                            'SequenceActionData root reader pointer VA', sequence_method)
     sequence_root_rva = sequence_method['pointerVa'] - gameassembly_image_base
-    require(sequence_root_rva, 0x39C6AA0, source, prefix_end)
+    require(sequence_root_rva, SEQUENCE_PINS['rootRva'], source, prefix_end)
     sequence_root = sequence_reader.get('rootCodeWindow')
     require((sequence_root.get('startRva'), sequence_root.get('endRva'),
              sequence_root.get('sha256')) if isinstance(sequence_root, dict) else None,
-            (0x39C6AA0, 0x39C6FA7,
-             '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90'),
+            consumer_window(SEQUENCE_PINS['rootRva']),
             source, prefix_end)
 
     if candidate_limit is None:
@@ -3104,7 +3185,7 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
             for tag, evidence in buff_action_prefixes.items()):
         raise ContextError(source, 0, 'tag-to-current-native-action-prefix evidence mapping',
                            type(buff_action_prefixes).__name__)
-    native_action_readers = {0xD5: buff_d5_reader, 0xD6: buff_d6_reader}
+    native_action_readers = {INT_RESOURCE_HP_CHECK_TAG: buff_d5_reader, INT_RESOURCE_ON_HP_ZERO_TAG: buff_d6_reader}
     native_action_readers.update(buff_action_readers)
     require(skilldata_reader.get('firstSkillDataField', {}).get('fieldName'),
             'actionGroupData', source, 0)
@@ -3116,7 +3197,7 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
             ['passiveEventActions', 'timelineActions'], source, 0)
     require([row.get('serializedOrderIndex') for row in members], [0, 1], source, 0)
     require([row.get('readerMethodSpec', {}).get('index') for row in members],
-            [610662, 610915], source, 0)
+            READER_PINS['listReadMethodSpecIndices'], source, 0)
     first_generic = members[0].get('readerMethodSpec', {}).get('genericType', {})
     require(first_generic.get('typeName'), 'System.Collections.Generic.List`1', source, 0)
     require(first_generic.get('elementTypeName'),
@@ -3126,18 +3207,13 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
         raise ContextError(source, 0, 'current SkillData/ActionGroupData code windows',
                            skilldata_code_windows)
     require(any((row.get('rva'), row.get('byteLength'), row.get('sha256')) ==
-                (58581179, 2314,
-                 'FEA359985EBF5DF75CC58D871469481F0F692B1768D84724FF5941D47CAD8132')
+                skill_reader_body_window()
                 for row in skilldata_code_windows), True, source, 0)
     skilldata_instructions = skilldata_reader.get('verifiedInstructionWindows')
     if not isinstance(skilldata_instructions, list):
         raise ContextError(source, 0, 'current SkillData verified instruction windows',
                            skilldata_instructions)
-    expected_skilldata_instructions = {
-        (65273925, '4080FD02', 'ActionGroupData member-count comparison against 2'),
-        (65273975, '48894118', 'store passiveEventActions result at object offset +0x18'),
-        (65274020, '48894110', 'store timelineActions result at object offset +0x10'),
-    }
+    expected_skilldata_instructions = {tuple(row) for row in READER_PINS['instructionWindows']}
     actual_skilldata_instructions = {
         (row.get('rva'), row.get('rawHex'), row.get('role'))
         for row in skilldata_instructions
@@ -3148,23 +3224,24 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
     ability_methods = ability_map_reader.get('methods')
     if not isinstance(ability_methods, list):
         raise ContextError(source, 0, 'native AbilityActionMap method identities', ability_methods)
+    pins = AUDIT_PINS['skilldataActiongroupBranchStaticAlignment']
     ability_reader_methods = [row for row in ability_methods
-                              if row.get('methodIndex') in (104445, 104446)]
+                              if row.get('methodIndex') in pins['abilityMapReaderMethods']]
     require(sorted(row['methodIndex'] for row in ability_reader_methods),
-            [104445, 104446], source, 0)
+            pins['abilityMapReaderMethods'], source, 0)
     require(ability_map_reader.get('anonymousReadOrder', {}).get('mapMember2'),
             ['scalar32', 'nullable-sequence-array'], source, 0)
     ability_map_windows = ability_map_reader.get('codeWindows')
     if not isinstance(ability_map_windows, list):
         raise ContextError(source, 0, 'current AbilityActionMap code windows', ability_map_windows)
     require(any((row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
-                (63974160, 63974463,
-                 'ADDDF617D14CF2A723E7E6CDD2978D46BC6557DEE539EA28A21A12619CCF42BB')
+                tuple(pins['abilityMapRootWindow'])
                 for row in ability_map_windows), True, source, 0)
     sequence_contexts = [row for row in ability_map_reader.get('nestedContexts', [])
                          if row.get('typeName') == 'Beyond.Gameplay.Core.SequenceActionData']
     require(len(sequence_contexts), 1, source, 0)
-    require(sequence_contexts[0].get('methodSpecIndex'), 610597, source, 0)
+    require(sequence_contexts[0].get('methodSpecIndex'),
+            pins['abilityMapSequenceMethodSpecIndex'], source, 0)
 
     expected_shared_contract = (CONTRACTS_DIR / 'buff_b4_native.json').resolve()
     shared_contract = Path(shared_list_reader.get('contractPath', '')).resolve()
@@ -3176,8 +3253,7 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
         raise ContextError(source, 0, 'current shared List<T> native code windows',
                            shared_code_windows)
     require(any((row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
-                (46828560, 46829514,
-                 'CD9E5FC3BAB5502AC7D168F445CA3DC207C39D61A9CFF7D7F52F51A1F447B7C5')
+                tuple(pins['sharedListReaderWindow'])
                 for row in shared_code_windows), True, source, 0)
     if not shared_list_reader.get('methods'):
         raise ContextError(source, 0, 'current shared list reader method identities',
@@ -3186,28 +3262,32 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
     if not isinstance(sequence_methods, list):
         raise ContextError(source, 0, 'native SequenceActionData method identities', sequence_methods)
     require(sorted(row.get('methodIndex') for row in sequence_methods),
-            [104346, 104347], source, 0)
+            sorted(row[0] for row in SEQUENCE_PINS['methods']), source, 0)
+    header_rva, header_hex = SEQUENCE_PINS['windows'][2]
     sequence_header_window = [row for row in sequence_reader.get('windows', [])
-                             if row.get('rva') == 0x39C6B82]
+                             if row.get('rva') == header_rva]
     if len(sequence_header_window) != 1:
         raise ContextError(source, 0, 'one exact SequenceActionData count window',
                            len(sequence_header_window))
     require(sequence_header_window[0].get('rawHex'),
-            '4080FE030F85DD030000', source, 0)
+            header_hex, source, 0)
     if 'header 3 takes a signed dword count after the one-byte header' not in sequence_reader.get('boundary', '').lower():
         raise ContextError(source, 0, 'SequenceActionData header/count boundary statement',
                            sequence_reader.get('boundary'))
 
-    expected_action_readers = (
-        (0xD5, buff_d5_reader, 120788,
-         'Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceHpCheckAction_DataForMemoryPack',
-         16187, 106689, 0x4E67C83, 153753548, 153753943,
-         '24DFDAE1E252056FB43AB54D51BFA7443249A2FFA932B4636ACEA7F01C3EF1EB'),
-        (0xD6, buff_d6_reader, 120799,
-         'Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceOnHpZeroAction_DataForMemoryPack',
-         16189, 106690, 0x4E67CC6, 153754580, 153754975,
-         '2256CCF5032B30A1906A9830B8D815D491B6963EA04330DA4E67BBE49D399F7F'),
-    )
+    # Route identity (tag, switch target, usage index, type definition) comes
+    # from the pinned union routes; the reader method and body window from
+    # this helper's pins.
+    reader_pins = {row[0]: row[1:] for row in pins['intResourceReaders']}
+    expected_action_readers = []
+    for suffix, reader in (('IntResourceHpCheckAction_Data', buff_d5_reader),
+                           ('IntResourceOnHpZeroAction_Data', buff_d6_reader)):
+        tag, switch_target, usage_index, type_definition, _suffix, _init = union_route(suffix)
+        method_index, start_rva, end_rva, window_sha = reader_pins[suffix]
+        expected_action_readers.append((
+            tag, reader, method_index,
+            f'Beyond.MemoryPack.Beyond_Gameplay_Core_{suffix}ForMemoryPack',
+            type_definition, usage_index, switch_target, start_rva, end_rva, window_sha))
     route_rows = buff_routes.get('rows')
     if not isinstance(route_rows, list):
         raise ContextError(source, 0, 'current AbilityActionData union route rows', route_rows)
@@ -3271,7 +3351,7 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
     non_null_union_records = [row for row in all_union_records
                               if row.get('tag') != 0xFF]
     d5d6_union_records = [row for row in non_null_union_records
-                          if row.get('tag') in (0xD5, 0xD6)]
+                          if row.get('tag') in (INT_RESOURCE_HP_CHECK_TAG, INT_RESOURCE_ON_HP_ZERO_TAG)]
     observed_union_headers = witness.get('completedActionUnionHeaderObservations')
     if not isinstance(observed_union_headers, list):
         raise ContextError(source, witness.get('parserCursor'),
@@ -3345,7 +3425,7 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
             require(record.get('end') - record.get('start'), tag_width + 1,
                     source, record.get('start', 0))
 
-    for tag in (0xD5, 0xD6):
+    for tag in (INT_RESOURCE_HP_CHECK_TAG, INT_RESOURCE_ON_HP_ZERO_TAG):
         if tag in native_reader_evidence_by_tag:
             native_reader_evidence_by_tag[tag].update(
                 action_union_reader_evidence_by_tag[tag])
@@ -3378,11 +3458,11 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
                 'timelineActions remains unread')
         elif sorted((row.get('tag'), row.get('start'), row.get('end'))
                     for row in d5d6_union_records) == [
-                        (0xD5, 20, 35), (0xD6, 51, 66)
+                        (INT_RESOURCE_HP_CHECK_TAG, 20, 35), (INT_RESOURCE_ON_HP_ZERO_TAG, 51, 66)
                     ] and len(non_null_union_records) == 2:
             require([(row.get('tag'), row.get('start'), row.get('end'))
                      for row in d5d6_union_records],
-                    [(0xD5, 20, 35), (0xD6, 51, 66)], source, 20)
+                    [(INT_RESOURCE_HP_CHECK_TAG, 20, 35), (INT_RESOURCE_ON_HP_ZERO_TAG, 51, 66)], source, 20)
             require(cursor, 68, source, 68)
             require(witness.get('passiveEventActionsListCount'), 2, source, 2)
             require(count_fields, {2: 2, 11: 1, 16: 1, 42: 1, 47: 1}, source, 2)
@@ -4700,14 +4780,18 @@ def skilldata_shifted_candidate_reader_assessment(branch_replay,
     require(guard.get('signedCount'), True, source, start + 3)
     require(guard.get('remainingBytesComparedToCount'), True, source, start + 3)
     require(guard.get('rangeFailureCondition'), 'remaining < signed count', source, start + 3)
-    require(guard.get('comparisonRva'), 0x3BA4130, source, start + 3)
+    require(guard.get('comparisonRva'), LIST_FORMATTER_PINS['fastHeaderComparisonRva'],
+            source, start + 3)
     require(guard.get('comparisonRawHex'),
-            '48634744488B4F18482BC84863C6483BC8', source, start + 3)
-    require(guard.get('rangeFailureBranchRva'), 0x3BA4141, source, start + 3)
-    require(guard.get('rangeFailureBranchRawHex'), '0F8CB4653201', source, start + 3)
-    require(guard.get('rangeFailureTargetRva'), 0x4ECA6FB, source, start + 3)
+            LIST_FORMATTER_PINS['fastHeaderComparisonHex'], source, start + 3)
+    require(guard.get('rangeFailureBranchRva'), LIST_FORMATTER_PINS['rangeFailureBranchRva'],
+            source, start + 3)
+    require(guard.get('rangeFailureBranchRawHex'), LIST_FORMATTER_PINS['rangeFailureBranchHex'],
+            source, start + 3)
+    require(guard.get('rangeFailureTargetRva'), LIST_FORMATTER_PINS['rangeFailureTargetRva'],
+            source, start + 3)
     require(guard.get('rangeFailureBodyRawHex'),
-            '33D28BCEE8900A8404CCCC', source, start + 3)
+            LIST_FORMATTER_PINS['rangeFailureBodyHex'], source, start + 3)
     if count['signedI32'] > count['remainingAfterCount']:
         assessment.update({
             'status': 'rejected-by-registered-list-count-bound',
@@ -4764,7 +4848,8 @@ def skilldata_nested_branch_static_alignment(branch_replay, nested_readers,
         require(native_element_count, 1, source)
         require(element_schema.get('tagIdField', {}).get('fieldType', {}).get('wireType'),
                 'System.Int32', source)
-        require(element_schema.get('readerCall', {}).get('targetRva'), 0x2CA86B0, source)
+        require(element_schema.get('readerCall', {}).get('targetRva'),
+                READER_PINS['readInt32TargetRva'], source)
         cursor_advancement = element_schema.get('cursorAdvancement')
         if not isinstance(cursor_advancement, dict):
             raise ContextError(source, 0, 'bounded int32/member-count cursor helper evidence',
@@ -4772,7 +4857,8 @@ def skilldata_nested_branch_static_alignment(branch_replay, nested_readers,
         native_record_width = cursor_advancement.get('validNormalPathByteWidth')
         require(native_record_width, 5, source)
         native_reader_method = element_schema.get('readerMethodIdentity', {})
-        require(native_reader_method.get('methodIndex'), 104467, source)
+        require(native_reader_method.get('methodIndex'),
+                READER_PINS['nestedReaderMethods'][3][0], source)
         native_ranges = []
         for ordinal, row in enumerate(records):
             require(row.get('memberCount'), native_element_count, source, ordinal)
@@ -4867,18 +4953,7 @@ def skilldata_nested_branch_static_alignment(branch_replay, nested_readers,
 def skilldata_terminal_tail_layout(collision, sample_witness, tail_reads,
                                    tag_list_wrapper, *, source):
     """Compare exact terminal reader/type evidence to both current VFS shapes."""
-    expected_reads = [
-        (43, 'switchToCenterBeforeCast', 'bool', 0xA5, 0x37DE8C5, 0x2CA88C0, 0x37DE8E0),
-        (44, 'tagDuringAttach', 'Beyond.Gameplay.Core.GameplayTagList',
-         0xB8, 0x37DE8F3, 0x2DA5C90, 0x37DE90E),
-        (45, 'toggleBuffs',
-         'System.Collections.Generic.List`1<Beyond.Gameplay.Core.ToggleBuffData>',
-         0xD8, 0x37DE92E, 0x381F8F0, 0x37DE949),
-        (46, 'uiRangeHints',
-         'System.Collections.Generic.List`1<Beyond.Gameplay.Core.UIRangeHintData>',
-         0xC8, 0x37DE969, 0x381F8F0, 0x37DE984),
-        (47, 'useAIExclusiveFrame', 'bool', 0x58, 0x37DE99D, 0x2CA88C0, 0x37DE9C2),
-    ]
+    expected_reads = [row[:7] for row in terminal_tail_expectations()]
     if not isinstance(tail_reads, list) or len(tail_reads) != len(expected_reads):
         raise ContextError(source, 0, 'five exact terminal SkillData reader operations',
                            type(tail_reads).__name__ if not isinstance(tail_reads, list)
@@ -5009,14 +5084,17 @@ def skilldata_cursor_hook_call_sites(pe, *, source):
     not the start of the E8 instruction.
     """
     sites = []
-    for name, instruction_rva in (
-            ('firstTerminalByte', 0x37DE8C5),
-            ('finalTerminalByte', 0x37DE99D)):
+    observer_sites = observer_field_sites()
+    for name, field_index in (
+            ('firstTerminalByte', TERMINAL_TAIL_FIELDS[0][0]),
+            ('finalTerminalByte', TERMINAL_TAIL_FIELDS[-1][0])):
+        instruction_rva = observer_sites[field_index]['callInstructionRva']
         raw = pe.bytes_at_va(pe.image_base + instruction_rva, 5)
         require(raw[:1], b'\xE8', source, instruction_rva)
         target = relative_branch_target(
             raw, pe.image_base + instruction_rva, source=source)
-        require(target, pe.image_base + 0x2CA88C0, source, instruction_rva)
+        require(target, pe.image_base + observer_sites[field_index]['targetRva'],
+                source, instruction_rva)
         return_rva = instruction_rva + len(raw)
         sites.append({
             'name': name,
@@ -5043,35 +5121,29 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
     exact-build evidence. They do not establish which formatter/provider ran
     for a VFS file, so the empty-list end stays conditional.
     """
-    selected_methods = module_methods(pe, md, modules, image_owners, [
-        (102566, 'Beyond.MemoryPack.Beyond_Gameplay_Core_SkillDataForMemoryPack', 'Deserialize', 0x37DE060),
-        (102567, 'Beyond.MemoryPack.Beyond_Gameplay_Core_SkillDataForMemoryPack+Beyond_Gameplay_Core_SkillDataForMemoryPackFormatter', 'Deserialize', 0x37DDF70),
-        (104262, 'Beyond.MemoryPack.Beyond_Gameplay_Core_ActionGroupDataForMemoryPack', 'Deserialize', 0x3E3FFE0),
-        (104263, 'Beyond.MemoryPack.Beyond_Gameplay_Core_ActionGroupDataForMemoryPack+Beyond_Gameplay_Core_ActionGroupDataForMemoryPackFormatter', 'Deserialize', 0x3E3FF80),
-    ], source=source, expected_image='MemoryPack.Beyond.dll')
+    pins=AUDIT_PINS['selectedSkillDataReaderOrder']
+    # The observer contract's rows describe this audit's build or none.
+    observer_native = OBSERVER_CONTRACT['nativeInputs']
+    require((observer_native['GameAssembly.dll'].upper(),
+             observer_native['global-metadata.dat'].upper()),
+            (GA_SHA, MD_SHA), OBSERVER_CONTRACT_PATH)
+    selected_methods = module_methods(pe, md, modules, image_owners,
+                                      OBSERVER_CONTRACT['methods'],
+                                      source=source, expected_image='MemoryPack.Beyond.dll')
     code_windows = []
-    for rva, length, expected in (
-        (0x37DE060, 0x5B, '0926899BA44C601CEBAC2B4E70580B397CDDAB4FC60060C1E8DC0EF99A2555FB'),
-        (0x37DE0BB, 0x90A, 'FEA359985EBF5DF75CC58D871469481F0F692B1768D84724FF5941D47CAD8132'),
-        (0x3E3FFE0, 0x13F, 'D2C4A8B7F40CDB99154F7EE9EFA9FB85CD8F2F086932F03C1BC2FF8568E1AB4E'),
-    ):
+    for window in OBSERVER_CONTRACT['codeWindows']:
+        rva, length, expected = window['rva'], window['byteLength'], window['sha256']
         raw = pe.bytes_at_va(pe.image_base + rva, length)
         digest = hashlib.sha256(raw).hexdigest().upper()
         require(digest, expected, source, rva)
         code_windows.append({'rva': rva, 'byteLength': length, 'sha256': digest})
     instruction_windows = []
-    for rva, raw_hex, role in (
-        (0x37DE0CF, '4080FD30', 'SkillData member-count comparison against 48'),
-        (0x37DE101, '488981C0000000', 'store first SkillData result at object offset +0xC0'),
-        (0x3E40045, '4080FD02', 'ActionGroupData member-count comparison against 2'),
-        (0x3E40077, '48894118', 'store passiveEventActions result at object offset +0x18'),
-        (0x3E400A4, '48894110', 'store timelineActions result at object offset +0x10'),
-    ):
+    for rva, raw_hex, role in pins['instructionWindows']:
         raw = pe.bytes_at_va(pe.image_base + rva, len(bytes.fromhex(raw_hex)))
         require(raw, bytes.fromhex(raw_hex), source, rva)
         instruction_windows.append({'rva': rva, 'rawHex': raw.hex().upper(), 'role': role})
     formatter_thunks = []
-    for rva, target in ((0x37DDFAC, 0x37DE060), (0x3E3FFBC, 0x3E3FFE0)):
+    for rva, target in pins['formatterThunks']:
         raw = pe.bytes_at_va(pe.image_base + rva, 5)
         actual = relative_branch_target(raw, pe.image_base + rva, source=source) - pe.image_base
         require(actual, target, source, rva)
@@ -5262,17 +5334,17 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
                                'direct class or List<T> generic type argument', hex(type_kind))
         return context
 
-    action_group_call = call_method_spec(0x37DE0D9, 0x37DE0E6, 428464, 'ReadValue', 0x2DA5C90)
-    require(action_group_call['index'], 619840, source, action_group_call['usageVa'])
+    action_group_call = call_method_spec(pins['actionGroupReadLoadRva'], (observer_field_sites()[0]['callInstructionRva']), pins['readValueMethodIndex'], 'ReadValue', pins['readValueTargetRva'])
+    require(action_group_call['index'], pins['actionGroupReadMethodSpecIndex'], source, action_group_call['usageVa'])
     require(action_group_call['genericType']['typeName'], 'Beyond.Gameplay.Core.ActionGroupData',
             source, action_group_call['usageVa'])
     require(action_group_call['genericType']['typeDefinitionIndex'], action_group_type,
             source, action_group_call['usageVa'])
     list_calls = [
-        call_method_spec(0x3E4004F, 0x3E4005C, 428462, 'ReadPackable', 0x381F8F0),
-        call_method_spec(0x3E40084, 0x3E40091, 428462, 'ReadPackable', 0x381F8F0),
+        call_method_spec(pins['passiveListReadLoadRva'], (OBSERVER_CONTRACT['actionGroupChildCallsites'][0]['callInstructionRva']), pins['readPackableMethodIndex'], 'ReadPackable', pins['readPackableTargetRva']),
+        call_method_spec(pins['timelineListReadLoadRva'], (OBSERVER_CONTRACT['actionGroupChildCallsites'][1]['callInstructionRva']), pins['readPackableMethodIndex'], 'ReadPackable', pins['readPackableTargetRva']),
     ]
-    require([row['index'] for row in list_calls], [610662, 610915], source)
+    require([row['index'] for row in list_calls], pins['listReadMethodSpecIndices'], source)
     for row in list_calls:
         require(row['genericType']['typeName'], 'System.Collections.Generic.List`1', source, row['usageVa'])
     require(list_calls[0]['genericType']['elementTypeName'],
@@ -5287,14 +5359,14 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
     timeline_action_type = type_index(
         'Beyond.Gameplay.Core.TimelineAction+TimelineActionData',
         'Gameplay.Beyond.dll')
-    require(timeline_action_type, 9199, source, timeline_action_type)
+    require(timeline_action_type, pins['timelineActionTypeDefinition'], source, timeline_action_type)
     timeline_action_fields = field_layout(timeline_action_type, {
         '_startFrame', '_endFrame', '_sequenceActionData', 'forceSyncAnimData',
     })
     force_sync_type = type_index(
         'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData',
         'Gameplay.Beyond.dll')
-    require(force_sync_type, 9198, source, force_sync_type)
+    require(force_sync_type, pins['forceSyncTypeDefinition'], source, force_sync_type)
     force_sync_fields = field_layout(force_sync_type, {
         'forceSync', 'montageName', 'targetFrame', 'playbackSpeed',
     })
@@ -5339,37 +5411,9 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
             'fieldType': identity,
         }
 
-    timeline_reader_methods = module_methods(pe, md, modules, image_owners, [
-        (104653,
-         'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack',
-         'Deserialize', 0x32CCF70),
-        (104654,
-         'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack+'
-         'Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPackFormatter',
-         'Deserialize', 0x32CE8C0),
-        (107909,
-         'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack',
-         'Deserialize', 0x32CE4B0),
-        (107910,
-         'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack+'
-         'Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPackFormatter',
-         'Deserialize', 0x32CE860),
-    ], source=source, expected_image='MemoryPack.Beyond.dll')
+    timeline_reader_methods = module_methods(pe, md, modules, image_owners, pins['timelineReaderMethods'], source=source, expected_image='MemoryPack.Beyond.dll')
     timeline_reader_code_windows = []
-    for start_rva, end_rva, expected_sha, role in (
-        (0x32CCF70, 0x32CD277,
-         'CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688',
-         'TimelineActionData Deserialize: selected source-read path and bounded failure/return fragments'),
-        (0x32CE4B0, 0x32CE75C,
-         '1FB17BEDE173176E0BC082E7C315267B6FC6F3CE76796DB90A627E9B0E9D7767',
-         'ForceSyncAnimData Deserialize: selected source-read path and bounded failure/return fragments'),
-        (0x32CE860, 0x32CE8C0,
-         '1F6F3F32B14A6DCBB87743E94C1DB14106B3AB3EE17D6C6EBB14F7DB0347A3EB',
-         'ForceSyncAnimData formatter forwarding window'),
-        (0x32CE8C0, 0x32CE920,
-         'D0D022A7D27D843AD4BFFE86FEC8A5FA07037249273A8ECB5AEC0167FEF98F33',
-         'TimelineActionData formatter forwarding window'),
-    ):
+    for start_rva, end_rva, expected_sha, role in pins['timelineReaderCodeWindows']:
         raw = pe.bytes_at_va(pe.image_base + start_rva, end_rva - start_rva)
         digest = hashlib.sha256(raw).hexdigest().upper()
         require(digest, expected_sha, source, start_rva)
@@ -5382,19 +5426,19 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         })
 
     timeline_sequence_read = call_method_spec(
-        0x32CD07F, 0x32CD089, 428464, 'ReadValue', 0x2DA5C90)
-    require(timeline_sequence_read['index'], 619962, source,
+        pins['timelineSequenceReadLoadRva'], pins['timelineSequenceReadCallRva'], pins['readValueMethodIndex'], 'ReadValue', pins['readValueTargetRva'])
+    require(timeline_sequence_read['index'], (AUDIT_PINS['selectedBuffIfElseReadOrder']['nestedMethodSpecIndex']), source,
             timeline_sequence_read['usageVa'])
-    require(timeline_sequence_read['genericType']['typeDefinitionIndex'], 9202,
+    require(timeline_sequence_read['genericType']['typeDefinitionIndex'], (AUDIT_PINS['selectedBuffIfElseReadOrder']['nestedTypeDefinition']),
             source, timeline_sequence_read['usageVa'])
     require(timeline_sequence_read['genericType']['typeName'],
             'Beyond.Gameplay.Core.SequenceActionData', source,
             timeline_sequence_read['usageVa'])
     timeline_force_sync_read = call_method_spec(
-        0x32CD16F, 0x32CD179, 428464, 'ReadValue', 0x2DA5C90)
-    require(timeline_force_sync_read['index'], 620038, source,
+        pins['timelineForceSyncReadLoadRva'], pins['timelineForceSyncReadCallRva'], pins['readValueMethodIndex'], 'ReadValue', pins['readValueTargetRva'])
+    require(timeline_force_sync_read['index'], pins['timelineForceSyncMethodSpecIndex'], source,
             timeline_force_sync_read['usageVa'])
-    require(timeline_force_sync_read['genericType']['typeDefinitionIndex'], 9198,
+    require(timeline_force_sync_read['genericType']['typeDefinitionIndex'], pins['forceSyncTypeDefinition'],
             source, timeline_force_sync_read['usageVa'])
     require(timeline_force_sync_read['genericType']['typeName'],
             'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData', source,
@@ -5411,37 +5455,18 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
                 'role': role}
 
     timeline_reader_instructions = []
-    for rva, expected_hex, role in (
-        (0x32CD04E, '4080FE04', 'TimelineActionData accepts member-count header 4 on this path'),
-        (0x32CD079, '894614', 'store endFrame result at object offset +0x14'),
-        (0x32CD0BC, '49894018', 'store SequenceActionData result at object offset +0x18'),
-        (0x32CD126, '448B30', 'load the startFrame DWORD from the current cursor'),
-        (0x32CD142, '4883435004', 'advance the startFrame source cursor by four bytes'),
-        (0x32CD147, '83434004', 'advance the consumed counter for startFrame by four'),
-        (0x32CD14B, '83434404', 'advance the total counter for startFrame by four'),
-        (0x32CD168, '44897010', 'store startFrame at object offset +0x10'),
-        (0x32CD19B, '49894020', 'store ForceSyncAnimData result at object offset +0x20'),
-        (0x32CE57E, '4080FE04', 'ForceSyncAnimData accepts member-count header 4 on this path'),
-        (0x32CE5A9, '884610', 'store forceSync byte at object offset +0x10'),
-        (0x32CE5D9, '49894018', 'store montageName result at object offset +0x18'),
-        (0x32CE635, 'F30F1030', 'load playbackSpeed float32 from the current cursor'),
-        (0x32CE652, '4883435004', 'advance playbackSpeed source cursor by four bytes'),
-        (0x32CE67B, 'F30F117024', 'store playbackSpeed float32 at object offset +0x24'),
-        (0x32CE69A, '8B28', 'load targetFrame int32 from the current cursor'),
-        (0x32CE6B5, '4883435004', 'advance targetFrame source cursor by four bytes'),
-        (0x32CE6D8, '896820', 'store targetFrame int32 at object offset +0x20'),
-    ):
+    for rva, expected_hex, role in pins['timelineReaderInstructions']:
         raw = pe.bytes_at_va(pe.image_base + rva, len(bytes.fromhex(expected_hex)))
         require(raw, bytes.fromhex(expected_hex), source, rva)
         timeline_reader_instructions.append({
             'rva': rva, 'rawHex': raw.hex().upper(), 'role': role,
         })
     timeline_direct_calls = [
-        timeline_helper_call(0x32CD05E, 0x2CA86B0,
+        timeline_helper_call(pins['endFrameReadCallRva'], pins['readInt32TargetRva'],
                              'read endFrame int32'),
-        timeline_helper_call(0x32CE58E, 0x2CA88C0,
+        timeline_helper_call(pins['forceSyncReadCallRva'], pins['readBoolTargetRva'],
                              'read forceSync boolean'),
-        timeline_helper_call(0x32CE5B2, 0x2CA8700,
+        timeline_helper_call(pins['montageNameReadCallRva'], pins['readStringTargetRva'],
                              'read montageName string'),
     ]
     timeline_action_data_reader = {
@@ -5462,8 +5487,7 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
              'reader': {'kind': 'inline-int32', 'byteWidth': 4,
                         'verifiedInstructions': [
                             row for row in timeline_reader_instructions
-                            if row['rva'] in (0x32CD126, 0x32CD142,
-                                             0x32CD147, 0x32CD14B)]}},
+                            if row['rva'] in pins['startFrameInstructionRvas']]}},
             {'serializedOrderIndex': 3, 'fieldName': 'forceSyncAnimData',
              'objectField': timeline_field_rows['forceSyncAnimData'],
              'readerMethodSpec': timeline_force_sync_read},
@@ -5483,26 +5507,24 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
                  'reader': {'kind': 'inline-float32', 'byteWidth': 4,
                             'verifiedInstructions': [
                                 row for row in timeline_reader_instructions
-                                if row['rva'] in (0x32CE635, 0x32CE652,
-                                                 0x32CE67B)]}},
+                                if row['rva'] in pins['playbackSpeedInstructionRvas']]}},
                 {'serializedOrderIndex': 3, 'fieldName': 'targetFrame',
                  'objectField': force_sync_field_rows['targetFrame'],
                  'reader': {'kind': 'inline-int32', 'byteWidth': 4,
                             'verifiedInstructions': [
                                 row for row in timeline_reader_instructions
-                                if row['rva'] in (0x32CE69A, 0x32CE6B5,
-                                                 0x32CE6D8)]}},
+                                if row['rva'] in pins['targetFrameInstructionRvas']]}},
             ],
             'verifiedInstructionWindows': [
                 row for row in timeline_reader_instructions
-                if row['rva'] in (0x32CE57E, 0x32CE5A9, 0x32CE5D9)],
+                if row['rva'] in pins['forceSyncHeaderAndStoreRvas']],
         },
         'verifiedInstructionWindows': timeline_reader_instructions,
         'sequenceActionDataReaderReference': {
             'reportKey': 'selectedBuffSequenceReadOrder',
-            'methodIndex': 104346,
-            'rootRva': 0x39C6AA0,
-            'rootCodeWindowSha256': '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90',
+            'methodIndex': (AUDIT_PINS['selectedBuffSequenceReadOrder']['methods'][0][0]),
+            'rootRva': (AUDIT_PINS['selectedBuffSequenceReadOrder']['rootRva']),
+            'rootCodeWindowSha256': (consumer_window(AUDIT_PINS['selectedBuffSequenceReadOrder']['rootRva'])[2]),
         },
         'level': 'exact current-build module/token, generic MethodSpec, TypeDef field-offset and selected source-read code joins',
         'runtimeProviderSelection': 'unobserved',
@@ -5517,11 +5539,11 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
 
     terminal_method_calls = {
         'tagDuringAttach': call_method_spec(
-            0x37DE8E9, 0x37DE8F3, 428464, 'ReadValue', 0x2DA5C90),
+            pins['tagDuringAttachReadLoadRva'], (observer_field_sites()[44]['callInstructionRva']), pins['readValueMethodIndex'], 'ReadValue', pins['readValueTargetRva']),
         'toggleBuffs': call_method_spec(
-            0x37DE921, 0x37DE92E, 428462, 'ReadPackable', 0x381F8F0),
+            pins['toggleBuffsReadLoadRva'], (observer_field_sites()[45]['callInstructionRva']), pins['readPackableMethodIndex'], 'ReadPackable', pins['readPackableTargetRva']),
         'uiRangeHints': call_method_spec(
-            0x37DE95C, 0x37DE969, 428462, 'ReadPackable', 0x381F8F0),
+            pins['uiRangeHintsReadLoadRva'], (observer_field_sites()[46]['callInstructionRva']), pins['readPackableMethodIndex'], 'ReadPackable', pins['readPackableTargetRva']),
     }
     require(terminal_method_calls['tagDuringAttach']['genericType']['typeName'],
             'Beyond.Gameplay.Core.GameplayTagList', source)
@@ -5535,9 +5557,8 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
                 source, terminal_method_calls[field_name]['usageVa'])
 
     cursor_hook_sites = skilldata_cursor_hook_call_sites(pe, source=source)
-    observer_calls = (
-        (0,0x37DE0E6,0x2DA5C90),(1,0x37DE11A,0x2CA86B0),(2,0x37DE145,0x2CA86B0),(3,0x37DE170,0x381F8F0),(4,0x37DE1AB,0x2DA5C90),(5,0x37DE1E6,0x381F8F0),(6,0x37DE21A,0x2CA88C0),(7,0x37DE241,0x2CA88C0),(8,0x37DE268,0x2CA88C0),(9,0x37DE28F,0x2CA88C0),(10,0x37DE2BD,0x2DA5C90),(11,0x37DE2F8,0x2DA5C90),(12,0x37DE32D,0x2CA86B0),(13,0x37DE351,0x2CA88C0),(14,0x37DE378,0x2CA8700),(15,0x37DE3AC,0x2CA8700),(16,0x37DE3E0,0x2CA88C0),(18,0x37DE461,0x2CA86B0),(19,0x37DE485,0x2CA86B0),(20,0x37DE4A9,0x2CA8BB0),(21,0x37DE4D9,0x2CA86B0),(22,0x37DE4FD,0x2CA8700),(23,0x37DE52B,0x2CA86B0),(24,0x37DE54F,0x2CA88C0),(25,0x37DE576,0x2CA88C0),(26,0x37DE59D,0x2CA86B0),(27,0x37DE5C1,0x2CA88C0),(28,0x37DE5E8,0x2CA88C0),(29,0x37DE616,0x2CA86B0),(30,0x37DE63A,0x2CA88C0),(31,0x37DE668,0x2CA86B0),(32,0x37DE68C,0x2CA88C0),(33,0x37DE6BA,0x2DA5C90),(34,0x37DE6EE,0x2CA8700),(35,0x37DE71C,0x2CA8700),(36,0x37DE751,0x2CA86B0),(37,0x37DE77C,0x2DA5C90),(38,0x37DE7B7,0x2DA5C90),(39,0x37DE7F2,0x381F8F0),(40,0x37DE827,0x2CA86B0),(41,0x37DE857,0x3D3C620),(42,0x37DE891,0x2DA5C90),(43,0x37DE8C5,0x2CA88C0),(44,0x37DE8F3,0x2DA5C90),(45,0x37DE92E,0x381F8F0),(46,0x37DE969,0x381F8F0),(47,0x37DE99D,0x2CA88C0),
-    )
+    observer_calls = [(row['fieldIndex'], row['callInstructionRva'], row['targetRva'])
+                      for row in OBSERVER_CONTRACT['fieldCallsites']]
     skill_names = MEMORYPACK_FIELD_SCHEMAS['SkillData']
     observer_rows = []
     for field_index, call_rva, target_rva in observer_calls:
@@ -5551,47 +5572,38 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
             'targetRva': target_rva, 'rawHex': raw.hex().upper(),
         })
     action_observer_rows = []
-    for child_index, call_rva in enumerate((0x3E4005C, 0x3E40091)):
+    for child in OBSERVER_CONTRACT['actionGroupChildCallsites']:
+        child_index, call_rva = child['childIndex'], child['callInstructionRva']
         raw = pe.bytes_at_va(pe.image_base + call_rva, 5)
         require(raw[:1], b'\xE8', source, call_rva)
         require(relative_branch_target(raw, pe.image_base + call_rva, source=source),
-                pe.image_base + 0x381F8F0, source, call_rva)
+                pe.image_base + child['targetRva'], source, call_rva)
         action_observer_rows.append({
             'childIndex': child_index,
             'fieldName': ('passiveEventActions', 'timelineActions')[child_index],
             'callInstructionRva': call_rva, 'returnAddressRva': call_rva + 5,
-            'targetRva': 0x381F8F0, 'rawHex': raw.hex().upper(),
+            'targetRva': child['targetRva'], 'rawHex': raw.hex().upper(),
         })
     runtime_cursor_observer = {
         'status': 'exact-static-callsite-vector',
         'fieldCallsites': observer_rows,
-        'inlineField': {'fieldIndex': 17, 'fieldName': skill_names[17],
+        'inlineField': {'fieldIndex': OBSERVER_CONTRACT['inlineField']['fieldIndex'],
+                        'fieldName': skill_names[OBSERVER_CONTRACT['inlineField']['fieldIndex']],
                         'status': 'no-direct-helper-callsite'},
         'actionGroupChildCallsites': action_observer_rows,
-        'sourceLengths': [424, 533],
+        'sourceLengths': list(OBSERVER_CONTRACT['receiptVerifierSourceLengths']),
         'boundary': ('The 47 direct top-level read calls and both ActionGroup child-list calls are exact '
                      'current-build E8 targets inside hash-pinned reader windows. Field 17 is inline and '
                      'has no observer callsite. This authenticates the observer allow-list, not execution.'),
     }
-    tail_field_expectations = [
-        (43, 'switchToCenterBeforeCast', 'bool', 0xA5, 0x37DE8C5,
-         0x2CA88C0, 0x37DE8E0, '8881A5000000', None),
-        (44, 'tagDuringAttach', 'Beyond.Gameplay.Core.GameplayTagList', 0xB8,
-         0x37DE8F3, 0x2DA5C90, 0x37DE90E, '488981B8000000',
-         terminal_method_calls['tagDuringAttach']),
-        (45, 'toggleBuffs',
-         'System.Collections.Generic.List`1<Beyond.Gameplay.Core.ToggleBuffData>',
-         0xD8, 0x37DE92E, 0x381F8F0, 0x37DE949, '488981D8000000',
-         terminal_method_calls['toggleBuffs']),
-        (46, 'uiRangeHints',
-         'System.Collections.Generic.List`1<Beyond.Gameplay.Core.UIRangeHintData>',
-         0xC8, 0x37DE969, 0x381F8F0, 0x37DE984, '488981C8000000',
-         terminal_method_calls['uiRangeHints']),
-        (47, 'useAIExclusiveFrame', 'bool', 0x58, 0x37DE99D,
-         0x2CA88C0, 0x37DE9C2, '884158', None),
-    ]
+    tail_method_specs = {
+        44: terminal_method_calls['tagDuringAttach'],
+        45: terminal_method_calls['toggleBuffs'],
+        46: terminal_method_calls['uiRangeHints'],
+    }
     tail_reads = []
-    for order_index, field_name, expected_wire_type, expected_offset, call_rva, target_rva, store_rva, store_hex, method_spec in tail_field_expectations:
+    for order_index, field_name, expected_wire_type, expected_offset, call_rva, target_rva, store_rva, store_hex in terminal_tail_expectations():
+        method_spec = tail_method_specs.get(order_index)
         field = skill_fields[field_name]
         require(field['fieldOffset'], expected_offset, source,
                 field['metadataFieldIndex'])
@@ -5684,22 +5696,9 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         'headerCodeWindows': wrapper_evidence['headerCodeWindows'],
     }
 
-    nested_reader_methods = module_methods(pe, md, modules, image_owners, [
-        (104420, 'Beyond.MemoryPack.Beyond_Gameplay_Core_ToggleBuffDataForMemoryPack',
-         'Deserialize', 0x4438A40),
-        (104433, 'Beyond.MemoryPack.Beyond_Gameplay_Core_UIRangeHintDataForMemoryPack',
-         'Deserialize', 0x3A60AE0),
-        (107721, 'Beyond.MemoryPack.Beyond_Gameplay_SkillHintShapeDataForMemoryPack',
-         'Deserialize', 0x3997B70),
-        (104467, 'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagForMemoryPack',
-         'Deserialize', 0x40EFC30),
-    ], source=source, expected_image='MemoryPack.Beyond.dll')
+    nested_reader_methods = module_methods(pe, md, modules, image_owners, pins['nestedReaderMethods'], source=source, expected_image='MemoryPack.Beyond.dll')
     nested_code_windows = []
-    for rva, length, expected in (
-            (0x4438A40, 0xB3, '79E10BB093386D263DED64AF51B082F0CDEF758DCB7C779AAAB6411839036CC1'),
-            (0x3A60AE0, 0xD4, '98CCCC5E6DB50926C87C91CD5465CFAF1FB033DF01AD43ED3490BF760EDE3204'),
-            (0x3997B70, 0x33F, '07D6FE9927BF0D51DC1B5BAC8E185C68B695890BCCEF3B780B3F7960AAAAC299'),
-            (0x40EFC30, 0x66, '20E91A6A12C8F0744F68C6B10AF26032F7030FA75C62AD17CDCFDF986A18EF89')):
+    for rva, length, expected in pins['nestedCodeWindows']:
         raw = pe.bytes_at_va(pe.image_base + rva, length)
         digest = hashlib.sha256(raw).hexdigest().upper()
         require(digest, expected, source, rva)
@@ -5738,9 +5737,9 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         toggle_type, toggle_fields, 'conditions', 0x10,
         'System.Collections.Generic.List`1<Beyond.Gameplay.Core.Abilities.Condition.ConditionBase>')
     toggle_buff_read = call_method_spec(
-        0x4438A95, 0x4438AA2, 428462, 'ReadPackable', 0x381F8F0)
+        pins['toggleBuffReadLoadRva'], pins['toggleBuffReadCallRva'], pins['readPackableMethodIndex'], 'ReadPackable', pins['readPackableTargetRva'])
     toggle_condition_read = call_method_spec(
-        0x4438ABE, 0x4438ACB, 428462, 'ReadPackable', 0x381F8F0)
+        pins['toggleConditionReadLoadRva'], pins['toggleConditionReadCallRva'], pins['readPackableMethodIndex'], 'ReadPackable', pins['readPackableTargetRva'])
     for name, read, element_name in (
             ('buffs', toggle_buff_read, 'Beyond.Gameplay.Core.BuffInput'),
             ('conditions', toggle_condition_read,
@@ -5753,15 +5752,15 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         'typeDefinitionIndex': toggle_type,
         'typeName': md.type_full_name(toggle_definition),
         'memberCountCompare': {
-            'rva': 0x4438A8B, 'rawHex': '4080FD02', 'memberCount': 2},
+            'rva': pins['toggleMemberCountCompareRva'], 'rawHex': pins['toggleMemberCountCompareHex'], 'memberCount': 2},
         'members': [
             {'serializedOrderIndex': 0, 'fieldName': 'buffs',
              'objectField': toggle_buff_field, 'readerMethodSpec': toggle_buff_read,
-             'setterCall': direct_reader_call(0x4438AB9, 0x3209E50, 'store buffs result')},
+             'setterCall': direct_reader_call(pins['toggleBuffsSetterCallRva'], pins['objectSetterTargetRva'], 'store buffs result')},
             {'serializedOrderIndex': 1, 'fieldName': 'conditions',
              'objectField': toggle_condition_field,
              'readerMethodSpec': toggle_condition_read,
-             'setterCall': direct_reader_call(0x4438ADE, 0x3207AC0,
+             'setterCall': direct_reader_call(pins['toggleConditionsSetterCallRva'], pins['toggleConditionsSetterTargetRva'],
                                                'store conditions result')},
         ],
         'sourceParserOrder': ['buffs', 'conditions'],
@@ -5775,30 +5774,14 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
     gameplay_tag_id_field = nested_field(
         gameplay_tag_type, gameplay_tag_fields, 'tagId', 0x10, 'System.Int32')
     tag_cursor_helper_windows = []
-    for rva, length, expected in (
-            (0x2CA8860, 0x57,
-             'CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F'),
-            (0x2CA86B0, 0x50,
-             '2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65')):
+    for rva, length, expected in pins['tagCursorHelperWindows']:
         raw = pe.bytes_at_va(pe.image_base + rva, length)
         digest = hashlib.sha256(raw).hexdigest().upper()
         require(digest, expected, source, rva)
         tag_cursor_helper_windows.append({'rva': rva, 'byteLength': length,
                                           'sha256': digest})
     tag_cursor_instruction_rows = []
-    for rva, raw_hex, operation, byte_width in (
-            (0x2CA886F, '83793001', 'require at least one remaining byte', 0),
-            (0x2CA8883, '0FB608', 'load one member-count byte', 1),
-            (0x2CA8894, '48FF4350', 'advance cursor pointer by one byte', 1),
-            (0x2CA8898, 'FF4340', 'increment consumed counter by one byte', 0),
-            (0x2CA889B, 'FF4344', 'increment total counter by one byte', 0),
-            (0x2CA889E, '897B30', 'store remaining length after subtracting one', 0),
-            (0x2CA86BF, '83793004', 'require at least four remaining bytes', 0),
-            (0x2CA86D0, '8B30', 'load one little-endian int32', 4),
-            (0x2CA86DE, '4883435004', 'advance cursor pointer by four bytes', 4),
-            (0x2CA86E3, '83434004', 'increment consumed counter by four bytes', 0),
-            (0x2CA86E7, '83434404', 'increment total counter by four bytes', 0),
-            (0x2CA86EB, '897B30', 'store remaining length after subtracting four', 0)):
+    for rva, raw_hex, operation, byte_width in pins['tagCursorInstructionRows']:
         expected_raw = bytes.fromhex(raw_hex)
         actual_raw = pe.bytes_at_va(pe.image_base + rva, len(expected_raw))
         require(actual_raw, expected_raw, source, rva)
@@ -5811,16 +5794,16 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         'typeName': md.type_full_name(gameplay_tag_definition),
         'fieldCount': gameplay_tag_definition.field_count,
         'readerMethodIdentity': next(
-            row for row in nested_reader_methods if row['methodIndex'] == 104467),
+            row for row in nested_reader_methods if row['methodIndex'] == pins['nestedReaderMethods'][3][0]),
         'memberCountCheck': {
-            'rva': 0x40EFC6D, 'rawHex': '807C243001',
+            'rva': pins['gameplayTagMemberCountCheckRva'], 'rawHex': pins['gameplayTagMemberCountCheckHex'],
             'acceptedMemberCount': 1,
         },
         'tagIdField': gameplay_tag_id_field,
-        'readerCall': direct_reader_call(0x40EFC7E, 0x2CA86B0,
+        'readerCall': direct_reader_call(pins['gameplayTagReaderCallRva'], pins['readInt32TargetRva'],
                                          'read int32/unmanaged tagId'),
         'storeInstruction': {
-            'rva': 0x40EFC88, 'rawHex': '894310',
+            'rva': pins['gameplayTagStoreRva'], 'rawHex': pins['gameplayTagStoreHex'],
             'objectFieldOffset': 0x10,
             'wireType': gameplay_tag_id_field['fieldType']['wireType'],
         },
@@ -5831,19 +5814,19 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
             'derivation': 'The count helper reads and advances one byte; the int32 helper requires four remaining bytes, reads a four-byte value, and advances cursor/consumed/total by four. The generated reader accepts count one before calling the int32 helper.',
         },
         'normalReturnPathWindow': {
-            'rva': 0x40EFC30, 'byteLength': 0x66,
+            'rva': pins['nestedCodeWindows'][3][0], 'byteLength': pins['nestedCodeWindows'][3][1],
             'sha256': nested_code_windows[-1]['sha256'],
-            'normalReturnRva': 0x40EFC95,
-            'coldFailureTargetsOutsideWindow': [0xF7A932, 0xF7A95D, 0xF7A997],
+            'normalReturnRva': pins['gameplayTagNormalReturnRva'],
+            'coldFailureTargetsOutsideWindow': pins['gameplayTagColdFailureTargets'],
         },
         'boundary': 'The registered generated GameplayTag reader accepts member count one on this normal path, consumes a raw int32 and stores it to tagId. Cold malformed-header handlers are outside the pinned normal-return window; this is not runtime list-element dispatch evidence.',
     }
-    header_read = direct_reader_call(0x40EFC56, 0x2CA8860,
+    header_read = direct_reader_call(pins['gameplayTagHeaderReadCallRva'], pins['readMemberCountTargetRva'],
                                      'read one-byte member count')
-    require(pe.bytes_at_va(pe.image_base + 0x40EFC6D, 5),
-            bytes.fromhex('807C243001'), source, 0x40EFC6D)
-    require(pe.bytes_at_va(pe.image_base + 0x40EFC88, 3),
-            bytes.fromhex('894310'), source, 0x40EFC88)
+    require(pe.bytes_at_va(pe.image_base + pins['gameplayTagMemberCountCheckRva'], 5),
+            bytes.fromhex(pins['gameplayTagMemberCountCheckHex']), source, pins['gameplayTagMemberCountCheckRva'])
+    require(pe.bytes_at_va(pe.image_base + pins['gameplayTagStoreRva'], 3),
+            bytes.fromhex(pins['gameplayTagStoreHex']), source, pins['gameplayTagStoreRva'])
     gameplay_tag_reader['memberCountReadCall'] = header_read
 
     ui_range_type = type_index('Beyond.Gameplay.Core.UIRangeHintData',
@@ -5857,9 +5840,9 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
     ui_faction_field = nested_field(ui_range_type, ui_range_fields, 'targetFaction', 0x10,
                                     'Beyond.Gameplay.Core.FactionType')
     ui_shape_read = call_method_spec(
-        0x3A60B57, 0x3A60B64, 428464, 'ReadValue', 0x2DA5C90)
+        pins['uiShapeReadLoadRva'], pins['uiShapeReadCallRva'], pins['readValueMethodIndex'], 'ReadValue', pins['readValueTargetRva'])
     ui_faction_read = call_method_spec(
-        0x3A60B80, 0x3A60B8D, 428448, 'ReadUnmanaged', 0x2CA86B0)
+        pins['uiFactionReadLoadRva'], pins['uiFactionReadCallRva'], pins['readUnmanagedMethodIndex'], 'ReadUnmanaged', pins['readInt32TargetRva'])
     require(ui_shape_read['genericType']['typeName'],
             'Beyond.Gameplay.SkillHintShapeData', source, ui_shape_read['usageVa'])
     require(ui_faction_read['genericType']['typeName'],
@@ -5868,21 +5851,21 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         'typeDefinitionIndex': ui_range_type,
         'typeName': md.type_full_name(ui_range_definition),
         'memberCountCompare': {
-            'rva': 0x3A60B2B, 'rawHex': '4080FD03', 'memberCount': 3},
+            'rva': pins['uiRangeMemberCountCompareRva'], 'rawHex': pins['uiRangeMemberCountCompareHex'], 'memberCount': 3},
         'members': [
             {'serializedOrderIndex': 0, 'fieldName': 'selectAll',
              'objectField': ui_select_field,
-             'readerCall': direct_reader_call(0x3A60B3B, 0x2CA88C0,
+             'readerCall': direct_reader_call(pins['uiSelectAllReadCallRva'], pins['readBoolTargetRva'],
                                                'read boolean member'),
-             'setterCall': direct_reader_call(0x3A60B52, 0x50816CC,
+             'setterCall': direct_reader_call(pins['uiSelectAllSetterCallRva'], pins['uiSelectAllSetterTargetRva'],
                                                'store selectAll')},
             {'serializedOrderIndex': 1, 'fieldName': 'shapeData',
              'objectField': ui_shape_field, 'readerMethodSpec': ui_shape_read,
-             'setterCall': direct_reader_call(0x3A60B7B, 0x3209E50,
+             'setterCall': direct_reader_call(pins['uiShapeDataSetterCallRva'], pins['objectSetterTargetRva'],
                                                'store shapeData')},
             {'serializedOrderIndex': 2, 'fieldName': 'targetFaction',
              'objectField': ui_faction_field, 'readerMethodSpec': ui_faction_read,
-             'setterCall': direct_reader_call(0x3A60B9F, 0x507E454,
+             'setterCall': direct_reader_call(pins['uiTargetFactionSetterCallRva'], pins['uiTargetFactionSetterTargetRva'],
                                                'store targetFaction')},
         ],
         'sourceParserOrder': ['selectAll', 'shapeData', 'targetFaction'],
@@ -5928,32 +5911,7 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         shape_field_contracts[name] = nested_field(
             shape_type, shape_fields, name, offset, wire_type)
 
-    shape_operations = [
-        ('angle', 'System.Single', 0x3997BCB, 0x2CA8BB0, 0x3997BE2, 0x507E524, None, None),
-        ('angleKey', 'System.String', 0x3997BED, 0x2CA8700, 0x3997C04, 0x320C9C0, None, None),
-        ('centerBaseIsEndPoint', 'bool', 0x3997C0F, 0x2CA88C0, 0x3997C26, 0x50816E8, None, None),
-        ('centerOffset', 'UnityEngine.Vector2', 0x3997C38, 0x3D7E030, 0x3997C4F, 0x5081704,
-         0x3997C2B, 'UnityEngine.Vector2'),
-        ('centerOffsetXKey', 'System.String', 0x3997C5A, 0x2CA8700, 0x3997C71, 0x3207A90, None, None),
-        ('centerOffsetZKey', 'System.String', 0x3997C7C, 0x2CA8700, 0x3997C93, 0x320AC10, None, None),
-        ('extent', 'UnityEngine.Vector2', 0x3997CA5, 0x3D7E030, 0x3997CBC, 0x508160C,
-         0x3997C98, 'UnityEngine.Vector2'),
-        ('extentXKey', 'System.String', 0x3997CC7, 0x2CA8700, 0x3997CDE, 0x3209DF0, None, None),
-        ('extentZKey', 'System.String', 0x3997CE9, 0x2CA8700, 0x3997D00, 0x320BA00, None, None),
-        ('fixedExtent', 'bool', 0x3997D0B, 0x2CA88C0, 0x3997D22, 0x50816CC, None, None),
-        ('radius', 'System.Single', 0x3997D2D, 0x2CA8BB0, 0x3997D44, 0x5081400, None, None),
-        ('radiusKey', 'System.String', 0x3997D4F, 0x2CA8700, 0x3997D66, 0x320C900, None, None),
-        ('restrictEndPointInRange', 'bool', 0x3997D71, 0x2CA88C0, 0x3997D88, 0x50816B0, None, None),
-        ('shape', 'Beyond.Gameplay.SkillHintShape', 0x3997D9A, 0x2CA86B0, 0x3997DB0, 0x507E454,
-         0x3997D8D, 'Beyond.Gameplay.SkillHintShape'),
-        ('useAngleKey', 'bool', 0x3997DBB, 0x2CA88C0, 0x3997DD2, 0x507E544, None, None),
-        ('useCenterOffsetKey', 'bool', 0x3997DDD, 0x2CA88C0, 0x3997DF4, 0x5081694, None, None),
-        ('useExtentKey', 'bool', 0x3997DFF, 0x2CA88C0, 0x3997E16, 0x507DEC8, None, None),
-        ('useRadiusKey', 'bool', 0x3997E21, 0x2CA88C0, 0x3997E38, 0x507E5F8, None, None),
-        ('useWidthKey', 'bool', 0x3997E43, 0x2CA88C0, 0x3997E5A, 0x507EFF0, None, None),
-        ('width', 'System.Single', 0x3997E65, 0x2CA8BB0, 0x3997E7C, 0x5081674, None, None),
-        ('widthKey', 'System.String', 0x3997E87, 0x2CA8700, 0x3997E9A, 0x320BA60, None, None),
-    ]
+    shape_operations = pins['shapeOperations']
     shape_serialized_rows = []
     for order_index, (name, wire_type, read_rva, read_target, store_rva,
                       store_target, spec_load_rva, spec_type_name) in enumerate(shape_operations):
@@ -5963,7 +5921,7 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         method_spec = None
         if spec_load_rva is not None:
             method_spec = call_method_spec(
-                spec_load_rva, read_rva, 428448, 'ReadUnmanaged', read_target)
+                spec_load_rva, read_rva, pins['readUnmanagedMethodIndex'], 'ReadUnmanaged', read_target)
             require(method_spec['genericType']['typeName'], spec_type_name,
                     source, method_spec['usageVa'])
         else:
@@ -5985,7 +5943,7 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         'typeDefinitionIndex': shape_type,
         'typeName': md.type_full_name(shape_definition),
         'memberCountCompare': {
-            'rva': 0x3997BBB, 'rawHex': '4080FD15', 'memberCount': 21},
+            'rva': pins['shapeMemberCountCompareRva'], 'rawHex': pins['shapeMemberCountCompareHex'], 'memberCount': 21},
         'serializedOrder': shape_serialized_rows,
         'metadataStorageOrder': [
             md.string(md.fields[shape_definition.field_start + index].name_index)
