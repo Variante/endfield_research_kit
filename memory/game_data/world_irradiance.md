@@ -61,6 +61,21 @@ runtime selection rules. Per-index evidence and changing counts belong in
 `reports/animestudio/iv_index_additive_relations.json`; the reusable framing
 and checks are in the tracked reader.
 
+The two installed V3 Gacha `character` and `weapon` indexes have the same
+ordered record count. Comparing their independently framed records by position,
+every pair agrees on anonymous words 0, 1, 6 and 7, while interval offsets and
+lengths differ. This is a shared stored key/order across the two directories,
+not proof that the records were loaded together, that those words are spatial
+coordinates, or that their payloads contain the same lighting. The current
+`irradiance_volume_corpus.py` gate checks the complete authenticated IV index
+set and reports the per-word agreement with its outer-audit provenance.
+
+The scene V3 relation `w4 = w5 + w6` does not establish a physical split at
+`w5`: some authenticated stored intervals are shorter than `w5` itself.
+Likewise, the Gacha V3 relation `w3 = w4 + w5` is only an exact stored
+arithmetic relation until a native consumer or independently bounded inner
+record identifies those parts.
+
 The seven `regionIv_room_*` files have an exact `44 + 16*nx*ny*nz` length:
 
 | Byte offset | Stored field |

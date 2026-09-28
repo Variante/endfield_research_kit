@@ -186,6 +186,12 @@ exact VFS file identity, backend normalization, supplied directory roots, and
 the serialized property value remain unresolved. Room record fields, actual
 GPU execution, and texture format also remain unresolved.
 
+`python -m scripts.game_data.irradiance_volume_corpus --expected-input-set-sha256 INPUT_SET_SHA256`
+checks every current IV index and room against the full authenticated VFS
+ledger and writes `reports/irradiance/volume_corpus_latest.json`. It reports
+directory arithmetic and the ordered V3 Gacha character/weapon word agreement
+without assigning those words a renderer meaning.
+
 The maintained DynamicStreaming `stream_area` gate is
 `python -m scripts.game_data.dynamic_stream_area_corpus --expected-input-set-sha256 INPUT_SET_SHA256`.
 It revalidates the authenticated outer VFS inputs, streams only current
