@@ -10,129 +10,81 @@ user research notes without modifying generated evidence.
 
 1. AnimeStudio reads AKPK/Wwise payloads from StreamingAssets with Persistent
    overlay/fallback and decodes lossless FLAC directly.
-2. `scripts.webui.audio.build_audio` owns decode, Wwise bank indexing, event-to-media
-   traversal, Story relinking, and Gameplay sound sidecars. Shared SFX/music is
-   written once under `game/Audio/shared/`; language voice belongs under
-   `game/Audio/<LANG>/`. Known HIRC Event categories are resolved before decode,
-   so AnimeStudio writes media into the final category folders. Its source
-   manifest preserves PCK bank provenance after the physical bank folders are
-   skipped. Only pre-existing legacy layouts and media whose category cannot be
-   established before decode need a later path correction.
-3. The same `build_audio` command invokes the semantic orchestrator under
-   `build_audio_semantics.py` and publishes the compact page index/shards.
+2. `scripts.webui.audio.build_audio` owns decode, Wwise bank indexing,
+   Event-to-media traversal, Story relinking and Gameplay sound sidecars. Known
+   HIRC Event categories are resolved before decode, so media land in their
+   final category folders; its module docstring holds the layout and cache
+   rules.
+3. The same command runs the internal semantic orchestrator
+   (`build_audio_semantics.py`), whose reusable evidence owners live under
+   `scripts/webui/audio/semantics/`.
 4. Optional verified runtime-trace bundles add only their matching observed
    request relation.
-5. `webui/overrides/audio_notes.json` stores searchable manual notes through
-   the local server.
+5. `webui/overrides/audio_notes.json` stores searchable manual notes through the
+   local server.
 
-Primary outputs are `webui/data/lang/<LANG>/audio/{index,events,media}.json`,
-semantic shards, scene backgrounds, Gameplay audio sidecars, and the Story
-conversation sidecars under `audio/conv/`. Story relinking reads Story's
-published `conv/*.json` and writes only those sidecars; the relink owns their
-line, conversation-event and cutscene fields, the semantic refresh owns the
-dialog lifecycle hooks, and each replaces only its own. Without published
-Story, Audio builds and links no voice lines.
+Story relinking reads Story's published `conv/*.json` and writes only Audio's
+own sidecars: the relink owns their line, conversation-event and cutscene
+fields, the semantic refresh owns the dialog lifecycle hooks, and each replaces
+only its own. Without published Story, Audio builds and links no voice lines.
+
+## Primary generated outputs
+
+- `webui/data/lang/<LANG>/audio/{index,events,media}.json` plus lazy semantic
+  shards and `scene_backgrounds.json`;
+- `webui/data/lang/<LANG>/gameplay/sound_effects.json` and the other Gameplay
+  audio sidecars;
+- `webui/data/lang/<LANG>/audio/conv/<key>.json`, merged by the Story page;
+- decoded media under `game/Audio/shared/` (SFX/music) and
+  `game/Audio/<LANG>/` (voice).
 
 ## Evidence boundary
 
 - Media identity, Wwise graph relation, authored consumer, runtime request,
-  selected branch, and audibility are separate layers.
-- Music Switch Event details expose the exact stored type-`0x0C` tree paths
-  already carried by `musicNodeEvidence`, with group IDs/types, path keys,
-  leaf IDs, raw weights/probabilities and same-bank ownership status. The
-  searchable view pages its rows; a missing same-bank declaration remains a
-  local join gap. A stored path does not prove live group values, the selected
-  leaf, or audible output. The WebUI requires argument-only `pathKeys`; an
-  older generated shard that still includes the root sentinel shows no tree
-  rows until a focused HIRC refresh republishes the Audio details.
+  selected branch and audibility are separate layers
+  ([`../game_data/audio_overview.md`](../game_data/audio_overview.md)).
 - Event traversal and authored control curves do not prove live values or DSP
   response. A prefab source does not prove a scene instance.
-- Runtime bundles must pass source, build, language, and terminal validation;
-  otherwise they remain degraded and create no binding.
+- Runtime bundles must pass source, build, language and terminal validation;
+  otherwise they stay degraded and create no binding.
 - Story-line binding can close purpose investigation for a media record, but
-  does not prove that playback occurred in a captured session.
+  does not prove playback in a captured session.
 - Manual notes are user annotations and never upgrade confidence.
-- An exact decoded `soundEvent` member is a naming candidate, including when it
-  carries prose or outer whitespace. The page gains an Event name from this
-  source only on a selected HIRC Event-object hash match; other authored
-  references can remain visible with `foundInWwise=false`. The source index's
-  `eventNameSources` still records raw decoded-member candidates for cache
-  provenance; use `decodedPayloadEventNameRecovery.promotedNames` or the final
-  `eventNames` to decide whether that source supplied an Event identity.
-- Selected derived-plan EOF SkillData/BuffData PlaySound actions are retained in the
-  Gameplay sound sidecar with raw literals, exact action paths, enclosing
-  frame or event slots, native enum labels, and typed target settings. Only
-  actions with a selected HIRC Event-object hash join Audio Event contexts;
-  actions lacking that identity remain in the raw catalog. Authored config
-  ownership and runtime execution remain distinct, so an unlinked Buff action
-  can still show its trigger slot without acquiring a character or enemy.
+- A decoded `soundEvent` member is a naming candidate even when it carries prose
+  or outer whitespace; the page gains an Event name from it only on a selected
+  HIRC Event-object hash match, and other authored references stay visible with
+  `foundInWwise=false`. Use `decodedPayloadEventNameRecovery.promotedNames` or
+  the final `eventNames`, not the raw `eventNameSources`, to tell whether that
+  source supplied an identity.
+- Exact SkillData/BuffData PlaySound actions stay in the Gameplay sound sidecar
+  with raw literals, action paths, frame/event slots, native enum labels and
+  typed target settings; only HIRC-matched actions join Event contexts, and an
+  unlinked Buff action can show its trigger slot without gaining an owner.
 
 ### What each rendered state refuses to claim
 
-The frontend renders these status tokens verbatim (they are listed in
-[`../../webui/README.md`](../../webui/README.md)); this is what each one is
-allowed to mean:
+The frontend renders these tokens verbatim (listed in the header comment of
+`webui/src/features/audio/index.js`):
 
-- an authored `monoBehaviourAudioIdField` role is a serialized field
-  projection. No field is executed, posted, selected, or audible.
-- Spawner pre-warning Event contexts carry the authored rotation only when the
-  16-byte nullable Vector3 has its presence flag set. The three displayed
-  values are stored components; no in-game effect placement or playback is
-  observed from them.
-- a prefab source row is not a recovered level instance.
-  `sceneId`/`sourceName`/`sourcePath` appear only on an exact scene containment
-  row, and disagreeing component and prefab-path identity fail closed with
-  `conflictingPrefabInstanceIdentityJoins` rather than one route being chosen.
-- a grammar-hash-preimage name is a weaker source than a shipped literal. It
-  supplies only the owner and category its spelling encodes, and no caller,
-  trigger, execution, branch, or audibility.
-- an Event named from an authored serialized payload literal
-  (`LevelScriptData`, `LevelScriptTemplateData`, `SpawnerConfig`, `Interactive`,
-  `LevelData`) is an exact shipped-string match on the FNV-1 hash, so the
-  spelling is proven. The payload root is provenance for the spelling only:
-  which serialized field holds the literal is unidentified, so it is **not** a
-  consumer, trigger or playback-location claim for that payload record.
-- `noExplicitOutputBusSerialized` is an absence of serialized output-bus nodes.
-  It implies no default or parent routing, no silence, and no effect-free path.
-- `ownerKind=npc` requires the agreeing table pair plus an exact channel key. A
-  mixed Event keeps the NPC on occurrence/Clip evidence only and receives no
-  single NPC owner.
-- namespace and native-response groups are identity-only. Shared media lists
-  every named owner, while generic templates, live speaker choice, Wwise
-  selection, and concrete playback locations stay unresolved.
-- the AudioCue AST shows structure only: no condition truth, runtime variable
-  value, handler dispatch, cue execution, branch selection, or audibility.
-- `controlCatalog.staticRtpcAlignment` is authored static evidence. A missing,
-  mismatched, malformed, or stale gate withholds the static names instead of
-  showing stale identities, and `0x1802`/`0x1804` are never renamed.
-- serialized effect-chain, RTPC, State, Aux-send, and ducking rows are possible
-  routes. Runtime DSP order, effective inheritance, live control values, branch
-  selection, and audibility remain unresolved.
-- Built-in effect parameter names and authored base values appear only for
-  reviewed classes after the selected native triplet and method bodies validate
-  against the tracked Wwise contract. `effectParameterNativeGate` records that
-  gate. An opaque row still exposes its raw class ID, byte length/SHA and exact
-  plug-in media prefix; the Convolution Reverb and Mastering Suite parameter
-  blocks currently remain in that state. RoomVerb's extra private floats show
-  values and serialized offsets, with no selected-client use-role label.
-  The HIRC inventory displays the generated gate status and the number of
-  reviewed plug-in classes beside the exact/partial/opaque definition counts.
-  A missing or malformed gate is shown as unverified, and none of these counts
-  imply live effect activation or DSP output.
-- a recovered semantic category or coarse ownership never upgrades playback
-  placement or runtime status.
-- an action row's `actionTypeName` is the Wwise SDK identifier for the whole
-  serialized 16-bit action type, taken from the pinned
-  `wwise_sdk_enums` contract through
-  `scripts/webui/audio/semantics/wwise_enums.py`. `operation` remains the masked
-  high byte and stays the grouping key, because that is what decides the body
-  layout. A name is a serialized constant's spelling: it establishes no
-  execution, no target scope, no event selection, and no audibility, and the two
-  words the SDK does not name are shown unnamed rather than fitted from the
-  suffix pattern. See
-  [`../game_data/audio_overview.md`](../game_data/audio_overview.md).
+| state | does not claim |
+| --- | --- |
+| Music Switch tree paths (type `0x0C`, from `musicNodeEvidence`) | live group values, the selected leaf, audible output; a missing same-bank declaration is a local join gap. Rows need argument-only `pathKeys`, so an older shard that still carries the root sentinel shows no rows until a focused HIRC refresh |
+| `monoBehaviourAudioIdField` role | any field executed, posted, selected or audible |
+| Spawner pre-warning rotation | in-game placement; shown only when the nullable Vector3's presence flag is set |
+| prefab source row | a level instance; `sceneId`/`sourceName`/`sourcePath` only on exact containment, `conflictingPrefabInstanceIdentityJoins` on disagreement |
+| grammar-hash-preimage name | caller, trigger, execution, branch or audibility; only the owner and category its spelling encodes |
+| authored-payload-literal name | a consumer, trigger or playback location: the spelling is exact, the holding field is unidentified |
+| `noExplicitOutputBusSerialized` | default or parent routing, silence, or an effect-free path |
+| `ownerKind=npc` | a single owner for a mixed Event (the NPC stays on occurrence/Clip evidence) |
+| namespace and native-response groups | speaker choice, Wwise selection or playback location; shared media list every owner |
+| AudioCue AST | condition truth, variable value, handler dispatch, cue execution, branch selection |
+| `controlCatalog.staticRtpcAlignment` | current names when the gate is missing, mismatched, malformed or stale; `0x1802`/`0x1804` are never renamed |
+| effect chain, RTPC, State, Aux-send, ducking rows | runtime DSP order, effective inheritance, live values, branch selection |
+| built-in effect parameter names (`effectParameterNativeGate`) | shown only after the selected native triplet validates; Convolution Reverb and Mastering Suite stay opaque (class ID, byte length/SHA, plug-in media prefix); RoomVerb's private floats have no use-role label; a missing gate shows unverified; no live activation |
+| semantic category or coarse ownership | playback placement or runtime status |
+| `actionTypeName` | execution, target scope, Event selection; `operation` stays the masked grouping key and the two SDK-unnamed words stay unnamed |
 
-## Focused refresh
+## Focused refresh commands
 
 ```bat
 python -m scripts.webui.audio.build_audio
@@ -140,53 +92,33 @@ python -m scripts.webui.audio.build_audio --skip-decode --refresh-hirc
 python -m scripts.webui.audio.build_audio --semantics-only --language CN
 ```
 
-Inspect `--help` for non-CN or targeted maintenance options. The semantic
-publisher stays internal; put reusable evidence logic in its domain module.
+Inspect `--help` for non-CN or targeted maintenance options. Focused audits
+(`play_sound_action_corpus`, `native_play_sound_string`, `hirc_action_corpus`,
+`hirc_named_reach`) are listed in [`../../scripts/README.md`](../../scripts/README.md).
 
-## Remaining gaps
+## Highest-value remaining gaps
 
-- Media under `wwise/unknown` are not unnamed media: `unknown` is the raw
-  physical category, and most such rows already carry an exact named Event.
-  The real residual is the media whose only reaching Event is still
-  `hashed-event:0x...`, plus the External-Source-shaped ids no Event reaches at
-  all. Quote those two, not the folder size.
-- Wwise Events named `Play_au_*` are outside the harvested
-  `au_`/`bark_`/`radio_` grammar. The exact decoded-member source recovers
-  those present in its supported payload roots after a selected HIRC hash
-  match; other payload roots still need a measured reader rather than a prefix
-  guess.
-- Close more authored consumer-to-Event and Event-to-media ownership paths.
-- Recover selector/parameter meaning without conflating control with playback.
-- Keep unsupported codecs, missing chunks, and unobserved runtime branches visible.
-- The native audio catalog was reviewed on the previous build
-  (`contracts/audio_native.json`). On another installed build the callsite
-  catalogs -- managed-literal and selector callsites, SwitchAudioCustomState
-  callsites and voice-response triggers -- and the AnimatorMono, enemy
-  voice-action and AI-bark routes, the Wwise music state groups (setter,
-  enum members from the installed metadata, and each callsite that still
-  loads its value and calls the setter) and the native selector setters are
-  re-derived by name
-  (`scripts/webui/audio/semantics/native_callsite_rederivation.py`): a row is
-  published only when its consumer resolves, its literal reaches the consumer
-  (in the body, a reached helper, or the selector field's initializer) and the
-  playback sink is reached, with that build's addresses; the rest are withheld
-  with a reason. A re-derived row proves the literal and playback path, not
-  its reviewed trigger prose (`branchConditionStatus`). The ModelView routes
-  re-derive the same way: the consumer must still call each target, where a
-  target that changed owner (the handler registry moved into
-  `ModelAnimatorContext`) is a reviewed re-reading. Music transition
-  registrations are read from each `RegisterTransitionAction` call's own
-  arguments (state mask, enter/leave, action order, delegate target): on the
-  current build every state registers an `_OnEnter*` (order 5) / `_OnLeave*`
-  (order 1) pair, and none matches the reviewed pairing, which the previous
-  build can no longer confirm. Playback call chains stay withheld: their links
-  include delegate callbacks and native engine stages a call-graph check cannot
-  prove, and sibling entry points are listed as sequential stages. The selector catalog used to publish the music setters and
-  selector callsites with no build gate at all; with no measured build they
-  now carry no native field.
-  Authored and HIRC evidence is unaffected.
+- The residual is not the `wwise/unknown` folder (a raw physical category whose
+  media mostly carry a named Event) but the media whose only reaching Event is
+  still `hashed-event:0x...`, plus External-Source-shaped ids no Event reaches.
+  Quote those two, not the folder size.
+- Events spelled `Play_au_*` outside the byte grammar are recovered only from
+  supported decoded payload roots; other roots need a measured reader, not a
+  prefix guess.
+- Close more authored consumer-to-Event and Event-to-media ownership paths, and
+  recover selector/parameter meaning without conflating control with playback.
+- Keep unsupported codecs, missing chunks and unobserved runtime branches
+  visible.
+- The native callsite catalog (`contracts/audio_native.json`) was reviewed on a
+  previous build. On another build its rows -- callsites, selector setters,
+  music state groups, ModelView routes, music transition registrations -- are
+  re-derived by name and published only when every claim holds, with that
+  build's addresses; the rest are withheld with a reason, and playback call
+  chains stay withheld (`native_callsite_rederivation.py` owns the rules). A
+  re-derived row proves the literal and playback path, not its reviewed trigger
+  prose (`branchConditionStatus`). Authored and HIRC evidence is unaffected.
 
 See [`../game_data_recovery.md`](../game_data_recovery.md) for durable
 serialized-data and native-consumer conclusions, and
-[`../game_data/audio_overview.md`](../game_data/audio_overview.md) plus the
-HIRC files beside it for the Wwise chain.
+[`../game_data/audio_overview.md`](../game_data/audio_overview.md) plus the HIRC
+files beside it for the Wwise chain.

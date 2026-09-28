@@ -4,308 +4,199 @@ Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
 [`README.md`](README.md) for the level and lane map.
 
 **Level 1 -- the outermost layer.** Before any format question, this is what the
-installed client exposes: which VFS blocks exist, how big each one is, and which
-maintained reader owns each payload family. Every other file assumes you know which
-block its bytes came out of.
+installed client exposes: which VFS blocks exist and which maintained reader
+owns each payload family. Every other file assumes you know which block its
+bytes came out of.
 
-## The remaining VFS blocks, inventoried
+## The VFS blocks
 
-Beyond `streaming` and `terrain`, the blocks hold: **`iv` 4.17 GB** (irradiance volumes;
-`iv_N_N.bytes`, 92 `index.bytes`, a few `regionIv_room_*`), **`table`** 724 single-instance
-config tables (`BuffTable`, `SkillConditionTable`, `CharacterConst`, ...), **`json-data`** ~1,264
-name shapes of plain JSON, **`extend-data`** just three files
-(`CompressData.bin`, `FacBoneTRS.bin`, `StringPathHash.bin`, 176 MB together), and
-**`bundle-manifest`** a single 50 MB `manifest.hgmmap`. *`iv` is by a wide margin the largest
-and was entirely uncharacterised.*
+The authenticated VFS audit locates every logical file by block, chunk, offset
+and length and routes it to its reader. A `.chk` chunk is a physical container
+that may pack many logical files, and location needs no payload: a block whose
+chunks are not installed is still located, and its availability is reported
+separately. The tracked per-block inventory (raw id, contents, lane, families,
+path patterns) is `vfsBlocks` in
+[`recovery_declarations.json`](../../scripts/webui/recovery/recovery_declarations.json);
+which blocks the exporter decodes into `game/` and which it publishes undecoded
+into `raw/` is `STRUCTURED_BLOCKS`/`RAW_BLOCKS` in
+[`scope.py`](../../scripts/game_data/extraction/scope.py). Sizes and counts
+live in the VFS audit report, not here.
+
+| Block | Holds | Export | Reader; lane file |
+| --- | --- | --- | --- |
+| `Bundle`, `InitBundle` | Unity asset bundles | Unity objects (never dumped) | AnimeStudio; [`unity_assets.md`](unity_assets.md), [`containers_cabmap.md`](containers_cabmap.md) |
+| `Audio`, `InitialAudio`, `Audio<Language>`, `HotfixAudio` | Wwise AKPK packages | decoded audio (never dumped) | AKPK/BNK readers; [`audio_overview.md`](audio_overview.md) |
+| `Video` | CRI USM by directory | `game/Video` | outer framing only |
+| `Table` | single-instance SparkBuffer config tables | `game/Table` | AnimeStudio dump |
+| `JsonData` | plain JSON and MemoryPack payloads by root directory | `game/Json`, packed folders in `GameFiles.sqlite` | `jsondata_corpus`; [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) |
+| `Lua` | base64+XXTEA-wrapped Lua | `game/Lua` plaintext | exporter unwrap |
+| `Terrain` | TRET tiles and per-scene `LAYER_*` arrays | `game/` (`terrain-height` selects `_H` only) | `terrain/`; [`world_terrain.md`](world_terrain.md) |
+| `Streaming` | `StreamingChunkInfo`, paired `InitChunkData`/`StreamingChunkData` | `raw/` | `streaming/`; [`world_chunks_schema.md`](world_chunks_schema.md) |
+| `DynamicStreaming` | `fb_main_*`, `FBStreamArea`, `fb_init_*`, `fb_streaming_*`, `fb_version` | `raw/` | `dynamic_streaming`; [`world_dynamic_streaming.md`](world_dynamic_streaming.md) |
+| `IV` | `index.bytes`, `iv_*` payloads, `regionIv_room_*` | `raw/` | `irradiance_volume`; [`world_irradiance.md`](world_irradiance.md) |
+| `ExtendData`, `InitialExtendData` | `StringPathHash.bin`, `FacBoneTRS.bin`, `CompressData.bin`; `InitStringPathHash.bin` | `raw/` | `extend_data_binary`; [`extend_data.md`](extend_data.md) |
+| `IFixPatch` | IFix code patches (the exporter names raw id 5 `IFixPatchOut`) | `raw/` | `ifix_patch`; [`ifix_patch.md`](ifix_patch.md) |
+| `BundleManifest` | one Brotli `manifest.hgmmap` | `raw/` | `bundle_manifest`; [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) |
+| `Audit*` | audit variants of Streaming, DynamicStreaming, IV, Audio, Video | shares the base block's folder | no separate content |
+
+`raw/` bytes are shown by the Data page only; nothing builds from them, and
+recovery tools stream those blocks from the installed client with
+`AnimeStudio.CLI stream`.
 
 ## Payload families, and the reader each one routes to
 
+The VFS recovery evidence index in the AnimeStudio skill reference maps each
+family to its reader, fixtures and corpus report. How far each reader is
+proven is [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md);
+the bullets below are the routing facts and the boundaries this file owns.
 
-The maintained evidence index in the AnimeStudio workflow routes each family to
-its reader, fixtures, and generated corpus report. Durable current conclusions:
-
-- DynamicStreaming is a generated FlatBuffers family with validated version,
-  grid, string, resource/state, and area accessors. The deeper meaning of its
-  DataMask and several record fields remains unresolved. The maintained
-  `stream_area` gate rejoins current `FBStreamArea.bytes` files to the
-  authenticated outer VFS ledger and proves a contiguous vector tail through
-  EOF. The selected-build main-grid vector widths and area-record index
-  evidence belong to [`world_dynamic_streaming.md`](world_dynamic_streaming.md),
-  with generated corpus details in `reports/animestudio/`.
-- StreamingChunkInfo has an exact anonymous EOF graph and slot partitions
-  derived from actual vtable positions. Standard rows provide one inline
-  eight-byte pair and a counted vector of eight-byte pairs. Their anonymous
-  four-word projections uniquely match the same-directory secondary-file
-  catalog among all permutations; duplicate multiplicity, missing paths and
-  ambiguity are not discarded. Legacy three-field roots retain exact framing
-  but are unsupported by this catalog projection. A separate native gate
-  connects Info pairs through shared owner state, complete normal-container
-  pair equality (including collision paths and custom register liveness),
-  reviewed direct insertion guards, and unchanged key assembly to paired path
-  formatters. This proves conditional static value provenance, not all possible
-  active-set mutations, a concrete runtime Info instance or spatial meaning.
-  See `layer3.infoCatalogRelation` and `layer4.infoKeyProducerStaticChain` in
-  the Streaming corpus report; inventories and candidate comparisons live there.
-- Init/Streaming have three exact anonymous subgraphs, not whole-file
-  understanding: root-field2 through decoded EOF, parallel root-fields3/4/5,
-  and paired root-fields6/7. Init field2 is empty; Streaming field2 rows have
-  exact table/vtable layouts followed immediately by counted scalar32 vectors.
-  Slot spans for present fields0--5 are 4/4/4/8/24/4 bytes without padding.
-  Three-image native gates establish scalar32, int32[2], float32[6] and
-  scalar32-key-vector representations; field names and key namespace/signedness
-  remain unresolved. Numeric/Global filename relations are structural, not
-  coordinate or gameplay names. Managed GridData names are candidates only.
-  Parallel directories use equal-count width4/1/4 vectors. Their row-field0
-  remains string/byte-vector ambiguous. Applicable row-field5 vectors are
-  empty (nonempty fails closed); row-field3 reaches another parallel directory.
-  Nested marker17 bounds two wrappers and a counted opaque byte range. Its
-  maintained table-local directory retains each key, marker, raw selector,
-  serialized ordinal and decoded wrapper/count range with logical-file
-  provenance. Duplicate keys remain ambiguous across all markers in the table;
-  absent selectors are not defaulted to zero. Directory counts reconcile with
-  framing counts; failed gates suppress directory publication. This adds no
-  owned bytes and does not name the opaque bodies or prove runtime selection.
-  The separate marker17 body parser refines selected default slot3 tag5 bodies
-  into a 64-byte anonymous header, one optional record and five counted arrays.
-  Native-gated pointer arithmetic fixes their order and widths; counts are
-  bounded before multiplication and the parser enforces exact body EOF.
-  Header gaps and record fields remain opaque. Native construction, callback
-  installation and publication are pinned separately from concrete execution;
-  the native reader itself checks neither source extent nor final cursor.
-  Its external-array equality remains conditional on an unavailable carrier.
-  The remaining selected profiles independently bind tags1/4/6 to their keys.
-  Their strict fixed lengths match reviewed maximum read ends and are tested
-  against authenticated bodies, not inferred as native EOF checks. Bytes30--31
-  are explicitly unread/opaque, not certified padding. Equal lengths do not
-  imply equal tags: the tag6 profile must not be dispatched as tag1.
-  The separate marker13 profile joins explicit raw selector9/root marker2 and
-  unique full key FF000000 to two independently pinned default consumers.
-  Its physical gap starts at a certified structural end and finishes at the
-  next certified start; other anonymous target addresses do not define either
-  boundary. The finite physical-gap profile accepts only 16 or 18 bytes; this
-  end need not equal the native 16-byte read end. Four anonymous
-  scalar32 positions are consumed conditionally; remaining gap bytes stay opaque
-  with unresolved ownership, even when zero. Serialized sizeof, field meanings and
-  native final cursor remain unknown; absent selectors and longer gaps are not
-  silently defaulted or treated as padding. The corpus gate inventories the
-  independently certified ranges, selected read windows and opaque complement,
-  keeping physical-gap lengths separate from read-window byte counts.
-  For absent selectors, the parser rechecks the actual row/vtable field2 and
-  preserves null. A separate pinned slot5 accessor-default-zero witness is
-  conditional on a new key and default registration, not a serialized value.
-  The pair validator binds both file identities, complete ordered field3/4
-  vectors and the same bounded ordinal, then rechecks the marker byte and row
-  uoffset. Only a complete source-reconciled corpus terminal permits publication;
-  existing-key history, overrides and runtime receipt remain unresolved.
-  Marker16 belongs to a different outer-row shape. These associations do not
-  prove a union registry. Marker15 references require nonzero forward bounded
-  targets; hashes bind each source/slot directory, but target contents and
-  record extent remain opaque, with zero additional owned target bytes.
-  The reviewed default selector's initial callback is a false stub. Its later
-  callback uses the second root's row-field3 for one scoped context. Full-u32
-  key equality, collision probing, insertion/rehash and lookup are native-gated.
-  Native duplicates retain the first ordinal; serialized joins instead reject
-  ambiguity. Unique element keys yield bounded marker15 sixteen-byte candidate
-  reads, with known-range overlap checks.
-  Missing count keys remain explicit unsupported rows; readable spans are not
-  record extents or execution receipts.
-  A separate installed-byte neighbor probe rechecked selected packed slices
-  against the VFS ledger MD5 and walked their decoded certified ranges and
-  *all* nested target pointers in each file. Marker15 targets occur under
-  several key prefixes, not only the selector-5 `5,1,index` route. In the
-  bounded sample every target has sixteen readable bytes before the next
-  certified range, but multiple targets often occupy one physical gap; the
-  gap can also extend beyond the last target. Target spacing and available
-  bytes therefore do not establish a serialized record end or identify a
-  producer. The sample selection, per-file identities, key counts, target
-  neighbors and gap bounds are in
-  `reports/chunk_data/marker15_physical_neighbors_latest.json`. The next
-  useful discriminator is a writer or a selected consumer that carries the
-  target pointer together with a checked byte extent. For the prevalent
-  selector-9 keys, this also requires the live mapping index and component
-  pool span already missing from that route; applying the selector-5 reader
-  to those keys would cross an unproved dispatch boundary.
-  A maintained current-audit gate now checks *every* `StreamingChunkData`
-  file in any explicitly selected scene and reports the Marker15 targets that
-  start an otherwise uncertified **exact 16-byte gap** before the next
-  certified range, with no other nested target reference in that gap. In the
-  two selected blackbox scenes, every such witness carries anonymous key
-  `08,01,0`; the generated gate report holds the counts, per-file MD5s,
-  offsets, and bytes. This is an independent **physical upper bound for those
-  specific target addresses**, not a producer or a general serialized
-  `sizeof`: unrecognized data could still share the gap, and the selected
-  native 16-byte candidate reader is on a different, unjoined key/selector
-  route. The gate is `streaming/marker15_gap_corpus.py`; extending the
-  conclusion requires a checked selector-8 nested-key consumer or a writer
-  carrying both source pointer and extent.
-  The marker2 finite-gap parser selects only the independently gated
-  selector6/full-key09020000 context. It rebuilds the complete nested target
-  directory; unknown markers preserve raw slots and prevent occupancy closure.
-  An exclusive target must start at the preceding certified end and have a
-  4- or 6-byte gap to the next certified range. Only four bytes are projected;
-  the extra two remain opaque, even when zero. All u32 bit patterns are accepted
-  structurally. Native signed-positive loop use does not establish serialized
-  validity, a semantic count name or sizeof. Multi-target clusters remain
-  unsupported, aliases stay ambiguous, and unseen exclusive gap lengths fail.
-  Selector9 remains unsupported: its prefix writes into returned component
-  storage, but the live mapping index, record index and resulting pool span
-  are not bounded by the reviewed accessors. Constructor allocations alone
-  do not prove current backing ownership. A presumed valid runtime object
-  must not substitute for this missing carrier/extent evidence.
-  Paired formatters prove first=Init and second=Streaming with identical
-  root/dev/key inputs; both use one serialized ordinal, not runtime allocation
-  order. Complete ordered field3/field4 witnesses match between paired files,
-  while row-field0 differs and is not shared identity. New runtime keys use
-  Init's marker; existing keys reuse an already stored marker. Live key-map
-  state, overrides, scheduling and execution are not established by these bytes.
-  The family-level native reader closes requested/returned length, exact-read
-  success, first leaf StreamingChunkInfo and base-relative root resolution.
-  Its post-I/O closure is pointer-only: no parsed length/final cursor reaches
-  the accessors. Static owner/handle/secondary-root chains do not supply a
-  concrete runtime-root or scheduler-to-Create receipt.
-  Details and per-file witnesses belong to `streaming_root_subgraphs_latest`
-  under `reports/animestudio/`; the native contract is
-  `scripts/game_data/contracts/streaming_field2_native.json`. Candidate marker15 native
-  reads remain in `reports/animestudio/streaming_marker15_native_latest.json`.
-- Terrain accepts the observed raw or length-prefixed inverted-LZ4 envelope and
-  TRET versioned prefix. `_H` records close as row-major little-endian height
-  samples; adjacent cells establish grid orientation. For the selected build,
-  the hash-gated UnityPlayer reader directly consumes decoded offset 14 as
-  `GraphicsFormat`, checks offset 16 against its allocated texture byte size,
-  and copies from offset 20. Current metadata and the native footprint table
-  establish 108/109 as BC7 sRGB/UNorm, 16 bytes per 4x4 block, so all observed
-  Terrain bodies now have exact anonymous EOF-consuming ranges. Absolute
-  height scale, no-data semantics, compressed-block channel meanings, D/N
-  ownership, texture-array slots, and selected runtime rendering remain
-  unresolved.
-- `ExtendData/Main/CompressData.bin` is an absolute-offset archive of Brotli
-  records whose decoded bodies are strict UTF-16LE JSON. Current bodies contain
-  NodeCanvas behavior graphs. This proves authored graph structure, not selected
-  runtime branches or blackboard values.
-- String/path hash, facial-bone TRS, and manifest files have separate mmap or
-  native consumers. Their member names guide bounded parsers but do not prove
-  complete byte layouts.
-- LipSync JsonData has an exact selected-build MemoryPack layout. Its float rows
-  are native-proven Unity keyframe values. LipSync animation data remains
-  distinct from language voice-audio availability. The maintained
-  `memorypack.lipsync_corpus` gate binds every current family identity to
-  `AnimeStudio stream --verify-md5` bytes and requires the 15-member reader to
-  consume each file through EOF; changing coverage totals stay in its generated
-  report.
-- NPC MontageNew JsonData has an exactly named three-member root and 24-member
-  body from current generated formatter setter order. Dynamic-entity and
-  transition-override collections use explicit counts and nested member
-  markers; clip info, event info, fixed async-clip values, and transition values
-  have named fields. Extra effects consume two exact `Vector3` values and one
-  mount path; the parent consumes its remaining strings, enum, GUID, hash and
-  booleans in generated order, so every current binary reaches EOF with a
-  complete named schema. The
-  `memorypack.npc_montage_corpus` gate joins current ledger identities to
-  `AnimeStudio stream --verify-md5` bytes by path, length and logical MD5, then
-  requires the maintained frame reader to consume supported records through
-  EOF. Coverage totals belong in
-  `reports/animestudio/npc_montage_current_latest.{json,md}`; named exact framing
-  does not establish runtime selection or playback.
-- NPC PrefabInfo textual JSON has its own exact schema reader. It validates the
-  complete current `NPCPrefabInfo` field set and every populated nested object,
-  list and scalar type; two older rows may omit `correspondingCharId`. Empty
-  SkillBBData remains an explicit current boundary, while unrelated manifest
-  and hash-map documents remain generic JSON.
-- SkillData's MemoryPack framing remains a structural prefix: the current
-  corpus report preserves all valid EOF-anchored terminal candidates. Exact-
-  build native evidence resolves the resource type as `Core.SkillData` and
-  orders the first field as `actionGroupData`; its nested reader requests
-  `passiveEventActions` followed by `timelineActions`. Current VFS branches
-  cross-check those list counts and consumed prefix ranges. The empty-list
-  nested endpoint `[1,10)` remains conditional on both generic formatter
-  queries selecting the audited four-byte zero-count path. Provider/cache
-  state and an executed cursor are not available offline, so this does not
-  establish which formatter path ran or prove a parent record end. The
-  exact-build offline audit now binds raw bytes
-  for one terminal collision and branch samples covering every positive
-  count shape of the three terminal lists to their current VFS identities,
-  hashes and hard limits, then matches nested parser cursors and member order
-  to registered static reader bodies. This includes the one-member
-  GameplayTagList wrapper, its GameplayTag element reader, ToggleBuffData, and
-  UIRangeHintData with its nested 21-member shape reader. The registered
-  GameplayTag path consumes one member-count byte and a four-byte field; its
-  `tagId` is `System.Int32`, while the parser preserves the same bytes as an
-  unsigned id/hash view, so signed semantic interpretation remains open.
-  Under these registered paths, the shifted tail fails either the wrapper's
-  accepted-header path or the bounded list reader's remaining-byte check. This
-  ranks the tail hypotheses offline, but provider/cache selection and an
-  executed parent cursor remain unavailable, so no whole SkillData record is
-  closed. A separate ActionGroupData census replays current positive
-  `passiveEventActions` lists through empty and nonempty SequenceActionData
-  branches. Exact-build dispatch and selected reader bodies align several
-  non-null child unions to their independently pinned member-header counts.
-  The C9 member-eight normal path is consumed only through its scalar prefix,
-  stopping before its first generic SequenceActionData call because runtime
-  provider selection for that nested reader remains unobserved. A separate
-  candidate-only replay may record its three SequenceActionData call ranges
-  against the current native sequence and child-action reader contracts, but
-  those ranges do not advance the authoritative parser cursor or close C9.
-  Other tags without a selected reader remain opaque at their first byte. The
-  offline `memorypack.skill_timeline_cursor` now extends candidates through a
-  child action only when the exact-build native route, per-tag reader contract,
-  and source-hash-verified `memorypack.buff_actions.Reader` agree. Its selected
-  reader endpoints and byte ranges remain candidates; an unsupported nested
-  union stays unconsumed at its first byte. This broadens offline structural
-  prefixes without selecting the runtime provider/cache or closing the parent.
-  `timelineActions` remains a non-advancing count peek, and neither
-  `ActionGroupData` nor whole SkillData is closed. Child fields remain unnamed,
-  and bytes beyond each proven prefix or conditional list endpoint stay opaque.
-  The report also verifies the observer's post-call return-address coordinates,
-  which are hook locations rather than a live cursor receipt.
-  Available TypeTrees do not cover these JsonData files.
-  A bounded exact-build `skilldata-cursor` observer is available, but no receipt
-  has yet verified a candidate. Cleanup now requires
-  a post-disable thread-IP rendezvous over the detour and MinHook trampoline;
-  incomplete enumeration, context reads, or thread resumption leaves the
-  capture incomplete and transfers its owners to a cleanup worker that retries
-  until teardown is proven or the process exits; later cleanup cannot upgrade
-  the published receipt. Each cleanup attempt is bounded; a failed
-  `ResumeThread` keeps its handle for later worker retries rather than dropping
-  the cleanup responsibility.
-  Keep candidates ambiguous until a loss-accounted
-  receipt joins source bytes, start/end cursors, hard limit, and logical
-  identity/hash to the same inputSet. Counts,
-  hashes, and per-file ranges belong in
-  `reports/animestudio/skilldata_current_latest.*` and
-  `reports/animestudio/il2cpp_context_current_latest.*`.
-- Video has exact outer framing for the maintained corpus; codec/container
+- **JsonData** routes through the `jsondata_corpus` family registry. LipSync
+  has an exact 15-member MemoryPack layout whose six-float rows the native
+  `LipSyncTrack._ConvertToAnimationCurve` consumer reads as Unity `Keyframe`
+  values (`memorypack.lipsync`); lip-sync animation is distinct from
+  language voice-audio availability, and playback selection is unproven. NPC
+  MontageNew closes a complete named schema through EOF
+  (`memorypack.npc_montage`); NPC PrefabInfo and the two NPC catalogs have
+  exact JSON schema readers (`schemas.npc_prefab_info`, `schemas.npc_catalog`).
+  Available TypeTrees do not cover MemoryPack JsonData.
+- **SkillData** is a 48-member MemoryPack object (`memorypack.skill`).
+  Exact-build native evidence resolves the resource type as `Core.SkillData`,
+  field 0 as `actionGroupData` (nested `passiveEventActions` then
+  `timelineActions`), and the five terminal members as two EOF-valid
+  candidates that only a replayed live cursor receipt selects
+  (`memorypack.skill_terminal`, `memorypack.skill_corpus`). Most current
+  files close whole-schema that way; the residue keeps a named prefix, an
+  authenticated terminal and opaque bytes past its first unsupported nested
+  action tag. Registered static reader paths rank candidates but never select
+  the runtime provider or close a parent. The registered `GameplayTag` reader
+  stores `tagId` as `System.Int32` while the parser keeps an unsigned id view,
+  so its signed interpretation stays open.
+- **Video** has exact outer framing for the maintained corpus; container
   validity does not prove narrative attachment or playback.
+- **Terrain** accepts the raw or length-prefixed inverted-LZ4 envelope and the
+  versioned TRET prefix; `_H` records are row-major little-endian heights. The
+  selected UnityPlayer reader consumes decoded offset 14 as `GraphicsFormat`,
+  checks offset 16 against the allocated texture size and copies from offset
+  20; every observed body has exact anonymous EOF-consuming ranges. Height
+  scale, no-data, block channels, D/N ownership and rendering stay open.
+- **ExtendData**: `CompressData.bin` is an absolute-offset archive of Brotli
+  records whose bodies are strict UTF-16LE JSON NodeCanvas graphs (authored
+  structure, not selected branches). The path-hash, facial-bone and manifest
+  files have separate mmap or native consumers; their member names guide
+  bounded parsers but do not prove complete byte layouts.
 
-Changing sizes and totals live in `reports/animestudio/`, not here.
+### Streaming (block 15)
 
-## Reading VFS logical files: three things that look like corruption and are not
+- **StreamingChunkInfo** has an exact anonymous EOF graph with slot partitions
+  from actual vtable positions. Standard rows hold one inline eight-byte pair
+  and a counted vector of eight-byte pairs; their anonymous four-word
+  projections uniquely match the same-directory secondary-file catalog among
+  all permutations, keeping duplicates, missing paths and ambiguity. Legacy
+  three-field roots are framed but unsupported by that projection, and no
+  field is named. A separate native gate carries Info pairs through shared
+  owner state, container pair equality, direct insertion guards and unchanged
+  key assembly to the paired path formatters: conditional static value
+  provenance, not a concrete runtime Info instance, every active-set mutation
+  or spatial meaning (`layer3.infoCatalogRelation`,
+  `layer4.infoKeyProducerStaticChain` in the `streaming.corpus` report).
+- **InitChunkData/StreamingChunkData** have three exact anonymous subgraphs,
+  not whole-file understanding: root field 2 through decoded EOF, parallel
+  root fields 3/4/5, and paired fields 6/7. Init field 2 is an empty vector;
+  Streaming field-2 rows are exact table/vtable layouts followed by counted
+  scalar32 vectors, with present slots 0-5 spanning 4/4/4/8/24/4 bytes and no
+  padding. Three-image native gates read them as scalar32, int32[2],
+  float32[6] and a scalar32 key vector; names, key namespace and signedness
+  are open. Filename relations are structural, not coordinates, and managed
+  `GridData` names are candidates only. Parallel directories use equal-count
+  width-4/1/4 vectors; row field 0 stays string-versus-byte-vector ambiguous,
+  applicable row field-5 vectors are empty (nonempty fails closed), and row
+  field 3 reaches another parallel directory.
+- **Marker 17** bounds two wrappers and a counted opaque byte range. Its
+  table-local directory keeps each key, marker, raw selector, serialized
+  ordinal and wrapper/count range with logical-file provenance; duplicate
+  keys stay ambiguous across markers, absent selectors are never defaulted,
+  directory counts reconcile with framing counts, and a failed gate suppresses
+  publication. The directory adds no owned bytes and names no body. Native
+  construction, callback installation and publication of tag-5 bodies are
+  pinned separately from execution, and the native reader checks neither
+  source extent nor final cursor, so external-array equality stays
+  conditional on an unavailable carrier. The tag1/4/6 profiles' fixed lengths
+  match reviewed maximum read ends; bytes 30-31 are unread, not padding.
+- **Marker 13 and marker 2** gaps start at a certified structural end and
+  finish at the next certified start; other anonymous target addresses never
+  define either boundary, and a physical gap is not a serialized `sizeof` or
+  native EOF. Absent selectors are preserved as null after rechecking the
+  row's field 2; the pinned slot-5 accessor default of zero is conditional on
+  a new key, not a stored value. Marker 2 rebuilds the complete nested target
+  directory, keeps unknown markers as raw slots (blocking occupancy closure),
+  accepts any u32 structurally and refuses unseen exclusive gap lengths;
+  native signed-positive loop use names no count. Constructor allocations or
+  a presumed-valid runtime object never substitute for carrier and extent
+  evidence.
+- **Marker 15** targets occur under several key prefixes, not only the
+  selector-5 `5,1,index` route. The reviewed default selector's first callback
+  is a false stub; the later one uses the second root's row field 3 for one
+  scoped context, with full-u32 key equality, collision probing, insertion and
+  lookup native-gated. Native duplicates keep the first ordinal, while
+  serialized joins reject ambiguity; unique keys yield bounded sixteen-byte
+  candidate reads, and missing count keys stay explicit unsupported rows.
+  Several targets often share one physical gap, and a gap can extend past the
+  last target, so spacing is not a record end. The useful discriminator is a
+  writer, or a selected consumer that carries the target pointer with a
+  checked extent; for selector-9 keys it also needs the live mapping index and
+  component-pool span, and applying the selector-5 reader there would cross an
+  unproved dispatch boundary.
+- **Pairs**: paired formatters make the first file Init and the second
+  Streaming with identical root/dev/key inputs and one serialized ordinal
+  (not runtime allocation order). New runtime keys use Init's marker; existing
+  keys reuse a stored one. Live key-map state, overrides, scheduling and
+  execution are not established by these bytes.
+- The family-level native read closes requested and returned length, the
+  exact-read success branch, first leaf `StreamingChunkInfo` and base-relative
+  root resolution, then stays pointer-only. Static owner, handle and
+  secondary-root chains do not supply a concrete runtime-root or
+  scheduler-to-Create receipt. The native contract is
+  [`streaming_field2_native.json`](../../scripts/game_data/contracts/streaming_field2_native.json).
 
-- **A raw span read is only valid for `encrypted=False` rows.** The audio probe's
-  `read_logical` seeks to a ledger row's offset, reads its length and checks the
-  MD5. That works because every audio block is `encrypted=False`. Five block types
-  are `encrypted=True` -- `BundleManifest`, `IFixPatchOut`, `JsonData`, `Lua` and
-  `Table` -- and on those the same read produces a confident MD5 mismatch that
-  looks exactly like a corrupt or stale file.
-- **A chunk's filename is not the MD5 of its raw bytes.** `fileChunkMd5...` is not
-  the raw-byte digest: checked across six chunks, including ones whose files
-  verify normally, the filename never equals the raw MD5. So "filename does not
-  match its hash" is **not** evidence that a chunk changed on disk. That control
-  is cheap and worth running before concluding anything about a mismatch.
-- **`manifest.hgmmap` is a Brotli stream**, so XOR-decrypting it yields no UTF-16
-  and looks like a failed decrypt. `scripts/game_data/bundle_manifest.py` already
-  frames it end to end -- headers, three fixed-width row regions, a variable region
-  with counted UTF-16 fragments. Do not re-derive it.
-- **There is no Python VFS decryption path, by design.** Encrypted blocks are
-  decrypted by the AnimeStudio CLI during `dump`, and Python reads the structured
-  output; that is why no script takes an `ivSeed`. Hand-rolling the XOR with the
-  ledger's seed does not reproduce the file -- I tried, and the result is not a
-  Brotli stream.
-- So **naming bundles is not the cheap step I called it.** The current structured
-  export covers only `table` and `json-data`, so the decrypted manifest is not on
-  disk. The recipe is: dump with `--block-type BundleManifest` (the CLI's `list`
-  confirms that name), then feed the decrypted `.hgmmap` to
-  `scripts/game_data/bundle_manifest.py`, then join its names to the CAB-to-bundle
-  relation above. The join is cheap; producing its input is an export run.
-- All three cost time here because a wrong tool produced a plausible failure rather
-  than an obvious one. **When a read fails, check whether the reader was valid for
-  that row before believing the bytes are wrong.**
+### DynamicStreaming auxiliary roots
+
+The five DynamicStreaming roots share `dynamic_streaming`; `fb_main_*` and
+`FBStreamArea.bytes` have selected-build generated accessors and belong to
+[`world_dynamic_streaming.md`](world_dynamic_streaming.md). The three
+auxiliary roots keep a framing-only boundary here:
+
+- `fb_init_*` and `fb_streaming_*` use the length-prefixed inverted-LZ4
+  envelope and an eight-field anonymous FlatBuffer root.
+  `dynamic_aux_pair_corpus` rejoins every pair to the VFS ledger and proves
+  paired byte and count relations, the grouped-ID partition of root field 3,
+  blob lengths equal to descriptor stride times ID count, and descriptor 21 as
+  a stored name column clipped to 63 bytes. `dynamic_aux_bridge_native` checks
+  the native handoff that reads first-root field 7 and second-root field 6.
+  Other descriptor meanings, the selected provider, concrete file identity
+  and live selection stay open.
+- `fb_version` is a raw FlatBuffer with two scalars and an entry vector that
+  is exact only when a native caller supplies its entry width.
+
+## Reading VFS logical files: things that look like corruption and are not
+
+When a read fails, check whether the reader was valid for that row before
+believing the bytes are wrong. Each of these produced a plausible failure:
+
+- **A raw span read is valid only for `encrypted=False` rows.** Seeking to a
+  ledger offset, reading its length and checking the MD5 works for audio,
+  whose blocks are unencrypted. `BundleManifest`, `IFixPatchOut`, `JsonData`,
+  `Lua` and `Table` are `encrypted=True`, and the same read gives a confident
+  MD5 mismatch that looks like a stale file.
+- **A chunk's filename is not the MD5 of its raw bytes.** The ledger's chunk
+  MD5 is a reference identity (`memorypack.corpus_gate` keeps it apart from
+  the raw digest), so a filename that does not match its bytes is not
+  evidence that a chunk changed.
+- **`manifest.hgmmap` is a Brotli stream**, so XOR-decrypting it yields no
+  UTF-16 and looks like a failed decrypt. `bundle_manifest` frames it end to
+  end.
+- **There is no Python VFS decryption path, by design.** AnimeStudio decrypts
+  encrypted blocks during `dump`/`stream`, and Python reads that output; no
+  script takes an `ivSeed`, and hand-rolling the XOR with the ledger seed does
+  not reproduce the file. To read the manifest, dump it with
+  `--block-type BundleManifest` (or run a page export that publishes it into
+  `raw/`) and pass the result to `bundle_manifest`.

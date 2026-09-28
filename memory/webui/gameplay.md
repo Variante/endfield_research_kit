@@ -9,138 +9,83 @@ is deliberately not attached while its ownership model is under review.
 
 ## Inputs and recovery flow
 
-1. `scripts.webui.gameplay.build_gameplay --stage base --stage audit` reads gameplay Tables
-   and exact binary/serialized contracts, localizes entries, and publishes
-   sharded data.
-2. `--stage projectiles` publishes immutable projectile behavior separately.
-   Its input is the `data_projectile_*` MonoBehaviour JSON whose
-   `ProjectileTemplateData` and `ProjectileComponentData` references the
-   exporter decoded from the bundle's own managed-reference TypeTree
-   (`exactTypeTreeDecoded`, registry fully decoded). Any other shape is
-   skipped and counted by reason in the output, never adapted: the retired
-   hand-decoder shape published inferred names and a partial tail, and a
-   JSON export made before the exporter's TypeTree upgrade contains no
-   projectile objects at all, because the exact-only gate excluded them.
-   An empty dataset therefore points at the export, not at this stage.
-3. `--stage asset-refs` joins current Gameplay identities to the Assets index
-   and is the sole writer of `webui/data/assets/gameplay_refs.json`.
+`python -m scripts.webui.gameplay.build_gameplay` runs every stage; the stages
+are scheduled separately by the export graph
+([`build_gameplay`](../../scripts/webui/gameplay/build_gameplay.py)).
+
+1. `--stage base --stage audit` reads gameplay Tables and exact
+   binary/serialized contracts, localizes entries, and publishes sharded data
+   ([`base_data`](../../scripts/webui/gameplay/base_data.py)).
+2. `--stage projectiles` publishes immutable projectile behavior from the
+   `data_projectile_*` MonoBehaviour documents the exporter decoded through the
+   bundle's own managed-reference TypeTree. Any other shape is skipped and
+   counted by reason, never adapted; an empty dataset points at the export
+   ([`projectiles`](../../scripts/webui/gameplay/projectiles.py)).
+3. `--stage asset-refs` joins current Gameplay identities to the Assets index.
 4. After the curated source graph is current, `--stage combat` publishes
    relationships or an explicit stale/degraded reason.
 
-Primary outputs are `webui/data/lang/<LANG>/gameplay/**`,
-`webui/data/gameplay/projectiles.json`, `combat_relationships.json`, and
-`gameplay_refs.json`. Audio recovery may still publish `projectile_audio.json`
-and `sound_effects.json`, but this page does not consume them.
+## Primary generated outputs
+
+`webui/data/lang/<LANG>/gameplay/**`, `webui/data/gameplay/projectiles.json`,
+`combat_relationships.json`, and `webui/data/assets/gameplay_refs.json`, whose
+sole writer is the `asset-refs` stage. Audio recovery may still publish
+`projectile_audio.json` and `sound_effects.json`, but this page does not load
+them. Frontend rendering rules are in the header comment of
+`webui/src/features/gameplay/index.js`.
 
 ## Evidence boundary
 
-- Authored stats and level points are shown as authored. The character
-  Loadout view computes final attributes only from the validated attribute
-  formula (see `../game_data/gameplay_semantics.md`) over level, potential,
-  weapon, weapon skills, equipment and set effects; combat Buffs, gems, team
-  effects, IFix and display rounding remain uncomputed.
+- Authored stats and level points are shown as authored. The Loadout view
+  computes final attributes only from the validated attribute formula (see
+  [`../game_data/gameplay_semantics.md`](../game_data/gameplay_semantics.md))
+  over level, potential, weapon, weapon skills, equipment and set effects;
+  combat Buffs, gems, team effects, IFix and display rounding stay uncomputed.
 - Binary action chains publish only when typed fields consume to exact
-  boundaries. Unknown unions, enums, tags, selectors, and action payloads stay
+  boundaries. Unknown unions, enums, tags, selectors, and payloads stay
   explicit.
-- Character active-skill rows can expand authored `DamageUnit` values from
-  their directly referenced SkillData IDs. The base builder reloads the
-  selected native MemoryPack plan and DamageUnit/calculation enum field types,
-  then accepts each SkillData file only when it decodes through EOF and its
-  internal identifier equals the filename. The language payload keeps
-  `skillDamageEvidence` and `skillDamageUnits[skillId]` with per-file status,
-  serialized source paths, stored raw enum integers beside names, the
-  `simpleCalculation` and `takeAtkSnapshot` route flags, attack-scale blackboard
-  values, calculation subtype tags, and the raw decoration mask.
-  A missing or mismatched native pair publishes no units. These are authored
-  setup rows, not evaluated damage, selected branches, mitigation, or hits.
-- `skillDamageRouteEvidence` is a compact selected-native status for
-  `DamageAction._CalculateDamageResultForNormalEntity`. A validated route
-  permits a conditional simple-path formula only on authored Hp units with
-  `takeAtkSnapshot == false` and `simpleCalculation == true`: the resolved
-  DamageUnit `atkScale` multiplies `DamagePackData.attackerAttributes[2]`.
-  A stored `atkCalculation` subtype on such a row is bypassed by this selected
-  normal-entity branch. The current exact character corpus contains both
-  AtkScale and DefiniteValue subtype rows in that situation; its changing
-  six-part partition is generated by `scripts.webui.gameplay.route_audit`.
-  The normal Hp calculation badge is suppressed on Poise rows because this
-  attack route does not describe their separate Poise input.
-  If the normal-entity route audit is unavailable, its conditional Hp formulas are
-  hidden while authored rows remain visible.
-- `skillDamageAtkScaleEvidence` is a compact status and boundary from the
-  selected `AtkScaleCalculation.Evaluate` native audit, invoked with the same
-  explicit GameAssembly/metadata pair. Both that audit and the route audit
-  must validate before the symbolic `ATK × resolved atkScale` annotation
-  appears, and then only on rows with `takeAtkSnapshot == false`,
-  `simpleCalculation == false`, a matching calculation subtype, and an Hp
-  damage attribute.
-  It describes a normally returning unpatched evaluator path; the selected
-  attack can come from an override array or attacker getter, and the scale is
-  read through `BlackboardDouble.GetValue`. Authored level blackboard numbers
-  are not observed `GetValue` results. A failed audit leaves those numbers and
-  the calculation subtype visible, with one unavailable note near the skill
-  evidence instead of a formula on each row. This does not establish a final
-  damage amount.
-- `skillDamageBreakingAttackEvidence` follows the same compact selected-pair
-  gate for `BreakingAttackCalculation.Evaluate`. It also requires the validated
-  normal-entity route, an Hp damage attribute, and both authored flags false.
-  Only then does a
-  conditional symbolic annotation appear: attacker ATK and defender
-  `BreakingAttackDamageTakenScalar` multiply as Doubles; the resolved
-  `multiplier` and `atkScale` multiply as Singles; the attribute product is
-  converted to Single before the final Single multiplication, then widened to
-  Double for `CalcResult.value`. The hover detail states the multiplication
-  order, precision changes, override-array sources, and unpatched normally
-  returning path. Stored level values remain authored operands, not observed
-  `GetValue` results. A missing or mismatched audit suppresses the formula and
-  shows one unavailable note by the character's skill evidence.
-- `skillDamagePoiseRouteEvidence` and `skillDamageDefiniteValueEvidence` gate a
-  separate conditional **Poise calculation input** badge. The selected
-  `_ProcessDamage` body reads the indexed DamageUnit's nonnull
-  `poiseCalculation`, calls the PoisePackData before-calculation modifier,
-  dispatches that stored calculation, and copies its intermediate result into
-  `PoisePackData.calcResult.value`. Where the stored subtype is
-  `DefiniteValueCalculation`, the badge describes `GetDoubleValue(value)` or,
-  if `applyScale` is true, that Double times `Double(GetValue(valueScale))`.
-  The formula remains conditional on virtual dispatch selecting that evaluator,
-  the post-evaluation guard allowing the result copy, and the normal unpatched
-  paths. This route is independent of the attack
-  `simpleCalculation` flag and may coexist with an Hp attack badge on one
-  authored unit. The generated route audit partitions the stored Poise
-  subtypes and flags. Missing or mismatched evidence hides the input badge and
-  leaves the stored operands with one unavailable note. No applied or
-  displayed Poise amount is computed.
-  A separate selected-build [Poise result audit](../../scripts/game_data/memorypack/poise_result_native.py)
-  traces a guarded continuation through after-calculation modifiers, Poise
-  output/taken scalars, `Modifier.NewPoise`, and a conditional route to
-  `PoiseController.ModifyPoise`. That audit is not published in the Gameplay
-  index or used to gate this input badge. Its virtual application target and
-  live result remain unresolved, so the page makes no applied-Poise claim.
-- Native enum names require the selected GameAssembly/metadata gate.
+- Character `DamageUnit` rows come only from SkillData that the selected native
+  plan decodes through EOF with an identifier equal to the filename
+  (`build_skill_damage_catalog`). A missing or mismatched native pair publishes
+  no units. They are authored setup rows, not evaluated damage, selected
+  branches, mitigation, or hits.
+- Formula badges are conditional intermediate expressions, each gated by its
+  own selected-native audit status in the language payload; an unavailable
+  audit hides the badge and leaves the stored operands plus one note. Stored
+  level blackboard numbers are never presented as observed `GetValue` results.
+
+  | Status field | Native proof | Badge scope |
+  | --- | --- | --- |
+  | `skillDamageRouteEvidence` | [`damage_action_route_native`](../../scripts/game_data/memorypack/damage_action_route_native.py) | Hp units, `simpleCalculation` true, `takeAtkSnapshot` false: `atkScale × attackerAttributes[2]`; a stored `atkCalculation` subtype is bypassed on this branch; suppressed on Poise rows |
+  | `skillDamageAtkScaleEvidence` | [`atk_scale_native`](../../scripts/game_data/memorypack/atk_scale_native.py) plus the route audit | Hp units with both flags false and an `AtkScaleCalculation` subtype |
+  | `skillDamageBreakingAttackEvidence` | [`breaking_attack_native`](../../scripts/game_data/memorypack/breaking_attack_native.py) plus the route audit | Hp units with both flags false; hover keeps the mixed-precision order |
+  | `skillDamagePoiseRouteEvidence` + `skillDamageDefiniteValueEvidence` | [`damage_action_poise_route_native`](../../scripts/game_data/memorypack/damage_action_poise_route_native.py), [`definite_value_native`](../../scripts/game_data/memorypack/definite_value_native.py) | the intermediate `PoisePackData.calcResult` input from a stored `DefiniteValueCalculation`, independent of the attack flags |
+
+  The stored-subtype partition that makes these gates necessary is generated by
+  [`route_audit`](../../scripts/webui/gameplay/route_audit.py). The separate
+  [Poise result audit](../../scripts/game_data/memorypack/poise_result_native.py)
+  is not published in the Gameplay index and gates nothing here; the page makes
+  no applied or displayed Poise claim.
+- Native enum names require the selected GameAssembly/metadata gate and
+  disappear without it; authored rows remain.
 - Projectile effect setup expands the exact TypeTree `EffectActionCfg` rows by
-  authored list slot and shows the stored effect name, effect type, movement
-  mode, and position reference. `projectiles.json` carries the optional
-  `effectConfigEnums` and `effectConfigEnumEvidence` join: native field types,
-  the selected MemoryPack member plan, and every published projectile effect
-  value must validate before names appear beside raw numbers. The authored
-  alert row appears only when its stored `showAlertEffect` flag is set. An
-  unavailable or incomplete join leaves numeric values and an explicit note;
-  these fields do not prove that a runtime effect spawned or followed a target.
-- Buff action `TargetSettings` enum names additionally require a selected
-  native-field to serialized-plan join. The builder enriches only exact target
-  objects, including those inside an otherwise partial action, and preserves
-  every stored numeric value. An unavailable join leaves raw numbers and an
-  explicit UI fallback. `ActionTargetType`, `DirectionType`, and `TargetSource`
-  names label authored settings; they do not prove evaluated target, finder
-  execution, enclosing branch selection, or live playback.
+  list slot. `effectConfigEnums` names appear only when native field types, the
+  selected MemoryPack member plan, and every published effect value validate.
+  These fields do not prove that a runtime effect spawned or followed a target.
+- Buff `TargetSettings` enum names need a selected native-field to
+  serialized-plan join (`enrich_buff_target_settings_names`); they label
+  authored settings, not the evaluated target, finder execution, branch
+  selection, or playback.
 - Projectile ownership distinguishes exact references from inferred
-  candidates. Projectile fields are exact TypeTree values: enum members,
-  mount-point ids, layer masks, and Wwise event hashes are published as their
-  serialized integers, and no member name is inferred. Audio ownership
-  remains outside the page until its evidence model is better understood.
+  candidates. Projectile fields are exact TypeTree values published as stored
+  integers; no member name is inferred.
+- A Buff card quotes a nonempty stored `stackingSettings.stackingKey` only when
+  native evidence validates and the exact post-id tail projection supplies it;
+  empty and null keys stay omitted, and no runtime stack sharing is inferred.
 - Asset availability, event registration, or graph proximity does not prove
   runtime use.
 
-## Focused refresh
+## Focused refresh commands
 
 ```bat
 python -m scripts.webui.gameplay.build_gameplay
@@ -151,22 +96,16 @@ python -m scripts.webui.gameplay.build_gameplay --stage asset-refs --default-lan
 Use the canonical wrapper when cross-page Assets, Audio, source-graph, or
 Story inputs changed.
 
-## Remaining gaps
+## Highest-value remaining gaps
 
 - Improve exact skill-to-projectile and asset ownership.
 - Revisit Gameplay audio attachment only after its ownership and runtime
   evidence boundaries are better understood.
 - Recover additional action/selector schemas with exact-consumption fixtures.
 - Keep runtime formula and tag semantics gated and reproducible.
-- Buff coverage is reported without a current denominator: the page consumes
-  exported BuffData with Persistent precedence, but no provenance-matched
-  BuffData census exists. See the BuffData corpus gap in
-  [`../game_data/extraction_payload_boundaries.md`](../game_data/extraction_payload_boundaries.md);
-  until it closes,
-  an absent lifecycle/stacking/trigger tail cannot be distinguished from an
-  unextracted one.
-- A Buff card renders a nonempty stored `stackingSettings.stackingKey` string
-  only when selected native evidence validates and the exact post-id tail
-  projection supplies it. Empty and null keys remain omitted. The value is
-  authored data; the browser does not infer which runtime Buff instances share
-  a stack.
+- Buff coverage has no current denominator: the page consumes exported
+  BuffData with Persistent precedence, but no provenance-matched BuffData
+  census exists (see the BuffData corpus gap in
+  [`../game_data/extraction_payload_boundaries.md`](../game_data/extraction_payload_boundaries.md)).
+  Until it closes, an absent lifecycle/stacking/trigger tail cannot be told
+  apart from an unextracted one.

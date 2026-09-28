@@ -11,6 +11,9 @@ model these carriers feed, and everything about presenting the result, is
 
 ## LevelScript, Timeline, and native evidence
 
+Selected LevelScript actions prove Story links under explicit gates. That
+covers the carriers Story reads, not the whole LevelScript family.
+
 - LevelScript actions, headers, UIDs, callbacks, lists, and target carriers are
   accepted only through versioned parsers and bounded validation.
 - Active evidence uses one logical-path overlay. Persistent replaces the
@@ -30,177 +33,106 @@ model these carriers feed, and everything about presenting the result, is
 ## Native claims across a client update
 
 - A contract records its build in its own `nativeInputs`/`sources`; no module
-  repeats that hash. On another build it reports `mismatched` until its claim
-  is proved again there, and only names carry over: every address, token,
-  offset, register and enum value is re-derived. Code registration is located
+  repeats that hash. On another build it reports `mismatched` until the claim
+  is proved again, and only names carry over: addresses, tokens, offsets,
+  registers and enum values are re-derived, and code registration is located
   from the metadata image names, never pinned.
-- Claims that re-prove from the binary have a regenerator (CallServer
-  callback, cutscene case resolution, iFix patch, cinematic queue,
-  TeleportParam); `scripts/README.md` lists them. Census conclusions
-  (identity-carrier negative boundaries, cross-system consumers) have none and
-  stay `mismatched` until reviewed again.
-- Instruction-shape analyses must survive codegen churn, not match one build's
-  text. The current build wraps many methods in an iFix patch-flag test, moves
-  rare paths into separate `.pdata` fragments reached by a conditional jump,
-  calls unnamed helpers (struct-argument shims and inlined copies of named
-  methods), reallocates saved registers, and uses rel32 `jcc` where a short
-  jump was. A split-off fragment's unwind info carries `UNW_FLAG_CHAININFO`
-  and ends in its owner's RUNTIME_FUNCTION, so a body is the function plus
-  every fragment chained to it (`BodyIndex.chained_fragments`), however the
-  fragment is reached; a jump-target walk misses fragments reached from other
-  fragments. Follow one level into an unnamed helper, name a jump from its
-  opcode, and accept any save/restore register pair; label a helper-reached
-  callee as such rather than as a direct call. Compiler-generated names
+- Claims that re-prove from the binary have a regenerator (CallServer callback,
+  cutscene case resolution, iFix patch, cinematic queue, TeleportParam). Census
+  conclusions (identity-carrier negative boundaries, cross-system consumers)
+  have none and stay `mismatched` until reviewed again.
+- Instruction-shape analyses must survive codegen churn. The current build
+  wraps many methods in an iFix patch-flag test, moves rare paths into
+  separate `.pdata` fragments, calls unnamed helpers (struct-argument shims,
+  inlined copies of named methods), reallocates saved registers, and widens
+  short jumps to rel32 `jcc`. A body is the function plus every fragment
+  chained to it by `UNW_FLAG_CHAININFO` (`BodyIndex.chained_fragments` in
+  `scripts/game_data/il2cpp/body_claims.py`), however reached; a jump-target
+  walk misses fragment-to-fragment edges. Follow one level into an unnamed
+  helper, name a jump from its opcode, accept any save/restore register pair,
+  and label a helper-reached callee as such. Compiler-generated names
   (`<M>d__N`, `<>c__DisplayClassN_M`, `b__N_M`) renumber between builds; match
   them with the ordinal normalized, and only when unique.
-- `withinActiveArea` is a hysteresis rule in the current build:
+- An iFix wrapper may test its patch id after a class-init prologue, so an
+  opening-window miss does not prove it absent. The inlined
+  `TaskCondition.InvokeOnIsCompleteChangeAction` escapes a hook on the named
+  method (`scripts/game_data/mission_task_paths_native.py`).
+- `withinActiveArea` is hysteresis, proved from `_CalcWithinAreaHysteresis`:
   `!rangeSensitive || hit(enterShapes) || (prevWithin &&
-  !IsNullOrEmpty(exitShapes) && hit(exitShapes))`, proved from
-  `_CalcWithinAreaHysteresis`. The outside list is therefore a hold zone, not
-  an exclusion zone; the previous build's "outside hit clears" reading no
-  longer applies. UpdateWithinActiveArea calls an inlined copy, tied to the
-  named body by its five arguments and result store (`conditional`).
-- Consumer meanings the Story builders cite are claims about named bodies,
+  !IsNullOrEmpty(exitShapes) && hit(exitShapes))`. The outside list is a hold
+  zone, not an exclusion zone ("outside hit clears" was the previous build).
+  The inlined call site is tied to it `conditional`ly (`protocol_registry.py`).
+- Consumer meanings the Story builders cite are claims about named bodies
   proved on the installed build (`contracts/story_native_consumers.json`,
-  `contracts/dialog_finish_native.json`), not tokens pinned by body hash. On
-  the current build DialogTreeIfNode delegates to a new
-  `DialogManager.GetIfNextIndex`; the meaning holds (outgoing 1 exactly when
-  `GameCondition.result == 1`). The Timeline option index now travels
-  `DialogTimelineOptionData.optionIndex` -> `DialogChooseOption` ->
-  `TimelineRuntimeUtils.TrySetNewOptionIndex` (every director under the root)
-  -> `TimelinePlayable.newOptionIndex`; `Evaluate` commits it to
-  `curOptionIndex` and keeps the previous one in `lastOptionIndex`, and
-  `CheckWillRuntimeElementEnabled` enables an element whose option index is
-  zero or equals the current *or previous* selection -- the gate is wider than
-  the previous build's single matching value during a switch. Branch-sequence
-  order edges are admitted only while the `Branch.Execute` list-order claim
-  holds.
-- An iFix-wrapped method can test `IsPatched(<its own patch id>)` after a
-  class-initialization prologue; a bounded opening-window search that misses
-  the test does not prove the wrapper absent. An inlined copy may retain the
-  id test, which supports an inlined-hop claim when its surrounding body and
-  arguments also match. `TaskCondition.InvokeOnIsCompleteChangeAction` is inlined into
-  `LevelScriptRuntime.UpdateTaskMainObjectiveIsCompleted` on the current
-  build: the server progress path invokes `m_onIsCompleteChangeAction` without
-  calling the named method, so a runtime hook on that method misses this path;
-  `contracts/mission_task_paths.json` still names it and is pinned to the
-  previous build.
+  `contracts/dialog_finish_native.json`), not pinned tokens. The current
+  DialogTreeIfNode, Timeline option-index (a wider current-or-previous gate)
+  and `Branch.Execute` order readings are in
+  [`story_native_consumers_native.py`](../../scripts/game_data/story_native_consumers_native.py).
 - A generated artifact made on one build is current only when its recorded
   native hashes equal the installed build's. The reverse-PPtr audit (Story
   root playback aliases) and `webui/story/dynamic_scene.json` were made on the
-  previous build and publish nothing until regenerated; the latter still names
-  layout-v1 export paths. The reverse audit regenerates through
-  `scripts.webui.story_recovery.audit_story_objects`, but only after an
-  installed-game export published with `--animestudio-object-index`.
-  `dynamic_scene.json` has no generator in the tree: its two builders
-  (`build_dynamic_scene_mission_control_audit.py` and the LevelScript
-  action-bridge audit) were deleted when it was frozen in `74a263c7`, so
-  refreshing it means restoring and porting them from history.
-- Mission Pipeline `RUNTIME_CONTRACT` rows are re-verified by name each run;
-  a hop reached through an inlined copy is `verified_with_inlined_hops`. A row
-  whose chain no longer holds is `link_failed` and needs a fresh reading, not
-  a pin; the building-panel lock row had its chain written backwards (the
-  public `CheckIsBuilding*Locked` checks call `CheckBuildingLock` and build the
-  radio).
+  previous build and publish nothing until regenerated. The reverse audit
+  regenerates through `scripts.webui.story_recovery.audit_story_objects` after
+  an export published with `--animestudio-object-index`; `dynamic_scene.json`
+  has no generator (see `scripts/webui/story/dynamic_scene.py`).
+- Mission Pipeline `RUNTIME_CONTRACT` rows are re-verified by name each run
+  (`scripts/webui/mission_pipeline/runtime_contract_native.py`); a row whose
+  chain no longer holds is `link_failed` and needs a fresh reading, not a pin.
 
 ## Current mission JsonData carrier boundary
 
 The selected VFS ledger and exported `game/Json` bytes agree for the active
-LevelScriptData, LevelData, LevelConfig, SpawnerConfig, and
-MissionRuntimeAsset families. The current corpus comparison and focused
-changed-file probe are in `reports/story/recovery/current_json_mission_carriers.json`
-and `current_json_mission_parser_probe.json`. This direct byte comparison is
-needed because the existing export lacks per-output extraction provenance;
-`verify_export_freshness` alone cannot authenticate every file's content.
+LevelScriptData, LevelData, LevelConfig, SpawnerConfig and MissionRuntimeAsset
+families; that direct comparison is needed because the export lacks
+per-output provenance, so `verify_export_freshness` alone cannot authenticate
+every file's content.
 
-The changed LevelScriptData, LevelData, and SpawnerConfig files close at
-physical EOF with `levelscript_binary.frame_levelscript_declared_root` and
-declarations derived from the **matching installed native build**. The byte
-boundary is complete, while member names remain at the `direct` declaration
-tier. Changed LevelConfig files close under `decode_level_config`'s exact
-reader. Both current MissionRuntimeAsset main and meta sets pass their complete
-named JSON schema readers. The main schema contract now admits two previously
-known condition types at their newly observed nested positions and one
-`_nextID` guide action shape. Its `currentCorpus` header still identifies the
-older reviewed baseline; it is not a current-corpus gate. The current
-validation uses the active VFS byte comparison and separately recorded
-parser probe.
-
-The exact source path chain is LevelConfig's signed `levelDataPaths` int64 ->
-the authenticated `StringPathHash.bin` bucket/path-offset pair -> active
-LevelData logical path. The changed LevelData `levelScriptBriefDataDict`
-stores a `dataPath.hash`; a unique catalog path plus equality of its
-dictionary key, embedded `scriptId`, and LevelScriptData filename stem proves
-that authored script reference. Its `spawners[].configId` matches the
-SpawnerConfig root `configId` and logical path. The current joins are in
-`reports/story/recovery/current_levelconfig_path_joins.json` and
-`current_leveldata_carrier_joins.json`. These are JsonData source-path and
-typed-id joins; Unity CAB/PathID identity applies only when crossing into
-serialized Unity objects, and a filename resemblance alone is insufficient.
-
-For example, the new `gm02m27` main/meta pair explicitly stores
-`map02_lv002` as its level, while `gm02m27d1` through `d6` store
-`indie_dg016`; the related LevelConfig and LevelData files are now bounded
-through the path chain above. Their authored mission-name keys, and each
-nonempty mission-description key, resolve directly in the current byte-verified
-`TextTable`; matching prefixes in Dialog tables are only candidates until a
-typed mission-to-dialog field connects them. A level field, matching mission
-name in a LevelData filename, script brief, condition, or `mainPathQuests` array proves
-authored definition or reference, **not** that the client activated the
-mission, that the server selected a quest branch, or that a particular Story
-played. Runtime producer-to-mission/quest ownership and the selected
-activation/order path are still unresolved until an exact consumer trace or
-observed runtime event joins those identities. Do not turn the new source
-joins into a Story edge or chronological order on their own.
+- Changed LevelScriptData, LevelData and SpawnerConfig files close at physical
+  EOF with `levelscript_binary.frame_levelscript_declared_root` and declarations
+  derived from the matching installed native build: the byte boundary is
+  complete, member names stay `direct`. Changed LevelConfig files close under
+  `decode_level_config`. Both MissionRuntimeAsset main and meta sets pass their
+  named schema readers (`scripts/game_data/schemas/mission_runtime_main.py`);
+  the main contract's `currentCorpus` header still identifies the older
+  reviewed baseline and is not a current-corpus gate.
+- The source path chain is LevelConfig's signed `levelDataPaths` int64 -> the
+  authenticated `StringPathHash.bin` bucket/path-offset pair -> active LevelData
+  logical path. LevelData `levelScriptBriefDataDict` stores a `dataPath.hash`;
+  a unique catalog path plus equality of its dictionary key, embedded
+  `scriptId` and LevelScriptData filename stem proves that script reference.
+  `spawners[].configId` matches the SpawnerConfig root `configId` and path.
+  These are JsonData source-path and typed-id joins; Unity CAB/PathID identity
+  applies only when crossing into serialized Unity objects, and a filename
+  resemblance alone is insufficient.
+- Mission name and description keys resolve directly in the byte-verified
+  `TextTable`; matching Dialog prefixes are candidates until a typed
+  mission-to-dialog field connects them. A level field, a mission name in a
+  LevelData filename, script brief, condition, or `mainPathQuests` array proves
+  authored definition or reference, **not** client activation, a server quest
+  branch, or a played Story. Producer-to-mission ownership and activation
+  order stay unresolved until an exact consumer trace or observed runtime event
+  joins them; the source joins never become a Story edge or order on their own.
 
 ## LevelScript FMV path to installed Video
 
-The current `PlayFmvAction` layout in the selected
-`levelscript_union_tags.json` contract and the strict
-`codecs/levelscript/fmv.py` field decoder identify `_moviePath` as a stored
-constant `Param<string>`, not a string inferred from a neighboring action.
-The focused current LevelScript replay reaches 19 such actions in 19
-source-authenticated files. Rechecking each export's SHA256 and VFS data MD5,
-then the tagged string inside that action's physical byte range, finds 19
-distinct `cs_video_*` values. Exact audited Video logical paths resolve six
-values as a base `<id>.usm` file; the other 13 have one `f_<id>.usm` and one
-`m_<id>.usm` file each, all under `Data/Video/PC/Narrative/Cutscene/`.
-The per-source and per-file identities are in the generated
-`reports/story/recovery/current_levelscript_fmv_video_join.json` receipt.
-`levelscript_fmv_video_corpus.py` rechecks this join against the reviewed
-`levelscript_fmv_video_native.json` consumer contract, selected native hashes,
-the current VFS input set, each source's exported bytes, and each Video file's
-audited path/data identity; it fails on a missing base or incomplete gender
-pair rather than promoting a name resemblance.
-
-The selected native `PlayFmvAction.Execute` reads its `_moviePath` parameter
-and calls `GameAction.PlayFmv`, the route independently listed in the reviewed
-`cinematic_queue.json` contract. In the unpatched bodies,
-`GameAction.PlayFmv` forwards the name to
-`NarrativeUtils.GetGenderedFMVId`, then checks a
-`GetCSVideoAssetSubPath` result with `VideoManager.CheckCanPlay`.
-`GetGenderedFMVId` selects the literal `f_` or `m_` prefix by narrative
-gender, concatenates it with the original id, checks the candidate through
-`_CheckIfFMVExists`, and falls back to the unprefixed id if that check fails.
-`GetCSVideoAssetSubPath` formats `Narrative/Cutscene/{0}`;
-`VideoManager.GetVideoAssetPath` appends `.usm` when needed, and
-`TryGetVideoPlayFullPath` calls `Beyond.VFS.VirtualFileSystem.TryGetAssetFullPathInfo`.
-The selected method bodies, literal usage cells and branch bytes are recorded
-in `reports/story/recovery/current_levelscript_fmv_video_native.json` with
-the installed native hashes. This is **conditional** source-to-video name
-resolution: the selected gender, active iFix patch state, action activation,
-actual playback, mission ownership and chronological order are not proved by
-these static bytes or VFS matches.
+`PlayFmvAction._moviePath` is a stored constant `Param<string>`. Each
+authenticated `cs_video_*` value resolves to exact Video logical paths under
+`Data/Video/PC/Narrative/Cutscene/` -- a base `<id>.usm` or a complete `f_`/`m_`
+pair -- through
+[`levelscript_fmv_video_corpus.py`](../../scripts/game_data/levelscript_fmv_video_corpus.py)
+and the reviewed `levelscript_fmv_video_native.json` consumer route
+(`GameAction.PlayFmv` -> `GetGenderedFMVId` -> `Narrative/Cutscene/{0}` ->
+VFS lookup). This is **conditional** name resolution: gender, iFix state,
+activation, playback, mission ownership and order are not proved. The
+per-source join is `reports/story/recovery/current_levelscript_fmv_video_join.json`.
 
 ## Spatial carriers
 
-Story may be placed on Map only through the exact carrier's own authored
-geometry or identity. Maintained carrier families include validated trigger
-volumes, constant EntityPtr targets, explicit entity lists, patrol checkpoints,
-SpawnerPtr/encounter hosts, NPC proxy dialogs and envTalk, atmospheric NPC
-clusters, narrative components, reading points, and exact 3D radio actions.
-
-Each family has its own schema and uniqueness gate. These rules are shared:
+Story is placed on Map only through the exact carrier's own authored geometry
+or identity: trigger volumes, constant EntityPtr targets, entity lists, patrol
+checkpoints, SpawnerPtr/encounter hosts, NPC proxy dialogs and envTalk,
+atmospheric NPC clusters, narrative components, reading points, and 3D radio
+actions. Each has its own schema and uniqueness gate, under shared rules:
 
 - every constant or getter field is decoded in formatter order and bounded by
   exact consumption;
@@ -210,39 +142,34 @@ Each family has its own schema and uniqueness gate. These rules are shared:
 - one Story may have several exact authored points; do not choose, average, or
   collapse them;
 - placement does not prove activation, mission ownership, runtime actor
-  position, or chronology;
-- changing per-level carrier coverage belongs in generated frontier and map
-  reports.
+  position, or chronology; per-level coverage belongs in the generated frontier
+  and map reports.
 
 ## What each carrier's identity domain is
 
-Two carriers can address numerically equal ids in unrelated domains, so the
-domain is part of the identity:
+Numerically equal ids in unrelated domains are different identities:
 
 - validated local Story trigger volumes carry their own decoded Box/Sphere
   geometry at an authored X/Z position and rotation. Current-build native
-  consumers confirm that these ids address the LevelScript-local
-  `triggerVolumes` domain through a runtime registered-id bridge; **they are not
+  consumers confirm these ids address the LevelScript-local `triggerVolumes`
+  domain through a runtime registered-id bridge; **they are not
   WorldEntityRegistry slots.** Their Story links stay distinct from nominal
   mission context and imply neither mission ownership nor runtime firing.
 - MissionArea pins have an exact MissionAreaTable Box/Sphere definition and
-  remain **Story-unresolved.** Spatial proximity never supplies their Story
-  files or Story order.
-- NPC proxy rows use their own identity domain. A build-locked `NpcProxyGetter`
-  reference can attach actions through an exact proxy-id/segment/table join; it
-  **never reuses a numerically equal world-entity identity.**
-- MissionRuntimeAsset `trackingInfoList` rows gained `jumpToCampFireGlobalId`
-  on every tracking-info type in the current client (NpcProxy, Pos,
-  MissionArea, Entity, Sns, JumpToUI, NPC). It is 0 on every row but one
-  PosTrackingInfo; by name an optional campfire (fast-travel) jump target, not
-  yet reviewed against native code. The NpcProxy tracking reader accepts it
-  only at 0 (`npc_proxy_tracking_fields_are_exact`); any other value, or any
-  other new field, fails closed until its meaning is reviewed.
-- current-script slot actions resolve through a pinned native resolver
-  contract: the runtime lookup is keyed by the current `LevelScriptRuntime`
-  script id and slot in `EntityManager`. A unique WorldEntityRegistry
-  script/slot row proves the authored map target, while **runtime registration
-  and lifetime remain explicitly unproven.**
+  remain **Story-unresolved**; proximity never supplies their Story or order.
+- NPC proxy rows use their own domain. A build-locked `NpcProxyGetter` reference
+  attaches actions through an exact proxy-id/segment/table join and **never
+  reuses a numerically equal world-entity identity.** The unreviewed
+  `jumpToCampFireGlobalId` tracking field (by name an optional campfire jump
+  target) is accepted only at 0 (`npc_proxy_tracking_fields_are_exact` in
+  `scripts/webui/story/source_gap/data.py`); any other value or new field fails
+  closed until reviewed.
+- current-script slot actions resolve through the pinned
+  [`entityptr_script_slot_native.py`](../../scripts/game_data/entityptr_script_slot_native.py)
+  contract: the lookup is keyed by the current `LevelScriptRuntime` script id
+  and slot in `EntityManager`. A unique WorldEntityRegistry script/slot row
+  proves the authored map target; **runtime registration and lifetime stay
+  unproven.**
 - world scenery receives a Story link when one counted `LevelInteractiveData`
   record stores both its exact `embeddedLogicId` and a NarrativeComponent
   `typeId`. e0m0's four tombs use that direct binding, **not numeric order or
@@ -250,25 +177,26 @@ domain is part of the identity:
 
 ## Registered shells and slot action bindings
 
-- An `int_empty` shell is a registered but unresolved empty slot. It is not an
-  understood interaction, and it stays in its own unresolved layer.
-- A registered shell referenced by a strict constant `Param<EntityPtr>` value
-  inside a validated action record becomes a script target **only when a
-  build-locked native formatter contract also proves its named member
-  boundary**; unresolved occurrences remain candidates. Neither form inherits
-  sibling Story, cutscene, or sequence ownership.
+- An `int_empty` shell is a registered, unresolved empty slot in its own layer.
+- A registered shell referenced by a strict constant `Param<EntityPtr>` inside
+  a validated action record becomes a script target **only when a build-locked
+  native formatter contract also proves its named member boundary**
+  ([`action_entity_fields_native.py`](../../scripts/game_data/action_entity_fields_native.py));
+  unresolved occurrences stay candidates. Neither form inherits sibling Story,
+  cutscene, or sequence ownership.
 - Script-container files, conditions, and ordering anchors are map-level
-  context. They are not repeated onto every sibling slot, and a point receives
-  a Story or a file **only from an exact script/slot consumer.**
+  context, not repeated onto sibling slots; a point receives a Story or a file
+  **only from an exact script/slot consumer.**
 - Every spatial world/script registry slot publishes an observational action
-  binding status and an action array. `no_reference_observed` means only that
-  current decoded LevelScript evidence contains no matching constant pointer;
-  **it is not proof that the slot has no action.** Exact and unresolved
-  references stay separate even when both address the same slot.
+  binding status and action array. `no_reference_observed` means only that
+  current decoded LevelScript evidence has no matching constant pointer --
+  **not that the slot has no action.** Exact and unresolved references stay
+  separate even when both address the same slot.
 - A dynamic local-output reference becomes a slot action **only when a pinned
-  producer contract proves a same-header constant alias**; validated non-alias
-  outputs remain unplaced.
-- The exhaustive per-slot audit -- every contracted EntityPtr field state,
-  diagnostic-only dynamic `idRef`/output/variable references, and the
-  non-spatial references that must not become map markers -- belongs in
-  `reports/assets/map_recovery/action_binding_index.json`, not here.
+  producer contract proves a same-header constant alias**
+  ([`entityptr_output_alias_native.py`](../../scripts/game_data/entityptr_output_alias_native.py));
+  validated non-alias outputs remain unplaced.
+- The exhaustive per-slot audit -- contracted EntityPtr field states,
+  diagnostic-only dynamic `idRef`/output/variable references, and non-spatial
+  references that must not become map markers -- belongs in
+  `reports/assets/map_recovery/action_binding_index.json`.

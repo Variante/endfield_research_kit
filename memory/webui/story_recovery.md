@@ -3,20 +3,16 @@
 Cross-page Story reconstruction model, indexed from
 [`README.md`](README.md) beside the page guides that consume it. Story page
 behavior itself is [`story.md`](story.md). The carrier-level LevelScript,
-Timeline, native-gate, and spatial-placement rules moved to
+Timeline, native-gate, and spatial-placement rules live in
 [`../game_data/story_carriers.md`](../game_data/story_carriers.md), because they
 describe how the installed bytes are read rather than how Story is presented.
 
 This topic owns the evidence model used to reconstruct Story structure,
-ownership, branches, activation carriers, and partial order. The Story WebUI
-page consumes those results but does not define their truth conditions.
-
-## Why this file remains
-
-Story page behavior is documented in [`story.md`](story.md). This
-file remains necessary because the same recovered Story evidence also feeds Map,
-Audio, source-graph queries, standalone Mission Pipeline investigation, and
-validation reports.
+ownership, branches, activation carriers, and partial order. It is a separate
+file because the same recovered evidence feeds Story, Map, Audio, source-graph
+queries, standalone Mission Pipeline investigation, and validation reports;
+the Story page consumes those results but does not define their truth
+conditions.
 
 ## Current status
 
@@ -54,8 +50,8 @@ probes, and report-only CLIs live in `scripts/webui/story_recovery/`.
 
 The dependency is one-way: recovery tools may import stable builder primitives;
 production builders must not import or execute recovery modules. Promote a
-recovery algorithm by moving its pure, tested core into `scripts/webui/story/` and
-leaving only report/CLI orchestration in `story_recovery`.
+recovery algorithm by moving its pure, tested core into `scripts/webui/story/`
+and leaving only report/CLI orchestration in `story_recovery`.
 
 ## Story structure and media
 
@@ -74,27 +70,23 @@ leaving only report/CLI orchestration in `story_recovery`.
 - Subtitle attachment requires an authored link or one unique complete ordered
   match across the selected language/gender tracks. Partial and ambiguous
   matches fail closed.
-- **Some authored subtitle ids have no localized text row, but their Timeline
-  clips may still carry literal display text.** A current installed Table VFS
-  index, using Persistent over StreamingAssets, has exactly the exported Table
-  name set; a targeted active `TextTable` dump is byte-identical to the export.
-  Every `SubtitlePlayableAsset._textId` absent from `TextTable` is also absent
-  from all exported Table and Json payloads, including packed `Json/LipSync`,
-  and every exported `TextAsset` after decoding its base64 `m_Script`.
-  The focused-versus-full structured scope cannot explain the gap: both export
-  every Table and JsonData block, and the broader scope adds Terrain. A
-  source-CAB-local `m_Asset` PPtr joins every absent-key asset to a serialized
-  Subtitle Track clip. Many such clips have literal, language-specific
-  `m_DisplayName` strings, while others store `<key not found>` or an i18n error
-  string. The complete per-build counts, key list, source hashes, and clip
-  inventory are in `reports/story/recovery/subtitle_key_coverage_current.json`.
-  `m_DisplayName`
-  is an authored clip display field; its literal text does not prove the
-  runtime subtitle getter uses it as a fallback. Whether the absent rows never
-  ship in any other original-data carrier, and why the asset ids remain, are
-  still open. `DialogCenterTextPlayableAsset` and
-  `LeftSubtitlePlayableAsset` resolve completely, so this is specific to the
-  Subtitle Track family.
+- **Some authored Subtitle Track ids have no localized text row, but their
+  Timeline clips may still carry literal display text.** Every
+  `SubtitlePlayableAsset._textId` absent from `TextTable` is also absent from
+  all exported Table and Json payloads (including packed `Json/LipSync`) and
+  from every decoded `TextAsset.m_Script`. It is not an extraction gap: a
+  current Table VFS index (Persistent over StreamingAssets) matches the
+  exported Table name set, a targeted active `TextTable` dump is
+  byte-identical to the export, and the focused and full structured scopes
+  both export every Table and JsonData block. A source-CAB-local `m_Asset`
+  PPtr joins every absent-key asset to a serialized Subtitle Track clip; many
+  such clips have literal, language-specific `m_DisplayName` strings, others
+  store `<key not found>` or an i18n error string. `m_DisplayName` is an
+  authored clip display field; its text does not prove the runtime subtitle
+  getter uses it as a fallback. `DialogCenterTextPlayableAsset` and
+  `LeftSubtitlePlayableAsset` resolve completely, so the gap is specific to
+  the Subtitle Track family. Per-build counts, keys, and clip inventory are
+  generated under `reports/story/recovery/`.
 - Video, image, SNS, audio definition, authored placement, activation, and
   observed playback are distinct claims.
 - Character Wiki voice rows do not replace responsive or exploration catalogs;
@@ -153,66 +145,50 @@ Reference reuse is allowed only when exported Timeline and Table inputs are
 unchanged. Never use it after an installed-game refresh. Allow a long timeout
 for Story builds.
 
-## Maintained reports
-
-```text
-reports/story/build/
-reports/story/recovery/
-reports/mission_order/
-reports/assets/map_recovery/
-reports/source_graph/
-```
-
-Counts, edge inventories, native addresses, hashes, per-level examples, and
-session proof belong in those outputs rather than this file.
+Generated outputs live under `reports/story/build/`, `reports/story/recovery/`,
+`reports/mission_order/`, `reports/assets/map_recovery/`, and
+`reports/source_graph/`. Counts, edge inventories, native addresses, hashes,
+per-level examples, and session proof belong there rather than here.
 
 ## Deferred bounded Story capture plan
 
-Planned, not implemented: revisit EndfieldCapture for runtime trigger and
-continuation evidence after selecting a concrete static-evidence gap. Existing
-audio relationships and optional host recording can document one observed
-playthrough; the generic gameplay-semantics profile is not a Mission/LevelScript/
-Story tracer. Recheck actual provider capabilities when resuming. Operational
-commands and capture restrictions remain owned by
-[`EndfieldCapture/README.md`](../../tools/EndfieldCapture/README.md).
+Planned, not implemented, and authorizing no capture until explicitly
+revisited. Operational commands and capture restrictions are owned by
+[`EndfieldCapture/README.md`](../../tools/EndfieldCapture/README.md); the
+generic gameplay-semantics profile is not a Mission/LevelScript/Story tracer,
+so recheck provider capabilities when resuming.
 
-Start with one short, repeatable NPC interaction leading to one Story and its
-completion callback, not a whole chapter. Record the initial mission/objective,
-interaction target, and chosen option. Existing bounded audio capture plus
-optional recording may establish observed playback, but cannot establish its
-trigger or mission ownership by themselves.
-
-Before implementing a dedicated observer, authenticate the current native
-inputs and validate each selected method body, ABI, payload boundary, and
-identity carrier. Observe only the bounded chain:
-
-`trigger -> condition result -> LevelScript action -> Story start/end -> callback or quest-state change`
-
-Retain exact source-connectable trigger/entity/LevelScript identities, condition
-inputs and results, Story key and initiating action, playback-instance lifetime,
-callback/successor identity, and supplied mission/quest identities where proven.
-Cross-thread or asynchronous links need validated correlation identities;
-timestamps and process-local pointers alone do not establish causality or
-persistent source identity. Unavailable fields remain unresolved. A received
-server notification does not reveal the server's selection policy.
-
-Keep hooks observation-only and bounded, preserve original calls and results,
-and follow the prelaunch, one-attachment, exact-build, clean-stop, and collector
-gates. Missing hooks, unreadable/truncated payloads, lost events, ambiguous joins,
-or incomplete cleanup fail closed. Add focused positive and negative tests
-before retail observation. A key press or successful preflight is not evidence
-that capture completed; require validated collection and its hashed inventory.
-
-Join accepted runtime records back to authenticated static sources before
-publishing edges. One session proves only its observed route, not universal
-ordering, unobserved branch behavior, or server policy. If safely repeatable,
-use separate bounded sessions for a repeat and a controlled alternative, without
-modifying game state through the observer. Keep raw sessions in the existing
-`scratch/reverse_engineering/endfield_capture/` area and compact reviewed results
-in `reports/story/recovery/`; update this topic only with durable conclusions.
-Expand to quest conditions and cross-Story callbacks only after the first chain
-has a complete identity join. This plan authorizes no capture or implementation
-until explicitly revisited.
+- Start from one concrete static-evidence gap and one short, repeatable NPC
+  interaction leading to one Story and its completion callback. Record the
+  initial mission/objective, interaction target, and chosen option. Existing
+  bounded audio capture plus optional recording can establish observed
+  playback, never its trigger or mission ownership.
+- Before a dedicated observer, authenticate the current native inputs and
+  validate each selected method body, ABI, payload boundary, and identity
+  carrier. Observe only
+  `trigger -> condition result -> LevelScript action -> Story start/end -> callback or quest-state change`,
+  retaining source-connectable trigger/entity/LevelScript identities,
+  condition inputs and results, Story key and initiating action,
+  playback-instance lifetime, callback/successor identity, and supplied
+  mission/quest identities where proven.
+- Cross-thread or asynchronous links need validated correlation identities;
+  timestamps and process-local pointers do not establish causality or source
+  identity. A received server notification does not reveal the server's
+  selection policy.
+- Hooks stay observation-only and bounded, preserve original calls and results,
+  and follow the prelaunch, one-attachment, exact-build, clean-stop, and
+  collector gates. Missing hooks, unreadable or truncated payloads, lost
+  events, ambiguous joins, or incomplete cleanup fail closed; a key press or
+  successful preflight is not evidence that capture completed. Add focused
+  positive and negative tests before retail observation.
+- Join accepted runtime records back to authenticated static sources before
+  publishing edges. One session proves only its observed route. Use separate
+  bounded sessions for a repeat and a controlled alternative, never modifying
+  game state through the observer. Keep raw sessions in
+  `scratch/reverse_engineering/endfield_capture/`, compact reviewed results in
+  `reports/story/recovery/`, and durable conclusions here. Expand to quest
+  conditions and cross-Story callbacks only after the first chain has a
+  complete identity join.
 
 ## Remaining gaps
 

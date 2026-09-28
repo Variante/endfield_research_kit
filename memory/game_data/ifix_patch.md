@@ -10,301 +10,143 @@ framing boundary belongs to
 
 ## From installed bytes to a replacement target
 
-`IFixPatchOut` is an encrypted VFS block. A direct AnimeStudio
-`dump -b i-fix-patch --verify-md5` from the active Persistent root, with
-StreamingAssets fallback, supplies the decoded logical bytes. The maintained
-[`ifix_patch.py`](../../scripts/game_data/ifix_patch.py) reader consumes the
-current files exactly: a bounded opaque prefix precedes the IFix file-VM
-stream; the stream has strings, external type and method tables, raw
-instruction/exception spans, and fix records. The parser validates lengths,
-indices it understands, canonical string lengths, and EOF. The source
-declarations and exact current file census are in the reader and its local
-corpus report, not in this topic.
-
-The selected native build declares `IFix.Core.Instruction` as an eight-byte
-value type with 32-bit `Code` and `Operand` fields. Its `IFix.Core.Code` enum
-names the first word. The maintained
-[`ifix_vm_instruction_native.py`](../../scripts/game_data/ifix_vm_instruction_native.py)
-derives that layout and enum from an explicit selected `GameAssembly.dll` and
-`global-metadata.dat` pair, checks the native sizes and field offsets, then
-names every instruction opcode inside the parser's exact method spans. Every
-instruction in the freshly dumped patch files maps to a named enum member.
-Unknown codes fail closed. The opcode name alone does not interpret its
-numeric operand. The generated instruction inventory belongs in
-`reports/animestudio/`.
-
-The reviewed
-[`ifix_vm_operands_native.json`](../../scripts/game_data/contracts/ifix_vm_operands_native.json)
-contract pins the selected native `PatchManager.LoadInternal` and
-`VirtualMachine.Execute` bodies and the VM table fields. Its
-[`validator`](../../scripts/game_data/ifix_vm_operands_native.py)
-checks the explicit native inputs, both method identities and complete body
-bytes, field offsets, and opcode enum before projecting an operand.
-`LoadInternal` reads each file VM body in sequence and stores its code at
-the same index in `unmanagedCodes`. It likewise reads each external method
-signature in sequence and stores its resolved method at the same index in
-`externMethods`; it allocates `externInvokers` from that table's length.
-`Execute` makes the second half of the join: `Call` and `Callvirt` use the
-operand's low 16 bits as an index into `unmanagedCodes`; `CallExtern` and
-`Newobj` use the same low half for external method lookup, with
-`CallExtern` consulting the invoker cache first. Thus a valid low-half index
-directly identifies one **declared file row**, conditional on the selected
-native build and caller-supplied patch bytes. For `Call` and `Callvirt`, the
-signed upper 16 bits are forwarded as `argsCount` to a recursive `Execute`
-call. For `CallExtern`, the selected path multiplies the signed upper half by
-the 12-byte VM slot size and subtracts it from the evaluation-stack top to
-form the external call's argument base. The reviewed contract pins the
-arithmetic helper bytes and call sites. This is a stack rewind count, not a
-claim about the reflected method's parameter count. `Newobj` first reads
-the resolved constructor's declaring type and its base type through the
-selected virtual slots. It compares that base with the selected
-`System.MulticastDelegate` type. If they differ, `Newobj` joins the same
-signed-upper-half stack-rewind path as `CallExtern`; delegate construction
-takes a separate path. The validator checks the virtual slots, helper bytes,
-type-usage cell, pointer comparison, branch target, and shared rewind calls.
-The current patch's three `Newobj` upper halves are 0, 3, and 0, matching
-the file-declared constructor parameter counts. This is a **conditional
-native operand rule**, since actual reflection selection and execution are
-unobserved.
-
-An IFix generic method signature stores ordinary type indices and generic
-parameter names in separate streams, interleaved by a flag for each parameter.
-The older text-only reference printer dropped the generic positions; its
-shortened `LogError` spelling was incomplete. The maintained
-[`ordered_signature_parameters`](../../scripts/game_data/ifix_patch.py)
-restores the file order. The
-[`external signature audit`](../../scripts/game_data/ifix_external_signatures_native.py)
-then substitutes constructed owner and method arguments, including byref
-parameters, and requires a unique full signature in the explicit selected
-IL2CPP metadata pair. Every external declaration in the current patch files
-has one such metadata definition. Its return type and static flag are direct
-selected-build facts; the runtime reflection selection and invocation remain
-unobserved. The per-build method inventory belongs in `reports/animestudio/`.
-
-The same selected `Execute` body interprets `Br`, `Brtrue`, and `Brfalse`
-operands as **signed instruction offsets relative to the current
-instruction**. A taken branch adds that offset to the current instruction
-pointer; conditional fallthrough advances one instruction. The validator
-publishes both authored edges and marks a target outside the method's
-instruction span as out of range, without assigning it a file row. It does
-not decide which conditional edge ran. `Leave` uses a different rule: its
-signed operand is stored as a pending **absolute instruction index**.
-`Endfinally` with operand -1 resumes at that index when the pending value
-is nonzero. The selected interpreter multiplies the index by the eight-byte
-instruction size, adds the method code base, clears the pending value, and
-returns to opcode dispatch. The validator checks the operand read, pending
-store and read, code-base use, helper calls, and selected helper bytes. A
-zero pending value takes another path, so the projection marks a `Leave 0`
-target as a sentinel rather than a direct resume edge.
-
-The same authenticated `LoadInternal` body reads each 24-byte exception
-record as six signed `BinaryReader.ReadInt32` values, then stores them in
-`ExceptionHandler` fields in this file order: `HandlerType`, `CatchTypeId`,
-`TryStart`, `TryEnd`, `HandlerStart`, `HandlerEnd`. The
-[`operand validator`](../../scripts/game_data/ifix_vm_operands_native.py)
-checks the six read calls, their field stores, the runtime field offsets,
-and the selected `ExceptionHandlerType` enum against its reviewed contract
-before naming a record. The current Gameplay `_InitLoader` VM body declares
-one `Finally` handler (`HandlerType` 2, `CatchTypeId` -1). Its try boundary
-indices are 42 and 109; its handler boundary indices are 109 and 114,
-all within the body's 117 instructions. In the authored code, instruction
-107 is `Leave 114`, instruction 108 branches to 109, the handler begins
-at 109, instruction 113 is `Endfinally -1`, and instruction 114 follows
-the handler. This is a direct authored cleanup and resume chain under the
-selected interpreter. Whether the path ran remains unobserved.
-
-`LoadInternal` also preserves the file's `internStrings` and `fieldInfos`
-row order in the VM tables. In `Execute`, `Ldstr` indexes `internStrings`;
-the nonnegative operand paths for `Ldfld`, `Ldsfld`, `Stfld`, and `Stsfld`
-index `fieldInfos`. The reviewed contract authenticates these consumer
-paths and their table fields. Every such operand in the current patch files
-is nonnegative and resolves to an in-range row. Negative field operands
-select another native path, which the validator leaves unresolved rather
-than interpreting as a file-field index. The named field rows describe
-**authored references**; they do not prove a load, store, or resulting value
-occurred at runtime.
-
-`Initobj` has a separate, now-authenticated type-table operand. The selected
-`LoadInternal` body reads external-type declarations in file order, passes
-their strings through a helper, and stores the resulting array in
-`VirtualMachine.externTypes`.
-The selected `Execute` body reads `Initobj`'s signed operand, loads that
-array, and uses a bounds-checked array getter at the operand index. The
-maintained operand audit joins an in-range index to the corresponding
-file-declared external type and leaves an invalid index visibly out of range.
-The same selected body takes the preceding evaluation slot as the destination
-reference, calls `System.Activator.CreateInstance(Type)` with the selected
-type, and passes its result to `EvaluationStackOperation.UpdateReference`.
-`Ldloca` places the selected local-slot address in a `StackReference` value;
-the checked `UpdateReference` branch for that tag calls `PushObject` on the
-referenced slot. `PushObject` stores the resulting object through the managed
-stack and updates the slot's value tag. The maintained native contract checks
-the named methods, complete helper bodies, dispatch branch, call targets,
-slot arithmetic, and value-tag writes. In the current source-authenticated
-patch, each `Initobj` immediately follows an in-range `Ldloca`, so the operand
-audit names its authored local-slot destination and the conditional normal-return
-reference update. The selected type, target slot, and call path are established;
-the actual constructed value, constructor effects, patch activation, and
-execution remain unobserved. The current per-instruction projections are in
-`reports/animestudio/ifix_vm_operands_current.json`.
-
-`Constrained` uses the same ordered `externTypes` table through a distinct
-selected `Execute` dispatch path. The reviewed native contract checks that
-path's opcode selection, the VM table-field load, the signed instruction
-operand read, and the bounds-checked row getter. The single authored
-`Constrained` instruction in the current Gameplay patch selects the
-file-declared `List<string>.Enumerator` type row. It occurs inside the
-`_InitLoader` replacement's declared finally handler before an external call.
-The type-row join is direct under the selected native build. A further selected
-`Execute` path reads the **preceding instruction's signed operand**, selects
-the evaluation slot at `top - 1 - precedingOperand` in twelve-byte slots,
-and passes that slot and the resolved external type to
-`EvaluationStackOperation.ToObject`. On normal return, it stores the helper's
-object result in `managedStack` at the selected slot's evaluation-base index,
-then writes that index and the native `ValueType.Object` tag into the slot.
-The current preceding instruction is `Nop 0`, so the authored route selects
-the top evaluation slot. The reviewed validator checks the selected method
-bodies, arithmetic and store calls, value-layout fields, and enum member;
-the current two-file VFS receipt joins the neighboring instruction bytes.
-This is a conditional VM stack effect. The slot's runtime contents, the
-helper's returned object, patch loading, handler entry, and execution remain
-unobserved.
-
-`Execute` treats the first `StackSpace` instruction as a frame header before
-dispatching ordinary opcodes. The header's signed upper 16 bits reserve
-local slots, its unsigned lower 16 bits reserve evaluation-stack slots, and
-execution starts at the next instruction. `Ldarg` indexes the runtime
-`argumentBase`; `Ldloc`, `Ldloca`, and `Stloc` index the local base after the
-runtime argument count. The header and local indices in the current files
-are consistent: every local reference fits its method's declared local
-count. An `Ldarg` index names an argument slot. The file supplies `argsCount`
-for a recursive `Call` or `Callvirt` edge, while an externally entered
-replacement's invocation count remains unobserved. `Ret` with operand zero
-returns no stack value; a nonzero operand selects the top evaluation-stack
-value. This explains the getter/setter-like shape of the Gameplay helper
-bodies and the Rendering body's return instruction.
-
-The selected `CallExtern` cache-miss path constructs a
-`ReflectionMethodInvoker` from the resolved external method. Its encoded
-MethodDef usage cell resolves exactly to
-`ReflectionMethodInvoker.Invoke`, the delegate target. The reviewed contract
-authenticates that cell, the constructor and invoke bodies, and the direct
-calls. For a normally returning nonconstructor method with a nonvoid return,
-`Invoke` calls `Call.PushObjectAsResult`; that helper pushes the reflected
-result and updates the call's stack top, which `Execute` reads after the
-delegate returns. This is a **conditional native data-flow path**, not an
-observed invocation or result value.
+`IFixPatchOut` is an encrypted VFS block. A direct, MD5-verified AnimeStudio
+dump from the active Persistent root, with StreamingAssets fallback, supplies
+the decoded logical bytes. The maintained
+[`ifix_patch.py`](../../scripts/game_data/ifix_patch.py) reader consumes every
+current file exactly: a bounded opaque prefix, then the IFix file-VM stream of
+strings, external type and method tables, raw instruction/exception spans, and
+fix records through EOF.
 
 A fix record binds a CLR method signature to an index in the patch's VM method
-body table. That is direct evidence of a *declared replacement target* in this
-file. An external-method table entry is a reference available to patch code;
-it does not make that method a replacement target. The selected native
-projection decodes reviewed operands and the exception record; those authored
-declarations alone do not prove
-the replacement's behavior, that the runtime loaded the file, or that any
-call entered the patch. A target name is not an execution trace.
+body table. That is direct evidence of a **declared replacement target** in
+this file. An external-method row is a reference available to patch code, not
+a replacement target. Declarations alone do not prove the replacement's
+behavior, that the runtime loaded the file, or that any call entered the patch;
+a target name is not an execution trace.
 
-The VM method index and the AOT wrapper's `IsPatched` id are different identity
-domains. `ifix_patch.py` reads the former from the file;
-[`body_claims.py`](../../scripts/game_data/il2cpp/body_claims.py) reads the
-latter from a native method's test. The current native spot-check finds
-different values for the same fixed methods. Do not join these integers or
-read an AOT id as an offset into the VM body table.
+The VM method index and the AOT wrapper's `IsPatched` id are **different
+identity domains**: `ifix_patch.py` reads the former from the file,
+[`body_claims.py`](../../scripts/game_data/il2cpp/body_claims.py) the latter
+from a native method's test, and they differ for the same fixed methods. Never
+join the two integers or read an AOT id as a VM body offset. A `None` from
+`BodyIndex.ifix_patch_id` means *not found by its bounded search*, not
+*unwrapped* or *not fixed*; the fix record is the authority.
 
-### The shipped patch declarations do not directly replace the checked PlaySound route
+## Opcodes, operands, frames and signatures
 
-A fresh direct `IFixPatchOut` VFS dump with chunk and file MD5 verification
-matches the earlier parsed patch-byte identities. The maintained `ifix_patch.py`
-reader closes every dumped file to EOF and resolves each fix record's declaring
-type and method name through its own external-type table. None of those
-declared replacement targets is a named method in the checked default
-PlaySound string-to-hash route recorded by
-[`audio_play_sound_string_native.json`](../../scripts/game_data/contracts/audio_play_sound_string_native.json).
-The current target rows and source digests are in the generated
-`reports/audio/play_sound_ifix_targets_current.json`.
+Every module below derives its facts from the explicit selected
+`GameAssembly.dll`/`global-metadata.dat` pair and checks the reviewed contract's
+method identities and complete body bytes before projecting anything, failing
+closed on a mismatch. A **row join** (an operand naming a declared file row) is
+direct under the selected build and the supplied bytes; every **stack, slot or
+resume effect** is conditional on the native path returning normally. Execution
+is never observed. The native facts behind each rule are listed in
+`validate_vm_operand_contract` in
+[`ifix_vm_operands_native.py`](../../scripts/game_data/ifix_vm_operands_native.py),
+against the reviewed
+[`ifix_vm_operands_native.json`](../../scripts/game_data/contracts/ifix_vm_operands_native.json).
 
-This is an exact absence from the installed files' **declared fix targets**.
-An external reference inside a patch is not a replacement, and the file
-declarations do not establish patch loading, runtime activation, or the path
-actually taken by a PlaySound action. The selected default-body proof and its
-remaining runtime boundary belong in
-[`audio_native_hooks.md`](audio_native_hooks.md).
+| Operands | Rule under the selected `LoadInternal`/`Execute` bodies |
+| --- | --- |
+| every opcode | `IFix.Core.Instruction` is 8 bytes (`Code`, `Operand`); the `IFix.Core.Code` enum names every current instruction and unknown codes fail closed ([`ifix_vm_instruction_native.py`](../../scripts/game_data/ifix_vm_instruction_native.py)) |
+| `Call`, `Callvirt` | low 16 bits index `unmanagedCodes` (file body order); the signed upper half is the recursive `argsCount` |
+| `CallExtern`, `Newobj` | low 16 bits index `externMethods`; the signed upper half rewinds that many 12-byte evaluation slots to the argument base, a stack count rather than a parameter count; `Newobj` takes a separate path for delegate constructors |
+| `CallExtern` result | a cache miss builds a `ReflectionMethodInvoker` whose `Invoke` pushes a nonvoid result through `Call.PushObjectAsResult`: a conditional data-flow path |
+| `Br`, `Brtrue`, `Brfalse` | signed offsets relative to the current instruction; a target outside the method span is marked out of range, never given a row |
+| `Leave`, `Endfinally -1` | `Leave` stores a pending absolute index that `Endfinally -1` resumes when it is nonzero; `Leave 0` is a sentinel, not a resume edge |
+| `Ldstr`, `Ldfld`, `Ldsfld`, `Stfld`, `Stsfld` | index `internStrings` / `fieldInfos` in file order; negative field operands take another native path, left unresolved |
+| `Initobj`, `Constrained` | index `externTypes` in file order; `Initobj` after `Ldloca` updates that local slot with an `Activator.CreateInstance` object; `Constrained` converts the slot its preceding operand selects to an object |
+| `StackSpace`, `Ldarg`, `Ldloc`/`Ldloca`/`Stloc`, `Ret` | the frame header reserves local and evaluation slots; locals index after the runtime argument count; `Ret` with a nonzero operand returns the top value |
+| exception records | six signed `ReadInt32` fields per 24-byte record, `HandlerType` through `HandlerEnd`, with the selected `ExceptionHandlerType` enum |
+| external signatures | generic positions restored to file order ([`ordered_signature_parameters`](../../scripts/game_data/ifix_patch.py)); constructed owner/method arguments and byref parameters substituted; one unique selected metadata definition each ([`ifix_external_signatures_native.py`](../../scripts/game_data/ifix_external_signatures_native.py)) |
 
-## Correcting the older mission reading
+In the current files every file index, branch target and local slot fits its
+declared table, method body or frame; every field operand is nonnegative and in
+range; every external declaration resolves uniquely, so its return type and
+static flag are direct selected-build facts; and the `Newobj` upper halves equal
+the file-declared constructor parameter counts.
 
-An older local mission audit describes a different patch payload and must not
-be carried forward as current. A fresh direct VFS dump on the selected native
-build matches the reviewed
-[`ifix_patch.json`](../../scripts/game_data/contracts/ifix_patch.json)
-Gameplay payload, and the active fix-record set is different. The older audit
-must not be cited as current. The selected contract's fixed-target and
-external-reference classifications contain no direct task-completion or
-receiver-ownership match. This is a narrow negative over the decoded records,
-not proof that the patch has no indirect effect on missions or Story. The
-current file names and counts are in the local
-`reports/story/recovery/current_ifix_mission_graph_audit.md` and the reviewed
-contract.
+**Eliminated readings.** The older text-only signature printer dropped generic
+positions, so its shortened spellings (such as `LogError`) were incomplete. A
+`CallExtern` upper half is not the reflected method's parameter count. A
+`Leave 0` target is not a resume edge. Widening `ifix_patch_id`'s search window
+does not safely find a method's own id, because later `IsPatched` calls can
+come from inlined methods.
 
-There is a second, independent currentness gate. The production
+## What the current patches author
+
+- **Gameplay.** The `_InitLoader` replacement body declares calls to three
+  other VM bodies, and its external signatures include typed
+  `DeserializeFromJson` returns for the list and per-level UI map load configs,
+  byref level-config lookups, and the loader-data constructor. Its field
+  references cluster around map loader configuration, inverse-coordinate setup,
+  and loader-data lookup dictionaries; `NetClientManager.Launch` references
+  session and network-limit fields. The recursive call operands cover every
+  authored `Ldarg` slot in their target helpers: one getter-like
+  `Ldarg`/`Ldfld`/`Ret` helper for `DataManager.uiLevelMapConfig` and two
+  setter-like `Ldarg`/`Stfld`/`Ret` helpers for MapManager grid lengths (an
+  inference from opcode order and named field rows).
+- **The `_InitLoader` finally chain.** Its one `Finally` handler forms a direct
+  authored cleanup and resume chain: a `Leave` to the instruction after the
+  handler, the handler, and `Endfinally -1`. Inside the handler, before an
+  external call, the single `Constrained` selects the file-declared
+  `List<string>.Enumerator` row and follows `Nop 0`, so it selects the top
+  evaluation slot. Each `Initobj` follows an in-range `Ldloca`, so its
+  destination is that authored local slot. Whether the path ran is unobserved.
+- **Rendering.** The body names the `_Crash1` string and calls the metadata's
+  static `bool ShaderWarmupManager._IsFeatureEnabled(string featureKeyword)`,
+  rewinding one slot after `Ldstr` (the string is its apparent argument); `Ret 1`
+  selects the reflected result on the normal-return path. The bool is
+  unobserved.
+
+These are authored references and control-flow edges, not proof that a patch
+ran or produced an effect.
+
+## Negatives over declared targets
+
+- **PlaySound.** In a fresh, MD5-verified dump, no declared replacement target
+  is a named method in the checked default PlaySound string-to-hash route
+  ([`audio_play_sound_string_native.json`](../../scripts/game_data/contracts/audio_play_sound_string_native.json)).
+  This is an exact absence from the **declared fix targets** only: an external
+  reference is not a replacement, and nothing here establishes loading,
+  activation, or the path a PlaySound action takes. The default-body proof and
+  its runtime boundary belong to [`audio_native_hooks.md`](audio_native_hooks.md).
+- **Missions.** An older local mission audit describes a different patch
+  payload and must not be carried forward. The current payload matches the
+  reviewed [`ifix_patch.json`](../../scripts/game_data/contracts/ifix_patch.json)
+  contract, whose fixed-target and external-reference classifications contain
+  no direct task-completion or receiver-ownership match: a narrow negative over
+  the decoded records, not proof that the patch has no indirect effect on
+  missions or Story.
+
+## Currentness gate
+
+The production
 [`ifix_patch_native.py`](../../scripts/game_data/ifix_patch_native.py) loader
-checks the contract against the selected `GameAssembly.dll` and
-`global-metadata.dat`, but it does **not** read the live VFS patch. Its
-`validated` status proves the native pair and contract shape, not that a
-patch-only hotfix still has the contract's `patchSha256`. For a current patch
-claim, compare that digest with a fresh, MD5-verified VFS dump before using
-the contract's target list. A native build match alone is insufficient.
-The maintained VM operand audit can now bind every caller-supplied patch input
-to the current outer VFS summary and complete ledger with an explicit
-`inputSetSha256` gate. It requires the entire IFix file set, verified outer
-boundaries, and byte-for-byte MD5 agreement before projecting operands. The
-current two-file input set passes this gate. Without those three outer-gate
-arguments, its result remains a projection over caller-supplied bytes rather
-than a current installed-file claim.
-
-The native helper `BodyIndex.ifix_patch_id` searches a bounded early window
-for `IsPatched`. In the selected build, one method named by a fix record has
-its first direct `IsPatched` call after that window because class
-initialization precedes it. The helper returns `None` there. That result
-means **not found by this bounded search**, not **unwrapped** or **not fixed**.
-Later calls in the same long body may come from inlined methods, so merely
-increasing the window does not safely identify the target's own id. The
-patch's fix record is the authority for the declared replacement target.
+checks the contract against the selected native pair but does **not** read the
+live VFS patch. Its `validated` status proves the native pair and contract
+shape, not that a patch-only hotfix still has the contract's `patchSha256`, so
+compare that digest with a fresh, MD5-verified VFS dump before using the target
+list; a native build match alone is insufficient. The VM operand audit binds
+its inputs to the current outer VFS summary and full ledger when given
+`--outer-summary`, `--outer-ledger` and `--expected-input-set-sha256`: the
+entire IFix file set, verified outer boundaries, and byte-for-byte MD5
+agreement. The current two-file input set passes; without those arguments the
+result is a projection over caller-supplied bytes, not a current installed-file
+claim.
 
 ## Remaining boundary
 
-The selected native loader and interpreter bodies establish direct call,
-branch, field, string, frame-slot, and return-operand readings. Every file
-index, branch target, and local slot in the current patch fits its declared
-table, method body, or frame. In the Gameplay patch, the `_InitLoader` replacement
-body declares calls to three other VM bodies, and the external signatures
-include typed `DeserializeFromJson` returns for both the list and per-level
-UI map load configs, byref level-config lookups, and the loader-data
-constructor. These are authored call sites with unique selected metadata
-definitions, not evidence that the calls ran. Its field references cluster
-around map loader configuration, inverse-coordinate setup, and loader-data
-lookup dictionaries; the `NetClientManager.Launch` body references session and
-network-limit fields. The three recursive call operands pass counts that cover
-every authored `Ldarg` slot in their target helpers. One small helper has a
-getter-like `Ldarg`/`Ldfld`/
-`Ret` shape for `DataManager.uiLevelMapConfig`; two have setter-like
-`Ldarg`/`Stfld`/`Ret` shapes for MapManager grid lengths. This is an inference
-from authored opcode order and named field rows. The Rendering patch body
-names the `_Crash1` string, calls
-`ShaderWarmupManager._IsFeatureEnabled`, and requests a stack-value return.
-The selected metadata declares that referenced method as static
-`bool _IsFeatureEnabled(string featureKeyword)`; the authored string is its
-apparent argument. Its `CallExtern` rewinds one slot after `Ldstr`, and `Ret 1`
-selects the reflected result on the normal-return path above. The actual bool
-value is unobserved.
-These are **authored references and control-flow edges**, not proof that a patch ran or produced
-an effect. The delegate-construction path and other unreviewed opcode
-operands remain uninterpreted. `Initobj` and `Constrained` have direct
-file-declared type joins. The current adjacent-`Ldloca` `Initobj` instructions
-have a conditional local-slot reference update; `Constrained`'s object-slot
-effect is likewise conditional on the selected native path returning normally.
-A runtime claim additionally needs
-an authenticated load and dispatch receipt. The missing witness is a runtime
-trace tying the accepted patch-file hash to `LoadInternal`, the selected fix
-record to its registered wrapper identity, and `IsPatched`/`GetPatch` to an
-`Execute` entry at this VM instruction. Static method bodies and the two
-installed patch files cannot supply those observed transitions.
+**Level 3 (partial):** opcodes and selected operand routes through
+authenticated file-VM code, frame slots, exception records, and uniquely
+resolved external signatures. The delegate-construction path and other
+unreviewed opcode operands remain uninterpreted.
+
+**Level 4 (partial):** declared fix targets and conditional VM invoker flow
+only. There is no runtime receipt of load, dispatch or behavior. A runtime
+claim needs a trace tying the accepted patch-file hash to `LoadInternal`, the
+selected fix record to its registered wrapper identity, and
+`IsPatched`/`GetPatch` to an `Execute` entry at this VM instruction. Static
+method bodies and the installed patch files cannot supply those observed
+transitions.

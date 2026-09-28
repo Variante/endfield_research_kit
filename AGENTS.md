@@ -640,6 +640,13 @@ Treat these documents as living sources of truth:
   native-address catalogs, hash inventories, per-session proof logs, long
   object lists, or case-by-case current-corpus narration. A correction replaces
   the claim it corrects; do not leave both and let a reader guess which holds;
+- let the code carry the detail. Each reader, codec, validator, gate or
+  builder states in its module docstring what it proves, its evidence tier,
+  and what it does not prove; per-build layouts stay in its contract. When a
+  new route or contract lands, expand that docstring and give memory at most a
+  one-line status or recovery-queue entry, never another per-route paragraph.
+  Memory keeps shared rules, cross-family conclusions, one-line eliminations
+  and the queue, each pointing at the owning module;
 - keep changing counts, exhaustive inventories, and generated audits in
   `reports/`, with the durable interpretation and any figure a later session
   must not re-derive kept in memory, since the report itself is local-only;

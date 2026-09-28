@@ -60,12 +60,13 @@ page's output: Audio publishes what it links to a Story conversation (line
 voice files, event audio, dialog lifecycle hooks) as its own
 `lang/<code>/audio/conv/<key>.json` sidecar, which the Story page merges at
 load, so a Story rebuild keeps its voice and Audio never edits `conv/`. A new
-cross-page link takes the same shape. `story` extracts text only (tables,
-JsonData, the Story Unity classes); the video override gate reports its stem
-checks as skipped when no video was exported. `story-media` is the same page
-with its images and videos: it also extracts video, Texture2D and Sprite and
-publishes `story_media.json`.
-The Data page also serves every decodable output the other pages do not show
+cross-page link takes the same shape.
+
+`story` extracts text only (tables, JsonData, the Story Unity classes); the
+video override gate reports its stem checks as skipped when no video was
+exported. `story-media` is the same page with its images and videos: it also
+extracts video, Texture2D and Sprite and publishes `story_media.json`. The
+Data page serves every decodable output the other pages do not show
 (everything except their media), so an all-page extraction already equals
 `debug`, which extracts every structured block and Unity class.
 
@@ -94,36 +95,29 @@ workers. `--asset-jobs N` limits AnimeStudio workers. Use
 `--changed-only` is a local refresh, not an Updates comparison. It runs the
 same complete build of every page while reusing existing bundle-derived
 outputs, asset maps and decoded audio, which its freshness check reports as
-reused rather than current. Only changed structured VFS logical files are extracted; it
-neither calls the Updates builder nor advances any previous-export/Updates
-baseline. Its private VFS snapshot commits only after all publication stages
-succeed.
+reused rather than current. Only changed structured VFS logical files are
+extracted; it neither calls the Updates builder nor advances any
+previous-export/Updates baseline. Its private VFS snapshot commits only after
+all publication stages succeed.
 
 ## Shared contracts
 
 - Generated data belongs in `webui/data/`; never hand-edit it. User-maintained
-  inputs belong in `webui/overrides/`.
+  inputs belong in `webui/overrides/`, and export runs never replace Story
+  order or manual option overrides.
 - A schema change updates producer and consumer together. Missing optional
   sidecars render as unavailable or degraded, never as a silent empty success.
-- Normal navigation contains only the eight pages above. Debug state may reveal
-  raw sources and recovery evidence, but Story issue/method filters stay visible.
-- Story order and manual option overrides are user data and are not replaced by
-  export runs.
+- Normal navigation contains only the eight pages above; debug state may
+  reveal raw sources and recovery evidence, but Story issue/method filters stay
+  visible.
 - Evidence types remain distinct: authored reference, recovered relation,
   inferred ownership, runtime observation, and user annotation are not
   interchangeable.
 - Gameplay does not load or render the generated projectile/audio sound
   sidecars while their ownership model is under review; audio investigation
   remains on the Audio page.
-  - Ordinary long-list pages (Characters, Gameplay, Audio, Assets, Text,
-    Updates, and the Data page) share paginated left lists and a
-    persisted custom 1-10000-items-per-page input, 1000 by default, with
-    50/100/200/500/1000 offered as suggestions, plus a direct page-number input that clamps to the valid
-    range. Filtering and sorting return to the first page; Story and Map retain
-    their hierarchical navigation.
-- Assets derives JSON filter categories from the exported source/object
-  directory. Unity object lanes remain separate, and same-hash collapsed rows
-  retain every contributing JSON lane rather than only the first path's type.
+- List-page layout, pagination, and search semantics are shared frontend
+  contracts in [`../webui/README.md`](../webui/README.md).
 - Reuse an existing `http://127.0.0.1:8765/` server before starting another.
 
 ## Verification
@@ -131,20 +125,19 @@ succeed.
 After a focused edit, run the owning builder and its focused tests. At a
 publication boundary, run the canonical wrapper, inspect
 `reports/export/webui_build_steps_latest.md` and
-`reports/export/export_full_summary.md`, then smoke-test every active page for
-console errors, deep links, filters, media playback, and explicit degraded
-states. Use the serve/package workflow only when browser or archive validation
-is required.
+`reports/export/export_full_summary.md`, then smoke-test every active page.
+Use the serve/package workflow only when browser or archive validation is
+required.
 
 The frontend smoke test is, concretely: load every normal page and read the
 browser console; check Story reset, the recovery filters, and the SNS
 emoji/sticker fixtures named in [`../webui/README.md`](../webui/README.md);
 open one playable character and one enemy in Gameplay and verify variants,
-progression, skills, projectiles, and asset links; and confirm that an
-absent optional input produces a clear degraded state rather than an empty
-success. On each long-list page, also change the page size, move between pages,
-then filter and confirm the list returns to page one without losing the current
-detail unexpectedly.
+progression, skills, projectiles, and asset links; check deep links and media
+playback; and confirm that an absent optional input produces a clear degraded
+state rather than an empty success. On each long-list page, also change the
+page size, move between pages, then filter and confirm the list returns to
+page one without losing the current detail unexpectedly.
 
 Changing counts and per-build inventories belong in `reports/`; page guides
 record only stable recovery logic, evidence boundaries, and the highest-value
@@ -154,15 +147,16 @@ gaps.
 
 `scripts/webui/package.py` emits four matching archives; the commands are in
 [`../scripts/README.md`](../scripts/README.md). The main archive owns WebUI
-code and generated text data. The `-media` archive owns images/videos referenced by
-Story, Text, Map, Characters, and Gameplay plus their compact asset index. The
-`-audio` archive owns FLAC files referenced by those pages. The optional
-`-resources` archive owns every file listed by the Assets page—including
-indexed images, videos, JSON, OBJ, and FBX files—the remaining FLAC set, and
-the complete Audio/Assets resource indexes. Assets referenced by normal pages
-are duplicated there so the Assets page works from the resources archive alone.
-With no selection the archives publish atomically in main, media, audio, then
-resources order; an explicit selection uses the caller's order.
-Already-compressed media is ZIP-stored instead of being recompressed. Each
-archive includes a UTF-8 Chinese usage note; extract resources last because its
-complete asset index replaces the compact media-only index.
+code and generated text data. The `-media` archive owns images/videos
+referenced by Story, Text, Map, Characters, and Gameplay plus their compact
+asset index. The `-audio` archive owns FLAC files referenced by those pages.
+The optional `-resources` archive owns every file the Assets page lists, the
+remaining FLAC set, and the complete Audio/Assets resource indexes; assets
+referenced by normal pages are duplicated there so the Assets page works from
+the resources archive alone. With no selection the archives publish atomically
+in main, media, audio, then resources order; an explicit selection uses the
+caller's order. Already-compressed media is ZIP-stored instead of being
+recompressed. Each archive includes a UTF-8 Chinese usage note; extract
+resources last because its complete asset index replaces the compact
+media-only index. Decoded Data-page datasets are local output and are not
+packaged.

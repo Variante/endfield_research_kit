@@ -5,35 +5,37 @@
 Assets inventories browser-visible exported images, video, OBJ, FBX, and
 related resource metadata. Exported JSON documents are not listed: they are
 rows of the export's Unity object store, browsed on the Data page, and Assets
-links a material to its Data-page document. It is a resource browser and evidence source for
-other pages, not proof that an asset was used at runtime.
+links a material to its Data-page document. It is a resource browser and
+evidence source for other pages, not proof that an asset was used at runtime.
 
 ## Inputs and recovery flow
 
 1. AnimeStudio builds source-scoped AssetMaps and exports the selected asset
    scope. Focused mode targets referenced textures; default adds WebUI-facing
    model/material/animation needs; debug is exhaustive diagnostics.
-2. `scripts.webui.assets.build_assets` indexes available outputs and publishes media lookup,
-   Story media, and video catalogs. Sprite images have no files: each Sprite
-   crop document is listed as an image at `Unity/Sprite/<name>.png`, with the
-   crop's size and its texture (`crop`), at the Sprite folder's place in the
-   sorted walk; `serve.py` answers that path with the document and
-   `webui/sprite_worker.js` renders it from the texture.
+2. `scripts.webui.assets.build_assets` indexes available outputs and publishes
+   media lookup, Story media, and video catalogs. Sprite images have no files:
+   each Sprite crop document is listed as an image at
+   `Unity/Sprite/<name>.png` with its size and texture (`crop`); `serve.py`
+   answers that path with the document and `webui/sprite_worker.js` renders it
+   from the texture.
 3. Gameplay's `asset-refs` stage consumes the Assets index and owns its
    consumer-specific join; the Assets builder does not write that sidecar.
-4. `scripts.webui.assets.table_asset_owners` recovers exact table-row
-   ownership: an exported Table row owns an asset when an asset-bearing field
-   (`icon`, `img`, `image`, `path`, `sprite`, `bg`, `avatar`, `bust`, `logo`,
-   `portrait`, `texture`, `model`, `prefab`, `pic`, `art`) holds a value equal
-   to the whole normalized asset stem. It always reads the complete scan, not
-   the focused projection.
+4. [`table_asset_owners`](../../scripts/webui/assets/table_asset_owners.py)
+   recovers exact table-row ownership: a Table row owns an asset only when an
+   asset-bearing field holds a value equal to the whole normalized asset stem.
+   It always reads the complete scan, not the focused projection.
 5. Packaging may publish a compact normal-page media index and a complete
-   resource index. Extract the resources archive last so the complete index wins.
+   resource index. Extract the resources archive last so the complete index
+   wins.
 
-Primary outputs: `webui/data/assets/{index,table_owners,videos}.json`
+## Primary generated outputs
+
+`webui/data/assets/{index,table_owners,videos}.json`
 (`build_assets --publish index`); Story media owns `story_media.json`
 (`--publish story-media`, the `story_media` task) and Gameplay owns
-`gameplay_refs.json`.
+`gameplay_refs.json`. Frontend behavior is in the header comment of
+`webui/assets.js`.
 
 ## Evidence boundary
 
@@ -44,16 +46,16 @@ Primary outputs: `webui/data/assets/{index,table_owners,videos}.json`
   renderer ownership, or final appearance.
 - Missing optional previews remain visible and do not erase the indexed asset.
 - A Sprite image equals AnimeStudio's rendering pixel for pixel
-  (`memory/game_data/unity_assets.md`); a crop whose texture is not exported is
-  left out of the index. Sprites with the same pixels share `h`: a whole-texture
-  Sprite shares its texture's SHA-256.
+  ([`../game_data/unity_assets.md`](../game_data/unity_assets.md)); a crop whose
+  texture is not exported is left out of the index. Sprites with the same
+  pixels share `h`: a whole-texture Sprite shares its texture's SHA-256.
 - Table ownership requires both gates: an asset-bearing field name and a
   whole-stem value match. A shared name prefix, a family stem, or an
   identifier field that coincides with an asset name is not ownership and is
   not published as a candidate. Most exported assets therefore stay unowned,
   because UI sprites are referenced from prefabs rather than from table rows.
 
-## Focused refresh
+## Focused refresh commands
 
 ```bat
 python -m scripts.webui.assets.build_assets
@@ -65,7 +67,7 @@ The Assets page extracts Table, video, Material JSON and the Texture2D,
 Sprite, Mesh and Animator media. Use `.\export.bat debug --from-game` only for
 broad investigation; the index then also carries every debug class.
 
-## Remaining gaps
+## Highest-value remaining gaps
 
 - Improve object-level dependency and conversion diagnostics.
 - Recover exact renderer/material/texture and animation ownership.

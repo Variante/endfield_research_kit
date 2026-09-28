@@ -6,1269 +6,249 @@ Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
 **Level 2, extraction lane.** One statement per payload family: which reader is
 fail-closed, how far its framing is exact, and where it stops. This is the
 *boundary* layer -- what the data inside a family means belongs to that family's
-lane file, and a reader boundary here never implies a semantic there.
+lane file, and a reader boundary here never implies a semantic there. Reader
+mechanics (member orders, cursor rules, framing quirks) live in the named
+module's docstring and its contract under `scripts/game_data/contracts/`.
 
-## VFS and payload recovery
+## What "proven" means
 
-The outer VFS boundary and each inner payload schema are separate claims. A
-validated range/hash proves the bytes under study, not their fields or runtime
-meaning. Start at the VFS recovery evidence index in the AnimeStudio skill
-reference; it maps each active family to its maintained reader, fixtures,
-corpus report, and remaining boundary.
-The current JsonData registry report also pins the byte length and SHA256 of
-its generated per-file ledger. A downstream reader checks that pairing before
-using a file row as a current-source identity. This joins publications; it
-does not add a field name or runtime claim.
+- The outer VFS boundary and each inner payload schema are separate claims. A
+  validated range and hash proves the bytes, not their fields or runtime
+  meaning. The VFS recovery evidence index in the AnimeStudio skill reference
+  ([`animestudio.md`](../../.codex/skills/animestudio-workflow/references/animestudio.md))
+  maps each family to its reader, fixtures and corpus report.
+- A parser is exact only after positive fixtures, truncated/malformed/
+  trailing-byte negatives, exact-consumption checks and a current-corpus sweep.
+  Authored field names, envelope framing, cross-file ownership and observed
+  runtime behavior stay separate evidence layers.
+- EOF closure is necessary, not sufficient. A same-width wrong reading also
+  closes (the SpawnerConfig `Optional<Vector3>` case in `spawner_binary`), so a
+  framing conclusion needs a second signal: a boundary on a known marker, a
+  coherent value distribution, or a closed field domain.
+- Exact closure of a child never promotes its parent, and a named stored field
+  is not its runtime consumer or effective value.
+- Freshness is live provenance, not a report digest: consumers recheck
+  catalog, build, CLI, parser and chunk fingerprints at both ends and
+  reauthenticate with a rebuilt tool instead of rewriting pins. Each MemoryPack
+  family report pins only its own gate's import closure. DummyDll population
+  never fills a missing native proof. Totals and per-file rows stay in reports.
 
-A parser becomes exact only after positive fixtures, truncated/malformed/
-trailing-byte negatives, exact-consumption checks, and a current-corpus sweep.
-Keep authored field names, envelope framing, cross-file ownership, and observed
-runtime behavior as separate evidence layers. Changing totals and source
-fingerprints belong in generated reports.
+## The JsonData registry
 
-## Current durable boundaries, per family
+`scripts.game_data.jsondata_corpus` joins every current JsonData identity to
+the export by safe path, length and logical MD5, runs only maintained readers,
+and records one terminal state per file; its docstring defines the states. A
+path, extension or leading member count never supplies a schema. BuffData and
+SkillData enter through their family reports, which own formatter, cursor,
+native-input and semantic claims. A complete registry is an accounting result:
+consumers gate on the per-file state, and whole-schema recovery stays a
+per-family claim.
 
-Current durable boundaries:
+## Per-family boundaries
 
-- Bundle and InitBundle nested-container framing, current VFS logical-file
-  reads, Terrain and Streaming envelopes, all five DynamicStreaming root
-  families, LipSync payloads, video outer framing, and several routed JsonData
-  families have fail-closed readers. SpawnerConfig framing treats the integer
-  dictionary key and serialized string wave key as independent fields; exact
-  wave maps still require one unique bounded parse through physical EOF.
-  Every current SpawnerConfig file independently closes the exact named
-  enemy-library prefix; files whose wave map does not close remain bounded
-  partial rather than unclassified.
-  For DynamicStreaming `FBStreamArea.bytes`, the corrected `Int32` widths of
-  `RootVisible` and `AreaVisibleGroups` close the previous apparent gaps:
-  all six vector count words and bodies tile the tail from root end to EOF in
-  the authenticated current corpus. The selected native accessor and record
-  evidence is separate from this framing gate and belongs to
-  [`world_dynamic_streaming.md`](world_dynamic_streaming.md).
-  For `fb_main_*.bytes`, the former four-byte assumption for every `SingleGrid`
-  vector was wrong in both directions: generated builders and indexers now
-  prove field-specific widths, and the current native-gated audit bounds those
-  vector bodies without overlap. The generic reader uses a one-byte minimum;
-  neither route yet claims whole-file or nested-record closure.
-  Terrain additionally validates its body-length word against the complete
-  decoded payload. A current-build UnityPlayer reader, IL2CPP GraphicsFormat
-  enum, and native format-footprint table now close every selected-build body
-  as exact contiguous anonymous ranges. In particular, raw words 108/109 are
-  BC7 sRGB/UNorm footprints with 16 bytes per 4x4 block; the 1024-to-1 bodies
-  split into eleven ranges and consume EOF. Offset 14 is therefore a direct
-  format selector, while offset 12's numeric mip-count interpretation remains
-  inferred. Block contents, D/N path meaning, texture-array ownership, and
-  final rendering remain unresolved; unobserved header tuples fail closed.
-- The current Table corpus has a direct full-block dump covering selected
-  overlay provenance, decoded MD5, exact read length, SparkBuffer parsing, and
-  read-through-EOF for every selected declaration. Every resulting JSON file
-  parses and is byte-equal to the existing structured export; the changing
-  counts and current input-set receipt are in
-  `reports/animestudio/table_current_compare_20260927.json`.
-  BundleManifest and IFixPatchOut likewise have current exact framing sweeps.
-  BundleManifest uses corrected size/count
-  fixed-width sections plus a repeated-size terminal variable envelope. Its
-  variable payload begins with a gap-free sequential anonymous span of UTF-16LE
-  fragments and three counted-u32 regions per record; its 48-byte rows index a
-  second span with the same raw-record multiset under a different order. A
-  current full-VFS corpus gate proves that the indexed names, in lexical order,
-  equal the complete verified `Bundle`/`InitBundle` path set. Each 48-byte row's
-  first 64-bit word pair (u32 words 6-7, low word first) equals that path's
-  independently recomputed VFS filename hash; word 10 separates the two block
-  families for every row. The selected native `ManifestDataBinary.InitBinary`
-  maps the three fixed sections to `assetInfoDictionary`,
-  `bundleInfoDictionary`, and `bundles`, respectively. Its array helper points
-  directly at the 48-byte rows, and `TryGetBundleByIndex` copies each whole row.
-  The nominal 32- and 56-byte section widths are a capacity accounting unit,
-  not interleaved records. Each section contains a capacity word, that many
-  eight-byte `(relativeOffset, count)` hash slots, then the same number of
-  24-byte `AssetInfo` or 48-byte `Bundle` values. The selected asset lookup
-  reads `AssetInfo.pathHashHead` from the 24-byte values and advances by 24;
-  the selected bundle validation lookup reads `Bundle.hashName` at value offset
-  24 and advances by 48. Both lookups select eight-byte slots by unsigned
-  comparer-hash modulo capacity. Every current slot range lands on its value
-  stride, the ranges cover each value once, and each stored key itself maps
-  back to its slot by unsigned modulo capacity.
-  In the current corpus, the dictionary `Bundle` values resolve the sequential
-  variable span and join every indexed-array `Bundle` name, list, flag, hash,
-  and category; their stored `bundleIndex` is zero, while the indexed array
-  stores the ordinal.
-  The `AssetInfo` values contain `pathHashHead`, `path`, `bundleIndex`, and
-  `assetSize`. Every asset `bundleIndex` is within the indexed Bundle array.
-  Asset `path` offsets tile the former terminal variable suffix exactly as
-  length-prefixed Brotli records with two zero terminator bytes; every stream
-  decodes to strict UTF-16LE, and the selected `RefCompressString` reader calls
-  Brotli. The asset writer hashes its source path after `ToLow`; replaying the
-  reviewed UTF-16 recurrence on every current decoded path reproduces its
-  `pathHashHead`. Current paths contain no ASCII uppercase witness, so unseen
-  case normalization remains conditional. In the current file, every repeated
-  decoded asset path has the same hash, bundle index, and size; the raw path
-  offsets differ, and repetition does not add another recorded bundle
-  association.
-  A keyed cross-store check resolves the manifest bundle index through its
-  indexed Bundle name, while independently resolving an AssetMap row's
-  `Source` plus `Offset` through the current VFS logical span and CABMap; the
-  row's `Container` is then compared to the manifest path. Many selected rows
-  agree exactly. Some rows with an exact matching path sit in another physical
-  Bundle, sometimes while other rows with that same `Container` sit in the
-  manifest Bundle. Thus the recorded manifest association does not establish
-  ownership of every exported Unity object carrying that container label, or
-  a GUID binding. The StreamingAssets AssetMap requires selection per source
-  *and offset*: per-file overlay replacement leaves gaps inside a chunk that
-  also contains verified selected files. The keyed results and changing counts
-  are in `reports/animestudio/bundle_manifest_assetmap_join_20260927.json` and
-  `reports/animestudio/bundle_manifest_streaming_assetmap_join_20260927.json`;
-  live asset lookup execution remains open.
-  A follow-up selected-build keyed audit checks the manifest's named Bundle
-  dependency lists against the physical Bundle of each disagreement. Every
-  Persistent disagreement and nearly every selected StreamingAssets
-  disagreement has that physical Bundle in the listed Bundle's
-  `directDependencies`, with reciprocal `directReverseDependencies` membership;
-  a bounded fallback residual has no such relation. This explains a stored
-  Bundle-list relationship, not Unity object ownership or the live loader's
-  choice. The residual and controls are in
-  `reports/animestudio/bundle_manifest_assetmap_dependency_audit_20260927.json`.
-  The maintained `bundle_cab_dependency_corpus.py` gate now compares the
-  manifest's named dependency lists with each selected Unity CABMap entry
-  after joining its source root, chunk and offset to an authenticated VFS
-  Bundle span. Every current manifest list is sorted and duplicate-free;
-  `directReverseDependencies` is the exact inverse of
-  `directDependencies`, and `dependencies` is the exact transitive closure
-  of the acyclic direct graph. These are full-corpus stored-graph relations;
-  selected load order remains unresolved. Projecting each CAB's external-CAB
-  names to selected Bundle paths yields a multiset contained in the manifest
-  direct list for every selected CAB. Equality fails only for a small,
-  explicitly reported manifest-only residual. One selected Bundle
-  contains both a main CAB and a `.sharedAssets` CAB, so the gate checks
-  both. Unselected external names remain unresolved; the current residual
-  has manifest-only references to one mesh Bundle from dialog-timeline
-  prefab Bundles. The manifest list is sorted by Bundle index while Unity
-  CAB externals retain their own order, so sequence equality is not part
-  of the join. The current input-set gate, relation counts, named residual
-  and source hashes are in
-  `reports/animestudio/bundle_cab_dependency_corpus_current_20260927.json`.
-  The selected native `BundleLoader+Manager` sync and async proxy-load bodies
-  each call `RuntimeManifestBinary.TryGetBundleDirectDeps`; later in each body
-  a loop element is read and the same loader recurses. The reviewed
-  `bundle_manifest_native.json` contract checks both call targets, loop reads
-  and recursive targets against the selected native image. This is a direct
-  static consumer path for the stored direct list, without live branch or
-  ref/out capture. A bounded exception sweep joins the manifest-only edges to
-  their source and target AssetInfo rows and locates every unresolved CABMap
-  external's selected referring Bundle. The extra edges originate in dialog
-  timeline prefab Bundles and point to a Bundle with no manifest AssetInfo
-  row; no CAB external names that target. Explaining why those edges were
-  authored needs the producer of raw `ManifestData.Bundle.directDeps` or a
-  selected object/loader trace linking those particular prefabs to the target.
-  The common `unity default resources` external has an exact-name installed
-  `Resources` serialized file with a self-consistent header, and UnityPlayer
-  contains the same ASCII literal. The strict no-type-tree Unity v22 reader
-  in `scripts/game_data/unity_serialized_identity.py` closes both installed
-  `Resources` files at their declared metadata boundary and enumerates their
-  object PathIDs and class IDs. The separate
-  `scripts/game_data/bundle_external_identity_corpus.py` gate authenticates
-  the complete source-fingerprint-matched object index, each indexed PPtr's
-  selected VFS/CABMap source and external slot, and the installed Resource
-  object identity. One exact-name PPtr target is a unique `Capsule` Mesh in
-  the installed file; this is a stored serialized identity, not a proved
-  runtime resolver binding. The other CAB-shaped external still has no
-  selected CABMap source. Its observed indexed pointer PathIDs do not occur
-  in either installed Resource object table, leaving its target unresolved.
-  The index covers only MonoBehaviour and PlayableDirector, and no absence
-  conclusion is made for other Unity classes. The current inputs, source
-  hashes, and bounded receipts are in
-  `reports/animestudio/bundle_external_identity_current_20260927.json`;
-  the earlier exception sweep is
-  `reports/animestudio/bundle_cab_exceptions_current_20260927.json`.
-  The reviewed `Bundle` value layout identifies row fields as `bundleIndex`,
-  `name`, `dependencies`, `directReverseDependencies`, `directDependencies`,
-  `bundleFlags`, `hashName`, `hashVersion`, and `category`, in that order;
-  `hashName` is the VFS-joined pair. The selected `Bundle.Convert` writer also
-  joins the three counted lists to source `deps`, `directReverseDeps`, and
-  `directDeps`. It initializes `hashVersion` from `hashName`, then XORs a
-  factor-39 multiple of each dependency's native name hash. The selected
-  string wrapper passes dependency names as direct UTF-16 code units; its
-  reviewed managed fallback performs no case conversion and gives a two-lane
-  recurrence. Replaying that recurrence and the writer fold on the indexed
-  names reproduces every current `hashVersion` value. This validates the
-  current serialized values. The folded `deps` list is the transitive closure
-  certified above, so the current version hash incorporates the names of all
-  reachable direct dependencies. Current referenced names contain no ASCII
-  uppercase witness, so unseen-name and case behavior in the Burst path,
-  the `hashName` writer's internal path handling, runtime comparisons, and
-  lookup execution remain unresolved.
-  Stale AssetMap source chunks cannot supply field ownership. The reviewed
-  native contract authenticates this selected-build static path; unresolved
-  stream/ref-out carriers still block a safe live lookup capture ABI. For IFix,
-  the selected native `Instruction` layout
-  and `Code` enum name every opcode in the current exact method spans;
-  pinned `PatchManager.LoadInternal` and `VirtualMachine.Execute` bodies
-  directly join four call opcodes' low-half indices to file method rows and
-  three branch opcodes' signed relative offsets to instruction rows. It also
-  joins `Ldstr` and four field opcodes' nonnegative operands to their
-  loader-preserved file tables. The `StackSpace` header bounds local slots,
-  and `Ret` selects whether a stack value returns. The reviewed VM operand
-  gate also frames exception handler fields, relates `Leave`/`Endfinally` to
-  a pending absolute index, and gives `Newobj`'s signed upper half a
-  conditional stack-rewind reading. Actual reflection selection, call
-  argument counts outside those selected paths, remaining operands, and
-  patch activation remain separate claims.
-- Irradiance-volume region framing is exact for seven files; all 92 IV indexes
-  have a bounded unique UTF-16LE filename-table parser that references the 138
-  remaining payloads exactly once. Supported single/grouped v3 indexes strictly
-  bind filename-ordered groups to ranges that restart at zero and cover each
-  payload through EOF without gaps or overlaps. Directory starts may use
-  absolute or filename-table-end-relative four-byte alignment, but the combined
-  candidate must remain unique. Other words and renderer meanings stay opaque;
-  legacy indexes use a separate EOF-ending 24-record directory whose grouped
-  ranges also tile every referenced payload. All indexed payload boundaries are
-  now exact; record and renderer semantics remain open.
-- The selected IV native gate follows the managed V3 path into a path-keyed
-  stream lookup, then the ready stream's buffer pointer and parser cursor. That
-  cursor checks both V3 index magics and advances through 36-byte scene or
-  32-byte Gacha records, but has no local finite length bound. The buffer's
-  authenticated VFS file identity, asynchronous fill, outer/final EOF and
-  record values still need proof. A generic file-I/O hook
-  cannot preserve the virtual-path/hash join, and a stale capture manifest must
-  fail preflight before the game starts.
-- Audio has fail-closed AKPK/BNK/DIDX/DATA/media framing and a direct audit;
-  its non-voice HIRC lane now exact-frames numeric object envelopes and keeps
-  unknown types. HIRC behavior, selected runtime playback, and audibility
-  remain separate.
-- Audio availability is data-driven rather than type-excluded: shared and all
-  language blocks parse normally whenever any declared chunk exists. A block
-  wholly absent from both overlay roots remains visible as a conditional
-  missing terminal state and does not fail; partial presence, bad hashes, and
-  malformed payloads remain fail-closed.
+### Containers, catalogs and code
 
-## Corpus freshness, and why a report hash is not enough
+| Family | Reader / gate | Boundary | Stops at |
+| --- | --- | --- | --- |
+| Bundle, InitBundle | AnimeStudio nested-container readers | fail-closed nested container framing over current VFS logical-file reads | object identity: [`unity_assets.md`](unity_assets.md) |
+| Table (`TableCfg`) | direct AnimeStudio full-block dump | every metadata declaration: overlay provenance, decoded MD5, exact read length, SparkBuffer parse, EOF; JSON byte-equal to the structured export | field meaning (text consumers) |
+| BundleManifest | `bundle_manifest`, `bundle_manifest_corpus`, `bundle_manifest_native` | exact: Brotli envelope, two headers, two capacity-sized hash-slot/value dictionaries, the 48-byte indexed Bundle array, the sequential UTF-16LE record span, the Brotli AssetInfo path suffix, EOF. Native reads name every AssetInfo and Bundle field; `hashName`, `pathHashHead` and every `hashVersion` replay | live lookup, unseen-name case handling, Unity object ownership |
+| Bundle dependency graph | `bundle_cab_dependency_corpus`, `bundle_cab_exceptions`, `bundle_external_identity_corpus` | stored graph: reverse list is the direct graph's inverse, `dependencies` its transitive closure, projected CAB externals a sub-multiset of the direct list; the loader's direct-list recursion is a static consumer | authoring of a small manifest-only residual, one CAB-shaped external's target, load order |
+| IFixPatchOut | `ifix_patch`, `ifix_vm_*_native` | exact current method spans; selected `Instruction`/`Code` name every opcode; call, branch, `Ldstr` and field operands join file tables | reflection selection, remaining operands, patch activation: [`ifix_patch.md`](ifix_patch.md) |
+| StringPathHash (main, initial) | `extend_data_binary`, `string_path_hash_corpus`, `string_path_hash_native` | both dictionaries self-bound lookup and value pools; every pair replays against VFS filename hashes or manifest AssetInfo | catalog writer, runtime lookup |
+| FacBoneTRS | `extend_data_binary` | file-provided unit count, contiguous bone records, 64-byte ranges through EOF; every value shape-consistent with a row-vector rigid-affine 4x4 float matrix | exact type/convention; unit and bone hashes match neither StringPathHash catalog |
+| CompressData | AnimeStudio `EndfieldCompressData`, `extend_data_compress_corpus` | count, offset table, Brotli UTF-16LE JSON bodies, EOF; reviewed NodeCanvas root and task-envelope schemas | nested task values, blackboards, execution: [`extend_data.md`](extend_data.md) |
+| Video (`.usm`) | AnimeStudio video reader | fail-closed outer framing; inner streams go to the decoder | narrative attachment, playback |
+| Wwise packages, hotfix | AKPK/BNK/DIDX/DATA readers | fail-closed; hotfix packages use the same package reader; SDK-backed readers frame music bodies `0x0A`-`0x0D` exactly although the built-in HIRC dispatcher skips them unless a hook is registered | HIRC behavior, playback: [`audio_overview.md`](audio_overview.md) |
+| Material, Shader | AnimeStudio export | recoverable metadata preserved | renderer ownership, selected variants, final lighting |
 
-Saved corpus consumers must recheck live catalog, build, CLI, parser and chunk
-fingerprints at both ends; authenticating the report hash alone does not
-establish freshness after a tool rebuild. Reauthenticate affected bytes with
-the rebuilt tool rather than rewriting old provenance pins.
-A corpus report is authenticated by that live provenance, not by a digest of
-its own bytes pinned in code: the context audit hashes its SkillData basis only
-to prove the file is stable while it runs. Each MemoryPack family report pins
-the static import closure of its own gate inside `memorypack/` (imports inside
-functions included), so an executed helper cannot escape provenance, while an
-unrelated family's reader edit no longer stales every other report.
-DummyDll population and setter declarations do not fill these gaps. Historical
-residual JsonData censuses supply family leads, not current denominators
-without a ledger rejoin. `jsondata_corpus` now owns that block-wide ledger
-rejoin: it matches every current logical identity to `export_full/game/Json`
-by safe relative path, exact length, and logical MD5, then records one terminal
-state per file. Complete UTF-8 JSON syntax, exact schema readers, anonymous
-exact frames, bounded partial frames, bounded ambiguous frames, unsupported
-reader variants, and unclassified binary payloads remain distinct. It invokes only maintained
-readers and never promotes a payload from its path, extension, or leading
-MemoryPack member count. The generated summary and per-file ledger live under
-`reports/animestudio/`; family-specific gates remain the authority for deeper
-formatter, native-input, cursor, and semantic claims. BuffData and SkillData
-are joined through their complete current family reports: the registry checks
-the report contract and identity-set digest, requires a one-to-one current-ledger
-path set, and rechecks each report length, logical MD5, and logical SHA-256
-against the exported bytes. BuffData rows with a contiguous named 30-field
-outer cursor are `format_framed`; rows stopped by a positive unsupported modifier list or
-unsupported action remain `bounded_partial`. SkillData stays
-`bounded_partial_ambiguous`.
-LevelData's sequential generated-order reader closes the complete 43-field
-schema for supported empty/null shapes, including exact member-22
-`LevelScriptBriefData` dictionaries. It also advances exact camera-pose rows
-and the current environment-volume profile, including the authored phase-asset
-path and polygon/transform boundary. Map-region shapes/tier links and spline
-knots/progress/owner transforms also have exact sequential codecs. The same
-cursor now closes all 34 generated fields of each authored NPC attract point,
-including linked waypoint/point IDs, pose, tags, animation selectors and timing;
-runtime point selection remains outside this static payload evidence. Terminal
-world-waypoint graphs also close their generated nine-field records and nested
-lane direction/count values. Positive LevelData enemy lists reuse the exact
-30-member LevelEnemyData value codec already owned by LevelScript; this closes
-the list cursor without weakening either owner's later-field boundary. The
-following enemy-patrol lists also close their current owner, point and fixed
-action wrappers through the next LevelData field. NPC patrol owners, point
-poses, and current concrete point actions now close sequentially. The current
-action lane includes
-populated blackboard pairs plus the observed environment-talk and play-audio
-union routes; an unknown future route remains fail-closed. The separate
-top-level patrol list closes the generated 39-member authored patrol and
-four-member action wrappers also used by Spawner routes. Positive LevelData
-interactive-lock lists reuse the exact two-field lock owner
-and nested 18-member lock codec from LevelScript, then hand off at the next
-top-level field. The current top-level `specificData` union also closes its
-tag-zero eight-member spaceship wrapper, including cabin slots and showcase
-poses, before the remaining LevelData fields. Level-wide bamboo-raft maps also
-close their nested dictionary and the current raft/dock union wrappers,
-including typed or null dock-filter conditions. Other files stop at the first unsupported
-nonempty nested body and also retain one independent EOF frame: the short suffix
-is `safeZone` through `worldWayPointData`, while the longer empty tail is
-`levelIdNum` through `worldWayPointData`.
+Audio availability is data-driven: shared and language blocks parse whenever
+any declared chunk exists; a block absent from both overlay roots is a visible
+conditional missing state, while partial presence, bad hashes and malformed
+payloads fail closed.
 
-The same registry now routes every current binary JsonData identity: exact
-readers close LevelConfig, NavMesh, TeleportValidation, DialogId,
-AetherEnergyLock, MatrixShockWave, compact MissionArea, BambooRaft,
-InteractiveTable, CharInteractPerform, and the supported Spawner/Interactive variants.
-SpawnerConfig now uses its generated five-field order to join the exact enemy
-library to route maps, settings and the terminal wave cursor. Empty-action
-route patrols and current spawn-monster/pause/raise-event group actions close
-sequentially; positive polymorphic route actions retain their earlier prefix.
-Remaining
-families are explicitly bounded rather than unclassified: empty-action-map
-LevelScript files now follow a generated-order owner cursor through named
-activation, collection, identity and reset fields. Files whose nested owner
-collections and task map are null or empty close a complete schema at EOF;
-positive collections stop at their named count without a scan. Most other
-current LevelScript files expose a unique named five-member terminal suffix
-through physical EOF, while their earlier members retain weaker partial
-framing. LevelData, BuffData, and SkillData preserve
-their partial boundaries; montage-bearing AnimationConfig files advance a
-named five-member wrapper prefix before their opaque nested unions; GPU UI
-DamageText now has named PrefabGroup/Prefab/Animation outer framing, while the
-ExtendedPrefabGroup GPU UI roots close their complete named schemas, including
-animation, node metadata, render nodes, subroots and texture-hash tails.
-Unsupported Spawner/Interactive tails keep their opaque or ambiguous ranges
-visible. A complete registry is
-therefore an accounting result, while whole-schema and semantic recovery remain
-per-family claims. AnimationConfig's empty-montage shape is a named exception:
-its current 72-byte frames and one 270-byte ability mirror follow the exact
-generated wrapper order and contain no opaque bytes. The larger mirror closes
-populated sync-group and time-reference `FAnimationCurve` dictionaries with
-exact fixed-width keyframes; populated polymorphic montage dictionaries remain
-partial.
+### World blocks
 
-SkillData now has whole-object cursor proof for the current empty-ActionGroup
-profile: an accepted live receipt authenticates every field cursor on two
-byte-distinct samples, and a wrapper/type-driven reader generalizes only that
-identical field-0 representation. One field-42 nested action tag remains
-unsupported, while non-empty ActionGroup rows retain their bounded prefix and
-authenticated five-field terminal. NPC MontageNew has a current
-ledger/stream gate in `memorypack.npc_montage_corpus`; it binds each identity by
-path, length, and logical MD5 and requires exact EOF closure. Current generated
-formatter setters name the three root fields and all 24 `NPCMontageAnim`
-members, plus `AnimClipInfo`, `DynamicEntity`, `EventInfo`, and transition
-overrides. The nested extra-effect reader consumes both 12-byte vectors and its
-single following mount path, and the parent consumes every remaining generated
-field through EOF. This is a complete named stored schema; field names alone do
-not prove runtime selection or playback.
+| Family | Reader / gate | Boundary | Stops at |
+| --- | --- | --- | --- |
+| Terrain tiles (TRET, `_H`) | `terrain.tret`, `terrain.height` | raw or length-prefixed inverted-LZ4 envelope, versioned TRET prefix, body-length word equal to the decoded payload; `_H` row-major height samples | height scale, no-data, channel meaning: [`world_terrain.md`](world_terrain.md) |
+| Terrain `LAYER_D`/`LAYER_N` | `terrain.tret`, `terrain.native`, `terrain.corpus` | offset 14 is a direct `GraphicsFormat` selector (108/109: BC7 sRGB/UNorm, 16 bytes per 4x4 block); bodies split into exact contiguous mip-like ranges and consume EOF; unobserved header tuples fail closed | offset 12 as mip count is inferred; block contents, texture-array ownership, rendering |
+| IV index | `irradiance_volume` | bounded unique UTF-16LE filename table and one uniquely located directory (absolute or table-end-relative alignment); legacy indexes use a separate EOF-ending directory | -- |
+| IV payload | `irradiance_volume`, `irradiance_volume_corpus` | index-directed ranges tile every referenced payload through EOF | record fields; the native parser takes no length and checks no EOF, and repeated in-payload magic rules out signature scanning: [`world_irradiance.md`](world_irradiance.md) |
+| StreamingChunkInfo | `streaming.framing` | exact anonymous table/vector graph in every current file (reused and forward vtables, 4/8/12-byte widths); every nonzero byte owned | field names; catalog projection in [`install_and_vfs.md`](install_and_vfs.md) |
+| InitChunkData, StreamingChunkData | `streaming.framing`, `streaming.corpus`, `streaming.native` | three exact anonymous subgraphs: root field 2 through EOF, parallel fields 3/4/5, paired fields 6/7. Streaming field-2 rows close against seven selected layouts; native gates read row fields 0-5 as scalar32 x3, int32[2], float32[6] and a scalar32 hash-key vector | names, key namespace and signedness, the runtime root's logical file; bytes outside the subgraphs |
+| DynamicStreaming `fb_main_*` | `dynamic_streaming`, `dynamic_main_native` | field-specific `SingleGrid` vector widths bound bodies without overlap | whole-file and nested-record closure: [`world_dynamic_streaming.md`](world_dynamic_streaming.md) |
+| `FBStreamArea` | `dynamic_stream_area_corpus` | with `RootVisible` and `AreaVisibleGroups` as `Int32`, six vector count words and bodies tile the tail from root end to EOF | record meaning (world lane) |
+| `fb_init`, `fb_streaming`, `fb_version` | `dynamic_streaming`, `dynamic_aux_pair_corpus` | see [`install_and_vfs.md`](install_and_vfs.md) | descriptor meanings, live selection |
 
-## The Streaming and chunk families, framed to their native consumer
+Streaming nested targets stay anonymous and conditional on their `streaming/`
+gates (conclusions in the `world_chunk_*.md` files):
 
-StreamingChunkInfo exact-frames the anonymous
-table/vector graph in all 89 current files, including reused/forward vtables
-and 4/8/12-byte vector widths; every nonzero byte is owned and the sole
-four-byte gap is zero alignment. InitChunkData and StreamingChunkData also
-share three exact anonymous subgraphs across all current files. Root field 2
-is a width-4 table-offset vector: Init has an empty vector ending at EOF;
-Streaming closes each immediate table/vtable against seven selected-build
-layouts, and row field 5 is an exact count-prefixed vector of anonymous
-little-endian scalar32 values. This terminal subgraph is continuous from the
-field-2 vector
-start through decoded EOF. Each row object also partitions exactly into its
-four-byte vtable displacement and present slot-to-next-boundary spans:
-fields 0/1/2 use 4-byte spans, field 3 uses 8, field 4 uses 24, and field 5
-uses its proven 4-byte uoffset slot. A current-build hash-gated UnityPlayer
-consumer and accessors directly close fields 0--2 as scalar32, field 3
-as two int32 loads, and field 4 as six float32 loads. The same producer
-retains the source row pointer at offset 16 of a copied 72-byte runtime
-record; a later state consumer reloads it, reads the field-5 count and each
-`vector+4+index*4` element, and passes the scalar32 value to a hash-table
-lookup. Fields 0--5 therefore contain no padding and are directly consumed
-in these representations. The numeric filename family has an exact current-corpus relation:
-the field-3 lanes floor-divided by 128 equal the first two filename integers,
-with residuals limited to 0/32/64/96; present fields 1/2 equal the last two
-integers. The Global family has a separate present-field 1/2 relation to its
-two integers. A separately hash-gated family-level native read path now
-closes its payload base, requested length, returned byte count, exact-read
-success branch, and `base + u32(base)` root calculation. Its first formatted
-leaf is exactly `StreamingChunkInfo`, but the runtime root is unavailable,
-leaving a bounded authenticated candidate set instead of one logical-file
-identity. After I/O the selected closure is proven pointer-only: outer
-length never reaches the FlatBuffer accessors and no parsed-length or final
-cursor exists there. A separate hash-gated static chain carries anonymous
-scene-root pairs through a state-selected 16-byte handle to two secondary
-reads and the second root's field-2 row vector; the scheduler edge to one
-concrete Create instance and both concrete paths remain unresolved. These
-fields remain anonymous: the field-5 key namespace and signedness are
-unresolved, and the matching managed `GridData` shape is candidate-only.
-Root fields 3/4/5 have widths 4/1/4, equal counts, bounded field-5 row tables,
-and a bounded row-field-0 byte range whose string/byte-vector representation
-stays ambiguous. Rows with field 5 close only its empty count prefix,
-not its element width, and field 3 as a nested table with equal-count
-width-4/1/4 vectors. The marker-17 wrapper/byte-range closure and its
-unresolved type boundary are owned by
-[`game_data/install_and_vfs.md`](install_and_vfs.md); all other
-nested targets remain opaque. Marker 15 additionally has bounded uoffset
-targets. A selected-scene corpus gate isolates some targets in exact 16-byte
-physical gaps, without establishing a general record width or byte ownership.
-Root fields
-6/7 retain paired-group, descriptor, and blob-length closure. Bytes outside
-the certified subgraphs stay opaque; no union, entity, component, matrix,
-descriptor, field name, or runtime meaning follows.
+- **Marker 17**: two wrappers and a counted byte range; `streaming.marker17`
+  refines native-selected tag5 bodies (64-byte header, one optional record,
+  five counted arrays) and fixed tag1/4/6 profiles. Body EOF is a parser
+  requirement, not a native check; tag6 must not be dispatched as tag1.
+- **Marker 15**: nonzero forward bounded targets only; exact 16-byte physical
+  gaps in selected scenes bound those addresses, not a record width or owner.
+- **Marker 13** (selector 9, key `FF000000`): a 16- or 18-byte physical gap
+  between certified ranges, four scalar32 positions consumed conditionally.
+  **Marker 2** (selector 6, key `09020000`): a 4- or 6-byte gap, four bytes
+  projected. The rest stays opaque even when zero; marker-2 selector 9 and
+  multi-target clusters stay unsupported.
+- **Pairs** (`streaming.pairs`): Init first, Streaming second, one serialized
+  ordinal; ordered field-3/4 vectors match, row field 0 is not shared identity.
+- **Filename relations** (structural, not coordinates): in numeric files the
+  field-2 row field-3 lanes floor-divided by 128 equal the first two filename
+  integers (residuals 0/32/64/96) and present fields 1/2 equal the last two;
+  `Global` files have a separate field-1/2 relation.
+- The native read closes requested/returned length and root resolution, then
+  is pointer-only (no parsed length or final cursor). Marker associations are
+  not a union registry; marker 16 is a different outer-row shape.
 
-## Catalogs, and what stays incomplete
+### JsonData families
 
-- Both StringPathHash dictionaries and FacBoneTRS now self-bound their lookup
-  and value pools. Both StringPathHash catalogs have current full
-  VFS/native-gated hash replays: their `Data/` path/hash pairs have independent
-  VFS filename-hash witnesses, and their other pairs match lowercased
-  BundleManifest `AssetInfo` path/`pathHashHead` pairs. The main catalog equals
-  those sources as multisets. The initial catalog repeats its own `Data/`
-  path/hash pair and its asset pairs form a multiset subset of the manifest.
-  The VFS implementation's branch at exactly 128 UTF-8 bytes explains the
-  standard XXH3 disagreement in the main catalog; 127/128/129-byte controls
-  are in that corpus gate. The catalog writer and runtime lookup remain open.
-  FacBoneTRS proves its file-provided unit count, observed
-  boundary overlaps, contiguous bone records, and 64-byte ranges through EOF;
-  every value is shape-consistent with a row-vector homogeneous rigid-affine
-  4x4 float representation. The exact type/convention remains unnamed, and
-  unit/bone hashes have no exact match in either StringPathHash dictionary.
-- The current selected `CompressData.bin` archive closes its count and absolute
-  offset table, per-record Brotli/UTF-16LE JSON bodies, and EOF under a
-  VFS/decoder-closure-gated corpus check. A reviewed decoded schema closes the
-  NodeCanvas root, observed node type/field sets, connection fields, and local
-  `$ref` endpoints. A separate reviewed schema closes every current shallow
-  typed task envelope and its typed child lists; a selected native body
-  independently reads one matching `behavior` field from an instance. A
-  selected native route reads the archive by exact VFS path and passes a
-  compressed `BehaviourTree` instance's stored index through the archive
-  offset table and Brotli to graph deserialization. A current gated export
-  joins authored BehaviourTree source-CAB/PathID objects to every archive
-  ordinal, retaining shared ordinals and excluding the inline graph. Stored
-  AssetBundle container paths, AI-config blackboard pointers and decoded
-  graph-mode PPtrs provide a further keyed authored join; exact table-key
-  equality connects a subset of `EnemyTable.aiTemplateId` rows to unique
-  AI-config objects. A selected native chain copies
-  `SCENE_MONSTER.commonInfo.templateid` into `EnemyServerData.enemyId`,
-  transfers server data through typed entity-spawn calls, then uses the enemy
-  ID for the `EnemyTable` lookup. Its synchronous path reads `aiTemplateId`
-  and loads the formatted `AIConfig` path on success.
-  This
-  export's freshness relies on summary source fingerprints, without
-  independent current-byte authentication of each Unity object. Nested task
-  values, blackboard data, selection of a live protocol message or installed
-  spawn record, alternate load paths, scene selection, and live execution
-  remain unproved. See
-  [`extend_data.md`](extend_data.md) for the current evidence boundary.
-- Terrain block/channel meaning, Streaming's concrete runtime-root/secondary-
-  path joins and field-5 key namespace/ownership, nested parallel-vector
-  element targets,
-  remaining tails,
-  manifest-to-Unity object ownership and live lookup, mmap value semantics,
-  patch-instruction/runtime, and remaining
-  JsonData semantics are incomplete.
-- Material and shader extraction preserves recoverable metadata; it does not
-  prove renderer ownership, selected variants, final lighting, or appearance.
+| Family | Reader | Current boundary | Stops at |
+| --- | --- | --- | --- |
+| LipSync | `memorypack.lipsync`, `memorypack.lipsync_corpus` | strict 15-member reader through EOF on every file; rows are native-proven Unity `Keyframe` values | playback selection |
+| NPC MontageNew | `memorypack.npc_montage`, `memorypack.npc_montage_corpus` | complete named schema through EOF (3-member root, 24-member body, nested records) | runtime selection, playback |
+| NPC PrefabInfo, catalogs | `schemas.npc_prefab_info`, `schemas.npc_catalog` | exact JSON schemas; extra or reordered fields refused | consumers |
+| MissionRuntimeAsset | `schemas.mission_runtime_main`, `schemas.mission_runtime_meta` | exact JSON schemas | Story semantics: [`../webui/story_recovery.md`](../webui/story_recovery.md) |
+| MapConfig, UILevelMapLoadConfig, textual roots, LevelMountPoint, compact GameplayConfig JSON | `schemas.*` | exact named JSON schemas | consumers |
+| LevelData | `leveldata_binary`, `leveldata_bezier_knot_corpus` | complete 43-field named schema through EOF on every current file, spline knots as raw 56-byte values; an unsupported future nested body stops at its field | runtime selection (which point, which patrol); knots are local to each row's transform (`leveldata_spline_runtime_native`: `direct` for the normal branch, `conditional` at runtime) |
+| LevelScriptData | `levelscript_binary` sequential owners | most files close a complete named schema at EOF; the residue is bounded partial, keeping an action-map named prefix or the five-member terminal suffix, stopped at its first unsupported action-map union route | per-route codecs (recovery order below) |
+| LevelScriptTemplateData | `levelscript_template_binary` | part of the family closes named exact; the rest is bounded partial at a recorded action-map refusal | same union-route work |
+| SkillData | `memorypack.skill_corpus` | most files whole-schema exact through native-gated readers and replayed live cursor receipts; the residue keeps a named prefix and an authenticated terminal | distinct unsupported nested action tags; provider/cache selection |
+| BuffData | `memorypack.buff_corpus`, `memorypack.buff` | every file has a named 30-field outer frame through EOF; a native-gated subset (no-positive, positive-damage, sole CreateBuffAction roots) is whole-schema exact | interior action and icon bodies of the rest |
+| Interactive | `interactive_binary`, `memorypack.interactive` | every current table, template and ModelViewStateController file exact | future variants fail closed |
+| SpawnerConfig | `spawner_binary` | generated five-field cursor through EOF on every file | positive route-action lists (absent; fail closed) |
+| AnimationConfig, CharInteractPerformCfgs, AtmosphericNpcData | `animation_config_binary`, `char_interact_perform_binary`, `atmospheric_npc_binary` | exact on every current file | runtime selection and use (stored, authored data only) |
+| GPUISystemConfig | `gpu_ui_binary` | ExtendedPrefabGroup roots and DamageText close complete named schemas | prefab selection, GPU addressing, texture-hash identity |
+| LevelConfig, NavMesh, TeleportValidation, DialogId, AetherEnergyLock, MatrixShockWave, BambooRaft, MissionArea, SubGame, WorldEntityRegistry | `levelconfig_binary`, `navmesh_binary`, `teleport_validation_binary`, `memorypack.tables`, `aether_energy_lock_binary`, `matrix_shockwave_binary`, `gameplay_compact_binary` | exact | consumers |
 
 ## Measuring a boundary, and the JsonData recovery order
 
-A family's *status* says whether a reader closed it; it does not say how much
-of a file is understood, and the obvious proxy is wrong. `bytesConsumed` is how
-far a cursor reached, not how much it named: a framing anchored on a file's
-tail reports EOF while declaring an opaque prefix. Scoring LevelScriptData that
-way reads 66%; the honest figure is 39%.
-
-`scripts/game_data/jsondata_schema_coverage.py` computes it as
-`min(bytesConsumed, size)` minus the declared opaque spans inside that reach.
-An unreached tail and a declared opaque span are different omissions -- one was
-never looked at, the other was bounded and left anonymous on purpose -- but
-neither is named, so neither counts. One class must stay separate: a framing
-that advertises opaque content in its own status yet declares no span cannot be
-scored at all, and is reported `unmeasurable` rather than credited as whole. A
-reader that declares its opaque ranges is being more honest than one that stops
-early in silence, not less covered.
-
-That measurement, not file count, sets the order. The JsonData work concentrates
-in four places, largest unnamed region first:
-
-1. **LevelScriptData `opaqueRemainder`** -- the non-empty action-map records.
-   The framing names the first record's prefix and stops, leaving the bulk of
-   the family's bytes anonymous. This is the single largest unnamed region in
-   the lane and the one codec that would move the number most. What blocks it
-   is not the framing but the union table; see below.
-2. **LevelScriptData `opaqueTopLevelPrefix`** -- files recovered from their
-   tail. The five-member terminal suffix is exact through EOF; the earlier
-   members are unnamed. Recovering these is the same action-map problem
-   approached from the other end, so treat 1 and 2 as one target.
-3. **BuffData** -- every current file is a `structural-prefix`; none is
-   whole-schema exact. The named 30-field prefix and proven event prefix hold,
-   and the suffix stays anonymous.
-4. **SkillData** -- a minority of files are `exact-closed` through a named
-   profile; the rest keep a bounded prefix and an authenticated terminal.
-   Extending the profile route is incremental and already has its pattern.
-
-The JsonData gate also accepts a SkillData row whose first shared-sequence
-action group is exact but whose later top-level continuation stops at an
-unsupported field. That row remains `structural-prefix` with its remaining
-bytes opaque; exact child closure cannot promote the parent to whole-schema
-exactness. The gate checks the explicit stop status and keeps this distinction
-when joining the SkillData report to the authenticated JsonData corpus.
-
-Everything else in the lane is closed or plain JSON: LipSync, LevelData,
-Interactive, SpawnerConfig, LevelConfig, AtmosphericNpcData,
-CharInteractPerformCfgs, AnimationConfig, NavMesh and the GPU UI roots decode
-against their readers, and MissionRuntimeAsset, MapConfig, UILevelMapLoadConfig
-and the small config families are real JSON. Do not spend effort there.
-
-`LevelScriptTemplateData` is a trap worth naming: its opaque-middle files look
-complete because the framing reaches EOF without locating what it skipped. They
-are unmeasured, not covered. Give that reader declared ranges before trusting
-any figure for it.
-
-### The action-map blocker is the union table, and it is derivable
-
-Targets 1 and 2 are not a framing problem. `decode_action_serialized_map`
-already walks the three declared lists correctly; it fails closed on
-`unsupported-union=0xNNNN` because `action_map_layouts.json` holds 277 reviewed
-rows and the corpus uses far more unions than that. Each reviewed row was read
-out of the native dispatcher one at a time, which is why the table is small.
-
-The table does not have to be recovered that way. Two facts hold across all 277
-reviewed rows, on three families whose tags run to 1341, 1101 and 216:
-
-- a union's compact tag is its **case-insensitive ordinal rank on the wrapped
-  type's full name** among the `ForMemoryPack` wrappers of its family. The
-  wrapper name flattens `.`, `<`, `,` and `>` to `_`, so the key must read them
-  back (`_` as `.`, a generic's closing `_` as `>`). Ranking the flattened name
-  directly -- the earlier rule -- reproduces all 277 reviewed rows yet
-  mis-tags `IFixAction.Data`..`IFixAction3.Data` in AbilityActionData and six
-  `GameConditionClientOnce<...>` instantiations, because `.` and `,` sort below
-  digits and `>` where `_` does not. *A rule that reproduces every reviewed row
-  can still be wrong on rows no reviewed family contains;*
-- a wrapper's members are its `set____name__` setters in **declaration order**,
-  base chain first and root first, each typed by that setter's parameter.
-
-Both are read straight out of the build's own managed image, so
-`scripts/game_data/levelscript_union_layouts.py` derives the whole table --
-1342 ActionBase, 1106 GetterBase, 235 ActionHeader -- from `tools/DummyDll`.
-It recomputes every reviewed row first and returns nothing if one disagrees,
-so the derivation is a cross-check rather than a guess. Comparison is on wire
-form, because the reviewed rows are not consistent about whether an enum inside
-a generic keeps its name or is written `Param<int>`; both spell the same four
-bytes, and the divergence is reported instead of failing the run.
-
-Keep the two evidence tiers apart. A reviewed row's boundary is `exact`: its
-`nativeIdentity` was read from the dispatcher. A derived row's is `direct`: an
-observed declaration in the build's managed image, with nothing in the
-derivation reading the dispatcher that assigns the tag.
-
-**The dispatcher can be read whole, not one row at a time.** Each family's
-`<Base>ForMemoryPackFormatter.Deserialize` guards a jump table with `cmp`/`ja`,
-whose bound equals the derived family size; each entry reaches (through at most
-one `e9` thunk) a body whose first `mov rdx,[rip+disp32]` loads the wrapper's
-type-usage cell. Resolving every cell names every tag natively: all 2,683
-LevelScript entries (ActionBase, PureGetter, ActionHeader), plus
-AbilityActionData, GameCondition and BaseComponentData, agree with the
-corrected derived table and with every reviewed row, with no shared targets.
-That sweep is what exposed the rank-rule error. It is maintained as
-`memorypack.union_dispatch`, which accepts a table only when its entries map
-one-for-one onto the family's derived wrappers with no shared targets; smaller
-families compile to compare chains rather than a jump table and are refused.
-Per-row getter contracts (`entityptr_getter`, `spawnerptr_getter`) now record
-tags, member counts and `GetResult` bodies as regenerated data keyed by managed
-type, and tie each authored reading to the body hash it was reviewed against:
-`--regenerate` refuses a row whose body changed. Between the recorded and the
-current build every such tag moved, one getter gained a member, and two
-recorded same-tag ambiguities split into distinct native tags. Tag identity read this way is native evidence, but a
-derived row's nested struct and enum declarations stay `direct` until their
-own codecs are proved.
-
-**Never write a union tag as a literal.** A tag is a rank, so a client update
-renumbers every type after an insertion; the ActionBase, PureGetter and
-ActionHeader families all shifted between the recorded builds and the current
-one. The Story record-hint lane had accumulated literals from several builds
-and silently matched nothing (published missions carried no Split, IfElse,
-Switch, Branch or While edges), while some stale pairs landed on unrelated
-current actions of equal member count and were decoded as the wrong action.
-LevelScript code now names the type and resolves it through
-`levelscript_union_tags`, regenerated from the native switches. A literal was
-converted only where the code itself named its type and the current member
-count agreed; literals with no recorded name, or whose type gained members,
-were left inert rather than guessed. The same applies to contracts: record
-tags as regenerated data keyed by type name, never as a key the next build
-reuses for another type.
-
-The semantic EntityPtr contracts (script slot, property initialization,
-output alias) are re-proved rather than re-pinned: each reading is authored as
-names -- ordered callees, the argument keys a body loads, the fields a call
-reads -- and `--regenerate` checks every claim on the installed build through
-`il2cpp.call_graph` (direct calls named via each image's method pointers and
-the generic method table, literal usage cells, runtime field offsets). A
-claim that fails refuses the write, and equal body sizes are never accepted in
-place of that check: one recorded 2,080-byte base `Process` is now a chain of
-smaller methods.
-
-**The re-test overturned one inherited reading.** `OnEntityEnterTrigger` was
-recorded as aliasing its SPECIFY_ENTITY filter. On the current build the
-listener is registered on the target's source key, the trigger's own
-`TriggerObserverAllEntityComponent` raises the event with itself as sender,
-and `Process` writes `trigger_cast_entity` -- the entity that *entered* -- to
-the output. The output is therefore not the filter, and the contract now says
-`validated_non_alias`. `OnSpecificEntityDie` does alias, more strongly than
-recorded: `Process` returns unless `@event_receiver` equals `_filterEntity`.
-*A recorded alias is a claim about who raises the event, and that has to be
-traced to the raiser, not read off the header.*
-
-BuffData's frozen reader (`memorypack/buff.py`) carried the same stale-tag
-problem for AbilityActionData (48 of 51 constants named other actions); it is
-rekeyed through its own tag-name table via the AbilityActionData family in
-`levelscript_union_tags`. Every tag-keyed table must move with the names: the
-member-count table was missed once, which rejected most items and broke the
-audio build. Rekeying keeps each *reviewed* count, so an action whose current
-wrapper has a different member count (twelve on this build, EffectAction the
-largest) fails closed at the reviewed header rather than being read with a
-stale layout. The selector unions inside TargetSettings (finder, validator,
-post-processor) are small unions ranked the same way, and their Buff tables
-had shifted by the subtypes added since (`AllEnemyFinder`, `BuffValidator`,
-`CircularOrderSort`, ...); SkillData had papered over this with a hand-kept
-override table. They are now `levelscript_union_tags` families, the Buff
-tables are keyed by name, every current subtype is listed, and each layout is
-the current wrapper's member list or `None` where a member type
-(`ColliderShapeData`, `BuffFindSettings`) has no reviewed reader.
-
-Items the reviewed decoders cannot read, reshaped or never typed, are
-consumed by the build's derived plan (`derived_values.ValueReader`) and
-published as `decodeStatus=derived` with `evidenceTier=direct` and the
-wrapper's member names. A chain still splits only when every item is consumed
-and the cursor lands on the proven payload end, and without the installed
-build there are no plans. Where both decoders read an item they must end on
-the same byte, and a disagreement fails closed instead of choosing a side.
-Every disagreement traced back to a byte-shape heuristic in the reviewed
-reader -- a `CreateBuffActionInput` scan for a `buff_*` string, and the
-TargetSettings "envelope", which assumes fixed lengths for common shapes --
-and both now read by member (a typed TargetSettings read is kept over the
-envelope and the envelope's objection is recorded). The two decoders now
-agree on every item both read. With the fallback, no non-empty BuffData
-action payload remains unsplit or ambiguous.
-
-The derivation also closes the types those layouts refer to: 42 structs and 94
-enums, reached by running the reference set to a fixed point. Both are checked
-against the reviewed `primitiveEvidence` -- its `stringKeyStructs` must derive
-to exactly one string member, its `int32Enums` to int32 -- so the declaration
-walk is held to what the native side already established.
-
-### Two facts a member list does not state
-
-An enum's width is one. Most are int32, but the referenced set contains three
-`uint8` enums and one `int16`, and the reviewed codec already special-cases the
-byte-backed pair by hand. Defaulting to int32 would mis-size those silently, so
-the width is read from each enum's own `value__` field.
-
-Wire framing is the other, and it is the subtler one. MemoryPack frames a value
-that holds any reference as an object -- a null marker or a member count, then
-the members -- and writes a struct holding no reference as raw bytes with no
-marker and no count. The reviewed contract encodes both by hand without naming
-the rule: `Param<EventArgsPtr>` reads a header then a string, `Param<LsmPtr>`
-reads a bare uint64.
-
-What decides it is the *real* type's complete field list, not its serialized
-members. `EntityPtr` and `AirWallPtr` declare the same three unmanaged members,
-yet only `EntityPtr` is object-framed -- because it also carries a generated
-`ObjectPtr<Entity>` backing field that never appears in the wrapper. Reading
-the real type settles every reviewed framing, and the derivation records the
-answer per struct as `containsReferences`.
-
-A raw struct's bytes are its memory image, so its members sit where the *real*
-field order and natural alignment put them -- not in serialized order. Every
-one of these types is `SequentialLayout` with no `ClassLayout` row, so the
-offsets follow. `AirWallPtr` is the case that makes it visible: it serializes
-as logicId, slotId, useSlotId, but its memory is useSlotId, seven bytes of
-padding, logicId, slotId, for twenty-four bytes.
-
-That derivation also explains something the reviewed contract left anonymous.
-`decode_levelscript_ptr_param` reads `scriptId` and then eight bytes it calls
-`reserved` and requires to be zero. Those eight are `LevelScriptPtr`'s
-generated `levelId` backing field plus its padding. Padding being zero is
-therefore a real integrity check, and the derived reader applies it: non-zero
-padding means the size or the offsets are wrong, and it fails rather than
-sliding.
-
-A struct whose layout cannot be established -- non-sequential, or holding a
-field of unknown size -- carries no `rawLayout`, and the codec refuses it as
-`unresolved-unmanaged-struct-layout`. Member order never stands in for memory
-order.
-
-### Framing is decided by position, not by the type alone
-
-The reference test above is necessary but not sufficient. `LevelScriptShape`
-is a struct holding only `Vector3`s, a float and an int32 -- as unmanaged as
-`LsmPtr` -- yet the reviewed shape decoder reads a member-count header for
-every `List<LevelScriptShape>` element, while the reviewed `Param<LsmPtr>`
-decoder reads a bare uint64.
-
-Both are right, and the rule is which formatter does the writing:
-
-- a **member** of an object -- root member, struct member, union subtype
-  member, `Param<T>` value -- is written by the enclosing type's generated
-  formatter, which puts an unmanaged member out as raw memory;
-- a **`List<T>` or dictionary element** goes through `T`'s own formatter, which
-  writes the object header;
-- a **`T[]` element** does not: an array of unmanaged `T` takes MemoryPack's
-  unmanaged-array path, a count then the elements raw. `List<T>` and `T[]` are
-  therefore not interchangeable;
-- a type with **no MemoryPack wrapper** has no generated object formatter at
-  all, so it is raw everywhere, elements included. `StringPathHash` is one bare
-  int64.
-
-Getting any of these backwards desynchronises the cursor by a byte or two,
-which surfaces as a plausible count far downstream rather than as an error
-where the mistake happened.
-
-Two further discriminators come off the type flags:
-
-- a **union base is abstract**. `BlackboardInt` has subtypes yet is concrete,
-  and is written as itself with no tag; every genuine union base in this corpus
-  carries the abstract flag. Treating a concrete base as a union costs two
-  bytes per value.
-- **static and literal fields are excluded** from a layout. They occupy no
-  space in an instance, and counting them both inflates a struct's size and
-  makes a type holding a static reference look reference-bearing --
-  `GameplayTag` declares a `string[]` constant and is otherwise a bare int32.
-
-Two more shapes follow from the same "read the memory image" principle:
-
-- `Nullable<T>` for an unmanaged T is .NET's `Nullable<T>` layout -- a
-  `hasValue` flag, padding to T's alignment, then the value. A `float?` is
-  eight bytes, not one plus four, and not one when absent.
-- a nullable count is `ff ff ff ff`. The generic null-object marker is a single
-  `0xff`, so a null list or dictionary must be recognised *before* that marker
-  is consulted or exactly one byte goes missing. This was the single change
-  that took whole-file decoding from nothing to most of the family.
-
-### The root is declared too, and that closes the file
-
-`LevelScriptData` is a twenty-seven member MemoryPack type whose wrapper sits
-beside the union wrappers. Deriving it closes whole files rather than parts of
-them, and two independently recovered framings corroborate the member order:
-the prefix framing proved member zero is `actionMap`, and the terminal framing
-proved the file ends with `scriptId`, `startShapeList`, `startType`, `taskMap`,
-`triggerVolumes` -- exactly the head and tail of the declared list.
-
-Deriving the root pulls in the rest of the graph. Closing the declaration set
-and deriving a family for every union base it discovers, run to a fixed point,
-yields 104 structs, 116 enums and 13 union families. Two of those families were
-already reviewed and reproduce exactly: `LevelScriptTriggerVolumeData` tag 1 is
-the Leader subtype with the reviewed eight fields in the reviewed order, and
-all 7 `conditionLayouts` rows reproduce, so the cross-check now gates on 284
-reviewed rows rather than 277.
-
-### Where the action-map lane now stands
-
-`action_map.py` takes the derived table through an explicit `declarations`
-argument. Passing nothing is byte-identical to the reviewed contract alone,
-which is what `levelscript_template_binary` and `memorypack/interactive` keep
-publishing at; passing it admits the `direct` tier and the caller owns saying
-so. `frame_levelscript_declared_action_map` is the framing built on it, and
-`jsondata_schema_coverage --declarations` measures with it.
-
-`frame_levelscript_declared_root` is the whole-file framing built on the root
-declaration. It refuses any file whose cursor does not land on physical EOF, so
-a partial read is never reported as whole.
-
-The framing generalises to any MemoryPack root with a wrapper, so it is not a
-LevelScript result. `ROOT_TYPES` seeds the roots; everything else -- the
-structs, the enums, and a family for every abstract union base -- is found by
-closing the reference set to a fixed point.
-
-An earlier `jsondata_schema_coverage --declarations` pass reached EOF across
-the then-selected declaration-derived families. That is a derived framing
-measure for its own input set, not a current reviewed-schema or runtime claim.
-The current `jsondata_corpus` gate joins every selected JsonData logical file
-to the export byte for byte, then classifies only families with maintained
-readers. Its current input-set, counts, and per-family status are in
-`reports/animestudio/jsondata_current_latest.json`. LipSync, NPC, LevelData,
-MissionRuntimeAsset, and several config families have complete named schemas;
-LevelScriptData and LevelScriptTemplateData retain bounded partial rows,
-BuffData has a complete outer frame with recursive interiors open, and the
-full SkillData family remains bounded ambiguous until a new complete cursor
-receipt covers this input set. A named stored field still does not prove its
-runtime consumer or effective value.
-
-The following LevelScriptData investigations record why earlier declaration
-readers stopped and how selected shapes were corrected. Their historical
-file counts are not the current coverage measure.
-
-**LevelScriptData's open set fell from 56 files to 24, and one form did it.**
-Every param-tail the sweep rejected was the *same* triple -- `idRef`,
-`paramSource` and `pathSize` all `-1`. The getter-reference rule required
-`0 <= idRef`, but `-1` is exactly how the default tail spells an absent id, so
-the form is a getter reference with no id rather than a new shape. Accepting it
-frames 32 more files, and the reason that is a reading rather than a guess is
-that `frame_levelscript_declared_root` refuses any file whose cursor does not
-land on physical EOF: a misalignment onto a run of `0xFF` does not end 32
-independent files on their last byte. This replaces the earlier recorded
-boundary, which had pinned the triple as rejected on a conservative argument
-rather than a measurement.
-
-All four shapes are now closed and the family is complete:
-
-| former first failure | files | what it was |
-| --- | --- | --- |
-| `manualValue:unsupported-declared-member-count=7,expected=9` | 15 | a wrapper property type read as a field type |
-| `modules[N].value.backIndex` / `.defaultHide` | 7 | unmanaged `KeyValuePair` layout padding |
-| `alternativeCameraPoses:unsupported-PosRot-count` | 2 | a recorded "unreviewed element layout" boundary |
-
-**The member-count group is closed.** All fifteen files were one authored
-action in one script family, and the nested value is now read from the bytes
-by `codecs/levelscript/send_lua_event.py`. The declaration could never have
-stated it: `manualValue` is not a field of the action or of its
-`ForMemoryPack` wrapper but the wrapper's `set___manualValue__` property,
-whose parameter type is the action itself, so the derivation recorded a
-self-reference and the reader expected the wrapper's nine members where the
-wire holds the instance's seven. Reading the wrapper's serialize body turned
-out to be unnecessary -- the payload says it:
-
-```text
-memberCount 7 | int32 | string | byte | int32 | byte | Param<string> | string
-```
-
-Two members are named by more than position. `_eventName` is the only
-`Param<string>` the class declares and holds a Lua event name; `_param1` is
-declared `Param<object>`, which MemoryPack cannot serialize generically, and
-the bytes hold JSON of the form `{"paramSource":200,"path":"RoomID"}` -- a
-param descriptor written as text. The two booleans and the second `int32` keep
-neutral keys, because `NodeBase` and `ActionBase` declare more candidate bools
-than the wire carries and nothing says which were dropped.
-
-The evidence is whole-file framing: the layout closes all fifteen at physical
-EOF, taking the family from 5,006 to **5,021 of 5,030** and 98.0% to 99.7%.
-`SendLuaEvent2` would write eight members, but **no file contains one**, so
-that count is derived from the declaration and checked rather than measured,
-and an unexpected count fails closed.
-
-**An unmanaged `Dictionary<K,V>` pair carries .NET layout padding, and the
-seven `modules` files were four bytes adrift per entry.** `RunePuzzleData`'s
-`anchorPointToIndexMap` is a `Dictionary<ulong,int>`, and the wire writes each
-entry in **sixteen** bytes, not twelve: `KeyValuePair<ulong,int>` is an
-unmanaged struct written as raw memory, so the four-byte value is followed by
-four bytes of padding that satisfy the eight-byte key's alignment. Reading the
-two back to back drifted four bytes per entry, and the next field then read a
-count out of the drifted cursor -- which is why the failure looked like
-`backIndex:unsupported-count=-354705288` rather than like a dictionary
-problem.
-
-Two things make this a rule rather than a patch. It is the same shape
-`SerializeFieldDictionary` already cost four bytes per value for, so the
-padding belongs to the unmanaged pair and not to one dictionary. And the
-padding must be zero, which keeps the reading self-checking: a wrong layout
-refuses instead of producing plausible values. The reader computes the pair
-layout from the two widths and leaves a managed side alone, because only an
-unmanaged pair is a raw struct.
-
-**The rule has exactly two sites, and both are handled.** Enumerating every
-declared `Dictionary<K,V>` whose key and value are both unmanaged *and* of
-different width -- the only shape that can carry this padding -- returns two
-across the whole declaration set: `Dictionary<ulong,int>` in
-`LevelScriptModuleData` and `Dictionary<ulong,uint>` in
-`NavMeshStateContainer`. Every other declared map has a managed side, or two
-sides of equal width, and needs nothing. So this is a closed question rather
-than an open sweep.
-
-The second site was latent. `navmesh_binary`'s `Dictionary<ulong,uint>` has the
-same shape and read its pair back to back. It never failed because both maps
-that use it -- `surfTileIDToSceneStateMask` and `surfTileIDToSceneStateSet` --
-are **empty in all twelve files**, so no entry has ever been read. Its sibling
-maps corroborate the rule from the other side: the ones whose value is already
-eight-aligned are populated, need no padding, and do decode. The reader now
-applies the padding by rule and requires it to be zero, so a build that
-populates those maps fails loudly instead of returning quietly shifted values.
-The path stays unexercised, and the test that pins it says so.
-
-*A discarded reading, recorded so it is not retried.* The derived row lists
-`RunePuzzleData`'s members in the wrapper's setter order, which is
-alphabetical after the two base fields, while the type declares them
-`delayToFinish, defaultHide, runeColumnList, ...`. Reordering to the
-declaration order looked like the obvious fix and is wrong: it moved the
-failure without closing a single file. The setter order is the wire order; the
-padding was the whole defect.
-
-**`List<PosRot>` closed the last two files, and confirmed the setter-order
-rule from the other side.** The codec refused any non-empty
-`Param<List<PosRot>>` as an unreviewed element layout. The elements are
-PosRot's own two-member objects -- a header byte then two `Vector3`s, so
-twenty-five bytes each, because `List<T>` writes every element through T's
-formatter rather than as raw memory. **The two vectors are written
-`eulerAngles` first**, against the declaration's `position, eulerAngles`:
-`Beyond_PosRotForMemoryPack` sets `eulerAngles` then `position`, and the
-payload agrees, giving a map02 world position and a plausible yaw/pitch/roll
-where the declared order gives eulers past 1300 degrees. So the same rule that
-made reordering `RunePuzzleData` wrong makes reversing `PosRot` right: the
-generated formatter's member order is the wire order, and the declaration's is
-not.
-
-The earlier selected LevelScriptData set reached EOF under that declaration
-reader. The current reviewed family registry still preserves partial
-LevelScriptData rows; the prior EOF count cannot promote them to a complete
-named schema on the refreshed input set.
-
-**NavMesh is closed, and what it was is worth keeping.** All twelve files
-decode to EOF with every field named, at the reviewed tier as well as the
-derived one. The four that used to be reported unframed are the four whose
-`surfTileIDToSceneStateBucketsMask` is non-empty, and the record there is
-written with **no MemoryPack member-count byte** -- eight raw `ulong` buckets
--- while the structurally identical value inside
-`surfTileIDToSceneStateBucketsSet` *is* written behind one. The derived
-whole-root framing assumes the count byte, so it read the first bucket's low
-byte as a member count and refused. That is the wrapped-versus-unwrapped
-distinction the reviewed reader already draws, not an unread nested
-dictionary, and the family is now measured by that reader.
-
-**An unregistered family is the failure this report must not have.** LipSync
-dominates the lane's byte volume. When it was absent from the family registry,
-the sweep silently reported coverage over only the smaller remainder. Its
-reviewed reader now closes the current selected LipSync set, and the registry
-test requires every directory under the Json root to have a family so a new
-one cannot shrink the denominator unnoticed.
-
-MissionRuntimeAsset, UILevelMapLoadConfig, MapConfig, LevelConfig,
-CharInteractPerformCfgs, GPUISystemConfig and several small config families
-are schema-decoded in the current gate. LevelScriptTemplateData remains mixed;
-use the current per-family report rather than this historical list for counts.
-
-### EOF closure is necessary, not sufficient, and here is the proof
-
-A reader that consumes its payload exactly to EOF has shown that its *total* is
-right. It has not shown that its *fields* are. The two come apart whenever a
-mis-reading has the same width as the truth, and this lane has a confirmed case:
-
-**`spawner_binary.py` formerly read `preWarnEffectFixedRotation` as four
-consecutive `f32` axes. It is `Optional<Vector3>`** -- a `bool hasValue`, three
-bytes of ABI padding, then the `Vector3`. Sixteen bytes either way, so the old
-reader consumed the right length while publishing a wrong value to the Audio
-page. The reader now checks the flag and zero padding, returns no vector when
-absent, and returns the three stored components when present.
-
-The corrected reader accepts all 608 current SpawnerConfig files and 1,497
-enemy rows: 1,452 absent values and 45 present values, with 16 distinct present
-vectors. The old first "float" on every present row was
-`1.401298464324817e-45` -- float bits `0x00000001`, the `hasValue` byte.
-Present values have the form `(0, yaw, 0)` including 90, 80, 78, and 110
-degrees. Boundary: `exact` for the selected current corpus.
-
-The correction applies the `Optional<T>` framing this lane already records for
-other families. When a framing conclusion rests on EOF closure, look for a
-second signal: a boundary landing on a known marker, a coherent value
-distribution, or a closed field domain. Closure alone cannot distinguish a
-right reading from a same-width wrong one.
-
-### Check the hand-written formatters first
-
-Every framing bug this lane has hit has been the same class: a type the build
-gives a **hand-written `MemoryPackFormatter<T>`** instead of a generated
-`<T>ForMemoryPack` wrapper. Its wire form comes from the formatter, so its
-field list need not describe it. `SerializeFieldDictionary` cost four bytes
-per value; `AnimationCurve` cost a whole reordering.
-
-Enumerate them rather than discovering them one desync at a time: find every
-type extending `MemoryPackFormatter<T>` whose own name does not end
-`ForMemoryPackFormatter`, and read off `T`. The non-stdlib answers on this
-build are `AnimationCurve`, `AudioId`, `BezierKnot`, `Gradient`, `RectOffset`,
-`SendLuaEvent1`, `SendLuaEvent2`, `StringPathHash`, `string`, and the
-`SerializeFieldDictionary` / `SerializeReferenceDictionary` family;
-`FORMATTER_BACKED_TYPES` records them.
-
-`StringPathHash`'s formatter agrees with its single int64 field, corroborated
-by SpawnerConfig and LevelConfig closing every file. `AudioId` is a raw int32;
-`AnimationCurve`'s keyframes disagree with their declared field list.
-`BezierKnot` is now settled separately below. The other hand-written
-formatters still need their own wire checks before their field lists can be
-used as framing evidence.
-
-### The BezierKnot that is a raw struct
-
-The selected `Beyond.Gameplay.LevelSplineData+BezierKnotFormatter.Deserialize`
-fast path copies one contiguous 56-byte value from the reader's current buffer
-to the output, then advances the reader pointer and counters by 56. Selected
-native offsets for `UnityEngine.Splines.BezierKnot`, less the 16-byte boxed
-value header, place `Position`, `TangentIn`, `TangentOut`, `Rotation`, and
-`Width` at bytes 0, 12, 24, 36, and 52. Their widths are 12, 12, 12, 16,
-and 4 bytes. Thus LevelData's existing 14-float knot reader agrees with the
-hand-written formatter; it does not need an added object header or an altered
-stride. The reviewed selected-build method window and field offsets live in
-`scripts/game_data/contracts/leveldata_bezier_knot_native.json`.
-
-`leveldata_bezier_knot_corpus.py` gates that claim against the selected native
-inputs and every exported LevelData file. The selected export passes a separate
-freshness check; all its files close the 43-field named schema through EOF,
-including nonempty spline lists and their knot byte spans. The changing counts
-and aggregate source digest live in
-`reports/game_data/leveldata_bezier_knot_corpus.json`. This is `exact` for the
-selected native fast path and exported payloads. It does not establish the
-formatter's cold/refill behavior or curve behavior in the game world.
-
-### A spline row's runtime transform
-
-The selected normal native branch of `LevelData.get_splineTable` indexes
-`LevelSplineData` rows by `splineId`. `MovePipelineSpline.OnEnter` looks up a row
-with its `m_splinePtr.id`, constructs a Unity `Spline` from the row's `knots`
-and `closed` fields, and builds `m_splineTransform` with the row's `position`,
-converted `rotation`, and unit scale. It applies the inverse transform to
-`MovementComponent.logicPos` before querying the spline. The normal
-`ProcessVelocity` branch calls `SplineUtility.Evaluate` on that spline and
-applies `m_splineTransform.MultiplyPoint` to the evaluated position. Thus this
-consumer treats knot positions as local to the row transform, and the
-movement position after transformation is in the logic-position space. The
-reviewed body windows, selected field offsets and direct callsites are in
-`scripts/game_data/contracts/leveldata_spline_runtime_native.json`;
-`leveldata_spline_runtime_native.py` validates them against the selected
-installed build.
-
-This is `direct` for the selected normal branch and `conditional` for runtime
-behavior: both methods have iFix patch checks, and the selected patch state or
-actual entity movement was not observed. The unnamed helper converting the
-stored rotation vector to a quaternion has not been proved, nor has a scene
-file been joined to the active level. A WebUI spline overlay should transform
-knots through each row's transform and keep that rotation convention and
-scene placement explicit until independently verified.
-
-### The keyframe that was not a struct
-
-One shape held most of the lane, and it resolved. `AnimationCurve` is served by
-a hand-written `MemoryPack.AnimationCurveFormatter`, and that formatter carries
-its own `SerializeKeyFrame` / `DeserializeKeyFrame`. So a keyframe is not the
-declared `FKeyframe` struct: the wire writes **seven of its eight fields,
-dropping Unity's legacy `tangentMode`, for a 28-byte stride with no
-per-element header**.
-
-That single correction took SkillData from 13.4% to 92.0% and BuffData from
-83.0% to 99.1%.
-
-Two independent measurements establish it. Sweeping the element width gives a
-*single sharp peak* at 28 -- SkillData and BuffData together go from 3,695
-closed files to 5,494, with every other width from 12 to 44 flat at 3,695.
-Field identity comes from the values themselves across 16,827 keyframes: slot 4
-is a small integer in every one (0, 1, 2 -- a `WeightedMode`), slots 5 and 6
-carry Unity's default 0.3333 weights, and `time` in slot 0 increases
-monotonically across 96.8% of multi-key curves.
-
-The method is the transferable part. Corpus-fitting *layouts* had stalled --
-four consecutive hypotheses scored at or below doing nothing. What broke it was
-asking the build which types have a hand-written formatter, then reading that
-formatter's method list: `SerializeKeyFrame` existing at all is the whole
-finding, because it says the element is custom-serialized and its declared
-field list cannot be trusted. Resolve the type, list its methods, and only then
-sweep the one number the formatter leaves free.
-
-Worth not re-deriving:
-
-- blame the innermost live union tag and a scatter of member-level errors
-  becomes a few names -- here four of 416 `AbilityActionData` subtypes, all
-  carrying a curve.
-- injecting bytes after each member in turn localises a deficit to one member.
-- checking that the next element of a union array starts with a valid tag
-  marker proves multi-element arrays self-consistent.
-- MemoryPack version tolerance was retested with every framing fix in place and
-  still changes nothing. A short member count is a desync symptom, never a
-  permitted encoding. Settled.
-
-Register the *strongest* reader per family, not the newest. AnimationConfig,
-CharInteractPerformCfgs and the NPC montages all have reviewed readers that
-close every file at EOF; measuring them by the derived whole-root path instead
-reported AnimationConfig at 0.1% and NPC at 88%, understating work that was
-already exact. A family's figure is only as honest as the reader behind it.
-
-One directory may hold several roots -- `Interactive/` holds three, one per
-subdirectory -- so a family may register more than one. Trying each in turn is
-safe because a root framing refuses any file it does not close at EOF.
-
-Unity types are a standing hazard here. `Color` resolves by leaf name to
-`System.Drawing.Color` unless the Unity value types are declared outright, and
-`AnimationCurve` cannot be read from its own declaration at all -- its only
-instance field is an engine pointer. MemoryPack serializes it through a
-Beyond-side `FAnimationCurve`, so it needs an explicit alias rather than a
-resolution rule.
-
-`AnimationCurve` is also the one type whose **serialized order the wire
-contradicts**. `FAnimationCurve` reads `keys, postWrapMode, preWrapMode` in
-both setter order and real field order, but a curve body reads 8, 8, 3 before
-its float data, and 8 is `WrapMode.ClampForever` -- the two wrap modes precede
-the key array. Taking the declared order produced a self-consistent but wrong
-parse, turning a three-key curve into eight keys and desynchronising the file
-far downstream, which is worse than failing.
-
-The corrected order is recorded in `SERIALIZED_ORDER_OVERRIDES`, and it rests
-on **corpus closure, not declaration**: it raised whole-file closure on
-SkillData from 826 to 964 files and BuffData from 2,659 to 2,729 with no family
-regressing. That is the same sequential-closure corroboration the reviewed
-layout contract cites for its own rows, and it is weaker than a declaration.
-Anything else added there needs the same measurement, stated. A type whose
-order is merely suspected belongs nowhere near that table -- withhold it
-instead and let its consumers fail closed.
-
-LevelScriptTemplateData's opaque-middle files -- the trap this document used to
-flag, complete looking because the framing reached EOF without locating what it
-skipped -- are genuinely closed now.
-
-A family that registers no framer at a tier is reported as *not measured*
-there, not as zero. Several of these have reviewed readers outside the coverage
-registry, and scoring them zero would understate that work.
-
-Keep the reviewed-tier report beside the declared one. The pair is what makes
-the derived tier's contribution visible, and the `exact` figure is still what a
-consumer publishing at that boundary may quote.
-
-The 149 files that do not close are a thin tail with no class above sixty-four:
-a `teleportSlot0` member, an NPC behaviour dictionary, a `manualValue` whose
-member count disagrees, and the `handle` Param tail. `CharPerformHandleBase`
-has no wrapper of its own and is the one remaining piece with real structure
-behind it.
+A status says whether a reader closed a file, not how much of it is named.
+`bytesConsumed` is how far a cursor reached: a tail-anchored framing reports
+EOF while declaring an opaque prefix, which overstated LevelScriptData by more
+than twenty points when read as coverage. `jsondata_schema_coverage` computes
+`min(bytesConsumed, size)` minus the declared opaque spans in that reach; an
+unreached tail and a declared opaque span are both unnamed. Its docstring
+records the registry rules (`unmeasurable`, not-measured is never 0%, the
+strongest reader per family) and the two tiers (reviewed `exact`, declared
+`direct`); keep both reports side by side.
+
+That measurement, not file count, sets the order:
+
+1. **LevelScriptData residue** -- the largest reviewed-tier unnamed region;
+   files stop at unsupported action-map union routes. Rerun the first-stop
+   census after each complete JsonData gate, since integrated routes move
+   files to exact.
+2. **BuffData interiors** -- nested action, condition and icon grammars behind
+   the format-framed files.
+3. **SkillData residue** -- distinct nested action tags touching one or two
+   files each, so each codec closes little.
+4. **LevelScriptTemplateData residue** -- the same union-route problem.
+
+Everything else is closed or schema-validated JSON; do not spend effort there.
+An earlier declaration-derived pass reached EOF on every selected family; that
+is a `direct` measure for its own input set and promotes no reviewed row.
+
+## MemoryPack wire rules the member lists do not state
+
+Each rule is enforced in code; the module named carries the reasoning.
+
+- **Union tags are ranks**: the case-insensitive rank of the wrapped type's
+  full name among the family's wrappers (`levelscript_union_layouts`), read
+  whole from large native switches (`memorypack.union_dispatch`) and ranked
+  for compare-chain unions (`memorypack.union_subtypes`, `structuralOnly`).
+  Reviewed rows are `exact`, derived rows `direct`.
+- **Never write a union tag as a literal**: updates renumber every later type.
+  Resolve by type name (`levelscript_union_tags`) and key contract rows by it.
+- **Members are the wrapper's setters in declaration order**, base chain
+  first (`memorypack.wrapper_members`); that, not field order, is the wire.
+- **Framing is decided by position**: object members go through the
+  enclosing formatter (unmanaged ones raw), `List<T>`/dictionary elements
+  through `T`'s formatter with a header, unmanaged `T[]` as a count plus raw
+  elements, wrapper-less types raw everywhere (`_Cursor.declared_inner` in
+  `codecs/levelscript/action_map.py`).
+- **Memory images**: a struct without references is written raw at real field
+  order and alignment with zero padding (`containsReferences`, `rawLayout`);
+  `Nullable<T>` is flag, padding, value; a nullable count is `ff ff ff ff`;
+  enum width comes from `value__`; union bases are abstract; static fields take
+  no space; unmanaged `KeyValuePair` pairs carry zero padding (two declared
+  sites: LevelScript `Dictionary<ulong,int>`, NavMesh `Dictionary<ulong,uint>`).
+- **Check hand-written formatters first** (`FORMATTER_BACKED_TYPES`): every
+  framing bug came from one. `AnimationCurve` writes wrap modes first and
+  28-byte keyframes (`SERIALIZED_ORDER_OVERRIDES`, corpus-closure evidence);
+  `BezierKnot` is a raw 56-byte value (`leveldata_bezier_knot_native`);
+  `SendLuaEvent.manualValue` has its own writer
+  (`codecs/levelscript/send_lua_event.py`). Unsettled formatters stay refused.
+- **Contracts are re-proved, not re-pinned**: getter and EntityPtr readings
+  are names re-checked on the installed build through `il2cpp.call_graph`
+  (`entityptr_*_native`); equal body size never substitutes.
+- **Two decoders must agree**: where the reviewed BuffData reader and the
+  derived plan both read an item they end on the same byte or fail closed;
+  derived-only items publish as `decodeStatus=derived`, tier `direct`.
+- **Localising a desync**: blame the innermost live union tag (member errors
+  collapse to a few subtypes), inject bytes after each member in turn, and
+  check that the next union-array element starts with a valid tag marker. A
+  desync surfaces far downstream as a plausible count, not where it began.
+
+## Eliminated readings
+
+Each was tested and refused; do not retry it.
+
+- Ranking the flattened wrapper name: reproduces every reviewed row yet
+  mis-tags `IFixAction.Data`..`IFixAction3.Data` and six
+  `GameConditionClientOnce<...>` instantiations.
+- Reordering `RunePuzzleData` members to declaration order: moved the failure
+  and closed nothing; the defect was `KeyValuePair` padding.
+- Declared `position, eulerAngles` order for `PosRot`: gives eulers past 1300
+  degrees.
+- `FAnimationCurve` declared order and the eight-field `FKeyframe` struct:
+  self-consistent but wrong parses.
+- SpawnerConfig `preWarnEffectFixedRotation` as four floats: same width, wrong
+  value (`Optional<Vector3>`).
+- Refusing the `idRef`/`paramSource`/`pathSize` = `-1` triple: it is a getter
+  reference with no id.
+- `manualValue` member count from the wrapper property type (nine): the
+  instance writes seven.
+- MemoryPack version tolerance for a short member count: retested with every
+  framing fix; a short count is always a desync symptom.
+- Recorded alias of `OnEntityEnterTrigger` to its filter: the output is the
+  entering entity (`validated_non_alias`).
+- Corpus-fitting keyframe layouts: stalled; reading the hand-written
+  formatter's method list (`SerializeKeyFrame`) solved it.
+- The TargetSettings byte "envelope" and the `CreateBuffActionInput` string
+  scan: byte-shape heuristics replaced by member reads.
+- Interleaved 32/56-byte BundleManifest records: the widths are a capacity
+  accounting unit over split slot and value arrays.
+- A four-byte width for every `fb_main` `SingleGrid` vector, and byte widths
+  for `FBStreamArea` `RootVisible`/`AreaVisibleGroups`.
+- Standard XXH3 for every StringPathHash row: the VFS implementation branches
+  at exactly 128 UTF-8 bytes.
 
 ## What each corpus gate proves
 
-One paragraph per maintained gate: what it reauthenticates, what it writes, and
-what it explicitly leaves unresolved. The commands themselves are in
-[`../../scripts/README.md`](../../scripts/README.md); this is the boundary each
-one establishes.
+Commands are in [`../../scripts/README.md`](../../scripts/README.md). Every
+gate reauthenticates its rows against the current VFS ledger and live
+fingerprints at both ends; partial `--max-files` probes write only to `tmp/`
+or `scratch/` and never count as complete-corpus evidence.
 
-`streaming.corpus` reauthenticates block-15 rows from that ledger and writes
-`reports/animestudio/streaming_root_subgraphs_latest.json` plus `.md`; pass the
-exact `inputSetSha256` from the current outer summary. The gate covers the
-anonymous field-2 vector, immediate table/vtable framing, and terminal row
-field-5 scalar32 vectors through EOF, as well as the field3/4/5 and field6/7
-subgraphs. It also verifies the field-2 row object's four-byte prefix plus
-slot-to-next-boundary partition. Before publishing fields 0--5 as anonymous
-scalar32/scalar32/scalar32/int32[2]/float32[6]/scalar32[], it revalidates the
-selected GameAssembly, metadata, UnityPlayer, and bounded accessor/consumer
-bodies. The field-5 consumer reloads the retained row pointer from a 72-byte
-runtime record, iterates the count-prefixed vector with four-byte loads, and
-uses each value as a hash-table key. The report also gates the current
-numeric/Global filename-token relations. The selected family-level native read
-path closes payload base, requested length, actual-count equality, and root
-calculation. The concrete runtime path is unavailable, FlatBuffer accessors
-receive no outer length, and no final cursor is exposed, so the carrier is not
-joined to one authenticated logical file. Key namespace and signedness, field
-names, and semantics remain unresolved.
-`streaming.marker17_corpus` reuses the source-bound marker17 directory from that
-report, reauthenticates every listed physical range and refines the native-gated
-tag5 counted arrays and fixed tag1/4/6 profiles with `streaming.marker17`;
-unknown keys remain explicitly opaque/unsupported. It writes
-`reports/animestudio/streaming_marker17_bodies_latest.json` plus `.md`.
-Partial `--max-files` probes require explicit output paths and are not eligible
-as complete-corpus evidence. Record fields and runtime selection remain unknown.
-`streaming.marker13_corpus` rereads the complete block-15 ledger through the
-source-bound Streaming parser, joins marker13 references to independently
-certified structural neighbours, and tests native-gated explicit-selector9 and
-byte-proven absent-selector profiles. `streaming.pairs` binds paired file
-identities, complete ordered vectors and exact serialized ordinals; absence is
-never rewritten to a stored zero. Its inventory separates structure, read windows,
-physical gaps and opaque remainder; a physical gap is not a serialized sizeof or native EOF.
-Outputs are `reports/animestudio/streaming_marker13_latest.json`/`.md` and
-`streaming_marker13_inventory_latest.jsonl.gz`; partial outputs must stay in
-`tmp/` or `scratch/`. The summary authenticates the inventory's content/hash.
-`streaming.marker2_directory` owns the complete nested reference/occupancy
-replay. `streaming.marker2_corpus` gates the separate selector6 finite-gap
-parser against the same source-bound ledger and ordered pairs; it publishes
-`streaming_marker2_latest.json`/`.md` and
-`streaming_marker2_inventory_latest.jsonl.gz` under `reports/animestudio/`.
-Its four-byte native window is separate from the physical gap and opaque
-complement. Unknown representations and multi-target clusters remain explicit;
-partial probes cannot replace complete reports. Both ends of a sweep check
-the live BLC path set as well as fingerprint contents and executing sources.
-`memorypack.skill_corpus` owns the SkillData current-VFS gate; `skill` owns
-anonymous prefix/candidate framing and `skill_terminal` enumerates each terminal
-branch with complete record ranges. The gate joins current decrypted stream
-bytes to every selected outer-ledger identity and checks overlay, raw chunks,
-CLI and parser provenance at both ends. Historical census rebinding is rejected,
-with one narrow, opt-in exception: `--allow-exporter-rebind` carries a cursor
-verification across input sets only when `AnimeStudio.CLI` is the sole moved
-build fingerprint and the identity set, every selected file's logical hash and
-length, and the BLC path set are identical. The rebuilt exporter otherwise
-strands the verified basis the context audit and the capture preflight both
-require, because only a capture can re-verify it and the preflight blocks the
-capture. The output records `cursorVerification.rebinding`; a fresh capture
-under the current input set supersedes it. A timeline continuation the reader
-stopped short of field 42 is a valid unverified state and promotes nothing.
-Unique, ambiguous, unsupported and failed rows remain explicit; no candidate
-establishes whole-schema ownership. Each prefix/candidate binds the input-set
-hash, logical identity/hash, `[start, hardLimit)`, grammar parser cursor, byte
-ranges and opaque ranges. The aggregate keeps independently closed records,
-structural-prefix evidence, ambiguity, unsupported/failed rows and opaque-byte
-counts distinct; candidate EOF cursors do not certify the active formatter.
-Partial `--max-files` outputs must stay in `tmp/` or `scratch/`.
-`memorypack.skill_cursor_receipt` validates the current corpus/native-context
-binding and joins a bounded cursor receipt to current SkillData identities,
-hashes, hard limits, and terminal candidates. It can promote only the observed
-terminal range, not the complete SkillData schema. Use its receipt mode from
-the exact-build workflow in `tools/EndfieldCapture/README.md`; `--preflight`
-prints the authenticated current input-set hash without launching the game.
-`memorypack.skill_timeline_cursor` joins a complete current SkillData stream to
-the source-bound corpus and exact-build native context, then replays child
-action readers only when the selected native route, per-tag reader contract,
-and hash-verified `memorypack.buff_actions.Reader` agree. It records candidate
-byte ranges and precise unsupported/truncated stops; selected reader ends do
-not prove runtime provider choice or close their parents. The command writes
-`reports/animestudio/skilldata_timeline_cursor_latest.json` and `.md`; partial
-probes belong in `tmp/` or `scratch/`.
-`memorypack.npc_montage_corpus` authenticates the complete current
-`Data/Json/NPC/MontageJson/MontageNew/*.json` family by joining each
-outer-ledger identity to AnimeStudio `stream --verify-md5` output, then frames
-supported records through EOF. It checks current chunks, CLI and parser
-fingerprints at both ends and writes
-`reports/animestudio/npc_montage_current_latest.json` and `.md`. Changing
-coverage belongs in that report. The reader publishes named root/montage fields
-only after a real cursor consumes the complete record; nested DynamicEntity
-vector/value-type spans remain explicit unresolved ranges.
-`memorypack.corpus_gate` owns shared outer-ledger, overlay, fingerprint and output
-guards. `memorypack.buff_corpus` joins the full current BuffData stream and retains
-every filename-string anchor and reader-accepted suffix candidate. Current
-generated wrapper order names the first six fields, the supported field-6-to-14
-middle, and the accepted field-15-to-29 suffix. A closed outer frame still keeps
-internal icon/action bodies opaque. Its report partitions selected files into successful candidate framing, failed
-reader execution and unsupported shapes; uniqueness is only within that reader.
-Each accepted BuffData suffix also records a hard-bounded prefix-reader stop and
-remaining gap, with prefix support counted separately from suffix acceptance.
-The report binds its parser cursor and closed action ranges to current input-set
-and logical-file identities, and keeps exact action closures, structural
-prefixes, opaque bytes, rejected anchors and unsupported results separate.
-`memorypack.buff_actions` owns the independent event-prefix grammar;
-its per-candidate scalar/record spans now carry the current wrapper field names,
-while explicit opaque remainders have a separate
-success/failed/unsupported/ambiguous census. Malformed prefixes fail the corpus
-gate even if the suffix candidate succeeds; unknown unions are not aliased.
-`currentRootContinuation` consumes selected root members 2-6 only after a
-supported first collection, beginning at `currentEventPrefix.consumedEnd`.
-Its independent status and ranges retain later physical bytes as opaque;
-malformed continuation data also fails publication. `currentNamedMiddle` then
-advances empty damage/heal modifier-list forms and the generated four-field
-positive `globalModifier` item through field 13, then bounds the 19-member
-`iconConfig` range at the accepted `id` marker. Only that contiguous prefix plus
-the sequential suffix earns `named_exact_frame`; a positive unsupported modifier list or an
-earlier unsupported union keeps the file partial.
-`memorypack.buff_1b_corpus` rebuilds that full current census, selects only
-exact-closed tag `0x1B` records from root continuation, and re-streams matching
-files to verify their literal tag byte against ledger MD5 and logical SHA-256.
-It joins the tag to the exact-build selected `BlowOffAction_Data` reader order
-and writes `reports/animestudio/buff_1b_current_latest.{json,md}`. Provider
-selection, action semantics and whole-BuffData EOF remain unresolved.
-`memorypack.lipsync_corpus` joins the full LipSync JsonData stream to current
-ledger identities and runs the strict 15-member reader through EOF, checking
-logical MD5 and source/tool/parser pins at both ends. It reads JSONL one row at a
-time and writes `reports/animestudio/lipsync_current_latest.json` plus `.md`:
+| Gate | Establishes | Leaves open |
+| --- | --- | --- |
+| `streaming.corpus` | block-15 subgraphs, row prefix/slot partitions, native row-field representations, numeric/Global filename relations | runtime logical file, key namespace, names |
+| `streaming.marker17_corpus`, `.marker13_corpus`, `.marker2_corpus`, `.marker15_gap_corpus` | the marker profiles above; physical gaps kept separate from native read windows and opaque complements | record fields, runtime selection |
+| `memorypack.skill_corpus` | SkillData prefix/terminal framing; whole-schema rows only through replayed cursor receipts; cross-input-set rebinding only by explicit opt-in | the residue, provider/cache choice |
+| `memorypack.skill_cursor_receipt`, `.skill_timeline_cursor` | observed cursor ranges; candidate child-action ranges where native route, reader contract and `buff_actions.Reader` agree | parent closure from candidates |
+| `memorypack.buff_corpus`, `.buff_1b_corpus` | BuffData outer frame, event prefix, root continuation, named middle, accepted suffix; tag `0x1B` against its selected reader | interior bodies, provider selection |
+| `memorypack.npc_montage_corpus`, `.lipsync_corpus` | exact EOF closure of every current file | runtime playback |
+| `il2cpp.context_audit` | static formatter-identity chain and bounded SkillData samples on the selected build | executed cursor, runtime provider |
+| `jsondata_corpus` | block-wide identity join and per-file terminal state | anything a family gate owns |
 
+## Remaining gaps
 
-`python -m scripts.game_data.il2cpp.context_audit` emits an exact-build native
-generic-instantiation audit as JSON on stdout. `il2cpp.context` owns bounded
-pointer-table/record/vector decoding and reciprocal method-parameter identity;
-the audit checks selected native inputs and consumer pins, scans all registered
-instances, validates metadata image ownership and unique module-name joins, and
-rechecks the saved SkillData corpus's live input/tool/parser/chunk pins through
-`memorypack.skill_corpus.verify_current_report_inputs`. It does not
-re-stream the full corpus or establish runtime formatter/cursor identity. Its
-SkillData section re-reads one terminal sample and selected branches covering
-every positive terminal-list count shape in the saved census. Each sample is
-bound to its current logical identity/hash/hard limit and replayed against the
-exact-build reader order and field types. It also checks the shifted candidate
-against the registered GameplayTagList header and matching List<GameplayTag>
-remaining-byte guard. These are conditional static-path checks; runtime
-provider/cache selection and an executed cursor remain unobserved.
-Its ActionGroupData section also replays current positive
-`passiveEventActions` samples against registered AbilityActionMap,
-SequenceActionData, and selected action readers. A child union advances only as
-far as its independently pinned reader evidence supports: unverified tags stop
-at their first byte, and the C9 member-eight path stops before its first generic
-SequenceActionData call. The report separately keeps any three-call nested
-SequenceActionData replay candidate-only: provider/cache selection remains
-unobserved, so its ranges do not advance the authoritative parser cursor. The
-following `timelineActions` count is only peeked; neither the parent
-`ActionGroupData` nor whole SkillData is closed. See
-`reports/animestudio/il2cpp_context_current_latest.*` for the current
-identity-bound ranges and corpus classification.
+- JsonData union-route residues (order above) and BuffData interior grammars.
+- Terrain block/channel meaning; Streaming runtime-root joins, field-5 key
+  namespace and nested target extents; BundleManifest live lookup and object
+  ownership; IFix activation; runtime selection for every closed schema.
