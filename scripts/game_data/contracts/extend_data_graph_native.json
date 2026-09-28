@@ -1,0 +1,128 @@
+{
+  "schema": "endfield.extend-data-graph-native-contract.v1",
+  "status": "validated",
+  "evidenceBoundary": {
+    "exact": "Selected metadata identities, static field layouts, literal usage cell, code windows, and direct call instructions.",
+    "direct": "DataCompressManager.Init passes the CompressData archive path to VFS.GetAssetStream; BehaviourTree inherits Graph; Graph.DeserializeSelf passes its stored integer index to DataCompressManager.GetUnSafeString; that method's unpatched path indexes the archive table and decompresses the selected span before Graph.Deserialize.",
+    "conditional": "The Graph path requires enabled graph-string compression and initialized manager data; IFix can redirect selected methods. Static native bytes do not witness live execution.",
+    "unresolved": "This native route alone does not identify an authored Graph asset, enemy, AI template, scene, or live runtime instance; any asset-to-ordinal join requires a separate exported-object witness."
+  },
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "types": [
+    {
+      "index": 31851,
+      "name": "Beyond.DataCompressManager",
+      "fields": [
+        ["s_datas", 0, "Unity.Collections.NativeArray`1<byte>"],
+        ["s_count", 16, "int"],
+        ["s_path", 24, "string"],
+        ["s_ptr", 32, "nint"]
+      ]
+    },
+    {
+      "index": 45361,
+      "name": "NodeCanvas.Framework.Graph",
+      "fields": [
+        ["_serializedGraph", 24, "string"],
+        ["_serializedGraphStringIndex", 32, "int"],
+        ["_enableGraphStringCompress", 36, "bool"]
+      ]
+    },
+    {
+      "index": 45281,
+      "name": "NodeCanvas.BehaviourTrees.BehaviourTree",
+      "fields": []
+    }
+  ],
+  "methods": [
+    [247116, "Beyond.DataCompressManager", "Init", 74519456],
+    [247118, "Beyond.DataCompressManager", "GetUnSafeString", 58916480],
+    [247120, "Beyond.DataCompressManager", "_DecompressSpanToBuffer", 58918016],
+    [247127, "Beyond.DataCompressManager", "_GetSpanByIndex", 58917024],
+    [247417, "Beyond.VFS.VirtualFileSystem", "GetAssetStream", 54211696],
+    [450944, "System.IO.Compression.BrotliDecoder", "Decompress", 50104000],
+    [366265, "NodeCanvas.Framework.Graph", "Deserialize", 58914304],
+    [366266, "NodeCanvas.Framework.Graph", "DeserializeSelf", 58915648]
+  ],
+  "methodParameter": {
+    "methodIndex": 247118,
+    "parameterName": "strIndex",
+    "parameterType": "System.Int32"
+  },
+  "pathLiteral": {
+    "text": "Data/ExtendData/Main/CompressData.bin",
+    "literalIndex": 7900,
+    "usageCellRva": 219017096,
+    "loadRva": 74519746
+  },
+  "codeWindows": [
+    {
+      "role": "archiveInit",
+      "startRva": 74519456,
+      "endRva": 74520463,
+      "sha256": "C7F42CD5A475D364EB60E2DF93DCE2EAD1B0D0C7198749C3262AD5FA4D5042EF",
+      "boundary": "exact"
+    },
+    {
+      "role": "graphDeserializeSelf",
+      "startRva": 58915648,
+      "endRva": 58916416,
+      "sha256": "CDF50EDDEB631B4BAA0394DAFAAE74FBDA49774E8F4B9859896456AD9C474104",
+      "boundary": "exact"
+    },
+    {
+      "role": "indexedStringHotBody",
+      "startRva": 58916480,
+      "endRva": 58916748,
+      "sha256": "5DF2ED16E6C4FE13020C9F7BBD615B6B07376D1651AC7807BA6F91BFA1573009",
+      "boundary": "exact"
+    },
+    {
+      "role": "indexToSpan",
+      "startRva": 58917024,
+      "endRva": 58917306,
+      "sha256": "4D33BBE2C6B36D9A2FEA9873C7C965E1D8FDF7892C1E5D47552DE65ACDFC8072",
+      "boundary": "exact"
+    },
+    {
+      "role": "indexedStringDecompression",
+      "startRva": 58918016,
+      "endRva": 58919828,
+      "sha256": "78AEF0F6C6AD08F558A8507A3B11258D2F23A8B97988096E6FB523FECD7BC544",
+      "boundary": "exact"
+    }
+  ],
+  "instructionWindows": [
+    [74519746, "488B15BFDA9C08", "load exact archive path literal usage cell"],
+    [74519756, "E89F1FCAFE", "call VFS.GetAssetStream"],
+    [74520247, "8B0A", "read archive record count from copied bytes"],
+    [74520249, "894810", "store archive record count"],
+    [74520266, "48895120", "store archive data pointer"],
+    [58915772, "807B2400", "test Graph compression flag"],
+    [58915782, "8B7320", "read Graph serialized string index"],
+    [58915810, "E899020000", "call DataCompressManager.GetUnSafeString"],
+    [58916185, "E8A2F8FFFF", "call Graph.Deserialize"],
+    [58916493, "8BD9", "preserve string index from first argument"],
+    [58916616, "8BD3", "pass preserved index to span reader"],
+    [58916623, "E88C010000", "call DataCompressManager._GetSpanByIndex"],
+    [58916673, "E83A050000", "call DataCompressManager._DecompressSpanToBuffer"],
+    [58919076, "E8177E79FF", "call BrotliDecoder.Decompress"],
+    [58917144, "8D0C9D00000000", "multiply index by four"],
+    [58917157, "498B4820", "read archive pointer field"],
+    [58917161, "4863541104", "read absolute offset-table slot after count"],
+    [58917172, "448B02", "read uncompressed byte length"],
+    [58917175, "8B4204", "read compressed byte length"]
+  ],
+  "directCalls": [
+    [74519756, 54211696],
+    [58915810, 58916480],
+    [58916185, 58914304],
+    [58916623, 58917024],
+    [58916673, 58918016],
+    [58919076, 50104000]
+  ]
+}

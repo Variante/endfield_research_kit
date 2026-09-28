@@ -1,0 +1,51 @@
+{
+  "schema": "endfield.extend-data-graph-ai-contract.v3",
+  "status": "reviewed-structural-only",
+  "evidenceBoundary": {
+    "exact": "A same-source AssetBundle container PathID supplies each compressed BehaviourTree asset path. EnemyAIConfigData.aiBB points to an EnemyAIBlackboard in that source; each checked blackboard graph mode joins a managed-reference rid to an exact TypeTree canvasGraph PPtr, then to a compressed BehaviourTree PathID and archive ordinal. Every checked EnemyTable row key equals its stored enemyId. Its aiTemplateId equals the unique exported AI-config object's stored m_Name and its case-folded native-formatted AIConfig asset path for every reported table-key match.",
+    "conditional": "The selected native EnemyRootComponent copies EnemyServerData.enemyId into its own enemyId field; the unpatched EnemyAIComponent synchronous path passes that identity to EnemyTable and loads the aiTemplateId-formatted AIConfig path when lookup succeeds. IFix can redirect these methods. Unity and Table export freshness may rely on the pre-provenance export summary; no exported Unity object's current bytes have been independently authenticated.",
+    "unresolved": "No scene or runtime instance is selected by this gate. The producer of EnemyServerData.enemyId, async and override paths, unmatched EnemyTable IDs, AI config assets without a checked graph mode, null canvasGraph PPtrs, and graph assets outside this AI-config route remain open."
+  },
+  "scriptIdentities": {
+    "aiConfig": {
+      "className": "EnemyAIConfigData",
+      "namespace": "Beyond.Gameplay.AI.Config",
+      "assemblyName": "Gameplay.Beyond.dll"
+    },
+    "blackboard": {
+      "className": "EnemyAIBlackboard",
+      "namespace": "Beyond.Gameplay.AI.Config",
+      "assemblyName": "Gameplay.Beyond.dll"
+    }
+  },
+  "fields": {
+    "bundleContainer": "m_Container",
+    "bundleAsset": "asset",
+    "configBlackboard": "aiBB",
+    "blackboardGraph": "graph",
+    "managedReferences": "references",
+    "canvasGraph": "canvasGraph",
+    "enemyAiKey": "aiTemplateId"
+  },
+  "canvasGraphReferenceTypes": [
+    {
+      "class": "EnemyBattleGraph/EnemyBattleGraphData",
+      "ns": "Beyond.Gameplay.AI",
+      "asm": "Gameplay.Beyond"
+    },
+    {
+      "class": "EnemySettlementBattleGraph/EnemySettlementBattleGraphData",
+      "ns": "Beyond.Gameplay.AI",
+      "asm": "Gameplay.Beyond"
+    },
+    {
+      "class": "EnemyDefendBattleGraph/EnemyDefendBattleGraphData",
+      "ns": "Beyond.Gameplay.AI",
+      "asm": "Gameplay.Beyond"
+    }
+  ],
+  "requireAllCompressedOwnersInBundleContainer": true,
+  "requireResolvedNonNullCanvasGraph": true,
+  "requireEnemyRowIdentityKey": true,
+  "requireNativeAiConfigPathForMatchedEnemyRows": true
+}

@@ -1,0 +1,27 @@
+{
+  "schema": "endfield.extend-data-compress-reader.v1",
+  "status": "reviewed",
+  "framing": {
+    "header": "little-endian u32 record count followed by that many absolute little-endian u32 offsets",
+    "record": "little-endian u32 compressed byte length, little-endian u32 decoded byte length, then exactly that many Brotli bytes",
+    "decoded": "strict UTF-16LE JSON object",
+    "boundary": "first offset equals offset-table end, records are contiguous in table order, final record ends at EOF"
+  },
+  "decoderOutputClosure": {
+    "manifestFormat": "relative-path-length-sha256-v1",
+    "fileCount": 104,
+    "manifestSha256": "0C32FCFC2809BAC6E2624FE98F5F6315DA226B2E487EE982BDD5BB097355DBA8",
+    "reviewedFiles": [
+      {"path": "AnimeStudio.CLI.deps.json", "length": 29584, "sha256": "D8F515AE464D4941BD8B658D0884ED4476DBFDBB6393A4B60B5D911B38E47FA0"},
+      {"path": "AnimeStudio.CLI.dll", "length": 1021952, "sha256": "B204908D3FCAEC14E40A4B584AD99C025006F999FABF28D59B8B46874CF336D6"},
+      {"path": "AnimeStudio.CLI.exe", "length": 168960, "sha256": "118F50A273D3387D11DDD446EFBF8EADAF3FA57A1DCF271A8B2EF50D1929A549"},
+      {"path": "AnimeStudio.dll", "length": 1243136, "sha256": "67497831BF43F5A6566072EC265ADE64E43A2E6ABA43A0148DB234A0D37A1CFC"},
+      {"path": "Newtonsoft.Json.dll", "length": 723368, "sha256": "A28C251DFE36D881E9E2462E171441B8B0EC156FE3F452602C9149B1B9EFE05B"}
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "The selected decoder closure and current VFS file bytes are checked before decoding; the closure is checked again afterward. The reviewed decoder rejects malformed offsets, length mismatch, Brotli, UTF-16LE and JSON, and the corpus gate rechecks its manifest against every source offset and EOF.",
+    "structuralOnly": "JSON graph meaning is separately constrained by extend_data_graph_schema.json.",
+    "unresolved": "Installed runtime producer/consumer, graph owner and execution."
+  }
+}

@@ -322,6 +322,30 @@ class UnityObjectStore:
         for found in self._connection().execute(sql + " ORDER BY type, name", params):
             yield UnityObjectRow(*found)
 
+    def iter_rows_by_script_path_id(
+        self, script_path_id: int, type_name: str | None = None
+    ) -> Iterator[UnityObjectRow]:
+        """Rows referring to one MonoScript path ID, using the store's script index."""
+        sql = f"SELECT {_ROW_COLUMNS} FROM objects WHERE script_path_id=?"
+        params: list[Any] = [script_path_id]
+        if type_name is not None:
+            sql += " AND type=?"
+            params.append(type_name)
+        for found in self._connection().execute(sql + " ORDER BY type, name", params):
+            yield UnityObjectRow(*found)
+
+    def iter_rows_by_source_file(
+        self, source_file: str, type_name: str | None = None
+    ) -> Iterator[UnityObjectRow]:
+        """Rows in one serialized source file, using the store's source index."""
+        sql = f"SELECT {_ROW_COLUMNS} FROM objects WHERE source_file=?"
+        params: list[Any] = [source_file]
+        if type_name is not None:
+            sql += " AND type=?"
+            params.append(type_name)
+        for found in self._connection().execute(sql + " ORDER BY type, name", params):
+            yield UnityObjectRow(*found)
+
     def meta(self, key: str) -> str | None:
         found = self._connection().execute("SELECT value FROM meta WHERE key=?", (key,)).fetchone()
         return found[0] if found else None

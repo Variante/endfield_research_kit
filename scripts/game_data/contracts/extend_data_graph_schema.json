@@ -1,0 +1,579 @@
+{
+  "schema": "endfield.extend-data-graph-shape.v1",
+  "status": "reviewed-structural-only",
+  "evidenceBoundary": {
+    "exact": "Decoded NodeCanvas JSON root, node, and connection field sets and reference representation. Unknown root/node/connection shapes fail closed.",
+    "structuralOnly": "Task payloads, blackboard values, canvas groups, node execution order, and graph-owner mapping remain outside this reader. Missing node $id is preserved; only present IDs can be connection endpoints.",
+    "unresolved": "Archive ordinal to authored AI owner, runtime graph selection, task execution and blackboard state."
+  },
+  "root": {
+    "type": "NodeCanvas.BehaviourTrees.BehaviourTree",
+    "fields": [
+      "canvasGroups",
+      "connections",
+      "derivedData",
+      "localBlackboard",
+      "m_allParameters",
+      "nodes",
+      "type"
+    ],
+    "derivedDataType": "NodeCanvas.BehaviourTrees.BehaviourTree+DerivedSerializationData",
+    "derivedDataFields": [
+      "$type",
+      "repeat"
+    ],
+    "localBlackboardFields": [
+      "_variables"
+    ]
+  },
+  "node": {
+    "fieldKinds": {
+      "$id": "string",
+      "$type": "string",
+      "_action": "object",
+      "_color": "object",
+      "_comment": "string",
+      "_condition": "object",
+      "_position": "object",
+      "_subTree": "object",
+      "_tag": "string",
+      "_variablesMap": "array",
+      "additionalWidth": "number",
+      "childConditions": "array",
+      "childWeights": "array",
+      "conditionFailReturn": "integer",
+      "coolDownTime": "object",
+      "dynamic": "boolean",
+      "failChance": "object",
+      "failureRemap": "integer",
+      "filterMode": "integer",
+      "isDynamic": "boolean",
+      "maxCount": "object",
+      "policy": "integer",
+      "random": "boolean",
+      "repeatTimes": "object",
+      "repeaterMode": "integer",
+      "returnImmediately": "boolean",
+      "successRemap": "integer",
+      "timeout": "object"
+    },
+    "types": [
+      {
+        "type": "Beyond.Gameplay.AI.Nodes.ConditionalProbabilitySelector",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_color",
+            "_position",
+            "childConditions"
+          ],
+          [
+            "$id",
+            "$type",
+            "_comment",
+            "_position",
+            "childConditions"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "childConditions"
+          ]
+        ]
+      },
+      {
+        "type": "Beyond.Gameplay.AI.Nodes.RepeatUntil",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth",
+            "returnImmediately"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.ActionNode",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_action",
+            "_comment",
+            "_position",
+            "_tag",
+            "additionalWidth"
+          ],
+          [
+            "$id",
+            "$type",
+            "_action",
+            "_comment",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$id",
+            "$type",
+            "_action",
+            "_position"
+          ],
+          [
+            "$id",
+            "$type",
+            "_action",
+            "_position",
+            "_tag",
+            "additionalWidth"
+          ],
+          [
+            "$id",
+            "$type",
+            "_action",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$type",
+            "_action",
+            "_comment",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$type",
+            "_action",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$type",
+            "_position"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.BinarySelector",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$id",
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth",
+            "dynamic"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.ConditionNode",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$type",
+            "_position"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.ConditionalEvaluator",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_comment",
+            "_condition",
+            "_position",
+            "_tag",
+            "additionalWidth"
+          ],
+          [
+            "$id",
+            "$type",
+            "_comment",
+            "_condition",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$id",
+            "$type",
+            "_condition",
+            "_position"
+          ],
+          [
+            "$id",
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$id",
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth",
+            "conditionFailReturn"
+          ],
+          [
+            "$id",
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth",
+            "isDynamic"
+          ],
+          [
+            "$type",
+            "_condition",
+            "_position"
+          ],
+          [
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth"
+          ],
+          [
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth",
+            "conditionFailReturn"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.Filter",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_position",
+            "additionalWidth",
+            "coolDownTime",
+            "filterMode",
+            "maxCount"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "additionalWidth",
+            "coolDownTime",
+            "filterMode",
+            "maxCount",
+            "policy"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "additionalWidth",
+            "coolDownTime",
+            "maxCount"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "coolDownTime",
+            "maxCount"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.Optional",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_position"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.Parallel",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_position",
+            "additionalWidth",
+            "dynamic"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.ProbabilitySelector",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_position",
+            "childWeights",
+            "failChance"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.Remapper",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_position",
+            "additionalWidth",
+            "failureRemap"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "additionalWidth",
+            "successRemap"
+          ],
+          [
+            "$type",
+            "_position",
+            "additionalWidth",
+            "failureRemap"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.Repeater",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_position",
+            "additionalWidth",
+            "repeatTimes"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "additionalWidth",
+            "repeatTimes",
+            "repeaterMode"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "repeatTimes"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.Selector",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_color",
+            "_position"
+          ],
+          [
+            "$id",
+            "$type",
+            "_color",
+            "_position",
+            "dynamic"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "dynamic"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "dynamic",
+            "random"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "random"
+          ],
+          [
+            "$type",
+            "_position",
+            "dynamic"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.Sequencer",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_color",
+            "_comment",
+            "_position"
+          ],
+          [
+            "$id",
+            "$type",
+            "_color",
+            "_position"
+          ],
+          [
+            "$id",
+            "$type",
+            "_comment",
+            "_position"
+          ],
+          [
+            "$id",
+            "$type",
+            "_comment",
+            "_position",
+            "_tag"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "dynamic"
+          ],
+          [
+            "$type",
+            "_position"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.SubTree",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_comment",
+            "_position",
+            "_subTree",
+            "_variablesMap",
+            "additionalWidth"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "_subTree",
+            "_variablesMap",
+            "additionalWidth"
+          ],
+          [
+            "$type",
+            "_position",
+            "_subTree",
+            "_variablesMap",
+            "additionalWidth"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.Timeout",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_comment",
+            "_position",
+            "_tag",
+            "timeout"
+          ],
+          [
+            "$id",
+            "$type",
+            "_position",
+            "timeout"
+          ]
+        ]
+      },
+      {
+        "type": "NodeCanvas.BehaviourTrees.WaitUntil",
+        "fieldSets": [
+          [
+            "$id",
+            "$type",
+            "_condition",
+            "_position",
+            "additionalWidth"
+          ]
+        ]
+      }
+    ],
+    "positionFields": [
+      "x",
+      "y"
+    ],
+    "requiredPositionFields": 1,
+    "idEncoding": "decimal-string-optional-unique-when-present"
+  },
+  "connection": {
+    "type": "NodeCanvas.BehaviourTrees.BTConnection",
+    "fieldSets": [
+      [
+        "$type",
+        "_sourceNode",
+        "_targetNode"
+      ],
+      [
+        "$type",
+        "_isDisabled",
+        "_sourceNode",
+        "_targetNode"
+      ]
+    ],
+    "referenceFields": [
+      "_sourceNode",
+      "_targetNode"
+    ],
+    "referenceShape": [
+      "$ref"
+    ],
+    "disabledField": "_isDisabled"
+  }
+}

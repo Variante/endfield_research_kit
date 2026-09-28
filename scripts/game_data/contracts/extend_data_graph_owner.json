@@ -1,0 +1,25 @@
+{
+  "schema": "endfield.extend-data-graph-owner-contract.v1",
+  "status": "reviewed-structural-only",
+  "evidenceBoundary": {
+    "exact": "The current exported BehaviourTree object's script pointer, compression flag, integer archive index, CAB/source-file identity, PathID and stored document hash are checked against the reviewed shape.",
+    "conditional": "The export freshness guard may use its pre-provenance summary; that proves source-root fingerprint continuity under the maintained guard, not an independent current-byte hash for each Unity object.",
+    "unresolved": "Authored asset ownership does not establish which enemy or scene selects the asset, a live Graph instance, runtime execution, or a blackboard value."
+  },
+  "scriptIdentity": {
+    "className": "BehaviourTree",
+    "namespace": "NodeCanvas.BehaviourTrees",
+    "assemblyName": "ParadoxNotion.dll"
+  },
+  "fields": {
+    "scriptPointer": "m_Script",
+    "scriptReferencePath": "$.m_Script",
+    "inlineGraph": "_serializedGraph",
+    "archiveIndex": "_serializedGraphStringIndex",
+    "compressEnabled": "_enableGraphStringCompress"
+  },
+  "compressedFlagValue": 1,
+  "requireEmptyInlineGraphWhenCompressed": true,
+  "requireFullOrdinalCoverage": true,
+  "allowRepeatedOrdinals": true
+}

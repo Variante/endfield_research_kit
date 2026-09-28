@@ -1,0 +1,426 @@
+{
+  "schema": "endfield.extend-data-spawner-library-native-contract.v2",
+  "status": "validated",
+  "evidenceBoundary": {
+    "exact": "Selected native input hashes, metadata field types and offsets, method identities, code bytes and decisive instructions.",
+    "direct": "SpawnerConfigData indexes enemyLibrary by item.key. GameplayNetwork._Handle_EnemySpawnerObjectEnd copies each SPAWNER_DETAIL objId/actionId/spawnIdx into a SpawnDataDetail list and calls SpawnerManager.OnEnemySpawnerObjectEnd, which passes the list to SpawnerRuntime.SetupSpawnData and stores serverId -> actionId in m_entityId2ActionIdDict. SpawnerManager.TryGetLibraryItem uses the entity server ID to retrieve that action, reads its SpawnMonsterFromTemplateV2.libraryKey, and looks up that key in the spawner config's library dictionary. EnemyAIComponent._InitSync uses its entity server ID and parent spawner to request the item; when overrideAIConfig is nonempty and the typed asset loads, it calls EnemyAIRuntimeCfg.SetOverrideData with EnemyAIConfigDataOverride. Its TryGetRuntimeBornData branch calls _TryGetSpawnerLibraryItem and reads the selected item's bornTemplateId and bornBehaviorData as separate born-data outputs; the resolver itself delegates to TryGetLibraryItem. Separately, the EnemyServerData message constructor copies SCENE_MONSTER.commonInfo.templateid to enemyId and SCENE_MONSTER.monsterLibraryKey to subgameLibraryKey.",
+    "conditional": "These are unpatched static native branches. The lookup, override, and born-data fallback require a selected spawner, an entity-to-action mapping, matching libraryKey, relevant nonempty item fields, and runtime execution. The born-data fallback is bypassed when entity-provided born data takes precedence.",
+    "unresolved": "No checked instruction compares or copies SpawnerEnemyLibraryItem.enemyId to Proto.SCENE_MONSTER.commonInfo.templateid. The producer of the live monster message, selected EnemyInfo/EntityNode, and live override execution are not witnessed."
+  },
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "types": [
+    {
+      "index": 1099,
+      "name": "Beyond.Gameplay.SpawnerConfigData",
+      "fields": [
+        [
+          "enemyLibrary",
+          48,
+          "System.Collections.Generic.List`1<Beyond.Gameplay.SpawnerEnemyLibraryItem>"
+        ],
+        [
+          "m_enemyLibraryDict",
+          56,
+          "System.Collections.Generic.Dictionary`2<string,Beyond.Gameplay.SpawnerEnemyLibraryItem>"
+        ]
+      ]
+    },
+    {
+      "index": 1106,
+      "name": "Beyond.Gameplay.SpawnerEnemyLibraryItem",
+      "fields": [
+        [
+          "key",
+          16,
+          "string"
+        ],
+        [
+          "enemyId",
+          24,
+          "string"
+        ],
+        [
+          "overrideAIConfig",
+          40,
+          "string"
+        ],
+        [
+          "bornTemplateId",
+          48,
+          "string"
+        ],
+        [
+          "bornBehaviorData",
+          56,
+          "Beyond.Gameplay.AI.EnemyCommonPlayTemplate+BornBehaviorData"
+        ]
+      ]
+    },
+    {
+      "index": 1092,
+      "name": "Beyond.Gameplay.SpawnerActions+SpawnMonsterFromTemplateV2",
+      "fields": [
+        [
+          "libraryKey",
+          24,
+          "string"
+        ]
+      ]
+    },
+    {
+      "index": 12016,
+      "name": "Beyond.Gameplay.Core.SpawnerManager",
+      "fields": [
+        [
+          "m_entityId2ActionIdDict",
+          160,
+          "System.Collections.Generic.Dictionary`2<ulong,int>"
+        ]
+      ]
+    },
+    {
+      "index": 12334,
+      "name": "Beyond.Gameplay.Core.Entity",
+      "fields": [
+        [
+          "<serverId>k__BackingField",
+          48,
+          "ulong"
+        ],
+        [
+          "<enemy>k__BackingField",
+          464,
+          "Beyond.Gameplay.Core.EnemyRootComponent"
+        ]
+      ]
+    },
+    {
+      "index": 10915,
+      "name": "Beyond.Gameplay.Core.EnemyRootComponent",
+      "fields": [
+        [
+          "<parentSpawner>k__BackingField",
+          432,
+          "Beyond.Gameplay.Core.SpawnerPtr"
+        ]
+      ]
+    },
+    {
+      "index": 12436,
+      "name": "Beyond.Gameplay.Core.BaseComponent",
+      "fields": [
+        [
+          "<entity>k__BackingField",
+          80,
+          "Beyond.Gameplay.Core.Entity"
+        ]
+      ]
+    },
+    {
+      "index": 2800,
+      "name": "Beyond.Gameplay.EnemyServerData",
+      "fields": [
+        ["<enemyId>k__BackingField", 16, "string"],
+        ["<subgameLibraryKey>k__BackingField", 64, "string"]
+      ]
+    },
+    {
+      "index": 30387,
+      "name": "Proto.SCENE_MONSTER",
+      "fields": [
+        ["commonInfo_", 24, "Proto.SCENE_OBJECT_COMMON_INFO"],
+        ["monsterLibraryKey_", 64, "string"]
+      ]
+    },
+    {
+      "index": 30383,
+      "name": "Proto.SCENE_OBJECT_COMMON_INFO",
+      "fields": [
+        ["templateid_", 40, "string"]
+      ]
+    },
+    {
+      "index": 30202,
+      "name": "Proto.SC_SCENE_MONSTER_SPAWNER_OBJECT_DATA_END",
+      "fields": [
+        ["sceneNumId_", 24, "int"],
+        ["spawnerId_", 32, "ulong"],
+        ["waveId_", 40, "int"],
+        ["groupId_", 44, "int"],
+        ["details_", 48, "Google.Protobuf.Collections.RepeatedField`1<Proto.SPAWNER_DETAIL>"]
+      ]
+    },
+    {
+      "index": 30204,
+      "name": "Proto.SPAWNER_DETAIL",
+      "fields": [
+        ["objId_", 24, "ulong"],
+        ["actionId_", 32, "int"],
+        ["spawnIdx_", 36, "int"]
+      ]
+    },
+    {
+      "index": 12015,
+      "name": "Beyond.Gameplay.Core.SpawnerManager+SpawnDataDetail",
+      "fields": [
+        ["actionId", 16, "int"],
+        ["spawnIndex", 20, "int"],
+        ["serverId", 24, "ulong"]
+      ]
+    }
+  ],
+  "methods": [
+    [
+      5315,
+      "Beyond.Gameplay.SpawnerConfigData",
+      "get_enemyLibraryDict",
+      59337968
+    ],
+    [
+      77508,
+      "Beyond.Gameplay.Core.SpawnerManager",
+      "TryGetLibraryItem",
+      59337632
+    ],
+    [
+      47706,
+      "Beyond.Gameplay.AI.EnemyAIComponent",
+      "_InitSync",
+      66487184
+    ],
+    [
+      48608,
+      "Beyond.Gameplay.AI.Config.EnemyAIRuntimeCfg",
+      "SetOverrideData",
+      66489344
+    ],
+    [
+      17839,
+      "Beyond.Gameplay.EnemyServerData",
+      ".ctor",
+      59333744
+    ],
+    [21096, "Beyond.Gameplay.GameplayNetwork", "_Handle_EnemySpawnerObjectEnd", 50895424],
+    [77519, "Beyond.Gameplay.Core.SpawnerManager", "OnEnemySpawnerObjectEnd", 50881120],
+    [77556, "Beyond.Gameplay.Core.SpawnerRuntime", "SetupSpawnData", 50883520],
+    [47718, "Beyond.Gameplay.AI.EnemyAIComponent", "_TryGetSpawnerLibraryItem", 59334640],
+    [47719, "Beyond.Gameplay.AI.EnemyAIComponent", "TryGetRuntimeBornData", 59334320],
+    [47720, "Beyond.Gameplay.AI.EnemyAIComponent", "TryGetResolvedBornBehaviorData", 59339312]
+  ],
+  "methodParameterTypes": [
+    [
+      77508,
+      [
+        "Beyond.Gameplay.Core.SpawnerPtr",
+        "ulong",
+        "Beyond.Gameplay.SpawnerEnemyLibraryItem"
+      ]
+    ],
+    [
+      48608,
+      [
+        "Beyond.Gameplay.AI.Config.EnemyAIConfigDataOverride"
+      ]
+    ],
+    [
+      17839,
+      [
+        "Proto.SCENE_MONSTER"
+      ]
+    ],
+    [21096, ["Proto.SC_SCENE_MONSTER_SPAWNER_OBJECT_DATA_END"]],
+    [77519, ["Beyond.Gameplay.Core.SpawnerPtr", "int", "int", "System.Collections.Generic.List`1<Beyond.Gameplay.Core.SpawnerManager+SpawnDataDetail>"]],
+    [77556, ["int", "int", "System.Collections.Generic.List`1<Beyond.Gameplay.Core.SpawnerManager+SpawnDataDetail>"]]
+  ],
+  "codeWindows": [
+    {
+      "role": "libraryKeyIndex",
+      "startRva": 59338078,
+      "endRva": 59338308,
+      "sha256": "0D0628582D574E10FEF66BB96F12716B44A98B1FB3812B209A07A7A5E35B596F",
+      "boundary": "exact"
+    },
+    {
+      "role": "entityActionLibraryLookup",
+      "startRva": 59337715,
+      "endRva": 59337930,
+      "sha256": "CF8B579EB4CD8A5DB38A0D9DD9065DEB562BB189915EEE40EAD239C898A33A45",
+      "boundary": "exact"
+    },
+    {
+      "role": "enemyAiOverrideLoad",
+      "startRva": 66487771,
+      "endRva": 66488100,
+      "sha256": "C56DC4EB6E0DE60935A1B2FC6AECF1C3F31A805804FBAD647C7DC6C7F2623150",
+      "boundary": "exact"
+    },
+    {
+      "role": "sceneMonsterIdentityCopy",
+      "startRva": 59333779,
+      "endRva": 59334000,
+      "sha256": "0CF4E7F51E26E035F226A0BD0225EBA432675C4830035AE56B27E9E886E43403",
+      "boundary": "exact"
+    },
+    {"role": "serverSpawnerDetailHandler", "startRva": 50895547, "endRva": 50895801, "sha256": "CE56EE1657D2A9DAEB5B3BB61BAC41664D614E58C06C1EFEE842915D31D7AF36", "boundary": "exact"},
+    {"role": "managerSetupSpawnData", "startRva": 50881560, "endRva": 50881590, "sha256": "AA26C10DA9DBA5ABA0AFFA2E68E95C47986F833BCB41DA5D22FCBA831ADAF3EF", "boundary": "exact"},
+    {"role": "managerServerIdActionMap", "startRva": 50881801, "endRva": 50882732, "sha256": "EED3AC4F58B6AD9A29708ACDAC54075B58912CEA7192896F9D71BAB2F6969C33", "boundary": "exact"},
+    {"role": "tryGetRuntimeBornData", "startRva": 59334320, "endRva": 59334640, "sha256": "F4028269F594A4AB4542A037EB5D47FAEE1ECF0151736094EEAC196C1B874CE5", "boundary": "exact"},
+    {"role": "tryGetSpawnerLibraryItem", "startRva": 59334640, "endRva": 59334992, "sha256": "BEBC107EFDE8BF3E4350CEDE36BF37D839573EAC5BEB366053DDAEDD82CF660E", "boundary": "exact"},
+    {"role": "tryGetResolvedBornBehaviorData", "startRva": 59339312, "endRva": 59339568, "sha256": "AB79C07C8562DEA75111923C7C2DD5847E8243F297FBEC2073EB87B41C971769", "boundary": "exact"},
+    {"role": "syncRuntimeBornBranch", "startRva": 66487677, "endRva": 66487731, "sha256": "22B47FE6DFF61B0A299E3317B6DE57BCA497D48A6F94C23C1C8C506E4402B499", "boundary": "exact"},
+    {"role": "syncResolvedBornBranch", "startRva": 66488370, "endRva": 66488388, "sha256": "CFF0181E975E6FEDE15CB2A8103AC223494EB5AD1B7F5B2E08FDE60396A40D71", "boundary": "exact"}
+  ],
+  "instructionWindows": [
+    [
+      59338203,
+      "4C8B7B10",
+      "read item.key, not item.enemyId"
+    ],
+    [
+      59338297,
+      "498BD7",
+      "use item.key as dictionary insertion key"
+    ],
+    [
+      59338303,
+      "E8DC5A47FF",
+      "insert dictionary item"
+    ],
+    [
+      59337747,
+      "488B8EA0000000",
+      "read entityId2ActionId dictionary"
+    ],
+    [
+      59337868,
+      "488B5818",
+      "read SpawnMonsterFromTemplateV2.libraryKey"
+    ],
+    [
+      59337888,
+      "E84B000000",
+      "read spawner config library dictionary"
+    ],
+    [
+      59337914,
+      "E8D19247FF",
+      "lookup action library key"
+    ],
+    [
+      66487897,
+      "4C8B4030",
+      "pass entity.serverId"
+    ],
+    [
+      66487918,
+      "E82DE592FF",
+      "resolve spawner library item"
+    ],
+    [
+      66487945,
+      "488B5B28",
+      "read item.overrideAIConfig"
+    ],
+    [
+      66487992,
+      "E8E3F4FCFF",
+      "format override asset path"
+    ],
+    [
+      66488010,
+      "E8A193B0FF",
+      "load override asset"
+    ],
+    [
+      66488095,
+      "E8DC040000",
+      "set typed override data"
+    ],
+    [59333779, "488B4218", "read SCENE_MONSTER.commonInfo"],
+    [59333792, "488B4028", "read commonInfo.templateid"],
+    [59333796, "48894110", "store EnemyServerData.enemyId"],
+    [59333988, "4C8B4F40", "read SCENE_MONSTER.monsterLibraryKey"],
+    [59333996, "4C894B40", "store EnemyServerData.subgameLibraryKey"],
+    [50895547, "488B4330", "read message details"],
+    [50895599, "448B7020", "read SPAWNER_DETAIL.actionId"],
+    [50895639, "8B6824", "read SPAWNER_DETAIL.spawnIdx"],
+    [50895674, "488B4018", "read SPAWNER_DETAIL.objId"],
+    [50895698, "4489742430", "store SpawnDataDetail.actionId"],
+    [50895703, "896C2434", "store SpawnDataDetail.spawnIndex"],
+    [50895796, "E8A7C6FFFF", "pass copied details to SpawnerManager"],
+    [50881585, "E88A070000", "pass detail list to SpawnerRuntime.SetupSpawnData"],
+    [50881801, "0F1034C2", "load SpawnDataDetail record"],
+    [50882457, "660F73D808", "select SpawnDataDetail.serverId"],
+    [50882462, "66480F7EC6", "move serverId as dictionary key"],
+    [50882622, "4D8BB7A0000000", "select entityId2ActionId dictionary"],
+    [50882716, "66410F7EF0", "select SpawnDataDetail.actionId as value"],
+    [50882721, "488BD6", "pass serverId as dictionary key"],
+    [50882727, "E834CBE4FF", "insert serverId to actionId"],
+    [59334448, "E8BB000000", "resolve selected spawner library item for born-data fallback"],
+    [59334471, "488B4030", "read selected item.bornTemplateId"],
+    [59334496, "488B4038", "read selected item.bornBehaviorData"],
+    [59334866, "E8C90A0000", "delegate to SpawnerManager.TryGetLibraryItem"],
+    [66487718, "E805D992FF", "synchronous AI initialization requests runtime born data"],
+    [66488381, "E8EEE992FF", "synchronous AI initialization requests resolved born behavior data"]
+  ],
+  "directCalls": [
+    [
+      59338303,
+      47237408
+    ],
+    [
+      59337888,
+      59337968
+    ],
+    [
+      59337914,
+      47251344
+    ],
+    [
+      66487918,
+      59337632
+    ],
+    [
+      66487992,
+      66288544
+    ],
+    [
+      66488010,
+      61282928
+    ],
+    [
+      66488095,
+      66489344
+    ],
+    [50895796, 50881120],
+    [50881585, 50883520],
+    [50882727, 49099744],
+    [59334448, 59334640],
+    [59334866, 59337632],
+    [66487718, 59334320],
+    [66488381, 59339312]
+  ],
+  "namedTargets": [
+    [
+      47237408,
+      "System.Collections.Generic.Dictionary`2.TryInsert<generic>"
+    ],
+    [
+      47251344,
+      "System.Collections.Generic.Dictionary`2.TryGetValue<generic>"
+    ],
+    [
+      61282928,
+      "Beyond.Gameplay.AI.EnemyAIComponent.LoadSingleConfig<generic>"
+    ],
+    [49099744, "System.Collections.Generic.Dictionary`2.TryInsert<generic>"]
+  ],
+  "pathLiterals": [
+    "Assets/Beyond/DynamicAssets/Gameplay/AI/Enemy/AIConfig/Override/",
+    "{0}{1}.asset"
+  ]
+}

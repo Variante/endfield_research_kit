@@ -1,0 +1,1903 @@
+{
+  "schema": "endfield.extend-data-task-envelopes.v2",
+  "status": "reviewed-structural-only",
+  "requireKnownTaskTypes": true,
+  "evidenceBoundary": {
+    "exact": "All currently reached typed task names, field sets and JSON value kinds; recursive typed child arrays for ActionList and ConditionList; EnemySwitchBehavior behavior.tag.tagId stored integer wrapper. Unknown task types reject.",
+    "structuralOnly": "Object/list field contents other than the declared wrappers remain opaque. Blackboard variables and values are not resolved.",
+    "unresolved": "Task execution, behavior tag meaning/hash writer, graph ownership, selected runtime task instance and blackboard state."
+  },
+  "profiles": [
+    {
+      "type": "Beyond.Gameplay.AI.Action.EnemySwitchBehavior",
+      "fieldSets": [
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "foceSwitch",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDuration",
+          "idleWaitTime",
+          "needFormationTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "idleWaitTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDelay",
+          "idleWaitTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDelay",
+          "formationDuration",
+          "idleWaitTime",
+          "needFormationTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSeqSkillGraph",
+          "castSkillResult",
+          "checkMarker",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDelay",
+          "formationFaceToTarget",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDelay",
+          "formationDuration",
+          "idleWaitTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "idleFaceToTarget",
+          "idleWaitTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDelay",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "foceSwitch",
+          "formationDelay",
+          "formationFaceToTarget",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "foceSwitch",
+          "idleFaceToTarget",
+          "idleWaitTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationFaceToTarget",
+          "idleWaitTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSeqSkillType",
+          "castSkillResult",
+          "checkMarker",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "foceSwitch",
+          "idleWaitTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDelay",
+          "formationDuration",
+          "needFormationTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDelay",
+          "formationDuration",
+          "idleWaitTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos",
+          "waitFinish"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos",
+          "waitFinish"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDelay",
+          "formationDuration",
+          "idleWaitTime",
+          "needFormationTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos",
+          "waitFinish"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "foceSwitch",
+          "formationFaceToTarget",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationFaceToTarget",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "idleFaceToTarget",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDuration",
+          "needFormationTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "foceSwitch",
+          "formationDelay",
+          "formationDuration",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "formationDelay",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos",
+          "waitFinish"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "foceSwitch",
+          "formationDelay",
+          "formationDuration",
+          "needFormationTime",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "behavior",
+          "castSkillResult",
+          "checkMarker",
+          "foceSwitch",
+          "formationDelay",
+          "seqskillData",
+          "skillData",
+          "target",
+          "targetPos"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "behavior": "object",
+        "castSeqSkillGraph": "integer",
+        "castSeqSkillType": "integer",
+        "castSkillResult": "object",
+        "checkMarker": "array",
+        "foceSwitch": "boolean",
+        "formationDelay": "object",
+        "formationDuration": "object",
+        "formationFaceToTarget": "boolean",
+        "idleFaceToTarget": "boolean",
+        "idleWaitTime": "object",
+        "needFormationTime": "boolean",
+        "seqskillData": "array",
+        "skillData": "object",
+        "target": "object",
+        "targetPos": "object",
+        "waitFinish": "boolean"
+      },
+      "nestedBehaviorTag": {
+        "behaviorFields": [
+          "tag"
+        ],
+        "tagFields": [
+          "tagId"
+        ],
+        "tagIdKind": "integer"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckAngleToTarget",
+      "fieldSets": [
+        [
+          "$type",
+          "angle",
+          "checkList",
+          "checkType",
+          "targetActor"
+        ],
+        [
+          "$type",
+          "angle",
+          "checkList",
+          "targetActor"
+        ],
+        [
+          "$type",
+          "_invert",
+          "angle",
+          "checkList",
+          "checkType",
+          "targetActor"
+        ],
+        [
+          "$type",
+          "advance",
+          "angle",
+          "calcType",
+          "checkList",
+          "checkType",
+          "targetActor"
+        ],
+        [
+          "$type",
+          "_invert",
+          "angle",
+          "checkList",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_invert": "boolean",
+        "advance": "boolean",
+        "angle": "object",
+        "calcType": "integer",
+        "checkList": "array",
+        "checkType": "integer",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Framework.ConditionList",
+      "fieldSets": [
+        [
+          "$type",
+          "conditions"
+        ],
+        [
+          "$type",
+          "checkMode",
+          "conditions"
+        ],
+        [
+          "$type",
+          "_invert",
+          "conditions"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_invert": "boolean",
+        "checkMode": "integer",
+        "conditions": "array"
+      },
+      "taskListField": "conditions"
+    },
+    {
+      "type": "NodeCanvas.Tasks.Actions.SetFloat",
+      "fieldSets": [
+        [
+          "$type",
+          "valueA",
+          "valueB"
+        ],
+        [
+          "$type",
+          "Operation",
+          "valueA",
+          "valueB"
+        ],
+        [
+          "$type",
+          "Operation",
+          "perSecond",
+          "valueA",
+          "valueB"
+        ],
+        [
+          "$type",
+          "perSecond",
+          "valueA",
+          "valueB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "Operation": "integer",
+        "perSecond": "boolean",
+        "valueA": "object",
+        "valueB": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckDistanceToTarget",
+      "fieldSets": [
+        [
+          "$type",
+          "checkType",
+          "distance",
+          "targetActor"
+        ],
+        [
+          "$type",
+          "distance",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "checkType": "integer",
+        "distance": "object",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckCanCastSkill",
+      "fieldSets": [
+        [
+          "$type",
+          "skillData",
+          "skillId",
+          "skipCheckAngle",
+          "skipCheckDistance",
+          "targetActor",
+          "targetPoint"
+        ],
+        [
+          "$type",
+          "dataType",
+          "skillData",
+          "skillId",
+          "skipCheckAngle",
+          "skipCheckDistance",
+          "targetActor",
+          "targetPoint"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "dataType",
+          "skillData",
+          "skillId",
+          "skipCheckAngle",
+          "skipCheckDistance",
+          "targetActor",
+          "targetPoint"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "skillData",
+          "skillId",
+          "skipCheckAngle",
+          "skipCheckDistance",
+          "targetActor",
+          "targetPoint"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "dataType": "integer",
+        "skillData": "object",
+        "skillId": "object",
+        "skipCheckAngle": "object",
+        "skipCheckDistance": "object",
+        "targetActor": "object",
+        "targetPoint": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Framework.ActionList",
+      "fieldSets": [
+        [
+          "$type",
+          "actions"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "actions": "array"
+      },
+      "taskListField": "actions"
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.GetCurTime",
+      "fieldSets": [
+        [
+          "$type",
+          "saveAs"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "saveAs": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Conditions.Probability",
+      "fieldSets": [
+        [
+          "$type",
+          "maxValue",
+          "probability"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "maxValue",
+          "probability"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "maxValue": "object",
+        "probability": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckBuffStackNum",
+      "fieldSets": [
+        [
+          "$type",
+          "buffId",
+          "buffOwner",
+          "compareType",
+          "layerCnt"
+        ],
+        [
+          "$type",
+          "buffId",
+          "buffOwner",
+          "layerCnt"
+        ],
+        [
+          "$type",
+          "_invert",
+          "buffId",
+          "buffOwner",
+          "compareType",
+          "layerCnt"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "buffId",
+          "buffOwner",
+          "compareType",
+          "layerCnt"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_invert": "boolean",
+        "_isDisabled": "boolean",
+        "buffId": "object",
+        "buffOwner": "object",
+        "compareType": "integer",
+        "layerCnt": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Conditions.CheckFloat",
+      "fieldSets": [
+        [
+          "$type",
+          "checkType",
+          "valueA",
+          "valueB"
+        ],
+        [
+          "$type",
+          "valueA",
+          "valueB"
+        ],
+        [
+          "$type",
+          "checkType",
+          "differenceThreshold",
+          "valueA",
+          "valueB"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "checkType",
+          "valueA",
+          "valueB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "checkType": "integer",
+        "differenceThreshold": "number",
+        "valueA": "object",
+        "valueB": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckEntity",
+      "fieldSets": [
+        [
+          "$type",
+          "_invert",
+          "actorA",
+          "actorB"
+        ],
+        [
+          "$type",
+          "actorA",
+          "actorB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_invert": "boolean",
+        "actorA": "object",
+        "actorB": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckEntityAttribute",
+      "fieldSets": [
+        [
+          "$type",
+          "targetActor",
+          "value"
+        ],
+        [
+          "$type",
+          "attributeType",
+          "targetActor",
+          "value"
+        ],
+        [
+          "$type",
+          "checkOtherActor",
+          "targetActor",
+          "value"
+        ],
+        [
+          "$type",
+          "checkType",
+          "targetActor",
+          "value"
+        ],
+        [
+          "$type",
+          "attributeType",
+          "checkType",
+          "targetActor",
+          "value"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "targetActor",
+          "value"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "attributeType": "integer",
+        "checkOtherActor": "boolean",
+        "checkType": "integer",
+        "targetActor": "object",
+        "value": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.EnemyGetTargetFromBrain",
+      "fieldSets": [
+        [
+          "$type",
+          "saveAs"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "saveAs"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "saveAs": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Actions.SetBoolean",
+      "fieldSets": [
+        [
+          "$type",
+          "boolVariable"
+        ],
+        [
+          "$type",
+          "boolVariable",
+          "setTo"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "boolVariable"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "boolVariable": "object",
+        "setTo": "integer"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.HasAttackerAIIdentity",
+      "fieldSets": [
+        [
+          "$type"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Conditions.CheckBoolean",
+      "fieldSets": [
+        [
+          "$type",
+          "valueA",
+          "valueB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "valueA": "object",
+        "valueB": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.MoveToTarget",
+      "fieldSets": [
+        [
+          "$type",
+          "customStopRange",
+          "stopRange",
+          "targetActor"
+        ],
+        [
+          "$type",
+          "customStopRange",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "customStopRange": "object",
+        "stopRange": "integer",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.ResetTimer",
+      "fieldSets": [
+        [
+          "$type",
+          "key"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "key": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.GetMainCharacter",
+      "fieldSets": [
+        [
+          "$type",
+          "saveTo"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "saveTo": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Actions.SetInt",
+      "fieldSets": [
+        [
+          "$type",
+          "Operation",
+          "valueA",
+          "valueB"
+        ],
+        [
+          "$type",
+          "valueA",
+          "valueB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "Operation": "integer",
+        "valueA": "object",
+        "valueB": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.StartTimer",
+      "fieldSets": [
+        [
+          "$type",
+          "key",
+          "passTime"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "key",
+          "passTime"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "key": "object",
+        "passTime": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.GetRandomMember",
+      "fieldSets": [
+        [
+          "$type",
+          "target"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "target": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Actions.Wait",
+      "fieldSets": [
+        [
+          "$type",
+          "waitTime"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "waitTime": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.NpcDoAttractPoint",
+      "fieldSets": [
+        [
+          "$type",
+          "animType",
+          "detailAnimType",
+          "duration"
+        ],
+        [
+          "$type",
+          "detailAnimType",
+          "duration"
+        ],
+        [
+          "$type",
+          "animType",
+          "detailAnimType",
+          "duration",
+          "loopCount"
+        ],
+        [
+          "$type",
+          "animType",
+          "duration"
+        ],
+        [
+          "$type",
+          "animType",
+          "duration",
+          "loopCount"
+        ],
+        [
+          "$type",
+          "detailAnimType",
+          "duration",
+          "loopCount"
+        ],
+        [
+          "$type",
+          "duration"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "animType": "integer",
+        "detailAnimType": "string",
+        "duration": "object",
+        "loopCount": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.IsFreeForAction",
+      "fieldSets": [
+        [
+          "$type",
+          "includeExclusive"
+        ],
+        [
+          "$type"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "includeExclusive": "boolean"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.SimplePQS",
+      "fieldSets": [
+        [
+          "$type",
+          "pqsData",
+          "saveAs",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "pqsData": "object",
+        "saveAs": "object",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckTimer",
+      "fieldSets": [
+        [
+          "$type",
+          "checkType",
+          "key",
+          "time"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "checkType",
+          "key",
+          "time"
+        ],
+        [
+          "$type",
+          "key",
+          "time"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "checkType": "integer",
+        "key": "object",
+        "time": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.InterruptCurrentSkill",
+      "fieldSets": [
+        [
+          "$type"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.GetAITransData",
+      "fieldSets": [
+        [
+          "$type",
+          "key",
+          "result",
+          "success"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "key": "object",
+        "result": "object",
+        "success": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Actions.SetFloatRandom",
+      "fieldSets": [
+        [
+          "$type",
+          "floatVariable",
+          "maxValue",
+          "minValue"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "floatVariable": "object",
+        "maxValue": "object",
+        "minValue": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.WaitSec",
+      "fieldSets": [
+        [
+          "$type",
+          "waitTime"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "waitTime": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.CastSeqSkill",
+      "fieldSets": [
+        [
+          "$type",
+          "skillData",
+          "target",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "castSkillType",
+          "skillData",
+          "target",
+          "targetPos"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "castSkillType": "integer",
+        "skillData": "object",
+        "target": "object",
+        "targetPos": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckBuffState",
+      "fieldSets": [
+        [
+          "$type",
+          "buffId",
+          "checkEvent",
+          "targetActor"
+        ],
+        [
+          "$type",
+          "buffId",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "buffId": "object",
+        "checkEvent": "integer",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.WaitRandom",
+      "fieldSets": [
+        [
+          "$type",
+          "variance",
+          "waitTime"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "variance": "object",
+        "waitTime": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Conditions.CheckInt",
+      "fieldSets": [
+        [
+          "$type",
+          "valueA",
+          "valueB"
+        ],
+        [
+          "$type",
+          "checkType",
+          "valueA",
+          "valueB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "checkType": "integer",
+        "valueA": "object",
+        "valueB": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.EnemyCheckEntityMode",
+      "fieldSets": [
+        [
+          "$type",
+          "_invert",
+          "customIndex",
+          "mode"
+        ],
+        [
+          "$type",
+          "customIndex",
+          "mode"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_invert": "boolean",
+        "customIndex": "object",
+        "mode": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.GetTargetInSight",
+      "fieldSets": [
+        [
+          "$type",
+          "finderData",
+          "saveAs",
+          "selectorData"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "finderData": "object",
+        "saveAs": "object",
+        "selectorData": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckAbilityEntityInBattleCount",
+      "fieldSets": [
+        [
+          "$type",
+          "compare",
+          "templateId",
+          "threshold"
+        ],
+        [
+          "$type",
+          "templateId",
+          "threshold"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "compare": "integer",
+        "templateId": "object",
+        "threshold": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.EnemySwitchEntityMode",
+      "fieldSets": [
+        [
+          "$type",
+          "customIndex",
+          "mode"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "customIndex",
+          "mode"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "customIndex": "object",
+        "mode": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckDistanceToPoint",
+      "fieldSets": [
+        [
+          "$type",
+          "distance",
+          "targetPos"
+        ],
+        [
+          "$type",
+          "checkType",
+          "distance",
+          "targetPos"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "checkType": "integer",
+        "distance": "object",
+        "targetPos": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.EnemyGetAttrbute",
+      "fieldSets": [
+        [
+          "$type",
+          "actorAttr",
+          "attrType",
+          "saveAs",
+          "targetActor"
+        ],
+        [
+          "$type",
+          "actorAttr",
+          "saveAs",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "actorAttr": "integer",
+        "attrType": "integer",
+        "saveAs": "object",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckAIMarker",
+      "fieldSets": [
+        [
+          "$type",
+          "marker"
+        ],
+        [
+          "$type",
+          "_invert",
+          "marker"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_invert": "boolean",
+        "marker": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.NpcHoldSeqAction",
+      "fieldSets": [
+        [
+          "$type",
+          "seqActionId"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "seqActionId": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.NpcFinishSeqAction",
+      "fieldSets": [
+        [
+          "$type"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Actions.SetIntRandom",
+      "fieldSets": [
+        [
+          "$type",
+          "intVariable",
+          "maxValue",
+          "minValue"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "intVariable": "object",
+        "maxValue": "object",
+        "minValue": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.FinishCurBehavior",
+      "fieldSets": [
+        [
+          "$type",
+          "isFinish"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "isFinish": "boolean"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.IsTargetInRange",
+      "fieldSets": [
+        [
+          "$type",
+          "range",
+          "targetActor",
+          "useNavDistance"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "range": "object",
+        "targetActor": "object",
+        "useNavDistance": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.IsInAbility",
+      "fieldSets": [
+        [
+          "$type",
+          "_invert"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_invert": "boolean"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.MoveToPoint",
+      "fieldSets": [
+        [
+          "$type",
+          "entity",
+          "targetPos",
+          "useWalkGaitIfPossible",
+          "waitFinish"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "entity": "object",
+        "targetPos": "object",
+        "useWalkGaitIfPossible": "object",
+        "waitFinish": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.StopMove",
+      "fieldSets": [
+        [
+          "$type"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.CastSkill",
+      "fieldSets": [
+        [
+          "$type",
+          "skillId",
+          "successful",
+          "targetActor",
+          "targetPoint",
+          "waitFinish",
+          "waitFinishTiming"
+        ],
+        [
+          "$type",
+          "castTarget",
+          "skillId",
+          "successful",
+          "targetActor",
+          "targetPoint",
+          "waitFinish",
+          "waitFinishTiming"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "castTarget": "integer",
+        "skillId": "object",
+        "successful": "object",
+        "targetActor": "object",
+        "targetPoint": "object",
+        "waitFinish": "object",
+        "waitFinishTiming": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.IsSkillCDReady",
+      "fieldSets": [
+        [
+          "$type",
+          "skillData",
+          "skillId"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "skillData": "object",
+        "skillId": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.EnemyRotateTowardsTarget",
+      "fieldSets": [
+        [
+          "$type",
+          "targetActor",
+          "waitFinish"
+        ],
+        [
+          "$type",
+          "_isDisabled",
+          "targetActor",
+          "waitFinish"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_isDisabled": "boolean",
+        "targetActor": "object",
+        "waitFinish": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.IsGivenTargetExist",
+      "fieldSets": [
+        [
+          "$type",
+          "_invert",
+          "selectorData"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_invert": "boolean",
+        "selectorData": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.SetPosition",
+      "fieldSets": [
+        [
+          "$type",
+          "customPos",
+          "offset",
+          "posType",
+          "saveAs"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "customPos": "object",
+        "offset": "object",
+        "posType": "integer",
+        "saveAs": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.EnemyRequireChargeSkillToken",
+      "fieldSets": [
+        [
+          "$type",
+          "tokenId"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "tokenId": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.EnemySetFaceToTarget",
+      "fieldSets": [
+        [
+          "$type",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.EnemyReleaseChargeSkillToken",
+      "fieldSets": [
+        [
+          "$type",
+          "tokenId"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "tokenId": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.GetDistanceToTarget",
+      "fieldSets": [
+        [
+          "$type",
+          "saveTo",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "saveTo": "object",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckCapsuleCollider",
+      "fieldSets": [
+        [
+          "$type",
+          "angle",
+          "customEntity",
+          "direction",
+          "height",
+          "layer",
+          "radius",
+          "range",
+          "targetEntity"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "angle": "object",
+        "customEntity": "object",
+        "direction": "integer",
+        "height": "object",
+        "layer": "integer",
+        "radius": "object",
+        "range": "object",
+        "targetEntity": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.EnemyHasChargeSkillToken",
+      "fieldSets": [
+        [
+          "$type"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckGroupAIIdentity",
+      "fieldSets": [
+        [
+          "$type",
+          "identityType"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "identityType": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckCurBehaviorFinish",
+      "fieldSets": [
+        [
+          "$type",
+          "isFinish"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "isFinish": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckInAngleRange",
+      "fieldSets": [
+        [
+          "$type",
+          "angle",
+          "forwardOffsetAngle",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "angle": "number",
+        "forwardOffsetAngle": "number",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Conditions.CheckVariable`1[[Beyond.Gameplay.AI.AIEntity, Gameplay.Beyond, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+      "fieldSets": [
+        [
+          "$type",
+          "_invert",
+          "valueA",
+          "valueB"
+        ],
+        [
+          "$type",
+          "_invert",
+          "_isDisabled",
+          "valueA",
+          "valueB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "_invert": "boolean",
+        "_isDisabled": "boolean",
+        "valueA": "object",
+        "valueB": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.GetDistanceFromTargetToTarget",
+      "fieldSets": [
+        [
+          "$type",
+          "entityA",
+          "entityB",
+          "saveTo"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "entityA": "object",
+        "entityB": "object",
+        "saveTo": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Conditions.CheckVariable`1[[System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089]]",
+      "fieldSets": [
+        [
+          "$type",
+          "valueA",
+          "valueB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "valueA": "object",
+        "valueB": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.SetEntity",
+      "fieldSets": [
+        [
+          "$type",
+          "actorA",
+          "actorB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "actorA": "object",
+        "actorB": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.FinishAIToken",
+      "fieldSets": [
+        [
+          "$type"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.IsPosInRange",
+      "fieldSets": [
+        [
+          "$type",
+          "range",
+          "targetPos",
+          "useNavDistance"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "range": "object",
+        "targetPos": "object",
+        "useNavDistance": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Actions.SetBooleanRandom",
+      "fieldSets": [
+        [
+          "$type",
+          "boolVariable"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "boolVariable": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.EnemyMoveAroundTarget",
+      "fieldSets": [
+        [
+          "$type",
+          "isCounterClockwise",
+          "targetActor"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "isCounterClockwise": "object",
+        "targetActor": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Action.GetInteractive",
+      "fieldSets": [
+        [
+          "$type",
+          "isValid",
+          "saveAs",
+          "selectorData"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "isValid": "object",
+        "saveAs": "object",
+        "selectorData": "object"
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.AI.Condition.CheckOwnedAbilityEntityCount",
+      "fieldSets": [
+        [
+          "$type",
+          "compare",
+          "threshold"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "compare": "integer",
+        "threshold": "object"
+      }
+    },
+    {
+      "type": "NodeCanvas.Tasks.Actions.SetVariable`1[[Beyond.Gameplay.AI.AIEntity, Gameplay.Beyond, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+      "fieldSets": [
+        [
+          "$type",
+          "valueA",
+          "valueB"
+        ]
+      ],
+      "fieldKinds": {
+        "$type": "string",
+        "valueA": "object",
+        "valueB": "object"
+      }
+    }
+  ]
+}

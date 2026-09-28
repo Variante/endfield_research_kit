@@ -1,0 +1,284 @@
+{
+  "schema": "endfield.extend-data-graph-ai-native-contract.v4",
+  "status": "validated",
+  "evidenceBoundary": {
+    "exact": "Selected metadata type and field identities, static field offset, string literals, code windows, and direct call/jump instructions.",
+    "direct": "EntityDataStorage.CreateEnemyFromServer passes its Proto.SCENE_MONSTER argument to EnemyInfo.InitFromServerData. That method reads SCENE_MONSTER.commonInfo.templateid for an EnemyTable lookup, then passes the same SCENE_MONSTER to EnemyServerData's message constructor. The constructor copies commonInfo.templateid into EnemyServerData.enemyId and EnemyInfo stores it as BaseEntityData.serverData. On the checked EntityNode spawn path, EntityNode.data.serverData is passed through typed ObjectContainer.SpawnEntity and LoadEntity arguments to Entity.AssignServerData, which stores Entity.serverData. EnemyRootComponent.InitSelf copies EnemyServerData.enemyId from Entity.serverData into EnemyRootComponent.enemyId. On the unpatched synchronous EnemyAIComponent initialization path, the inherited BaseComponent.entity points to Entity.enemy; its enemyId is the key passed to Tables.s_enemyTable. A successful lookup supplies an EnemyData bean. The code reads the same bean field selected by EnemyData.get_aiTemplateId, formats the AIConfig path from that string, and passes the path to LoadSingleConfig before storing the returned EnemyAIConfigData.",
+    "conditional": "The route requires a nonnull Proto.SCENE_MONSTER.commonInfo, successful EnemyTable lookup and template setup, selection of the resulting EnemyInfo into an EntityNode, its checked spawn path, an EnemyServerData cast, and nonempty aiTemplateId; IFix may redirect methods. These are static native branches, not a witnessed message, enemy instance, resource load, or graph execution.",
+    "unresolved": "The source and selection of a live Proto.SCENE_MONSTER message, relation of installed spawn or scene records to that message, selection of an EnemyInfo into a particular EntityNode, use of the alternate EnemyServerData(string,int) constructor, async and override paths, and live graph instance are not established by this contract."
+  },
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "types": [
+    {
+      "index": 33842,
+      "name": "Beyond.Cfg.Tables",
+      "fields": [["s_enemyTable", 2072, "Beyond.Cfg.Tables+EnemyTable"]]
+    },
+    {
+      "index": 33386,
+      "name": "Beyond.Cfg.Tables+EnemyTable",
+      "parent": "Beyond.Cfg.RuntimeSparkMapTable`3<Beyond.SparkBuffer.Runtime.Wrapper.S2BeanMap`1<Beyond.Cfg.EnemyData>,string,Beyond.Cfg.EnemyData>",
+      "fields": []
+    },
+    {
+      "index": 32551,
+      "name": "Beyond.Cfg.EnemyData",
+      "fields": [["m_bean", 16, "Beyond.SparkBuffer.Runtime.Bean"]]
+    },
+    {
+      "index": 8134,
+      "name": "Beyond.Gameplay.AI.EnemyAIComponent",
+      "parent": "Beyond.Gameplay.AI.AIComponent",
+      "fields": [["m_tempEnemyAIConfigData", 480, "Beyond.Gameplay.AI.Config.EnemyAIConfigData"]]
+    },
+    {
+      "index": 8126,
+      "name": "Beyond.Gameplay.AI.AIComponent",
+      "parent": "Beyond.Gameplay.Core.TickComponent",
+      "fields": []
+    },
+    {
+      "index": 12424,
+      "name": "Beyond.Gameplay.Core.TickComponent",
+      "parent": "Beyond.Gameplay.Core.BaseComponent",
+      "fields": []
+    },
+    {
+      "index": 12436,
+      "name": "Beyond.Gameplay.Core.BaseComponent",
+      "fields": [["<entity>k__BackingField", 80, "Beyond.Gameplay.Core.Entity"]]
+    },
+    {
+      "index": 12334,
+      "name": "Beyond.Gameplay.Core.Entity",
+      "fields": [
+        ["<serverData>k__BackingField", 160, "Beyond.Gameplay.EntityServerData"],
+        ["<enemy>k__BackingField", 464, "Beyond.Gameplay.Core.EnemyRootComponent"]
+      ]
+    },
+    {
+      "index": 10915,
+      "name": "Beyond.Gameplay.Core.EnemyRootComponent",
+      "parent": "Beyond.Gameplay.Core.RootComponent",
+      "fields": [["<enemyId>k__BackingField", 408, "string"]]
+    },
+    {
+      "index": 12148,
+      "name": "Beyond.Gameplay.Core.RootComponent",
+      "parent": "Beyond.Gameplay.Core.BaseRootComponent",
+      "fields": []
+    },
+    {
+      "index": 12063,
+      "name": "Beyond.Gameplay.Core.BaseRootComponent",
+      "parent": "Beyond.Gameplay.Core.BaseComponent",
+      "fields": []
+    },
+    {
+      "index": 2800,
+      "name": "Beyond.Gameplay.EnemyServerData",
+      "parent": "Beyond.Gameplay.EntityServerData",
+      "fields": [["<enemyId>k__BackingField", 16, "string"]]
+    },
+    {
+      "index": 12678,
+      "name": "Beyond.Gameplay.Core.BaseEntityData",
+      "fields": [["<serverData>k__BackingField", 216, "Beyond.Gameplay.EntityServerData"]]
+    },
+    {
+      "index": 12680,
+      "name": "Beyond.Gameplay.Core.EnemyInfo",
+      "parent": "Beyond.Gameplay.Core.BaseEntityData",
+      "fields": []
+    },
+    {
+      "index": 30387,
+      "name": "Proto.SCENE_MONSTER",
+      "fields": [["commonInfo_", 24, "Proto.SCENE_OBJECT_COMMON_INFO"]]
+    },
+    {
+      "index": 30383,
+      "name": "Proto.SCENE_OBJECT_COMMON_INFO",
+      "fields": [["id_", 24, "ulong"], ["templateid_", 40, "string"]]
+    },
+    {
+      "index": 12707,
+      "name": "Beyond.Gameplay.Core.EntityManager+EntityNode",
+      "fields": [["<data>k__BackingField", 80, "Beyond.Gameplay.Core.BaseEntityData"]]
+    }
+  ],
+  "methods": [
+    [47721, "Beyond.Gameplay.AI.EnemyAIComponent", "InitSelf", 66486560],
+    [47706, "Beyond.Gameplay.AI.EnemyAIComponent", "_InitSync", 66487184],
+    [253552, "Beyond.Cfg.EnemyData", "get_aiTemplateId", 84399788],
+    [67031, "Beyond.Gameplay.Core.EnemyRootComponent", "InitSelf", 57157312],
+    [67021, "Beyond.Gameplay.Core.EnemyRootComponent", "get_enemyId", 77920336],
+    [83964, "Beyond.Gameplay.Core.EnemyInfo", "InitFromServerData", 59333440],
+    [83965, "Beyond.Gameplay.Core.EnemyInfo", "TryGetEnemyTemplateIdFromEnemyId", 59334032],
+    [17839, "Beyond.Gameplay.EnemyServerData", ".ctor", 59333744],
+    [253565, "Beyond.Cfg.EnemyData", "get_templateId", 84414396],
+    [83903, "Beyond.Gameplay.Core.BaseEntityData", "SetupTemplate", 52688240],
+    [84210, "Beyond.Gameplay.Core.EntityManager+EntityDataStorage", "CreateEnemyFromServer", 59333312],
+    [84389, "Beyond.Gameplay.Core.EntityManager+EntityNode", "_SpawnEntity", 48020592],
+    [84615, "Beyond.Gameplay.Core.ObjectContainer", "SpawnEntity", 48021264],
+    [84614, "Beyond.Gameplay.Core.ObjectContainer", "LoadEntity", 48026640],
+    [81388, "Beyond.Gameplay.Core.Entity", "AssignServerData", 48027504]
+  ],
+  "methodFirstParameters": [
+    [83964, "Proto.SCENE_MONSTER"],
+    [83965, "System.String"],
+    [17839, "Proto.SCENE_MONSTER"],
+    [83903, "System.String"],
+    [84210, "Proto.SCENE_MONSTER"]
+  ],
+  "methodParameterTypes": [
+    [81388, ["Beyond.Gameplay.EntityServerData"]],
+    [84615, ["Beyond.Gameplay.Core.ObjectType", "string", "UnityEngine.Vector3", "UnityEngine.Vector3", "bool", "bool", "int", "ulong", "uint", "ulong", "Beyond.Gameplay.LevelEntityData", "Beyond.Gameplay.EntityServerData", "Beyond.Gameplay.Core.BaseEntityData"]],
+    [84614, ["Beyond.Gameplay.Core.ObjectType", "string", "UnityEngine.Vector3", "UnityEngine.Vector3", "int", "ulong", "uint", "ulong", "Beyond.Gameplay.LevelEntityData", "Beyond.Gameplay.EntityServerData", "Beyond.Gameplay.Core.BaseEntityData", "bool"]]
+  ],
+  "tableUsage": {
+    "loadRva": 59337085,
+    "usageCellRva": 218863448,
+    "typeIndex": 144039,
+    "typeDefinition": 33842
+  },
+  "sourceUsage": {
+    "loadRva": 57157417,
+    "usageCellRva": 218789376,
+    "typeIndex": 117003,
+    "typeDefinition": 2800,
+    "typeName": "Beyond.Gameplay.EnemyServerData"
+  },
+  "pathLiterals": [
+    {
+      "role": "assetPathPrefix",
+      "text": "Assets/Beyond/DynamicAssets/Gameplay/AI/Enemy/AIConfig/",
+      "literalIndex": 4011,
+      "usageCellRva": 218789368,
+      "loadRva": 66487541
+    },
+    {
+      "role": "assetPathFormat",
+      "text": "{0}{1}.asset",
+      "literalIndex": 48940,
+      "usageCellRva": 218789360,
+      "loadRva": 66487548
+    }
+  ],
+  "codeWindows": [
+    {"role": "initSelf", "startRva": 66486560, "endRva": 66486788, "sha256": "38EFBC7B97410DD7B572FE55CAE7C783D35EE15BF93000A06C8CA6549002315D", "boundary": "exact"},
+    {"role": "initSyncTableToConfig", "startRva": 66487184, "endRva": 66487597, "sha256": "53372404A1DD8F4F6A4F196F0CF939F2E4169ACD323F3230127A7847EEBA4DC3", "boundary": "exact"},
+    {"role": "enemyTableStaticAccessor", "startRva": 59337072, "endRva": 59337158, "sha256": "0A453A64D6E01BF0A3C4D9EBE72088A2BBD42DC560E9491E04BEA01C2FE196A4", "boundary": "exact"},
+    {"role": "enemyAiTemplateGetter", "startRva": 84399788, "endRva": 84399795, "sha256": "3AD66103FB641BFB2AAD62646DF8C323A84C1F776E34C3C63C81C4218781A907", "boundary": "exact"},
+    {"role": "sparkStringField", "startRva": 61599392, "endRva": 61599430, "sha256": "50B32378C722226744B8EAB565DC7027136DED9541E2DF7F7E64916CC3F00D44", "boundary": "exact"},
+    {"role": "formatWrapper", "startRva": 66288544, "endRva": 66288657, "sha256": "5628A7DEE53B566016EE67030381EC07DC6EBD2195290D5D74F9B10923C21D66", "boundary": "exact"},
+    {"role": "formatString", "startRva": 63647184, "endRva": 63647471, "sha256": "9382F7A0FA2922AC8222D2B321933743FC42B65F002E89B8424F6850C5AF4493", "boundary": "exact"},
+    {"role": "loadSingleConfig", "startRva": 61282928, "endRva": 61283130, "sha256": "6B89ADDE38363AB03135A120ABF29222E9D79DF9AD759815A7C13F6200B60376", "boundary": "exact"},
+    {"role": "enemyRootInit", "startRva": 57157312, "endRva": 57157468, "sha256": "59D18F692414CF72FCD8D2E4D33B5A3CCF69497BE9EDB09A174497491A06A6B6", "boundary": "exact"},
+    {"role": "enemyRootIdGetter", "startRva": 77920336, "endRva": 77920344, "sha256": "0A69F85CDDF83E816F0BBB73EC96B4E2C4885FE52A969C1834B812B3F942C333", "boundary": "exact"},
+    {"role": "enemyInfoInitFromServerData", "startRva": 59333440, "endRva": 59333737, "sha256": "AA53C1F1F7D7B3B76CA1CCC1155B93EB33C61F7C6274D765AD2F699A4D6D82AC", "boundary": "exact"},
+    {"role": "enemyInfoTryGetTemplateId", "startRva": 59334032, "endRva": 59334315, "sha256": "72C0668ED219AE1D56BA0DD5E79DE04B2736D2E8006EF03F048DDC82F2649686", "boundary": "exact"},
+    {"role": "enemyServerDataMessageCtor", "startRva": 59333744, "endRva": 59334031, "sha256": "F381DA937B5403E3B45A78A1435966AF637EF6BEB8860D0682BEA73B2CCD695F", "boundary": "exact"},
+    {"role": "enemyDataTemplateIdGetter", "startRva": 84414396, "endRva": 84414406, "sha256": "CD569A614E6369FEA7DA217CA294D49DDCEC3600A2D03A7003F08610852AB85E", "boundary": "exact"},
+    {"role": "entityDataStorageCreateEnemyFromServer", "startRva": 59333312, "endRva": 59333428, "sha256": "C83FA0D631FE3D464F73AE1F43A63372F7E20B0A57991863E65B454548E26E9D", "boundary": "exact"},
+    {"role": "entityNodeSpawn", "startRva": 48020592, "endRva": 48021254, "sha256": "4D8C47022974A0C03F75AEF26CBED88B47BB88D1DB28EADB5BC347AD748F2FC3", "boundary": "exact"},
+    {"role": "objectContainerSpawnEntity", "startRva": 48021264, "endRva": 48021744, "sha256": "A61F6C2620D71ADBFC1D8A771DAC2150419B13C38FEDC9648EA44B1A65733AD6", "boundary": "exact"},
+    {"role": "objectContainerLoadEntity", "startRva": 48026640, "endRva": 48027185, "sha256": "59BCFFE4434D540B250A9F865394D84DF9B2F94871E41484BA71DC9805410109", "boundary": "exact"},
+    {"role": "entityAssignServerData", "startRva": 48027504, "endRva": 48027724, "sha256": "4BB3576F144C3D183E45844DD3A5E149E8C7BB786100B694854C7311BF650EDA", "boundary": "exact"}
+  ],
+  "instructionWindows": [
+    [66486655, "E80C020000", "InitSelf calls _InitSync"],
+    [66487364, "E827E592FF", "_InitSync reads EnemyTable static accessor"],
+    [66487448, "E8138340FF", "EnemyTable S2BeanMap.TryGetValue"],
+    [66487480, "33D2", "zero bean string-field selector"],
+    [66487482, "488D4C2450", "pass returned EnemyData bean"],
+    [66487487, "E8DC69B5FF", "read aiTemplateId bean field"],
+    [66487538, "4C8BC3", "pass aiTemplateId as formatting argument"],
+    [66487541, "488B15FCF01309", "load AIConfig path prefix"],
+    [66487548, "488B0DEDF01309", "load two-argument asset path format"],
+    [66487555, "E898F6FCFF", "format AIConfig asset path"],
+    [66487573, "E85695B0FF", "load config asset from formatted path"],
+    [66487585, "488987E0010000", "store returned EnemyAIConfigData"],
+    [59337085, "488B05D42D8209", "load Tables type usage"],
+    [59337108, "488B8018080000", "read Tables.s_enemyTable"],
+    [84399788, "33D2", "EnemyData.get_aiTemplateId uses selector zero"],
+    [84399790, "E9ED17A4FE", "EnemyData.get_aiTemplateId jumps to bean string decoder"],
+    [66288635, "E9D0B1D7FF", "format wrapper jumps to string formatter"],
+    [63647343, "E85C72D1FF", "string formatter calls AppendFormat"],
+    [66487369, "488B4F50", "read inherited BaseComponent.entity"],
+    [66487385, "488B91D0010000", "read Entity.enemy"],
+    [66487417, "488B9298010000", "read EnemyRootComponent.enemyId as table key"],
+    [57157404, "488B4B50", "read EnemyRootComponent inherited entity"],
+    [57157417, "488B15D04EA209", "load EnemyServerData cast type"],
+    [57157424, "488B89A0000000", "read Entity.serverData"],
+    [57157431, "E8E41098FC", "cast Entity.serverData to EnemyServerData"],
+    [57157445, "488B4010", "read EnemyServerData.enemyId"],
+    [57157456, "48898398010000", "store EnemyRootComponent.enemyId"],
+    [77920336, "488B8198010000", "EnemyRootComponent.get_enemyId reads same field"],
+    [59333499, "488B5318", "EnemyInfo reads SCENE_MONSTER.commonInfo for common-info sync"],
+    [59333536, "488B4B18", "EnemyInfo rereads SCENE_MONSTER.commonInfo for template lookup"],
+    [59333549, "488B4928", "EnemyInfo reads commonInfo.templateid as lookup key"],
+    [59333561, "E8D2010000", "EnemyInfo calls template ID lookup"],
+    [59333577, "488B542448", "EnemyInfo passes returned template ID to SetupTemplate"],
+    [59333585, "E89A999AFF", "EnemyInfo calls BaseEntityData.SetupTemplate"],
+    [59333669, "488BD3", "EnemyInfo passes the same SCENE_MONSTER to EnemyServerData constructor"],
+    [59333675, "E840000000", "EnemyInfo constructs EnemyServerData from SCENE_MONSTER"],
+    [59333687, "4889B7D8000000", "EnemyInfo stores constructed EnemyServerData in BaseEntityData.serverData"],
+    [59333779, "488B4218", "EnemyServerData constructor reads SCENE_MONSTER.commonInfo"],
+    [59333792, "488B4028", "EnemyServerData constructor reads commonInfo.templateid"],
+    [59333796, "48894110", "EnemyServerData constructor stores enemyId"],
+    [59334103, "E8940B0000", "EnemyInfo template lookup reads EnemyTable static accessor"],
+    [59334140, "488BD7", "EnemyInfo template lookup passes enemyId key"],
+    [59334151, "E8A4A9ADFF", "EnemyInfo template lookup calls S2BeanMap.TryGetValue"],
+    [59334176, "BA2C000000", "EnemyInfo template lookup selects EnemyData.templateId slot"],
+    [59334186, "E871902200", "EnemyInfo template lookup reads templateId bean field"],
+    [59334228, "E847902200", "EnemyInfo template lookup rereads templateId bean field"],
+    [59334236, "488903", "EnemyInfo template lookup writes out template ID"],
+    [84414396, "BA2C000000", "EnemyData.get_templateId selects same bean slot"],
+    [84414401, "E9DADEA3FE", "EnemyData.get_templateId jumps to bean string decoder"],
+    [59333322, "488BDA", "EntityDataStorage.CreateEnemyFromServer retains SCENE_MONSTER argument"],
+    [59333397, "488BD3", "EntityDataStorage.CreateEnemyFromServer passes same message"],
+    [59333403, "E820000000", "EntityDataStorage.CreateEnemyFromServer calls EnemyInfo.InitFromServerData"],
+    [48020688, "488B4B50", "EntityNode._SpawnEntity reads EntityNode.data"],
+    [48020787, "4C8B81D8000000", "EntityNode._SpawnEntity reads BaseEntityData.serverData"],
+    [48020877, "4C89442460", "EntityNode._SpawnEntity passes serverData as SpawnEntity parameter"],
+    [48020946, "E839010000", "EntityNode._SpawnEntity calls ObjectContainer.SpawnEntity"],
+    [48021507, "488B842420010000", "ObjectContainer.SpawnEntity reads typed serverData parameter"],
+    [48021515, "4889442450", "ObjectContainer.SpawnEntity forwards serverData as LoadEntity parameter"],
+    [48021628, "E88F130000", "ObjectContainer.SpawnEntity calls ObjectContainer.LoadEntity"],
+    [48026998, "488B942440010000", "ObjectContainer.LoadEntity reads typed serverData parameter"],
+    [48027009, "E8EA010000", "ObjectContainer.LoadEntity calls Entity.AssignServerData"],
+    [48027555, "4889BBA0000000", "Entity.AssignServerData writes Entity.serverData"]
+  ],
+  "directCalls": [
+    [66486655, 66487184],
+    [66487364, 59337072],
+    [66487448, 53938096],
+    [66487487, 61599392],
+    [66487555, 66288544],
+    [66487573, 61282928],
+    [63647343, 60596432],
+    [57157431, 14368],
+    [59333561, 59334032],
+    [59333585, 52688240],
+    [59333675, 59333744],
+    [59334103, 59337072],
+    [59334151, 53938096],
+    [59334186, 61599392],
+    [59334228, 61599392],
+    [59333403, 59333440],
+    [48020946, 48021264],
+    [48021628, 48026640],
+    [48027009, 48027504]
+  ],
+  "directJumps": [[84399790, 61599392], [66288635, 63647184], [84414401, 61599392]],
+  "namedTargets": [
+    [53938096, "Beyond.SparkBuffer.Runtime.Wrapper.S2BeanMap`1.TryGetValue<generic>"],
+    [61282928, "Beyond.Gameplay.AI.EnemyAIComponent.LoadSingleConfig<generic>"],
+    [60596432, "Cysharp.Text.Utf16ValueStringBuilder.AppendFormat<generic>"]
+  ]
+}

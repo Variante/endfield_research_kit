@@ -1,0 +1,48 @@
+{
+  "schema": "endfield.extend-data-tasks-native-contract.v1",
+  "status": "validated",
+  "evidenceBoundary": "direct",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "taskType": {
+    "index": 8283,
+    "name": "Beyond.Gameplay.AI.Action.EnemySwitchBehavior",
+    "field": "behavior",
+    "fieldOffset": 120
+  },
+  "method": [
+    48454,
+    "Beyond.Gameplay.AI.Action.EnemySwitchBehavior",
+    "OnExecute",
+    56740064
+  ],
+  "codeWindows": [
+    {
+      "role": "onExecuteFullBody",
+      "startRva": 56740064,
+      "endRva": 56741916,
+      "sha256": "14530B09EBD422DEFB4262B1562CF89D865708B9EA7C73988C3C93F1261F2C8E",
+      "boundary": "exact"
+    }
+  ],
+  "instructionWindows": [
+    [
+      56740105,
+      "488BF9",
+      "OnExecute preserves the instance argument in rdi"
+    ],
+    [
+      56740932,
+      "8B4F78",
+      "OnExecute reads behavior at instance offset 0x78"
+    ]
+  ],
+  "semanticLimits": [
+    "This static method body establishes a selected-build native field read, not a witnessed live execution.",
+    "The same type and field names occur in the decoded graphs, but no archive ordinal or graph task is joined to this native instance.",
+    "The stored behavior.tag.tagId integer has no proved selected native writer, comparison, or tag meaning."
+  ]
+}
