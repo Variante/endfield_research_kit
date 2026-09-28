@@ -2,6 +2,13 @@
 
 The native contract proves the generated union reader, parameter types and
 string storage. Source receipts prove reached bytes, not a live guide transition.
+
+The branch stores `groupId` as `Param<string>` after the eight inherited
+action fields. Reached group IDs are concrete authored strings with no local
+parameter path. Derived root ID and physical EOF corroborate framing; the
+full corpus gate decides enclosing-owner status.
+
+Run as: python -m scripts.game_data.levelscript_manually_stop_guide_native
 """
 
 from __future__ import annotations

@@ -1,4 +1,21 @@
-"""Authenticate the separate UI and gameplay animation/material consumer routes."""
+"""Authenticate the separate UI and gameplay animation/material consumer routes.
+
+This is the native-consumption proof for AnimationConfig's shader
+declaration, recorded in ``animation_material_publication.json``:
+
+- Gameplay: the component reads numbered Animator output parameters and
+  forwards their evaluated floats using configured shader IDs and renderer
+  masks. This publication branch does not directly evaluate the stored
+  montage curve keys.
+- Character UI: ``CharUIModelMono``'s ``EmotionBlend`` parameter reaches the
+  ``_EmotionBlend`` material-helper route. The selected Overview controller
+  declares that parameter, but neither selected start nor loop clip binds
+  it.
+
+Evidence tier: authenticated base-code and selected-source facts,
+conditional on runtime actor and IFix selection. Live writers and draw
+consumption remain unresolved.
+"""
 from __future__ import annotations
 
 import hashlib

@@ -1,4 +1,18 @@
-"""Exact top-level tail decoder for current-build ``LevelScriptData``."""
+"""Exact top-level tail decoder for current-build ``LevelScriptData``.
+
+The generated 27-member wrapper ends with ``scriptId`` (u64),
+``startShapeList``, ``startType`` (``START_TYPE_NAMES``), ``taskMap`` and
+``triggerVolumes``.  ``decode_tail_candidate`` decodes that sequence from a
+given ``scriptId`` offset.  Two callers use it with different strength:
+
+- the sequential owner (``sequential_owner``) reaches ``scriptId`` by a real
+  cursor, so the tail is positional and exact;
+- the independent terminal fallback
+  (``levelscript_binary.frame_levelscript_terminal_suffix``) accepts a tail
+  only when exactly one filename-independent byte-grammar candidate closes at
+  physical EOF with a null or empty task map.  The preceding members stay
+  opaque there, so that result is a named partial schema, never a whole file.
+"""
 
 from __future__ import annotations
 

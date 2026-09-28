@@ -1,4 +1,14 @@
-"""Exact current codec for LevelData's nested level-wide configuration map."""
+"""Exact current codec for LevelData's nested level-wide configuration map.
+
+``levelWideConfigs`` is a nested dictionary from the raw
+``LevelWideConfigType`` integer to string-keyed polymorphic values. Current
+tag zero selects the two-member ``BambooRaftDockWideConfig``, whose dock rows
+retain logic ID, localized name, a nullable or typed condition (the shared
+``function_area`` condition codec) and node index; tag one selects the
+three-member ``BambooRaftWideConfig`` with config key, raft logic ID and
+moving-spline ID. Duplicate keys, unknown tags and changed member counts
+fail closed. Exact stored layout only.
+"""
 
 from __future__ import annotations
 

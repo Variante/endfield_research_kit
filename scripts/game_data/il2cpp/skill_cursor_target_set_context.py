@@ -3,6 +3,23 @@
 The existing single-target native context remains the provenance source for its
 earlier receipt.  This context uses the same native observer validator and
 unselected corpus gate, but binds every still-ambiguous logical source at once.
+
+The target-set contract pins an immutable pre-capture selected-status report
+and the current native reader.  This non-launching audit rechecks source
+identity, exact set membership, native inputs and observer callsites before
+it emits the host's SHA-authenticated binding file.  Both the unselected
+corpus and the selected-status snapshot are parser-provenance-bound: a reader
+change requires rebuilding the unselected basis, freezing a newly selected
+report, updating the reviewed target-set reference, and regenerating the
+native-only context before preflight can pass.  A stale-context rejection
+after such a change is expected, not a reason to loosen the gate.
+
+``--preflight --capture-binding-batch`` prints ``inputSet|absolutePath|
+bindingSha256`` for the capture host; ``--capture-binding`` prints the same
+binding as JSON.  The default context output is
+``reports/animestudio/skill_cursor_target_set_native_context_latest.json``.
+The full capture workflow is in
+:mod:`scripts.game_data.memorypack.skill_cursor_capture_target_set`.
 """
 
 from __future__ import annotations

@@ -2,6 +2,14 @@
 
 Each route has a selected switch entry and a complete pinned wrapper reader.
 The wire profile is structural; it does not assert live target behavior.
+
+The routes are ``GuardAITargetFinder``, ``HittableObjectValidator`` and
+``ConvertToPosition``, each a distinct zero-member wrapper.  Their contracts
+pin the selected dispatch, wrapper identity, empty setter set, source-header
+read and the complete zero-member native body.  The reader distinguishes a
+null ``FF`` wrapper from a present zero-member header and still requires the
+enclosing cursors to close.  The bytes do not show which target was found,
+validated or converted during play.
 """
 from __future__ import annotations
 

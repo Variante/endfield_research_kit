@@ -1,4 +1,26 @@
-"""Fail-closed current-corpus gate for authenticated Terrain TRET payloads."""
+"""Fail-closed current-corpus gate for authenticated Terrain TRET payloads.
+
+Run ``python -m scripts.game_data.terrain.corpus`` with a completed VFS audit
+(``--outer-summary``, ``--outer-ledger``) and that audit's exact
+``--expected-input-set-sha256``. It revalidates the pinned native consumer
+contract on the selected build, rereads every block-22 Terrain row of the
+ledger, and writes ``--output-json``/``--output-md`` (conventionally
+``reports/animestudio/terrain_tret_latest.{json,md}``). It is a focused
+recovery command, not part of the normal WebUI export.
+
+The receipt proves, per authenticated logical file, the exact TRET envelope,
+fixed header and contiguous anonymous ranges from decoded offset zero to EOF.
+Across the corpus it checks complete six-file ``Terrain_*_H/N/T/A/S/C`` tile
+groups, scene-scoped ``LAYER_D``/``LAYER_N`` index pairing with ``LAYER_C`` as
+an optional subset of them, and reports GraphicsFormat and header-shape
+distributions by path family. Only selected-build header tuples backed by the
+validated native footprint are accepted; every other tuple fails closed.
+
+The native consumer directly establishes decoded +14 as GraphicsFormat, +16 as
+the checked payload length and +20 as the copy source. Range contents,
+path-suffix channel meaning, texture-array ownership and runtime render
+selection remain unresolved.
+"""
 
 from __future__ import annotations
 

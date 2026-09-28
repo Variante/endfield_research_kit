@@ -1,4 +1,15 @@
-"""Authenticate the selected ListAddValueEntityPtr ActionBase reader."""
+"""Authenticate the selected ListAddValueEntityPtr ActionBase reader.
+
+The reviewed contract pins ActionBase `ListAddValueEntityPtr` (tag 0x0170 in
+the contract): the selected switch branch and wrapper, the complete reader
+and forwarding formatter, ordered reads and setters, and two generic
+parameter contexts including the nested `List<EntityPtr>` element type.
+Passing `--export-root`, `--ledger` and `--summary` together also replays the
+reviewed source cursors against the current JsonData ledger. The command
+prints its audit and exits nonzero unless it validates. Every current
+selected list value is null and path-bound, so positive stored lists, runtime
+list contents and action execution remain unobserved.
+"""
 
 from __future__ import annotations
 

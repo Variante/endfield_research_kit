@@ -1,4 +1,13 @@
-"""Selected zero-member validator children in Buff SelectorData lists."""
+"""Selected zero-member validator children in Buff SelectorData lists.
+
+The selected ``SelectorValidator`` switch and generated setter plans close
+tags 5 (``ExcludeOwner``) and 9 (``MainCharacter``). Both have zero
+serialized members and consume only their union tag and wrapper header; the
+currently reached wrappers are nonnull, and each list ends at its parent's
+independently fixed one-entry list extent. A stored validator is not a
+runtime predicate. Null, unknown-tag, malformed-count and changed-build
+branches fail closed.
+"""
 from __future__ import annotations
 
 import hashlib

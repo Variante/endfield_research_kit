@@ -4,6 +4,13 @@ The file parser in ``ifix_patch`` establishes each eight-byte instruction
 boundary.  The selected build's ``IFix.Core.Instruction`` layout establishes
 two 32-bit fields, and ``IFix.Core.Code`` names the first one.  This module
 does not interpret the operand or claim that a patch executed.
+
+The layout (an eight-byte value type with 32-bit ``Code`` and ``Operand``
+fields) and the enum are derived from an explicit ``GameAssembly.dll`` and
+``global-metadata.dat`` pair, with native sizes and field offsets checked,
+and every opcode inside the parser's exact method spans is named. Every
+instruction in the current dumped patch files maps to an enum member; an
+unknown code fails closed.
 """
 
 from __future__ import annotations

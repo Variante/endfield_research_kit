@@ -1,4 +1,9 @@
-"""Selected-build SkillData BlockMoveInterruptSkill 0x001A storage framing."""
+"""Selected-build SkillData BlockMoveInterruptSkill 0x001A storage framing.
+
+The selected four-member reader stores only the inherited action fields: a
+bool, the Priority enum and two scalar words.  The stored flag and priority
+do not establish runtime movement or interruption behavior.
+"""
 from __future__ import annotations
 
 import hashlib

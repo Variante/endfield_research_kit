@@ -3,6 +3,10 @@
 The existing Buff action reader supplies the finite six-member wire profile.
 This module independently authenticates its SkillData union route and direct
 source order before it can be admitted by the shared SkillData reader.
+
+After the inherited action fields it stores an attack-type mask and a bounded
+list of skill types.  Weapon records reach it in their passive lists.  The
+stored predicate inputs do not show whether the condition held during play.
 """
 from __future__ import annotations
 

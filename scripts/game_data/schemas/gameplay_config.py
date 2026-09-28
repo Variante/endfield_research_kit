@@ -3,6 +3,25 @@
 These tables are ordinary JSON, but JSON syntax alone does not prove their
 field contracts.  This reader names the compact table families whose complete
 current shapes and cross-index relationships are understood.
+
+Together with ``schemas.gameplay_config_polymorphic`` (the five broad
+polymorphic tables) this closes every textual ``GameplayConfig`` JSON file;
+the binary GameplayConfig tables keep their MemoryPack readers
+(``scripts.game_data.gameplay_compact_binary`` and the table readers).  Each
+decoder in ``_DECODERS`` validates the explicit root, rows, vectors, curves,
+type identities and cross-index relations of one table: inverse map/short-ID
+dictionaries (``MapIdTable``, ``LevelShortIdTable``), the three
+atmospheric-NPC indexes, NPC proxy placements and extra data, model paths and
+interactive lock-view metadata, world-entity briefs, focus modes, mission
+areas, map regions and LevelScript teleport-validation rows.
+
+``LevelShortIdTable`` is keyed by ``sceneName`` and its ``ids`` dictionaries
+hold logic IDs; ``MapBriefInfoTable.subLevelTable`` keys and ``MapRegionTable``
+rows (which carry an explicit ``levelId``) are the other level-side keys that
+``scripts.game_data.map_mark_relations`` joins against.
+
+Evidence boundary: ``exact`` stored configuration structure.  Runtime
+selection of a row and render consumption are separate evidence.
 """
 
 from __future__ import annotations

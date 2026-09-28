@@ -2,6 +2,14 @@
 
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove a live facility-template change.
+
+The route stores `instKey`, `level`, `mode` (`FCNodeMode`, Int32-backed with
+its declared members checked), `newTemplateName`, `playBuildEffect` and
+`playBuildEffectDuration` as six typed parameters. Reached authored actions
+describe sub-hub template changes across several map regions and levels,
+with the normal mode and a build-effect duration.
+
+Run as: python -m scripts.game_data.levelscript_fac_change_building_native
 """
 
 from __future__ import annotations

@@ -3,6 +3,9 @@
 The outer VFS ledger authenticates file identity and encrypted boundaries.
 AnimeStudio stream --verify-md5 supplies decrypted logical bytes; every selected
 row must join one-for-one before the parser may certify physical EOF.
+
+Pass the VFS audit's ``--expected-input-set-sha256``; the default outputs are
+``reports/animestudio/npc_montage_current_latest.{json,md}``.
 """
 
 from __future__ import annotations

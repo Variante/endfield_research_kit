@@ -2,6 +2,54 @@
 
 No runtime MethodInfo or serialized source cursor is inferred. Native tables
 are referenced PE extents, not a claim to consume the entire PE to EOF.
+
+Run as ``python -m scripts.game_data.il2cpp.context_audit``; the generated
+inventory belongs under ``reports/animestudio/``. The audit validates the
+current native inputs, every registered generic instance, and reciprocal
+open-parameter ownership, then joins the MemoryPack formatter identity chain
+one static link at a time. Each report key carries its own ``boundary``
+string, which is the maintained statement of what that link proves:
+
+1. registration -- a pointer array of 16-byte records (``context``); the
+   selected ``GetFormatter<T>`` parameter belongs to ``ReadValue<T>``. An
+   earlier concrete-type probe that seemed to contradict this was an
+   indirection bug, not a runtime counterexample;
+2. MVAR leaf, modules and usage cells (``selectedRawArgument``,
+   ``staticImageOwnership``, ``selectedUsageCell``) -- the leaf's ordinal is
+   checked against the call's registered argument; method records reach
+   their class, the image-range directory and a module picked by bytewise
+   name comparison; the on-disk usage cell joins through the guarded lazy
+   initializer and the tag-specific MethodSpec/triple resolver. The open
+   formatter-check carrier joins the same MVAR through its class-inst pointer
+   (``selectedFormatterTypeCarrier``); its 32-byte window's last 16 bytes stay
+   opaque and certify no allocation extent or returned formatter;
+3. instantiation cache, MethodSpecs and RGCTX (``selectedInstantiationCacheSeed``,
+   ``selectedObjectComparison``, ``selectedSharedMethodCandidates``,
+   ``selectedAdapterClassSlot``, ``selectedNestedAdapterSlots``) -- a gated
+   initializer seeds the cache from the registration's pointer table and
+   insertion and lookup share one storage global; the adapter's class-token
+   range links its slot to a reciprocal second type parameter (VAR), and
+   nested slots link DeserializeNotNull, GetFormatter and CreateInstance to
+   parameters of that same adapter;
+4. shared-code normalization (``selectedSharingBranch``,
+   ``selectedObjectIdentity``, ``selectedMethodCompanionConstruction``) -- a
+   missed original-context lookup retries with class-tag arguments replaced
+   by one global ``System.Object`` carrier, whose bytes match both arguments
+   of the static object/object candidate. MethodInfo construction stores the
+   original instantiated class separately from the shared code pointers, so
+   never substitute the shared body's object/object arguments for the
+   companion's class context.
+
+Every link is ``direct`` static evidence of a mechanism. None observes
+initialization, cache contents, interned pointer identity, generic
+substitution, the active formatter, a source cursor or EOF, and none
+promotes the unresolved registration history or earlier nested SkillData
+fields. The accepted direct-reader cursor resolves the current terminal
+candidate independently of this audit.
+
+Redirect stdout to ``reports/animestudio/il2cpp_context_current_latest.json``;
+that is the default native-context input of ``memorypack.buff_1b_corpus``,
+``memorypack.skill_timeline_cursor`` and ``memorypack.skill_cursor_receipt``.
 """
 from __future__ import annotations
 

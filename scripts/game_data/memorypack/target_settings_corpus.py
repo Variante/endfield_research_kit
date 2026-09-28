@@ -6,6 +6,23 @@ object reference must name its wrapper. Enum names are selected from the
 explicit GameAssembly/metadata pair only after their declaring fields agree
 with that wrapper's member plan. The report describes stored authored values,
 not a runtime target selection.
+
+Every record must reach EOF with its decoded id equal to its filename. The
+enum-typed fields are ``centerType``, ``selectorOwner`` and ``target``
+(``ActionTargetType``), ``selectorDirection`` (``DirectionType``) and
+``targetSource`` (``TargetSource``). A missing native pair, a field that no
+longer resolves to a selected enum, an unknown numeric value or an incomplete
+record leaves the audit incomplete.
+
+The corpus strongly associates ``targetSource=Context`` with a nonempty
+``targetGroupKey`` and ``InstantSearch`` with a nested finder, but each has an
+authored counterexample whose source path the report keeps. These are
+observed co-occurrences, not schema constraints or proof that a consumer chose
+that target, ran the finder or executed the branch.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair and optionally
+``--export-root``; the default report is
+``reports/game_data/memorypack_target_settings.json``.
 """
 from __future__ import annotations
 

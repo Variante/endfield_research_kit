@@ -1,4 +1,13 @@
-"""Exact selected EntityAttachToParent cursor using the reviewed route codec."""
+"""Exact selected EntityAttachToParent cursor using the reviewed route codec.
+
+`EntityAttachToParent` (14 members) adds, after the inherited action
+fields, `child` and `parent` as `Param<EntityPtr>`, `followNodeName` as a
+string, `localPos` and `localRot` as `Param<Vector3>`, and the
+`npcOffsetUseParam` boolean. The selected union branch resolves the
+generated wrapper and its `Deserialize` body fixes the member count and
+read order (`levelscript_entity_attach_native.json`). Stored attachment
+values do not prove a runtime attachment.
+"""
 
 from __future__ import annotations
 

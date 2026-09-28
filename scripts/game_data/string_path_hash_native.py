@@ -4,6 +4,19 @@ The native contract records byte-checked method bodies and direct callsites.
 This validator proves the selected build's path-prefix branch and hash
 forwarders. Corpus output comparison is a separate check; these static bytes
 alone do not prove which inputs were used to write every stored catalog row.
+
+The contract authenticates the ``StringPathHash.hash`` 64-bit field and the
+construction and processor call routes. Those routes test the ``data/`` prefix
+with ``StringComparison.OrdinalIgnoreCase``: that branch reaches the method
+named ``Beyond.Cryptor.Crc32Utils.XXHash64``, and the other branch reaches an
+auto-lower UTF-16 hash wrapper and its authenticated managed fallback. The
+static route does not prove live execution, Burst dispatch for an unseen
+input, or the producer that wrote the file. The next useful native witness is
+the catalog writer, or the concrete comparer passed to its multi-hash-table
+initializer, to separate stored slot arithmetic from runtime lookup.
+
+Run ``python -m scripts.game_data.string_path_hash_native --out
+reports/animestudio/string_path_hash_native_latest.json``.
 """
 
 from __future__ import annotations

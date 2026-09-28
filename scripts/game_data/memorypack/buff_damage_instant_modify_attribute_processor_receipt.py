@@ -1,4 +1,15 @@
-"""Exact selected tag-nine InstantModifyAttribute damage processor child."""
+"""Exact selected tag-nine InstantModifyAttribute damage processor child.
+
+It checks the selected native tag-nine two-member route, its four-member
+AttributeModifier child and the exact BlackboardDouble param span, joined to
+the current VFS logical hash. ``memorypack.buff_corpus`` admits it with a
+sole selected ``CheckBuffStackNumAdvanced`` action through all 30 root
+fields, source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_instant_modify_attribute_processor_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

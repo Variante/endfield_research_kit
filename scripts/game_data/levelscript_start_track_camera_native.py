@@ -2,6 +2,14 @@
 
 The native contract proves the selected reader and six parameter types.
 Source receipts prove reached bytes, not runtime camera behavior.
+
+The chained branch stores, after the inherited action fields, a
+`cameraCtrl` `Param<CameraControllerBase>` (accepted only as the null
+reference constant), `follow` and `lookAt` entity pointers, `followOffset`,
+`trackName` and `tweenTime`. `ExitCamera` and `ResetFollowCamera` are
+separate branches with their own contracts.
+
+Run as: python -m scripts.game_data.levelscript_start_track_camera_native
 """
 
 from __future__ import annotations

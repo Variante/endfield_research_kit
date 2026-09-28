@@ -23,6 +23,28 @@ proves the literal and the playback path, not that prose.
 
 The evaluation opens the whole binary, so it is cached under ``reports/`` and
 reused only for the same build and the same catalog.
+
+The same by-name re-derivation covers the other build-locked catalogs from
+``build_contracts``: SwitchAudioCustomState callsites and voice-response
+triggers, the AnimatorMono, enemy voice-action and AI-bark routes, the Wwise
+music state groups (setter, enum members from the installed metadata, and
+each callsite that still loads its value and calls the setter), and the
+native selector setters. The selector catalog once published the music
+setters and selector callsites with no build gate at all; with no measured
+build it carries no native field. ModelView routes re-derive the same way:
+the consumer must still call each target, and a target whose owner changed
+(the handler registry moved into ``ModelAnimatorContext``) is an explicit
+reviewed re-reading in ``_MODEL_VIEW_TARGET_CANDIDATES``, not a loosened
+check.
+
+Music transition registrations are read from each ``RegisterTransitionAction``
+call's own arguments (state mask, enter/leave, action order, delegate target).
+On the current build every state registers an ``_OnEnter*``/``_OnLeave*``
+pair, and none matches the reviewed pairing, which the previous build can no
+longer confirm. Playback call chains stay withheld: their links include
+delegate callbacks and native engine stages a call-graph check cannot prove,
+and sibling entry points are listed as sequential stages, not a chain.
+Authored and HIRC evidence is unaffected by any withheld row.
 """
 from __future__ import annotations
 

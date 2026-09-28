@@ -165,6 +165,25 @@ def name_native_rows(rows: list[dict[str, Any]], audio_dll: Path) -> dict[str, A
     hand: an annotation derived from a previous build is exactly the stale
     evidence the rest of this tool refuses.
 
+    What the symbols said about the catalog. Of the rows named from the
+    engine library, four are ``CAkPlayingMgr`` or ``CAkPositionRepository``
+    members (playing-id bookkeeping, starvation and buffering notifications,
+    a speaker-volume mixing callback) and one is file-source stream creation
+    (``SourceProviderPreparation`` is ``CAkSrcFileBase::CreateStream``, which
+    is why it never observes external-source voice). None is an
+    external-source function, although four are named ``ExternalSource*`` or
+    ``SourceKey*``. A misnamed row's recorded argument shape and memory reads
+    describe a function that does not do that, so it is not evidence whatever
+    a session containing it seemed to show; hooking one such row
+    (``NotifySpeakerVolumeMatrix`` fires per mix connection) would be costly
+    and meaningless. Matching against every SDK library -- the stream
+    manager, memory manager and each codec link as separate archives --
+    names three more rows: ``CodecStreamRead``, ``CodecMemorySourceCopy`` and
+    ``CodecDecoderDecode`` are ``op_get_next_page``,
+    ``CAkSrcFileOpus::read_opus`` and ``AK_op_read_float_no_copy``, the Opus
+    file path. None of the three is enabled, so they record where someone
+    looked, not what voice does.
+
     Optional by design. The SDK is a local install, so its absence leaves rows
     unnamed and is reported, never fatal -- refusing here would make re-pinning
     impossible on a machine that merely lacks Wwise.

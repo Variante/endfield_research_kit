@@ -17,6 +17,27 @@ declared logical-file families with their four per-level stages.
 There is no progress score: a stage is a state with a stated boundary, never a
 number, and "framed and named" is never published as "understood".
 
+Measurement rules. ``profiledBytes`` counts only ``profiled`` rows whose
+declared bytes were fully read; absent rows (cataloged but uninstalled audio
+languages and AuditAudio chunks) never contribute local payload, and an unknown
+profile status fails the build. The profile's coarse ``pathFamily`` never
+decides a family: the declared ``pathRegex`` does. Asset-map layers are read
+Persistent first and keyed by (type, PathID), so a bundle Persistent replaces
+is counted once; the export's own VFS index assigns each chunk to its block, so
+a chunk added after the payload profile still resolves. Object counts cover
+only the types AnimeStudio's asset map lists (not GameObject, Transform or
+renderer components), so they are not a full census of a bundle.
+
+Everything is fail-closed. A missing input or unexpected ``schema``, a
+malformed profile row, an unknown raw block id or changed exporter name, a
+level table that is not 1..4, an ambiguous family pattern, a stage citing a
+missing source or an unknown evidence limit, a level stronger than the one
+below it, a level 4 declared ``closed``, a missing asset map or VFS index, and
+an asset-map chunk no VFS index assigns to a declared block all abort the
+build. A path matching no family is kept as ``Other / unclassified`` with all
+four levels ``notAssessed``; so is an asset-map type with no declaration.
+``sources`` records each input's size and mtime.
+
 Run from the repository root::
 
     python -m scripts.webui.recovery.build_recovery

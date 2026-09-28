@@ -1,4 +1,11 @@
-"""Selected-build SkillData ForceHideHeadBarAction 0x00B9 storage framing."""
+"""Selected-build SkillData ForceHideHeadBarAction 0x00B9 storage framing.
+
+The route has its own selected Skill dispatcher entry, while its six source
+reads reuse the reviewed Buff formatter: four inherited action values, the
+``finishByAction`` byte and a finite ``TargetSettings``.  The target can be
+null independently of the outer wrapper.  Neither head-bar visibility nor a
+live target selection is observed.
+"""
 from __future__ import annotations
 
 import hashlib

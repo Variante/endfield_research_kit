@@ -1,4 +1,15 @@
-"""Authenticate reached Buff EffectActionCfg vector and scalar children."""
+"""Authenticate reached Buff EffectActionCfg vector and scalar children.
+
+It replays the reached ``EffectActionCfg`` blackboard fields under the
+selected native readers and each file's source hash, naming
+``BlackboardVector3.x/y/z`` and each stored ``BlackboardDouble`` child.
+Positive effect arrays, live provider evaluation, effect behavior and the
+whole-BuffData schema stay open.
+
+Takes the shared Buff child-corpus arguments (see
+``buff_shared_nested_receipt_corpus``); the default output is
+``reports/animestudio/buff_effect_vector_children_current_latest.json``.
+"""
 from __future__ import annotations
 
 import argparse

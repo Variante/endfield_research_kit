@@ -1,7 +1,25 @@
 """Trigger-context catalog: what authored and native evidence says fires an Event.
 
 Each collector answers one source of trigger evidence and returns compact context
-rows. None of them establishes runtime execution, selection, or audibility."""
+rows. None of them establishes runtime execution, selection, or audibility.
+
+Native trigger contexts. Exact ``SwitchAudioCustomState`` contexts (rotate
+platform, crane, electric fence, ForgeIron, LifterButton, MovingPlatform)
+expose the decoded custom-state name, current-build method/callsite and
+metadata usage word only after an authored ``InteractiveData`` custom-state
+join; branch-specific states at one callsite stay separate. The pause/resume
+control Events sit at their exact ``SnapshotSystem`` ``PostEvent``
+callsites, and the validated native-literal catalog (``managed_literals``)
+covers anchor-wave hit-state routes and 3D-radio narrative selectors. These
+are authored callsite contexts, not execution or audible playback.
+
+LevelScript ``PlayVoice``/``PlayVoiceNarrative`` rows are a separate direct
+path-stem contract: their constant ``_voId`` selects an ``AudioDialog`` path
+and carries ``wwiseEventStatus=notApplicable``; they are never rewritten into
+Wwise identities. RemoteCommon lifecycle fields use an exact
+Persistent-over-Streaming row overlay; non-empty ``startAudioEvent``/
+``endAudioEvent`` become separate authored trigger contexts while ``voiceId``
+stays a dialogue identity."""
 
 from __future__ import annotations
 from scripts.source_paths import ExportLayout

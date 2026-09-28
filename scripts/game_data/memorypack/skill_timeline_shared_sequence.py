@@ -4,6 +4,72 @@ This is deliberately narrower than the general BuffData action reader. It
 admits only reached routes in its reviewed composite contract, including
 timeline actions and passive action maps. Every absent child route still fails
 closed at its first byte.
+
+Evidence ladder.  The readers keep an exact action, an exact enclosing
+``TimelineActionData`` record and a whole ``ActionGroupData`` apart.
+:func:`decode_first_timeline_shared_sequence` closes the first record from a
+contracted root tag (``rootTags``; ``createBuffMultiActionRoot`` only with
+more than one action).  :func:`decode_timeline_shared_sequence` walks later
+records with the same bounded member order, checking every reached union tag
+and member-count byte against ``allowedReachedRoutes``; a complete list
+rejoins SkillData's fields 1..42 and the selected terminal, while an
+unsupported later child keeps only the exact first-record prefix and its stop
+reason.  :func:`decode_passive_shared_sequence` closes a positive
+``passiveEventActions`` list (map header, scalar word and nullable Sequence
+array per the reviewed ``AbilityActionMap`` formatter) only when the
+following ``timelineActions`` count is zero.  A first-record or exact-record
+closure is never a whole ActionGroup.  Some admitted roots close whole files
+and others only add exact records and named bytes, so frontier ranking must
+report both gains separately.
+
+Admission.  A route enters only through a contract that validates on the
+installed build and pins its dispatcher branch, generated wrapper or complete
+reader, ordered source calls and nested generic contexts: a Skill route
+module (``skill_timeline_*``, ``skill_selector_*`` and siblings) or a
+reviewed Buff contract listed in ``dependencies``.  Reusing a finite Buff
+reader still needs the Skill contract to list that tag and member count; a tag
+the Buff reader parses but the Skill contract omits stays an explicit stop.
+Buff's own header check asks the build-gated union contract for each
+tag/member pair, because its former handwritten table drifted (an old
+23-member count for a 24-member wrapper).  Buff-owned bodies admitted here
+include BroadcastAlertToCharacters ``0x0023``, SetSuperArmor ``0x0159``,
+SaveValueFromAIBlackboard ``0x0142``, SetWeakness ``0x015B``,
+SetSkillCdAtOnce ``0x0157``, LockCameraAim ``0x00E0``, Teleport ``0x017C``,
+CheckTwoDirectionAngle ``0x0082``, ComboCache ``0x004E``, AddAIMarker
+``0x0007``, CheckHp ``0x0065``, CheckPoiseValue ``0x006E``, AddTagToEntities
+``0x000C``, NotNextCheck ``0x00FD``, CheckSuperArmor ``0x007B``,
+CheckTargetsEqual ``0x0080``, EnableParts ``0x00A7``, CharWeaponAnimation
+``0x0036``, SwitchMode ``0x0178``, ClearProjectile ``0x004C``,
+SaveBuffStackNum ``0x0135``, DamageAction ``0x009A`` at a first root, and
+the passive condition/source routes, where ``CheckSkillType`` ``0x0078``
+keeps its Buff contract's conditional list provider.
+
+Bodies owned here.  FacBuildingPlayAnimation ``0x00B0`` was admitted by the
+derived plan before it had a body: six reads (bool, three scalar words, a
+bounded byte payload, bool), re-evaluated at the corpus gate.  JumpToAction
+``0x00D9`` (Buff keeps its residual reader), SetAbilityEntityTarget
+``0x0147`` (five members ending in TargetSettings), PlayPerfectDodgeAnim
+``0x0118`` (six members) and the first positive ``DamageUnit`` cost list
+(the authenticated ``List<CastData.CostData>`` instantiation plus Buff's
+exact three-member ``CostData`` grammar) each have a named provider.
+``IfElseAction`` ``0x00C9`` reads three nested ``SequenceActionData`` members
+selected through the reviewed RIP-load and usage-cell chain to a MethodSpec
+the atlas validates as ``SequenceActionData``; recursion is capped at depth
+64 and accepts the native null-wrapper branch.
+
+Tag width and stops.  A union tag is one byte, or ``FA`` plus a 16-bit tag.
+Only one-byte ``FF`` is null: ``FA FF 00`` is physical tag ``0x00FF``
+(ObtainUspInNormalSkill), and treating every numeric 255 as null loses that
+identity even with an exact cursor.  ``BoneAttachAction`` ``0x0000`` is
+likewise a real route.  Apparent ``CheckSuperArmor`` tail anomalies are exact
+endpoints: its children close before the next union tag, and the following
+bytes select separately registered ``BoneAttachAction`` or
+``SaveBuffStackNumByTag`` routes.  Variant member-count or nested-shape
+mismatches (DamageAction's unsupported variants, CameraImpulse's uncontracted
+nested actions, the non-applicable ModifyDynamicBlackboard shape, other
+CreateBuff or camera variants) stay bounded at their own selector instead of
+inheriting an admitted layout.  A closed action is stored framing only; it
+never shows that an action, condition, selector or branch ran.
 """
 from __future__ import annotations
 

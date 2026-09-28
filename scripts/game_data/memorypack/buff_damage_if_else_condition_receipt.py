@@ -1,4 +1,13 @@
-"""Exact selected nested IfElseAction damage conditions on original BuffData bytes."""
+"""Exact selected nested IfElseAction damage conditions on original BuffData bytes.
+
+``memorypack.buff_corpus`` admits these selected conditions with processor
+tag five through all 30 root fields, source ID and EOF; this receipt names
+the condition spans and promotes no root itself.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_if_else_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

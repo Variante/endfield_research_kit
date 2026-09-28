@@ -1,4 +1,9 @@
-"""Selected-build SkillData CheckTargetContains 0x007E framing."""
+"""Selected-build SkillData CheckTargetContains 0x007E framing.
+
+The selected six-member reader stores two TargetSettings children after the
+inherited action fields; its source order distinguishes the child and parent
+settings.  The stored pair does not establish the condition's result.
+"""
 from __future__ import annotations
 
 import hashlib

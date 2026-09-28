@@ -1,4 +1,10 @@
-"""Selected-build SkillData ChannelingCastingAction 0x0031 framing."""
+"""Selected-build SkillData ChannelingCastingAction 0x0031 framing.
+
+The selected eight-member reader's source calls and setter order fix the
+inherited header, three stored Boolean fields and a BlackboardDouble
+duration; the scalar payload reuses a reviewed Buff carrier.  A stored
+duration and flag set do not establish a cast at runtime.
+"""
 from __future__ import annotations
 
 import hashlib

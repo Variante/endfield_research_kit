@@ -1,4 +1,21 @@
-"""Authenticate the selected OnEnemyTakeLastAttackDamage ActionHeader reader."""
+"""Authenticate the selected OnEnemyTakeLastAttackDamage ActionHeader reader.
+
+The reviewed contract pins ActionHeader
+`LevelEvent.OnEnemyTakeLastAttackDamage` (tag 0x0068 in the contract): the
+selected switch branch and wrapper, the complete reader and forwarding
+formatter, ordered reads and setters, and its generic parameter contexts.
+Passing `--export-root`, `--ledger` and `--summary` together also replays the
+reviewed source cursors against the current JsonData ledger. The command
+prints its audit and exits nonzero unless it validates. It proves stored
+header bytes; positive entity-filter payloads, runtime damage events and
+output values remain unobserved.
+
+After the inherited event fields the header stores `damageOutput`
+(`ParamOutput<float>`), `entityFilter` (`Param<EntityPtr>`) and
+`entityOutput`, and the `sourceIsMainCharacterFilter` and `useEntityFilter`
+Boolean filters. Reached cursors carry null entity fields. Enclosing dungeon
+files advance past it to later, separately unsupported event headers.
+"""
 
 from __future__ import annotations
 

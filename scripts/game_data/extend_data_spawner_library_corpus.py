@@ -3,6 +3,27 @@
 Every reported row is backed by an exact sequential MemoryPack decode and by
 the current VFS ledger's logical-file length and MD5. This proves the authored
 action-to-library relation, not live monster selection or protocol template ID.
+
+The gate requires current JsonData export freshness, rechecks every
+SpawnerConfig logical file against the VFS ledger (exact path, length and
+plaintext MD5), and decodes the wave, group and action maps sequentially to
+physical EOF. Every decoded ``SpawnMonsterFromTemplateV2.libraryKey`` selects
+exactly one ``enemyLibrary[].key`` in the same file, yielding that action's
+authored ``enemyId`` and optional ``overrideAIConfig``; other action union
+tags keep the reader's bounded status. Every distinct authored ``enemyId`` is
+an ``EnemyTable`` key, and some are in the graph-linked AI subset: an authored
+key join only. In the current corpus, items selected by monster actions carry
+positive ``bornTemplateId`` strings that differ from the item's ``enemyId``,
+and every stored ``bornBehaviorData`` is null. Neither these bytes nor the
+source graph's authored spawner-enemy rule converts an item to
+``SCENE_MONSTER.commonInfo.templateid`` or selects an ``EnemyInfo``/
+``EntityNode``; the missing witness is the producer or consumer that carries
+one stored entry's ID into a selected protocol message or entity-data node.
+
+The selected native fallback branch that reads those born fields is checked by
+``extend_data_spawner_library_native``. Pass ``--game-root`` and the VFS
+audit's ``inputSetSha256``; the default report is
+``reports/animestudio/extend_data_spawner_library_latest.json``.
 """
 
 from __future__ import annotations

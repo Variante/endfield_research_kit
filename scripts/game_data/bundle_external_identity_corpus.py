@@ -5,6 +5,24 @@ and native consumer first.  This gate then checks a complete object index from
 the same installed StreamingAssets tree and the standalone Unity ``Resources``
 files.  A matching filename, external slot, and target PathID is an authored
 serialized-object identity; it does not prove Unity executed a resolver.
+
+Current reading: an indexed MonoBehaviour ``interactiveCollider`` pointer
+reaches the CABMap external slot named ``unity default resources``, and its
+target PathID exists only in the exact-name installed Resources file, as the
+``Capsule`` Mesh. The runtime resolver binding still needs a selected native
+or live trace. The CAB-shaped external's indexed pointer targets are absent
+from both installed Resources object tables, which rules those files out for
+those pointers without locating the missing CAB. Its references include
+non-null PlayableDirector assets and MonoBehaviour skybox and cloth fields,
+so it is more than an unused external-table entry. The object index covers
+only MonoBehaviour and PlayableDirector, so this negative does not cover
+every Unity class. The Resources files are read by
+``unity_serialized_identity``.
+
+It takes the ``bundle_cab_exceptions`` inputs plus ``--export-root
+export_full`` and ``--resources-root`` (the installed ``Resources``
+directory); the conventional ``--out`` is
+``reports/animestudio/bundle_external_identity_latest.json``.
 """
 
 from __future__ import annotations

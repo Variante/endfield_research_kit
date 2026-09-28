@@ -2,6 +2,18 @@
 
 This is a structural range check, not an ID-to-component dictionary. A limited
 run is diagnostic and cannot publish a complete current-corpus result.
+
+A complete run rereads every current Init logical file, checks its physical
+VFS MD5, frames its groups and counts signed descriptor IDs. Every observed
+ID is nonnegative and inside the two-QWORD mask, including IDs that select
+the second QWORD; that is a current-input observation, not a rule for
+future inputs.
+
+The IDs are read from slot 7 through the maintained framing reader and stay
+anonymous packed-column positions. Both selected native gates (first root
+and descriptor mask) must validate. Pass ``--game-root`` and the VFS audit's
+``--expected-input-set-sha256``; the default report is
+``reports/chunk_data/descriptor_mask_corpus_latest.json``.
 """
 
 from __future__ import annotations

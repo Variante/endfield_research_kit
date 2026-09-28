@@ -3,6 +3,38 @@
 This checks static native code under selected installed inputs. The result is
 conditional on successful table lookup and the unpatched synchronous path;
 it does not witness a live enemy, resource load, or graph execution.
+
+The route (contract ``extend_data_graph_ai_native.json``), all static:
+
+1. ``EntityDataStorage.CreateEnemyFromServer`` passes its
+   ``Proto.SCENE_MONSTER`` to ``EnemyInfo.InitFromServerData``, which reads
+   ``SCENE_MONSTER.commonInfo.templateid`` for a keyed ``EnemyTable`` lookup
+   (``EnemyData.templateId`` for template setup) and passes the message to the
+   ``EnemyServerData`` constructor, which copies the same ``templateid`` into
+   ``EnemyServerData.enemyId`` and is stored as ``BaseEntityData.serverData``:
+   a direct producer and a second, independent Table-key use of the field.
+2. ``EntityNode._SpawnEntity`` passes ``BaseEntityData.serverData`` through
+   ``ObjectContainer.SpawnEntity`` and ``LoadEntity`` into
+   ``Entity.serverData`` (``Entity.AssignServerData``);
+   ``EnemyRootComponent.InitSelf`` casts it to ``EnemyServerData`` and copies
+   ``enemyId`` into the enemy root.
+3. On the unpatched synchronous ``EnemyAIComponent`` initialization, the code
+   reads ``BaseComponent.entity``, ``Entity.enemy`` and
+   ``EnemyRootComponent.enemyId`` as the ``Tables.s_enemyTable`` key, reads the
+   ``EnemyData`` bean's string slot zero (the selector
+   ``EnemyData.get_aiTemplateId`` uses), formats an ``AIConfig`` asset path,
+   calls ``LoadSingleConfig``, and stores the result in a field declared
+   ``EnemyAIConfigData``.
+
+The chain is conditional on the initialized ``EnemyInfo`` reaching the checked
+``EntityNode`` spawn path, the cast, a successful lookup and a nonempty AI
+field. The source of a live ``SCENE_MONSTER`` message, its relation to
+installed spawn or scene records, alternate constructors, async and override
+paths, and the graph instance remain open; IFix can redirect the methods.
+
+The audit prints JSON; ``--out
+reports/animestudio/extend_data_graph_ai_native_latest.json`` also saves it.
+``extend_data_graph_ai_corpus`` reruns this audit before its join.
 """
 
 from __future__ import annotations

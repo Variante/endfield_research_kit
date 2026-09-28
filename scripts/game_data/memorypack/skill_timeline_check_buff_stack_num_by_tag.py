@@ -2,6 +2,10 @@
 
 The nine stored members and their nested profiles are a byte-level claim.
 They do not establish when a runtime condition evaluates true.
+
+Native source calls and generic contexts distinguish the stack-type enum,
+TargetSettings, comparison enum, finite GameplayTagQuery and BlackboardDouble
+value after the inherited action fields.
 """
 from __future__ import annotations
 

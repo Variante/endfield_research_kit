@@ -4,6 +4,41 @@ This is a static-data audit. It does not infer runtime marker visibility or
 assign a scene from a shared numeric group key or a registry id bucket. JsonData source identities are
 checked against the current complete corpus receipt before the named schemas
 and joins are read. The Table source has its own digest in the output.
+
+Run as ``python -m scripts.game_data.map_mark_relations``; it writes
+``reports/game_data/map_mark_relations.json`` (changing counts live there).
+
+Join rules (each is an exact stored-value relation):
+
+- Template: each marker's ``basicData.templateId`` joins one
+  ``Table/MapMarkTempTable.json`` row whose ``markInfoId`` equals the key.
+  The full table also has variant keys (``_invalid``, ``_social`` and the
+  like) whose ``markInfoId`` names a base template, so "table key equals row
+  id" is not a blanket rule; variant rows are kept out of the authored-marker
+  join.
+- Group keys: the numeric ``LevelMapMark`` root key meets
+  ``MapBriefInfoTable.subLevelTable`` keys and some ``MapRegionTable`` keys
+  (whose rows carry an explicit ``levelId``).  Neither relation supplies a
+  scene for every group, and a MapBrief map id must not be rewritten as a
+  level id: several region level ids occur under one MapBrief id.
+- Detector visibility: in the ``MapDetectorEntity`` visibility variant the
+  stored ``entityId`` equals ``basicData.markInstId``; this does not say when
+  a marker appears or what server state controls it.
+- Registry-linked marker: an exact ``markInstId`` key in
+  ``WorldEntityRegistry.worldEntityBriefInfos`` with an exactly equal decoded
+  position, plus a matching used template, assigns the authored marker to
+  that registry entity.  It does not assign a scene; the registry id bucket
+  can plot the entity on Map but is not a ``LevelMapMark`` scene field.  A
+  changed position or missing id fails the annotation; nothing is joined by
+  proximity or by the group key.
+- Scene-linked marker (narrower): the ``markInstId`` is one logic id in a
+  unique ``LevelShortIdTable`` ``sceneName`` entry, that scene exists in
+  ``LevelBasicInfoTable``, and the registry join above also holds.  This
+  assigns only that marker, never its whole numeric group or any other
+  registry-linked marker, to the scene.
+
+``defaultVisible`` is authored configuration, not observed runtime
+visibility; discovery and server state are unobserved.
 """
 
 from __future__ import annotations

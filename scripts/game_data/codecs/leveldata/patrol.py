@@ -1,4 +1,24 @@
-"""Exact current-wrapper codecs for authored LevelData NPC patrols."""
+"""Exact current-wrapper codecs for authored LevelData NPC patrols.
+
+- ``npcPatrol`` (``decode_npc_patrol_list``): the generated ten-field
+  ``NpcPatrolData`` owner, three-field points and positive
+  ``PatrolSubAction`` lists. The action codec follows all 26 generated
+  members, including the four-field ``Beyond.Blackboard.DataPair`` order
+  (``isDynamic``, ``key``, ``valueDouble``, ``valueStr``). Its polymorphic
+  ``subActionData`` admits only null, tag-0 three-field
+  ``PatrolSubActionEnvTalkData`` and tag-1 one-field
+  ``PatrolSubPlayAudioData``; the latter stores ``AudioId._id`` as an
+  unsigned 32-bit value.
+- ``patrols`` (``decode_patrol_list``): the authored patrol grammar also
+  used by Spawner routes. ``PatrolData`` has 39 stored members, beginning
+  with the action list and ending with ``worldOffset``; each
+  ``PatrolAction`` has four members (``actionType``, position, subactions,
+  subpositions) and reuses the same ``PatrolSubActionData`` union routes.
+
+Unknown tags, changed member counts and malformed nested values fail
+closed. Exact stored layout; it does not prove runtime traversal or audio
+playback.
+"""
 
 from __future__ import annotations
 

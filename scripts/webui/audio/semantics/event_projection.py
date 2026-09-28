@@ -560,6 +560,14 @@ def selector_branch_projection(
     The HIRC parser already proves the flat package/association tail.  This
     projection keeps that authored shape and exact catalog joins while refusing
     to infer nested container closure or a live selected branch.
+
+    Group and value ids join the selector catalog (``build_contracts``: the
+    native-backed voice identity, surface material and local/remote routing
+    roles plus the current-metadata music State groups); unmatched ids stay
+    numeric. Package child ids reach decoded media only through exact same-bank
+    ``soundObjectIds`` evidence; malformed or cross-bank structures stay
+    unresolved and fail closed. Published only on lazy Event-detail records as
+    ``selectorBranches``.
     """
 
     catalog = _selector_group_catalog(selector_groups)

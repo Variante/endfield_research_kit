@@ -1,4 +1,13 @@
-"""Exact current MemoryPack codec for LevelData's polymorphic specific data."""
+"""Exact current MemoryPack codec for LevelData's polymorphic specific data.
+
+The top-level ``specificData`` union closes on ``0xff`` (null) or the
+current tag-zero ``SpaceShipSpecificData`` route. Its generated
+eight-member order retains the cabin-slot dictionary, grow-box identities,
+manufacturing-machine map, showcase root/bind/local-pose lists and spawn
+pose. ``CabinSlotInfo`` values use their exact four-member order
+(``boundSize``, ``logicId``, position, rotation). Unknown union tags or
+changed member counts fail closed. Exact stored layout only.
+"""
 
 from __future__ import annotations
 

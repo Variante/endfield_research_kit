@@ -4,6 +4,29 @@ Selected-build derived-plan EOF decoding supplies the action path and its
 enclosing timeline or Buff event. This is not the independent Buff child-schema
 gate. The strings are retained exactly as serialized; a
 PlaySound member alone does not establish a current Wwise Event object.
+
+It is a focused audit, not a page build. It writes
+``reports/audio/play_sound_action_corpus.json`` with SkillData/BuffData
+PlaySound paths, enclosing timeline, Buff/Ability event context, selected
+native enum labels, raw literals, and a comparison with the narrower local
+action reader. It requires the selected ``GameAssembly.dll`` and
+``global-metadata.dat`` and refuses incomplete whole-record decodes. To bind
+the result to the current installed JsonData set, pass ``--jsondata-report``
+(``reports/animestudio/jsondata_current_latest.json``), ``--jsondata-files``
+(``reports/animestudio/jsondata_current_files_latest.jsonl.gz``) and
+``--expected-input-set-sha256`` from the current VFS audit together; every
+SkillData/BuffData export file is then checked by path, length and SHA256.
+Without the three options the audit describes only the selected export
+directory.
+
+In current-corpus mode the registry report's ledger digest is checked first,
+then each exported file is joined to the JsonData ledger by path, length and
+logical SHA256 before decoding; source drift, omissions and extra files are
+refused. A whole-plan EOF over the set is a source-set and derived-plan
+closure, not the stricter independently named Buff schema. The comparison
+proves the local action reader is a strict subset (see ``play_sound_actions``);
+the actions it misses do not become runtime-posting evidence by being added
+to an inventory.
 """
 
 from __future__ import annotations

@@ -2,6 +2,14 @@
 
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove a live NPC dialog override.
+
+The wide-tagged route stores `dialogId` and `proxyId` as `Param<string>`
+after the inherited fields. Reached values are authored constants: dialog
+IDs often prefix `DialogTextTable` row keys but some do not join by that
+rule, and proxy IDs name NPC variants. This is a stored reference shape, not
+which dialog a live NPC displays.
+
+Run as: python -m scripts.game_data.levelscript_override_npc_dialog_native
 """
 
 from __future__ import annotations

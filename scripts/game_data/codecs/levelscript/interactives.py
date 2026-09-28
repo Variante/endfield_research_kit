@@ -1,4 +1,26 @@
-"""Exact current ``Dictionary<uint, LevelInteractiveData>`` codec."""
+"""Exact current ``Dictionary<uint, LevelInteractiveData>`` codec.
+
+Each value is the 25-member generated ``LevelInteractiveData`` wrapper: 14
+inherited ``LevelEntityData`` members, then 11 interactive members.  Nested
+component, global, map and property values use the generated
+``ParamKeyValue(key, value)``, ``ParamValue(type, valueArray)`` and
+``ParamValueAtom(valueBit64, valueString)`` orders.  ``componentProperties``
+is ``Dictionary<InteractiveComponentType, List<ParamKeyValue>>``: its Int32
+enum key does not dispatch a polymorphic payload, so the raw key is kept,
+duplicates are rejected, and the typed list always advances; a
+corpus-derived enum subset must not block the layout.
+
+``progressLockCondition`` accepts the union-null tag, the three-member mission
+state and quest state routes, and the recursive three-member combined
+condition (``_decode_progress_lock_condition``); any other non-null condition
+fails closed.  The route tags are written as literals here, unlike the
+build-resolved GameCondition tags in ``task_conditions``.
+
+``decode_interactive_list`` reuses the same value codec for LevelData's
+member-20 list.  In LevelScript, positive dictionaries reach the next
+top-level member with one sequential cursor.  Stored authored configuration
+only; runtime component validity and ownership are not proved.
+"""
 
 from __future__ import annotations
 

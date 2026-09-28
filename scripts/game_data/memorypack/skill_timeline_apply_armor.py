@@ -2,6 +2,9 @@
 
 The selected five-member source path reads a byte, three four-byte slots and
 one TargetSettings child. Stored fields do not establish armor behavior.
+
+The first four reads are the inherited bool, Priority enum and two scalar
+words; the TargetSettings child is ``applyTo``.
 """
 from __future__ import annotations
 

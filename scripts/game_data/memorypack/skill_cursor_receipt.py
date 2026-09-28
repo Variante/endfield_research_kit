@@ -4,6 +4,36 @@ The receipt's source bytes are treated as private input: output rows retain the
 SHA-256 and observed cursor ranges, never the supplied hex payload. A promoted
 row proves the executed direct-field cursor vector and terminal candidate under
 the maintained framer; field meaning remains separately native-authenticated.
+
+Observer.  The EndfieldCapture ``skilldata-cursor`` profile observes the
+complete direct-call surface of the selected SkillData reader: 47
+field-indexed post-read cursors for the 48-member object (field 17 is read
+inline) plus the two ActionGroup child-list post-call cursors inside field 0.
+Seven typed helper hooks preserve the original ABI.  The runtime admits only
+bounded source lengths (the verifier and capture-target contracts record
+them), copies each source once into bounded storage, and publishes only after
+a quiescent teardown proves every detour and trampoline vacant.  The loaded
+reader body, the seven helper entries and the ActionGroup window are
+hash-pinned on top of the native file gate
+(``contracts/skill_cursor_observer_native.json``).
+
+Accepted evidence.  The accepted v2 publication receipt has zero genuine loss
+and overflow and records complete field/child vectors for two byte-distinct
+samples whose field 0 is the identical empty two-list ``ActionGroupData``.  In
+both, the ``one-member-wrapper`` terminal begins at field 43
+``switchToCenterBeforeCast`` and field 47 ``useAIExclusiveFrame`` closes at
+EOF; these two samples anchor the family-wide field-43..47 selection.  A later
+accepted receipt with two different current sources confirms the ActionGroup
+child checkpoints at cursors 6 and 10, supporting the passive-versus-timeline
+split; ``PlayAnimation`` body ownership still comes from the native wrapper
+and corpus joins.  Overflow in the separate off-target callsite sampler does
+not weaken an accepted target stream.  A direct top-level cursor never names
+the interior of a populated ActionGroup child.
+
+Preflight.  :func:`preflight_skilldata_corpus` is the non-launching check.
+After a VFS content addition a fresh capture first needs an immutable
+unselected basis and an IL2CPP context under the new input set; a prior
+context cannot serve even when the native binaries match.
 """
 
 from __future__ import annotations

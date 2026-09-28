@@ -2,6 +2,17 @@
 
 This proves serialized patrol-start arguments on the selected installed client.
 It does not prove that the action executes or changes an enemy's patrol state.
+
+After the inherited action fields the branch stores `patrolId` as
+`Param<ulong>` and `target` as `Param<EntityPtr>`. The contract checks the
+dispatcher, registered wrapper, complete reader and forwarding formatter,
+ordered reads and setters, and both generic parameter contexts. Source
+cursors are joined to the JsonData summary and per-file ledger and replayed
+through the exact field codec to the pinned action end. Reached targets use
+the reviewed constant `EntityPtr` form; other pointer forms stay explicit
+stops.
+
+Run as: python -m scripts.game_data.levelscript_enemy_patrol_start_native
 """
 
 from __future__ import annotations

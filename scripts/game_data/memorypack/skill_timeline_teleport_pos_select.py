@@ -3,6 +3,11 @@
 The Buff frontier-nine contract already authenticates this union route and its
 ordered source reads.  Keep the Skill-only admission separate so an unsupported
 Skill action still stops at its first byte.
+
+This is a distinct nine-member route, not an alias of ``TeleportAction``
+(``0x017C``): its ordered string, FixDistanceData, RangedData and
+TargetSettings members reuse bounded nested grammars.  The stored selection
+parameters do not establish which destination was chosen at runtime.
 """
 from __future__ import annotations
 

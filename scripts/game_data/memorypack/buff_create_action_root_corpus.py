@@ -3,6 +3,14 @@
 This supplementary gate does not change the canonical Buff or JsonData census.
 It emits proposals only for roots whose sole remaining nested blocker is the
 CreateBuff action and whose original bytes pass the thirty-field forward read.
+
+The replay names the action's icon duration, input/assignment, blackboard and
+selector children on original bytes under the selected native readers. Other
+event actions and runtime buff effects stay open. It reads the complete
+``memorypack.buff_corpus`` report (default
+``reports/animestudio/buffdata_current_latest.json``) and the VFS audit's
+``--expected-input-set-sha256``; the default output is
+``reports/animestudio/buff_create_action_root_current_latest.json``.
 """
 from __future__ import annotations
 

@@ -3,6 +3,18 @@
 The checked-in contract is the production boundary.  Recovery tooling may
 refresh or reconcile it, but Story builders never read ignored recovery
 reports or require the IFix payload to be extracted into ``export_full``.
+
+This loader checks the contract against the selected ``GameAssembly.dll`` and
+``global-metadata.dat`` but does not read the live VFS patch. ``validated``
+therefore proves the native pair and contract shape, not that a patch-only
+hotfix still has the contract's ``patchSha256``: for a current patch claim,
+compare that digest with a fresh, MD5-verified VFS dump before using the
+target list (``ifix_vm_operands_native`` can bind its inputs to the outer VFS
+gate). The contract's fixed-target and external-reference classifications
+contain no direct task-completion or receiver-ownership match; that is a
+narrow negative over the decoded records, not proof that the patch has no
+indirect effect on missions or Story. An older local mission audit described
+a different patch payload and must not be cited as current.
 """
 from __future__ import annotations
 

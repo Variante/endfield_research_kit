@@ -1,4 +1,65 @@
-"""Anonymous BuffData event-prefix framing; no legacy union-tag aliases."""
+"""Anonymous BuffData event-prefix framing; no legacy union-tag aliases.
+
+``Reader`` is the structural cursor shared by the BuffData readers. It
+records contiguous atomic spans and completed records but assigns no field
+meanings; named receipts elsewhere attach generated names to its spans.
+
+- ``event_prefix`` reads the 30-member ``BuffDataForMemoryPack`` header and
+  field 0, ``abilityEventAction``, from byte zero.
+- ``root_continuation`` reads fields 1-5 in generated setter order
+  (``addingCooldown``, ``applyTags``, ``attributeModifier``, ``blackboard``,
+  ``buffEventAction``) only after a supported first-collection endpoint;
+  the caller owns that prerequisite.
+- ``damage_modifier_element_profile`` and ``heal_modifier_element_profile``
+  follow the generated three-field ``DamageModifier``/``HealModifier``
+  wrappers and are driven by ``buff.frame_buff_named_middle``.
+
+Damage processor union routes closed here: 0, 2, 3, 4, 5, 6, 9 and 10. The
+current native dispatcher binds 0/2/3/4 to the critical-rate,
+``AttackerCriticalDamageProcessorForMemoryPack``,
+``AttackerPenProcessorForMemoryPack`` and
+``DamageIndependentHealthProcessorForMemoryPack`` wrappers, each one
+bounded ``BlackboardDouble`` (``scale`` or ``multiplier``); 5 to
+``DamageScaleProcessorForMemoryPack`` (``addition``, ``side``,
+``zoneName``); 6 to ``DamageTextProcessorForMemoryPack`` (a bounded
+``DamageTextStyle`` scalar, then ``useHpChangeAsDisplayValue``); and 10 to
+``ModifyCalcResultForMemoryPack`` (``baseMultiplier``, ``modifyType``,
+``multiplierCnt``, the two multipliers as bounded ``BlackboardDouble``
+around a raw enum-like scalar). Both current heal processor routes (0, 1)
+are closed. Any other damage route stops at its union tag. The per-route
+child receipts are the ``buff_damage_*_processor_child_receipt`` modules.
+
+Root framing. ``event_prefix`` works under each retained filename-anchor
+candidate's hard limit and stops at the first unsupported union; atomic spans
+plus an explicit physical-file remainder tile the bytes, and that remainder is
+opaque, not a decoded record. The root members after field 0 follow the
+reviewed ``buff_root_prefix``/``fifth``/``sixth`` native contracts:
+
+- fields 1-3 (``buff_root_prefix_native.json``): a scalar payload, a directly
+  counted raw DWORD array (four bytes per entry, no element header; the
+  ``GameplayTag`` type name does not select the separate tag-list wrapper),
+  and a member-two collection profile whose terminal byte exists only when
+  it is non-null;
+- field 4 (``buff_root_fifth_native.json``), a ``List<DataPair>``: member-four
+  elements read a byte, a signed nullable byte payload, eight raw bytes, then
+  another nullable payload. The eight-byte load is pinned on its own -- not
+  the scalar profile's four-byte value -- and the leading byte is not a union
+  tag;
+- field 5 (``buff_root_sixth_native.json``), a ``List<BuffActionMap>``: FF or
+  member two, a nullable Sequence array, then a required inline DWORD. This
+  reverses the first collection's scalar/array order, so equal member counts
+  do not make the two maps interchangeable.
+
+Extended unions consume ``FA`` followed by a little-endian unsigned 16-bit
+tag; records keep the decoded tag, not the escape byte. Supporting a decoded
+tag does not admit its reserved single-byte encoding. The recurring action
+prefix (one byte plus three scalar32 values) is a shared shape, not an
+identifier, and cannot select a reader.
+
+Evidence tier: ``structuralOnly`` cursor framing. The stored names and order
+do not establish processor arithmetic, presentation behavior, live provider
+choice or whole-BuffData EOF.
+"""
 import struct
 
 

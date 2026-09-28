@@ -20,6 +20,56 @@
 //     show their hexadecimal form.
 // Nothing here promotes evidence: every status, range, and boundary passes
 // through from the publisher unchanged.
+//
+// Record viewer contract (memory/webui/data_inspector.md owns the dataset
+// list; scripts/webui/data_inspector/contract.py owns the envelope):
+//   * Scalar `facts` are quick-scan cards; `facts` and `payload` are then two
+//     labelled roots of one annotated tree. The root label follows the
+//     required `payloadKind`: `reader` is a maintained scripts/game_data
+//     reader's own result, `projection` was assembled by the publisher from an
+//     already-decoded source whose mounted raw file stays authoritative.
+//     `facts` is always the publisher's projection and may hold more than
+//     `payload`. Only the reader payload root receives framing chips; a
+//     `bytesConsumed` quoted in facts is not a consumption claim. Payload
+//     sniffing for a framing status survives only for datasets published
+//     before `payloadKind` existed. No dataset id is hardcoded.
+//   * For a value-only reader the header shows a fully consumed file only when
+//     facts.wholeFileCursorExact is true and bytesConsumed equals the source
+//     size. A facts `evidenceBoundary` is labelled as a publisher boundary,
+//     never a decoder claim; a decoder's own payload boundary wins when both
+//     exist. Header chips drop a tag or schemaStatus that repeats the family
+//     or decode status already shown, and a whole-file read is stated on the
+//     size chip rather than as a second chip.
+//   * Field names are shown verbatim in every locale so a row stays
+//     searchable against the export, the contract JSON and the reader; only
+//     page furniture and evidence vocabulary are localized.
+//   * The tree offers a field search under TREE_ROW_BUDGET, expand/collapse
+//     all (alt-click folds one branch recursively), a raw-JSON view, and an
+//     on-demand bounded raw source preview. Branches below the roots
+//     materialize lazily.
+//   * `references` (publisher projection): each stored identifier with its
+//     exact source path; an item links only when targetState is `present` and
+//     the target is in the loaded catalog. Absent or ambiguous targets stay
+//     labelled non-links, and the publisher boundary is shown above the list.
+//     SkillData uses this for AllowNextSkillAction.allowedSkillIdList,
+//     including nested action values; links do not assert a runtime skill
+//     transition.
+//   * Catalog `searchTerms` feed the sidebar search without loading shards.
+//     The detail shows them as a collapsed list of exact same-dataset
+//     filters; selecting one clears other list facets, and editing the search
+//     box returns to regex search. With a complete directStoredActionTypes
+//     inventory (SkillData), each term also shows its union tag and this
+//     record's timeline/passive occurrence counts; the `records` number counts
+//     catalog records carrying the term, never occurrences.
+//   * The same validated inventory offers a collapsed list of direct action
+//     occurrences with decoded array indices and field paths; selecting one
+//     opens that node. The payload's type/tag counts are checked against the
+//     publisher inventory first, and a changed or incomplete shape withholds
+//     the list. Nested branch actions stay outside it; positions are stored
+//     array order, not execution order or timing.
+//   * buff-action-receipts records show a collapsed span list that locates
+//     each verified wrapper in the tree by byte range; it claims no nested
+//     field semantics, whole-file ownership or runtime execution.
 (() => {
   const ROOT_PATH = "data/data_inspector/index.json";
   const AUTO_OPEN_DEPTH = 1;

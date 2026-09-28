@@ -1,4 +1,19 @@
-"""Authenticate the selected OnTrainLevelEvent ActionHeader reader."""
+"""Authenticate the selected OnTrainLevelEvent ActionHeader reader.
+
+The reviewed contract pins ActionHeader `LevelEvent.OnTrainLevelEvent` (tag
+0x00AD in the contract): the selected switch branch and wrapper, the complete
+reader and forwarding formatter, ordered reads and setters, and its generic
+parameter contexts. Passing `--export-root`, `--ledger` and `--summary`
+together also replays the reviewed source cursors against the current
+JsonData ledger. The command prints its audit and exits nonzero unless it
+validates. It proves stored header bytes; train level event emission and
+object output values remain unobserved.
+
+The header adds `eventKey` as `Param<string>` and `value` as
+`ParamOutput<object>` to the inherited header. The object output stores only
+a parameter source and path, not a value. Reached dungeon files advance past
+it to later, separately unsupported event headers.
+"""
 
 from __future__ import annotations
 

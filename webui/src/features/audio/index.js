@@ -1,3 +1,106 @@
+// Audio page behavior contract (webui/README.md links here; the UI-facing
+// evidence boundary is memory/webui/audio.md, the Wwise chain is
+// memory/game_data/audio_overview.md).
+//
+// Four layers stay separate and the page claims only the one available:
+// authored Event/media identity; Wwise graph relation and possible media
+// leaves; authored consumer/trigger context; observed runtime execution.
+//
+// Layout and playback
+//   * In a selected record the playable-media block renders first, directly
+//     below the detail heading and before Details, manual notes and the
+//     longer facts/evidence sections.
+//   * Expanded files load with their waveform. A group of more than
+//     PLAYER_COLLAPSE_THRESHOLD files keeps lazy collapsed players and loads a
+//     waveform only when that file is expanded.
+//   * The default purpose-priority sort and recovery filters put
+//     unknown-purpose records ahead of partial and known ones; a direct
+//     Story-line binding is terminal known-purpose, not investigation queue.
+//   * Notes: each Event/media record takes a note that is written only on an
+//     explicit Save note (typing never writes). Notes are keyed by language
+//     and record identity, persist through overrides/audio_notes.json, join
+//     the text search and show their first line beside the list filename.
+//     They are user annotations, not game-data evidence.
+//   * Identity-only collapsed groups exist for chr_*, au_chr_*,
+//     au_actor_<token>_*, au_monster_<token>_* and au_ namespaces and are
+//     never merged with skill or animation SFX.
+//   * The overview loads audio/scene_backgrounds.json as a compact scene
+//     catalog (validated and missing object-index sources, partial coverage
+//     visible, filters by scene id, mission id or Event); Event chips
+//     navigate to the Event detail, and no Wwise branch or media is copied.
+//
+// Detail sections (all authored serialized joins)
+//   * Event details list exact SkillData/BuffData PlaySound contexts when the
+//     raw literal matches a selected HIRC Event, with an authored frame window
+//     only when the action has one; Buff and Ability slots appear by checked
+//     native enum names. Empty, outer-whitespace and HIRC-unmatched literals
+//     stay without Event links. No branch execution, target or playback claim.
+//   * Music Switch Events show a searchable list of authored type 0x0C
+//     decision-tree leaves from musicNodeEvidence, 40 rows per page: stored
+//     argument group/type and path key, leaf object ID, weight, probability
+//     and same-bank ownership (a missing declaration is a local join gap). It
+//     needs one pathKeys entry per argument level; older shards with a root
+//     sentinel need the focused Audio HIRC build first.
+//   * Direct node effects (postProcessSummary.effectNodes); the serialized
+//     effect chain (direct slots before each leaf-to-root Bus path, at most 64
+//     stages per row, truncation marked); serialized RTPC controls and State
+//     overrides (at most eight curve points each); Bus-control, ducking and
+//     User-Defined Aux sends resolved by Bus ID against the unique Bus
+//     catalog; media-edge types and selection paths (directSound, layerChild,
+//     randomAlternative, switchCandidate, sequence/music) with root Action
+//     IDs; trigger_contexts.json mediaRefs; non-playback Action payloads
+//     (SetState/SetSwitch, GameParameter ranges and fade, Stop/Pause/Resume,
+//     Seek, value/filter actions, exception buses, FX bypass); the lazy
+//     debug-only AudioCue AST. An unsupported tail stays fail-closed with its
+//     offset and reason.
+//   * Effect parameter names/values appear only for classes passing the
+//     selected native gate; others keep raw class IDs, parameter lengths and
+//     hashes and exact plug-in media dependencies. The HIRC overview shows the
+//     gate status and reviewed-class count beside exact/partial/opaque counts;
+//     an absent gate is marked unverified. No live effect or DSP claim.
+//
+// Status vocabulary, rendered verbatim in details, search and filters
+//   * identity: eventIdentityStatus=grammarHashPreimageNameRecovered with
+//     eventNameSourceKind=grammarHashPreimage and the head/tail sibling counts
+//     that admitted the name; ownerKind=npc; the physical wwise/unknown path.
+//   * category: physical audioCategory beside a separately recovered semantic
+//     category (SFX, voice, UI, ambience, control, music, cue) and a coarse
+//     ownership (scene environment, scene object, animation, gameplay
+//     component, interaction, UI, voice system, mission narration). A mixed
+//     known-category join stays unclassified; a generic scene emitter keeps
+//     scene ownership without a forced category.
+//   * authored fields and scenes: monoBehaviourAudioIdField roles
+//     (componentSoundSpawn, componentHitCallback, finish/state,
+//     water/particle, or the generic serialized-field boundary) plus
+//     componentLayout; sceneOwnershipStatus, sceneContainmentStatus, sceneId,
+//     sourceName, sourcePath, conflictingPrefabInstanceIdentityJoins.
+//   * routing: noExplicitOutputBusSerialized,
+//     controlCatalog.staticRtpcAlignment with the six AU_RTPC_* names
+//     (CINE_CTRL_VOL_AMB, ..._VOL_MU, ..._VOL_SFX, IS_MUTE_BY_SDK_WEBVIEW,
+//     IS_SURROUND_CHANNELS, GLOBAL_VOL_MASTER_IOS_WORKAROUND),
+//     postProcessSummary.gameParameterNameEvidence, and the custom numeric
+//     targets 0x1802/0x1804.
+//   * AudioCue AST: exprType (3, 8), runtimeCueVariable, compositeOpaque,
+//     childrenLimit.
+//   * Wwise actions: `operation` (the masked high byte that decides the body
+//     layout and stays the grouping key) beside actionTypeName, the SDK name
+//     of the whole 16-bit type shown without its AkActionType_ prefix (so
+//     Stop_E, Stop_E_O and Stop_ALL are told apart). A word the SDK enum does
+//     not name shows no name rather than one fitted from the suffix.
+//
+// Storage and degraded state
+//   * Shared SFX/music and language voice stay in separate roots; repeated
+//     media IDs keep every physical occurrence and package provenance.
+//   * Direct Story-line binding, authored context, Event-only relation and
+//     unknown placement are mutually exclusive media states. Coverage counts
+//     come from generated summaries, never hard-coded here.
+//   * Missing or mismatched native inputs keep authored rows and remove only
+//     build-locked callsites, mappings and addresses, with the unavailable
+//     state shown: interactive and Snapshot state Events, enemy/character
+//     voice callsites, Story dialogId lifecycle hooks, and the
+//     EnemyTriggerVoiceAction voice-type-to-trigger-key mapping.
+//   * An unverified, missing or mismatched offline capture bundle stays a
+//     degraded diagnostic and adds no runtime binding.
 (() => {
   const ROW_HEIGHT = 66;
   const OVERSCAN_PX = 260;

@@ -2,6 +2,12 @@
 
 The native contract proves the selected reader's inherited fields.
 Source receipts prove reached bytes, not runtime camera behavior.
+
+`ResetFollowCamera` is an inherited-only ActionBase branch: the selected
+switch, complete reader and formatter, and eight ordered reads and setters
+authenticate the record. The record does not prove a runtime reset.
+
+Run as: python -m scripts.game_data.levelscript_reset_follow_camera_native
 """
 
 from __future__ import annotations

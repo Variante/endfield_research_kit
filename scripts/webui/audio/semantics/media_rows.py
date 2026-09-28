@@ -2,7 +2,49 @@
 
 Builds the compact media rows the Audio page shards, and annotates each row with
 its post-process effect chain and trigger/event context. A route is a serialized
-relation, not evidence that the media played."""
+relation, not evidence that the media played.
+
+Media decoded under ``wwise/unknown`` keep that **raw physical category**
+(``audioCategory``). ``unknown`` is not an "unnamed" flag: only the six
+naming prefixes in ``build_audio.WWISE_EVENT_CATEGORY_FOLDERS`` map to a
+physical folder, so most such media already carry a named Event. A separate
+``semanticCategory`` is attached only from exact evidence -- one unique known
+related-Event category, one trigger-context Event category, or a MonoBehaviour
+audio-field role -- and mixed joins stay unclassified rather than resolved by
+majority.
+
+What a media row may say about the typed HIRC catalog (``hirc_v150``). The
+shape is a durable contract; row counts are per build:
+
+- Each leaf is projected onto its exact serialized Event output-bus paths,
+  with effect and unresolved bus ids kept as references into the typed
+  catalog. A leaf whose typed NodeBase evidence has ``outputBusNodeCount=0``
+  gets ``noExplicitOutputBusSerialized``, which is not a default route,
+  silence, or proof of an effect-free path.
+- Direct NodeBase effect slots (Event ``postProcessSummary.effectNodes``) are
+  kept apart from output-bus effects, each with effect id and plug-in, node,
+  slot, authored parameter summary and slot flags. The compact serialized
+  effect chain lists direct-node slots first, then each leaf-to-root bus path
+  in serialized path and slot order -- an authored join, not observed DSP order.
+- Media-edge types and selection paths (``directSound``, ``layerChild``,
+  ``randomAlternative``, ``switchCandidate``, sequence and music edges) plus
+  root Action ids are authored candidate relations, not runtime branch or
+  caller traces.
+- Bus controls, ducking and user-defined aux sends are compact references;
+  full points and plug-in parameters stay in the unique bus catalog, resolved
+  by bus id. Aux targets keep their serialized aux-bus parent path and
+  effect-bus ids. Game-defined aux ids and live send levels are runtime-only,
+  and duck activation is not inferred.
+- NodeBase property values and ranges are summarized per possible path as
+  distinct signatures; StateChunk overrides and InitialRTPC shapes are bounded
+  (at most eight points per curve, truncation marked).
+- A separate Event-level context summary (consumer kinds, roles, owners,
+  situations) is broader than exact ``mediaRefs``, non-selected and
+  runtime-unobserved, and capped at 32 distinct summaries per row with
+  truncation reported.
+
+None of these joins is a live setter value, selected branch, effective
+inheritance, platform DSP or audibility."""
 
 from __future__ import annotations
 

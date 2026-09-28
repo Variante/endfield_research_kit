@@ -2,6 +2,9 @@
 
 The native source pins fourteen ordered reads and the two nested generic
 contexts. The stored command fields are not a runtime recipient trace.
+
+The two nested children are SkillAlertData and TargetSettings, both read
+through reviewed finite profiles.
 """
 from __future__ import annotations
 

@@ -2,6 +2,13 @@
 
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove a live building effect.
+
+The route stores `buildEffect` (bool), `effectDuration` (float) and
+`instKey` (string) as typed parameters after the inherited fields. Reached
+authored spans store a false switch, a unit duration and sub-hub instance
+keys across several map regions.
+
+Run as: python -m scripts.game_data.levelscript_fac_build_effect_native
 """
 
 from __future__ import annotations

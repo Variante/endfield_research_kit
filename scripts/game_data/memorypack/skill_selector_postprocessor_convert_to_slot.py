@@ -1,4 +1,20 @@
-"""Selected zero-member ConvertToSlot postprocessor nested in SkillData."""
+"""Selected zero-member ConvertToSlot postprocessor nested in SkillData.
+
+The selected ``SelectorPostProcessor`` switch dispatches physical tag ``0x03``
+to ``Selector+ConvertToSlot+Data``.  Its generated wrapper has no setters and
+its selected ``Deserialize`` reads one wrapper header with zero members; ``FF``
+is a separate null-wrapper state, which ``decode_convert_to_slot_postprocessor``
+keeps distinct.  The reviewed contract pins the switch target, registered
+wrapper type, formatter and reader bodies, source header call, zero-member
+branch and the installed native inputs (``exact`` for that stored shape).
+
+The finite Skill reader applies this shape only at reached postprocessor
+children.  A SkillData file is still exact only when the enclosing timeline,
+fields through 42, the selected terminal and EOF all close; a file that
+advances past this child to a later unsupported action tag keeps its earlier
+prefix partial.  The static stored type does not establish runtime target
+conversion.
+"""
 from __future__ import annotations
 
 import hashlib

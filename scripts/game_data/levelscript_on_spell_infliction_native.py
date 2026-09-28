@@ -1,4 +1,19 @@
-"""Authenticate the selected OnSpellInfliction ActionHeader reader."""
+"""Authenticate the selected OnSpellInfliction ActionHeader reader.
+
+The reviewed contract pins ActionHeader `LevelEvent.OnSpellInfliction` (tag
+0x00A5 in the contract): the selected switch branch and wrapper, the complete
+reader and forwarding formatter, ordered reads and setters, and its generic
+parameter contexts. Passing `--export-root`, `--ledger` and `--summary`
+together also replays the reviewed source cursors against the current
+JsonData ledger. The command prints its audit and exits nonzero unless it
+validates. It proves stored header bytes; spell-infliction events and
+parameter output values remain unobserved.
+
+After the inherited event fields the header stores count, entity, source and
+type outputs plus an entity filter, an `EnergyShardType` type filter and a
+`useEntityFilter` flag. Reached cursors include a positive stored entity
+pointer. Enclosing dungeon files advance to later unsupported headers.
+"""
 
 from __future__ import annotations
 

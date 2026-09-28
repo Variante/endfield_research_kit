@@ -1,4 +1,21 @@
-"""Load the canonical current-build LevelScript task-path contract."""
+"""Load the canonical current-build LevelScript task-path contract.
+
+Unlike the other Story native loaders this one does not gate the installed
+native inputs itself; the contract is validated by its consumers, the
+protocol registry and the mission trace hook manifest.
+
+Known drift: on the current build ``TaskCondition.InvokeOnIsCompleteChangeAction``
+is inlined into ``LevelScriptRuntime.UpdateTaskMainObjectiveIsCompleted``. The
+server progress path invokes ``m_onIsCompleteChangeAction`` without calling the
+named method, so a runtime hook on that method misses this path. The contract
+still names the method and is pinned to the previous build.
+
+An iFix-wrapped method can test ``IsPatched(<its own patch id>)`` after a
+class-initialization prologue, so a bounded opening-window search that misses
+the test does not prove the wrapper absent. An inlined copy may keep the id
+test, which supports an inlined-hop claim only when its surrounding body and
+arguments also match.
+"""
 from __future__ import annotations
 
 import hashlib

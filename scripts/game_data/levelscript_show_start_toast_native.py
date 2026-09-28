@@ -2,6 +2,12 @@
 
 The native contract proves the selected reader and parameter types.
 Source receipts prove reached bytes, not a live toast or displayed UI.
+
+After the inherited action members the branch stores four parameters:
+`desc` and `title` as `Param<LangKey>` (a one-string-key struct) and
+`iconName` and `toastGOName` as `Param<string>`.
+
+Run as: python -m scripts.game_data.levelscript_show_start_toast_native
 """
 
 from __future__ import annotations

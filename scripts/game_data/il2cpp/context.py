@@ -3,6 +3,30 @@
 The caller must authenticate the native inputs and registration ABI, and supply
 a raw-backed PE reader. This module does not select a runtime MethodInfo,
 formatter, serialized field, or source cursor.
+
+These are the static decoding rules the MemoryPack formatter-identity chain in
+``scripts.game_data.il2cpp.context_audit`` is built from. Each is enforced
+here, and each is a place an earlier probe went wrong:
+
+* generic-instantiation registration is a pointer array, not inline records:
+  slot ``i`` points at a 16-byte record (u32 argument count, four padding
+  bytes kept separately, argument-vector pointer). ``table + i*16`` is not a
+  record address, however plausible the adjacent bytes look;
+* a VAR/MVAR owner join is checked in both directions (owner container range
+  and ordinal); names never determine an ordinal. The native MVAR leaf reads
+  that ordinal and indexes the supplied method-inst vector;
+* RGCTX range-relative slots are not module entry indices, and a 16-byte
+  static definition is not the eight-byte runtime slot the class initializer
+  would emit from it;
+* module-name joins fail closed on a duplicate name, because the native loop
+  continues after a match; last-match-wins is not reproduced. The type-image
+  partition must likewise be complete and non-overlapping;
+* the object-tag comparator and hash use only the tag and one flag bit, never
+  record addresses, so every registered pair matching that projection is a
+  candidate and even a unique match is not the returned runtime instance;
+* a MethodSpec joins bounded method/invoker index triples; the no-adjustor
+  sentinel ``-1`` reuses the ordinary method pointer, and any other adjustor
+  is refused until its table extent is separately proven.
 """
 from __future__ import annotations
 

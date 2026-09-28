@@ -4,6 +4,15 @@ All currently reached task names and immediate fields are framed here. Nested
 object/list contents remain opaque except for the two typed list wrappers and
 one behavior-tag wrapper. Stored fields do not imply execution, blackboard
 values, or a graph-owner relationship.
+
+The reviewed contract ``extend_data_task_envelopes.json`` follows each node's
+``_action`` and ``_condition`` task plus the typed children in
+``ActionList.actions`` and ``ConditionList.conditions``, and closes exact
+field sets and JSON value kinds for every task type the authenticated corpus
+reaches. An unknown task type, a new field set or value kind, or a new typed
+child list is rejected. In every reached ``EnemySwitchBehavior`` task the
+stored ``behavior`` value has the exact ``tag.tagId`` integer wrapper; what
+that integer means is not established.
 """
 
 from __future__ import annotations

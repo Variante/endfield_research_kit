@@ -4,6 +4,15 @@ The exporter owns index production.  Consumers use this module to make the
 published merged index the first source and resolve an indexed object to
 its exported document, a row of the export's Unity object store
 (``game/Unity.sqlite``, see scripts/game_data/unity_store.py).
+
+A published index is compressed object and schema streams plus a terminal
+``summary.json`` written last. Consumers fail closed on a missing or
+incomplete summary, an undeclared or missing output, stale source or CLI
+provenance, a hash mismatch, duplicate physical identity, or an ambiguous
+external CAB/PathID target. The index covers only the MonoBehaviour and
+PlayableDirector rows, so a negative over it says nothing about other Unity
+classes. Scene hierarchy and world positions are exact only where their
+resolution status says so.
 """
 
 from __future__ import annotations

@@ -3,6 +3,32 @@
 This is a counterexample gate, not a descriptor-name decoder. It authenticates
 one VFS logical file and the selected native/metadata consumer before comparing
 the stored ID range with the selected StreamingComponentType enum's bit range.
+
+``StreamingComponentType`` is a ulong one-hot mask (``Transform`` = 1 up to
+bit 42), and ``GetComponentIndexFromType`` returns the first set bit. A
+stored descriptor ID above 42 (44 in the selected witness) would be bit 44
+of the anonymous 128-bit mask that ``descriptor_mask_native`` builds, so
+descriptor IDs and enum bit indices are distinct namespaces and even an ID
+inside the enum's range is not labelled by numeric equality. A separate
+ID-to-component lookup is not excluded.
+
+Decode enum defaults at their declared width and encoding
+(``_enum_index_range``). An earlier one-byte-per-entry read gave
+StreamingComponentType a bogus "non-sequential, maximum 128" that wrongly
+excluded it from the chunk readings, and gave flag enums incoherent
+sequences; it only looked right for small sequential enums
+(``StreamingLayer`` 0..10, ``ECSEntityType`` 0..13, ``ProxyEntityType``
+0..10). A wrong read that returns a small tidy value is the dangerous kind.
+
+Pass ``--game-root`` (the installed ``Endfield_Data``), ``--witness-path``
+(one exact ``Data/Streaming/PC/.../InitChunkData_...bytes`` logical path) and
+the VFS audit's ``--expected-input-set-sha256``. The witness is checked
+against the current ledger and the selected first-root and descriptor-mask
+native contracts. The gate writes
+``reports/chunk_data/descriptor_component_index_boundary.json`` only when a
+stored descriptor ID has a checked mask position but exceeds the named enum's
+bit index range; that counterexample rules out direct ordinal identification
+and does not label the descriptor.
 """
 
 from __future__ import annotations

@@ -2,6 +2,16 @@
 
 The native contract proves the generated union reader, parameter types and
 stored fields. Source receipts prove reached bytes, not a live trigger state.
+
+After the seven inherited getter fields the branch stores `scriptPtr` as
+`Param<LevelScriptPtr>` and `triggerSlotId` as `Param<uint>`. The contract
+authenticates the switch jump and wrapper, complete reader including owned
+fragments and formatter, ordered reads and setters, and both distinct
+generic parameter contexts. Reached script pointers select the current
+script, while slot IDs are authored constants. A derived root reaches script
+ID and physical EOF; the full corpus gate decides enclosing-file status.
+
+Run as: python -m scripts.game_data.levelscript_get_is_leader_in_trigger_volume_native
 """
 
 from __future__ import annotations

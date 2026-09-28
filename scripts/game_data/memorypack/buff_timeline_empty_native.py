@@ -2,6 +2,17 @@
 
 The positive list still needs independent element boundaries.  This reader
 only joins an empty or null list count to the following exact trigger tail.
+
+The selected native join identifies the root call after
+``tagsAfterTriggerExtendBuffAction`` as
+``ReadPackable<List<TimelineActionData>>``, stores it in
+``BuffData.timelineActions``, and then reads and stores ``triggerInterval``
+through a different ``BlackboardDouble`` context. On the source-hash-checked
+empty branch the list consumes exactly its four-byte zero count before that
+exact trigger tail. The receipt removes the suffix-fallback blocker only
+when both the native gate and the cursor joins validate (``conditional``).
+Positive timeline bodies keep a structural endpoint and their
+fallback-ownership blocker.
 """
 from __future__ import annotations
 

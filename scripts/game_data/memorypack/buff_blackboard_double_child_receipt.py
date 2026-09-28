@@ -4,6 +4,18 @@ The parent action adapters establish an exact wrapper field and physical span.
 The independently reviewed addingCooldown child establishes the shared
 BlackboardDouble member-three reader and generated setter order. This adapter
 composes those proofs without evaluating a runtime blackboard value.
+
+Composed parents: ``CreateBuffAction.count``,
+``FinishBuffAdvanced.finishLayerCnt``, ``ModifyDynamicBlackboard.value`` and
+``RaiseTrainLevelEvent.numericValue``. Each parent adapter reparses its
+reported action and fixes the exact field extent; this child then names the
+stored ``blackboardKey``, ``useBlackboardKey`` and ``value`` spans in
+generated setter order, closing the direct member-ownership gap for every
+reached instance of those fields. Null provider and malformed length
+branches stay explicit and fail closed. The key bytes, flag byte and four
+value bytes stay raw: string decoding, live blackboard lookup, provider
+selection, evaluated values and the rest of each action's nested interior
+remain open.
 """
 from __future__ import annotations
 

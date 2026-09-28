@@ -3,6 +3,14 @@
 This reads the separately authenticated compact-branch corpus receipt, then
 rechecks its report hash, exported logical bytes and exact following tail.  A
 positive timeline list remains a structural endpoint and is never promoted.
+
+It pairs the selected-native timeline list source/store with per-file
+null/empty counts and exact following-tail joins; positive timeline bodies
+and the whole-BuffData schema stay open. ``--compact-report`` is the
+``buff_stacking_compact_corpus`` output, ``--buff-report`` the complete
+``memorypack.buff_corpus`` report, ``--export-root``
+``export_full/game/Json/BuffData``; the conventional ``--output`` is
+``reports/animestudio/buff_timeline_empty_current_latest.json``.
 """
 from __future__ import annotations
 

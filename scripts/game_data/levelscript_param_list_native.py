@@ -1,4 +1,15 @@
-"""Authenticate the generated ParamListForGraph collection owner."""
+"""Authenticate the generated ParamListForGraph collection owner.
+
+A loader, not a command. `load_param_list_for_graph_contract` returns the
+reviewed `contracts/levelscript_param_list.json` layout only when the
+installed native inputs match the contract, and `None` plus a fail-closed
+audit otherwise. `ParamListForGraph` is a one-member wrapper whose generated
+value setter accepts `List<ParamKeyValue>`; its elements use the same
+ParamKeyValue/ParamValue/ParamValueAtom serialization decoded for LevelScript
+and interactive properties. The LevelScriptTemplate reader and the current
+action-sequence codec consume it. It establishes stored fields only, not
+graph execution or what a parameter reference means.
+"""
 from __future__ import annotations
 
 from functools import lru_cache

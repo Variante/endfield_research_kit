@@ -6,6 +6,56 @@ framed independently by ``bundle_manifest``. Its table offsets are projected
 through the authenticated pointer and field reads. The supplied file then
 replays both split dictionaries, their Bundle joins, every Brotli UTF-16 asset
 path hash, and every Bundle version hash. Live gameplay use remains separate.
+
+What the selected build establishes (``exact`` for the pinned inputs plus the
+supplied file; the RVAs and field offsets live in
+``contracts/bundle_manifest_native.json``):
+
+* ``ManifestDataBinary.InitBinary`` maps the three fixed sections to
+  ``assetInfoDictionary``, ``bundleInfoDictionary`` and ``bundles``. The
+  nominal 32- and 56-byte section widths are a capacity accounting unit, not
+  interleaved records: each dictionary section is a capacity word, that many
+  eight-byte ``(relativeOffset, count)`` hash slots, then the same number of
+  24-byte ``AssetInfo`` or 48-byte ``Bundle`` values. The array helper points
+  straight at the 48-byte rows and ``TryGetBundleByIndex`` copies a whole row.
+* The asset lookup reads ``AssetInfo.pathHashHead`` and advances by 24; the
+  bundle validation lookup reads ``Bundle.hashName`` and advances by 48; both
+  pick a slot by unsigned comparer hash modulo capacity. Every slot range
+  lands on its value stride, the ranges cover each value once, and every
+  stored key maps back to its own slot.
+* ``Bundle`` fields, in order: ``bundleIndex``, ``name``, ``dependencies``,
+  ``directReverseDependencies``, ``directDependencies``, ``bundleFlags``,
+  ``hashName``, ``hashVersion``, ``category``. Dictionary values store
+  ``bundleIndex`` zero while the indexed array stores the ordinal; both join
+  on name, lists, flags, hash and category. ``AssetInfo`` holds
+  ``pathHashHead``, ``path``, ``bundleIndex`` and ``assetSize``, and every
+  asset ``bundleIndex`` is inside the indexed array.
+* The ``Bundle.Convert`` writer binds the counted lists to source ``deps``,
+  ``directReverseDeps`` and ``directDeps``, sets ``hashVersion`` from
+  ``hashName`` and XORs in a fixed multiple of each dependency's native name
+  hash; the dependency string wrapper hashes raw UTF-16 code units with no
+  case conversion. Replaying that fold reproduces every stored
+  ``hashVersion``, and because the folded ``deps`` list is the transitive
+  closure (``bundle_cab_dependency_corpus``) the version hash covers every
+  reachable dependency name.
+* ``AssetInfo.path`` offsets tile the terminal suffix as length-prefixed
+  Brotli records with two zero terminator bytes; each decodes to strict
+  UTF-16LE through ``RefCompressString``. The asset writer hashes its source
+  path after ``ToLow``, and the replayed recurrence reproduces every
+  ``pathHashHead``. Repeated decoded paths repeat hash, bundle index and size
+  at different raw offsets, so repetition adds no bundle association.
+* Both ``BundleLoader+Manager`` proxy loaders call
+  ``RuntimeManifestBinary.TryGetBundleDirectDeps``, read a loop element later
+  in the body and recurse into the same loader: a direct static consumer of
+  the stored direct list, without a live branch or ref/out capture.
+
+Not established: case handling for unseen names (current paths carry no ASCII
+uppercase witness), the Burst hash path, runtime comparisons, which loader
+branch runs, and Unity object ownership. Unresolved stream and ref/out
+carriers still block a safe live lookup capture.
+
+Pass the same dumped ``manifest.hgmmap`` the corpus gate reads; ``--output
+reports/animestudio/bundle_manifest_native_latest.json`` saves the report.
 """
 
 from __future__ import annotations

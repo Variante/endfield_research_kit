@@ -1,4 +1,14 @@
-"""Selected exact nested children of BuffData ModifyDynamicBlackboard actions."""
+"""Selected exact nested children of BuffData ModifyDynamicBlackboard actions.
+
+It checks the selected native tag-236 ten-member action with exact simple
+TargetSettings and BlackboardDouble child endpoints on current logical source
+bytes. The reached children close inside compound conditions that stay
+partial, so this receipt makes no whole-root promotion.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_modify_dynamic_blackboard_child_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

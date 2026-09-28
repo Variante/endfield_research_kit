@@ -12,6 +12,57 @@ records it, so a frontier never inherits a claim it did not make.
 
 Every loader fails closed: a missing or different installed build returns no
 rows and an audit naming the gate that stopped it.
+
+What each frontier contract records (the tag, wrapper, actual type, member
+count and read order of every row live in the JSON itself):
+
+- ``buff_residual_frontier.json``: three base-only wrappers,
+  ``BreakPassingSmallSceneObject`` (``0x21``), ``OnPhysicalNoGuardStart``
+  (``0x100``) and ``ShowComboSkillUI`` (``0x15F``). Each serializes exactly
+  the four inherited action members, read as byte, scalar32, scalar32,
+  scalar32.
+- ``buff_frontier6.json``: seven routes -- base-only ``DisableRootMotion``;
+  ``ChangePushBackDistanceFactor`` with a ``BlackboardDouble``;
+  ``LockMainCharacterToggle`` and ``TyphoeaArcheryBrainToggleRegister`` with
+  a direct boolean; ``ReplaceAnimationShake`` with a string; and
+  ``IntRollingStoneRepatriateAction`` and ``PausePoiseRecover`` with a
+  ``TargetSettings``.
+- ``buff_frontier7.json``: eight six-member wrappers whose two derived
+  fields are ``BlackboardDouble``/``TargetSettings``, ``BuffInput``/enum32,
+  string/int32, int64/``TargetSettings``, string/string, enum32/string,
+  string/``TargetSettings`` or ``TargetSettings``/string
+  (``ObtainUspInNormalSkill``, ``OverrideJumpAction``,
+  ``OverrideStateAnimationWithMontage``, ``SetAllowedDamageDecoMask``,
+  ``ShowTyphoeaHudHint``, ``StoreAtbValue``, ``StoreCurSkillExecuteFrame``,
+  ``UpdateGlobalContextTarget``). Its ``ObtainUspInNormalSkill`` row is
+  union tag ``0x00FF``, which is admitted only in the extended ``FA FF 00``
+  encoding; a one-byte ``FF`` stays the null-union sentinel.
+- ``buff_frontier8.json``: twelve reached singleton wrappers. Two are
+  base-only four-member records; the rest reuse independently bounded
+  string-list, paired/scalar, sequence, target and buff-finder profiles.
+  The reader keeps short versus extended union width, a null union versus a
+  null wrapper, and independent nested null states distinct.
+- ``buff_frontier9.json``: the final root-action frontier -- every
+  previously unsupported root route plus the downstream ``0x00E9`` and
+  ``0x017E`` routes reached by the floating-mode record, and the
+  ``CheckTwoDirectionAngle`` condition (``0x82``) that the last
+  damage-modifier stop used.
+
+Evidence tier: dispatcher route, registered wrapper identity, deserialize
+body, setter identities and generated fields are ``exact`` for the pinned
+build; each tag is ``direct``-ly reached at its recorded corpus cursor. The
+rows establish wire layout and cursor advance (``structuralOnly`` for
+meaning): not runtime action behavior, field-value meaning, nested profile
+semantics, or whole-BuffData EOF. Admission requires both the exact native
+contract and a matching input set; ``buff_residual_actions`` then lets a
+reached route rejoin the independently named middle, exact icon
+configuration and terminal suffix. A ``TargetSettings`` body may close
+nested actions, so action-record gains can exceed newly closed root files.
+
+Recorded negative: a numeric tag match against the LevelScript ``ActionBase``
+layout is not evidence for a Buff route. Union families can assign different
+wrappers and member counts to the same number, so every row here comes from
+the Buff sequence dispatcher itself.
 """
 from __future__ import annotations
 

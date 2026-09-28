@@ -18,6 +18,35 @@ include a packed folder. ``--prune-previous-export-untracked`` never deletes a
 store file, whatever its bytes: a store holds a whole family of the previous
 export in one file.
 
+Sprite images are left out on both sides, including a saved baseline: they
+are crops of exported textures, so a Sprite changes when its Texture2D does,
+and older exports kept them as PNGs no crop document can be compared with.
+AnimeStudio ``object_index``/``field_index`` directories (with their
+``parts``) and exporter index-only JSONL, compressed and temporary files are
+excluded from every comparison and previous-export prune. The published feed
+keeps every matching changed entry; ``--sample-limit N`` is an opt-in
+diagnostic cap (``0`` is unlimited). Only an oversized text diff preview is
+bounded, never the entry itself.
+
+Asset identity follows the exported relative path. For unmatched add/delete
+pairs the builder also recognizes one-to-one Unity exports whose stable name
+differs only by the generated ``_p<PathID>`` suffix, decoded audio whose
+bytes match exactly, and FLAC files whose STREAMINFO PCM identity matches
+(so metadata or encoder changes are recognized without a decoder). Exact
+hashing is limited to equal-size unmatched candidates. A shared filename is
+preferred; duplicate-content buckets pair one-to-one only inside the same
+unchanged parent folder, otherwise each byte or PCM identity must be unique.
+A recognized relocation with unchanged content publishes no update; a stable
+Unity identity whose bytes also changed publishes ``modified`` with both
+paths and its match basis. Several candidates in one folder stay separate
+``added``/``deleted`` entries rather than being guessed. The same pass drops
+obsolete numeric AudioDialog copies (see ``redundant_audio_dialog_copies``);
+any ambiguity keeps the original add/delete entry visible.
+
+Every comparison also writes ``webui/data/updates/characters.json`` through
+``scripts.webui.updates.characters``, independently of the asset flags and
+also under ``--text-only``.
+
 Run from the repo root:
     python -m scripts.webui.updates.build_updates
 """
@@ -1108,10 +1137,13 @@ def redundant_audio_dialog_copies(
 ) -> tuple[set[str], set[str]]:
     """Find obsolete numeric copies when the authored voice file survives.
 
-    A numeric AKPK external-source id is joined to a current AudioDialog path
-    only by its exact 64-bit path hash. The authored basename must resolve to
-    one voice asset, and the numeric/canonical files must be byte-identical.
-    Same-name ambiguity therefore remains visible instead of being guessed.
+    A numeric ``wwise/unknown`` AKPK external-source id is joined to a current
+    AudioDialog path only by its exact 64-bit FNV-1 path hash
+    (``audio_dialog_external_media_id``). The authored basename must resolve
+    to one canonical voice asset present in both exports, and the
+    numeric/canonical files must be byte-identical. This records duplicate
+    cleanup, not a deleted Story line; a repeated basename, missing peer, hash
+    ambiguity or byte mismatch keeps the original add/delete entry.
     """
 
     dialog_paths = audio_dialog_paths_by_external_id(current_export_root)

@@ -3,6 +3,25 @@
 This joins a registered IL2CPP method to a UnityPlayer internal-call table
 entry and that entry's native setup call. It does not identify a LAYER file,
 its owner-local resource, or a managed TextureResources field.
+
+``python -m scripts.game_data.terrain.manager_bridge_native --game-root
+.../Endfield_Data`` checks the selected
+``HGTerrainManager.SetupTerrainManager`` internal-call resolver, the
+UnityPlayer name/function registration slot and the wrapper's direct native
+setup call against ``contracts/terrain_manager_bridge_native.json``, and writes
+``reports/terrain/manager_bridge_native.json``. The resolver branch is
+conditional on runtime registration state. The join from the ``LAYER_*`` owner
+to the managed texture fields remains open.
+
+The second ``SetupTerrainManager`` overload is an internal-call trampoline:
+on its uncached branch it passes the full method signature to a resolver
+that tries the full name first and, if absent, searches for ``(`` and
+retries the bare name. The UnityPlayer parallel name and function arrays
+have one matching slot, pointing to a native wrapper that directly calls a
+native terrain setup entry. A stored registration and a direct call do not
+show that the runtime selected this route, and nothing yet links that entry
+to the ``LAYER_C/D/N`` path-result owner or to
+``TerrainResource.runtimeResources.textures``.
 """
 
 from __future__ import annotations

@@ -1,4 +1,58 @@
-"""Bind AnimeStudio HIRC structural audits to the current authenticated VFS set."""
+"""Bind AnimeStudio HIRC structural audits to the current authenticated VFS set.
+
+The gate is current-corpus bound: ``--expected-input-set-sha256`` must be the
+exact ``inputSetSha256`` of ``reports/animestudio/vfs_understanding_latest.json``.
+It binds verified package MD5, chunk and physical-source identities and the
+per-bank cursor totals to the authenticated outer ledger, hashes a sorted
+path/length/SHA-256 manifest of the CLI output directory before and after the
+audit, and hashes the exact intermediate JSON bytes it parses.
+
+It writes one ``reports/animestudio/hirc_*_current_latest.{json,md}`` pair per
+lane (the ``DEFAULT_*_OUTPUT`` constants below enumerate them): the Action
+cursor census, the type ``0x02`` source prefix, the type ``0x04`` u32 vectors,
+one body report per numeric type, and the reference graph. The body lanes
+share one framer, census, metrics reader, renderer and publisher. Every lane
+enforces its own closure -- a failed, unsupported or ambiguous body publishes
+``incomplete`` and exits nonzero -- and every lane publishes the same
+shared-framer residual list. Adding a numeric type means one more lane and one
+more framer, not another copy of the census. What each lane's framing does
+and does not establish is recorded in ``memory/game_data/audio_overview.md``
+and the HIRC files beside it.
+
+How to read a lane. Layouts are the Wwise 2023.1.17 SDK deserializer's (see
+``hirc_v150``), so a lane checks extents, not a fit. A 100% rate over mostly
+optional structure is still an average of claims of different strength, so
+every lane publishes, per node-frame group, how many exact bodies exercise it
+and the widest single body (recorded at the reader's one choke-point,
+``RecordHircBodyFrame``). ``every_group_reports_the_bodies_behind_it`` refuses
+entry totals without bodies; ``thinly_seen_groups`` reports, without gating,
+groups resting on fewer than ``GROUP_THINLY_SEEN_BODIES`` bodies in one type.
+Pooling groups across lanes is legitimate only because they are one layout.
+
+A constant chosen because the parse closes is established only if its rivals,
+scored the same way, lose. ``every_shared_constant_beats_its_rivals`` scores
+each constant of the pre-SDK 0x08/0x12 framer only over the bodies that
+exercise it and on corpus totals; only ``middleBlockBytes`` is settled by
+closure, while the entry, element and trailer widths are settled by landing on
+the five-byte zero trailer, which every rival misses.
+``the_shared_constants_are_not_settled_by_closure`` is the control that keeps
+that reasoning under test.
+
+The reference-graph gates measure words at corpus offsets and predate the SDK
+read; they stay as regression guards on the bytes, and the lanes own the field
+names. In SDK terms: the 0x08/0x12 leading word is the ``CAkBus``
+OverrideBusId (the parent bus), and a null one is followed by
+idDeviceShareset, which is the extra word the corpus found on null-reference
+bodies; the front-offset parent of 0x02/0x05/0x06/0x07/0x09 and the music
+offset-9 word are the node frame's DirectParentID; the 0x0A counted array is a
+segment's children list; the name hashes near the end of 0x0C bodies are
+decision-tree keys; 0x0B's closing word 100 is iLookAheadTime. Three relation
+kinds are gated: the main reference graph is owner to owned (every target named
+exactly once), the bus relation is child to parent (many children per parent, a
+forest per bank, with a 0x12 parent often in another bank), and the music
+references are mostly mutual. The parent field is the exact inverse of the
+child lists, with no disagreement.
+"""
 
 from __future__ import annotations
 

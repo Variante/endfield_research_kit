@@ -2,6 +2,14 @@
 
 The native contract proves the selected reader and parameter types.
 Source receipts prove reached bytes, not a live countdown state.
+
+The branch stores one `handle` as `Param<uint>` after the inherited action
+members. Every reached handle path names a `StartSubGameCountDownByTimer`
+output handle path in the same serialized owner, so the two actions carry a
+stored reference to each other; that reference does not establish that a
+countdown ran or stopped.
+
+Run as: python -m scripts.game_data.levelscript_stop_subgame_countdown_by_handle_native
 """
 
 from __future__ import annotations

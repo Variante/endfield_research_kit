@@ -3,6 +3,11 @@
 The generated wrapper has ten stored slots. ColliderShapeData and
 TargetSettings reuse separately reviewed finite profiles. These bytes do not
 prove that a battle shape is created or retained at runtime.
+
+The route has its own selected Skill dispatcher entry.  After the four
+inherited action fields, six own setters receive ``duration``, three
+follow/release flags, ``ColliderShapeData`` and ``TargetSettings`` in native
+source order; their opaque scalar bits stay structural-only.
 """
 from __future__ import annotations
 

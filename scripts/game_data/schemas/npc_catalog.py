@@ -1,4 +1,15 @@
-"""Exact JSON schemas for the two current NPC catalog files."""
+"""Exact JSON schemas for the two current NPC catalog files.
+
+- ``NPC/PrefabInfo/manifest.json``: root ``{"files": [...]}``, a list of
+  ``npc_*.json`` names that must be unique case-insensitively.
+- ``NPC/MontageJson/hashMapPath.Json``: root ``{"array": [...]}`` of
+  ``{"hash", "path"}`` rows with a nonnegative integer hash and a nonempty
+  path.  Repeated identical rows occur and are counted; a repeated hash with a
+  different path is a conflicting collision and fails closed.
+
+Root and row keys are validated exactly.  This names the stored catalogs; it
+does not show which NPC prefab or montage a runtime actor loads.
+"""
 
 from __future__ import annotations
 

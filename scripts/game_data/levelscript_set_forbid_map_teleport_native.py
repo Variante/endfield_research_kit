@@ -1,4 +1,18 @@
-"""Authenticate the selected SetForbidMapTeleport ActionBase reader."""
+"""Authenticate the selected SetForbidMapTeleport ActionBase reader.
+
+The reviewed contract pins ActionBase `SetForbidMapTeleport` (tag 0x041A in
+the contract): the selected switch branch and wrapper, the complete hot and
+chained reader plus forwarding formatter, ordered reads and setters, and its
+two Boolean parameter contexts. The shared ActionMap reader admits the route
+only while this validator passes. Passing `--export-root`, `--ledger` and
+`--summary` together also replays the reviewed source cursors against the
+current JsonData ledger. The command prints its audit and exits nonzero
+unless it validates. Map-teleport restrictions and action execution remain
+unobserved.
+
+The two stored parameters after the common action fields are
+`allowGetUnstuckPoint` and `forbid`, both `Param<bool>`.
+"""
 
 from __future__ import annotations
 

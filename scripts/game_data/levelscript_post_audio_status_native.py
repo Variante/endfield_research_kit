@@ -3,6 +3,22 @@
 This is a selected-build contract, so a missing or different installed client
 returns no route. The optional source check joins every reviewed cursor to the
 JsonData per-file ledger before treating it as a current exported example.
+
+After the inherited action fields the branch stores
+`onlyTriggerExitAfterNodeTriggered` as `Param<bool>` and the
+`statusEnterEvent`/`statusExitEvent` names as `Param<string>`. The contract
+authenticates the dispatcher and registered wrapper, complete reader and
+formatter bodies, ordered native reads, own setters and the three generic
+parameter contexts. The shared ActionMap reader requires this validation.
+Stored event names and the exit flag do not establish an observed audio
+status change.
+
+The command takes no options and prints the native audit only, exiting
+nonzero unless it validates. The source check goes through
+`validate_post_audio_status_native_contract`, which accepts an explicit
+JsonData export root, per-file ledger and summary.
+
+Run as: python -m scripts.game_data.levelscript_post_audio_status_native
 """
 
 from __future__ import annotations

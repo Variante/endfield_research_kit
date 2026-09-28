@@ -3,6 +3,41 @@
 This is a supplemental, fail-closed action inventory.  The input Buff corpus
 still owns the outer frame and its unresolved recursive naming obligations;
 neither this sweep nor a closed action span promotes whole BuffData.
+
+The gate rechecks every completed corpus identity against the matching
+exported logical bytes and the selected native inputs before using its
+eight named action adapters (``_ROUTES``). Physical Buff dispatcher tags:
+
+- ``0x0050`` seven-member ``CompareFloat.Data``;
+- ``0x0092`` 19-member ``CreateBuffActionData``;
+- ``0x00A2`` 18-member ``EffectActionData``;
+- ``0x00B4`` 13-member ``FinishBuffAdvanced``;
+- ``0x00C9`` eight-member ``IfElseActionData``;
+- ``0x00EC`` ten-member ``ModifyDynamicBlackboard.Data``;
+- ``0x011F`` eight-member ``RaiseTrainLevelEvent.Data``;
+- ``0x0159`` seven-member ``SetSuperArmorAction.Data``.
+
+Generated member order and the selected readers name each reached wrapper
+field and close the exact reported action span, whether the action occurs in
+``abilityEventAction`` or in the supported root continuation. Adapters
+additionally check generated field kinds against source read kinds and
+nested declared types against the source's direct call contexts where their
+modules say so. The field-five ``buffEventAction`` frontier contains many
+distinct action unions, so one named wrapper does not close its recursive
+schema obligation. Nested input, selector, scalar, target, blackboard and
+effect-configuration profiles remain structural where their concrete
+providers or values are unproved; this gate removes no recursive
+action-interior blocker.
+
+``--buff-report`` is the complete ``memorypack.buff_corpus`` report,
+``--export-root`` the export root (``export_full``), ``--game-root`` the
+installed ``Endfield_Data``, and ``--expected-input-set-sha256`` the VFS
+audit value that report was built from. The default outputs are
+``reports/animestudio/buff_action_receipts_current_latest.{json,md}``; the
+JSON is the ``--action-report`` of the Buff child corpora
+(``buff_shared_nested_receipt_corpus``, ``buff_create_input_child_corpus``,
+``buff_effect_config_child_corpus``, ``buff_effect_vector_child_corpus``,
+``buff_find_settings_child_corpus``, ``buff_super_armor_blackboard_child_receipt``).
 """
 from __future__ import annotations
 

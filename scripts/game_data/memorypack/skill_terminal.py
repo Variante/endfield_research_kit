@@ -1,4 +1,18 @@
-"""Anonymous SkillData terminal candidate framing; no native/field-order claim."""
+"""Anonymous SkillData terminal candidate framing; no native/field-order claim.
+
+The five terminal members (fields 43..47) have two encodings that both parse
+exactly to EOF: the ``one-member-wrapper`` candidate, whose field-43 bool
+starts directly after field 42, and a shifted candidate starting one byte
+later.  A malformed bool at the earlier start is refused while the later
+shape still parses, so EOF validity alone cannot select the formatter's
+cursor.  The selected native field-43 bool read rejects the shifted start on
+the witnessed reader route, and the field-44 ``GameplayTagList`` wrapper
+accepts a one-byte header of ``1`` or null ``FF``: the earlier candidate
+supplies ``1``, the shifted one ``0``.  That static argument is conditional on
+the ordinary formatter/provider route.  The executed choice comes only from a
+live cursor receipt replayed by :mod:`skill_corpus`; every witnessed source so
+far reads the earlier candidate.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,42 @@
-"""Authenticate reviewed Wwise effect parameter layouts on selected inputs."""
+"""Authenticate reviewed Wwise effect parameter layouts on selected inputs.
+
+The contract ``wwise_effect_parameters_native.json`` records, for the selected
+``GameAssembly.dll``, ``global-metadata.dat`` and ``AkSoundEngine.dll``, which
+built-in plug-in classes have a reviewed ``SetParamsBlock`` layout. Each
+reviewed method body in the shipped DLL matches the named Wwise 2023.1.17 SDK
+COFF method outside relocation operands; ``check_effect_parameter_native_inputs``
+re-hashes every body on the selected build before any typed value is published.
+Missing, drifted or pending evidence keeps the class id, parameter length and
+SHA-256 and the plug-in media prefix, and withholds names and values.
+
+Reviewed layouts (``hirc_v150.decode_hirc_v150_effect_parameters``) decode the
+authored base settings of Gain, Delay, Compressor, Expander, three-band
+Parametric EQ, Meter, Matrix Reverb, Pitch Shifter, Harmonizer, Stereo Delay,
+Guitar Distortion (three pre-EQ and three post-EQ bands, distortion type,
+drive, tone, rectification, output gain, wet/dry) and RoomVerb. RoomVerb
+exposes its public controls and 31 ER pattern names; eleven further floats
+keep exact offsets and values but no current public name or runtime role.
+
+Registration witnesses join a class id to its method without a public SDK
+layout. The DLL holds four-word static effect registrations -- plug-in type,
+plug-in id, effect factory, parameter factory -- and each parameter factory
+installs a vtable whose ``+0x28`` slot is ``SetParamsBlock``. Gain and RoomVerb
+are ``slotControl`` witnesses (their slots are independently SDK-named);
+Convolution Reverb and Mastering Suite are ``structuralOnly``: the contract
+proves the registration, factory and constructor bodies, vtable target, slot
+and method body, and the method's contiguous input read span, but no field
+name, value label, forwarding role or DSP behavior. Neither method checks the
+supplied length, so a span is a direct read, not a ``uSize`` acceptance rule,
+and the shipped ``uSize`` distribution is not proved by this contract.
+Convolution's impulse-response media ids stay exact bank data and never become
+playable WEM leaves.
+
+Claims from an older ``AkSoundEngine.dll`` (private SetParam ids, consumer or
+forwarding roles) are withheld until re-derived on the selected build: a
+constant that pinned an older DLL without checking the pin had no current
+native basis. Authored slot flags and parameters are not runtime DSP,
+execution or audibility.
+"""
 
 from __future__ import annotations
 

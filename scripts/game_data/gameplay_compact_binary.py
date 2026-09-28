@@ -1,4 +1,28 @@
-"""Readers for compact root-level GameplayConfig MemoryPack payloads."""
+"""Readers for compact root-level GameplayConfig MemoryPack payloads.
+
+Each reader is exact: it checks the root member count, walks every counted
+collection at a real cursor, and requires physical EOF, so the JsonData
+registry (``scripts.game_data.jsondata_corpus``) classifies a closed file as a
+named schema.  Any other member count, invalid boolean or trailing byte raises
+``GameplayCompactDecodeError``.
+
+- ``decode_mission_area_table``: the one-member ``MissionAreaTable`` root,
+  ``m_areas`` keyed by signed level id, with each area's tracking bounds and
+  route segment planes.
+- ``frame_subgame_table``: the one-member WorldChallenge SubGame
+  ``dataTable``.
+- ``frame_world_entity_registry``: the persisted ``WorldEntityRegistry`` root
+  has exactly four dictionaries -- ``m_npcIdToLogicIdLut``,
+  ``npcProxyBriefInfos`` (four-member rows), ``worldEntityBriefInfos``
+  (four-member rows: nullable ``detailId`` string, then type and transform)
+  and ``worldEntityConfigInfos`` (one-member typed ``ParamKeyValue`` property
+  lists).  The script lists in the larger textual GameplayConfig table are
+  derived postprocessing, not serialized members of this root.
+
+These are stored configuration layouts.  They do not show which runtime
+object consumes a row; ``worldEntityBriefInfos`` ids and positions are the
+join target of ``scripts.game_data.map_mark_relations``, not a scene field.
+"""
 
 from __future__ import annotations
 

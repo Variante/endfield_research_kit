@@ -5,6 +5,24 @@ current VFS archive, selected native build, exported Unity script identity and
 export freshness before publishing source-CAB/PathID-to-ordinal ownership.
 Export freshness may rely on the pre-provenance summary and is reported as
 such; the join does not imply scene/enemy selection or live execution.
+
+No decoded graph root carries an owner key, so ownership comes from the
+exported side (contract ``extend_data_graph_owner.json``): each
+``NodeCanvas.BehaviourTrees.BehaviourTree`` MonoBehaviour's
+``_serializedGraphStringIndex`` names an archive ordinal. The gate checks the
+MonoScript identity and object script pointer, source CAB and PathID, the
+enabled compression flag, an empty inline graph, the document hash and full
+ordinal coverage. Several distinct authored assets share an ordinal, so every
+source-CAB/PathID-to-ordinal assignment is kept rather than forced
+one-to-one. An inline ``CanvasGraph`` with compression disabled is excluded
+despite its incidental index; index kind/range and script-pointer mutations
+are rejected. Under the freshness guard this closes authored asset ownership
+for the exported set, without independently authenticating each Unity
+object's current installed bytes.
+
+Pass ``--game-root`` (the installed ``Endfield_Data``) and the VFS audit's
+``inputSetSha256``; the report is
+``reports/animestudio/extend_data_graph_owner_latest.json``.
 """
 
 from __future__ import annotations

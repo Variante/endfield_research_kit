@@ -3,6 +3,25 @@
 This child receipt names the compact stacking key branch without changing the
 legacy Buff suffix parser. The following tag/timeline fields remain separate
 proof obligations even when a standalone corpus replay reaches EOF.
+
+The selected root reader passes ``BuffStackingSettings`` to its child reader
+and stores the result in ``BuffData.stackingSettings``; the twelve generated
+setters fix the stored member order. The ``stackingKey`` string reader
+consumes a signed four-byte length before distinguishing null, empty and
+nonempty values, and ``stackingType`` then occupies two bytes before the two
+one-byte flags ``useMaxStackCntKey`` and ``usePriorityKey``. The corrected
+child cursor rejoins the next root field in source-hash-checked current
+files, including positive ``stackEffects`` whose action interiors stay
+separately opaque.
+
+Recorded negative: an earlier compact reader left an empty key's length in
+place and consumed just one byte of ``stackingType``. Its suffix could still
+appear to reach EOF by assigning those bytes to later fields, so EOF alone
+was not a field-ownership proof.
+
+Evidence tier: ``exact`` stored child cursor for the selected build. A
+missing or changed native build withholds the named child and the raw-tag
+joins. Nested stack effects and runtime stacking behavior are unresolved.
 """
 from __future__ import annotations
 

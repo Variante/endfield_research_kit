@@ -2,6 +2,14 @@
 
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove a live event-argument mutation.
+
+The route stores `eventArgsPtr` (`Param<EventArgsPtr>`, a one-string-key
+struct), `key` (string) and `value` (float). Reached records mostly target a
+`ratio` key with a unit float, and their `EventArgsPtr` parameter is
+path-sourced: its serialized wrapped-string slot does not resolve the
+event-argument object.
+
+Run as: python -m scripts.game_data.levelscript_event_args_float_native
 """
 
 from __future__ import annotations

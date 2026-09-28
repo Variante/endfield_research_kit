@@ -2,6 +2,13 @@
 
 This is the reached SelectorFinder tag-2 branch only. Its generated wrapper
 serializes zero members; other finder tags keep their structural boundary.
+
+The selected switch branch loads the ``CharacterTeamFinder.Data`` wrapper,
+whose generated setters are empty and whose ``Deserialize`` body consumes
+exactly one wrapper header byte. A zero header ends the nonnull child; ``FF``
+is a distinct null-wrapper branch. Every reached tag-2 span is the two-byte
+tag-plus-zero-header form and ends at the parent finder field's fixed
+boundary. Null, unknown-tag and changed-build branches fail closed.
 """
 from __future__ import annotations
 

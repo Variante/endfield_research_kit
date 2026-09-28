@@ -4,6 +4,41 @@ The legacy receipt verifier is a pinned source of the current SkillData basis.
 This diagnostic composes that verifier's native, corpus, cursor and teardown
 checks, then replaces only its older two-length publication requirement with
 the reviewed current capture target. It does not publish a SkillData selection.
+
+The reviewed target contract (``contracts/skill_cursor_capture_target.json``)
+binds one added SkillData logical path, length and current SHA-256 to the
+unselected basis.  Another current file shares that length, so the recorder
+copies the bounded source first and hashes the copied bytes, rejecting a
+same-length source before it opens a cursor transaction; a failed hash
+fails closed.  The copy cap, native manifest gate, quiescence checks and
+source-hash join stay in force.  The accepted target receipt witnesses the
+Purrche second-talent source: fields 0..42 match the static empty-ActionGroup
+profile, the cursor selects the earlier one-member terminal and closes at EOF,
+and :mod:`skill_cursor_target_overlay` promotes only that exact path and
+SHA-256.  Other sources in the same session close their own cursors but are
+not admitted, and a source with a populated ActionGroup keeps unresolved
+interior ownership.  A second binding with the same schema
+(``contracts/skill_cursor_capture_purrche_combo_target.json``, passed with
+``--target-contract``) admits Purrche's smaller combo-skill source by exact
+copied hash; its populated ActionGroup needs separate interior evidence, and
+the second-talent witness cannot select its terminal by analogy.
+
+Capture procedure: wait for ``runtime.ready``, exercise a plausible source
+trigger, stop the capture with ``Numpad 9`` while the game is still open, and
+retain the raw receipt before exiting; a session that ends by the game
+exiting leaves no receipt, and runtime readiness alone never supplies a
+cursor.  Authored links identify plausible triggers, not proof that the game
+loads the source.
+
+Before a new target, rebuild the all-unselected basis
+(``reports/animestudio/skilldata_cursor_basis_latest.json``) and its
+native-only context with ``python -m
+scripts.game_data.il2cpp.skill_cursor_native_context``, and check the host
+with ``tools/EndfieldCapture/StartCapture.bat skilldata-cursor targeted
+--skilldata-next-target --preflight-only --no-pause``.  Verify the session's
+``<session>/skilldata-cursor/receipt.json`` with ``--output
+reports/animestudio/skilldata_cursor_target_verification_latest.json``; that
+is what ``memorypack.skill_corpus --capture-target-verification`` replays.
 """
 
 from __future__ import annotations

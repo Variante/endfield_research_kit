@@ -1,4 +1,16 @@
-"""Reviewed positive Encounter opera-segment list cursor."""
+"""Reviewed positive Encounter opera-segment list cursor.
+
+Decodes ``EncounterData.introPart.operaSegments`` through the generated
+``OperaSegment``, ``ParamKeyValue``, ``ParamValue`` and ``ParamValueAtom``
+wrappers supplied by ``levelscript_encounter_opera_segments_native.json``,
+which checks all four nested layouts and their complete reader windows
+against the selected build before this runs.  Only the shape seen in current
+sources is accepted: one segment with one keyed parameter holding one value
+atom.  Any other positive shape fails closed.  The nested cursor rejoins the
+sequential owner, which must still reach physical EOF.  The stored opera
+type, key and value do not establish when or whether an encounter operation
+executes.
+"""
 
 from __future__ import annotations
 

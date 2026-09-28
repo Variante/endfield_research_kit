@@ -3,6 +3,14 @@
 The nested BlackboardDouble, DirectionSettings and TargetSettings members
 reuse finite reviewed profiles. Stored fields do not establish live takedown
 behavior or an enclosing SkillData EOF.
+
+The twelve-member wrapper follows its three-byte physical tag with the four
+inherited action values, then ``deadOption``, BlackboardDouble ``duration``,
+DirectionSettings ``faceDirection``, float-width ``immobilizedTime``,
+``returnTrueWhen``, two independently framed TargetSettings members
+``source`` and ``targetSettings``, and the terminal ``teammateBigStagger``
+byte.  The reviewed native route pins all twelve source calls, seven generic
+type arguments and eight own-field setters.
 """
 from __future__ import annotations
 

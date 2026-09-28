@@ -21,12 +21,38 @@ Two orders exist for the same wrapper and only one describes the wire:
   reviewed contracts, from ``fields_for``), and
 * the generated wrapper's setter order, which is what this module returns.
 
+Where a reviewed contract records both a declaration list and a natively proved
+positional read order, the setter order reproduces the proved order and the
+declaration order contradicts it; ``OverrideJumpAction`` is the compact case
+(declared ``overrideJumpType, buffInput``, read buff-input then enum32).
+Never order a new reader by ``fields_for``.  Contracts that keep or drop a
+backing-field underscore differ in spelling, not order.
+
 ``verify_against_contracts`` re-derives every reviewed wrapper and reports the
 agreement, so build drift or a wrong model shows up as a named disagreement
-rather than as silently renamed fields.
+rather than as silently renamed fields.  Reviewed member counts, setter lists
+and the LevelScript layouts' named read orders are all checked; the generated
+agreement counts belong to ``reports/game_data/memorypack_wrapper_members.json``
+and to the union atlas's ``generatedMemberEnrichment`` block.
+
+Member widths come with the names.  A primitive's width is fixed by its type,
+and an enum's by the primitive its ``value__`` field declares, which this build
+does not always make int32 (byte, sbyte, short, ushort, uint, long and ulong
+enums all occur), so an assumed four-byte enum would mis-size many types.  An
+all-fixed wrapper's summed width excludes its own header byte and is a lower
+bound on a record's extent, not a proven boundary.  A nested member declares
+the type it holds, not its wrapper; ``wrapped_type_index`` reads each
+wrapper's single instance field (``__realInstance``, ``__instance`` or
+``___instance`` by generator vintage) to map wrapped type to wrapper
+structurally, without a mangled-name match.
 
 Fails closed: a missing or unreadable installed build returns no rows and an
 audit naming the gate that stopped it.
+
+The report lists every generated wrapper's serialized member order, member
+types, fixed member widths (each enum at its real underlying width) and the
+wrapped type it frames, plus its agreement with the reviewed contracts;
+``--wrapper NAME`` prints one wrapper instead.
 """
 from __future__ import annotations
 

@@ -2,6 +2,11 @@
 
 The native wrapper has zero serialized members. Its stored type identity does
 not establish runtime target selection or combat behavior.
+
+The tag is the TyphoeaArcherySelectedFinder wrapper in the selected
+``SelectorFinder`` switch table, which is independent of the
+AbilityActionData action tags (as are the ``SelectorValidator`` tables behind
+the in-screen and interactive-key validator modules).
 """
 from __future__ import annotations
 

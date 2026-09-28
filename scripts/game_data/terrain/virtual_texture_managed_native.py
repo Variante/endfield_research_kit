@@ -1,4 +1,71 @@
-"""Validate the selected managed Terrain texture-resource constructor copies."""
+"""Validate the selected managed Terrain texture-resource constructor copies.
+
+``python -m scripts.game_data.terrain.virtual_texture_managed_native
+--game-root .../Endfield_Data`` checks, against
+``contracts/terrain_virtual_texture_managed_native.json``, the managed
+``HGTerrainRenderer`` to ``VirtualTextureRenderer`` ``TerrainResource`` handoff
+and the child constructor's eight ``runtimeResources.textures`` field copies,
+including field names, runtime types and offsets and the selected instruction
+bytes. It also checks the direct converter-to-terrain-manager setup route
+(``HGTerrainConvertFunc.ConvertFrom`` to ``SetupFromParams_Phase1`` to both
+``SetupTerrainManager`` overloads), the four named converter property IDs, the
+``TryConvertAssetFrom<T>`` MethodSpecs and the local output slots forwarded as
+typed Phase 1 arguments. The receipt is
+``reports/terrain/virtual_texture_managed_native.json``.
+
+It does not join those managed fields to the installed ``LAYER_*`` files or
+the six-file tile paths.
+
+Renderer copies (direct). ``HGTerrainRenderer``'s constructor allocates a
+``VirtualTextureRenderer``, passes it the same ``TerrainResource`` value,
+stores it in ``m_vtRenderer`` and copies the value's ``runtimeResources`` and
+``configuration`` references. The child reads ``runtimeResources.textures``
+(``TextureResources``) and copies ``splatIndexMap``, ``splatControlMap``,
+``terrainLayerDiffuseArray``, ``terrainLayerNormalArray``, ``normalmap``,
+``colorVariationTex``, ``heightmap`` and ``deformableControlMap`` into
+``m_splatIndexMap``, ``m_splatControlMap``, ``m_splatsDiffuseArray``,
+``m_splatsNormalArray``, ``m_terrainNormalMap``, ``m_colorVariationTex``,
+``m_terrainHeightmap`` and ``m_deformableControlMap``. The two layer arrays
+are ``Texture2DArray``; the other six are ``Texture2D``. The copies need a
+child allocation and present source objects. No checked edge carries a
+UnityPlayer path-result handle into these fields, and a shared word such as
+"splat" does not supply one.
+
+Direct-call census (bounded). Every raw-backed section is scanned for ``E8``
+relative calls to the two registered constructors: none targets
+``HGTerrainRenderer.ctor(TerrainResource)`` and one targets
+``VirtualTextureRenderer.ctor``, at the checked parent handoff. Indirect
+invocation, patch dispatch and the ``TerrainResource`` supplier are not
+excluded or identified.
+
+Converter arguments (direct, conditional on the unpatched iFix branches).
+``ConvertFrom`` receives a component, ``FlatBufferConvertContextV2`` and an
+entity transition and calls ``HGTerrainV2.SetupFromParams_Phase1``, which
+calls one ``HGTerrainManager.SetupTerrainManager`` overload and that the
+second (``terrain.manager_bridge_native``). It reads four static
+``PropertySerializeId`` fields and passes each with its own local output to
+one helper under a ``TryConvertAssetFrom<T>`` MethodSpec matching the
+argument type, then loads those slots as Phase 1 arguments:
+``PROP_ID_TERRAIN_CS`` first ``ComputeShader``, ``PROP_ID_TERRAIN_RTCS``
+second ``ComputeShader``, ``PROP_ID_TERRAIN_PS`` ``Shader`` and
+``PROP_ID_SPLAT_INDEX_MAP`` ``Texture2D``. The helper's returned objects and
+the producer of ``runtimeResources.textures`` are not established; the
+single ``Texture2D`` splat-index argument is no evidence that a ``LAYER_*``
+family fills a ``Texture2DArray`` field.
+
+Unchecked metadata review (bounded negative, not validated here):
+``HGTerrainRuntimeResources`` is a ``ScriptableObject`` with nested
+``TextureResources``. ``HGTerrainConvertFunc`` also declares
+``PROP_ID_SPLAT_DIFFUSE_TEXTURE_ARRAY``,
+``PROP_ID_SPLAT_NORMAL_RO_TEXTURE_ARRAY`` and
+``PROP_ID_SPLAT_CONEMAP_TEXTURE_ARRAY``, but a direct read census of
+``ConvertFrom`` finds none of the three read (its requests use the four IDs
+above plus terrain-information and array-data IDs). The MonoBehaviour and
+PlayableDirector object-index schema sweep has no ``terrainLayerDiffuseArray``,
+``terrainLayerNormalArray`` or ``deformableControlMap`` fields, but it does
+not cover every ``ScriptableObject`` producer. Neither result bridges the
+``LAYER_*`` handles to ``TextureResources``.
+"""
 
 from __future__ import annotations
 

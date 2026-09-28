@@ -1,4 +1,11 @@
-"""Selected-build SkillData TargetPostProcessorAction 0x017B framing."""
+"""Selected-build SkillData TargetPostProcessorAction 0x017B framing.
+
+The selected eleven-member reader stores bounded center, direction, source and
+target selectors plus lists of postprocessor and validator data.  Native
+generic contexts and reviewed Buff child windows constrain those nested
+profiles.  The stored selection graph does not establish which target was
+chosen at runtime.
+"""
 from __future__ import annotations
 
 import hashlib

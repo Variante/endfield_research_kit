@@ -2,6 +2,14 @@
 
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove that a settlement display appeared in game.
+
+After the inherited action fields the route stores constant
+`targetDynamicEntity` (`Param<ulong>`), `targetLevel` (`Param<int>`) and
+`targetSettlementId` (`Param<string>`). Reached settlement IDs belong to the
+tundra and hongs families, each with a level value; this is stored
+configuration, not an observed display.
+
+Run as: python -m scripts.game_data.levelscript_require_settlement_show_native
 """
 
 from __future__ import annotations

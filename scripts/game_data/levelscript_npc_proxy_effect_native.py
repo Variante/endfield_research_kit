@@ -2,6 +2,16 @@
 
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove a live NPC effect.
+
+The wide-tagged route stores `effectId` (string), `effectType`
+(`NpcEffectType`), `mountPoint` (`MountPoint`) and `npcProxyId` (string) as
+four typed parameters; both enums are Int32-backed with their member
+catalogs checked. Reached authored IDs name map transmission and character
+expression effects; enum values include normal and material effects and no
+mount point, head, or custom point. `PlayEffectOnNpc` is a separate wrapper
+with an `npcId` member, owned by `levelscript_npc_effect_native`.
+
+Run as: python -m scripts.game_data.levelscript_npc_proxy_effect_native
 """
 
 from __future__ import annotations

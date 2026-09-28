@@ -1,4 +1,14 @@
-"""Fail-closed validator for the selected-build animation-curve contract."""
+"""Fail-closed validator for the selected-build animation-curve contract.
+
+``animation_curve_native.json`` records the reviewed identities, reader
+windows, native offsets and helper joins for ``FAnimationCurve`` and
+``FKeyframe``. The durable point it authenticates: the standalone generated
+``FKeyframe`` wrapper reads alphabetical setter order and stores into native
+offsets, while ``FAnimationCurve.keys`` is a counted bulk unmanaged array of
+32-byte elements in native struct order, followed by ``postWrapMode`` and
+``preWrapMode``. ``scripts.game_data.animation_config_binary`` loads the
+bulk layout from this contract and refuses a changed shape.
+"""
 
 from __future__ import annotations
 

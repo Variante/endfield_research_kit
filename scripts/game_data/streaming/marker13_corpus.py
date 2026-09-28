@@ -1,4 +1,14 @@
-"""Full authenticated block-15 corpus gate for marker13 gap/read projections."""
+"""Full authenticated block-15 corpus gate for marker13 gap/read projections.
+
+Run after ``streaming.corpus`` with the same ``--input-set-sha256`` (the VFS
+audit value); ``--root-report`` defaults to that gate's
+``reports/animestudio/streaming_root_subgraphs_latest.json``. The gate
+reauthenticates the outer VFS ledger, then publishes
+``reports/animestudio/streaming_marker13_latest.{json,md}`` plus the
+per-file inventory ``streaming_marker13_inventory_latest.jsonl.gz``. A
+``--max-files`` run is a diagnostic probe, not complete-corpus evidence, and
+its output belongs in ``tmp/`` or ``scratch/``.
+"""
 from __future__ import annotations
 
 import argparse

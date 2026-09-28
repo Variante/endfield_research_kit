@@ -1,4 +1,23 @@
-"""Exact named schema for current textual ``MapConfig`` JsonData rows."""
+"""Exact named schema for current textual ``MapConfig`` JsonData rows.
+
+Beyond field order and types, the reader enforces three stored authoring
+constraints: ``sceneStates`` indices are distinct positions 0..31 of a
+32-bit mask; each condition row names a distinct ``sceneStates`` key (some
+states have no row, so rows are not a state catalog); and every map-variable
+condition, including inside combined trees, names its containing map and a
+key of that map's variable dictionary. The native evaluation of these
+fields is described in ``scripts.game_data.dynamic_visibility_runtime_native``.
+
+Both root shapes are admitted explicitly (with and without the optional
+``sceneStates``). Level arrays, named scene-state values, typed condition
+rows (quest state, mission state, map variable, global variable) with their
+recursive ``CombinedConditionRuntime`` trees, and both directions of the
+map-variable dictionaries are validated; ``mapVarNumId2Name`` and
+``mapVarName2NumId`` must be exact inverses. ``mapVarClientDefaultValues``
+is empty throughout the current corpus, so a populated future shape fails
+closed. Stored configuration only; see the native module above for what is
+known about runtime evaluation.
+"""
 
 from __future__ import annotations
 

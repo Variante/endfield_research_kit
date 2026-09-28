@@ -1,4 +1,13 @@
-"""Exact JSON schema for the current GoldCoinConfigTable."""
+"""Exact JSON schema for the current GoldCoinConfigTable.
+
+Validates, in stored key order, the ``Gameplay.Beyond`` /
+``Beyond.Gameplay.GoldCoinConfigTable`` type identity, the source-keyed
+``data`` rows (integer ``source`` and ``scatterAlgorithm``, pickup and
+lifetime floats, the ``raycastDir`` vector), the legacy ``sinArcLegacy``
+settings and the ``physicalBouncePipeline`` motion block.  A duplicate
+``source`` enum value, a non-finite float, and any key or type drift fail
+closed.  Stored tuning values only; runtime coin behavior is not observed.
+"""
 
 from __future__ import annotations
 

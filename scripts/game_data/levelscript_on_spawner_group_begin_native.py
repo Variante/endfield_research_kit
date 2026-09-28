@@ -1,4 +1,18 @@
-"""Authenticate the selected OnSpawnerGroupBegin ActionHeader reader."""
+"""Authenticate the selected OnSpawnerGroupBegin ActionHeader reader.
+
+The reviewed contract pins ActionHeader `LevelEvent.OnSpawnerGroupBegin` (tag
+0x0097 in the contract): the selected switch branch and wrapper, the complete
+reader plus forwarding formatter, ordered reads and setters, and the typed
+group and spawner filter and output contexts. Passing `--export-root`,
+`--ledger` and `--summary` together also replays the reviewed source cursors
+against the current JsonData ledger. The command prints its audit and exits
+nonzero unless it validates. It proves stored header bytes; the spawner-group
+event and output values remain unobserved.
+
+The header stores `groupKeyFilter` and `spawnerFilter` with the matching
+string and `SpawnerPtr` outputs (five typed parameter contexts including the
+inherited `validate`).
+"""
 
 from __future__ import annotations
 

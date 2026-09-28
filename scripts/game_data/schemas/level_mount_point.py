@@ -1,4 +1,13 @@
-"""Exact recursive schema for LevelMountPoint JSON trees."""
+"""Exact recursive schema for LevelMountPoint JSON trees.
+
+Root is ``{"subRootByType": {...}}``.  Every node is exactly one of three
+shapes: a named branch (``nodeName``, ``children``), a mount leaf
+(``nodeName``, ``mountPoint`` with position and rotation vectors), or a
+teleport mount that adds ``extraData`` typed
+``Beyond.Gameplay.LevelTpMountPointExtraData`` with a nonempty
+``tpUniqueId``.  Depth is bounded at 32; any other shape fails closed.  This
+names authored attachment points, not the runtime object mounted there.
+"""
 
 from __future__ import annotations
 

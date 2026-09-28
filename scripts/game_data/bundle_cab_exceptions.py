@@ -5,6 +5,18 @@ unselected CAB external at its selected referring Bundle and checks for an
 exact-name installed Resources file. A same-name file is a candidate, not a
 proved Unity runtime resolution. It also records manifest AssetInfo paths for
 the few Bundles on either side of a manifest-only edge.
+
+Current reading: the manifest-only residual's sources are dialog timeline
+prefabs with manifest AssetInfo paths, while the common target has no
+AssetInfo row and no matching CAB external. The common unselected external is
+the ``unity default resources`` literal, which matches an installed
+serialized file and a UnityPlayer string (identity is settled by
+``bundle_external_identity_corpus``). A second, CAB-shaped external name has
+no selected CABMap source and no exact-name installed Resources file.
+
+It takes the same inputs as ``bundle_cab_dependency_corpus``; the
+conventional ``--out`` is
+``reports/animestudio/bundle_cab_exceptions_latest.json``.
 """
 
 from __future__ import annotations

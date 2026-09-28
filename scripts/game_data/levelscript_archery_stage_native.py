@@ -3,6 +3,16 @@
 This proves serialized stage arguments on the selected installed client and
 joins reviewed source cursors to the current JsonData ledger when requested.
 It does not prove that the action executes or changes a live stage.
+
+After the inherited action fields the branch stores `levelId`
+(`Param<string>`), `module` (`Param<LsmPtr>`), `scriptId`
+(`Param<LevelScriptPtr>`) and `stageIndex` (`Param<int>`). The contract
+checks the dispatcher and registered wrapper, complete generated reader and
+forwarding formatter, all twelve ordered reads and setters, and the four
+nested `ReadValue<Param<T>>` contexts. The shared ActionMap reader admits the
+route only while this gate passes.
+
+Run as: python -m scripts.game_data.levelscript_archery_stage_native
 """
 
 from __future__ import annotations

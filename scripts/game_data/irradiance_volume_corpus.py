@@ -3,6 +3,21 @@
 The outer audit owns file-byte identity. This gate reopens the small index files,
 checks their MD5s, and joins their opaque directories to authenticated payload
 lengths. It records cross-index word agreement without naming renderer fields.
+
+``python -m scripts.game_data.irradiance_volume_corpus
+--expected-input-set-sha256 INPUT_SET_SHA256`` checks every current IV index
+and room against the full authenticated VFS ledger (``--outer-summary`` and
+``--outer-ledger`` default to the ``reports/animestudio/vfs_understanding_*``
+pair) and writes ``reports/irradiance/volume_corpus_latest.json``. It reports
+directory arithmetic and the ordered V3 Gacha character/weapon word agreement
+without assigning those words a renderer meaning.
+
+The two installed V3 Gacha ``character`` and ``weapon`` indexes have the same
+ordered record count, and every positional pair agrees on anonymous words 0,
+1, 6 and 7 while interval offsets and lengths differ; the gate fails if that
+agreement changes. This is a shared stored key and order (structural), not
+evidence that the records load together, that the words are coordinates, or
+that the payloads hold the same lighting.
 """
 
 from __future__ import annotations

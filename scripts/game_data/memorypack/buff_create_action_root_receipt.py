@@ -3,8 +3,20 @@
 This route is deliberately narrower than the Buff corpus. It reads the original
 logical bytes from the root header through physical EOF and refuses every
 positive recursive collection except one certified CreateBuff action and the
-separately reviewed DataPair list. Its publication is a proposal until the
-canonical corpus integrates and independently replays the receipt.
+separately reviewed DataPair list. The canonical corpus integrates and
+independently replays the receipt (see below).
+
+It accepts only a sole ``CreateBuffAction`` in ``abilityEventAction``, an
+empty ``buffEventAction``, and the already supported other root children,
+and composes the CreateBuff input, ``BlackboardDouble``, ``TargetSettings``,
+``DirectionSettings``, ``SelectorData``, selected null or zero-member finder,
+and ``BuffIconDurationSourceSetting`` child receipts. It reads the original
+logical bytes through all thirty root members, checks the stored ``id``
+against the source stem and reaches physical EOF. ``buff_corpus`` integrates
+this receipt per accepted row, and ``scripts.game_data.jsondata_corpus``
+re-checks the installed native build, source SHA and the entire receipt
+before classifying the row as schema decoded. Assignment execution, decoded
+string parity, duration selection and gameplay effects remain unobserved.
 """
 from __future__ import annotations
 

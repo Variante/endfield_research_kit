@@ -3,6 +3,9 @@
 The BuffData reader owns this finite six-member wire profile. This module
 authenticates the independent SkillData union route and source read order.
 The stored fields do not establish runtime cooldown evaluation.
+
+The own members are a bounded buff identifier and a finite TargetSettings
+child.
 """
 from __future__ import annotations
 

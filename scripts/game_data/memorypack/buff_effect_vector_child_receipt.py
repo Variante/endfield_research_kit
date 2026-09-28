@@ -3,6 +3,18 @@
 The selected EffectAction and EffectActionCfg readers fix each parent span.
 This adapter names the three BlackboardVector3 members and reuses the
 independently selected BlackboardDouble child reader for every scalar leaf.
+
+The generated vector wrapper names ``x``, ``y`` and ``z`` in the same order
+as three selected ``BlackboardDouble`` generic source reads, with direct
+stores to the corresponding runtime fields. Inside each component, and in the
+configuration's two direct scalar blackboard children, the scalar reader
+names ``blackboardKey``, ``useBlackboardKey`` and the raw four-byte
+``value``. The VFS and source-hash gate reparses every reached action and
+requires each nested child to close at the enclosing field boundary. This
+closes the stored blackboard interiors on the reached branch only: key
+strings are not decoded, no live provider is selected, no coordinate meaning
+is assigned, and positive effect arrays and the enclosing BuffData record
+remain open.
 """
 from __future__ import annotations
 

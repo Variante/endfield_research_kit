@@ -4,6 +4,85 @@ Native code establishes the inline layout, typed template lookup, and a
 conditional consumer path. The current VFS-backed corpus establishes exact
 directory partitions and ordered per-entity signatures, but does not observe
 live grid activation or the runtime template list contents.
+
+Layout (direct, ``dynamic_root_comp_native.json``). ``FBDynamicSceneRootComp``
+is an 84-byte inline record: ``Type`` (``Int32``) at zero, ``State``
+(``UInt32``) after it, ``Comps`` as a 24-byte ``FBDynamicSceneDataGroup`` at
+offset eight, the Boolean ``NeedLazyDestroy`` after ``Comps``, and a final
+48-byte ``FBDynamicSceneVisibleDesc``. A DataGroup is a 16-byte DataIndex
+followed by ``Num`` and ``TotalInGrid`` as four-byte integers. VisibleDesc
+holds two consecutive DataGroups, ``VisibleStateGroup`` and
+``VisibleAreaGroup``. ResourceComp and SludgeComp reuse these shared layouts.
+
+Directory partition (structural). In every authenticated current grid each
+``Comps.Index`` has ``Type=DataIndex``, ``Grid=SingleGrid.UniqueId`` and a
+nonnegative ``Index``; ``Num`` is positive, ``TotalInGrid`` equals the grid's
+DataIndex count, and the ``[Index, Index+Num)`` spans are disjoint and tile
+the DataIndex vector. This is the first authored hop: RootComp groups
+partition the DataIndex directory, whose rows then address components in
+their named vectors. The embedded ``Type=DataIndex`` names the directory, not
+the target component type. ``State`` has no variation in this corpus.
+
+Visible groups. Both embedded indexes carry ``EDynamicSceneData.PrimitiveInt``,
+refer to the containing grid, and have ``TotalInGrid`` equal to that grid's
+``PrimitiveIntList`` count; their nonempty spans stay inside that vector and
+never overlap. ``VisibleAreaGroup`` is always nonempty; ``VisibleStateGroup``
+is usually invalid with zero elements. ``PrimitiveInt`` has a different
+numeric ID from ``PrimitiveIntList``'s field index, and the similarly named
+``SceneVisibleStateInts``/``SceneVisibleAreaInts`` vectors are not the
+targets (they are empty in the current corpus). The native consumer decides
+the target: ``DynamicSceneEntitySystem.RegisterEntity`` passes its typed state
+and area controllers and the grid to ``SceneVisibilityControllerBase.Register``;
+the controllers' ``GetValidIndexGroup`` overrides select ``VisibleStateGroup``
+and ``VisibleAreaGroup``; base ``Register`` checks ``Num``, starts at the
+embedded ``Index`` and reads each four-byte value through the grid's
+``PrimitiveIntList`` vector slot, not through the stored group ``Type``. This
+is a direct conditional consumer; whether a grid takes the path is open.
+
+Template lookup (direct). ``_ParseLoad`` reads ``RootComp.Type`` through the
+generated scalar reader and uses its byte value as the key into
+``m_templateDataMap``, a registered
+``Dictionary<EDynamicSceneEntityType, DynamicSceneEntityTemplateData>``; the
+enum names therefore have a typed consumer although the getter returns
+``Int32`` (this supersedes an earlier label reading based only on numeric
+agreement). ``OnInit`` loads the literal that equals the metadata default of
+``TEMPLATE_PATH``, calls typed ``TryLoad<DynamicSceneTemplates>`` and
+``FAssetProxyHandle.Get<DynamicSceneTemplates>``, walks
+``templateDataList`` and inserts each record by its ``entityType``. The path
+joins the fresh export's asset map to a ``DynamicSceneTemplates``
+MonoBehaviour whose type tree exposes ``entityType`` and ``comps``.
+
+Template match (structural). Each observed ``RootComp.Type`` has one
+invariant ordered sequence of child ``DataIndex.Type`` values across all its
+groups, equal to that entity type's ordered ``comps`` list in the exported
+template asset, so ``Comps.Num`` equals the authored list length. Template
+rows absent from current grids are reported; a missing or differing match
+fails. This is an authored match, not a receipt that the asset was loaded.
+
+Lifecycle (direct, conditional). ``DynamicSceneDynamicEntitySystem``
+advertises RootComp as its grid lifecycle data type. Grid load and reload
+call ``_RegisterEntities``, whose count-bounded loop walks RootComp at an
+84-byte stride and calls ``_ParseLoad``; grid enter calls ``_ParseLoad``
+directly. ``_ParseLoad`` reads 16-byte DataIndex entries from the embedded
+group start, routes each ``Type`` through the selected data-type system route
+and conditionally calls ``RegisterEntity``. The inner loop bound is a
+``SafeCount<EDynamicSceneData>`` call on the template record's
+``List<EDynamicSceneData> comps``; the body does not read stored
+``Comps.Num`` for it.
+
+IdComp detour. When ``DataIndex.Type`` is IdComp, ``_ParseLoad`` passes the
+``Index`` and grid to an IdComp vector helper (eight-byte stride) and reads
+``FBDynamicSceneIdComp.UniqueId`` through the generated getter's scalar
+reader; the unpatched branch then rejoins the common system route with the
+original type. It does not skip routing. Patched iFix branches are outside
+this claim.
+
+Run ``python -m scripts.game_data.dynamic_root_comp_native --gameassembly PATH
+--metadata PATH --game-root GAME_DATA_ROOT --export-root EXPORT_ROOT
+--input-root DUMP_ROOT --expected-input-set-sha256 INPUT_SET_SHA256``. The
+exported ``DynamicSceneTemplates`` MonoBehaviour must be fresh against its
+asset map and the export manifest. It writes
+``reports/animestudio/dynamic_root_comp_native_latest.{json,md}``.
 """
 
 from __future__ import annotations

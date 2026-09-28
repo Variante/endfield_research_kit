@@ -8,6 +8,95 @@ header, copied-record command binding and count-sized virtual dispatch. The
 default provider's OS-file method set is a conditional registry fallback. Its
 selected runtime provider and concrete VFS source remain unresolved.
 The reviewed contract pins the selected native inputs and instruction windows.
+
+``python -m scripts.game_data.irradiance_path_native`` (optionally with
+``--gameassembly``/``--metadata``) writes
+``reports/irradiance/v3_path_native.json``.
+The checked chain is: scene/Gacha ``/v3/index.bytes`` suffix construction; the
+selected proxy property's conversion into a scene path; managed-to-native path
+handoff and path-keyed stream lookup; the selected request's type-zero queue
+drain, exact-count read success gate and queued status completion; the
+resource-name keyed handle cache; the ready buffer-pointer transfer; and the
+downstream native cursor. The cursor checks both V3 index magics and uses
+36-byte scene versus 32-byte Gacha records.
+
+For room files it checks the conditional ``regionIv_%s_%u.bytes`` format, the
+supplied-root directory plus formatted-basename path assembly, the shared
+lookup/stream route, the ready-buffer room-header parser and the conditional
+8- or 16-byte grid-record copy, plus the copied-record allocation descriptor's
+callback handoff, command binding and grid-cell-count-sized virtual dispatch.
+
+Boundaries: the complete selected parser body has no final EOF comparison, and
+its byte and u32 readers have no local length check; the read gate bounds
+successful I/O separately from that. When no registered provider matches, the
+default provider's open and read slots reach ``CreateFileW``,
+``SetFilePointerEx`` and ``ReadFile`` (a conditional fallback). Unresolved: the
+runtime-selected provider, exact VFS file identity, backend normalization, the
+supplied directory roots, the serialized property value, room record field
+meanings, actual GPU execution and texture format.
+
+Managed path sources (direct, conditional). The managed literal table carries
+``/v3/index.bytes`` (tag-5 usage, ``System.String.Concat`` calls). Scene:
+``StreamingInNewMap`` appends it to a supplied root and stages the result;
+``PipelineUpdate`` promotes the staged string and calls ``SetMapV3`` when the
+path changes. Gacha: ``CreateGachaIV`` stores its appended path in a separate
+field, ``UpdateGachaIV`` compares and replaces with the same suffix, and a
+separate ``PipelineUpdate`` branch passes that field to ``SetMapV3``. Proxy:
+``HGIrradianceVolumeProxyEntityConvertFunc.ConvertFrom`` reads the static
+``PROP_ID_IV_INDEX_PATH`` ID (its ``.cctor`` writes the twelve bytes
+``FF0000000000000000000000``, a stored identifier with no inferred sentinel
+meaning), calls ``FlatBufferConvertContextV2.ConvertStringFrom_Injected``,
+appends the suffix and stages the pending path. The property's runtime value
+and the other supplied roots are not recovered.
+``Beyond.VFS.VFSDefine.BLOCK_IV_DATA_PATH`` uses a ``Data/IrradianceVolume/``
+literal, but no selected read joins it to the proxy value, so the prefix
+cannot authenticate this path. Other ``ReloadIndexFileV3`` callers are
+unidentified.
+
+Native V3 chain. ``HGIrradianceVolumeManager.ReloadIndexFileV3`` only stores
+its path and releases an old volume; it reads no index bytes (an earlier
+claim that the path was exhausted by IL2CPP metadata was wrong). The
+``SetMapV3`` internal call's UnityPlayer function stores the string on the
+native volume. A downstream consumer reads that field and passes it to a
+parser that retains it as a lookup key and, in its open state, calls a native
+hash-table lookup; a hit yields two u64 words and a resource name, and the
+second word becomes the stream's requested size. The stream constructor sets
+request type and queue partition to zero, leaves its multi-read descriptor
+null, queues the object and installs a completion callback. The singleton's
+thread drains the pending vector and routes type zero to a read branch that
+passes the request's data buffer (``+0x68``), requested size (``+0x70``) and
+backend offset (``+0x78``) to an accumulating read, stores the count
+(``+0x80``) and reports status zero only when it equals the requested size;
+the callback writes status and releases a reference but does not fill the
+buffer. A sibling direct worker has a similar gate but is not on this route.
+With no optional resource handle, the read branch calls a selector that
+matches the resource name against a cache or builds a slot and opens a
+provider through a virtual method; the registry searches registered
+providers by name before returning the default. In the ready state the
+parser takes the stream's buffer pointer for a cursor that reads
+little-endian u32 values, accepts ``0x03000002`` and ``0x03000003``, copies
+``count*36`` scene directory bytes or consumes ``count`` 32-byte Gacha
+records, initializes its middle word to ``-1`` and never compares its offset
+with the stream size. The lookup hashes the supplied string bytes; the
+surrounding VFS canonicalization is not established, and the lookup's size
+word is not an observed cursor bound.
+
+Room files. A separate UnityPlayer function formats ``regionIv_%s_%u.bytes``
+and calls the same lookup and stream constructor, skipping construction when
+lookup fails. Its caller passes a stored root string to the room handler,
+which copies on change, takes the prefix through the last forward slash,
+appends the formatted basename and passes that path unchanged to lookup. In
+the ready branch the handler checks the leading ``0x1000`` word, reads the
+header-size word, two 12-byte triples and three grid dimensions, locates the
+records at buffer plus header size, and copies ``nx*ny*nz`` times 8 or 16
+bytes by a native configuration branch (current files: header 44, 16 bytes).
+It then writes the three dimensions into a separate ``0x30``-byte
+descriptor, packs it with the copied-record allocation descriptor into a
+``0x58``-byte callback payload, and the cloned command's callback passes the
+allocation descriptor's first word (payload ``+0x28``) to a native binding
+helper and requests a virtual dispatch of ``ceil(nx*ny*nz/64)``, 1, 1 groups.
+This supports the offline header and stride framing and shows a command-side
+consumer of the record allocation; it names no tuple axis or record field.
 """
 
 from __future__ import annotations

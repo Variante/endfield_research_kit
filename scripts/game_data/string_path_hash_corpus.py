@@ -9,6 +9,37 @@ AssetInfo rows must be a multiset subset. Repeated VFS rows for one logical
 path are reported without duplicating its path/hash witness.
 Reading the compressed manifest requires the same optional Brotli package as
 the maintained BundleManifest reader; no xxhash package is used.
+
+The initial catalog also repeats its own ``Data/`` path/hash pair. Standard
+XXH3 disagrees with some main-catalog rows only because the VFS
+implementation branches at exactly 128 UTF-8 bytes; the gate replays 127-,
+128- and 129-byte controls to keep that boundary visible. The catalog writer
+and runtime lookup remain open.
+
+What a passing run establishes: every distinct ``Data/`` path/hash pair in
+either catalog equals the VFS ledger's recomputed filename hash for that exact
+path (the ledger separates verified payloads from missing optional audio or
+voice chunks whose metadata-only filename hashes still match), and the
+remaining pairs join the manifest as above. The reader
+(``extend_data_binary``) consumes the string pool through EOF: every counted
+string is strict, terminated UTF-16LE, every bucket has a distinct record
+position, and every stored path offset names a string start. Every stored
+unsigned 64-bit hash locates its slot by modulo the catalog's count. The other
+bucket word and a four-byte gap before the string pool stay anonymous. These
+stored joins establish neither asset ownership nor runtime use, and a framed
+catalog is not an exhaustive runtime namespace.
+
+Recorded negatives: FNV, DJB2, SDBM, classic xxHash64, Murmur64A and
+MurmurHash3 failed to replay the catalogs under their tested encodings and
+seeds; the native method name ``XXHash64`` does not mean classic xxHash64, and
+the 128-byte branch explains why the earlier xxHash64 and standard-XXH3 probes
+missed rows. It is not evidence for a third stored hash.
+
+``--scope`` is ``main`` or ``initial``; ``--source`` is that scope's dumped
+catalog ``.bin`` and ``--manifest`` the dumped manifest. Pass the VFS audit
+summary, ledger and ``inputSetSha256``. Run each scope separately, each with
+its own ``--out`` path under ``reports/animestudio/``, so one scope's report
+never overwrites the other's.
 """
 
 from __future__ import annotations

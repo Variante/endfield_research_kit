@@ -1,4 +1,15 @@
-"""Exact selected CheckBuffStackNumAdvanced damage condition child."""
+"""Exact selected CheckBuffStackNumAdvanced damage condition child.
+
+It checks the selected native ten-member ``CheckBuffStackNumAdvanced`` action
+and its exact reached BuffFindSettings, simple TargetSettings and
+BlackboardDouble children, joined to current VFS logical hashes.
+``memorypack.buff_corpus`` admits the sole action with processor tag five or
+nine through all 30 root fields, source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_check_buff_stack_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

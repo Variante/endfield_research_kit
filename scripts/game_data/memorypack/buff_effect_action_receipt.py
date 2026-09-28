@@ -4,6 +4,11 @@ The existing Buff reader frames physical tag 0x00A2. The reviewed A2 source
 contract supplies its member-18 read order, while the current native action
 route supplies the generated wrapper's field names. Nested profiles remain
 structural; a closed action does not complete its BuffData parent.
+
+The adapter also checks each current generated field kind against the
+selected source read kind, and its nested declared types against the
+source's five nested call contexts. ``effectActionCfg`` is named further by
+``buff_effect_config_child_receipt``.
 """
 from __future__ import annotations
 

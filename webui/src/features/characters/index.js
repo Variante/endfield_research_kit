@@ -1,3 +1,16 @@
+// Characters page behavior contract (webui/README.md links here; evidence
+// limits are in memory/webui/characters.md).
+//   * Merges table, Story and asset identities while retaining source
+//     provenance. Merge and name overrides (overrides/character_merges.json,
+//     overrides/character_name_overrides.json) are live inputs written
+//     through serve.py and need no rebuild. Debug-only controls must not
+//     leak into normal navigation.
+//   * The optional data/updates/characters.json supplies version-change
+//     badges and filters. Added or modified ids join the constituent ids and
+//     aliases of an already-recovered identity group; deleted ids are
+//     read-only previous-version snapshots. The sidecar never changes
+//     automatic or manual grouping, naming, evidence or overrides, and its
+//     absence leaves the page fully usable without badges.
 (() => {
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const PANE_STORAGE_KEY = "webui_characters_splitter_width";

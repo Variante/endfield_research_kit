@@ -2,6 +2,16 @@
 
 The native contract proves the selected reader and three parameter types.
 Source receipts prove reached bytes, not runtime lock behavior.
+
+After the inherited action fields the route stores `instKey` (string),
+`isLocked` (bool) and `radioId` (string) as typed parameters. The selected
+switch, complete reader and formatter, ordered setters and typed generic
+contexts authenticate the layout; ledger-joined cursors replay exactly in the
+shared ActionMap reader, which admits the row only while this validator
+passes. A whole-owner projection made after registration stays provisional
+until the full JsonData corpus gate runs.
+
+Run as: python -m scripts.game_data.levelscript_fac_set_interact_locked_state_native
 """
 
 from __future__ import annotations

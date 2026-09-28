@@ -4,6 +4,29 @@ The targeted AnimeStudio conversion is a disposable input, produced with
 ``ANIMESTUDIO_EXPORT_SHADER_BYTECODE_SIDECARS=1`` and a one-object filter. The
 reviewed contract authenticates its source CHK and the selected program bytes.
 No WebUI export is published by this validator.
+
+Run ``python -m scripts.game_data.terrain.shader_sampling --game-root
+.../Endfield_Data --evidence-root DIR``, where ``DIR`` is the one-object
+targeted ``Shader:Both`` conversion output (for example under
+``scratch/animestudio/terrain_shader_target``). It gates the selected installed
+source CHK, the authored texture bindings and the compiled SPIR-V sample path
+against ``contracts/terrain_shader_sampling.json`` and writes
+``reports/terrain/shader_sampling_latest.json``.
+
+The selected HGRP/HGTerrainPS VTBakePage fragment variant declares
+``_ConeMaps`` as a 2D array texture and samples its component zero. That is an
+authored input and sample path, not proof that an installed ``LAYER_C`` file
+reached this shader live. Runtime shader and file selection, the managed
+VirtualTextureRenderer fields and the stored byte's visual meaning remain open.
+
+Detail. The serialized ``VTBakePage`` Vulkan fragment program names
+``_Splats``, ``_Normals`` and ``_ConeMaps`` as separate array inputs.
+``_ConeMaps`` is at descriptor set 3, binding 11; the SPIR-V variable at that
+binding has a 2D array image type, and four direct image-sample results each
+feed a component-zero extract. The gate traces the exact
+variable/load/sampled-image/sample/extract path rather than assigning a role
+from shader or file names. The contract pins the physical CHK hash, source
+offset, CAB, PathID, sidecar identity and the metadata and SPIR-V hashes.
 """
 
 from __future__ import annotations

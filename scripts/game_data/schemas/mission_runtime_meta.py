@@ -1,4 +1,12 @@
-"""Exact named schema for current MissionRuntimeAsset ``*_meta.json`` rows."""
+"""Exact named schema for current MissionRuntimeAsset ``*_meta.json`` rows.
+
+Every row validates the five-field mission root (``ROOT_FIELDS``) and the
+three-field accept-mode object. The populated mode-info branch admits only
+the stored ``$type`` identities and exact fields for ``NPCInfo`` or
+``EnterAreaInfo``, including its typed area rows. Unknown fields or
+discriminators fail closed. Stored-schema closure only; it does not prove
+when or whether a mission is offered.
+"""
 
 from __future__ import annotations
 

@@ -24,6 +24,39 @@ What this does **not** establish: that posting the identifier plays the media,
 any ordering or selection among reached sources, audibility, or a name for any
 object other than the type ``0x04`` entry point itself. The walk direction is the
 physical one -- which object's body holds the value -- and nothing more.
+
+A second, broad pass is scored against a computed coincidence rate. The gate
+refuses to publish when a gated match lands on an unexpected type, when a
+count and its id list describe different walks, or when nothing clears the
+bar. Like ``hirc_action_corpus`` it requires ``--expected-input-set-sha256``
+from the current VFS audit.
+
+The same pass gates the bank sections outside HIRC, which the AnimeStudio
+reader censuses and this module pools. Every one is framed; STMG, INIT, ENVS
+and PLAT occur once in the corpus, all in one bank, so for them closure is a
+single observation and each carries a second, content-based check:
+
+- ``STMG``, byte-exact in three blocks, each located by different evidence.
+  Leading block: u16 (0), f32 (-60.0), u16 (256), u16 (50), u32 count, count x
+  12-byte {u32 id, u16 value, 6 zero bytes}; the stride is chosen by id
+  distinctness against every rival from 8 to 20. Middle block: u32 count x
+  13-byte entry {u32, u32, u8 zero, u32 records, 3 zero bytes}, each followed
+  by records x 12 bytes {8 bytes, u8 = 9, 3 zero bytes}; bounded on both
+  sides, it is the one shape of about 745,000 searched that consumes the block
+  in exactly its declared entries. Trailing block, framed backward: u32 count x
+  21-byte {u32 id, f32, u8 selector, 3 zero bytes, f32, f32, u8}, then 4 zero
+  bytes; the record shape overshoots by one record and the count locates it.
+- ``INIT``: u32 count x {u16 encoded type/company, u16 plug-in, NUL-terminated
+  name}, the plug-in name table.
+- ``ENVS``: no count of its own; curves of {u8, u8, u8 count, u8} then count x
+  12-byte {f32 x, f32 y, u32 interpolation} until the section ends. Three
+  shapes close it; interpolation codes and rising x pick one.
+- ``PLAT``: one NUL-terminated platform name.
+- ``DIDX`` and ``DATA``: 12-byte media entries addressing the embedded media.
+
+A 32-bit window over these sections names bus objects (0x08, 0x12) and
+nothing else, all of them in STMG; no music object is named from outside the
+music family (``the_unparsed_sections_name_only_buses``).
 """
 
 from __future__ import annotations
@@ -393,9 +426,9 @@ def the_stmg_record_stride_beats_its_rivals(stmg: dict[str, Any]) -> bool:
       that begins a further block. Every other stride lands on zero or on an arbitrary
       large value.
 
-    Only the leading block is framed: 3,722 bytes of 10,118. The remaining 6,396 are
-    reported as unframed rather than guessed at, because with one instance there is
-    nothing to check a guess against.
+    The leading block is 3,722 of the section's 10,118 bytes. The trailing run and
+    the middle block are framed by the two gates below; with one instance, each
+    block needed its own discriminating evidence rather than a shared closure.
     """
     if not isinstance(stmg, dict):
         return False
@@ -422,8 +455,9 @@ def the_stmg_record_stride_beats_its_rivals(stmg: dict[str, Any]) -> bool:
 def the_stmg_tail_run_is_located_by_its_count(stmg: dict[str, Any]) -> bool:
     """STMG's trailing run is framed backward, and its count is what locates it.
 
-    It has to be backward: the block between STMG's two runs is variable-length and is
-    not framed, so the trailing run's start cannot be computed forward.
+    It has to be backward: the block between STMG's two runs is variable-length and has
+    no count of its own that locates its end, so the trailing run's start cannot be
+    computed forward.
 
     The record-shape walk **bounds** the run but does not locate it -- it reaches 270
     records where the count is 269, because the three bytes it checks happen to be zero
@@ -435,9 +469,10 @@ def the_stmg_tail_run_is_located_by_its_count(stmg: dict[str, Any]) -> bool:
     Then the shape is discriminated the same way the leading run's was. All 269 ids are
     distinct and all 269 carry the three zero bytes at +9; every rival stride from 14
     to 24 gives neither. All 807 floats across the three float fields are finite and
-    bounded.
+    bounded. The selector at +8 takes 0, 1 and 2.
 
-    739 bytes remain unframed and are reported as such.
+    Once this run is located, the middle block is bounded on both sides and is framed
+    by ``the_stmg_section_closes_byte_exactly``.
     """
     if not isinstance(stmg, dict):
         return False
@@ -576,6 +611,12 @@ def the_init_table_names_the_plugins_the_records_use(init: dict[str, Any]) -> bo
     gate asks that the table close, that it name some records, and that **everything it
     fails to name have the exact low word 0x0001** -- because a Source id
     missing from the table would mean the decomposition is wrong.
+
+    The low word 0x0001 is type 1 (Codec) with company 0, not company 1; the shipped
+    codec ids are 0x00040001 (Vorbis) and 0x00140001 (Opus in WEM), so every
+    codec-backed source is a built-in Audiokinetic codec. The table also names the
+    Sink plug-in 0x01FB0007 AkMotion. A name here is authored plug-in identity, not
+    proof that the class is registered, instantiated, or produces output.
     """
     if not isinstance(init, dict):
         return False

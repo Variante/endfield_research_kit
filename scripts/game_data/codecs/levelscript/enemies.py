@@ -1,4 +1,21 @@
-"""Exact current ``Dictionary<uint, LevelEnemyData>`` codec."""
+"""Exact current ``Dictionary<uint, LevelEnemyData>`` codec.
+
+Each value is the 30-member generated ``LevelEnemyData`` wrapper: the 14
+inherited ``LevelEntityData`` members, then 16 enemy members in formatter read
+order.  The nested lane closes the nullable 18-member born behavior, spawned
+buffs and their four-member blackboard pairs, the eight-byte native
+``Nullable<float>`` representation, idle-animation strings, nullable
+three-float AI override attributes, and the generated action/patrol enums.
+The dynamic AI blackboard is null in the current corpus; a positive
+``Dictionary<string, object>`` stops there because its runtime object union
+is not named.  In LevelScript this gives the real cursor into ``exitBuffer``
+without searching for a later entity key.
+
+``decode_enemy_list`` is the same value codec over LevelData's ``enemies``
+list (values stored directly, null elements explicit), so the field order is
+never duplicated.  Stored authored placement and settings only; runtime
+spawning is not proved.
+"""
 
 from __future__ import annotations
 

@@ -3,6 +3,18 @@
 The stored route is admitted only when the installed ActionBase branch,
 complete native reader and formatter, generic contexts and source
 spans still match the reviewed contract.
+
+After the inherited action fields the action stores `taskObjective` as
+`Param<TaskObjectiveEnum>` (reported as `enum32` here and as `int32` in the
+shared layout row) and `taskPtr` as `Param<ScriptTaskPtr>`, where the
+pointer is a one-member `key` string wrapper. Receipts cover LevelScript and
+template sources. The reached dungeon files continue through the archery
+advanced-stage headers (`levelscript_archery_advanced_headers_native`); the
+tower files advance to positive task-map entries, and the Battle Tower
+template's action map is exact while its later owner fields stay partial.
+The stored arguments do not establish that a task condition failed.
+
+Run as: python -m scripts.game_data.levelscript_mark_task_condition_failed_native
 """
 
 from __future__ import annotations

@@ -1,4 +1,18 @@
-"""Exact current-build reader for BuffData's nested ``iconConfig`` field."""
+"""Exact current-build reader for BuffData's nested ``iconConfig`` field.
+
+On the authenticated build the generated 19-member
+``BuffIconConfigForMemoryPack`` wrapper and its selected reader close the
+field-14 range exactly at the independently accepted ``id`` marker. The
+order-priority value is a direct twelve-byte native-value read: a boolean,
+three preserved padding bytes, a signed priority value and an enum-like
+DWORD. The remaining members are the sprite path, three enum-like DWORDs and
+fourteen booleans, in generated setter order. A null wrapper is one ``FF``
+byte. Without the validated contract, ``buff.frame_buff_named_middle``
+keeps ``iconConfig`` as one named opaque range instead.
+
+Evidence tier: ``exact`` stored layout for the pinned build. Icon
+presentation behavior and UI ownership do not follow from the field names.
+"""
 from __future__ import annotations
 
 import struct

@@ -2,6 +2,19 @@
 
 The native contract proves the generated union reader, parameter types and
 enum storage. Source receipts prove reached bytes, not a live teleport.
+
+After the inherited action fields the branch stores after/before
+`CommonMaskBlendData` masks, level and teleport IDs, position and rotation
+vectors, the `TeleportUIType` parameter, a cutscene ID, existing enemy and
+interactive `EntityPtr` lists and a scene-object `ulong` list, extra
+streaming position and flag, and the raw `nodeEnablePreload` boolean. The
+contract authenticates the selected switch jump and wrapper, complete
+generated reader and formatter, all ordered reads and setters, thirteen
+`Param` contexts including the element types of the three nested lists,
+and the finite signed-integer teleport UI enum. Derived root ID and physical
+EOF corroborate framing; the full corpus gate decides whole-owner status.
+
+Run as: python -m scripts.game_data.levelscript_cutscene_teleport_native
 """
 
 from __future__ import annotations

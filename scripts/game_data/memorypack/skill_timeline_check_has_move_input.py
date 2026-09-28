@@ -1,4 +1,9 @@
-"""Selected-build SkillData CheckHasMoveInput 0x0045 finite framing."""
+"""Selected-build SkillData CheckHasMoveInput 0x0045 finite framing.
+
+A four-member condition with its own selected dispatcher, four source calls
+and the Priority enum context.  Later actions keep their own stops; the
+stored condition does not show an input event at runtime.
+"""
 from __future__ import annotations
 
 import hashlib

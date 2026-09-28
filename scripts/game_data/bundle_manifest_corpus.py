@@ -3,6 +3,23 @@
 The joined row words are reported as structural relations, not managed field
 names or a runtime lookup receipt. Run ``vfs-audit`` for the selected install
 first, then ``AnimeStudio.CLI dump --block-type bundle-manifest --verify-md5``.
+
+What the join proves on the current corpus: the indexed Bundle names, in
+lexical order, equal the complete verified ``Bundle``/``InitBundle`` path set
+of the ledger; each 48-byte row's u32 words 6-7 (low word first) equal that
+path's independently recomputed VFS filename hash; and word 10 separates the
+two block families (1 for ``InitBundle``). ``bundle_manifest_native`` later
+names those words ``hashName`` and ``category``; this gate does not rely on
+that naming.
+
+Pass ``--manifest`` as the dumped
+``Data/Bundles/Windows/manifest.hgmmap`` (normally under
+``tmp/animestudio/bundle_manifest/``), ``--outer-summary`` and
+``--outer-ledger`` as the VFS audit's
+``reports/animestudio/vfs_understanding_latest.json`` and
+``vfs_understanding_files_latest.jsonl.gz``, and that audit's
+``inputSetSha256`` as ``--expected-input-set-sha256``. The conventional
+``--output-json`` is ``reports/animestudio/bundle_manifest_corpus_latest.json``.
 """
 
 from __future__ import annotations

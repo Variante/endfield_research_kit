@@ -1,4 +1,20 @@
-"""Authenticate the selected OnEntityCastSkill ActionHeader reader."""
+"""Authenticate the selected OnEntityCastSkill ActionHeader reader.
+
+The reviewed contract pins ActionHeader `LevelEvent.OnEntityCastSkill` (tag
+0x0069 in the contract): the selected switch branch and wrapper, the complete
+reader and forwarding formatter, ordered reads and setters, and its generic
+parameter contexts, including the typed skill filter and UInt64 output.
+Passing `--export-root`, `--ledger` and `--summary` together also replays the
+reviewed source cursors against the current JsonData ledger. The command
+prints its audit and exits nonzero unless it validates. It proves stored
+header bytes; skill casting, target identity and output values remain
+unobserved.
+
+The header stores entity, entity-template, first-target (`ulong`) and skill
+ID outputs, an `isCharacter` Boolean filter and a `SkillTypeMask` filter
+whose enum has a signed 32-bit underlying type. Reached cursors include
+consecutive headers in one source.
+"""
 
 from __future__ import annotations
 

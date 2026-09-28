@@ -1,4 +1,82 @@
 ﻿(() => {
+  // Gameplay page behavior contract (webui/README.md links here; evidence
+  // limits are in memory/webui/gameplay.md).
+  //   * Filter sections basic, kind, rarity, job, character-property,
+  //     weapon-type, equipment-type and enemy-type, plus search, reset and
+  //     #gameplay-reveal-current. The page loads the base index, projectiles,
+  //     combat relationships and asset refs; it deliberately does not fetch
+  //     projectile_audio.json or sound_effects.json (Audio owns that
+  //     investigation until the ownership model is understood).
+  //   * Detail content is flat: sections, Buff cards, evidence notes and
+  //     debug-only technical blocks render open, with no <details> folding.
+  //     Only sidebar kind groups, the filter panel, and audio lists longer
+  //     than GAMEPLAY_INLINE_AUDIO_LIMIT stay collapsible.
+  //   * Each character active skill is one card: header with the level
+  //     slider, description, then the selected level's action table and cost.
+  //     One row per sub-skill carries its DamageUnits (type, attribute, stored
+  //     blackboard keys resolved to the selected level), remaining blackboard
+  //     values and assigned projectiles (speed, distance, time, hits). A
+  //     projectile matched only by the group's family identifier gets its own
+  //     row named after its action token and marked inferred. Enum numbers,
+  //     calculations, effect setup and source paths appear only in debug rows;
+  //     evidence notes shared by all skills are stated once above the cards.
+  //   * Playable characters have a Data / Loadout switch (loadout.js). Loadout
+  //     picks character level (with break stage) and potential, a weapon of
+  //     the character's type with level, potential and skill levels, and one
+  //     body, one hand and two accessory pieces, each attribute line with its
+  //     own enhancement slider (lines sharing an attrIndex move together; a
+  //     line with one value at every step is fixed). Cost and final
+  //     attributes come from attributeCalculation with per-source breakdowns;
+  //     without a validated formula it shows the gate status and computes
+  //     nothing, and attributes whose native hooks are not modelled are hidden.
+  //   * A descriptionTemplate (skill groups, weapon/equipment skill levels,
+  //     talents, potentials, item use) renders in the browser from the
+  //     selected level, highlighting substituted values; value chips the text
+  //     already shows are hidden outside debug. An unresolvable placeholder
+  //     falls back to the builder's rendered description.
+  //   * Exact chr_NNNN_token namespaces without a CharacterTable row are
+  //     labeled namespace-only (availability and playable status unproven).
+  //     Enemy level selectors show authored level points only, never
+  //     interpolated; positive authored skill cooldowns follow the level.
+  //   * Skill damage: skillDamageUnits[skillId] are authored DamageUnit rows
+  //     from whole-record SkillData, with native enum names beside raw numbers
+  //     only after the plan and field types validate; a missing join shows a
+  //     note. Conditional formula badges, each behind its own audit status:
+  //       - skillDamageRouteEvidence (normal-entity DamageAction selector):
+  //         Hp units with simpleCalculation true and takeAtkSnapshot false
+  //         show resolved atkScale x attacker attribute element 2, even when an
+  //         evaluator subtype is also stored; Poise units get no Hp badge;
+  //       - skillDamageAtkScaleEvidence: the AtkScaleCalculation expression,
+  //         only when simpleCalculation and takeAtkSnapshot are both false;
+  //       - skillDamageBreakingAttackEvidence: the BreakingAttackCalculation
+  //         expression on the same non-simple route; its hover keeps the
+  //         Double attribute product, Single scale product, Double-to-Single
+  //         conversion, final Single multiply and widening to Double;
+  //       - skillDamagePoiseRouteEvidence + skillDamageDefiniteValueEvidence:
+  //         a conditional Poise calculation-input expression, never an applied
+  //         or displayed Poise amount.
+  //     Stored level values are never substituted for runtime GetValue; an
+  //     unavailable audit leaves raw setup visible with one skill-level note.
+  //   * Enemy born-Buff cards expose exact BuffData lifecycle, stacking,
+  //     trigger, keyed values, attribute modifiers and applied tag ids. An
+  //     unmapped ID keeps its raw value with a hover reason. A nonempty stored
+  //     stacking key is quoted only when native evidence validates and the
+  //     exact-tail projection supplies it; it is a stored field, not a runtime
+  //     stacking group.
+  //   * Decoded action chains show the gated event name and decoded fields,
+  //     including If/Else-nested actions and common TargetSettings fields of a
+  //     partial action; unresolved unions, selectors and payloads stay
+  //     visibly unresolved. TargetSettings show native enum names beside each
+  //     stored source/target/selector-owner/direction/center number only when
+  //     the native field/plan join validates, else raw numbers plus a note.
+  //   * Projectile templates, spawned behavior and playable-skill ownership
+  //     stay separate relations. Projectile cards list authored effect setup
+  //     by serialized list slot; effect type, movement and position-reference
+  //     names appear only when projectiles.json schema 5 carries validated
+  //     effectConfigEnums/effectConfigEnumEvidence. The authored alert row
+  //     appears only when its stored showAlertEffect flag is set.
+  //   * Native enum names, tag names and gated event names disappear when the
+  //     selected build gate does not validate; the authored rows remain.
   const FILTER_PANEL_STORAGE_KEY = "gameplay_filters_collapsed";
   const COLLAPSED_KINDS_STORAGE_KEY = "gameplay_collapsed_kinds";
   const LEVEL_FRACTION_STORAGE_KEY = "gameplay_level_fraction";

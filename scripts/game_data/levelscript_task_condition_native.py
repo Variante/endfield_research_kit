@@ -1,4 +1,14 @@
-"""Authenticate reviewed LevelScript task-condition union rows."""
+"""Authenticate reviewed LevelScript task-condition union rows.
+
+A loader, not a command. `load_levelscript_task_condition_rows` returns the
+`(tag, memberCount)` rows of `contracts/levelscript_task_condition.json`
+(GameCondition task-condition wrappers such as `InteractiveCheckBool`) only
+after the installed native inputs, `UnityPlayer.dll` and every recorded code
+window hash match; otherwise it returns an empty mapping and an audit naming
+the failed gate. `codecs.levelscript.task_conditions` consumes it. A row
+applies only under those gates; condition evaluation, server authority,
+entity resolution and gameplay outcome are not established by serialization.
+"""
 from __future__ import annotations
 
 import hashlib

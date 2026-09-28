@@ -1,4 +1,16 @@
-"""Native-gated direct members of DamageScaleProcessor in Buff modifiers."""
+"""Native-gated direct members of DamageScaleProcessor in Buff modifiers.
+
+The selected processor tag five binds the generated three-member order:
+``addition`` is a selected BlackboardDouble whose callsite generic type joins
+the independently selected child reader and setters, naming
+``blackboardKey``, ``useBlackboardKey`` and ``value`` at exact boundaries;
+``side`` is a stored enum-width integer; ``zoneName`` is a signed-length byte
+string read through the separately pinned string helper, kept as its signed
+length and raw bytes without claiming native string-decoder parity.  Current
+logical-source-hash replay rejoins every reached tag-five span.  These stored
+fields do not establish damage arithmetic, zone selection or a complete
+BuffData schema.
+"""
 from __future__ import annotations
 
 import hashlib

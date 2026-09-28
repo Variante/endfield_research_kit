@@ -4,6 +4,36 @@ The generic reader bounds grid vectors with a one-byte minimum. This module
 uses reviewed generated FlatBuffer accessors and vector builders to close the
 element extents, then rejoins each dumped file to the current VFS ledger.
 It does not decode nested struct fields or claim live grid activation.
+
+Widths (direct). The selected generated indexed accessors and vector
+builders agree on one element size per ``SingleGrid`` vector field: four
+fields carry ``Int32`` values, most carry inline structs, and one carries
+table references. Widths range from one byte to a much larger fixed struct.
+The reviewed ``dynamic_main_vector_native.json`` contract records every field
+name, width, alignment, method identity and pinned code window. An earlier
+reader used a universal four-byte width; it overran byte-sized vectors and
+undercounted inline structs (``oldFourByteAssumption`` in the report), so it
+was neither a lower bound nor exact. ``dynamic_streaming`` therefore keeps a
+one-byte lower bound until this contract validates.
+
+Extent (exact). Every current main payload is rejoined to the VFS ledger by
+path, length and FileDataMd5, and every grid vector count word and body is
+bounded without overlap under the selected widths. This is exact vector
+extent, not whole-file closure: grid tables, string bodies, padding and
+nested record fields need their own ownership checks.
+
+DataMask (eliminated reading). The raw ``UInt64`` stays unnamed. The audit
+retests the proposal that its bits mark present or nonempty vector fields,
+``sum(1 << (fieldIndex - base))`` under several bases. None matches every
+grid, so the status is ``rejected``; the test supplies no alternative
+meaning.
+
+Run ``python -m scripts.game_data.dynamic_main_native --gameassembly PATH
+--metadata PATH --input-root DUMP_ROOT --expected-input-set-sha256
+INPUT_SET_SHA256``. ``DUMP_ROOT`` is a targeted ``AnimeStudio.CLI dump``
+containing ``Data/DynamicStreaming/.../fb_main_*.bytes``; the audit also
+authenticates the current VFS ledger and writes
+``reports/animestudio/dynamic_main_vector_native_latest.{json,md}``.
 """
 
 from __future__ import annotations

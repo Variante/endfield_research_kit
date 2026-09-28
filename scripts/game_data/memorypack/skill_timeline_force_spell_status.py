@@ -2,6 +2,9 @@
 
 The eleven stored members are an exact source-order claim. The action name
 does not establish an observed runtime spell-state transition.
+
+After the inherited action fields the wrapper stores three BlackboardInt
+children, two TargetSettings children, an energy-shard enum and a flag.
 """
 from __future__ import annotations
 

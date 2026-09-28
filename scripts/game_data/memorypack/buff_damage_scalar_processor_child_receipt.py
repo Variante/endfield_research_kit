@@ -1,4 +1,18 @@
-"""Native-gated one-BlackboardDouble damage processor children (tags 0, 2, 3 and 4)."""
+"""Native-gated one-BlackboardDouble damage processor children (tags 0, 2, 3 and 4).
+
+It checks the selected native one-member routes and their exact
+BlackboardDouble child spans, joined to current VFS logical hashes. The
+reader admits tags 0, 2, 3 and 4; this audit reports sole tag-0, tag-2 and
+tag-3 processors. ``memorypack.buff_corpus`` admits tag two with one
+``CheckDamageDecorateMask`` action, tags zero or three with that action or a
+simple ``CheckTagMatch``, and tag four only with the
+NotNextCheckAction/main-character condition, proving all 30 root fields
+through source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_scalar_processor_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

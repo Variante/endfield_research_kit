@@ -3,6 +3,18 @@
 The selected switch and generated reader prove the wire layout. Source checks
 join each receipt to the current JsonData ledger and replay its exact cursor.
 No runtime trigger-volume state or event firing is inferred.
+
+After the inherited script-event header (including `targetScript` and the
+`triggerTarget` enum) the route stores `triggerSlotIdFilter` as
+`Param<uint>` and a nullable `triggerSlotIdOutput` as `ParamOutput<uint>`.
+The contract authenticates the direct switch branch, complete fragmented
+generated reader and formatter, ordered reads and setters, and four typed
+generic contexts across the inherited and own fields. Reached slot filters
+are authored constants and the outputs are null. With the related leave
+header also reviewed, the reached race owners close their action maps and a
+derived root reaches script ID and physical EOF.
+
+Run as: python -m scripts.game_data.levelscript_leader_enter_trigger_volume_native
 """
 
 from __future__ import annotations

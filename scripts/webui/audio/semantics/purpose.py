@@ -1,4 +1,14 @@
-"""Purpose-recovery classification for Wwise Events and decoded media."""
+"""Purpose-recovery classification for Wwise Events and decoded media.
+
+Broad categories never upgrade status. Complete final-media leaf-set (or
+Play-target-set) equivalence with a named Event that has an authored consumer
+recovers a uniform broad output category for a hash-only Event without
+touching its caller, trigger, branch or runtime-purpose status: two Events
+reaching the same leaves need not share containers, conditions, timing,
+ownership or callers. Weak category-name evidence is retained for named
+enemy, actor/UI, LevelSequence and Gameplay-SFX Events, and exact voice
+contexts override the weak enemy-name category.
+"""
 
 from __future__ import annotations
 

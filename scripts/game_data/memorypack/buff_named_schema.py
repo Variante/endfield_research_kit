@@ -3,6 +3,23 @@
 This layer deliberately cannot promote the legacy suffix's endpoint searches or
 the anonymous native profiles into a whole named schema. It records the next
 proof obligations separately from physical bytes still opaque after composition.
+
+The receipt composes the independently proved prefix, middle, icon and
+suffix ranges before measuring what remains. It subtracts downstream coverage
+once, preserves opaque nested action bodies (``igniteEventAction``,
+``poiseModifier``, ``shieldConfigs``, ``timelineActions`` and positive
+``stackingSettings.stackEffects``) even when the enclosing suffix reaches
+EOF, and counts positive ``stackEffects`` explicitly instead of treating a
+closed outer cursor as a fully named record. A child receipt (for example
+``buff_adding_cooldown`` for field one) removes only its own field's
+anonymous member-ownership blocker.
+
+Whole-BuffData promotion therefore needs direct ownership of every
+recursive interior, not zero unconsumed bytes. The whole-root schema routes
+are the forward readers in ``buff_root_no_positive`` (no-positive and
+positive-damage roots) and ``buff_create_action_root_receipt`` (a sole
+``CreateBuffAction`` root); the JsonData registry re-authenticates each
+receipt before classifying a row as schema decoded.
 """
 from __future__ import annotations
 

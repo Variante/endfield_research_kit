@@ -3,6 +3,14 @@
 The reviewed native contract supplies tag, member count and field order. This
 module reuses ActionSerializedMap's primitive and Param cursors at a caller's
 actual offset and never searches for a later record boundary.
+
+Routes in `levelscript_spawner_camera_native.json`: the
+`LevelEvent_OnSpawnerComplete` header adds a `Param<SpawnerPtr>` filter and a
+separately framed `ParamOutput<SpawnerPtr>` after the inherited event
+fields; the `GetMainLevelCameraController` getter has only its seven
+inherited node fields. `codecs.levelscript.entity_attach` reuses this
+cursor with its own contract. The same rows are also reviewed layouts in
+`action_map_layouts.json`. Stored values do not prove gameplay effects.
 """
 
 from __future__ import annotations

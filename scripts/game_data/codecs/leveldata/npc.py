@@ -1,4 +1,18 @@
-"""Exact generated-wrapper codecs for LevelData NPC placement records."""
+"""Exact generated-wrapper codecs for LevelData NPC placement records.
+
+- ``AttractPointInEditorData``: the complete 34-member generated wrapper
+  (action/movement modes, GameplayTag IDs, position and quaternion,
+  waypoint and attract-point links, animation strings, spaceship tags,
+  timing, chair/point identities, initialization flags).
+- ``WayPointInEditorData`` (terminal ``worldWayPointData``): nine fields,
+  including pose, identity, gate/POI flags, level, linked point IDs and
+  nested two-field lane records (``laneDir``, ``totalLane``).
+
+These are authored placement and behavior-selection values. They do not
+establish which point a runtime NPC selects or that a waypoint graph is
+traversed. ``decode_npc_patrol_list_empty_actions`` is the older
+empty-action-only patrol reader; full NPC patrols live in ``patrol``.
+"""
 
 from __future__ import annotations
 

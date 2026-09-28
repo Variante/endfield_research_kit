@@ -3,6 +3,21 @@
 This is a selected-build contract, so a missing or different installed client
 returns no route. The optional source check joins every reviewed cursor to the
 JsonData per-file ledger before treating it as a current exported example.
+
+After the inherited action fields the branch stores `levelSeqId` and
+`loopSegmentName` as `Param<string>`, `segmentList` as
+`Param<List<string>>` and `setMultipleSegment` as `Param<bool>`. The
+contract checks the switch jump and registered wrapper, full reader and
+formatter extents, twelve ordered reads, four setters, and the nested
+generic contexts down to the list's string element. Reached records are
+wide-tagged. Stored loop settings do not show that a sequence ran.
+
+The command takes no options and prints the native audit only, exiting
+nonzero unless it validates. The source check goes through
+`validate_start_seq_loop_native_contract`, which accepts an explicit export
+root and JsonData per-file ledger.
+
+Run as: python -m scripts.game_data.levelscript_start_seq_loop_native
 """
 
 from __future__ import annotations

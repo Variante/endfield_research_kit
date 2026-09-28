@@ -1,4 +1,67 @@
-"""Strict partial framing for current-corpus ``LevelData`` payloads."""
+"""Strict partial framing for current-corpus ``LevelData`` payloads.
+
+``frame_leveldata_named_prefix`` is the one sequential reader for the
+generated 43-field ``LevelData`` wrapper (``LEVELDATA_FIELDS``, generated
+setter order). It advances a single cursor field by field, handing each
+member to its codec under ``scripts.game_data.codecs.leveldata`` (or, for
+shared value shapes, the LevelScript codec that owns that value). A file is
+``named_exact`` only when all 43 fields close and the cursor lands on
+physical EOF; the first changed wrapper, union tag or member count stops at
+that field, and later bytes are never scanned or assigned.
+
+Member lanes and their owners:
+
+- null/empty collections and the current empty ``LevelFactoryPredefineData``
+  (one list) and ``LevelFunctionAreaData`` (four lists) wrappers close
+  directly; member 22 ``Dictionary<ulong, LevelScriptBriefData>`` uses
+  ``levelscript_brief`` with its eight named value fields.
+- ``functionArea``: exact 13-member base rows (decoded here) and two-vector
+  ``ThreeDimRange`` records with nullable elements; its condition and
+  specific-data lists are ``codecs.leveldata.function_area``. The generated
+  base row's ``posList`` is ``List<Vector2>``: consuming three floats per
+  point looks plausible for several records and then drifts into the
+  following condition count, so each point is fixed at two finite floats.
+- ``buildableCondition`` reuses the ``ConditionRuntimeBase`` codec from
+  ``function_area`` and closes before ``cameraPoses``.
+- ``factoryMines``, ``factoryRegions``, ``doodadGroup``: ``factory``.
+- ``cameraPoses``, ``environmentVolumes``, ``mapVolumeDatas``, ``splines``,
+  ``waterVolumes``, ``aiTransData``: ``spatial``. ``riftVolumes`` declares the
+  same ``List<LevelWaterVolumeData>`` type and deliberately reuses the water
+  codec rather than a second layout.
+- ``specificData`` (polymorphic): ``specific``; ``levelWideConfigs``:
+  ``levelwide``; ``spawners``: ``spawners``; ``levelUIs``: ``ui``;
+  ``enemyGroup``: ``combat``; ``dynamicOccludeAreas``:
+  ``dynamic_occlusion``; ``guideHints``: ``guide_hints``;
+  ``blackbox``: ``blackbox``; ``predefinedParams``: ``predefined_params``.
+- ``npcs``: ``npc_runtime`` (the 14 + 77 + 27 flattened
+  ``NpcRuntimeProxyData`` row, also used by AtmosphericNpcData);
+  ``npcAttractPointData``/``worldWayPointData``: ``npc``;
+  ``npcPatrol``/``patrols``: ``patrol``; ``enemyPatrol``: ``enemy_patrol``;
+  ``charPatrol``: ``char_patrol``.
+- Shared with LevelScript: ``enemies`` stores the exact 30-member
+  ``LevelEnemyData`` values of LevelScript's keyed enemy dictionary directly
+  in a list (``codecs.levelscript.enemies``); ``interactives`` is the exact
+  25-member ``LevelInteractiveData`` codec of LevelScript's keyed dictionary
+  (``codecs.levelscript.interactives``); ``interactiveLockData`` is
+  LevelScript's two-field ``InteractiveLockData`` value codec without keys
+  (``codecs.levelscript.interactive_locks``). One field order serves both
+  families; no second layout is kept here.
+
+Outer-frame fallbacks. When an unsupported ``interactives`` body blocks the
+sequential reader but the independently proved member-21 empty tail bounds
+the list, ``interactive_layout`` must find exactly one record partition; each
+record then gets an exact opaque range and the owner closes as
+``named_exact_frame`` rather than a full nested schema. Files that stop
+earlier keep an independent terminal frame: ``frame_leveldata_empty_tail``
+names the recurring long tail as members 21-43 (``levelIdNum`` through
+``worldWayPointData``) and ``frame_leveldata_terminal_suffix`` the shorter
+form as members 36-43 (``safeZone`` onward). Both require one unique
+candidate closing at physical EOF; their preceding bytes stay opaque.
+
+Evidence tier: exact stored layout under the generated wrapper order. None
+of these readers proves runtime spawning, patrol traversal, condition
+evaluation, lock presentation or component ownership.
+"""
 
 from __future__ import annotations
 
@@ -338,12 +401,14 @@ def frame_leveldata_airwalls_prefix(data: bytes) -> dict[str, Any]:
 
 
 def frame_leveldata_named_prefix(data: bytes) -> dict[str, Any]:
-    """Advance the generated 43-field order through current simple shapes.
+    """Advance the generated 43-field order through every supported shape.
 
-    Collection fields close only when null or empty. For a nonempty collection,
-    the count header is still named but its records and every later field remain
-    opaque. Nullable objects close only on ``0xff``; a present object's member
-    marker is retained as the exact stop. The current empty
+    Null and empty collections always close. A nonempty collection closes
+    only through its maintained codec (see the module docstring); when no
+    codec accepts it, the count header is still named but its records and
+    every later field remain opaque. Nullable objects close on ``0xff`` or
+    through their exact codec; otherwise a present object's member marker is
+    retained as the exact stop. The current empty
     ``LevelFactoryPredefineData`` and ``LevelFunctionAreaData`` wrappers are
     also closed from their generated one- and four-list layouts.
     """

@@ -1,4 +1,11 @@
-"""Selected-build SkillData UltimateShowAction 0x0193 framing."""
+"""Selected-build SkillData UltimateShowAction 0x0193 framing.
+
+A selected four-member inherited-action reader: one byte followed by the
+Priority enum and two scalar words.  The native route, member count, source
+calls and Priority context are checked on the selected build.  It often
+follows UltimateTimeAction ``0x0194``.  The stored show command is not
+evidence that an ultimate display appeared.
+"""
 from __future__ import annotations
 
 import hashlib

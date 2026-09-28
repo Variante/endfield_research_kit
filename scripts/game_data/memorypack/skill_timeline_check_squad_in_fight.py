@@ -2,6 +2,10 @@
 
 The existing BuffData reader has a selected five-member source contract. This
 module authenticates the current union route and reuses that finite framing.
+
+The selected AbilityActionData switch and Priority generic context are
+rechecked before either physical tag width is admitted.  The stored condition
+does not establish the squad's live combat state.
 """
 from __future__ import annotations
 

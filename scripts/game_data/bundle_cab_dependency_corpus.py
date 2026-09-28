@@ -6,6 +6,38 @@ full VFS ledger, and both CABMaps' selected source positions. It then projects
 each CAB dependency through the selected Bundle span containing that CAB. A
 projection is a stored-graph relation, not a runtime load or object ownership.
 Dependencies without a selected CAB stay unresolved rather than being guessed.
+
+What the current corpus establishes (stored container relationships only, no
+Unity object ownership or load order): every projected external CAB target is
+present in the manifest's ``directDependencies``, with a small named residual
+of manifest-only edges; the reverse list is exactly the direct graph's
+inverse; and ``dependencies`` is exactly its transitive closure. The selected
+native Bundle proxy loaders both call
+``RuntimeManifestBinary.TryGetBundleDirectDeps`` and read a loop element
+before recursing (checked in the manifest-native contract), so the
+manifest-only residual belongs to a list the loader can consume; its
+authoring cause is unproved.
+
+The same relation explains most AssetMap path/physical-Bundle disagreements:
+the physical Bundle is in the path's listed Bundle's ``directDependencies``,
+with the reciprocal reverse entry. That is a verified Bundle-list relation,
+not proof that the mapped object belongs to, or loads through, either Bundle.
+
+Join mechanics worth not re-deriving: every manifest list is sorted by Bundle
+index and duplicate-free, while CAB externals keep their own order, so the
+comparison is a multiset containment and never a sequence equality. One
+selected Bundle holds both a main CAB and a ``.sharedAssets`` CAB, and both
+are checked. A CAB's source root, chunk and offset must first land inside an
+authenticated VFS Bundle span; stale AssetMap source chunks cannot supply
+field ownership, and the StreamingAssets AssetMap needs selection per source
+*and* offset because per-file overlay replacement leaves gaps inside chunks
+that also hold verified files. Unselected external names are excluded from
+the projection and counted separately.
+
+Inputs: the dumped ``manifest.hgmmap``, the VFS audit summary and ledger with
+its ``inputSetSha256``, ``--cabmap-dir export_full/meta/cab_map``, and the
+explicit ``--gameassembly``/``--metadata`` pair. The conventional ``--out``
+is ``reports/animestudio/bundle_cab_dependency_corpus_latest.json``.
 """
 
 from __future__ import annotations

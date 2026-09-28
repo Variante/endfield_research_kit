@@ -1,4 +1,23 @@
-"""Authenticate the selected archery advanced-stage ActionHeader readers."""
+"""Authenticate the selected archery advanced-stage ActionHeader readers.
+
+The reviewed contract pins two ActionHeader routes,
+`OnTyphoeaArcheryUnitAdvancedStageComplete` and
+`OnTyphoeaArcheryUnitAdvancedStageListComplete` (tags 0x00E8 and 0x00E9 in
+the contract): the selected switch branches, generated wrappers, complete
+readers and forwarding formatters, ordered reads and setters, and the generic
+Param and ParamOutput MethodSpec contexts. Passing `--export-root`, `--ledger`
+and `--summary` together also replays the reviewed LevelScript source cursors
+against the current JsonData ledger. The command prints its audit and exits
+nonzero unless it validates. It proves stored header bytes; archery-stage
+event emission and handler behavior remain unobserved.
+
+Both headers share the inherited header fields and a `filteredModuleId`
+`Param<int>` filter. The stage-complete header adds `module` as
+`ParamOutput<LsmPtr>`, `outStageIndex` as `ParamOutput<int>` and a
+`stageIndex` filter; the list header adds a positive `Param<List<int>>`
+stage list. Some reached dungeon owners reach physical EOF; others first
+stop at a task-map condition.
+"""
 
 from __future__ import annotations
 

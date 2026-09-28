@@ -3,6 +3,19 @@
 The selected switch and generated reader prove the wire layout. Source checks
 join each receipt to the current JsonData ledger and replay its exact cursor.
 No runtime mission transition or event firing is inferred.
+
+After the common inherited header the route stores filters for mission ID
+(`Param<string>`), new state (`Param<FilterMissionStateEnum>`) and succeed
+ID (`Param<int>`), then four `ParamOutput` references for the mission ID,
+new and old `MissionState`, and succeed ID. The contract checks the direct
+switch branch, registered wrapper, complete generated reader with owned
+fragments and formatter, all ordered reads and setters, and eight nested
+parameter contexts. The filter state is a finite signed-integer enum
+authenticated against the native declaration. A derived root reaches script
+ID and physical EOF in the reached files, but only the full reviewed corpus
+gate promotes an enclosing owner.
+
+Run as: python -m scripts.game_data.levelscript_mission_changed_header_native
 """
 
 from __future__ import annotations

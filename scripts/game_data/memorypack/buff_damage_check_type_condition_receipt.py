@@ -1,4 +1,15 @@
-"""Exact selected one-action CheckDamageType damage condition span."""
+"""Exact selected one-action CheckDamageType damage condition span.
+
+It checks the selected native dispatcher, formatter and both enum contexts,
+then replays one ``CheckDamageType`` action inside a damage condition on
+current VFS-verified source bytes. ``memorypack.buff_corpus`` composes its
+single selected tag-five or tag-ten processor subset into whole roots; this
+receipt promotes no BuffData root itself.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_check_type_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

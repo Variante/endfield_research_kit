@@ -4,6 +4,46 @@
 The script discovers the build-specific IL2CPP registration addresses, prepares
 the pinned Cpp2IL-Endfield release, generates assemblies into a staging folder,
 validates the complete metadata image set, and atomically publishes tools/DummyDll.
+
+    python -m scripts.game_data.extraction.animestudio.generate_dummydll --dry-run
+    python -m scripts.game_data.extraction.animestudio.generate_dummydll --replace
+    python -m scripts.game_data.extraction.animestudio.generate_dummydll --status-only
+
+Output is tied to the exact installed ``GameAssembly.dll`` and
+``global-metadata.dat``; registration addresses are never reused from another
+build. Publication must recover registrations uniquely, preserve the previous
+set, record provenance in ``tools/DummyDll/generation.json``, and reject any
+type-population failure, required-image skip or catastrophic type/size
+regression by default. Every staged non-module TypeDef must join the selected
+metadata on assembly, token and full name before publication.
+
+Cpp2IL compatibility is maintained as source in ``Variante/Cpp2IL-Endfield``
+on ``endfield/2022.0.7``; this script consumes an immutable release pinned by
+tag and commit (``CPP2IL_TAG``/``CPP2IL_COMMIT``) from the optional
+``tools/Cpp2IL-Endfield`` submodule, which ``setup.bat`` does not initialize
+and this script initializes on demand. A pinned commit is not enough by
+itself: preparation and validation also reject a foreign origin or tracked
+local changes. Two properties the release must keep:
+
+- the selected v29 build uses exact 92-byte TypeDef rows: the stock v29 prefix
+  plus one additional int32 after the eight range-start fields and before the
+  ushort counts (``endfieldUnknownIndex``). The slot stays semantically
+  unnamed. Image ranges, all eight start/count families, nested-child
+  relationships and token sequences close exactly under this boundary; a
+  retained-byref prefix interpretation is disproven;
+- Cpp2IL must attach a method shell and predeclare every method generic
+  parameter in metadata order before importing constraints, return types or
+  parameters. Importing an MVAR-bearing return through the declaring type
+  fails, and lazy return-first parameter creation can silently reorder
+  multi-generic signatures. Global method maps commit only after signature
+  construction succeeds; a failure rolls back the shell and the parameters it
+  registered.
+
+DummyDlls supply names, inheritance and possible field shapes, not method
+bodies or proof that a type was emitted. AnimeStudio's safe TypeTree priority
+is ``serialized-first``; ``script-first`` is for focused comparison, and a
+missing, stale, malformed or incomplete DummyDll set warns and falls back
+without breaking a normal export.
 """
 from __future__ import annotations
 

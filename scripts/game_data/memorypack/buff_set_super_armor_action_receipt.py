@@ -3,6 +3,13 @@
 The existing Buff reader already frames this action. This adapter attaches
 generated wrapper field names only after rechecking its dispatcher, complete
 source readers, nested generic calls, and the exact logical source bytes.
+
+Physical tag ``0x0159`` selects the seven-member ``SetSuperArmorAction.Data``
+wrapper. The checked generic calls cover the priority, impact, super-armor
+and target members, and the adapter rejoins the exact action end in the
+VFS-ledger-matched Buff corpus. ``TargetSettings`` remains structural, and
+the stored reads do not prove when super armor is applied. The two
+blackboard children are named by ``buff_super_armor_blackboard_child_receipt``.
 """
 from __future__ import annotations
 

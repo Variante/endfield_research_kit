@@ -1,4 +1,14 @@
-"""Exact two-action damage condition child with selected 0x005B then 0x005E."""
+"""Exact two-action damage condition child with selected 0x005B then 0x005E.
+
+It checks the selected native sequence and action readers and replays the
+ordered ``CheckDamageDecorateMask``/``CheckDamageTypeMask`` condition pairs on
+original bytes. ``memorypack.buff_corpus`` admits the pair with one tag-five
+processor through all 30 root fields, source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_two_action_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

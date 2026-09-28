@@ -4,6 +4,28 @@ This module deliberately does not assign authored field names to the terminal
 members.  The selected-build metadata proves the wrapper's member count and
 declared setter surface, but does not expose the formatter body/cursor order.
 The byte shapes below are therefore structural claims only.
+
+Object layout.  A SkillData payload is one 48-member object.  Field 0 is
+``ActionGroupData``, a two-member envelope holding the nullable
+``passiveEventActions`` and ``timelineActions`` lists; the empty profile is
+the member-count byte, the envelope count and two zero list counts (ten
+bytes).  Fields 1 through 42 are read by the sequential reader here, derived
+from the current generated wrapper types; it reproduces the field cursors of
+the two accepted empty-ActionGroup live samples exactly and is applied only to
+that structurally identical profile or behind an exact ActionGroup endpoint
+from the timeline/passive readers.  Its hard limit is EOF, never a terminal
+candidate start.  Fields 43 through 47 are framed by :mod:`skill_terminal`
+as two anonymous EOF-valid candidates.
+
+Which candidate the formatter reads, and the field-43..47 names
+(``switchToCenterBeforeCast`` .. ``useAIExclusiveFrame``), come from a
+replayed live cursor receipt (:mod:`skill_cursor_receipt`,
+:mod:`skill_cursor_capture_target_set`) that :mod:`skill_corpus` applies per
+exact source; this module keeps both candidates anonymous.  An unsupported
+nested union stops at its owning field, and a name or nearby anchor never
+advances the cursor.  A ``switchToBuffConfig`` body whose nested action uses a
+route absent from the admitted table leaves that row exact only through field
+41 plus the independent terminal.
 """
 
 from __future__ import annotations

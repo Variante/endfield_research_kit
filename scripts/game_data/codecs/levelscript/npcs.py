@@ -1,4 +1,11 @@
-"""Sequential current LevelScript NPC dictionary over shared NPC proxy rows."""
+"""Sequential current LevelScript NPC dictionary over shared NPC proxy rows.
+
+The production sequential LevelScript owner reads positive `npcs` dictionary
+values through the shared 118-member `codecs.leveldata.npc_runtime` row
+codec. An unsupported nested row leaves the dictionary unread, so the owner
+stops at a named partial stop there; a whole-file result still requires the
+terminal cursor to reach physical EOF in the authenticated JsonData sweep.
+"""
 
 from __future__ import annotations
 

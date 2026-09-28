@@ -2,6 +2,18 @@
 
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove a live cue-variable update.
+
+The wide-tagged route stores `boolValue`, `floatValue`, `intValue`, `scope`
+(`EAudioVarScope`), `stringValue`, `varName` and `varType`
+(`EAudioCueVarType`) as seven typed parameters; both enums are Int32 with
+their catalogs checked. In the reached cohort the authored scope is `LEVEL`,
+the type is `BOOL`, and only the boolean value and variable name are
+populated. Some variable names exactly match `AudioCueTable` `exprType=8`
+operand strings and others have no match; that is an authored name join,
+not a proved cue selection. `levelscript_audio_cue_execute_native` proves
+the separate claim about the `Execute` body's ordered call sites.
+
+Run as: python -m scripts.game_data.levelscript_audio_cue_native
 """
 
 from __future__ import annotations

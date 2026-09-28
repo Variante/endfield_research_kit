@@ -4,6 +4,28 @@ This module intentionally exposes byte ranges and integer encodings only.  The
 six little-endian words after the version are not assigned semantic names.
 Selected-build shapes may expose exact anonymous record ranges, while their
 values and every unsupported body shape remain opaque.
+
+Selected consumer (direct, ``terrain.native`` and ``terrain_tret_native.json``).
+After the VFS envelope, files begin with ``TRET``; the reader checks the
+version and a 20-byte fixed prefix. The UnityPlayer consumer reads decoded
+``+14`` as a ``GraphicsFormat``, checks the declared payload length at
+``+16`` against its allocation and copies that many bytes from ``+20``. It
+passes ``+12`` as an unsigned numeric texture-setup argument and separately
+whether it exceeds one; the pattern fits a mip count, but that name is
+inferred. The consumer ABI receives no input length, so the native contract
+does not prove the final source cursor; ``terrain.corpus`` checks the
+complete decoded file.
+
+Observed shapes, with format names and footprints from the selected native
+enum and descriptor table: ``LAYER_C`` uses format 5 with a
+one-byte-per-unit footprint; ``LAYER_D`` uses 108 (``RGBA_BC7_SRGB``) and
+``LAYER_N`` 109 (``RGBA_BC7_UNorm``), both 16-byte 4-by-4 blocks tiled into
+exact mip-like ranges. In the six-file tiles, ``_H`` is one 65-by-65 and
+``_C`` one 34-by-34 range of two-byte texels in format 6 (``R8G8_UNorm``);
+``_N`` and ``_A`` use 101 (``RGBA_DXT5_UNorm``) and ``_T`` 100
+(``RGBA_DXT5_SRGB``), each a 132-by-132 source axis in 4-by-4 blocks; ``_S``
+is a 132-by-132 range of four-byte texels in format 8 (``R8G8B8A8_UNorm``).
+All contained values stay anonymous; formats name storage, not channel roles.
 """
 
 from dataclasses import dataclass

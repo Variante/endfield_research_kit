@@ -1,4 +1,15 @@
-"""Selected two-CheckTwoDirectionAngle Buff damage condition on original bytes."""
+"""Selected two-CheckTwoDirectionAngle Buff damage condition on original bytes.
+
+It checks the selected native tag-130 twelve-member action, with four simple
+TargetSettings and one BlackboardDouble per action, and the exact two-action
+condition on current logical source bytes. For whole-root composition in
+``memorypack.buff_corpus`` it pairs only with the ordered tag-five/tag-six
+damage processors.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_two_direction_angle_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

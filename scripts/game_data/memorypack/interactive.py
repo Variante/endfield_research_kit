@@ -1,4 +1,76 @@
-"""Focused MemoryPack decoder implementation extracted from the retired Data-page builder."""
+"""Focused MemoryPack decoder implementation extracted from the retired Data-page builder.
+
+Owner of the ``Interactive/InteractiveData`` template family
+(``decode_interactive_template_memorypack``).  Every current file carries the
+26-member ``InteractiveTemplateData`` root; generated setter order places
+``relatedGuideTimestampGameVar`` between ``propertyKeyToIdMap`` and
+``saveProperties``.
+
+Template tail (``parse_interactive_template_empty_tail``).  With a supported
+``dataMap`` the reader consumes every field after ``configProperties`` to
+physical EOF: populated ``NameMountPointDef`` arrays, the paired property-ID
+dictionaries, guide-timestamp strings, typed ``ParamKeyValue`` save and
+temporary lists, and the populated
+``SerializeFieldDictionary<string, InteractiveTemplateVariant>`` whose values
+use the generated 14-member order (typed optional scalars and references,
+component property diffs, model/tag/mount-point overrides, global/map property
+diffs).  A present ``ActionSerializedMap`` with three zero list counts
+advances through the same typed suffix and stays distinct from a null map;
+positive maps go through the shared sequential reader
+``codecs.levelscript.action_map`` (layouts in ``action_map_layouts.json``).
+That reader closes the camera-control and forge time-dilation lane
+(``AddCameraControlState``, ``RemoveCameraControlState``,
+``TimeDilationToTarget`` and the ``OnForgeIronCameraShake`` header), which
+makes ``data_int_accelerate_buff`` and ``data_int_forge_iron`` whole-file
+schemas.  Unknown unions and member counts stop at the real cursor.  UID-scanned audio
+observations cannot establish map extents.
+
+``ParamValueType`` 29 carries the same string tail as the other string-backed
+property types (``INTERACTIVE_PROPERTY_VALUE_STRING_TAIL_TYPES``); this
+advances language-key lists in template config and both lifter components
+without reading their UTF-8 bytes as later object markers.
+
+Component unions.  The selected native ``BaseComponentData`` dispatcher is
+the authority for union identities (``BASE_COMPONENT_UNION_TAGS``): its
+registration joins observed tags through the branch's tag-1 usage cell and the
+MetadataRegistration type table, which corrected stale aliases in an earlier
+reader.  Bodies closed here:
+
+- one-member typed property maps (``LifterCore``, ``LifterForBoxGameCore``,
+  ``GameplayLockedReward``, ``Rotator``, factory-battle, physics-audio,
+  spaceship, butterfly, special-sight and related wrappers) advance only when
+  one complete map reaches an exact next-union or template-field handoff;
+  dynamic AI navigation adds a bounded ``ObstacleType`` enum;
+- ``Core_InteractiveModelLevelUpComponentData`` (map plus model-level string
+  list) and ``Core_NarrativeComponentData`` (map plus ``NarrativeObjType``);
+- ``CharacterMovementComponentData`` (five members): property map, the null
+  ability-movement list, five-float ``MovementData``, bounded ``MoveMode``
+  and a two-float proxy shape;
+- the three-member Attack, Click, Scan, StepOn and TriggerZone triggers:
+  ``propertyList`` (currently null), ``propertyStateData`` (20 generated
+  members, nested nine-member ``BaseConditionData``), then
+  ``triggerBehaviourBase`` whose four-member body closes nullable
+  ``TableFieldCondition`` and ``ServerPropertyCondition`` lists, the property
+  key and bounded ``EAffectTriggerBehaviourType``.  TriggerZone adds no field
+  to BaseTrigger, so a following audio-key map belongs to a later field or
+  component, never to TriggerZone;
+- ``Core_AbilitySystemForIntData`` (38 members): the 34 inherited
+  ``AbilitySystemData`` members in setter order, then ``battleShapeData``
+  (83-byte 16-member collider), ``propertyList``, ``skillBlackboardDataPairs``
+  and ``useSelfBlackboard``; it names the ``SkillDataBundle`` string-list/ID
+  shape.  Buff-input, effect, mode, combo-condition and auxiliary dictionaries
+  are null or empty in the current corpus, and a positive body fails closed
+  rather than inheriting a schema from its field name.
+
+``find_interactive_audio_property_maps`` only returns rows from a completely
+parsed typed map; the former signature/audio-map byte scan is removed from
+structural parsing, and an unanchored map keeps unresolved component
+ownership.  Evidence tier: ``exact`` stored layout where a body closes;
+nothing here proves runtime component behavior or action execution.
+Per-file status is recorded by ``scripts.game_data.jsondata_corpus``; the
+isolated action-map comparisons under ``reports/game_data/`` are historical
+workload inventories, not the current state.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,22 @@
-"""Exact current-wrapper codec for placed ``NpcRuntimeProxyData`` rows."""
+"""Exact current-wrapper codec for placed ``NpcRuntimeProxyData`` rows.
+
+One sequential reader for the complete inherited wrapper. Current generated
+wrappers prove the 118-member partition: 14 ``LevelEntityData`` members
+(read by ``atmospheric_npc_binary.decode_level_entity_data``), 77
+``LevelNpcData`` members and 27 ``NpcRuntimeProxyData`` members. The row
+retains authored identity and pose, animation and interaction tags,
+battle/collider settings, localized overrides, patrol and
+environment-talk configuration, runtime proxy identity, audio ID and
+optional AI/runtime data.
+
+Consumers: LevelData's ``npcs`` list, AtmosphericNpcData dictionary values
+and LevelScript's ``uint -> NpcRuntimeProxyData`` dictionary all use this
+one codec, so the field order is maintained once. Nested generated wrappers
+are admitted only with their exact member counts, strict primitive types
+and current polymorphic routes; an unknown positive runtime-extension body
+or a changed wrapper stops in place. Authored placement only; it does not
+prove runtime spawning.
+"""
 
 from __future__ import annotations
 

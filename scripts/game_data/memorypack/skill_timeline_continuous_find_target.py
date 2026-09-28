@@ -5,6 +5,12 @@ The selected SkillData AbilityActionData union uses current physical tag
 the older compact tag table retained by the Buff decoder, so this module
 supplies the current, reviewed subtype routes explicitly and fails closed
 for every route absent from the contract.
+
+The 19-member order is the shared four-member action prefix, fourteen
+target-selection members and a terminal ``findInterval`` float.  Current
+Skill selector routes include the two-member ``ExcludeTarget`` postprocessor
+(``excludedTargetSettings``, ``processTargetType``).  Reached first records
+close exactly; whole-file closure still needs every later timeline record.
 """
 from __future__ import annotations
 

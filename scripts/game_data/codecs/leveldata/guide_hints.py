@@ -1,4 +1,11 @@
-"""Exact current-wrapper codec for authored LevelData guide hints."""
+"""Exact current-wrapper codec for authored LevelData guide hints.
+
+The ten-member ``LevelDataGuideHintConfig`` list advances in generated
+order: begin/end guide IDs, enable flag, source/target instance keys, hint
+ID, integer grid segments (two-integer rows), start face/point and bounded
+hint type. Owners then continue to their later lock, interactive or
+predefined-parameter field. Exact stored layout only.
+"""
 
 from __future__ import annotations
 

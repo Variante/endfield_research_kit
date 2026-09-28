@@ -1,4 +1,21 @@
-"""Authenticate the selected ResumeSpawner ActionBase reader."""
+"""Authenticate the selected ResumeSpawner ActionBase reader.
+
+The reviewed contract pins ActionBase `ResumeSpawner` (tag 0x03AB in the
+contract): the selected switch branch and wrapper, the complete reader plus
+forwarding formatter, ordered reads and setters, and the string and typed
+`SpawnerPtr` generic contexts. Candidate positions found by the derived
+action-map scan are promoted into the contract only when their file and span
+hashes join the current ledger and the selected codec reaches their declared
+end cursor exactly. The shared ActionMap reader admits the route only while
+this validator passes. Passing `--export-root`, `--ledger` and `--summary`
+together also replays the reviewed source cursors against the current
+JsonData ledger. The command prints its audit and exits nonzero unless it
+validates. Spawner resume and action execution remain unobserved.
+
+The two stored parameters after the common action fields are `pauseKey`
+(`Param<string>`) and `spawnerPtr` (`Param<SpawnerPtr>`); reached cursors
+carry concrete spawner IDs.
+"""
 
 from __future__ import annotations
 

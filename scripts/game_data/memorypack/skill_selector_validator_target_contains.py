@@ -1,4 +1,13 @@
-"""Selected one-member TargetContainsValidator nested SkillData route."""
+"""Selected one-member TargetContainsValidator nested SkillData route.
+
+``SelectorValidator`` physical tag ``0x0C`` has its own selected switch
+table, not an AbilityActionData action tag.  :mod:`skill_selector_selected`
+checks the hash-pinned switch entry, resolves the reached branch's type-usage
+load to the generated wrapper and confirms its one-member plan, whose
+``parentTargetSettings`` child goes to the existing bounded TargetSettings
+reader.  ``FF`` is the separate null-wrapper state.  Unknown children still
+stop at their owning cursor; no runtime containment result is inferred.
+"""
 from __future__ import annotations
 
 from typing import Any

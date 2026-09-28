@@ -3,6 +3,24 @@
 The contract records a bounded native body and each read/setter call pair. A
 validated row proves the generated reader consumes the named fields in order;
 the shared ActionSerializedMap codec still owns the wire cursor and corpus gate.
+
+It covers the promoted routes of `action_map_layouts.json` (ActionBase,
+GetterBase and ActionHeader), checking each selected reader's body hash and
+ordered read/setter calls. A missing or different installed build returns no
+validated rows. The audit is written to
+`reports/game_data/levelscript_route_deserialize_native.json` (`--report`).
+
+The selected union branch establishes wrapper identity; the generated
+`Deserialize` body establishes member count and read order. Rows named here
+include `ScriptEvent_OnScriptEnd`, which adds a `ScriptEndReason` parameter
+whose underlying value is a signed integer, and `NpcProxyGetter`, which adds
+one string parameter. The same contract schema is reused by
+`levelscript_entity_attach_native.json` and
+`levelscript_spawner_camera_native.json`, which the route codecs
+`codecs.levelscript.entity_attach` and `codecs.levelscript.spawner_camera`
+read. None of these rows proves evaluation, execution or event causality.
+
+Run as: python -m scripts.game_data.levelscript_route_deserialize_native
 """
 
 from __future__ import annotations

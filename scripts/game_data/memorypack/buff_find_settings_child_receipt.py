@@ -1,4 +1,19 @@
-"""Selected native and exact-byte BuffFindSettings/GameplayTagQuery receipt."""
+"""Selected native and exact-byte BuffFindSettings/GameplayTagQuery receipt.
+
+``FinishBuffAdvanced.buffSettings`` is a ``BuffFindSettings``. Its reader
+consumes ``buffIdList``, ``checkType`` and ``tagQuery`` in generated setter
+order; the nested ``GameplayTagQuery`` reader stores ``queryType`` and
+``tags``. Selected normal/null reader windows, source contexts, runtime field
+offsets and direct destination stores authenticate these five names. The
+gate rechecks every source and parent action and closes each reached
+``buffSettings`` span at its independently fixed boundary, including
+positive string lists and positive packed tag arrays.
+
+Evidence boundary: the string list's selected generic type and signed-length
+byte grammar do not identify a live ``ListFormatter<string>`` provider, so
+decoded text and provider parity are ``conditional``. Tag values are raw
+stored IDs; the runtime buff finder and tag predicate stay unresolved.
+"""
 from __future__ import annotations
 
 import hashlib

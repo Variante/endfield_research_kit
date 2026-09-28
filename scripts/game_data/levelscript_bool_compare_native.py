@@ -2,6 +2,19 @@
 
 The native contract proves the fragmented generated reader and typed params.
 Source receipts prove reached bytes, not a live comparison result.
+
+After the inherited action fields the route stores `comparer` as
+`Param<BoolComparer>` (a four-byte enum in the selected native reader) and
+`valueA`/`valueB` as `Param<bool>`. The contract covers the dispatcher and
+registered wrapper, the hot reader plus owned fragments and formatter,
+ordered reads and setters, and three generic parameter contexts.
+
+Reached sources store the same comparer value. The first operand often
+points to an ID reference or a named path, so its serialized constant slot
+is a placeholder, not the value compared at runtime; the second operand is
+usually an authored constant.
+
+Run as: python -m scripts.game_data.levelscript_bool_compare_native
 """
 
 from __future__ import annotations

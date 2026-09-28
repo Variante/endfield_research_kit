@@ -1,6 +1,61 @@
 """Exact codec for the current sequential action/getter members.
 
 Moved verbatim out of ``scripts/game_data/levelscript_binary.py``.
+
+``frame_levelscript_current_action_sequence_leader_enter`` is the positive
+``ActionSerializedMap`` lane of the LevelScript owner.  It reads the three
+declared lists in order -- ``actionList``, ``getterList``, ``headerList``,
+each a counted sequence that may hold zero or many records -- then the
+one-member ``ParamListForGraph`` blackboard, and hands the map end to
+``sequential_owner._frame_levelscript_sequential_owner``.  A decoded map
+alone never promotes a file; the owner cursor must still reach physical EOF.
+
+Per node: a specialized reader in this module is tried first
+(``_CURRENT_SEQUENTIAL_ACTION_MEMBERS``, ``_CURRENT_SEQUENTIAL_GETTER_MEMBERS``
+and the ``ScriptEvent_OnLeaderEnterTriggerVolume`` header).  On refusal the
+node goes to ``action_map.decode_reviewed_node`` for its family (ActionBase,
+GetterBase, ActionHeader), which validates both selected native inputs and
+reads the reviewed ``action_map_layouts.json`` layout; an unknown union, a
+changed member count or an unsupported nested value fails at that node.
+Tag-to-type identity always comes from the family's own selected dispatcher:
+same-numbered rows in another union family (for example getter ``0x0109``
+versus action ``0x0109``) never select a layout.
+
+Stored-shape facts this module owns:
+
+- the node envelope keeps every ``NodeBase`` field, including nullable UTF-8
+  UIDs at their actual length; ``ActionBase`` adds ``nextID``;
+- ``StartDialogAction.afterMask``/``beforeMask`` are consecutive
+  ``Param<CommonMaskBlendData>`` values (param tail ``constValue``, ``idRef``,
+  ``paramSource``, ``path``); a non-null constant has six members
+  (``audioBlackScreenBehaviour``, ``curve``, ``fadeInDuration``,
+  ``fadeOutDuration``, ``maskType``, ``useCurve``), current curves are null or
+  the empty three-member ``AnimationCurve``, and a curve with keys fails; the
+  following ``override*MaskConfig`` members are nullable ``Param<bool>``;
+- ``StartDialogAndTeleportAction`` inherits the ``ClientCutsceneTeleport``
+  sequence (two mask params, level id, position, Euler rotation, teleport id,
+  nullable teleport UI type) before its dialog id; older catalogs that named
+  this tag ``StopLevelSeqLoopSegment`` are stale;
+- ``StartLevelCustomPerformance`` carries a nullable ``Param<bool>`` (both
+  null and present occur) and a ``ParamOutput<uint>``; treating the bool as an
+  always-present scalar loses the cursor;
+- ``AirWallPtr`` is not the compact ``EntityPtr`` wire shape: its constant is
+  an aligned 24-byte struct (use-slot flag, logic id, slot id) before the
+  ordinary ``Param`` tail;
+- ``RaiseCustomLevelEvent`` stores a one-member ``EventArgsPtr`` constant
+  inside its parameter before the event key; ``PlayRadioAndWait`` inherits the
+  five ``PlayRadio`` parameters and adds none;
+- the two camera-transform actions follow their generated parameter orders
+  (the ``WithoutBack`` variant lacks the need-interrupt/reset/use-angle
+  prefix); alternative-pose lists are null or empty and the curve key is
+  nullable, so positive poses or a new curve-key shape fail;
+- a positive ``ParamListForGraph`` count is read only while
+  ``levelscript_param_list_native`` validates the selected owner contract; it
+  then reuses the exact ``List<ParamKeyValue>`` codec.
+
+Evidence tier: ``exact`` stored layout for the selected build.  It does not
+prove runtime graph execution, event dispatch or handler ownership, and
+scanning UID-shaped bytes is never a substitute for these record extents.
 """
 
 from __future__ import annotations

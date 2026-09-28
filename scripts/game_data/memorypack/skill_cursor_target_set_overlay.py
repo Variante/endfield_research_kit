@@ -4,6 +4,24 @@ The runtime receipt chooses the terminal and authenticates the direct field
 cursors.  Whole-record framing is promoted only where the independently
 native-validated ActionGroup reader and top-level continuation reach those
 same cursors.  This says nothing about gameplay branch selection.
+
+The overlay composes each reviewed live field vector with that source's
+native-gated whole-ActionGroup static profile and exact fields through 42.
+Applied by the full authenticated SkillData sweep, it promotes every formerly
+ambiguous target-set source to a whole stored-schema exact row, leaving no
+terminal-ambiguous row in that input set; the singleton positive control
+stays under its separate verifier.  Unsupported action children in other
+files remain partial.
+
+Example of the boundary: Purrche's base combo ability-range source was read
+even on a Potential-3+ save.  Its exact-source replay closes the authored
+timeline and fields through 42, and the live cursor selects the earlier
+terminal directly after field 42.  Authored ``IfElseAction`` bytes in the
+parent projectile-hit skill place that source in the fail branch of
+``potential_3 >= 1`` (``buff_if_else_action_receipt``,
+``buff_compare_float_action_receipt``), yet deserializing it does not show
+that gameplay took the fail branch, since preloading remains possible, and the
+outer provider and cache-selection path is not source-bound by the receipt.
 """
 
 from __future__ import annotations

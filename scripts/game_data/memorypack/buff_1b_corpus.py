@@ -3,6 +3,11 @@
 This joins authenticated BuffData bytes, the maintained structural reader,
 and the selected exact-build native union route. It does not promote action
 field names, runtime behavior, provider selection, or whole-BuffData EOF.
+
+Pass the VFS audit's ``--expected-input-set-sha256``; the native report
+defaults to ``reports/animestudio/il2cpp_context_current_latest.json`` and the
+default outputs are ``reports/animestudio/buff_1b_current_latest.{json,md}``.
+``buff_1b_action_native`` names the tag's fields separately.
 """
 from __future__ import annotations
 

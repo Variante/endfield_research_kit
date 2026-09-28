@@ -1,9 +1,17 @@
 """Load the reviewed DynamicScene-to-Story context for Mission Pipeline.
 
-The adjacent artifact is a compact, current-build projection of the decoded
+The adjacent artifact is a compact projection of the decoded
 DynamicStreaming mission-control roots and their exact LevelScript decoration
 action joins.  It intentionally exposes context only: matching authored ids
 and shared local control flow do not prove mission ownership or Story order.
+
+The artifact is current only while its recorded GameAssembly/metadata hashes
+equal the installed build's; otherwise the loader publishes nothing. It was
+made on the previous client build and still names layout-v1 export paths. It
+has no generator in the tree: its two builders
+(``build_dynamic_scene_mission_control_audit.py`` and the LevelScript
+action-bridge audit) were deleted when it was frozen in commit ``74a263c7``,
+so refreshing it means restoring and porting them from history.
 """
 from __future__ import annotations
 from scripts.common import EXPORT_LAYOUT

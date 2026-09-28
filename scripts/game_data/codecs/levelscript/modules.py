@@ -1,4 +1,42 @@
-"""Exact current codecs for high-coverage LevelScript module values."""
+"""Exact current codecs for high-coverage LevelScript module values.
+
+``modules`` is a dictionary of ``LevelScriptModuleData`` unions.  Each
+reviewed concrete type (``_MODULE_TYPES``) has its tag resolved from the
+selected native union by type name, and a route is admitted only when that
+tag and the member count agree with the reviewed body.  Every value starts
+with the two inherited members ``disableWhenCompleted`` and ``id``.  Bodies
+in generated order:
+
+- ``GhostWallModuleData`` (27 members), ``SpecialSightControllerData`` (4),
+  ``SuperPressureBoardGroupData`` (9), ``WaterProgressSyncData`` (7): strict
+  booleans, finite vectors and timing values, ``EntityPtr`` wrappers,
+  collection counts and the generated movement/pressure-board enum ranges;
+- ``GuideButterflyModuleData`` (9): gather/scatter timing and effects, the
+  leader pointer, and three-member scatter records with butterfly pointer
+  lists and trigger-volume ids;
+- ``FogNestControllerData`` (7): AirWall pointers, five-member
+  transform/effect rows, the fog-nest entity pointer, controller size flag and
+  one-member LSM pointers;
+- ``TyphoeaArcheryUnitData`` (8) with 12-member target rows (nullable
+  extra-battle, spline-movement and scale configurations, spawn transforms,
+  VFX connection lists) and ``TyphoeaArcheryUnitAdvancedData`` whose
+  eight-member obstacle records carry stage and time lists, a destructible
+  flag, model strings, spawn transform and spline id, followed by
+  shooting-unit and stage-type lists;
+- ``EncounterData`` and ``EncounterDataV2`` (16 members, same stored shape):
+  AirWall/enemy pointers and the battle, intro, alternate-intro,
+  teleport-slot and tail shapes.  Positive ``introPart.operaSegments`` arrays
+  go through ``encounter_opera_segments`` only while its native contract
+  validates; other positive array shapes fail closed;
+- ``MatrixRepairControllerData`` (center ``EntityPtr`` and element pointer
+  list), ``TianshizhuangData`` (LangKey, pointer, transform and vector-list
+  fields) and ``WaterAbsorbedImpactData`` (curve, UI and pointer-list
+  fields).
+
+Whole-file promotion still needs the later sequential cursor to reach
+physical EOF.  Stored module settings do not establish when or whether the
+client activates a module.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,16 @@
-"""Selected native and bounded reader for zero-action damage conditions."""
+"""Selected native and bounded reader for zero-action damage conditions.
+
+For the condition-free, tag-five damage cohort a selected native MethodSpec
+join proves that the child condition call reads ``SequenceActionData``.  Its
+separately checked formatter and reader windows establish the three-member
+header, a zero action count and two terminal bytes: an exact seven-byte
+child.  A report-backed source join checks the named parent ``condition``
+span against the current logical file hash before accepting it.  The same
+reader's signed action count and terminal stores also carry the ordered
+two-action list that ``buff_damage_two_action_condition_receipt`` names.  The
+terminal values are stored booleans without live behavior evidence, and the
+runtime ``SequenceActionData`` provider stays unresolved.
+"""
 from __future__ import annotations
 
 import hashlib

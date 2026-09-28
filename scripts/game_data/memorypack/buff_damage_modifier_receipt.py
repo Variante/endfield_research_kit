@@ -3,6 +3,23 @@
 This partitions a positive modifier list into named child fields. Nested
 conditions and processors retain the exact structural reader's evidence tier;
 the receipt never claims a recursively named BuffData schema.
+
+It gates the selected native route and each file's logical-byte hash for
+positive ``damageModifier`` spans, including the exact stored
+``BlackboardDouble`` and raw string children of the tag-five
+``DamageScaleProcessor``. ``memorypack.buff_corpus`` composes selected empty,
+one-action and ordered two-action conditions with one selected processor, or
+an empty condition with ordered processor tags [5, 6]; other variants remain
+partial.
+
+Usage (shared by the ``buff_damage_*`` receipts): ``--buff-report`` is a
+complete, publication-eligible ``memorypack.buff_corpus`` report
+(``reports/animestudio/buffdata_current_latest.json``) built from the VFS
+audit input set passed as ``--expected-input-set-sha256``; ``--export-root``
+is ``export_full/game/Json/BuffData``. A report from another input set or a
+failed selected-native validation stops the run. The conventional
+``--output`` is
+``reports/animestudio/buff_damage_modifier_child_receipt_latest.json``.
 """
 from __future__ import annotations
 

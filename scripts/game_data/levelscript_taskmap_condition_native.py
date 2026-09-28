@@ -3,6 +3,18 @@
 The reviewed contract pins one installed client. A different or unavailable
 client returns no routes; exported source receipts are checked only when the
 caller requests the current corpus join.
+
+The contract ``levelscript_taskmap_condition_native.json`` authenticates, for
+each route, the selected GameCondition dispatcher entry, the generated member
+list, the complete reader and formatter bodies and the ordered field reads.
+Routes, all after the four shared condition members:
+``CheckMonsterSpawnerCompleteState`` (level string, then
+``Param<SpawnerPtr>`` whose pointer stores one unsigned 64-bit id),
+``CheckSnapshotIdentifySuccess`` and ``CheckSNSDialogComplete`` (one string
+parameter each) and ``Conditions.OnEnterMainHud`` (no further member).  The
+codec is ``codecs.levelscript.taskmap_selected_conditions``; the enclosing
+task parser still decides whole-owner promotion.  Stored conditions only:
+runtime evaluation and mission ownership stay unresolved.
 """
 
 from __future__ import annotations

@@ -2,6 +2,39 @@
 
 The reviewed native contract pins the selected name-resolution route. This
 gate never infers playback or mission order from matching file names.
+
+It is a selected-native plus current VFS byte gate: each stored LevelScript
+``moviePath`` resolves to an exact base Video path or a complete gendered
+pair under the contract's two reviewed name prefixes. Runtime playback stays
+unresolved. ``--cursor`` and ``--replay`` name the LevelScript cursor and
+replay reports the join reads (defaults under ``reports/game_data/`` and
+``reports/animestudio/``); pass the VFS audit's
+``--expected-input-set-sha256``. The default report is
+``reports/story/recovery/current_levelscript_fmv_video_join.json``.
+
+Source side: the ``PlayFmvAction`` layout in ``levelscript_union_tags.json``
+and the strict ``codecs/levelscript/fmv.py`` decoder identify ``_moviePath``
+as a stored constant ``Param<string>``, read inside that action's own physical
+byte range, never inferred from a neighboring action. Each source is rechecked
+by export SHA256 and VFS data MD5. A ``cs_video_*`` id resolves to a base
+``<id>.usm`` or to one ``f_<id>`` and one ``m_<id>`` file under
+``Data/Video/PC/Narrative/Cutscene/``; a missing base or an incomplete gender
+pair fails rather than promoting a name match.
+
+Native side (``levelscript_fmv_video_native.json``, unpatched bodies):
+``PlayFmvAction.Execute`` reads ``_moviePath`` and calls ``GameAction.PlayFmv``
+(the route also listed in ``cinematic_queue.json``). That forwards the name to
+``NarrativeUtils.GetGenderedFMVId``, which prefixes literal ``f_`` or ``m_`` by
+narrative gender, checks the candidate with ``_CheckIfFMVExists`` and falls
+back to the unprefixed id; it then checks a ``GetCSVideoAssetSubPath`` result
+(``Narrative/Cutscene/{0}``) with ``VideoManager.CheckCanPlay``.
+``VideoManager.GetVideoAssetPath`` appends ``.usm`` when needed, and
+``TryGetVideoPlayFullPath`` calls
+``Beyond.VFS.VirtualFileSystem.TryGetAssetFullPathInfo``.
+
+This is ``conditional`` source-to-video name resolution: selected gender,
+iFix patch state, action activation, playback, mission ownership and order
+are not proved by static bytes or VFS matches.
 """
 
 from __future__ import annotations

@@ -2,6 +2,9 @@
 
 The source fixes nineteen ordered reads and five nested generic contexts.
 Stored motion fields are structural evidence, not runtime movement proof.
+
+The contexts distinguish a direction enum, a raw LayerMask word, a finite
+TargetSettings child and an AnimationCurve profile.
 """
 from __future__ import annotations
 

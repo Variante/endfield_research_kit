@@ -7,6 +7,19 @@ that file authoritative, then publishes a compact overview plus lazy event and
 media shards for the Audio page.  Installed IL2CPP metadata is optional:
 when present, selected runtime-system types and members are validated against
 the current binary metadata instead of being asserted from a stale snapshot.
+
+It is reached only through ``python -m scripts.webui.audio.build_audio``
+(``--semantics-only`` to republish alone). Reusable evidence owners live under
+``scripts/webui/audio/semantics/``; add logic there rather than here. Lazy
+Event-detail payloads carry their own schema versions and are omitted from
+compact Event summaries: ``selectorBranches``, ``levelScriptAudioLifecycle``
+and full AudioCue ASTs (``audioCueExpressionSchemaVersion``); the page payload
+version is ``AUDIO_SEMANTIC_SCHEMA_VERSION``. Role/layout coverage is emitted
+in the generated Audio stats and Event summaries. A verified runtime trace
+bundle (``build_audio --runtime-trace-bundle``) is projected onto Event/media rows only
+when its schema, language and GameAssembly path/size/SHA-256 match; it
+records observed managed request boundaries and exact Event-to-media
+relations, never a selected Wwise branch, decoded leaf or audibility.
 """
 
 from __future__ import annotations

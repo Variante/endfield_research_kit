@@ -1,4 +1,15 @@
-"""Native-gated direct members of tag-ten ModifyCalcResult damage processors."""
+"""Native-gated direct members of tag-ten ModifyCalcResult damage processors.
+
+It checks the selected native tag-ten route, its three direct members and
+both exact BlackboardDouble child spans, joined to current VFS logical
+hashes. ``memorypack.buff_corpus`` admits this sole processor only with one
+selected ``CheckDamageDecorateMask`` or ``CheckDamageType`` action, and
+proves all 30 root fields through source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_modify_calc_result_processor_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

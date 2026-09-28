@@ -23,6 +23,22 @@ Evidence tier is ``structuralOnly``, deliberately below the dispatcher's
 routes, not a route read out of the binary.  Where a walked route exists it wins;
 this fills in only the unions the walk cannot reach, and a consumer that needs a
 proven route still needs a contract.
+
+Two orderings were tested and refused: ordinal comparison (``animat`` <
+``animato`` < ``anime`` breaks it) and comparison with the ``+`` separators
+removed.  ``check_reviewed_nested_tables`` is the sharper standing check: the
+frozen reader reads six nested unions (selector finder, validator and
+post-processor, damage and heal processor, calculation) with an explicit
+per-tag member count and none is natively walked, so the rule must place every
+one of those tags unaided.  It is keyed by managed base names so a client
+update does not invalidate it, and a misplaced tag surfaces as a member-count
+mismatch rather than a plausible name.  It corroborates the ordering; it does
+not promote it.  Promoting a nested-union tag to ``direct`` still needs that
+union's own switch table walked natively.
+
+The report (``reports/game_data/memorypack_union_subtypes.json``) lists every
+union base's subtypes and predicted tag assignment with the corroboration
+above; ``--union NAME`` prints one base's assignment instead.
 """
 from __future__ import annotations
 

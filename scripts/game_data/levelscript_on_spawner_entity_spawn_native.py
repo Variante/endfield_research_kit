@@ -1,4 +1,20 @@
-"""Authenticate the selected OnSpawnerEntitySpawn ActionHeader reader."""
+"""Authenticate the selected OnSpawnerEntitySpawn ActionHeader reader.
+
+The reviewed contract pins ActionHeader `LevelEvent.OnSpawnerEntitySpawn`
+(tag 0x0095 in the contract): the selected switch branch and wrapper, the
+complete reader and forwarding formatter, ordered reads and setters, and its
+generic parameter contexts, including the typed filter and spawner pointer.
+Passing `--export-root`, `--ledger` and `--summary` together also replays the
+reviewed source cursors against the current JsonData ledger. The command
+prints its audit and exits nonzero unless it validates. It proves stored
+header bytes; spawn events, spawner lookup and output values remain
+unobserved.
+
+The header stores entity, group-key and wave-key outputs, a typed
+`FilterType` enum filter, group and wave key filters and a
+`Param<SpawnerPtr>` filter. Reached cursors include both explicit spawner
+IDs and parameter paths that name a spawner only at runtime.
+"""
 
 from __future__ import annotations
 

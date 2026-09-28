@@ -2,6 +2,22 @@
 
 The native and source checks establish stored MemoryPack records. They do not
 establish when a getter is evaluated or which runtime entity or mission wins.
+
+Each branch inherits seven node fields and adds `comparer`, `valueA` and
+`valueB` as `Param<T>` members. The comparer and mission-state enums have
+four-byte storage; the entity operands are three-member `EntityPtr` records
+with independent source/path tails, including authored property references.
+The contract authenticates both dispatcher branches, complete chained
+readers and forwarding formatters, ordered reads and setters, and all three
+generic parameter contexts for each branch.
+
+The command takes no options: it always replays the source hashes and ledger
+spans against `export_full/game/Json` and the current JsonData per-file
+ledger and summary under `reports/animestudio/`, prints the audit and exits
+nonzero unless it validates. `validate_getter_compare_native_contract`
+accepts explicit export-root, ledger and summary paths instead.
+
+Run as: python -m scripts.game_data.levelscript_getter_compare_native
 """
 
 from __future__ import annotations

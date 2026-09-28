@@ -3,6 +3,45 @@
 This is a stored-data join. Reviewed native claims separately establish the
 conditional load and DynamicStreaming initialization route on the selected
 installed build; neither source observes a live selected scene.
+
+Run ``python -m scripts.game_data.dynamic_streaming_config_join --gameassembly
+PATH --metadata PATH --game-root GAME_DATA_ROOT --export-root EXPORT_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256``. It rechecks the RootComp and
+visibility-runtime native reports and the freshness of the StreamingAssets and
+Persistent exports. It joins every catalogued scene streaming asset to its
+exported MonoBehaviour and original object-index row by container, source and
+PathID, verifies the resolved ``StreamingMapConfig`` MonoScript, and marks the
+current MapConfig references. It then compares ``mapSceneName`` with the
+authenticated DynamicStreaming main-file directories and the ordinary
+Streaming VFS paths (the default ledger is under ``reports/animestudio/``;
+override with ``--vfs-ledger``). It writes
+``reports/animestudio/dynamic_streaming_config_join_latest.json``, keeping
+unreferenced assets and scene names present on only one side. The joined paths
+are authored evidence; the tool does not claim a live asset load.
+
+Stored relations (structural). Every current ``MapConfig.streamingMapConfigPath``
+resolves through the StreamingAssets asset map to one exported MonoBehaviour
+whose MonoScript is ``Beyond.Gameplay.Streaming.StreamingMapConfig``; the
+class comes from the object index, not from matching JSON fields or an asset
+name. The objects' ``mapSceneName``, ``exportScenePathRoot`` and
+``streamingDataPathRoot`` agree with their container paths. Several
+MapConfigs share one asset (many-to-one), and the class census also finds
+streaming-config assets no MapConfig references; they are kept as authored
+but unselected candidates. The key chain above it was observed in the
+current export but is not rechecked by this module: every decoded
+``LevelConfig.mapIdStr`` (``levelconfig_binary``) names an exported
+MapConfig, each ``MapConfig.mapIdStr`` equals its filename stem, every
+MapConfig is named by at least one LevelConfig, and several levels can share
+a map.
+
+``streamingDataPathRoot`` names ``Data/Streaming/PC/...``, a different path
+family from the ``Data/DynamicStreaming/PC/Scene/...`` main files; the link
+to DynamicStreaming is ``mapSceneName`` plus the native initializer, never
+equality of the two root strings. Every catalogued streaming-config asset has
+files under its ordinary Streaming root; some of those scenes have no
+DynamicStreaming main files, and of the main-file scenes lacking a MapConfig
+reference most still have a catalogued asset while a development scene has
+none. These one-sided sets do not show a failed load or a complete catalog.
 """
 
 from __future__ import annotations

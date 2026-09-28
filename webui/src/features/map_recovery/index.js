@@ -1,3 +1,79 @@
+// Map page behavior contract (webui/README.md links here; evidence grades are
+// in memory/webui/map.md and memory/game_data/story_carriers.md).
+//
+// Plots authored Unity X/Z; a background is drawn only when the image and its
+// world bounds share an explicit transform. Rectangles and markers use X/Z
+// with image top at +Z, and needInverseXZ applies the evidenced quarter-turn.
+// Stitched bounds are derived here from the loaded background rectangles.
+//
+// Payload handling
+//   * An elevationUnderlay with status terrain_height_grid_diagnostic is the
+//     Terrain _H byte preview: it gets its own control, separate from
+//     mesh-derived grayscale elevation, and shows the byte-composite
+//     boundary; its valueRange is the preview's composite, not world Y.
+//   * Every point layer owns its height mask (pointCloudOverlay.heightMask);
+//     there is no top-level mask fallback. Streaming-instance meshes feed
+//     static render layers only and are never duplicated as clickable nodes.
+//   * mapMark annotations are shown on existing registry nodes only; marks
+//     are never plotted from group keys.
+//
+// Panel and layers
+//   * A map opens as clean geography. The resizable left panel is a
+//     three-column map/task/object-filter tree whose outer body scrolls all
+//     three columns; map status sits in the task column, and the JSON/file
+//     inspector is also resizable.
+//   * The third column combines entity, quest, story and mission filters
+//     with minimap, Terrain byte preview, elevation, surface, water, point
+//     and point-height controls; there is no inner layer container and no
+//     bottom filter dock.
+//   * The Authored marks preset (offered when the map has exact
+//     ID-and-position mapMark annotations) selects only those registry
+//     nodes, clears mission and quest filters and keeps the authored floor
+//     selection; another preset or a mission selection leaves it.
+//   * Each raster layer is one row with a visibility checkbox and its own
+//     opacity slider; opacity persists across maps and while hidden.
+//   * Authored floor overlays are discovered by hovering their area and
+//     cycled by clicking; there is no global floor slider.
+//   * Entity size is independent of zoom. Opacity and the two-thumb point
+//     world-Y filter change presentation only.
+//   * The bottom-centre range switch defaults Map01/Map02 to the selected
+//     zone; All zones loads and stitches every Wuling or Valley-IV member,
+//     and switching back releases the cached sibling payloads.
+//
+// Navigation and markers
+//   * Physical level variants of one authored place are one map entry whose
+//     levels stay selectable in the task column; only the duplicate
+//     navigation entry is collapsed. Unnamed single-mission maps use the
+//     localized mission code/name; authored cross-map Story continuations are
+//     explicit links.
+//   * Map01, Map02 and config-proven shared blackbox scenes stitch by exact
+//     regionKey; dungeons with a source-art dependency stay independent.
+//   * Quest routes group by mission, ordered by authored questOrder;
+//     shared-file or shared-script relation webs are not drawn.
+//   * NPC proxies with explicit npcProxyDialogAttachments expose their owning
+//     mission and quest ids as selectable phases; no order is derived from
+//     proxy ids, registration order or coordinates.
+//   * Selecting a mission keeps missionless level-world entities available
+//     through type/floor filters; compact maps enable every recovered type.
+//   * Enemy, device, scenery and travel markers use distinct glyphs; grenade
+//     towers keep their Factory/Combat/Model evidence. Enemy labels resolve
+//     through EnemyTemplateDisplayInfo plus localized text; reading points use
+//     the generated Story title instead of their text_* key.
+//   * Unresolved evidence gets default-hidden layers: empty int_empty shells
+//     in an unresolved-empty-slot layer, unresolved script-target references
+//     in a candidate layer.
+//
+// Inspector
+//   * Strong identity links stay separate from weak spatial or mission
+//     context; proximity is never upgraded into ownership.
+//   * Opening WorldEntityRegistry.json from a registry-backed point resolves
+//     its exact world id or script-id/slot pair, jumps to the matched row and
+//     paired brief-info index, and highlights the excerpt.
+//   * A node with a generated Story conversation shows that conversation as
+//     its reader-facing file; placement, registry and script files stay
+//     behind Show debug info. Map-wide files and weak links are debug-only
+//     unless they have an exact Story deep link, and turning debug off closes
+//     a file viewer whose link is no longer visible.
 (() => {
   // The SVG world projection below is authoritative: viewBox size, padding and
   // plot() must stay byte-identical to the published coordinate contract.

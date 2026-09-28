@@ -1,4 +1,35 @@
-"""Exact whole-record PlaySound action contexts and selected event enum labels."""
+"""Exact whole-record PlaySound action contexts and selected event enum labels.
+
+The selected-build derived whole-record ``SkillData``/``BuffData`` plans
+expose ``PlaySoundActionData`` union records in their authored tree. Each
+exact action keeps its source hash and path, the raw sound string, the
+enclosing timeline frame window when present, the Buff or Ability event code
+when present, the enclosing action types and the decoded ``targetSettings``
+(selector data and routing fields -- authored parameters, not a selected
+runtime target). The selected native ``BuffActionMap.buffEvent`` and
+``AbilityActionMap.abilityEvent`` field types are checked to resolve to
+``Buff.Event`` and ``AbilitySystem.Event`` before their default-value tables
+label the stored codes.
+
+Exact records place PlaySound under multi-item timelines, nested
+conditional/channeling actions, Buff event actions and ability event actions,
+so they are a strict superset of the older local single-item timeline
+envelope (measured by ``play_sound_action_corpus``). The path is essential
+context and not an execution claim: an action under an ``IfElseAction``
+branch keeps its frame window without proving the branch runs, and an event
+label names a stored enum value, not an observed dispatch. For example the
+fire-wall buff's start, hit and end literals sit under ``OnBuffStart``,
+``DuringBuffEnable`` and ``OnBuffFinish``: direct authored trigger slots, not
+proof that an instance reached them.
+
+A raw string can be empty, carry outer whitespace, or be a prose
+instruction, so it stays distinct from a Wwise Event identity. The Gameplay
+sound sidecar keeps every exact action in separate SkillData and BuffData
+catalogs, including literals with no Event identity; only actions whose
+string matches a selected HIRC Event object join Event contexts, and owner
+links follow authored SkillData, referenced BuffData or enemy born-Buff
+dependencies -- a route to a config, not a selected target or a post.
+"""
 
 from __future__ import annotations
 

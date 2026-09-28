@@ -44,7 +44,25 @@ why.** The hooked post is
 `PostEventFn` in the audio hook adapter. It carries the hash, never the
 spelling. The game does expose string overloads on `AudioManager`, so a
 *different* hook could see a name, but the post this tooling observes cannot,
-and no session run today will name a hash-only Event.
+and no session run today will name a hash-only Event. (``AudioManager``'s
+``PostEvent(string)``, ``PlaySoundAtPosition(string, ...)`` and
+``PostAudioCue(string)`` would, but only for names that ship as literals,
+which the static sources already read.)
+
+**What gated sessions on disk have shown.** Complete, unpaired-free sessions
+post Events that each return their own playing id, and some of those posted
+Events have no recovered name, so hash-only Events are genuinely used -- a
+fact authored evidence alone cannot establish. The external-source post
+carries both the key and the media path in its own arguments, so that pair
+is a join the game makes, and it is many-to-one: one ``externalSourceKey``
+names many different voice files in one session, so a key is not a media
+identifier and no file can be recovered from a key. The key/path text field
+holds 96 bytes, so a path reaching 95 characters is cut and counted under
+``truncatedPaths``. ``DefaultIoOpenDispatch`` only ever opens banks, each
+probed in order across ``Persistent`` and ``StreamingAssets`` with and
+without the ``Chinese`` subdirectory -- the overlay fallback rule observed at
+runtime -- and never a voice ``.wem``: voice media is read by a path these
+hooks do not see. Per-session counts belong in the generated report.
 """
 from __future__ import annotations
 

@@ -4,6 +4,18 @@ The parent action receipt owns the seven-field action cursor. This adapter
 replays it, then joins its two exact child fields to selected inherited
 wrapper setters and complete byte-pinned native readers. It does not evaluate
 blackboard values or promote the enclosing BuffData record.
+
+Both direct children, ``impactResistance`` and ``superArmorValue``, carry
+four ordered members: ``blackboardKey``, ``useBlackboardKey``, ``value`` and
+``useCustomValue``. Each child is replayed against the authenticated source
+bytes and the exact parent action endpoint. String and flag bytes stay raw.
+``TargetSettings`` and the whole-BuffData schema stay open.
+
+``--buff-report`` and ``--action-report`` default to
+``reports/animestudio/buffdata_current_latest.json`` and
+``buff_action_receipts_current_latest.json`` (the ``0x0159`` spans come from
+the latter); the default output is
+``reports/animestudio/buff_super_armor_blackboard_children_current_latest.json``.
 """
 from __future__ import annotations
 

@@ -2,6 +2,16 @@
 
 The native contract proves the selected reader, parameter/output and enum types.
 Source receipts prove reached bytes, not runtime camera behavior.
+
+After the inherited action fields the branch stores blend style (finite
+Int32 `CinemachineBlendDefinition.Style`) and time, a
+`ParamOutput<CameraControllerBase>` path, camera name, `keepCameraPos` and
+`overrideBlend` booleans, optional `spawnLookAt` entity and bone name,
+optional `spawnPos` and the `useSpawnPos` flag, with ten typed generic
+contexts checked. Reached spans include non-null camera output paths and
+authored entity or vector values.
+
+Run as: python -m scripts.game_data.levelscript_switch_to_camera_native
 """
 
 from __future__ import annotations

@@ -3,6 +3,15 @@
 The seven stored fields are accepted only when the installed GameCondition
 branch, complete native reader fragments, forwarding formatter, and source
 spans still match the reviewed contract.
+
+The native reader is split: a short hot reader followed by a chained
+continuation.  The continuation checks the seven-member payload and reads the
+four inherited condition fields, then ``Param<EntityPtr>`` ``entityId``,
+``Param<bool>`` ``expectedSubmitSuccess`` and ``Param<string>`` ``levelId``;
+each read reaches its generated setter in order and the generic Param
+contexts are authenticated.  The codec is
+``codecs.levelscript.taskmap_submit_condition``.  Live submission success and
+condition evaluation remain unobserved.
 """
 
 from __future__ import annotations

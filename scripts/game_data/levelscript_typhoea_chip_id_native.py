@@ -3,6 +3,13 @@
 The installed switch, complete Deserialize bodies, ten ordered read/setter
 pairs, and two Param<string> contexts establish stored fields. They do not
 establish runtime chip selection.
+
+The two own members after the inherited action fields are `mainChipId` and
+`subChipId`. Source hashes joined to the JsonData ledger replay the exact
+action cursors, and the shared ActionMap reader admits the route only while
+this gate passes.
+
+Run as: python -m scripts.game_data.levelscript_typhoea_chip_id_native
 """
 
 from __future__ import annotations

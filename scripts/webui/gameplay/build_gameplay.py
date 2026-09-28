@@ -1,18 +1,24 @@
 """Build the behavior datasets behind the Gameplay WebUI page.
 
-The page reads these four behavior/asset payloads plus the language-specific
-``projectile_audio.json`` sidecar owned by ``build_audio.py``. The Gameplay
-builders still run as separate stages because the export pipeline
-schedules them in different dependency phases -- projectiles and the base index
-need nothing, the asset sidecar needs a current Assets index, and combat
-relationships need the source graph -- but the page now has one command:
+The page reads the base index, ``projectiles.json``, the combat
+relationships and ``assets/gameplay_refs.json``. The Audio builder still
+publishes ``projectile_audio.json`` and ``sound_effects.json`` beside them,
+but the page does not load or render those sidecars while their ownership
+model is under review. The Gameplay builders run as separate stages because
+the export pipeline schedules them in different dependency phases --
+projectiles and the base index need nothing, the asset sidecar needs a current
+Assets index, and combat relationships need the source graph (and publish an
+explicit stale/degraded reason when it predates their inputs) -- but the page
+has one command:
 
-    python scripts/webui/gameplay/build_gameplay.py                    # every stage
-    python scripts/webui/gameplay/build_gameplay.py --stage projectiles
+    python -m scripts.webui.gameplay.build_gameplay                    # every stage
+    python -m scripts.webui.gameplay.build_gameplay --stage projectiles
 
-Behavior stage implementations live in ``scripts/webui/gameplay/``. The
-asset-ref stage calls ``asset_builder.gameplay_refs`` directly so this command
-remains the sole owner of its consumer-specific sidecar.
+Behavior stage implementations live in ``scripts/webui/gameplay/``. An empty
+projectile dataset points at the export, not at the projectiles stage (see
+``scripts.webui.gameplay.projectiles``). The asset-ref stage calls
+``asset_builder.gameplay_refs`` directly so this command remains the sole
+owner of its consumer-specific sidecar.
 """
 from __future__ import annotations
 

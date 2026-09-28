@@ -2,6 +2,10 @@
 
 This reads the runtime's atomic progress snapshot and maps hashes to reviewed
 logical paths.  Only the final quiescent receipt can verify source cursors.
+
+Pass the session's ``<session>/skilldata-cursor/progress.json`` (raw sessions
+live under ``scratch/reverse_engineering/endfield_capture/``); the final
+receipt goes to ``skill_cursor_capture_target_set``.
 """
 
 from __future__ import annotations

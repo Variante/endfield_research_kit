@@ -3,6 +3,54 @@
 The framing gate authenticates current VFS payloads first. This separate audit
 names their fields only after the reviewed native code windows match the
 explicit installed build. It does not observe live area activation.
+
+Run ``python -m scripts.game_data.dynamic_stream_area_native --gameassembly
+PATH --metadata PATH --corpus-report
+reports/animestudio/dynamic_stream_area_current_latest.json --input-root
+DUMP_ROOT --expected-input-set-sha256 INPUT_SET_SHA256 --output
+reports/animestudio/dynamic_stream_area_native_latest.json``. ``DUMP_ROOT`` is
+an ``AnimeStudio.CLI dump`` tree containing the
+``Data/DynamicStreaming/.../FBStreamArea.bytes`` paths. The audit checks the
+reviewed selected-build accessors, reads that dump, and audits area/visibility
+and trigger/point index ownership. It also checks the selected ``CheckInArea``
+body and parity-branch window that establish its X/Z, height and even-odd
+polygon tests.
+
+Records (direct, ``dynamic_stream_area_native.json``). The root holds
+``TotalAreas``, ``RootVisible`` and ``AreaVisibleGroups`` as ``Int32``
+vectors, inline root bounds, and ``Areas``, ``Triggers`` and ``Points``
+record vectors. An area is an ID plus a ``VisibleStart``/``VisibleNum`` pair;
+a trigger is an ``AreaId``, an ``AreaPointStart``/``AreaPointNum`` pair and
+bounds; a point is two ``Single`` coordinates; bounds hold minimum and
+maximum coordinates and minimum and maximum heights.
+
+Authored relations (structural). In the populated current file
+``TotalAreas`` contains zero and the other area IDs without duplicates;
+``RootVisible`` and ``AreaVisibleGroups`` draw from that set, and some
+``RootVisible`` IDs occur in no area slice, so the root list is not their
+union. Area ranges lie within and partition ``AreaVisibleGroups``, each slice
+starting with one zero entry of unknown role. Every trigger names a present
+area, its point range partitions ``Points``, every point lies inside its
+trigger's XY bounds, and each trigger's XY bounds are exactly its points'
+extrema. The populated root bounds enclose the trigger bounds; rotating
+trigger bounds among point spans contains far fewer points, so containment is
+not an artifact of broad boxes. The other current files have empty area,
+trigger, group and point vectors and root bounds set to an inverted
+sentinel: a validator must require ordered bounds only for a populated root.
+Their zero ``TotalAreas``/``RootVisible`` entries take the default-area
+branch of ``SetAreaEnable`` (``dynamic_visibility_runtime_native``); they are
+not nonzero areas forwarded to the streaming engine.
+
+``CheckInArea`` (direct, selected unpatched body). The trigger index selects
+one ``Triggers`` record whose point range is a closed ring in ``Points``.
+Query ``Vector3.x``/``.z`` are compared with stored ``Coord.X``/``.Y`` and
+``Vector3.y`` with ``MinHeight``/``MaxHeight``; for finite values all six
+bound comparisons include equality. The body then walks consecutive point
+pairs with wraparound and toggles an even-odd flag when their stored Y values
+straddle query Z and the interpolated edge X is strictly on the positive-X
+side of query X. The false-toggle code sits in a separate window; both
+windows and their branch link are authenticated. Exact edge-equality cases,
+the position's origin and a live trigger firing are not established.
 """
 
 from __future__ import annotations

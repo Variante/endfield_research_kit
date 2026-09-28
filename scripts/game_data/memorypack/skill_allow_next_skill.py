@@ -3,6 +3,12 @@
 The installed dispatcher and generated wrapper derive this five-member plan:
 the common fixed prefix followed by a nullable List<string>.  The route is
 re-evaluated for the selected build instead of pinning build addresses in code.
+
+The list is named ``allowedSkillIdList``; the reader requires its type, tag,
+member order and string element kind from the selected native build and
+bounds each string payload.  The decoded strings mostly match SkillData file
+identifiers, but some have no file in the current corpus.  They are stored
+allowed IDs, not proof that a player could or did move between skills.
 """
 from __future__ import annotations
 

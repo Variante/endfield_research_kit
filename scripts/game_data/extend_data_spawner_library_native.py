@@ -2,6 +2,47 @@
 
 The static route is conditional. It does not prove that an authored enemyId
 becomes a live SCENE_MONSTER templateid or that any override asset was loaded.
+
+The checked routes (contract ``extend_data_spawner_library_native.json``):
+
+- ``SpawnerConfigData.get_enemyLibraryDict`` enumerates ``enemyLibrary`` and
+  keys each item by its ``key`` field, separately from ``enemyId``.
+- ``GameplayNetwork._Handle_EnemySpawnerObjectEnd`` copies
+  ``SC_SCENE_MONSTER_SPAWNER_OBJECT_DATA_END.details[]`` object, action and
+  spawn indexes into ``SpawnDataDetail`` records;
+  ``SpawnerManager.OnEnemySpawnerObjectEnd`` passes them to
+  ``SpawnerRuntime.SetupSpawnData``, which installs the server object ID to
+  action ID mapping in ``m_entityId2ActionIdDict``. This is a static client
+  consumer of a server message, not a captured message.
+- ``SpawnerManager.TryGetLibraryItem`` maps an entity's server ID to its
+  spawner action, reads ``SpawnMonsterFromTemplateV2.libraryKey`` and selects
+  from the key-indexed dictionary. On the unpatched synchronous path
+  ``EnemyAIComponent._InitSync`` supplies the entity's server ID and the enemy
+  root's parent spawner. A nonempty ``overrideAIConfig`` can cause a distinct
+  ``AIConfig/Override/{name}.asset`` load and a typed
+  ``EnemyAIRuntimeCfg.SetOverrideData(EnemyAIConfigDataOverride)`` call: an
+  override layer beside the default ``EnemyTable.aiTemplateId`` route, which
+  does not itself select a base graph.
+- ``EnemyAIComponent.TryGetRuntimeBornData`` prefers entity-provided born data;
+  otherwise its ``_TryGetSpawnerLibraryItem`` branch reaches the same keyed
+  lookup and copies ``bornTemplateId`` and ``bornBehaviorData`` as separate
+  outputs, never the item's ``enemyId``.
+- The ``EnemyServerData`` constructor copies
+  ``SCENE_MONSTER.commonInfo.templateid`` into ``enemyId`` and the separate
+  ``SCENE_MONSTER.monsterLibraryKey`` into ``subgameLibraryKey``. That
+  protocol key is a candidate for a spawner selection join, but no selected
+  client route compares it with an authored action's ``libraryKey``.
+
+The audit checks installed native hashes, metadata field identities, exact
+code windows, decisive instructions, call targets and the path literal, and
+returns no route when those inputs differ. The protocol-message producer, its
+binding to one action and library item, and a live override load remain
+open; an ID intersection alone cannot close them.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair; the audit prints
+JSON, and ``--out
+reports/animestudio/extend_data_spawner_library_native_latest.json`` also
+saves it.
 """
 
 from __future__ import annotations

@@ -5,6 +5,18 @@ The prepare phase compares authenticated VFS metadata against the last local
 snapshot, stages only added/modified logical files, applies removals, and
 writes a pending manifest.  The finalize phase advances the local snapshot
 only after export.bat has completed every WebUI builder.
+
+The snapshot is private to the export root and compares each logical file's
+decoded FileDataMd5 plus its length, type, path and encryption identity.
+Changed structured files are dumped with exact full-path filters, the staged
+output set is validated, and deletions are applied explicitly. The first run
+after a client update may seed the old side only from a certified VFS audit
+ledger whose input set and physical inventory bind to the previous export
+summary; otherwise it fails closed and requires a full export. Bundle-derived
+outputs (maps, objects, assets, audio) are reused, not refreshed per changed
+file, because a changed bundle does not prove per-output ownership; the build
+reports them as reused and a page extraction refreshes them. This mode never
+reads or writes Updates state.
 """
 
 from __future__ import annotations

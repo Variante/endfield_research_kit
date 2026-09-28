@@ -2,6 +2,9 @@
 
 The five ordered reads retain the common action prefix and one Boolean slot.
 The stored name alone does not establish a runtime position or rotation change.
+
+The route is reached through the three-byte extended union prefix; a pinned
+source call and setter constrain the final own ``overrideRot`` byte.
 """
 from __future__ import annotations
 

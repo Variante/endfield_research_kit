@@ -19,6 +19,16 @@ everywhere else::
 
 This reader admits exactly those tags, and names each field instead of taking
 it anonymously.  Every other tag is delegated to the frozen reader unchanged.
+A string member extends the reach without a new evidence class, because the
+frozen reader already proves its length-prefixed framing.
+
+The framing constant is itself checked against serialized data: the frozen
+reader's ``header()`` rejects any byte other than the expected member count,
+so its whole tag-to-member-count table is confirmed by the authenticated
+corpus's own bytes, and that table agrees with the bulk derivation on every
+entry.  ``cross_check`` rebuilds a record from the derived count and widths
+and feeds it to the frozen reader: every tag both admit must be consumed to
+exactly the predicted end.
 
 Two properties keep that safe:
 
@@ -38,6 +48,11 @@ body cannot express, and it has been measured against the exported BuffData
 family.  This module remains as the narrow, flat-body case: it needs no plan
 registry, which keeps it the simpler thing to reason about when only a
 fixed-width body is in question.
+
+The report (``reports/game_data/memorypack_derived_actions.json``) lists the
+union tags whose whole body this reader can consume and cross-checks that
+framing against the frozen reader; ``--list-routes`` prints the derived
+fixed-width routes instead.
 """
 from __future__ import annotations
 

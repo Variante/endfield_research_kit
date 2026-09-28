@@ -3,6 +3,45 @@
 Ownership is deliberately weaker than playback placement.  A possible Wwise
 leaf can be owned by a scene definition, animation, component, or voice path
 without proving that the leaf was selected or heard at runtime.
+
+Owner promotion rules (none proves CharacterTable identity, Animator
+execution, playback or audibility):
+
+* **Character.** A character owns ``chr_*``/``au_chr_*`` namespaces, leading
+  ``au_actor_<token>_*`` Events and Event-leading internal tokens only through
+  a delimited full ``CharacterTable`` key, a unique four-digit id prefix, or a
+  uniquely owned exact token. The owner set propagates to possible media and
+  keeps every owner when a Wwise leaf is shared; Endministrator gender
+  variants keep the existing synthetic alias.
+* **Enemy.** A leading ``au_monster_<token>_*`` Event is accepted only when
+  the token maps to one exact ``EnemyTable`` id, separately from full
+  ``au_eny_<id>_*`` matches, and is identity-only. Explicit response
+  candidates publish only on an exact owner-field equality, with
+  native-covered Events staying in the native group; native voice-response
+  callsites need one longest delimited EnemyTable prefix.
+* **NPC.** An owner needs one valid ``NpcInfoTable`` row with non-empty
+  ``voActor``/``wwiseId``, an agreeing ``NpcTemplateGroupTable`` row, and,
+  for exact actor tokens, one ``AudioDialogChannel`` key whose narrating and
+  radio suffixes agree. Generic archetypes are never promoted by name, and a
+  mixed Event keeps the NPC on occurrence/Clip evidence only.
+* **Table overlays** are authoritative or suppressed, never stale: a malformed
+  Persistent layer suppresses that table's identity surface instead of
+  falling back to the base (``_load_overlay_table``).
+* **Resolved is separate from candidate.** Per-Clip resolved entity ids never
+  absorb unique-token or multi-match candidates, and shared callback owners
+  stay shared.
+* **Animation callbacks: the callback is the edge, not the name.** Every
+  supported serialized AnimationClip ``PostAudioEvent`` context is an explicit
+  Event/media callback link with clip, owner, function, reachability and
+  AnimatorController names; it needs no name match and promotes no category.
+  A clip action name and a Wwise Event are the same thing only when their
+  normalized names match exactly inside such a callback, which promotes the
+  Event and its media to action SFX. Name similarity without the callback
+  creates nothing.
+* **Coarse ownership** (scene environment, animation, authored component,
+  interaction, mission narration) fills an otherwise unknown semantic category
+  only for unambiguous roles such as outdoor room tone or an authored ambient
+  emitter, and never upgrades playback or audibility status.
 """
 
 from __future__ import annotations

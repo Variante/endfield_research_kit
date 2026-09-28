@@ -2,6 +2,20 @@
 
 This proves static direct reads and calls under the selected binary inputs.
 It does not witness a graph instance, runtime execution, or an owner key.
+
+The route (contract ``extend_data_graph_native.json``): the exact archive
+path reaches ``DataCompressManager.Init`` and its VFS stream read. Metadata
+makes ``BehaviourTree`` a subclass of ``Graph``. On the unpatched branch,
+``Graph.DeserializeSelf`` tests the compression flag, passes its stored
+integer ``_serializedGraphStringIndex`` to ``GetUnSafeString``, and
+deserializes the decompressed string; the checked span reader uses that index
+in the archive's offset table, and the selected code calls Brotli. The route
+is conditional: the manager must be initialized and compression enabled, and
+IFix can redirect the methods.
+
+The audit prints JSON; ``--out
+reports/animestudio/extend_data_graph_native_latest.json`` also saves it.
+``extend_data_graph_owner_corpus`` reruns this audit before its join.
 """
 
 from __future__ import annotations

@@ -1,4 +1,22 @@
-"""Authenticate the selected FinishSceneEffect ActionBase stored layout."""
+"""Authenticate the selected FinishSceneEffect ActionBase stored layout.
+
+The branch stores ten members: the eight inherited action fields,
+`effectSaveId` as `Param<int>` and `forceImm` as `Param<bool>`. The contract
+checks the switch target and registered wrapper, the complete source and
+formatter bodies, ten ordered native reads, two own setters and both generic
+parameter contexts. Source-hash and ledger-joined receipts place reached
+records at their declared cursors. The shared ActionMap reader admits the
+route only while this validator passes; the JsonData corpus gate decides
+whole-file status. The stored settings do not establish that an effect
+finished.
+
+The command takes no options and prints the native audit only, exiting
+nonzero unless it validates. Source replay goes through
+`validate_finish_scene_effect_native_contract`, which accepts an explicit
+export root and JsonData per-file ledger.
+
+Run as: python -m scripts.game_data.levelscript_finish_scene_effect_native
+"""
 
 from __future__ import annotations
 

@@ -4,6 +4,12 @@ The VFS audit is the sole input-set authority. Every selected logical file is
 re-read from its physical chunk and checked against the ledger before the
 framing reader sees it. A limited run is diagnostic and cannot publish a
 complete-corpus result.
+
+Each file's MD5 and the input-set provenance are checked; descriptor 21's
+64-byte slot is compared with the paired root name's first 63 bytes, and the
+full-name and row-major controls are retained separately (see
+``descriptor_names``). Pass the VFS audit's ``--expected-input-set-sha256``;
+the default report is ``reports/chunk_data/descriptor_name_corpus_latest.json``.
 """
 
 from __future__ import annotations

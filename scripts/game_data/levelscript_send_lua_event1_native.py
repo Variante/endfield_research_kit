@@ -2,6 +2,20 @@
 
 The native contract proves the generated outer reader and nested type. Current
 source receipts prove the seven-member inner record, not a live Lua event.
+
+The generated outer reader makes eight ordinary setter calls for the
+inherited action fields, then `ReadValue<SendLuaEvent1>` and an instance
+assignment; it never calls the wrapper's declared `manualValue` setter. The
+nested wire value has seven members: ID, UID, two boolean and one integer
+position that keep neutral names, the event-name `Param<string>`, and a
+string holding a JSON parameter descriptor. The native switch, wrapper,
+complete reader and formatter, and nested type context authenticate the
+outer route; the inner seven-member shape rests on ledger-joined source
+cursors and whole-file framing, not on a native read of those members.
+`codecs.levelscript.send_lua_event` reads the inner value and records why
+the derived declaration cannot describe it.
+
+Run as: python -m scripts.game_data.levelscript_send_lua_event1_native
 """
 
 from __future__ import annotations

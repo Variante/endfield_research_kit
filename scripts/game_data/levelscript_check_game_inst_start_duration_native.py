@@ -1,4 +1,21 @@
-"""Authenticate the selected CheckGameInstStartDuration task condition."""
+"""Authenticate the selected CheckGameInstStartDuration task condition.
+
+The reviewed contract pins GameCondition `CheckGameInstStartDuration` (tag
+0x003C in the contract): the selected switch branch, generated wrapper and
+LevelScriptPtr, the complete reader and forwarding formatter, nine ordered
+parameter reads and setters, and five generic `Param` contexts. Passing
+`--export-root`, `--ledger` and `--summary` together also replays the
+reviewed source cursors against the current JsonData ledger. The command
+prints its audit and exits nonzero unless it validates. It proves the stored
+condition shape; duration evaluation and condition truth remain unobserved.
+
+After the four inherited condition fields the condition stores
+`Param<CompareOperator>`, `Param<int>`, the level as `Param<string>`, the
+script as `Param<LevelScriptPtr>` and the sub-game as `Param<string>`.
+`codecs.levelscript.taskmap_game_inst_duration_condition` reads it inside
+positive task maps; the reached dungeon owners then advance through their
+task maps and final trigger volumes to physical EOF.
+"""
 
 from __future__ import annotations
 

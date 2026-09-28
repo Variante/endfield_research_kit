@@ -1,4 +1,27 @@
-"""Exact generated-wrapper codecs for LevelData spatial records."""
+"""Exact generated-wrapper codecs for LevelData spatial records.
+
+- ``LevelCameraPoseData``: four fields (``cameraId``, FOV, position,
+  rotation).
+- ``LevelEnvironmentVolume``: the current twelve-field profile with the
+  environment-phase asset path, blend/fade settings, transform, priority,
+  volume identity/type and authored polygon points. Current polyline records
+  have empty BVH and convex-polygon caches and a null tree; a populated
+  future cache fails closed.
+- ``LevelMapRegionData``: nested map-shape polygons and tier links.
+- ``LevelSplineData``: Unity Splines' current ``BezierKnot`` layout
+  (position, in/out tangents, quaternion, width).
+- ``LevelWaterVolumeData``: all 26 generated fields, including OBB/pivot
+  geometry, polygon points, mesh/Luna/navmesh identities, fill/flow
+  settings, localized name key and start/stop audio names. LevelData's
+  ``riftVolumes`` declares the same ``List<LevelWaterVolumeData>`` type and
+  reuses this codec; there is no second rift layout.
+- ``LevelTransformData`` (four fields) and raw unsigned 64-bit identity
+  lists.
+
+Records keep their owner transforms and IDs rather than flattening points
+into world space. Exact stored layout; it does not prove render or runtime
+volume consumption.
+"""
 
 from __future__ import annotations
 

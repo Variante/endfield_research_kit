@@ -14,7 +14,16 @@ Any other object shape is skipped and counted.  The retired hand-written
 decoders published inferred field names and partial tails; the exporter's
 exact-only gate now replaces such a result with the TypeTree decode or leaves
 the object out, so a non-TypeTree payload reaching this builder is a pipeline
-regression to surface, not data to guess at.
+regression to surface, not data to guess at. A JSON export made before the
+exporter's TypeTree upgrade contains no projectile objects at all, because the
+exact-only gate excluded them, so an empty dataset points at the export, not
+at this builder. Skips are counted by reason
+(``counts.skipped``, ``skippedFiles``), and ``--require-exact`` turns a
+non-exact skip into a non-zero exit. Sound fields carry the signed int32 plus
+the uint32 hex that Audio joins on. Projectile behavior and authored event
+hashes stay immutable in ``webui/data/gameplay/projectiles.json``; Audio
+publishes playable HIRC candidates separately in
+``webui/data/lang/<LANG>/gameplay/projectile_audio.json``.
 
 Examples:
     python -m scripts.webui.gameplay.build_gameplay --stage projectiles

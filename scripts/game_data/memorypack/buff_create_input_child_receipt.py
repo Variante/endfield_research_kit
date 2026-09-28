@@ -3,6 +3,21 @@
 This names only the direct CreateBuffActionInput and AssignPair fields inside a
 previously certified CreateBuffAction.buffs range. It does not infer assignment
 execution or promote the enclosing BuffData record.
+
+The registered ``CreateBuffActionInput`` reader consumes a five-member
+wrapper: inherited ``assignBlackboard``, ``assignItems`` and ``buffId``,
+then ``buffIdKey`` and ``readIdFromBlackboard``. The ``assignItems`` generic
+source context resolves to ``List<AssignPair>``, and the registered
+``AssignPair`` reader consumes ``directValueType``, ``inputValueKey``,
+``numericValue``, ``stringValue``, ``targetKey`` and ``useDirectValue`` in
+generated setter order. The gate checks source calls, destination stores,
+runtime field offsets and complete reader windows against the selected
+build, rechecks every current logical source hash, reparses each certified
+CreateBuffAction parent, and requires the nested list to end exactly at the
+parent's ``buffs`` field boundary. Reached input and assignment wrappers,
+including positive assignment lists, close with named direct fields. String
+members stay signed-length byte spans and ``numericValue`` raw float bits;
+decoded strings and live assignment behavior are not claimed.
 """
 from __future__ import annotations
 

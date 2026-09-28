@@ -1,4 +1,49 @@
-"""Focused MemoryPack decoder implementation extracted from the retired Data-page builder."""
+"""Focused MemoryPack decoder implementation extracted from the retired Data-page builder.
+
+BuffData is a 30-member ``BuffDataForMemoryPack`` root read in generated
+setter order (``BUFF_MEMORYPACK_FIELD_TYPES`` lists the members). The
+outer frame is composed from independently proved pieces, never from one
+endpoint search:
+
+- field 0 ``abilityEventAction`` and fields 1-5 by ``buff_actions`` (and
+  the reviewed residual routes in ``buff_residual_actions``);
+- fields 6-14 by ``frame_buff_named_middle``: ``damageModifier``, a raw
+  eight-byte ``dispelConfig``, ``duration``, ``finishOnRepatriate``,
+  ``globalModifier`` (four-member items labelled ``applyToReturnAtbGain``,
+  ``formulaItem``, ``param``, ``type``; ownership proved separately by
+  ``buff_global_modifier_receipt``), ``hasAddingCooldown``, ``hasIcon``,
+  ``healModifier`` and ``iconConfig``. Here ``iconConfig`` is one named
+  opaque range ending at the independently accepted ``id`` marker;
+  ``buff_residual_actions`` replaces it with the exact
+  ``buff_icon_config`` cursor when the native contract validates;
+- the ``id`` marker and the suffix from ``igniteEventAction`` through
+  ``waitFirstTriggerInterval``, including ``stackingSettings``
+  (``read_buff_stacking_settings_compact_id_branch``),
+  ``tagsAfterTriggerExtendBuffAction``, ``timelineActions`` and
+  ``triggerInterval``.
+
+When the middle, exact icon cursor and unique suffix reader join, the block
+registry may classify a file as named exact framing. That is still an outer
+frame: unsupported nested bodies (recursive action interiors, positive
+``stackEffects``, positive timeline bodies) stay opaque, and a file with
+zero unconsumed composed bytes is not a whole named schema until those
+interiors have direct ownership evidence (see ``buff_named_schema``).
+
+Recorded corrections, kept so they are not repeated:
+
+- ``tagsAfterTriggerExtendBuffAction`` is a signed count followed by packed
+  four-byte ``GameplayTag`` IDs (``read_buff_tags_after_trigger_field``).
+  The earlier suffix reader's member-prefix and tag-name variants were
+  shifted interpretations of those bytes.
+- ``stackingSettings``: the legacy compact suffix branch here reaches EOF,
+  but the named child is ``buff_stacking_compact_native``, whose docstring
+  records why an earlier compact reader that also reached EOF was wrong.
+  EOF alone is not field-ownership proof.
+
+Field names beyond the proved cursors are labels, not serialization
+semantics; icon presentation, UI ownership and gameplay behavior do not
+follow from the recovered field names.
+"""
 
 from __future__ import annotations
 
@@ -1068,11 +1113,17 @@ def frame_buff_named_middle(
 
     The current generated ``BuffDataForMemoryPack`` wrapper supplies the field
     order. Damage and heal modifier elements use their current generated
-    wrapper order and only supported current processor union routes. Global
-    modifiers consume the generated four-member wrapper. An unsupported union
+    wrapper order and only supported current processor union routes: damage
+    items read condition, processor list, then enable-side storage; heal items
+    read condition, enable-side storage, then processor list. Global
+    modifiers consume the generated four-member wrapper. ``dispelConfig`` is
+    consumed as its exact raw-eight representation. An unsupported union
     stops at its tag instead of searching for the following field.
     ``iconConfig`` remains one named opaque range whose end is the independently
-    accepted top-level ``id`` marker.
+    accepted top-level ``id`` marker. From that marker the sequential suffix
+    reader names ``id`` through ``waitFirstTriggerInterval`` and closes at EOF;
+    nested icon, modifier and action bodies keep their own weaker evidence even
+    when the outer 30-field frame is closed.
     """
 
     fields: list[dict[str, Any]] = []

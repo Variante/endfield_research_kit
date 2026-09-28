@@ -3,6 +3,9 @@
 The reviewed Buff action reader supplies the finite ten-member wire profile.
 This module authenticates its separate SkillData union route and source order.
 Stored operands do not establish runtime deck-attribute evaluation.
+
+Native reads and generic contexts identify two operand enums, two bounded
+BlackboardDouble values, a comparison enum and a finite TargetSettings child.
 """
 from __future__ import annotations
 

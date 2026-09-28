@@ -4,6 +4,64 @@ This is the family registry for the JsonData block.  It proves that the
 structured export is a byte-for-byte view of every current logical file, then
 routes only the families with maintained readers.  A path or MemoryPack member
 count never promotes an otherwise unknown payload.
+
+Run as ``python -m scripts.game_data.jsondata_corpus
+--expected-input-set-sha256 <audit value>``; the value comes from the
+AnimeStudio VFS audit and fingerprints an exporter run, not the game build.
+
+Identity join.  Every selected ledger identity is joined to one structured
+export file by safe relative path, exact length and recomputed logical MD5; a
+length/MD5 mismatch, a missing file, or an export file no identity owns fails
+the whole audit.  Only then is a reader run.
+
+Terminal states (one per file, never merged):
+
+- ``format_framed_json``: valid UTF-8 JSON with no maintained named schema;
+- ``schema_decoded``: a named reader closed the whole payload (JSON schema or
+  MemoryPack reader at physical EOF);
+- ``format_framed``: a named outer frame whose nested bodies stay opaque (for
+  BuffData, ``namedOuterFrameStatus`` exact frame or full);
+- ``format_framed_anonymous``: an exact frame whose members are not named;
+- ``bounded_partial``: a named prefix with an opaque remainder;
+- ``bounded_partial_ambiguous``: SkillData rows whose terminal boundary has
+  more than one supported candidate;
+- ``unsupported``: a family reader refused a variant;
+- ``unclassified_binary``: no reader applies.
+
+A state is a structural evidence lane, not field coverage: a file with a
+terminal state is not thereby named field by field, and a whole-file claim
+still needs the family gate.  BuffData, SkillData and LevelScriptData have
+deeper family gates (``memorypack.buff_corpus``, ``memorypack.skill_corpus``,
+the LevelScript sequential owner) that own formatter, cursor, native-input and
+semantic claims.  Their reports are read here only after their own provenance
+checks, and every BuffData row promoted to ``schema_decoded`` is replayed from
+the current exported bytes against the family's recorded root receipt
+(no-positive, positive-damage, or sole-CreateBuffAction root) under the
+selected native validation; a differing canonical digest fails the audit.
+The Buff and Skill joins also check each report's format and identity-set
+digest, require a one-to-one path set with the current ledger, and recheck
+every row's length, logical MD5 and logical SHA-256 against the exported
+bytes.  Exact closure of a child record never promotes its parent: a SkillData
+row whose first action group is exact but whose later top-level continuation
+stops stays partial.  The SkillData adapter consumes the exact passive
+shared-list and multi-record CreateBuff profiles through separate structural
+predicates; a malformed profile claim raises ``SkillEvidenceContractError``
+naming the failed predicate, path and bounded row state rather than a
+generic validation failure.  Historical residual censuses are leads, not current
+denominators, until they are rejoined through this ledger.
+
+Current family and state totals are generated output
+(``reports/animestudio/jsondata_current_latest.json`` and its per-file JSONL);
+they are never restated in tracked prose.
+
+Outputs default to ``reports/animestudio/jsondata_current_latest.{json,md}``
+and the per-file ledger ``jsondata_current_files_latest.jsonl.gz``. The JSON
+report pins that compressed ledger's length and SHA-256
+(``provenance.outputFiles``), so downstream source joins (the LevelScript
+validators' ``--ledger``/``--summary`` replay, ``play_sound_action_corpus``)
+can prove they read the same ledger. ``--buff-report`` and ``--skill-report``
+are the complete Buff and Skill gate reports of the same input set; run
+vfs-audit, ``memorypack.buff_corpus`` and ``memorypack.skill_corpus`` first.
 """
 
 from __future__ import annotations

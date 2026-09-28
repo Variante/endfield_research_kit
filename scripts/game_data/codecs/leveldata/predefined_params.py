@@ -1,4 +1,12 @@
-"""Exact current-wrapper codec for LevelData ``predefinedParams``."""
+"""Exact current-wrapper codec for LevelData ``predefinedParams``.
+
+The top-level field reuses the 20-member ``PredefinedParam`` component
+codec from ``blackbox`` inside the generated two-member
+``LevelFactoryPredefinedParamData`` owner, stored as ``instKey`` then
+nullable ``param``. A changed owner, component marker, scalar, string,
+collection count or nested wrapper stops at the field instead of shifting
+the remaining LevelData cursor.
+"""
 
 from __future__ import annotations
 

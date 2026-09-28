@@ -1,3 +1,122 @@
+"""Extract one ``scope.ExtractionScope`` from the installed client into an export root.
+
+``export.bat`` always passes ``--structured BLOCK...`` plus
+``--unity-json``/``--unity-convert CLASS...``; direct use may take the presets
+``--structured-dump-mode focused|default|full`` and
+``--animestudio-scope story|assets|all`` with
+``--asset-mode focused|default|debug``. The exporter stamps every published
+structured block, Unity class and asset map with the installed build it came
+from (``meta/extraction/provenance.json``).
+
+Managed-reference schema work can opt into a fail-closed JSONL sidecar with
+``--animestudio-managed-reference-diagnostics`` without changing normal JSON
+or object-index output. Each MonoBehaviour worker writes a unique atomic part
+under ``<export root>/meta/<Layer>/managed_reference_diagnostics/``. Only
+partial managed references are included by default; repeat
+``--animestudio-managed-reference-diagnostic-type`` to constrain capture by
+``assembly::namespace.class`` regex, and
+``--animestudio-managed-reference-diagnostics-include-exact-matches``, which
+requires at least one type filter, adds exact matches for those identities.
+The options are rejected outside Story/all MonoBehaviour JSON scope. Rows
+carry exact object/RID/type identity, payload offset/length, SHA-256, bounded
+full base64 payload, focused-decoder failure cursors, and the serialized
+file's matching script/type hashes plus its bounded full TypeTree node list
+when it has one, tying field order to the asset's serialized schema rather
+than runtime metadata alone. Payloads up to the 1 MiB per-record cap carry
+base64 bytes; larger rows keep their exact range and hash with
+``truncated=true``. A final file is published only after a successful worker
+and ends with a complete terminal summary; absent, temporary, truncated,
+errored or incomplete parts are not evidence.
+
+This is the installed-game orchestrator for export layout v4. AnimeStudio
+(``tools/AnimeStudio``) owns the VFS catalogue, the overlay, block reads,
+Unity object decoding and conversion; this module owns scope, scheduling,
+worker isolation, staging, publication and provenance. Page semantics stay in
+the page builders, and a misdecoded source byte is fixed in AnimeStudio, not
+here.
+
+Scope and provenance
+    One run exports one ``ExtractionScope`` (``scope.py``) and publishes only
+    that scope. Each published structured block, Unity class and the asset maps
+    is stamped with the installed-layer fingerprints it came from
+    (``meta/extraction/provenance.json``); ``verify_export_freshness`` checks a
+    build's declared inputs against those stamps, not one export-wide
+    fingerprint. A height-only Terrain dump drops a whole-Terrain stamp, a
+    name-filtered class is stamped ``partial``, and outputs older than the
+    provenance file share its ``default`` stamp (the previous summary's
+    fingerprint). MonoBehaviour and PlayableDirector are always selected
+    together, because the object index is merged from one run's JSON jobs. Lua
+    is written as ``game/Lua/<name>.lua`` after the exporter removes the
+    base64+XXTEA wrapper.
+
+Staging and publication
+    Staging, filters and index parts live in the root's work dir
+    (``tmp/game_data/export/<root>-<hash>/``). JSON and Convert calls pass
+    AnimeStudio ``--document_store``, which writes ``.json`` and ``.anim``
+    documents straight into SQLite stores (exact bytes, SHA256 and the
+    ``describe_document`` header columns). Successful Convert shard stores
+    merge into persistent per-layer, per-type staging stores, which the asset
+    cache checks by row size and timestamp; JSON call stores are disposable.
+    Publishing merges the layers' staged stores into ``game/Unity.sqlite`` by
+    SQL: the later layer wins and only rows whose SHA256 changed are written.
+    The JsonData dump passes ``--packed-game-store``, so ``Json/LipSync`` rows
+    go into a staged ``GameFiles.sqlite`` merged during structured publish,
+    never as loose files. Converted media stays loose (mirrored as hardlinks),
+    except Sprite, which is a crop-document row over its Texture2D
+    (``sprite_crops.py``): selecting Sprite selects Texture2D whole, and every
+    Sprite publish checks that each crop names a published texture of its
+    recorded size. ``--sprite-images`` also keeps AnimeStudio's own Sprite
+    images in ``game/Sprite.sqlite`` and fails the Sprite item unless each crop
+    reproduces its image; any other Sprite publish removes that file.
+
+    A Unity type publishes only when every installed layer finished that type's
+    item in this run, never after a failed command or stage item. The
+    structured tree publishes only from a run that dumped the effective layer.
+    Catalogues, skip lists and the dump layer always follow the installed
+    layers, not the layers a run selected; each layer's Unity run gets
+    ``--skip_sources_file`` with its superseded bundle slots
+    (``unity_overlay.py``), so staging holds live objects only. Raw containers
+    (bundles, PCKs, streaming chunks) are never dumped.
+
+Exact-only output
+    AnimeStudio writes a non-exact sub-tree as a ``{"$undecoded": ...}``
+    location stub and does not write partial, metadata-only or TypeTree-less
+    objects; the per-layer export manifest records every written path (CAB,
+    chunk, offset) and every exclusion with its reason. Unnamed objects are
+    named by script class. A ``SerializeReference`` payload the hand-written
+    decoders only partly recover is re-decoded from the file's own
+    ``m_RefTypes`` TypeTree: additively (an exact decoder result is never
+    replaced, so consumers keep their keys) and only on a unique RefTypes match
+    plus exact payload consumption; otherwise the node records
+    ``exactTypeTreeUpgradeFailure``. The upgrade triggers on ``ExactOnlyGate``'s
+    own marker set, because a separate list that omits ``$inferred`` lets the
+    gate delete marked content un-upgraded; the remaining zero-length stubs are
+    Unity's ``rid: -2`` null sentinel, which is not a gap. The upgrade keeps
+    whole gameplay families: the ``EffectActionCfg`` reader marks every entry
+    ``$partial`` (unnamed enum semantics over a TypeTree-exact layout), and a
+    nested ``$partial`` excludes the object, so without it every
+    ``data_projectile_*`` object and each AbilityEntity or character template
+    with a populated ``deadEffect`` is excluded (the manifest's ``partial:``
+    exclusions are the audit). A JSON export from an older CLI therefore has no
+    projectile objects; re-run the MonoBehaviour ``json_by_type`` stage with a
+    rebuilt CLI rather than adapting a consumer.
+
+Scheduling (each default was measured; re-measure before changing one)
+    ``--animestudio-type-job-mode auto`` merges map-filtered JSON types, runs
+    broad Story JSON types sequentially in isolated processes, and keeps
+    map-filtered Convert types on the pooled sharded path; MonoBehaviour and
+    PlayableDirector stay broad. Map filtering is sound only for the types in
+    ``ANIMESTUDIO_JSON_MAP_FILTER_TYPES`` (the comment there records the
+    byte-for-byte comparison; TextAsset went from 508 s to 27 s in a full run).
+    Sharding was measured on identical object sets: Convert Texture2D scales
+    4.03x across 8 shards while JSON Material runs at 0.92-0.95x, because
+    Convert is CPU-bound decode (about 37 ms per object) and JSON export (about
+    3.55 ms per object) is bound on single-disk small-file creation. So Convert
+    shards, JSON does not, and ``--animestudio-broad-json-jobs`` stays at 1;
+    no measurement supports a higher value. Lower ``--asset-jobs`` before
+    changing shard counts or architecture when memory is constrained.
+"""
+
 from __future__ import annotations
 
 import argparse

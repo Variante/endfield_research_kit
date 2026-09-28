@@ -11,6 +11,24 @@ This domain deliberately keeps three different facts separate:
 The merged AnimeStudio object-index ``summary.json`` is the commit marker.  A
 missing, incomplete, or hash-invalid summary fails closed before any rows are
 published.
+
+Scene ownership rules. Each validated AssetMap object root is consumed in one
+bounded pass by exact ``Source`` + ``PathID``. Prefab-local and scene-asset
+containment candidates stay separate; only an authoritative scene id with
+unique containment promotes scene ownership, and no cross-source edge is
+inferred. Scene-emitter rows publish ``sceneEmitterSceneIds`` only from exact
+SceneAsset/Level containment or an exact prefab ``Source`` + ``PathID`` row
+joined to one level; candidate paths, sidecar ``levelId``, names, positions
+and mixed attributions fail closed. Scene-global rows are attributed only
+after the merged catalog validates every direct context.
+
+The blocking gap is exporter-side: the validated ``InitChunkData`` sidecars
+expose no prefab ``Source`` + ``PathID``/hash field, so no instance is
+promoted by basename, entity name, position, Mesh or similarity (see
+``_load_streaming_instance_identity_catalog``). A future exact numeric
+identity may resolve through one unique full AssetMap container path or an
+explicit component identity; disagreement between those routes fails closed
+with ``conflictingPrefabInstanceIdentityJoins``.
 """
 
 from __future__ import annotations

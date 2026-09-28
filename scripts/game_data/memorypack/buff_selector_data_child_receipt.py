@@ -4,6 +4,16 @@ The parent TargetSettings adapter owns `selectorData` and its exact span.
 This reader names the SelectorData union and two list fields through the
 selected derived plan and source MethodSpec. Finder/validator bodies remain
 structural, without a live target-selection claim.
+
+The three direct stored members are, in order, ``finderData``,
+``postProcessorData`` and ``validatorData``. The reader reparses its parent
+target, records the finder union's selected tag/type and both list counts,
+and must end at the parent's independently fixed selector boundary. Exact
+subtype children are separate modules: ``buff_selector_finder_character_team``
+(finder tag 2), ``buff_selector_finder_owner_spawned`` (finder tag 13),
+``buff_selector_validator_zero`` (validator tags 5 and 9) and
+``buff_selector_validator_tag_query`` (validator tag 11). Other positive
+finder subtype bodies remain structural.
 """
 from __future__ import annotations
 

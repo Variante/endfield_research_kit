@@ -1,4 +1,15 @@
-"""Sweep exported LevelData spline knots against the selected native layout."""
+"""Sweep exported LevelData spline knots against the selected native layout.
+
+The gate validates the selected native formatter window and struct offsets,
+then requires every exported LevelData file to close its named 43-field frame
+and every knot to occupy the proved stride. Pass ``--game-root`` (the
+installed ``Endfield_Data``); the default report is
+``reports/game_data/leveldata_bezier_knot_corpus.json``. Run the export
+freshness guard (``python -m
+scripts.game_data.extraction.verify_export_freshness``) first when claiming
+the export matches the installed client. Movement use of the knots is the
+separate ``leveldata_spline_runtime_native`` check.
+"""
 
 from __future__ import annotations
 

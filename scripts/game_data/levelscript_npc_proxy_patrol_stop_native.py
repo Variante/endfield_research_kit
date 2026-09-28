@@ -1,4 +1,20 @@
-"""Authenticate the selected NpcProxyPatrolStop ActionBase stored layout."""
+"""Authenticate the selected NpcProxyPatrolStop ActionBase stored layout.
+
+The branch adds `levelId` and `targetProxy`, both `Param<string>`, after the
+eight inherited action fields. The contract checks the dispatcher, complete
+reader and formatter bodies, ten ordered reads, two setters and both
+`System.String` generic contexts; source hashes joined to the JsonData
+ledger place reached records at exact cursors. The shared ActionMap reader
+admits the branch only while this route validates. Stored patrol targets do
+not prove that a proxy stopped at runtime.
+
+The command takes no options and prints the native audit only, exiting
+nonzero unless it validates. Source replay goes through
+`validate_npc_proxy_patrol_stop_native_contract`, which accepts an explicit
+JsonData export root, per-file ledger and summary.
+
+Run as: python -m scripts.game_data.levelscript_npc_proxy_patrol_stop_native
+"""
 
 from __future__ import annotations
 

@@ -1,8 +1,8 @@
 """Measure what each named MonoBehaviour class's serialized fields own.
 
-[`monobehaviour_census.py`](monobehaviour_census.py) collapses the exported
+[`census.py`](census.py) collapses the exported
 corpus to a few hundred script identities and
-[`monobehaviour_script_names.py`](monobehaviour_script_names.py) puts a managed
+[`script_names.py`](script_names.py) puts a managed
 class name on each one. Neither says what an instance *owns*. A name is an
 identity for the script; it is not evidence that a field points at an asset,
 carries a table key, or is ever written at all.
@@ -61,6 +61,13 @@ One deliberate refusal. This module never labels a field from its name.
 ``imgRefPath`` is reported as a string field whose values contain path
 separators; calling it an asset path is a reading, and it belongs in the
 owning memory topic once a consumer is found, not in a generated row.
+
+It is a second full sweep of the corpus, so give it the census's generous
+timeout. The export's ``meta/cab_map`` is read from the same export root.
+``--top N`` reports only the N largest classes, which is how to work the
+corpus down by object count; ``--limit N`` is a bounded probe, not a census.
+
+    python -m scripts.game_data.monobehaviour.field_semantics --names-report reports/assets/monobehaviour_script_names.json --progress 100000 --report reports/assets/monobehaviour_field_semantics.json
 """
 
 from __future__ import annotations

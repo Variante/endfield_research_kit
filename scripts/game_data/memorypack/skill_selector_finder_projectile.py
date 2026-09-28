@@ -1,4 +1,13 @@
-"""Selected one-member ProjectileFinder nested SkillData route."""
+"""Selected one-member ProjectileFinder nested SkillData route.
+
+``SelectorFinder`` physical tag ``0x0F`` has its own selected switch table,
+not an AbilityActionData action tag.  :mod:`skill_selector_selected` checks
+the hash-pinned switch entry, resolves the reached branch's type-usage load to
+the generated wrapper and confirms its one-member plan, whose ``shapeData``
+child goes to the existing bounded ColliderShapeData reader.  ``FF`` is the
+separate null-wrapper state.  The stored shape does not show which projectile
+a finder matched at runtime.
+"""
 from __future__ import annotations
 
 from typing import Any

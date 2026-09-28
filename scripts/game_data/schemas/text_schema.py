@@ -1,4 +1,20 @@
-"""Byte-pinned named schemas for the remaining textual JsonData tables."""
+"""Byte-pinned named schemas for the remaining textual JsonData tables.
+
+The reviewed ``jsondata_text_schema.json`` contract (walked by
+``schemas.named_schema``) closes the AI global settings and enemy-template
+path summary, the root-level NPC-proxy and script-task tables, interactive
+collection counts, doodad groups, factory regions and spaceship cabin spawn
+data.  ``_relations`` adds the cross-field checks the node walk cannot
+express: enemy-template paths end in ``data_<id>.asset``, the two root tables
+carry their ``Gameplay.Beyond`` type identities, collection rows hold exactly
+33 integer counts, and doodad group ids are globally unique.  The
+``LevelMountPoint`` files use the recursive reader in
+``schemas.level_mount_point`` instead.
+
+``exact`` stored structure for reconstruction placement, navigation,
+attachment and idle-behavior work; it does not show which runtime object
+consumes a row.
+"""
 
 from __future__ import annotations
 

@@ -5,6 +5,44 @@ source that never loads is reported missing; a conflicting source is isolated
 to that source.  Diagnostic mode can inspect retained rows from an incomplete
 transport, but its output is never publication eligible.  This verifier does
 not publish a whole-schema corpus claim.
+
+The target set (``contracts/skill_cursor_capture_target_set.json``, gated
+before launch by ``python -m
+scripts.game_data.il2cpp.skill_cursor_target_set_context``) binds every
+current terminal-ambiguous SkillData logical source plus the
+already closed Purrche second-talent source as a positive control.  The
+recorder admits each source by copied-byte hash, retains one full cursor
+vector per identity, and counts identical repeats, conflicting repeats and
+locally incomplete pairs separately; its atomic live progress
+(:mod:`skill_cursor_target_set_progress`) is provisional.  Publication needs
+a quiescent, loss-free receipt.  The strict mode replays the current native
+and corpus gates, exact copied source bytes, field cursors, child checkpoints
+and terminal EOF for each source independently.  A source never loaded during
+play stays missing rather than borrowing another source's selection.
+
+One earlier session lost callbacks during a bounded recorder-lock wait, and
+its positive control ended with an incomplete pair; the strict verifier
+rejected the globally incomplete receipt, and its diagnostic output stays
+nonpublishable even though every retained row selected the one-member
+terminal.  V3 callbacks wait on an SRW lock while worker drains stay
+nonblocking.  The following session produced a complete, loss-free receipt:
+every requested target and the positive control verified, each reading the
+earlier one-member terminal, so that set needs no further capture.  A
+top-level cursor never names a populated ActionGroup interior.
+
+Workflow.  ``python -m scripts.game_data.il2cpp.skill_cursor_target_set_context
+--preflight --capture-binding-batch`` prints the host binding;
+``tools/EndfieldCapture/StartCapture.bat skilldata-cursor targeted
+--skilldata-all-targets --no-pause`` (first with ``--preflight-only``) runs
+the session; ``python -m
+scripts.game_data.memorypack.skill_cursor_target_set_progress
+<session>/skilldata-cursor/progress.json`` shows provisional coverage; this
+module then verifies ``<session>/skilldata-cursor/receipt.json`` into
+``reports/animestudio/skilldata_cursor_target_set_verification_latest.json``
+(with ``--diagnose-incomplete``, into
+``skilldata_cursor_target_set_diagnostic_latest.json``).  The verification
+is what ``memorypack.skill_corpus --capture-target-set-verification`` replays.
+Raw sessions stay under ``scratch/reverse_engineering/endfield_capture/``.
 """
 
 from __future__ import annotations

@@ -32,8 +32,8 @@ bools than the wire carries and nothing here says which were dropped.
 
 **The evidence is whole-file framing, not a plausible parse.**
 ``frame_levelscript_declared_root`` refuses any file whose cursor does not land
-on physical EOF, and this layout closes all fifteen files that carry the action,
-taking LevelScriptData from 5,006 to 5,021 of 5,030.
+on physical EOF, and this layout closed every file that carried the action
+when it was reviewed; current counts are in the JsonData corpus report.
 
 ``SendLuaEvent2`` declares a second ``Param<object>`` and so should write eight
 members. **No file in the corpus contains one**, so that count is a prediction

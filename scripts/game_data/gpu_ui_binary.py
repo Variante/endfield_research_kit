@@ -1,4 +1,36 @@
-"""Current structural framing for binary GPU UI configuration payloads."""
+"""Current structural framing for binary GPU UI configuration payloads.
+
+Two families, two readers:
+
+- The three 16-member configurations (``buff_icon``, ``buff_icon_main``,
+  ``outscreen_target``) are ``ExtendedPrefabGroupSerializeData``.
+  ``decode_gpu_ui_root16`` closes every root field and the nested
+  ExtendedPrefab, ExtendedAnimation, NodeMetadata, ExtendedNode and Subroot
+  records with one sequential cursor to physical EOF. Generated wrapper order
+  plus the original field types name animation timing, affected-node
+  indices, render-node offsets, node text and autosizing, UV/animation
+  sampling values, material/fill parameters, subroot anchors and both
+  texture hashes. The root keeps ``layoutType``, ``prefabBufferSize`` and
+  the following ``prefabs`` count distinct. ``frame_gpu_ui_root16_prefix``
+  is only the bounded fallback for an unsupported nested layout.
+- DamageText's six-field ``PrefabGroupSerializeData`` is decoded by
+  ``decode_damage_text`` with a sequential cursor through every nested
+  record and the root tail, gated by
+  ``scripts.game_data.gpu_ui_damage_text_native``. It names the six-member
+  prefabs, five-member animations, twelve-member node metadata and distinct
+  ten-member ``NodeSerializeData`` bodies, including contiguous animation
+  vectors, unsigned material parameters and UVs. The final texture
+  references are signed 64-bit ``StringPathHash.hash`` values with the
+  text-ID list between them. ``frame_damage_text`` (the row-boundary
+  scanner) remains a structural fallback only.
+
+Negative kept on purpose: ``renderNodes`` can hold more entries than the
+stored ``nodeCount``; the two counts must not be equated.
+
+Evidence tier: exact stored schema. Stored render configuration does not
+establish runtime prefab selection, GPU buffer addressing, animation
+evaluation, shader consumption, or a resolved texture-hash identity.
+"""
 
 from __future__ import annotations
 

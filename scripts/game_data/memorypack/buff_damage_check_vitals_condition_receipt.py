@@ -1,4 +1,15 @@
-"""Selected CheckHp and CheckPoiseValue simple-target damage conditions."""
+"""Selected CheckHp and CheckPoiseValue simple-target damage conditions.
+
+It checks the separate selected native eight-member ``CheckHp`` and
+``CheckPoiseValue`` routes with simple TargetSettings and exact
+BlackboardDouble children, joined to current VFS logical hashes.
+``memorypack.buff_corpus`` admits each sole action with processor tag five
+through all 30 root fields, source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_check_vitals_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

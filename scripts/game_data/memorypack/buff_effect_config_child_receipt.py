@@ -3,6 +3,19 @@
 The 85 direct fields are named at a certified EffectAction.effectActionCfg
 span. Nested values retain their prior structural framing; the enclosing
 BuffData record is not promoted to a whole named schema.
+
+The generated wrapper's setter order agrees with the selected reader's 85
+source operations, and every operation has a checked destination store at
+the corresponding runtime field offset; vector members also have their
+companion stores checked. The runtime type has two additional fields,
+``forceGuardEffect`` and ``centerOffset``, that this serialized wrapper
+does not read. The gate reparses each selected ``EffectAction`` and requires
+the child to end at the independently certified parent field boundary.
+Strings stay signed-length byte spans. The ``TerrainEffectData`` array is
+proved only on its null or empty branch; positive arrays are refused, and
+effect execution stays unresolved. The three ``BlackboardVector3`` members
+and scalar blackboard children are named by
+``buff_effect_vector_child_receipt``.
 """
 from __future__ import annotations
 

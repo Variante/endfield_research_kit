@@ -3,6 +3,13 @@
 The selected dispatcher and generated wrapper determine a five-member plan.
 The mount-point field remains an enum32 bit pattern; no runtime effect or enum
 label is inferred from the stored value.
+
+The plan is the inherited bool and three DWORDs followed by a raw enum32
+``mountPoint``.  The route was a first refusal inside ``buffEventAction`` of a
+BuffData record added by the newer JsonData overlay; with it, the bounded
+reader rejoins the named middle fields and the exact ``iconConfig`` child at
+the independently accepted id marker.  Recursive action interiors and the
+post-ID suffix children remain open.
 """
 from __future__ import annotations
 

@@ -3,6 +3,18 @@
 The reviewed Buff source window owns the eight read kinds; the current native
 action route supplies generated wrapper names and nested declared types. The
 paired and scalar Blackboard payloads remain structurally framed here.
+
+After rechecking the eight-member source reader, generated wrapper route and
+three native Blackboard call contexts, the adapter names ``isEnable``,
+``priorityLevel``, ``priorityOffset``, ``serverActionIndex``, ``eventKey``,
+``numericValue``, ``outputStringValue`` and ``stringValue`` in source read
+order, and rejoins every reported physical action span exactly.
+``eventKey`` and ``stringValue`` are structurally framed
+``BlackboardString`` payloads and ``numericValue`` a structurally framed
+``BlackboardDouble`` (named further by
+``buff_blackboard_double_child_receipt``). Their contents, lookup or
+evaluation, and runtime event dispatch are unproved; recursive action
+interiors and the enclosing BuffData schema are not established here.
 """
 from __future__ import annotations
 

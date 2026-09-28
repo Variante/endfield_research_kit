@@ -4,6 +4,12 @@ The reviewed root body already has a complete native code window. This
 contract adds the per-member source-call, generic argument, and destination
 store joins. The byte reader in ``buff_root_no_positive`` uses these facts only
 for the null/empty recursive collection branch.
+
+``buff_root_no_positive_native.json`` joins all 30 root source reads,
+generic contexts, generated setters and destination stores to the installed
+native body; the positive branches in ``buff_root_no_positive`` reuse this
+root order and add their own child contracts. A different installed build
+yields no rows.
 """
 from __future__ import annotations
 

@@ -4,6 +4,16 @@ The stored route is authenticated by its native switch, complete generated
 reader and formatter bodies, ordered reader/setter calls, 30 nested Param<T>
 contexts, enum definition, and optional current source/ledger receipts.
 This does not establish that the camera action executes in a live session.
+
+The body after the eight inherited action fields is large (38 members).
+Its `moveWay` member is `Param<TrackCameraMoveState>`, whose enum has
+four-byte `int` storage and exactly two declared values, `Distance` and
+`WayPoints`; both occur in current source. `codecs.levelscript.track_camera`
+reads the four-member `Param` envelope and shared source/path tail with a
+dedicated finite enum codec, so an unknown enum value fails closed. The
+shared ActionMap reader admits the branch only while this validator passes.
+
+Run as: python -m scripts.game_data.levelscript_track_camera_native
 """
 
 from __future__ import annotations

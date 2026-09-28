@@ -12,6 +12,19 @@ payload, without importing ``pyinjector``, enumerating processes, or writing a
 package/session.  A non-check invocation must explicitly request package or
 session staging, or ``--inject``.  Injection is one ordinary pyinjector call;
 an access denial is reported and never retried.
+
+The payload is the experimental native fallback under
+``tools/audio-runtime-capture/``. It verifies the selected process,
+``GameAssembly.dll`` and ``AkSoundEngine.dll``, then can install the
+manifest-derived ``audio_chain_v1`` read-only profile, which records the
+managed external-source request, the Wwise source-media lookup and the default
+I/O open; the descriptor-post boundary stays disabled until its ABI is
+recovered. Staging copies the verified x64 DLL into a private package
+directory and writes the adjacent ``audio_capture.session.json``; a session
+is armed only after an importer-compatible, fully hash-matched
+``session_start`` handshake. A denial, incomplete module gate, hook
+attachment failure or unsupported profile stops without retry or fallback.
+The capture is optional and part of no export, Updates or packaging flow.
 """
 from __future__ import annotations
 

@@ -1,4 +1,13 @@
-"""Validate the selected native 128-bit Init descriptor mask setup."""
+"""Validate the selected native 128-bit Init descriptor mask setup.
+
+The selected UnityPlayer setup zeros two adjacent QWORDs, takes each group
+descriptor's first word sign-extended, divides it by 64 to pick a QWORD and
+sets the remainder bit, then passes the 16-byte mask to the packed layout
+constructor, which reads all of it. Stored descriptor IDs are therefore bit
+positions of an anonymous 128-bit packed-column mask. The setup has no
+checked rejection for a negative ID or one of 128 or more, so this is a
+description of the selected branch, not an input validator.
+"""
 
 from __future__ import annotations
 

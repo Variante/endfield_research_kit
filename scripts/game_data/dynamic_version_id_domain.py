@@ -1,4 +1,27 @@
-"""Join authenticated fb_version IDs to same-scene indexed IdComp.UniqueId rows."""
+"""Join authenticated fb_version IDs to same-scene indexed IdComp.UniqueId rows.
+
+Run ``python -m scripts.game_data.dynamic_version_id_domain --gameassembly
+PATH --metadata PATH --expected-input-set-sha256 INPUT_SET_SHA256
+--control-scene map01``. It checks the selected native version and IdComp
+layouts, streams the relevant files through AnimeStudio itself, rejoins them to
+the current VFS ledger, and writes
+``reports/animestudio/dynamic_version_id_domain_latest.{json,md}``.
+
+It checks same-scene containment of version IDs in indexed
+``IdComp.UniqueId`` values, a separate negative check against grid IDs, and an
+explicit control scene. It does not classify a live version-ban decision.
+
+Relation (structural). The gate uses the selected version, main-grid,
+DataIndex and RootComp contracts, and every streamed file is rejoined to the
+VFS path, length and FileDataMd5. In each grid the valid DataIndex rows
+partition its ``IdComp`` vector, so the compared values are indexed
+``IdComp.UniqueId`` fields rather than a byte search. Every current populated
+``Entry.Id`` occurs in an indexed ``IdComp.UniqueId`` of the same scene; other
+same-scene IdComp values have no entry, so the version vector is a subset,
+not an entity inventory. No entry equals a same-scene grid ``UniqueId``, and
+the independently authenticated ``map01`` control has no overlap. The
+meaning of ``Id`` beyond this join and the runtime ban selection are open.
+"""
 
 from __future__ import annotations
 

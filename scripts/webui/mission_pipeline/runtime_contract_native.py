@@ -15,6 +15,12 @@ scan cannot see; such links are labelled ``dispatch`` and not claimed. Prose
 hops are kept as prose. A row is ``verified`` only when every hop resolved and
 every checked link holds; the reviewed finding text beside it is otherwise
 unchanged, so an unverified row says so instead of borrowing a stale address.
+A hop reached only through an inlined copy of a named method makes the row
+``verified_with_inlined_hops``. A row whose chain no longer holds is
+``link_failed`` and needs a fresh reading, never a pin: the building-panel
+lock row was once written backwards -- the public
+``FactoryUtil.CheckIsBuilding*Locked`` checks call ``CheckBuildingLock`` and
+build the radio, not the reverse.
 """
 from __future__ import annotations
 

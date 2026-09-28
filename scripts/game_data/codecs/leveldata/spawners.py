@@ -1,4 +1,14 @@
-"""Exact generated-wrapper codec for LevelData spawner instances."""
+"""Exact generated-wrapper codec for LevelData spawner instances.
+
+LevelData's ``spawners`` member is a list of the generated six-member
+``LevelSpawnerInstDataForMemoryPack`` wrapper, stored in the order
+``belongLevelScriptId``, ``configId``, ``enableWaveDieEvent``, ``position``,
+``rotation``, ``spawnerId``. Both poses are finite three-float vectors and
+both IDs are unsigned 64-bit values. Nullable list elements are accepted;
+every other member count is rejected, and the list must hand off at the
+exact following ``specificData`` marker. Placement data only: it does not
+prove that or when a spawner activates.
+"""
 
 from __future__ import annotations
 

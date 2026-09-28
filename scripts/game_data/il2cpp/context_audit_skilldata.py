@@ -2,6 +2,36 @@
 
 Moved verbatim out of ``context_audit``; that module owns the audit
 contract and the report it assembles.
+
+SkillData formatter identity (joined in ``context_audit``, consumed here).
+Registration locates the real SkillData formatter/wrapper bodies and the
+relative five-operation terminal read sequence, never a file offset.  The Core
+type used by ``ReadValue<T>`` differs from the generated wrapper's
+``Register<T>`` type, so a generated wrapped reader alone proves neither the
+adapter nor the active formatter.  A separately gated immediate-registration
+site joins the Core key to ``GenericMemoryPackFormatter`` with ordered
+arguments Core and ``Beyond_Gameplay_Core_GameplayTagListForMemoryPack``; its
+type carrier and constructor MethodSpec share the registered class
+instantiation.  That is static adapter identity and a conditional
+registration callsite, not a completed allocation ABI, executed registration
+or active Deserialize dispatch.  Registration and lookup share one
+RIP-relative cell and the same class/static-storage dereferences; a matched
+lookup node supplies its value, but misses can invoke callbacks, retry or
+construct alternatives, so live contents and replacement history stay open.
+The generic serializer's pointer/length carrier is not joined to this
+formatter or to an authenticated VFS allocation.  PE reads stay inside raw
+section extents: a virtual-only global has no disk value and needs runtime
+initialization evidence, never adjacent file bytes.
+
+This module's terminal evidence (collision, sample byte witness, shifted
+wrapper probe, shifted-candidate reader assessment, tail layout) compares the
+two anonymous terminal candidates of :mod:`skill_terminal`: the native
+field-43 bool read refuses the one-byte-later start on the witnessed reader
+route, and the field-44 ``GameplayTagList`` wrapper's one-byte header (``1``
+or null ``FF``) favors the earlier candidate conditionally on that route.
+The audit's terminal sample witnesses require an already selected corpus, so
+an all-unselected basis stops at its ``ambiguous`` boundary; that case goes
+through ``python -m scripts.game_data.il2cpp.skill_cursor_native_context``.
 """
 from __future__ import annotations
 

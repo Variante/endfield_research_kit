@@ -2,6 +2,14 @@
 
 The native contract proves the generated union reader, parameter types and
 string storage. Source receipts prove reached bytes, not a live marker removal.
+
+The branch stores `trackingPointId` as `Param<string>` after the eight
+inherited action fields; the reader includes owned fragments and a
+forwarding formatter. Reached IDs are authored string values without a local
+parameter path or reference. Most enclosing owners continue to unsupported
+fields or unions, so the corpus EOF gate remains the owner-level boundary.
+
+Run as: python -m scripts.game_data.levelscript_remove_tracking_point_native
 """
 
 from __future__ import annotations

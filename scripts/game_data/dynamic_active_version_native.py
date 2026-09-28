@@ -1,4 +1,55 @@
-"""Validate the selected source of DynamicStreaming's active version fields."""
+"""Validate the selected source of DynamicStreaming's active version fields.
+
+``python -m scripts.game_data.dynamic_active_version_native --gameassembly
+PATH --metadata PATH`` checks the selected network login response through the
+typed yield, the shared object reference, the protocol-message branch-version
+setter, the player getter, the parser regex and its capture-to-output path,
+the default active fields, and the guarded stores into the version ban set. It
+writes ``reports/animestudio/dynamic_active_version_native_latest.json``. The
+live response bytes and value, and the selected phase, remain unobserved.
+
+Login chain (direct, conditional on the unpatched and success branches). The
+outer enter-game coroutine passes its ``<loginRespRef>5__5`` reference to
+``_NetConnectAndGSLogin``; the inner coroutine calls
+``NetClientManager.LoginAsync``, keeps the returned
+``HGNetSessionLoginYield``, and on success stores ``GetResponse`` (the
+yield's typed ``m_resp``, a ``Proto.MSG_B1``) in the reference's ``value``.
+``HGNetSession._SessionLoginThreadTask`` calls ``_ReadMessageInSessionThread``
+with a ``NetResponse`` output; that passes the received bytes to
+``NetUtil.GetNetMessageFromDataBytes``, where
+``ParsingPrimitivesMessages.ReadRawMessage`` parses a typed ``Proto.CSHead``
+and its ``msgid_`` is looked up in ``NetUtil.s_sc_id2MessageType``. The
+registration body's ``FastRegisterMessage`` resolves ``Proto.MSG_B1`` and
+calls ``RegisterSCMessage`` with literal ID ``1``, which ``TryAdd``s the pair
+to that dictionary (the authored ID-to-type route when registration runs
+unpatched). The mapped type is instantiated, filled by
+``MessageExtensions.MergeFrom`` and stored in ``NetResponse.msgBody`` beside
+``headMsg``. The session task requires a successful read and
+``get_msgId() == 1``, checks ``msgBody`` against the ``Proto.MSG_B1`` type
+usage (a runtime cast, not proof a live response passed it), passes it to
+``_HandleLoginEncryp`` and then to ``HGNetSessionLoginYield.SetSucceed``,
+which stores it in ``m_resp``. The outer coroutine later reads ``value`` for
+a guarded ``PlayerInfoSystem.SyncBranchVersion``; on its non-null route that
+reads string field ``f14_`` and calls ``set_branchVersion``, storing
+``m_branchVersion``.
+
+Parser. ``DynamicSceneVersionBanSet._ResolveActiveVersion`` reads
+``GameInstance.get_player``, ``GamePlayer.playerInfoSystem`` and
+``PlayerInfoSystem.get_branchVersion`` and passes the string to
+``GlobalOptions._ParseVersion``. That body loads the regex literal
+``^v(\\d+)d(\\d+)(d(\\d+))*?$``, calls ``Regex.Match`` and makes three integer
+parses: group 1 to major, group 2 to minor, nonempty group 4 to phase. It
+zeroes all outputs first; a failed major parse exits with zeros, a failed
+minor parse can leave the parsed major, and a failed nonempty phase parse
+resets all three; an absent or empty group 4 leaves phase zero. The capture
+returned for several repeated ``d`` segments is not exercised in the game
+runtime. The resolver initializes active major and minor to zero and phase
+to the full-phase sentinel, and copies all three outputs only when at least
+one is nonzero (so a partial nonzero major can be copied). A matched
+two-component value with a nonzero part therefore assigns phase zero, while
+``v0d0`` keeps the sentinel; this is a selected-body implication, not an
+observed branch-version value.
+"""
 
 from __future__ import annotations
 

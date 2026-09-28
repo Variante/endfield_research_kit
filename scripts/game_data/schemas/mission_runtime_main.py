@@ -1,4 +1,21 @@
-"""Fail-closed named schema reader for main MissionRuntimeAsset JSON bodies."""
+"""Fail-closed named schema reader for main MissionRuntimeAsset JSON bodies.
+
+The reviewed ``mission_runtime_main_schema.json`` contract names every
+nested object shape, array member and scalar type, and dispatches every
+polymorphic condition, tracking row, external-info row and client action
+through its stored ``$type``. Only three objects are dynamic dictionaries:
+``questDic`` maps authored quest IDs to the closed quest schema (the key
+must equal the nested ``questId``), and ``propertyIdToKeyMap`` /
+``propertyKeyToIdMap`` are typed maps that must be exact inverses.
+``clientActionMapKey`` and ``clientActionMapValue`` must have equal length,
+and ``missionId`` must equal the file stem. Unknown fields,
+discriminators, populated formerly-empty branches or scalar-type drift fail
+closed. ``scripts.game_data.jsondata_corpus`` binds this reader and
+``schemas.mission_runtime_meta`` to the authenticated VFS ledger.
+
+Evidence tier: stored-schema closure. Runtime activation and mission
+ordering remain separate evidence questions.
+"""
 
 from __future__ import annotations
 

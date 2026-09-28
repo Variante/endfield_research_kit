@@ -3,6 +3,40 @@
 Generated FlatBuffer getters establish the two nested record layouts. The
 selected main and RootComp contracts supply grid vectors, DataGroup and
 VisibleDesc. This audits stored references, not live resource activation.
+
+Layout (direct, ``dynamic_resource_comp_native.json``). ``ResourceComp`` is a
+124-byte inline record with five DataGroups, ``Res``, ``Mount``,
+``MountViewModel``, ``NavData`` and ``LodInfo``, plus a four-byte
+``NavState``. The 88-byte ``ResourceGroupWithStateDesc`` holds a ``Group``,
+the scalars ``SceneState``, ``LogicState``, ``LevelNum`` and
+``FactoryIndex``, and a nested ``VisibleDesc``. Their offsets and primitive
+types are exact; their runtime conditions and use are not established.
+
+Same-grid partitions (structural). In every authenticated current grid the
+five ResourceComp groups partition their vectors exactly: ``Res`` addresses
+``ResourceGroupWithStateDesc``, ``Mount`` ``MountPair``, ``MountViewModel``
+``PrimitiveStringList`` (string indices, not a model record as the name
+suggests), ``NavData`` ``DataGroup`` and ``LodInfo`` ``LodGridResource``,
+each checked by type value, grid ID, index, count and ``TotalInGrid``.
+
+Cross-grid payloads (structural). Each valid descriptor's inner ``Group``
+selects ``Model``, ``Effect`` or ``Ecs`` records and, unlike the outer
+``Res`` group, may name another grid in another main file. Grid IDs repeat
+across scenes, so targets resolve by scene path plus grid ID. Every valid
+target resolves to one grid in that scene and the inner groups partition the
+three target vectors exactly, including cross-file spans; invalid inner
+groups select no span. This is an authored cross-grid relation, not a load
+or activation record.
+
+The descriptor's two visible groups address the containing grid's
+``PrimitiveIntList`` like RootComp's. Their spans are disjoint and, with the
+RootComp spans, cover most of that vector; ``dynamic_sludge_surf_tile_native``
+closes the remainder.
+
+Run ``python -m scripts.game_data.dynamic_resource_comp_native --gameassembly
+PATH --metadata PATH --input-root DUMP_ROOT --expected-input-set-sha256
+INPUT_SET_SHA256`` over the targeted ``fb_main`` dump. It writes
+``reports/animestudio/dynamic_resource_comp_native_latest.{json,md}``.
 """
 
 from __future__ import annotations

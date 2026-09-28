@@ -5,6 +5,41 @@ GameAssembly/metadata pair. The dynamic witnesses below also require the
 serialized ``_soundEvent`` field to reach ``Compute(string)`` through the
 checked object and position branches. iFix replacement and runtime execution
 are outside this static proof.
+
+The audit covers the unpatched PlaySound object and position routes from the
+serialized sound string through ``AudioHashGenerator.Compute(string)``, fails
+closed on a different native pair, and writes
+``reports/audio/play_sound_string_native.json``. The optional
+``--event-literal`` and ``--audio-source-index`` compare the raw and
+hypothetically trimmed hashes with one scanned HIRC inventory; that comparison
+does not observe live posting.
+
+The checked routes, both reached from ``PlaySoundAction._DoPlaySound``:
+
+* object branch: reads ``PlaySoundActionData._soundEvent`` and passes that
+  pointer to its post helper, which checks for a nonempty string, calls
+  ``AudioHashGenerator.Compute(string)`` and sends the integer to
+  ``AudioAdapter._PostEvent``;
+* position branch: passes the same field to
+  ``AudioBattleUtil.PostEventAtPositionWithMixingType(string, ...)``, which
+  checks for a nonempty string, calls the same ``Compute(string)`` and
+  forwards the integer to its position-post overload.
+
+The selected ``Compute(string)`` hashes the whole managed UTF-16 string,
+folding ASCII uppercase and trimming nothing, so these default bodies keep a
+trailing space through hashing. The ``SkillData/eny_0080_reaper_skill_left``
+sound string ends in a space: raw and trimmed spellings hash differently and,
+in the scanned CN HIRC set, only the trimmed id is an Event object. That is a
+counterexample to silently trimming authored strings, not proof of which
+branch ran or what Wwise did with a post.
+
+Both methods test iFix patch state before their default bodies. A
+MD5-verified dump of the installed ``IFixPatchOut`` set declares no
+replacement target for the named methods (see
+``memory/game_data/ifix_patch.md``); that narrows the shipped-patch
+alternative without observing runtime patch state or ruling out another patch
+source. Other PlaySound routes are not covered, and neither finding promotes
+the trimmed spelling to a runtime Event identity.
 """
 from __future__ import annotations
 

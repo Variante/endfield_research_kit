@@ -3,6 +3,30 @@
 The selected getter identifies an inline DataGroup. The corpus audit tests its
 stored span alongside RootComp and resource visibility spans, without assigning
 runtime behavior to the selected tile IDs.
+
+The selected ``FBDynamicSceneSludgeComp.get_SurfTileIDs`` fast path returns an
+inline ``FBDynamicSceneDataGroup`` from the SludgeComp record
+(``dynamic_sludge_surf_tile_native.json``); the main-vector contract supplies
+the record vector and width and the RootComp contract the shared DataGroup
+layout and ``PrimitiveInt`` type. The field and offset come from native code,
+not from nearby bytes or a value pattern.
+
+The audit checks the native inputs, VFS input set, every main dump's size and
+MD5, all main-vector bounds, and each group's type, grid ID, index, count and
+total. In every authenticated current grid the ``SurfTileIDs`` spans are
+disjoint from the RootComp and ResourceGroup visibility spans, and the three
+families tile ``PrimitiveIntList`` exactly (structural). The selected values
+are nonzero stored tile IDs, not padding.
+
+The getter window has an alternate native branch outside its checked fast
+path. No selected consumer of the IDs is known: when SludgeComp is active and
+how a tile affects navigation or rendering remain open.
+
+Run ``python -m scripts.game_data.dynamic_sludge_surf_tile_native
+--gameassembly PATH --metadata PATH --input-root DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256`` over the targeted ``fb_main``
+dump. It writes
+``reports/animestudio/dynamic_sludge_surf_tile_native_latest.{json,md}``.
 """
 
 from __future__ import annotations

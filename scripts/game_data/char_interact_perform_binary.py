@@ -6,6 +6,33 @@ must then decode as a complete 27-member ``CharInteractPerformRuntimeCfg`` and
 the candidate must be reached through one of its counted action-list fields.
 Unknown action tags or changed nested member counts reject the whole owner;
 the prefilter is never semantic evidence by itself.
+
+``decode_char_interact_complete_frame`` is the whole-owner framing gate:
+it consumes the complete 27-member owner through physical EOF whether or
+not an audio action is present. The reviewed
+``char_interact_perform_native.json`` contract records the native
+tag-to-wrapper dispatch; generated wrapper properties plus whole-owner
+cursor closure establish the read order of every concrete action shape in
+the current corpus. The frame publishes each action's exact byte range,
+native type name, phase placement, base fields and actor index where
+present, alongside the richer audio rows. A future unobserved concrete tag
+or changed member count fails closed before the ``frame_char_interact_prefix``
+fallback. The ``serialized_dictionary`` helper reads a
+``SerializeFieldDictionary`` member as the formatter writes it: a one-member
+object header (or ``0xff`` null) and then the counted map.
+
+Curve representations are kept apart. Unity ``AnimationCurve``
+(``animation_curve``) is a nullable three-member wrapper with post/pre wrap
+modes, a count, and raw 28-byte keys; the per-key labels in that method are
+cursor labels only. The only positive keys in the current corpus read as
+(0,0) and (1,1) in the first two floats, which matches Unity's native
+Keyframe order (time, value, ...) rather than the alphabetical labels.
+``FAnimationCurve`` (``f_animation_curve``) reads keys and then the two wrap
+modes; every current ``_customCurve`` has zero keys, so its positive-key
+branch (per-key eight-member wrapper, alphabetical order) is unexercised and
+disagrees with the bulk native-order element layout proved for
+AnimationConfig in ``animation_curve_native.json``. Treat a positive
+FAnimationCurve key here as unverified.
 """
 from __future__ import annotations
 

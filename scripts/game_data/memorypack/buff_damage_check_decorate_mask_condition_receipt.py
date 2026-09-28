@@ -2,6 +2,15 @@
 
 This reader certifies a stored SequenceActionData child. Its enclosing
 DamageModifier and BuffData require their own composed cursor proof.
+
+It checks the selected native dispatcher and complete action reader, then
+replays one ``CheckDamageDecorateMask`` action inside a damage condition on
+current VFS-verified source bytes. Root candidates are reported separately
+from whole-root promotion, which only ``memorypack.buff_corpus`` performs.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_check_decorate_mask_condition_current_latest.json``.
 """
 from __future__ import annotations
 

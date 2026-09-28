@@ -2,6 +2,20 @@
 
 The native contract proves the generated union reader, parameter types and
 enum storage. Source receipts prove reached bytes, not a live tracking marker.
+
+After the eight inherited action members the route stores six parameters:
+`entityPtr` (`Param<EntityPtr>`), `guidingArea` (float), `levelId`
+(string), `styleType` (`CommonTrackingPointStyleType`), `trackingPointId`
+(string) and `trackingType` (`CommonTrackingType`). Both enums are
+signed-integer declarations with finite members. The contract authenticates
+the switch branch and wrapper, complete generated reader and formatter, all
+ordered reads and setters and six generic parameter contexts. A derived root
+replay corroborates script ID and physical EOF, but whole-owner exactness
+still needs the sequential reader to clear later unions and the corpus gate.
+`levelscript_add_tracking_point_native` owns the separate `AddTrackingPoint`
+route.
+
+Run as: python -m scripts.game_data.levelscript_tracking_point_native
 """
 
 from __future__ import annotations

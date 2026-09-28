@@ -8,6 +8,21 @@
 //
 // Volumes are measured; stages are declared readings of the cited memory
 // topic. There is no progress score, and bar width never means "understood".
+//
+// Debug-only page (#recovery, revealed by Show debug info). Behavior contract:
+//   * The bar measures payload bytes or logical-file count. Hatched segments
+//     are catalog-declared files whose chunks are absent locally. Widths use
+//     log10(1 + 100 * value / smallest nonzero value) so small blocks stay
+//     visible; hover and keyboard focus give the measured value and true
+//     share, and selecting a segment opens and focuses its block in the tree.
+//   * Blocks start open. Each type row (declared path families plus
+//     Other / unclassified for unmatched paths) shows file count, bytes and
+//     four L1-L4 state chips; the Unity bundle type lists its Unity object
+//     types one level deeper with their own counts and chips. Selecting a
+//     type shows its per-level statements, cited sources, evidence limits,
+//     path pattern and sample paths. One compact key names levels and states.
+//   * The payload is optional: a 404 or an older schema shows an explicit
+//     rebuild state, never an empty success.
 (() => {
   const DATA_URL = "data/recovery/index.json";
   const SCHEMA = "endfield.recovery-progress.v5";

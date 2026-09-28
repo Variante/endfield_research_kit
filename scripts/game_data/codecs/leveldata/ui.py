@@ -1,4 +1,9 @@
-"""Exact generated-wrapper codec for authored LevelData UI anchors."""
+"""Exact generated-wrapper codec for authored LevelData UI anchors.
+
+Authored ``LevelUIData`` rows close their argument strings, global identity,
+position/rotation/scale and prefab path in generated order. Exact stored
+layout; it does not prove which UI the runtime instantiates.
+"""
 
 from __future__ import annotations
 

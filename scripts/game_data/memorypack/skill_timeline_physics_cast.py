@@ -2,6 +2,11 @@
 
 Three ordered selected readers pin the action and its two physics cast records.
 SequenceActionData, target, scalar and vector children use finite reviewed framing.
+
+The twenty-member action holds SourceForwardData and SourceToTargetData
+children, bounded fail/succeed sequences, target and scalar settings, and
+hit-result blackboard keys.  These stored parameters do not prove a cast or
+hit occurred.
 """
 from __future__ import annotations
 

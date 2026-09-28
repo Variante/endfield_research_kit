@@ -4,6 +4,16 @@ The JSON carries its field names directly.  This reader binds those names to
 the current ``NPCPrefabInfo`` and nested wrapper shapes, validates every value,
 and rejects extra, reordered, or unsupported fields instead of treating a
 successful generic JSON parse as a schema claim.
+
+The current object has 42 fields; older rows without
+``correspondingCharId`` (41 fields) are admitted explicitly. Battle shape
+and vectors, accessories, born effects, water interaction, confront/battle
+tags, and every scalar and list type are validated exactly. The battle
+skill-blackboard (``SkillBBData``) list is empty in the current corpus and
+fails closed when populated; ``idleBreakTags`` rows are validated as
+one-field ``tagId`` objects. The PrefabInfo manifest and the
+Montage hash map are separate catalogs in ``schemas.npc_catalog``. Stored
+configuration only; it does not prove which prefab a runtime NPC loads.
 """
 
 from __future__ import annotations

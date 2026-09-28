@@ -33,6 +33,35 @@ as they were.
 
 Fails closed: without the installed build there are no plans, so there are no
 candidates and the module contributes nothing.
+
+How ``build_audio`` consumes it. The source feeds the builder before HIRC
+traversal, so a matching Event object carries the recovered spelling into its
+Event/media rows. The builder passes its selected ``GameAssembly.dll`` and
+``global-metadata.dat`` to the plan gate; a missing or mismatched pair
+contributes no decoded names and leaves the other Audio sources available,
+and the index records that gate and the per-family exact-decode counts.
+Reusing an Event/media cache requires the same decoded name set, native
+inputs, gate status and family decode counts. The grammar comparison
+(``beyondGrammar*``) is computed from the same payload read as the exact
+decode, so it counts names the byte grammar actually missed; in this corpus
+that delta is unprefixed ``eny_*`` names and ``Play_au_*`` names, admitted by
+member placement plus the HIRC gate rather than by widening the grammar. The
+same one-pass decode also yields the exact SkillData/BuffData PlaySound action
+rows (``play_sound_actions``) that the Gameplay sound catalog publishes.
+
+The standalone command (``python -m
+scripts.webui.audio.semantics.decoded_payload_event_names``) promotes
+against the source Audio index's HIRC Event object inventory and validates
+its occurrence count. An earlier audit compared against generated page Event
+identities, which include hashes absent from that inventory, and overstated
+the promoted count: a page-only identity cannot promote a member candidate.
+Raw candidates stay visible in ``eventNameSources`` for cache provenance; use
+``decodedPayloadEventNameRecovery.promotedNames`` or the final ``eventNames``
+to decide whether this source supplied an identity. Values with outer
+whitespace are kept as serialized: the two ``eny_0080_reaper`` sound strings
+ending in a space name no HIRC Event object, and a trimmed spelling found by
+another source does not change the stored value (see
+``native_play_sound_string``).
 """
 from __future__ import annotations
 

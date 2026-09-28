@@ -32,6 +32,16 @@ image. That is an exact bound on the region the body occupies and an upper
 bound on its instruction bytes, because trailing alignment padding is included;
 it is not a proven function length. Callers that need a proven length must
 disassemble to a return.
+
+Each report row records the route that reached it: ``name``, ``lambda``,
+``undecoratedName`` (a recorded display form such as ``Execute(int)``), and a
+``burstDirectCall`` type route (Burst wrapper tokens renumber).
+``--from-contract`` (repeatable) harvests every nested
+``{"type": ..., "method": ...}`` object, so it reads a contract's shape rather
+than one schema's key path; ``--type``/``--method`` resolve one identity. The
+report is evidence that an identity still exists at a new address, not that
+an old contract's body conclusions still hold. Contracts whose claims can be
+re-proved carry their own ``--regenerate`` command instead.
 """
 
 from __future__ import annotations

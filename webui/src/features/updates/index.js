@@ -1,3 +1,26 @@
+// Updates page behavior contract (webui/README.md links here; the feed's
+// matching rules are in memory/webui/updates.md and
+// scripts/webui/updates/build_updates.py).
+//   * Controls: search plus filter sections basic, category, extension,
+//     status and sort (path, status, file size/change, line delta), the
+//     added/modified/deleted summary counts, the run metadata line, and
+//     pagination over the complete entry set. A feed built with the
+//     diagnostic --sample-limit cap shows an explicit truncation note.
+//   * Size sort uses current size for additions, previous size for deletions
+//     and absolute size delta for modifications.
+//   * Added/modified/deleted pills and status chips share the green, gold and
+//     red semantic palette of the Character update badges.
+//   * A modified media asset shows old and new previews. Images and videos
+//     add a visual-difference highlight; decoded audio adds a client-side
+//     three-lane waveform (old envelope, new envelope, amplitude difference)
+//     on the longer file's timeline, with no extra data in the feed.
+//   * An entry with `text_kind` carries text that is not the file's own: the
+//     panel is titled Decoded diff, names the reader, and marks a bounded
+//     reader's view as partial. `text_diff_note` explains a changed file with
+//     no diff (identical decoded view, no routed reader, or over the size
+//     limit). A plain text file carries neither field.
+//   * A relocated Unity identity whose bytes also changed is one modified item
+//     whose detail shows both paths and the PathID-independent match basis.
 (() => {
   const FILTER_PANEL_STORAGE_KEY = "updates_filters_collapsed";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";

@@ -2,6 +2,11 @@
 
 The fifteen source reads preserve distinct nested objects and raw float bits.
 Child profiles remain bounded by their reviewed Buff readers.
+
+The children are the airborne-effect, direction, source and target profiles.
+Values seen at the cursor after this action are next-stop observations until
+their own enclosing reader and union route are independently proved.  Stored
+upward-motion settings do not establish a runtime trajectory.
 """
 from __future__ import annotations
 

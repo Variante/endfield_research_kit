@@ -3,6 +3,44 @@
 The selected metadata closes the virtual submission's candidate set, while
 runtime receiver identity and live iFix state remain unobserved. A validated
 report is conditional native evidence, not an applied or displayed amount.
+
+The reviewed unpatched chain, in order:
+
+- ``PoisePackData.GetFinalHealValue`` invokes
+  ``ApplyPoiseModifier(AfterCalculation)`` and reads the ``Double``
+  ``calcResult.value``; ``_ProcessDamage`` multiplies it by the attacker
+  ``PoiseDamageOutputScalar`` and defender ``PoiseDamageTakenScalar`` from the
+  pack's attribute arrays, flips the sign, and calls the ``Modifier.NewPoise``
+  overload that takes the pack plus three stored DamageUnit flags (break time
+  dilation, hidden Poise UI effect, ignore Poise immunity).
+- ``NewPoise`` stores the magnitude as a ``Double`` and the sign as
+  ``DeltaType.Add``/``Minus`` with ``TargetType.Poise``.
+- The normal non-extra-target branch calls ``Modifier.get_target``, guards a
+  null result and submits through the target's virtual slot 87. The selected
+  metadata closes the ``AbilitySystem`` descendants at six types: base, enemy
+  part, Int, IntResource and NPC keep the base ``ApplyModifier``;
+  ``AbilitySystemForGod`` overrides it and its unpatched branch returns
+  ``ApplyResult.Failed``. This is a candidate set, not an observed receiver.
+  The extra-target branch has another factor and a transferred-modifier path
+  that is not interpreted here.
+- Base ``ApplyModifier`` calls ``_DoApplyModifier``; its Poise branch tests
+  Poise immunity and the modifier's ignore flag, then calls
+  ``PoiseController.ModifyPoise``, which checks ``hasPoise`` and, for an enemy
+  part, ``useMainBodyPoise``. The active path narrows ``finalDelta`` to
+  ``Single``, adds the current Poise, calls virtual ``set_poise``, reads
+  ``get_poise`` back and stores the ``Single`` difference as ``Double`` in
+  ``Modifier.realDelta``. Base ``set_poise`` passes the proposed ``Single``,
+  zero and ``maxPoise`` to its bound helper and writes
+  ``AbilitySystem.m_poise`` only when the returned value differs enough from
+  the prior field value.
+
+So the authored input, the scaled modifier candidate and the readback
+``realDelta`` are different quantities. Runtime target choice, virtual
+accessor overrides, other guards, live iFix state and entity attributes still
+block any character-specific applied or displayed Poise amount.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair; the default report
+is ``reports/game_data/poise_result_native.json``.
 """
 from __future__ import annotations
 

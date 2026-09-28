@@ -4,6 +4,15 @@ The parent TargetSettings adapter owns `advancedDirection` and its exact span.
 This reader names the DirectionSettings direct members through the selected
 derived plan and source MethodSpec, retaining nested source/target objects at
 their existing evidence tier.
+
+The selected source MethodSpec, reader window, generated setters and derived
+plan name ``clampToXZ``, ``customSourceAndTarget``, ``directionType``,
+``invertDirection``, ``source``, ``sourceMountPoint``, ``target`` and
+``targetMountPoint`` in direct stored order. Each parent target is reparsed
+and the direction reader must end at the independently fixed field extent.
+In the authenticated current corpus both nested ``TargetSettings``
+references are null markers; those nulls do not establish a future nonnull
+body, and no runtime direction selection is claimed.
 """
 from __future__ import annotations
 

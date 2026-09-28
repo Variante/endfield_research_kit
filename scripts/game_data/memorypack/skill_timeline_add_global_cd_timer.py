@@ -3,6 +3,10 @@
 The BuffData action reader supplies its finite seven-member wire profile.
 This module authenticates the separate SkillData union route and source order.
 Stored values do not establish runtime cooldown timing or targeting.
+
+The own members are a bounded buff identifier, a finite BlackboardDouble
+duration and a TargetSettings child.  It commonly follows
+CheckGlobalCDTimerAction ``0x0044`` in weapon passive lists.
 """
 from __future__ import annotations
 

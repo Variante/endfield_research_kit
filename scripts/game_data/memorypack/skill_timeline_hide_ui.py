@@ -1,4 +1,9 @@
-"""Selected-build SkillData HideUIAction 0x00C6 framing."""
+"""Selected-build SkillData HideUIAction 0x00C6 framing.
+
+The selected five-member reader's source order and dispatcher identity bound
+the small action payload.  Stored UI flags do not show a live interface
+transition.
+"""
 from __future__ import annotations
 
 import hashlib

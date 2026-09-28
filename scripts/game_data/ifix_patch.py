@@ -7,6 +7,33 @@ method bodies, and fix records.  This reader names only those boundaries and
 metadata fields which are explicit in that writer.  Instruction words,
 exception records, and the prefix remain opaque bytes; a parsed fix record is
 not evidence that the patch was loaded or activated at runtime.
+
+The bytes come from a direct AnimeStudio ``dump -b i-fix-patch --verify-md5``
+of the active Persistent root with StreamingAssets fallback. The reader
+validates lengths, the indices it understands, canonical string lengths and
+EOF, and resolves each fix record's declaring type and method name through the
+file's own external-type table. Opcode names come from
+``ifix_vm_instruction_native`` and operand meaning from
+``ifix_vm_operands_native``.
+
+A fix record binds a CLR method signature to an index in the patch's VM method
+body table: direct evidence of a *declared replacement target*. An
+external-method row is a reference available to patch code, not a replacement
+target. The VM method index and an AOT wrapper's ``IsPatched`` id (read by
+``il2cpp.body_claims``) are different identity domains that differ for the
+same fixed methods, so never join the two integers or read an AOT id as an
+offset into the VM body table. ``BodyIndex.ifix_patch_id`` searches only a
+bounded early window: in the selected build one fixed method's first direct
+``IsPatched`` call follows class initialization, so ``None`` there means "not
+found by this search", not "unwrapped" or "not fixed". Later calls in a long
+body may come from inlined methods, so widening the window does not safely
+identify the method's own id; the fix record is the authority.
+
+An IFix generic method signature stores ordinary type indices and generic
+parameter names in separate streams, interleaved by a per-parameter flag;
+:func:`ordered_signature_parameters` restores file order. An older text-only
+printer dropped the generic positions, so its shortened spellings (such as
+``LogError``) were incomplete.
 """
 
 from __future__ import annotations

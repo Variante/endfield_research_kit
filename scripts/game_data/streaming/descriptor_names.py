@@ -4,6 +4,30 @@ The CLI accepts AnimeStudio.CLI ``stream --verify-md5 --block-type streaming``
 JSONL for a bounded reproduction. ``descriptor_name_corpus`` applies the same
 reader to every authenticated Init logical file. Neither route assigns a
 native component name or runtime behavior to the descriptor ID.
+
+The group byte vector can be split two ways that both satisfy the length
+equation: descriptor-major (one ``count * stride`` region per descriptor,
+then ``count`` fixed slots) or row-major. Descriptor 21 has stride 64 and
+occurs once per group. Read descriptor-major, each of its slots is a
+printable NUL-terminated name with zero padding, and pairing slot ``i``
+with the group's ID ``i`` reproduces the same-file root (field-3 ID,
+field-5 row name) pair truncated to 63 bytes; the row-major control fails
+most slots. Long root names lose their suffix in the slot, sometimes
+including the ``#`` token, so a predicate requiring ``#`` or full-name
+equality rejects valid prefixes. Some root pairs have no descriptor-21 slot.
+The result is a duplicated name prefix under the same ID, not a component
+label, full-name recovery, or runtime ownership. DynamicStreaming auxiliary
+pairs follow the same 63-byte prefix rule.
+
+Bounded reproduction: ``--input-jsonl`` is a targeted
+``AnimeStudio.CLI stream --verify-md5 --block-type streaming`` JSONL,
+``--expected-report`` the pair probe it must agree with
+(``reports/chunk_data/slot4_pair_probe_latest.json``), and the conventional
+``--output`` is ``reports/chunk_data/descriptor_name_join_latest.json``. The
+check covers complete Init framing, both byte layouts, source hashes and the
+same-file root ID/name prefixes. The selected Streaming native contract
+separately validates the direct descriptor and wrapped-byte consumer; neither
+check names the other descriptor IDs as components.
 """
 
 from __future__ import annotations

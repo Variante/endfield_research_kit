@@ -1,4 +1,26 @@
-"""Exact MemoryPack readers for current JsonData NavMesh payloads."""
+"""Exact MemoryPack readers for current JsonData NavMesh payloads.
+
+Two roots share ``Data/Json/NavMesh``: ``NavMeshStateContainer`` (eight
+dictionaries, ``decode_navmesh_state_container``) and ``LunaArea``
+(``decode_luna_area``). Each guards its own leading member count, names every
+field and refuses trailing bytes, so the JsonData registry records both as
+exact stored schemas.
+
+Two wire-form facts the declared member lists do not state:
+
+* the value of ``surfTileIDToSceneStateBucketsMask`` is eight raw ``ulong``
+  buckets with **no** MemoryPack member-count byte, while the structurally
+  identical element of ``surfTileIDToSceneStateBucketsSet`` is written behind
+  a count byte of 8. A derived whole-root framing that assumes the count byte
+  reads the first bucket's low byte as a member count and refuses the file;
+  that is a wrapped-versus-unwrapped distinction, not an unread dictionary;
+* ``Dictionary<ulong,uint>`` entries are ``KeyValuePair`` memory images with
+  four zero padding bytes after the value (see ``_u64_u32_padded``). Both maps
+  that use it are empty in the current corpus, so that path is applied by
+  rule and must fail loudly on non-zero padding.
+
+Stored navigation state only; runtime scene-state selection is not claimed.
+"""
 
 from __future__ import annotations
 

@@ -1,6 +1,38 @@
 """The generated-order owner walk shared by the sequential lanes.
 
 Moved verbatim out of ``scripts/game_data/levelscript_binary.py``.
+
+``LevelScriptData`` is a 27-member generated wrapper.  Member 1 is
+``actionMap``; every lane first proves an exact action-map boundary and then
+calls ``_frame_levelscript_sequential_owner`` for members 2..27.  The three
+boundaries are: a null ``actionMap`` (one ``0xff`` byte, owner at offset 2),
+the complete 20-byte empty ``ActionMapAssetRaw``, and a positive
+``ActionSerializedMap`` whose every action, getter and header plus the
+following ``ParamListForGraph`` close (``current_action_sequence`` and the
+shared ``action_map`` node codecs).
+
+Walk.  ``top_level_prefix.decode_empty_action_map_owner_prefix`` advances
+``activeShapeList`` through ``resetModeWhenEnd`` in generated order; a
+positive collection whose element codec is not owned stops before its count
+and names the field.  From ``scriptId`` the terminal members
+(``startShapeList``, ``startType``, ``taskMap``, ``triggerVolumes``) are read
+positionally with ``top_level_tail``; an empty task map must lead to an
+exact ``triggerVolumes`` EOF, and a positive one is decoded entry by entry by
+``task_conditions``.  Results:
+
+- ``exact_named_levelscript_data`` / ``named_exact``: one cursor reached
+  physical EOF;
+- ``exact_named_action_map_owner_through_task_map_header``: every member up
+  to the task count is named, ``taskMap.entries`` failed, and the first
+  bounded task diagnostic is kept;
+- a named ``stopField`` partial with the rest as one opaque remainder.
+
+No suffix scan, filename, or identifier-shaped byte contributes to a
+boundary.  ``frame_levelscript_action_map_named_prefix`` is the weaker lane
+for other nonempty or null action maps: it names ``actionMap``, ``dataMap``,
+the ``actionList`` count and the first record's fixed envelope and leaves
+every later byte opaque.  Evidence tier: ``exact`` stored layout; nothing
+here proves runtime graph execution.
 """
 
 from __future__ import annotations

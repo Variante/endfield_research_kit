@@ -2,6 +2,25 @@
 
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove a live NPC effect.
+
+The reviewed contract pins ActionBase `PlayEffectOnNpc` (tag 0x0366 in the
+contract): the selected jump and registered wrapper, the complete reader
+across its chained fragments and the formatter, twelve ordered reads, four
+own setters with typed `Param` MethodSpecs (`effectId`, `effectType`,
+`mountPoint`, `npcId`), and the `NpcEffectType` and `MountPoint` enum
+backings. Passing `--export-root`, `--ledger` and `--summary` together also
+replays the reviewed source spans against the current JsonData ledger. The
+command prints its audit and exits nonzero unless it validates.
+
+This is an isolated validator: the route is not registered in the shared
+ActionMap layout (`codecs/levelscript/action_map_layouts.json`), so the
+sequential LevelScript owner does not admit it yet. Integrate it there and
+replay the production source corpus before any whole-owner claim.
+
+`PlayEffectOnNpc` (12 members) is a different wrapper from the integrated
+`PlayEffectOnNpcProxy` route (`levelscript_npc_proxy_effect_native`): the
+enums and parameter order match, but the last member is `npcId`, not
+`npcProxyId`, and the tag differs, so neither contract covers the other.
 """
 
 from __future__ import annotations

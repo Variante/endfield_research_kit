@@ -32,8 +32,21 @@ and the exported file is named after it. ``verify_identifier`` checks that the
 decoded ``skillId``/``id`` equals the file's stem, which is an independent test
 of the whole chain -- the framing, the member order and the string decoding all
 have to be right at once for a name to come back matching, and a wrong member
-order still decodes a string, just the wrong one. Across both exported
-families that is 5,494 records, all agreeing.
+order still decodes a string, just the wrong one. Every exported record in
+both families agreed when the check was made. The same check covers all four
+whole-record families (``skillId``, ``id``, ``m_id``, ``templateId``); a family
+with no identifier member is reported as such, not as a disagreement.
+
+``verify_references`` is the second, semantic oracle: members that name a
+record of a known family (``buffId``, ``buffIdList``, ``skillId``,
+``projectileSkillId``) must resolve to an exported record. It counts nested
+occurrences only; counting SkillData's own root ``skillId`` would measure each
+file resolving to itself.
+
+The report (``reports/game_data/memorypack_derived_values.json``) records how
+many records of each exported family decode into named values, how many carry
+an identifier matching their filename, how many cross-record references
+resolve to records that exist, and one decoded sample per family.
 """
 from __future__ import annotations
 

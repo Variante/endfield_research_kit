@@ -5,6 +5,19 @@ wrapper.  The first decoder names its 19 fields and closes its timeline only
 when that SequenceActionData contains one action.  A separate continuation
 reuses the authenticated shared action grammar for later timeline records;
 unknown routes stop at the last exact record.
+
+After the four inherited members the wrapper reads ``asChildBuff``,
+``autoFinishByAction``, ``buffIconDurationSource``, ``buffs``,
+``buffSource``, ``contextKey``, ``count``,
+``finishWithNextSkillIfNotInherited``, ``inheritSkillIdList``,
+``inheritSourceSkillCastId``, ``inheritSourceSkillCastInfo``, ``isExtra``,
+``overrideBuffIconDuration``, ``passTargetGroupsToBuff`` and
+``targetSettings``; byte-pinned nested readers close every reached first
+action.  Dispatch requires the complete top-level ActionGroup, timeline and
+sequence shape, so an unrelated byte equal to ``0x92`` cannot select this
+decoder.  A one-action, one-timeline shape reuses the top-level continuation
+and terminal to close the file; the continuation promotes a multi-record
+ActionGroup only when every later record closes.
 """
 from __future__ import annotations
 

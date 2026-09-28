@@ -10,6 +10,21 @@ The metadata field names are native/static facts.  They are therefore only
 published after the shared explicit ``global-metadata.dat`` + ``GameAssembly``
 gate has validated the selected files.  No row in this module is a runtime
 value, target-object, branch, DSP, or audibility observation.
+
+The result is published as ``controlCatalog.staticRtpcAlignment`` with
+``evidenceClass: authoredStatic``. A missing or mismatched selected/source
+hash, a malformed or incomplete contract, or stale serialized evidence fails
+closed and withholds the static names and rows. The six names
+(``rtpc_contract.CANONICAL_RTPC_IDS``) are symbol-to-id evidence only: each is
+cross-matched against its own node and bus curve occurrences, and a
+Set/ResetGameParameter row that shares an exact id with an InitialRTPC curve
+target in the same Event is an authored curve-target join
+(``sameEventInitialRtpcId``), not a named live value. Ids that match no name
+stay numeric. The two shipped two-byte ParamID keys decode most-significant
+group first to 0x130 and 0x230, BypassFX effect slots 1 and 2 (see
+``hirc_v150``); the values 0x1802 and 0x1804 (6146, 6148) that older catalog
+text calls custom property ids are the little-endian misreading of the same
+bytes.
 """
 
 from __future__ import annotations

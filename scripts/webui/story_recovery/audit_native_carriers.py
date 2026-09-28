@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""Run maintained native carrier audits through one profile-based CLI."""
+"""Run maintained native carrier audits through one profile-based CLI.
+
+Profiles: ``generic`` is the importable type/field-driven scanner
+(``--carrier-type TYPE --focus-field FIELD``); ``cinematic`` retains the
+structural queue contract and its report paths and reconciles the full native
+audit against the compact ``contracts/cinematic_queue.json`` that production
+reads (``--write-contract`` regenerates that contract from a validating audit
+after a client update, ``--skip-contract-reconciliation`` only writes the
+audit); ``radio-forbid`` validates the small versioned negative boundary
+recorded for the pinned build. Reusable scanner and profile code lives in
+``native_carriers/``. The full audit is never a production input.
+"""
 from __future__ import annotations
 
 import argparse

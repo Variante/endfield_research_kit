@@ -3,8 +3,10 @@
 Shipped bank Events carry only a uint32 ``AudioHashGenerator`` identity.  The
 authored name lives in the Wwise project, which is not shipped: an exhaustive
 sweep of the IL2CPP string-literal blob and of every metadata type/field name
-resolves only a handful of the hash-only Events, so no observed-string source
-can close the remaining set.
+resolves only a handful of the hash-only Events. The authored serialized
+payloads are a second shipped-literal source (``authored_payload_event_names``
+and ``decoded_payload_event_names``); this module targets what remains after
+every shipped-string source, which no observed string closes.
 
 Recovered Event names are, however, strongly templated
 (``au_eny_0094_hsfly_skill03_charge``).  This module mines that grammar from
@@ -21,6 +23,24 @@ character, every phase of one enemy skill), while a coincidental preimage is a
 singleton, so a recovered name is promoted only when its head and its tail are
 each shared with another recovered Event.  The residual expectation is reported
 alongside the entries rather than hidden.
+
+The substitution generator exists because head/tail recombination cannot
+reach a sibling that differs in a middle token (``..._attack03_hit`` beside
+``..._attack01_hit``). It swaps one token at a time, drawing from tokens seen
+at that position in names of the same token count plus lifecycle words and
+numbered variants. Both generators feed one match table, so a hash that two
+generators (or one generator) spell differently is ambiguous and dropped.
+Against an equal number of random target hashes the substitution search
+produces the expected handful of coincidental preimages, and every one of them
+stays isolated: that control is what makes the wider search safe.
+
+Uncorroborated hits stay in ``grammarEventNameRecovery.isolatedEntries`` and
+never become a name. Promoted rows carry
+``eventIdentityStatus=grammarHashPreimageNameRecovered`` and recover only the
+owner and category the spelling encodes -- no caller, trigger, branch,
+execution or audibility. A grammar-derived ``au_`` name projects to an enemy
+only on an exact full current ``EnemyTable`` id prefix plus delimiter, as an
+identity-only ``enemyNamespaceAudio`` claim published by the orchestrator.
 """
 
 from __future__ import annotations

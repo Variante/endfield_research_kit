@@ -7,6 +7,71 @@ must join one-for-one to the current ledger before the MemoryPack framer runs.
 
 Family-agnostic provenance and drift gating lives in :mod:`corpus_gate`; this
 module owns only the SkillData selection, framing, and report contract.
+Run as ``python -m scripts.game_data.memorypack.skill_corpus``; the current
+report is ``reports/animestudio/skilldata_current_latest.json``.
+
+Terminal selection.  The static framer leaves the five terminal members as two
+anonymous EOF-valid candidates (:mod:`skill_terminal`).  A candidate is
+selected only by replaying a live cursor verification from its exact receipt,
+source-corpus, native-context and verifier hashes, then applying it to
+admitted rows whose bytes match: ``--cursor-verification`` (the family-wide
+publication receipt, anchored by its two empty-ActionGroup samples),
+``--capture-target-verification`` (one hash-pinned source) and
+``--capture-target-set-verification`` (the strict v3 target set, composed by
+:mod:`skill_cursor_target_set_overlay`).  Provenance is one-way: the IL2CPP
+context pins an immutable cursor-basis report, the verification pins that
+basis and context, and this corpus pins the verification, so atomically
+replacing ``current_latest`` does not break replay.
+
+Rebinding.  ``--allow-exporter-rebind`` accepts a verification from another
+input set only when the exporter fingerprint alone moved.  A real corpus
+change (the newer JsonData overlay added SkillData and BuffData records while
+keeping old logical lengths and MD5s) must instead use
+``--allow-verified-subset-rebind``: rows whose logical path, length, MD5 and
+SHA-256 reproduce the prior source under the unchanged native build keep the
+prior selection; a byte-identical row whose VFS chunk or offset moved is a
+sound content rebind, because the reader consumes decoded bytes; added or
+logically changed rows stay ``ambiguous``.  A rebind transfers an inference
+and never creates a live observation.  A new-input complete family gate is
+required after any reader or source-byte change.
+
+Profiles and refusals.  Admitted non-empty ActionGroup rows name only the
+exact field-0 prefix: member count, then the ``passiveEventActions`` and (when
+that list is empty) ``timelineActions`` counts, stopping at byte 6 or 10
+before a positive list's first record.  When a complete shared-sequence
+profile and a specialized PlayAnimation first-record prefix describe the same
+file, the complete profile wins and both stay in the row; the earlier
+priority hid whole-file closures.  Each nonexact positive-timeline or
+positive-passive file records its first refusal, from thrown and returned
+refusals alike (including a later stop behind an exact first-record prefix).
+A diagnostic ``actual`` integer is exposed as a physical action tag only when
+the reader reports a failed union-tag check; it can otherwise be a collection
+count or profile marker, so frontier ranking must keep the parser frame.
+Native route evidence and exact enclosing cursors, not diagnostic frequency,
+decide promotion, and a derived-plan oracle's EOF never promotes a row.
+First refusals appear per file, in bounded summaries and in the CLI result.
+
+Operator notes.  Choose a complete cursor verification whose receipt, source
+corpus, native context and verifier still match its recorded hashes; a
+replaced ``latest`` report is not provenance merely because it has the
+expected name.  ``--capture-target-verification`` promotes only its matching
+logical path and SHA-256, and only after the current static field ranges
+agree with the executed cursor; before verifying a new target, rebuild the
+all-unselected basis and native-only context
+(:mod:`scripts.game_data.il2cpp.skill_cursor_native_context`) and keep the
+verifier output under ``reports/``.  ``--capture-target-set-verification``
+replays the complete strict v3 receipt against its pinned corpus, native
+context, contract and verifier inputs, and promotes a source only when the
+native-gated static ActionGroup and fields through 42 match its direct
+runtime ranges and selected terminal at EOF; direct cursors alone do not
+name a populated ActionGroup child's interior.  ``--allow-exporter-rebind``
+is for a VFS audit that changed only because AnimeStudio.CLI was rebuilt: it
+proves the selected logical bytes, physical identities, game build and asset
+roots are unchanged before accepting the older receipt.  The gate also
+fingerprints every JSON dependency declared by the shared timeline route
+contract before and after streaming, so a route update during the run fails
+the report rather than publishing mixed evidence.  A ``--max-files`` run is
+a diagnostic probe, never complete-corpus evidence.
 """
 
 from __future__ import annotations

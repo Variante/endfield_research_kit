@@ -2,6 +2,9 @@
 
 The seven stored members retain two distinct Blackboard scalar payloads and a
 TargetSettings child. Value interpretation and live execution are out of scope.
+
+Native generic contexts identify them as a BlackboardInt count, a
+BlackboardDouble duration and a TargetSettings source.
 """
 from __future__ import annotations
 

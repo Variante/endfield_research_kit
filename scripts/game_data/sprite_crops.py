@@ -21,6 +21,24 @@ result. ``texture`` names the exported file and its identity (serialized file,
 PathID, size); ``unity`` keeps the Sprite's own fields (rect, pivot, border,
 packing settings) as evidence.
 
+AnimeStudio's Sprite image is a pure function of its texture (resolved from
+the Sprite's render data or its SpriteAtlas render-data entry), and it derives
+``transform`` and both run lists by running its own shaping code over probe
+images, so the document reproduces the former PNG by construction. Evidence:
+every Sprite of the current build rendered from its document matched
+AnimeStudio's image pixel for pixel, hidden color included, and matched every
+previously published Sprite PNG; the service worker and this module's
+renderer produce the same pixels, and ``export.bat debug`` repeats the check
+each build (``--sprite-images``). The current build has no downscaled, rotated
+or atlas-packed Sprite; the document and both renderers still carry those
+cases, and the exporter's texture check counts each.
+
+The texture join is the PPtr AnimeStudio resolves, carried as the texture's
+exported file name (``_p<PathID>``) plus CAB, PathID and size, and checked
+against the published texture after every Sprite publish. Name matching is not
+identity: many Sprite names have several same-named textures, and sliced
+sheets (``cs_loading_icon_<n>``) name only the sheet.
+
 The Sprite image keeps its logical path ``game/Unity/Sprite/<name>_p<PathID>.png``:
 the asset index lists it, pages link to it, ``serve.py`` answers it with the
 crop document and the WebUI's service worker (``webui/sprite_worker.js``)

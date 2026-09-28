@@ -2,6 +2,10 @@
 
 This establishes stored fields at a caller supplied cursor. Serialized
 visibility values do not establish a runtime NPC state change.
+
+The action adds a `clusterId` string parameter and a `visible` boolean
+parameter after the inherited action fields
+(`levelscript_npc_atmospheric_cluster_native.json`).
 """
 
 from __future__ import annotations

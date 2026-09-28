@@ -1,4 +1,9 @@
-"""Selected-build SkillData PickTargetAction 0x0114 framing."""
+"""Selected-build SkillData PickTargetAction 0x0114 framing.
+
+The selected seven-member reader's source calls and setter order identify the
+context key, a BlackboardInt index and a TargetSettings child after the
+inherited header.  The stored settings do not prove a target was selected.
+"""
 from __future__ import annotations
 
 import hashlib

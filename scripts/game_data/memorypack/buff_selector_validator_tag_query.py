@@ -1,4 +1,15 @@
-"""Selected TagValidator query child inside Buff SelectorData lists."""
+"""Selected TagValidator query child inside Buff SelectorData lists.
+
+``SelectorValidator`` tag 11 (``TagValidator``) has one direct ``query``
+member declared as ``GameplayTagQuery``. The selected reader consumes the
+wrapper header, invokes the typed query bridge and stores the result at the
+generated setter's destination offset. The nested body is framed as a
+scalar followed by a counted scalar array (the existing ``GameplayTagQuery``
+reader), and each reached list ends exactly at its parent field extent.
+Tag values are raw stored IDs; the runtime tag predicate, recursive action
+ownership and whole BuffData are not established. Null, unknown-tag,
+malformed-count and changed-build branches fail closed.
+"""
 from __future__ import annotations
 
 import hashlib

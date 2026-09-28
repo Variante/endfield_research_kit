@@ -1,4 +1,43 @@
-"""Shared publication contract for WebUI decoded-data inspector datasets."""
+"""Shared publication contract for WebUI decoded-data inspector datasets.
+
+Every decoded family publishes through ``publish_dataset``; the frontend is
+taught no decoder-specific schema. The envelope::
+
+    webui/data/data_inspector/index.json           (ROOT_SCHEMA)
+      datasets[]: id, title, description, available, diagnostic,
+                  recordCount, statusCounts, path
+    webui/data/data_inspector/datasets/<id>/index.json   (DATASET_SCHEMA)
+      id, title, description, available, diagnostic,
+      provenance: sourceRoot, reader, publisherRevision, inputSignature,
+      catalog[]: id, title, status, summary, tags, searchTerms,
+                 sourcePath, shard,
+      shards[]: path, offset, count
+    webui/data/data_inspector/datasets/<id>/records.NNNN.json  (SHARD_SCHEMA)
+      datasetId, offset, records[]
+
+A record carries ``id`` (stable, unique in the dataset, normally the
+export-relative source path), ``title``, ``status`` (the decoder result, such
+as ``named_exact``, ``bounded_partial`` or ``decode_error``), ``summary`` and
+``tags`` (search aids, not evidence), ``source`` (path, mounted href, byte
+size, media type), optional ``facts`` (the publisher's quick-review
+projection), optional ``payload`` with its required ``payloadKind``, optional
+``references`` (``evidenceBoundary`` plus ``items[]`` with ``kind``,
+``sourcePath``, ``storedId``, ``targetDatasetId``, ``targetRecordId`` or
+null, and ``targetState`` ``present``/``absent``/``ambiguous``), and a
+bounded ``diagnostic`` when decoding did not succeed.
+
+The catalog duplicates only what search and selection need; domain data stays
+in the lazy shard. A publisher may omit ``payload`` for already-decoded JSON
+that is too large to republish, but keeps a useful ``facts`` projection and a
+source link. Unknown, partial and failed rows stay visible; absence is never
+published as successful empty data. Dataset ids are lowercase ASCII letters,
+digits, ``_`` and ``-``; records sort by case-folded id for deterministic
+shards.
+
+All output is strict browser-safe JSON (``json_safe``): integers outside
+JavaScript's exact range become decimal strings, and non-finite floats become
+``"Infinity"``, ``"-Infinity"`` or ``"NaN"``.
+"""
 
 from __future__ import annotations
 

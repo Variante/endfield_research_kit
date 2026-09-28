@@ -10,6 +10,15 @@ global-metadata pair before attaching, then records only tag method observations
 and the config-set build boundary.  The output JSONL is intentionally separate
 from generated WebUI data until it is validated and passed to the Gameplay
 builder.
+
+Use it when the serialized registry is incomplete. Start the capture first
+(``--duration SECONDS --output PATH``, keeping raw output under
+``scratch/reverse_engineering/gameplay_tag_runtime/``) so it can attach during
+client startup, then load the title/menu or a gameplay scene, and rebuild the
+base stage with ``python -m scripts.webui.gameplay.build_gameplay --stage base
+--runtime-tag-capture PATH``. Runtime rows are merged only when the same
+native-input gate validates; otherwise the static export stays unchanged.
+``--check-only`` verifies the hook manifest without attaching.
 """
 from __future__ import annotations
 

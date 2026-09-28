@@ -8,6 +8,15 @@ keyed by its game/-relative path (``Json/LipSync/Chinese/x.json``), holding the
 exact bytes zlib-compressed with their SHA256, so ``game/<path>`` stays the
 reference every report already uses.
 
+Only folders with many small files and a handful of readers are packed. The
+rest of ``game/Json`` stays loose: tens of thousands of files read by dozens
+of builders by path, where the small-file cost is modest. ``meta/`` stays
+loose too: about a hundred large, already streamed indexes. The exporter's
+JsonData dump writes ``Json/LipSync`` rows straight into a staged store that
+structured publish merges by SQL; changed-only extraction stages its selected
+rows in the same format and applies them through the writer, with previous
+bytes kept in its rollback journal.
+
 The store reuses the Unity object store engine (``unity_store``) under its own
 schema token: the engine's ``type`` column holds the packed folder and its
 ``name`` column the path inside it. Callers never see that mapping; they use

@@ -1,7 +1,17 @@
 """Build the exported asset index for the unified asset browser.
 
+It writes only Assets-owned indexes and media lookup. ``--mode`` defaults to
+``focused``, the Story/Wiki media projection; the served Assets page is built
+with ``--mode default``, which the wrapper passes, so a direct run without it
+replaces the full index with the focused projection. It also writes
+``webui/data/assets/table_owners.json`` from ``table_asset_owners``: exact
+table-row ownership for indexed assets, always derived from the complete scan
+even when the published index is the focused projection. The legacy economy,
+world, presentation and broad data index helpers are diagnostic only and feed
+no active page.
+
 Run from the repo root:
-    python scripts/webui/assets/build_assets.py
+    python -m scripts.webui.assets.build_assets --mode default
 """
 from __future__ import annotations
 

@@ -4,6 +4,21 @@ The report keeps the maintained SkillData parser cursor separate from the
 conditional native-reader candidate. It requires a complete current AnimeStudio
 stream and the exact-build IL2CPP context report; candidate prefixes never
 count as closed records.
+
+The selected image base is derived from the unique TimelineActionData
+``Deserialize`` declaring-type/method row and its named reader window in the
+generated native context; a missing or ambiguous row, or a base that is not
+page aligned, fails closed.  A prior method index or RVA is never a
+cross-build identity.  Per-build helper targets and code addresses belong to
+the native contracts, which the validators compare against the installed
+call targets; duplicating them in Python would make the code a second stale
+native catalog.
+
+``--stream-jsonl`` is a complete current SkillData
+``AnimeStudio.CLI stream --verify-md5`` JSONL, ``--native-context`` the
+``il2cpp.context_audit`` report
+(``reports/animestudio/il2cpp_context_current_latest.json``). The default
+outputs are ``reports/animestudio/skilldata_timeline_cursor_latest.{json,md}``.
 """
 
 from __future__ import annotations

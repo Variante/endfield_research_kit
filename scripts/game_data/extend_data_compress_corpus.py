@@ -4,6 +4,19 @@ The exact Brotli/UTF-16LE/JSON reader lives in AnimeStudio's
 ``EndfieldCompressData``. This gate binds that reader to one full VFS audit,
 rechecks the selected physical file slice, and verifies the decoder manifest
 against the archive's complete offset table. Decoded JSON remains temporary.
+
+AnimeStudio exposes the reader as the opt-in ``extend-data`` CLI command. The
+gate binds the targeted, MD5-verified dump and the audited CLI apphost to the
+same input set and pins the compiled decoder's complete output closure through
+the ``extend_data_compress_reader.json`` contract. Each record has two
+little-endian lengths and an exact Brotli body that decodes as strict UTF-16LE
+JSON; the last record reaches EOF, and every current root is a NodeCanvas
+behavior tree. The same run enforces the graph schema (``extend_data_graph``)
+and the task envelopes (``extend_data_tasks``). The bytes establish authored
+graph structure, not a selected runtime branch or blackboard value.
+
+Pass the VFS audit's ``inputSetSha256`` as ``--expected-input-set-sha256``;
+the report is ``reports/animestudio/extend_data_compress_current_latest.json``.
 """
 
 from __future__ import annotations

@@ -3,6 +3,12 @@
 This validates the named JSON root, node and connection representation. Task
 payloads, blackboard contents and canvas metadata remain opaque JSON; no
 runtime execution or graph-owner inference follows from the stored shape.
+
+The reviewed contract ``extend_data_graph_schema.json`` closes the named
+NodeCanvas root, the observed node-type/field-set combinations, and
+``BTConnection`` source/target ``$ref`` objects, and requires every edge to
+reference a unique present node ID. Nodes without ``$id`` stay stored but
+cannot be edge targets. A node type name does not establish execution.
 """
 
 from __future__ import annotations

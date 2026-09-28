@@ -2,6 +2,36 @@
 
 The legacy reader's field labels are not promoted to serialization semantics.
 All matching filename-string anchors are retained, including rejected anchors.
+
+Promotion is narrow: only singleton rows with a selected-native 30-member
+forward receipt from byte zero to EOF, with source-ID equality, are promoted.
+The admitted cohorts are strict null/empty recursive lists, the bounded
+authenticated DataPair and GlobalModifier branches, the selected single
+damage condition/processor combinations whose child receipts are the
+``buff_damage_*`` modules, and the sole selected CreateBuff action (replayed
+separately by ``buff_create_action_root_corpus``). Every other row keeps its
+structural or nested blocker; nothing here names the whole BuffData schema.
+
+The denominator is the complete authenticated outer ledger with decrypted
+stream bytes, under the shared ``corpus_gate`` provenance guards.  Every
+reader-accepted EOF suffix candidate is retained rather than inheriting the
+legacy reader's anchor selection, and a unique accepted suffix still does not
+establish its top-level ownership or certify its internal opaque regions.
+The legacy prefix reader rejects an invalid anchor limit instead of clamping
+it and receives only the bytes before the anchor, so its count, string and
+scalar helpers cannot borrow suffix bytes; each accepted suffix records its
+prefix endpoint or unsupported-action stop and the remaining gap, without
+certifying the legacy field labels.  The residual Buff gap is nested
+semantics inside structurally bounded anonymous event/action bodies, not an
+outer-frame cursor failure.
+
+Run ``python -m scripts.game_data.memorypack.buff_corpus
+--expected-input-set-sha256 <VFS audit value> --output-json
+reports/animestudio/buffdata_current_latest.json --output-md
+reports/animestudio/buffdata_current_latest.md``. That report is the
+``--buff-report`` every Buff receipt and ``jsondata_corpus`` read, and it is
+the first gate of the chain vfs-audit, ``buff_corpus``, ``skill_corpus``,
+``jsondata_corpus``.
 """
 from __future__ import annotations
 

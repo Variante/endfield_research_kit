@@ -2,6 +2,12 @@
 
 The reviewed source also pins nested InteractiveShapeFinder tag 9. Stored
 fields and finite framing do not establish runtime break behavior.
+
+The action reader has nine members; the twelve-member
+``InteractiveShapeFinder`` child has its own selected reader, and the finite
+Skill reader admits that finder only inside this action's TargetSettings
+child.  The encoded calculation, damage-processor list and target are stored
+inputs.
 """
 from __future__ import annotations
 

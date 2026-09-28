@@ -4,6 +4,31 @@ The RootComp audit establishes the selected native layout and current main
 payloads. The export freshness guard checks that the selected Persistent
 export still describes the installed client. This audit compares stored IDs;
 it does not evaluate scene-state conditions or observe runtime activation.
+
+Stored relation (structural). The authored ``VisibleStateGroup`` integers in
+``Scene/<name>/`` main files all occur as indices in that scene's exported
+``Json/MapConfig/<name>.json`` ``sceneStates`` map, so they resolve to named
+scene states. Index zero is a named state in the matched configs, not a
+generic invalid marker. Scenes with no authored visible-state values need no
+MapConfig, and some have none. The join also finds the auxiliary grid vectors
+``SceneVisibleStateInts`` and ``SceneVisibleAreaInts`` empty, consistent with
+the native finding (``dynamic_root_comp_native``) that the nested visible
+groups address ``PrimitiveIntList``.
+
+The MapConfig reader (``schemas.map_config``) checks that scene-state indices
+are distinct positions 0..31 of a 32-bit mask and that each condition row
+names a distinct ``sceneStates`` key. Some state names have no condition row,
+so the condition list is not an exhaustive state catalog.
+``dynamic_visibility_runtime_native`` owns the native route from these
+fields to the controllers.
+
+Run ``python -m scripts.game_data.dynamic_visibility_state_join --gameassembly
+PATH --metadata PATH --game-root GAME_DATA_ROOT --main-input-root
+MAIN_DUMP_ROOT --export-root EXPORT_ROOT --expected-input-set-sha256
+INPUT_SET_SHA256``. It rechecks the RootComp native report, the main dump
+hashes and Persistent export freshness before joining, and writes
+``reports/animestudio/dynamic_visibility_state_join_latest.{json,md}``. Runtime
+state selection stays open.
 """
 
 from __future__ import annotations

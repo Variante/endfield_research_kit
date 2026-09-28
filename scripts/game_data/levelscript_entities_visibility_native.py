@@ -2,6 +2,16 @@
 
 The contract proves the installed reader, its nested types, and current source
 cursors. It does not establish that visibility changes occur at runtime.
+
+After the inherited action fields the branch stores `isVisible` and
+`resetVisible` as `Param<bool>`, `targetEntities` as
+`Param<List<EntityPtr>>` and `visibleSource` as `Param<ModelVisibleType>`,
+with four nested generic contexts checked. The enum has signed four-byte
+storage and a finite declared set; unknown values fail closed. Reached spans
+include populated entity-pointer lists, which
+`codecs.levelscript.visibility_action` and the shared ActionMap reader parse.
+
+Run as: python -m scripts.game_data.levelscript_entities_visibility_native
 """
 
 from __future__ import annotations

@@ -3,6 +3,8 @@
 The finite BuffData source reader supplies the wire profile. This module
 authenticates its separate SkillData union route before reusing that profile.
 Stored condition inputs do not establish runtime buff consumption.
+
+The seven-member profile includes a finite BlackboardInt child.
 """
 from __future__ import annotations
 

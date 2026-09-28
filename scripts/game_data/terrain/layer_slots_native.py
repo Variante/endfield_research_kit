@@ -1,4 +1,40 @@
-"""Validate the selected Terrain LAYER record-to-resource copy chain."""
+"""Validate the selected Terrain LAYER record-to-resource copy chain.
+
+``python -m scripts.game_data.terrain.layer_slots_native --game-root
+.../Endfield_Data`` checks, against ``contracts/terrain_layer_slots_native.json``
+and the upstream layer-path and tile-dispatcher contracts, the selected
+``LAYER_D/N/C`` queue and callback, handle forwarding through the owner
+consumer, three distinct owner-local destinations, the guarded copy helper and
+the same-handle render-property binding. The receipt is
+``reports/terrain/layer_slots_native.json``.
+
+It proves D/``_Splats``, N/``_Normals`` and C/``_ConeMaps``. The C copy and
+binding are conditional (present source, available destination, non-null
+resource), and the owner consumer can decline a record before the copy.
+
+Managed VirtualTextureRenderer field names, stored pixel/channel meanings and
+runtime selection of installed LAYER paths remain open. The authored shader
+sample of ``_ConeMaps`` is checked separately by
+``scripts.game_data.terrain.shader_sampling``.
+
+Chain detail. A separate queue promotes the grouped record; its callback
+resolves the three path-result handles in D/N/C order and forwards them with
+the record's numeric argument through an owner subobject. On the accepted
+branch a copy dispatcher pairs D and N with distinct owner-local resource
+handles and calls a common copy helper; C reaches a third handle only when
+its source is present and an owner-side availability check passes. The
+helper compares source and destination properties before a lower-level copy
+routine with further guards. The owner initializer builds property IDs from
+exact string literals, and a render-binding function resolves the same three
+owner-local handles and forwards each resource/ID pair to the common property
+sink, skipping the ``LAYER_C`` call when its resource is null. This D/N/C
+join supersedes readings based only on the D/N index pairing and the sparse
+C subset, and it retracts the earlier ``LAYER_C`` to ``m_colorVariationTex``
+identification (reached by elimination, then type argument, then a
+compositing proposal). A string-derived property ID, a native owner-local
+handle and a managed ``VirtualTextureRenderer`` field are distinct evidence;
+the old per-layer mask suggestion has no direct field join either.
+"""
 
 from __future__ import annotations
 

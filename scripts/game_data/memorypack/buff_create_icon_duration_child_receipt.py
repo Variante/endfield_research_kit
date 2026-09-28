@@ -3,6 +3,12 @@
 The child is replayed only at a range certified by the selected CreateBuff
 parent. String content is retained as source bytes; duration behavior is not
 inferred from the stored enum and string.
+
+The selected two-member ``BuffIconDurationSourceSetting`` reader stores
+``durationSourceType`` and ``timedMarkerId``. The validator checks the
+selected reader window, generated setters, source read call and destination
+stores against runtime field offsets. ``buff_create_action_root_receipt``
+composes this child into the narrow sole-CreateBuff root route.
 """
 from __future__ import annotations
 

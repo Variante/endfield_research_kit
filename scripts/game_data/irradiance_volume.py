@@ -17,6 +17,40 @@ Legacy numeric magic ``0x01000043`` has a separate exact grouped directory.
 Its 36-byte records remain nine opaque words. Words 7 and 8 are exposed only
 as structural byte intervals: after sorting each filename-bound group by word
 7, the intervals tile that authenticated payload from zero through EOF.
+
+Index details. Every current index has a unique bounded UTF-16LE filename
+table naming each payload in its own directory exactly once. Scene V3
+(``0x03000003``) directories use nine-word records and filename-ordered
+groups, and their start has two observed alignment variants: one is accepted
+only when the filename and payload-length constraints choose a unique
+boundary. Gacha V3 (``0x03000002``) uses eight-word records. Validation reads
+complete payload streams, so a short read or trailing byte fails. Do not merge
+the three magics' layouts because they share an ``iv`` path or a nominal
+version. The Gacha directory's reach to index EOF is this reader's strict
+corpus-framing rule; the selected native parser has no final EOF comparison
+(``irradiance_path_native``), so it is not a native acceptance condition.
+
+Stored arithmetic seen in the current corpus (not checked here): scene V3
+``w4 = w5 + w6`` and Gacha V3 ``w3 = w4 + w5``; legacy has neither. They are
+not interval splits (some scene intervals are shorter than ``w5``), and no
+consumer names the parts.
+
+Region room files (``regionIv_room_*``) are exactly ``44 + 16*nx*ny*nz``
+bytes: u32 ``4096`` at ``+0``, u32 header size ``44`` at ``+4``, six finite
+f32 values (two three-component tuples) at ``+8``, three positive u32 grid
+dimensions at ``+32``, then ``nx*ny*nz`` opaque 16-byte records at ``+44``.
+The tuples behave like bounding-box endpoints and the grid density is about
+two samples per world unit, but no axes, record fields or probe encoding are
+assigned; byte-position smoothness tests are clues, not a decoding.
+
+Eliminated readings: an early partial filename frame with no payload
+ranges (payloads are not self-describing; the index carries the ranges); V3
+payloads as block-compressed textures from a 16-byte autocorrelation peak (a
+BC6H mode check found no signal above shuffled controls); and the
+``HGIrradianceVolumeConfig``/``V2`` field names (clipmaps, hash tables,
+indirection, physical blocks, basis, coefficients) as a file layout. Those
+config structs describe runtime configuration; no read joins them to an
+``iv_*.bytes`` offset, LOD placement or index word.
 """
 
 from __future__ import annotations

@@ -2,6 +2,9 @@
 
 The six stored members are bounded by the reviewed native source order. The
 mount-point values and target profile do not establish live camera behavior.
+
+Native source calls and generic contexts identify a TargetSettings
+mount-point owner and a typed MountPoint override after the inherited fields.
 """
 from __future__ import annotations
 

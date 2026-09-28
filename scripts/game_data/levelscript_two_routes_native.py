@@ -3,6 +3,23 @@
 The reviewed contract records complete generated reader fragments, selected
 dispatch branches and ordered reads. It proves stored framing only; execution
 and getter/entity behavior require separate runtime evidence.
+
+Routes, each after its inherited fields (seven NodeBase fields for a
+PureGetter, eight for an ActionBase):
+
+* `BoolGetterOr` adds two `Param<bool>` operands.
+* `EntityHide` adds an allow-missing `Param<bool>` and a `Param<EntityPtr>`.
+* `DeadZoneDoRepatriate` adds a ninth member, `damageRatioPerFall` as
+  `Param<float>`, with its `System.Single` generic context checked. Its
+  reviewed layout row also carries a source-hash cursor record, and this
+  validator checks that the row's fields and cursor evidence still agree
+  with the selected route. The float is a stored setting, not evidence that
+  repatriation ran or damage was applied.
+* `OpenSnapshot` adds its camera rotation, focus and two boolean controls.
+
+The same rows live in `codecs/levelscript/action_map_layouts.json`; a
+focused replay that consumes one of these records advances a cursor only,
+and the JsonData corpus EOF gate alone promotes an enclosing owner.
 """
 from __future__ import annotations
 

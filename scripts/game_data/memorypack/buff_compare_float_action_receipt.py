@@ -1,4 +1,11 @@
-"""Selected-build named wrapper receipt for BuffData CompareFloat spans."""
+"""Selected-build named wrapper receipt for BuffData CompareFloat spans.
+
+Physical Buff dispatcher tag ``0x0050`` selects the seven-member
+``CompareFloat.Data`` wrapper. The adapter checks both blackboard-value
+member types against the selected source's two direct call contexts, then
+names the reached wrapper fields and closes the exact action span. The
+blackboard values stay structural; no comparison is evaluated.
+"""
 from __future__ import annotations
 
 import hashlib

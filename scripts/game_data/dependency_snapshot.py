@@ -4,6 +4,21 @@ This module is intentionally independent of a corpus publication gate.  It is
 useful for development caches and diagnostics, where hashing an entire package
 would make unrelated modules invalidate one another.  Publication readers must
 retain their existing authenticated, start/end drift gates.
+
+It follows repo-local Python imports, literal contract resources, transitive
+contract-declared JSON/Python ``dependencies``, and literal helper paths passed
+to a local ``spec_from_file_location`` loader.  It fails closed on ambiguous
+basenames, conflicting assignments, missing or repository-escaping paths and
+unsupported declarations.  Runtime-computed paths and dynamic contract
+discovery are outside its static proof, which is why dependency-scoped replay
+stays developmental: it is not equivalent to a complete family sweep until
+mechanically derived transitive dependencies and merged rows are shown equal
+to one under mutation tests.  Route admission has a global negative
+dependency -- adding a formerly unknown route can change an old bounded row
+elsewhere -- so no per-file dependency set can prove a cached row current.
+
+Call ``dependency_snapshot(roots)`` with importable module names; it hashes the
+resolved closure. The module has no command-line entry point.
 """
 
 from __future__ import annotations

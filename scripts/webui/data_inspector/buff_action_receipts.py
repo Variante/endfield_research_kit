@@ -1,4 +1,29 @@
-"""Publish only authenticated Buff action spans, never a whole BuffData decode."""
+"""Publish only authenticated Buff action spans, never a whole BuffData decode.
+
+The optional ``buff-action-receipts`` Data-page dataset projects the selected
+``0x0092`` CreateBuff and ``0x00B4`` FinishBuffAdvanced wrapper fields at
+their byte spans in exported BuffData files. ``load_receipt_records``
+publishes only when every check holds:
+
+* the receipt report names the Buff VFS corpus report by its SHA256, and its
+  source identity set and input set equal that report's;
+* the corpus report is complete and publication-eligible, with no failed or
+  ambiguous file;
+* both tags' native inputs agree and match the installed
+  ``GameAssembly.dll``, ``global-metadata.dat`` and ``UnityPlayer.dll``;
+* every Buff source's exported logical bytes still match its recorded length
+  and SHA256;
+* each span is the exact whole-action range with contiguous named fields and
+  the recorded member count, spans do not overlap, and the report summary
+  matches the recounted spans.
+
+Any failure raises, and the builder marks the dataset unavailable without
+cached records. Records are ``bounded_partial`` projections: nested values,
+unlisted actions and the enclosing BuffData schema are not decoded here, and
+a stored action is not evidence of runtime use. The default report paths are
+under ``reports/animestudio/``; ``--buff-corpus-report`` and
+``--buff-action-receipts-report`` override them.
+"""
 
 from __future__ import annotations
 

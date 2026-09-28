@@ -1,4 +1,13 @@
-"""Indexed Terrain `_H` texture-byte diagnostic support for map recovery."""
+"""Indexed Terrain `_H` texture-byte diagnostic support for map recovery.
+
+The reader accepts the observed ``_H`` shape (one 65-by-65 range of two-byte
+``R8G8_UNorm`` texels, see ``terrain.tret``) and combines each pair as
+``byte0 + 256*byte1`` for Map diagnostic contrast. That composite is not a
+proved height value, nor even a proved relative relief ordering. The
+selected native route binds the ``_H`` path result to the render-property
+name ``_HeightmapAtlas`` (``terrain.tile_slots_native``); a property name is
+not a channel meaning or a proof of which file a scene opened.
+"""
 
 from __future__ import annotations
 

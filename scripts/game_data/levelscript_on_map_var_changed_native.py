@@ -1,4 +1,24 @@
-"""Authenticate the selected OnMapVarChanged ActionHeader reader."""
+"""Authenticate the selected OnMapVarChanged ActionHeader reader.
+
+The reviewed contract pins ActionHeader `OnMapVarChanged` (tag 0x00DC in the
+contract): the selected switch branch and wrapper, the complete reader and
+forwarding formatter, ordered reads and setters, and five typed parameter
+contexts (validate, key, map ID, and the new and old values). The route is
+registered in the shared ActionMap layout, and `codecs.levelscript.action_map`
+admits it only while this validator passes on the installed build. Passing
+`--export-root`, `--ledger` and `--summary` together also replays the reviewed
+source cursors against the current JsonData ledger. The command prints its
+audit and exits nonzero unless it validates. It proves stored header bytes;
+map-variable change events and parameter output values remain unobserved.
+
+After the common event-header fields the header stores `key` and `mapId` as
+`Param<string>` and `newValue`/`oldValue` as `ParamOutput<long>` (18
+members). Registration advances reached cursors only: combined with the
+`OnEnemyInFight` route, the corrected integrated projection closes only part
+of the reached owners at EOF and leaves the rest at later unions. An earlier
+projection that put every reached owner at EOF came from a scratch counter
+bug. Whole-owner status waits for the full JsonData corpus gate.
+"""
 
 from __future__ import annotations
 

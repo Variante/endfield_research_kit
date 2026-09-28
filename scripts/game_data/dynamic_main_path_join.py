@@ -4,6 +4,20 @@ The selected GetPath body extracts a high nibble and two bytes from a packed
 grid value. This audit rechecks its named native claims, then tests that every
 current fb_main filename carries the same packed value as its root UniqueId.
 It does not observe a live grid request.
+
+Run ``python -m scripts.game_data.dynamic_main_path_join --gameassembly PATH
+--metadata PATH --main-input-root MAIN_DUMP_ROOT --expected-input-set-sha256
+INPUT_SET_SHA256``. It rechecks the selected native ``GetPath`` claims and the
+RootComp report, authenticates each main dump by its VFS MD5, and writes
+``reports/animestudio/dynamic_main_path_join_latest.json``.
+
+Relation (exact over the current corpus). ``DynamicSceneFbDataLoader.GetPath``
+takes a packed ``UInt32``, extracts its low byte, next byte and a masked high
+nibble, and replaces indexed characters of the ``fb_main`` template. Those
+values are the filename's ``x``, ``z`` and first one-character segments, and
+every current ``fb_main`` root ``UniqueId`` equals
+``(first << 16) | (z << 8) | x``, including the code's use of only one high
+nibble. This is the file-to-root ID join, not the ID requested in play.
 """
 
 from __future__ import annotations

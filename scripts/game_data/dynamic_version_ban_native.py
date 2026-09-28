@@ -1,4 +1,33 @@
-"""Validate the selected DynamicStreaming version-ban consumer path."""
+"""Validate the selected DynamicStreaming version-ban consumer path.
+
+``python -m scripts.game_data.dynamic_version_ban_native --gameassembly PATH
+--metadata PATH`` checks the selected ``LoadFromBasePath`` candidate selection
+and the ``IsEntityVersionBanned``/``IsBanned`` HashSet query path, including the
+iFix override branches. It gates on the installed native inputs and the
+reviewed version-entry layout (``dynamic_version_native``), then writes
+``reports/animestudio/dynamic_version_ban_native_latest.json``. It makes no
+live patch-state, phase or ban-outcome claim.
+
+Consumer (direct, conditional on the unpatched branches). The contract checks
+named fields, signatures, full code windows, direct call targets and
+controlling branches. ``LoadFromBasePath`` first resolves active major,
+minor and phase (``dynamic_active_version_native``). It exits before entry
+processing when the phase is at least the full-phase sentinel, or when the
+path, file or root checks or the root major/minor comparisons fail. On its
+successful entry loop, ``Entry.Version > m_activePhase`` selects a candidate
+whose ``UInt64 Id`` goes to ``m_banned`` (``HashSet<ulong>``) through
+``HashSet.Add``; ``m_needCheck`` is set when at least one candidate was
+processed. The body has no direct ``HashSet.Clear``; ``Reset`` clears the set
+and the flag, so reuse across loads is open.
+``DynamicStreamingScene.IsEntityVersionBanned(globalId)`` reads
+``m_versionBanSet`` and passes the same ``UInt64`` to ``IsBanned``, which
+returns false when ``m_needCheck`` is false and otherwise
+``m_banned.Contains(globalId)``. iFix ``IsPatched`` checks can route the
+loader and both queries through wrappers. Selection alone does not prove a
+later query returns true, and the same-scene IdComp join
+(``dynamic_version_id_domain``) does not show which file, phase, patch state
+or ban result occurs in play.
+"""
 
 from __future__ import annotations
 

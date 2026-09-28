@@ -1,4 +1,16 @@
-"""Exact selected one-action CheckTagMatch damage condition span."""
+"""Exact selected one-action CheckTagMatch damage condition span.
+
+It checks the selected native six-member action, simple
+TargetSettings/DirectionSettings/SelectorData children and a positive raw
+GameplayTagQuery, then replays one ``CheckTagMatch`` condition against current
+VFS logical hashes. ``memorypack.buff_corpus`` admits it with one tag-five,
+tag-zero or tag-three processor through all 30 original root fields, source
+ID and EOF. Raw tag values are stored authored data, not a runtime match.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_check_tag_match_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

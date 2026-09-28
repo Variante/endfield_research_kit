@@ -2,6 +2,9 @@
 
 The nested sequence and two scalar wrappers retain their independently bounded
 profiles. Stored tick values do not establish runtime scheduling behavior.
+
+The ten-member wrapper stores a SequenceActionData child, a BlackboardInt
+tick count and a BlackboardDouble interval.
 """
 from __future__ import annotations
 

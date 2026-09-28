@@ -2,6 +2,10 @@
 
 The reader establishes one serialized ActionBase node at a caller supplied
 cursor. It does not infer execution or summon AI effects from the bytes.
+
+`ResetSummonTeamAI` has only the eight inherited action fields; the
+contract (`levelscript_reset_summon_team_ai_native.json`) names it through
+`levelscript_union_tags.json` and checks that member sequence.
 """
 
 from __future__ import annotations

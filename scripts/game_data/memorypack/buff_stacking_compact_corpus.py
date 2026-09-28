@@ -5,6 +5,15 @@ receipt rechecks its unique accepted EOF candidate and logical SHA/length
 against each exported file before applying the selected native child contract.
 The following tag array has separate native ownership; timeline interiors stay
 structural where the existing reader uses an opaque endpoint search.
+
+The receipt rejoins the selected-native child and the raw GameplayTag array
+ownership to each complete Buff report identity and exported logical
+SHA/length. Positive nested bodies and the whole-BuffData schema stay open.
+``--corpus-report`` is the complete ``memorypack.buff_corpus`` report,
+``--export-root`` is ``export_full/game/Json/BuffData``, and the
+conventional ``--output`` is
+``reports/animestudio/buff_stacking_compact_current_latest.json`` (the
+``--compact-report`` of ``buff_timeline_empty_receipt``).
 """
 from __future__ import annotations
 

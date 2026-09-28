@@ -2,6 +2,18 @@
 
 The claims establish call sites and their order. They do not establish which
 runtime branch executes, the values written, or an AudioCueTable selection.
+
+This is a build-independent claims validator. Its contract,
+`contracts/levelscript_audio_cue_execute_claims.json`, names the method by
+type and method rather than pinning an address, and `il2cpp.body_claims`
+re-proves it on whichever build `--game-root` (the installed `Endfield_Data`
+directory, required) selects. The claims state that the body reads all seven
+authored `Param` fields and contains ordered call sites for an iFix state
+check, the typed string, float, int and bool GameAction cue-variable setters,
+and an iFix patch lookup. The audit is written to
+`reports/game_data/levelscript_audio_cue_execute_latest.json` (`--output`);
+the command exits nonzero unless every claim holds. The stored
+`SetAudioCueVar` route itself is checked by `levelscript_audio_cue_native`.
 """
 
 from __future__ import annotations

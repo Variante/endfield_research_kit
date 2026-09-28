@@ -34,6 +34,63 @@ and corpus-validated, so a record the two framings both consume to the same
 offset means the derivation reproduces a proven framing.  For a tag only this
 reader admits, reaching the end of a synthesized record is self-consistency,
 and a whole-corpus run against real payloads is the adoption gate.
+
+**Three bodies of evidence, none subsuming another.** The reviewed
+cross-check (``cross_check``) reaches every tag the frozen reader admits;
+``union_subtypes.check_reviewed_nested_tables`` re-places the nested-union
+tags the frozen reader records; ``corpus_run`` and the whole-record sweep
+walk only the routes and nested-union placements present in real payloads,
+reported as ``planTagsExercised`` and ``nestedUnionPlacementsExercised``.
+Closing every file is not validating every plan. Additivity is measured, not
+asserted: every file the frozen reader already closed must end at the
+identical extent with the identical range count.
+
+**Whole-record families.** ``WHOLE_RECORD_FAMILIES`` are executed from their
+first byte to physical EOF, and ``shortOfEof`` is reported beside
+``exactEof`` because a drifting layout lands at arbitrary offsets. A
+``nullOnly`` position (a refused formatter-backed body left null) is counted
+as ``nullOnlyPositionsRead`` so the claim that it is null is tested, not
+assumed. Excluded, and why: ``MissionRuntimeAsset`` files are JSON text
+(they begin ``{`` CR LF), not MemoryPack; ``LevelData`` and
+``LevelScriptData`` hold ``Dictionary<string, object>``, and
+``System.Object`` names no layout. That refusal stands here; the separate
+LevelData reader frames the known object shape.
+
+**Eliminated readings the corpus forced** (keep them refused):
+
+* a header byte of zero on ``TimelineAction+ForceSyncAnimData`` looked like
+  MemoryPack writing fewer members than declared. Accepting short headers
+  gained no exact file; the zero was a drifted cursor several members past
+  the real error, which was the list/array element rule in
+  ``derived_schema``;
+* a plan depth limit of 24 steps refused ordinary SkillData files. The limit
+  is a guard, not a correctness bound (every step consumes a byte), so
+  ``PLAN_DEPTH_LIMIT`` is set from the observed maximum with headroom;
+* ``PlanRegistry.__len__`` makes a registry with no dispatcher roots falsy,
+  so readers test ``is not None``, never truthiness.
+
+**How the Skill decoder adopts a plan.** The SkillData timeline reader
+(``skill_timeline_shared_sequence``) gates twice before a plan matters:
+``rootTags`` admits the first timeline tag and ``allowedReachedRoutes``
+admits each route reached later. Widening only the roots turns anonymous
+union failures into named ``not-contracted`` refusals; closure needs the
+reached children too. An admitted derived route keeps ``evidence:
+derivedPlanCorpusVerified`` so it stays distinguishable from a hand-reviewed
+native reader, and the decoder compares its recorded member count with the
+payload's header byte, failing closed on disagreement. That corroborates
+framing only, not field meanings, source-reader order or behavior. An
+unreached plan is never admitted because a wrapper exists; the composite
+contract's ``derivedRouteEvidence`` records the method and its boundary.
+
+Outputs.  The default run writes
+``reports/game_data/memorypack_derived_plans.json``: each plan's framing
+cross-checked against the frozen reader tag by tag.  ``--corpus`` is the
+adoption gate and prints instead: how many exported BuffData files each
+reader closes, whether every file the frozen reader already closed still
+ends at the same cursor, how many routes and nested-union placements the run
+walked, and, for each of the four whole-record families, how many files the
+plan consumes exactly to EOF against how many land short and how often a
+refused body's position was reached.
 """
 from __future__ import annotations
 

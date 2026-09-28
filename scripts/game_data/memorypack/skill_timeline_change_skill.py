@@ -2,6 +2,9 @@
 
 The fourteen native source reads preserve nested scalar and target profiles.
 Stored identifiers and values remain structural, without runtime semantics.
+
+The native source order distinguishes target and reverted skill IDs, slot
+and source selectors, and cache and lifetime settings.
 """
 from __future__ import annotations
 

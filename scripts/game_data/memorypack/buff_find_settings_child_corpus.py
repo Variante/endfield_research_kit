@@ -1,4 +1,14 @@
-"""Authenticate current BuffData and name reached BuffFindSettings children."""
+"""Authenticate current BuffData and name reached BuffFindSettings children.
+
+It replays ``FinishBuffAdvanced.buffSettings`` under the selected native
+readers and each file's source hash into three named ``BuffFindSettings``
+members and two ``GameplayTagQuery`` members. Conditional string-list
+provider selection, raw tag values and the whole-BuffData schema stay open.
+
+Takes the shared Buff child-corpus arguments (see
+``buff_shared_nested_receipt_corpus``); the default output is
+``reports/animestudio/buff_find_settings_children_current_latest.json``.
+"""
 from __future__ import annotations
 
 import argparse

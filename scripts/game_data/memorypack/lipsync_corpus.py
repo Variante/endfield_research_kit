@@ -4,6 +4,9 @@ The full family is substantially larger than the other JsonData audits, so
 AnimeStudio's JSONL stream is consumed one row at a time. Logical bytes must
 join the current VFS ledger by path, length and MD5 before the strict reader
 may classify an entry as exact-to-EOF.
+
+Pass the VFS audit's ``--expected-input-set-sha256``; the default outputs are
+``reports/animestudio/lipsync_current_latest.{json,md}``.
 """
 
 from __future__ import annotations

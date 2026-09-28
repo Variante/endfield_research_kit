@@ -2,6 +2,9 @@
 
 The thirteen ordered source reads retain distinct nested profiles and raw
 float bits; stored values do not establish gameplay knockdown behavior.
+
+Native source calls and generic contexts distinguish a BlackboardDouble
+duration, a DirectionSettings face direction and two TargetSettings children.
 """
 from __future__ import annotations
 

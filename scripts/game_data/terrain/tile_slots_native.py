@@ -1,4 +1,23 @@
-"""Validate the selected native Terrain tile-result-to-copy chain."""
+"""Validate the selected native Terrain tile-result-to-copy chain.
+
+``python -m scripts.game_data.terrain.tile_slots_native --game-root
+.../Endfield_Data`` checks, against ``contracts/terrain_tile_slots_native.json``,
+the selected tile queue and ready-vector promotion, the ready callback, the six
+result-handle resolutions, the guarded copies into distinct owner-local
+destinations and the render-property ID binding. The receipt is
+``reports/terrain/tile_slots_native.json``.
+
+The exact suffix-to-property route is H/``_HeightmapAtlas``,
+N/``_NormalmapAtlas``, T/``_TintColorAtlas``, A/``_AlbedoAtlas``,
+S/``_SplatCtrlAtlas`` and C/``_CliffIndexAtlas``; handles are staged as
+H/N/T/S/A/C, and the gate checks that A/S temporary-slot swap. The consumer can
+exit before the copies (absent owner data or zero tile availability) and each
+copy helper can skip on incompatible inputs, so the copies are conditional.
+
+This names render-property literals, not encoded pixel channels, runtime path
+selection or final GPU sampling, and it does not identify managed
+VirtualTextureRenderer fields.
+"""
 
 from __future__ import annotations
 

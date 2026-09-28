@@ -2,6 +2,16 @@
 
 This reader names two finite compound conditions. It does not promote their
 enclosing BuffData roots; the root reader performs that independent proof.
+
+It checks the selected native ``CheckOriginSkillType`` and
+``OrConditionAction`` routes on two exact compound damage-condition source
+spans, including the nested PoiseValue and BuffStackNumAdvanced sequences.
+``memorypack.buff_corpus`` admits both with processor tag five through 30
+root fields, source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_origin_or_condition_current_latest.json``.
 """
 from __future__ import annotations
 

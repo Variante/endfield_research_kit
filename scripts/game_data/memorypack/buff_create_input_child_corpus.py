@@ -1,4 +1,14 @@
-"""Authenticate current Buff files and replay CreateBuff input/assignment children."""
+"""Authenticate current Buff files and replay CreateBuff input/assignment children.
+
+It replays ``CreateBuffAction.buffs`` under the selected native readers and
+each file's source hash into the named five-member ``CreateBuffActionInput``
+and six-member ``AssignPair`` children. Raw string bytes stay raw; runtime
+assignment and the whole-BuffData schema stay open.
+
+Takes the shared Buff child-corpus arguments (see
+``buff_shared_nested_receipt_corpus``); the default output is
+``reports/animestudio/buff_create_input_children_current_latest.json``.
+"""
 from __future__ import annotations
 
 import argparse

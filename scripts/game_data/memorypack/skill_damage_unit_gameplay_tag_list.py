@@ -3,6 +3,15 @@
 This is the tenth DamageUnit source member.  The current generic list call
 and generated element reader are pinned independently; the active inflated
 list provider remains conditional until a live provider witness exists.
+
+The generic callsite, element formatter and list-count source each have an
+independent native window.  The wire accepted here is a signed nullable
+count, then elements that are either ``FF`` or a one-member wrapper header
+followed by one four-byte tag -- the ``List<T>`` element framing, as opposed
+to a packed ``T[]``.  The following DamageUnit tail is retained as a separate
+bounded region, and the parent action, ActionGroup and top-level fields must
+rejoin before a whole file becomes exact.  This is a stored-layout proof, not
+a claim that a tag caused damage.
 """
 
 from __future__ import annotations

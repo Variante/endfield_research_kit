@@ -25,6 +25,22 @@ to be pinned.  Its value is that an unreviewed tag stops being anonymous.
 
 Every contracted tag is re-derived and compared.  A contradiction fails the run
 closed rather than publishing a route set that disagrees with reviewed evidence.
+A route whose prologue is not the expected rip-relative load is recorded with
+that status rather than guessed at.  All current routes are distinct, so there
+is no shared default target to disambiguate.
+
+Eliminated reading: treating every switch-table pin in the contract directory
+as one union made enumeration fail once nested finder and validator contracts
+pinned their own tables.  The catalog join keeps those independent tables out
+of the AbilityActionData agreement check without relaxing a contradiction
+inside that union.  Nested unions are reached through ``union_subtypes``
+instead, because nothing in the image addresses their jump tables with a
+rip-relative load.
+
+The report (``reports/game_data/memorypack_action_dispatcher.json``) gives
+every AbilityActionData union tag's route, registered type, generated wrapper,
+named member order and member widths, with each reviewed tag re-derived and
+compared; ``--tag 0x92`` prints one tag's route instead.
 """
 from __future__ import annotations
 

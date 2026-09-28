@@ -2,6 +2,13 @@
 
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove a live camera range change.
+
+The route stores `customRangePointA` and `customRangePointB` as
+`Param<Vector3>` after the inherited action fields, with both value-type
+parameter contexts checked. Both coordinates use constant parameter
+sources; some authored pairs are zero and others are nonzero spatial bounds.
+
+Run as: python -m scripts.game_data.levelscript_fac_top_view_range_native
 """
 
 from __future__ import annotations

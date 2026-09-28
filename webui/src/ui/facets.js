@@ -22,6 +22,27 @@
 // Groups whose items come from elsewhere (a server-side query) omit `values`
 // and give `items` (chip list) plus `counts`; `matches()` ignores such a group
 // and the caller applies its active values itself.
+//
+// Page conventions (every list page uses this model: Story in app_tree.js,
+// Assets, Gameplay, Characters, Audio, Text, Updates and the Data page; Map's
+// layer checkboxes and Recovery are not filter groups):
+//   * chip counts are dataset totals (countMode: "total") on every page; the
+//     Data page's store groups carry server counts;
+//   * search stays outside `predicate`, so typing never recounts chips (Audio
+//     media alone is tens of thousands of records); each page applies its
+//     search after facets.filter(), and ranking stays page-owned;
+//   * values() must not return "": an empty value is dropped, so a page that
+//     needs one maps it to a sentinel (Assets uses "(root)");
+//   * a union across groups (Gameplay's per-kind type groups) is written as a
+//     `match` that reads the other groups' state;
+//   * state API: active(id) (a copy), has, set(id, values), toggle(id, value,
+//     on), reset({ only }), isFiltered(id?), activeCount(id?), counts(id);
+//     every mutator takes { silent: true } to skip onChange;
+//   * persistence: toParams/fromParams write one repeated URL parameter per
+//     active value (?kind=a&kind=b, so values may contain commas) for groups
+//     that declare `param`; snapshot()/restore() round-trip a plain
+//     { groupId: [values] } object for storage.
+// The Data page Files mode is the reference consumer.
 (() => {
   const WebUI = window.WebUI;
   const { $ } = WebUI;

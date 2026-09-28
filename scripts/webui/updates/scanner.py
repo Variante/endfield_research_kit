@@ -21,6 +21,16 @@ file: no reader owns it, so it is recorded as ``binary`` with no diff text.
 
 A packed folder is read only from its store: loose files under a packed
 folder are not game data in a v4 root and are never scanned.
+
+A ``.json`` name does not mean the bytes are text. UTF-8 text diffs as
+itself; a serialized payload is rendered through the ``scripts.game_data``
+reader that ``scripts.webui.decoded_payloads`` routes it to; a payload with no
+reader, or one over the diff size limit, gets no text. Each file records which
+form it stored, so a bounded reader's diff is published as partial and a
+changed file with no diff says why. Changing that routing changes the cached
+text: refresh the previous-export baseline afterwards
+(``--refresh-previous-export-baseline``). The scanner is an in-process API of
+``scripts.webui.updates.build_updates``, not a second CLI.
 """
 from __future__ import annotations
 

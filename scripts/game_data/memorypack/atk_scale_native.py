@@ -3,6 +3,21 @@
 The reviewed contract binds its signature, operands and arithmetic to exact
 selected-build bytes. The claim covers normally returning nonpatch paths, not
 an observed DamageUnit invocation or final damage.
+
+The signature names ``attacker`` and an optional ``attackerOverrideAttributes:
+double[]``. With a nonnull array longer than two, the body reads element 2,
+the selected ``AttributeType.Atk`` index; with a null array it calls
+``attacker.get_atk()``; a present shorter array takes a failure path instead
+of falling back. The stored ``atkScale: BlackboardDouble`` reaches
+``ActionBlackboardExtensions.GetValue`` with the action blackboard; its
+``Single`` result is converted to ``Double`` and multiplied by the selected
+attack into ``CalcResult.value``. The optional server debug-args path rejoins
+the same multiplication. The proved intermediate is ``attack *
+resolved(atkScale)`` -- present in character skills, but not a final damage
+number.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair; the default report
+is ``reports/game_data/atk_scale_calculation_native.json``.
 """
 from __future__ import annotations
 

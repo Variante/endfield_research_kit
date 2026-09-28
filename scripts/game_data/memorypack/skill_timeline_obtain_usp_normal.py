@@ -3,6 +3,10 @@
 FA FF 00 is the three-byte union tag for this action, not the one-byte FF
 null sentinel. The existing Buff frontier-seven native contract authenticates
 its finite six-member reader and two child profile types.
+
+A shared reader that treats every numeric tag 255 as null loses this
+identity even when its byte cursor is exact; only a width-one ``FF`` may take
+the null-summary path.
 """
 from __future__ import annotations
 

@@ -5,6 +5,15 @@ The decoder is intentionally narrow.  It admits only the authenticated
 contains one extended-tag ``0x0115`` PlayAnimation action and whose nested
 ``onEndAction`` is the exact empty three-member SequenceActionData shape.
 Other action tags and shapes fail at their first unsupported byte.
+
+The generated ``TimelineActionData``, ``ForceSyncAnimData``,
+``SequenceActionData`` and ``PlayAnimation`` wrapper orders name every
+consumed member.  When ``timelineActions`` holds only this record, the exact
+ActionGroup endpoint feeds the fields 1..42 reader and the selected terminal
+to close the whole file.  Later records and other first tags belong to
+:mod:`skill_timeline_shared_sequence`; when both describe a file, the corpus
+prefers the complete shared-sequence profile.  Provider selection stays
+conditional on the pinned native and input-set gates.
 """
 from __future__ import annotations
 

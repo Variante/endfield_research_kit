@@ -4,6 +4,12 @@ The existing reader frames physical tag 0x00EC. Its reviewed native source
 contract supplies the ten-member read order; the action dispatcher supplies
 generated field names and declared member types. Nested target and blackboard
 values remain structural, as does the enclosing BuffData.
+
+The adapter checks its generated member kinds against the source order, and
+its target and blackboard-value types against the source's direct nested
+contexts. The ``value`` and target children are named further by
+``buff_blackboard_double_child_receipt`` and
+``buff_target_settings_child_receipt``.
 """
 from __future__ import annotations
 

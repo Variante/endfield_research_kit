@@ -1,3 +1,23 @@
+// Assets page behavior contract (webui/README.md links here; evidence limits
+// are in memory/webui/assets.md).
+//   * Search plus filter sections basic, category, type, source and sort. The
+//     detail pane owns image/video/text preview with a selectable preview
+//     background, an OBJ/FBX model canvas with mesh stats, material,
+//     reference and related-asset lists, copy-path and download actions, and
+//     ?asset= deep links. Exported JSON is not listed: every such document is
+//     a Data-page store row, and a material links to its Data-page document.
+//   * The Table owner fact comes from the optional data/assets/table_owners.json
+//     and names the exported table row whose asset-bearing field holds this
+//     asset's exact normalized stem. No such row means no owner; a shared name
+//     prefix never produces one, and an absent sidecar only removes the fact.
+//   * A Sprite index entry with `crop` (its texture's path) has no file and no
+//     `s`; the page shows its pixel size and a Cropped from fact. Every page
+//     still links to .../game/Unity/Sprite/<name>.png: serve.py answers with
+//     the crop document (application/vnd.endfield.sprite-crop+json), or with
+//     AnimeStudio's PNG from game/Sprite.sqlite after a debug export, and
+//     sprite_worker.js renders the crop from the texture PNG so the pixels,
+//     transparent ones included, equal AnimeStudio's. Without the worker (no
+//     secure context) Sprite images do not display.
 (() => {
   const ASSET_GROUP_ROW_H = 28;
   const ASSET_ITEM_ROW_H = 70;

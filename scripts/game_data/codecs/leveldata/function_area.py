@@ -1,4 +1,31 @@
-"""Exact MemoryPack codecs for ``LevelFunctionAreaData`` nested collections."""
+"""Exact MemoryPack codecs for ``LevelFunctionAreaData`` nested collections.
+
+The 13-member base rows and ``ThreeDimRange`` records are read in
+``scripts.game_data.leveldata_binary``; this module owns the two
+polymorphic nested collections and the shared condition union.
+
+- ``ConditionData`` reads ``conditionRuntimeBase`` before ``uniqueId``.
+- ``decode_condition_runtime`` is the shared ``ConditionRuntimeBase`` codec
+  (also used by top-level ``buildableCondition``). It admits only the
+  current routes: tag 0 ``CombinedConditionRuntime`` (recursive, three
+  members), tag 8 ``SimpleConditionCheckGlobalVar`` (``compareOperator``,
+  ``compareTarget``, ``globalVarName``; reached by bamboo-raft dock
+  filters), tag 11 ``SimpleConditionCheckMissionNotPaused``, tag 12
+  mission-state and tag 17 quest-state checks.
+- ``FunctionAreaSpecificData`` follows the authenticated current native tag
+  dispatcher: ambience camera, blight miasma, block-AI bark, camera
+  control/look-at/volume, carry tags, dither factory bounds, entity-hiding
+  filters, radio triggers, repatriation, scene toast keys, teammate-follow
+  bounds, Story safe zones, and tag 16 ``VisitLocStatData`` (a one-member
+  wrapper holding the signed ``saveId``). Each concrete value uses its
+  generated setter order and member count, including nested LangKey,
+  string/identity lists and finite Vector3 values.
+
+An unknown tag or changed member count stops at the nested union instead of
+shifting later LevelData fields. Evidence tier: exact stored layout; the
+stored conditions and area settings do not prove runtime evaluation or
+activation.
+"""
 
 from __future__ import annotations
 

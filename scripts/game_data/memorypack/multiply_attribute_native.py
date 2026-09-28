@@ -3,6 +3,23 @@
 The contract pins one installed IL2CPP pair. Its windows and call/branch sites
 were reviewed together as one data-flow claim. This is a static, nonpatch
 method-body proof, not an observation that a DamageUnit executed.
+
+What the reviewed unpatched path shows (``direct``): ``valueSource ==
+AttackerOrHealer (0)`` keeps the attacker as the attribute source and
+``Target (1)`` selects the defender. The selected source, its matching
+override-attribute array and the stored ``attributeType`` reach
+``CalculationBase.GetAttribute``; the stored ``multiplier`` and ``addition``
+``BlackboardDouble`` fields each reach ``ActionBlackboardExtensions.GetValue``
+with the action blackboard. The evaluator converts the resolved values to
+double and returns the intermediate ``GetAttribute(...) * multiplier +
+addition``. Both authored source choices occur in the exact corpus.
+
+It holds only when this subtype is invoked and the iFix branch does not
+redirect Evaluate (``conditional``). Provider internals, patch state, branch
+activation, mitigation and final damage stay ``unresolved``.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair; the default report
+is ``reports/game_data/multiply_attribute_calculation_native.json``.
 """
 from __future__ import annotations
 

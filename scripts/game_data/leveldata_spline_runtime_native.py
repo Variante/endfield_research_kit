@@ -1,4 +1,12 @@
-"""Authenticate selected native LevelData spline ownership and movement use."""
+"""Authenticate selected native LevelData spline ownership and movement use.
+
+It validates the reviewed spline-table and movement-transform consumer
+contract (``contracts/leveldata_spline_runtime_native.json``) against the
+installed build and prints the result; run
+``python -m scripts.game_data.leveldata_spline_runtime_native``. A
+``validated`` status describes the reviewed normal branches only; iFix patch
+selection and actual movement remain unobserved.
+"""
 
 from __future__ import annotations
 

@@ -26,6 +26,36 @@ The result ranks recovery work by unnamed bytes, which is the quantity a new
 codec actually removes. It is a measurement, not evidence of a schema: naming
 a byte range here means a framing claims it, and the claim is only as good as
 the reader's own fixtures and corpus gate.
+
+Registry rules, each learned from a wrong figure:
+
+* A framing that reaches EOF, declares no opaque span, yet advertises opaque
+  content in its own status (``schemaStatus == "partial"`` or an opaque token
+  in ``status``) is ``unmeasurable``, reported beside the share rather than
+  credited as whole. An opaque-middle file that reaches EOF without locating
+  what it skipped is unmeasured, not covered.
+* A family with no framer at a tier is ``measured: False``, never 0%: several
+  families have reviewed readers or family gates outside this registry
+  (BuffData and SkillData are scored by their own corpus gates).
+* Register the strongest reader per family, not the newest. The derived
+  whole-root path understates families a reviewed reader already closes.
+* Every directory under the Json root needs a registry entry; an absent family
+  silently shrinks the denominator instead of reporting an open family.
+* One directory may hold several roots; each root framing refuses any file it
+  does not close at EOF, so trying them in turn cannot admit a wrong reading.
+
+Two tiers. With no ``--declarations`` the sweep uses reviewed readers only and
+reports ``evidenceTier: exact``. ``--declarations REPORT`` (a
+``levelscript_union_layouts`` report) adds the declaration-derived root and
+action-map framings and reports ``direct``: a derived row is an observed
+declaration, not a reviewed dispatcher read. Keep the reviewed-tier report
+beside the declared one; the pair shows what the derived tier contributes, and
+only the ``exact`` figure may be quoted by a consumer publishing at that
+boundary. A derived-tier EOF result for an earlier input set is not a current
+reviewed schema.
+
+Run as ``python -m scripts.game_data.jsondata_schema_coverage --report PATH``
+(output belongs under ``reports/game_data/``).
 """
 
 from __future__ import annotations

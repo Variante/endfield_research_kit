@@ -2,6 +2,25 @@
 
 This follows selected-build derived plans through whole records to EOF. It
 names stored enum values, not runtime damage computation or branch execution.
+
+The plan references reach ``DamageAction+DamageUnit``; each record must reach
+EOF with its decoded id equal to its filename. Selected native field types and
+enum defaults name ``damageAttributeType``, ``damageType``,
+``damageVisualImportance`` and ``ignoreDamageImmuneLevel``. The immunity
+values coincide with declared individual members; no bit-mask claim is made.
+
+The same plan identifies the concrete union subtype, or null, stored in each
+``atkCalculation`` and ``poiseCalculation`` slot. A subtype name establishes
+which body is stored, not which arithmetic runs (see
+``scripts.webui.gameplay.route_audit``). For ``MultiplyAttributeCalculation``
+and ``PrimaryAttrCalculation`` the audit also joins ``attributeType``/``type``
+and ``valueSource`` to their declared members; those are authored choices, and
+only the separate evaluator contracts prove their use.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair and optionally
+``--export-root``; missing or changed native inputs and incomplete records
+fail closed. The default report is
+``reports/game_data/memorypack_damage_unit_enums.json``.
 """
 from __future__ import annotations
 

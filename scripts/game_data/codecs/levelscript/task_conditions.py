@@ -1,6 +1,42 @@
 """Exact codec for the LevelScript task map and its condition unions.
 
 Moved verbatim out of ``scripts/game_data/levelscript_binary.py``.
+
+``taskMap`` is a counted map of ``LevelScriptTaskData`` entries: an
+eight-hex-digit task key, a four-member envelope, and a root ``GameCondition``
+union.  The sequential owner (``codecs.levelscript.sequential_owner``)
+promotes a file only when every declared entry closes and the following
+``triggerVolumes`` map ends at physical EOF.  An unsupported condition body
+stops immediately after the named task count; later bytes are never scanned
+or assigned to a guessed entry.  The first failing entry is kept as a bounded
+diagnostic (task key and checked union tag when readable) so the next reader
+frontier is identifiable without promoting any later bytes.
+
+Condition identity.  A ``GameCondition`` tag is the type's rank in the union
+and renumbers whenever a condition is added, so tags are never written down:
+``_task_condition_tag`` resolves each reviewed type name through
+``levelscript_union_tags`` for the selected build, and an unvalidated build
+yields a placeholder that no byte equals.  ``LEVELSCRIPT_TASK_CONDITION_TAGS``
+pairs each name with the member count its codec reads; a different current
+member count fails closed.  Generated wrapper setter order gives the concrete
+fields, e.g. ``CheckQuestState`` (comparer, quest id, quest state),
+``CheckTalkOptionFinish`` (dialog id, finish id), ``InteractiveCheckInt``
+(comparer, value, entity, key, level), ``CheckScanInteractive`` (entity then
+level), ``CheckTerminalReadingDone`` (terminal unique id) and
+``Conditions.CheckCurrentDungeonBoth`` (dungeon id).  Quest state accepts the
+generated sparse enum ``0,2,3,4,5``; value 1 is not a quest state and fails.
+Nullable ``Param<T>`` values, scalar/list payloads, sparse enums, nested
+pointers and raw trailing booleans advance only their declared member order.
+
+Supplemental routes are tried in order when the reviewed table has no row:
+``levelscript_task_condition_native`` rows, then the separately gated codecs
+``taskmap_selected_conditions``, ``taskmap_followon_conditions``,
+``taskmap_submit_condition``, ``taskmap_archery_condition`` and
+``taskmap_game_inst_duration_condition``, each admitted only while its own
+native contract validates the selected build.
+
+Evidence tier: ``exact`` stored layout.  Stored conditions do not establish
+runtime evaluation, mission ownership or task completion.
 """
 
 from __future__ import annotations

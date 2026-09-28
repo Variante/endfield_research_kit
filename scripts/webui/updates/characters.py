@@ -1,4 +1,18 @@
-"""Build a fail-closed final-catalog diff for the Characters page."""
+"""Build a fail-closed final-catalog diff for the Characters page.
+
+Every Characters build saves its final catalog under
+``webui/data/_build/characters/<LANG>.json``. The Updates diff does not read
+that snapshot: it builds two catalogs itself, one per export, with the current
+Characters builder, cached in ``.game-data-tracker/``, each from that export's
+own tables and converted media and without the Story actor registry. Builder
+changes and Story-only inputs therefore never appear as game updates; the
+comparison covers Table and exported-asset identities, not only
+``CharacterTable``. Only languages present on both sides participate. It
+reports ``added``, ``modified`` and ``deleted``. Missing, invalid, empty or
+legacy exports publish an unavailable empty sidecar instead of treating the
+current roster as entirely new; the sidecar does not alter recovery or
+grouping.
+"""
 from __future__ import annotations
 
 import hashlib

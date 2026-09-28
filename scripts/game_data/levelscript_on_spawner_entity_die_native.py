@@ -1,4 +1,20 @@
-"""Authenticate the selected OnSpawnerEntityDie ActionHeader reader."""
+"""Authenticate the selected OnSpawnerEntityDie ActionHeader reader.
+
+The reviewed contract pins ActionHeader `LevelEvent.OnSpawnerEntityDie` (tag
+0x0092 in the contract): the selected switch branch and wrapper, the complete
+reader and forwarding formatter, ordered reads and setters, and its generic
+parameter contexts, including the typed death filter and spawner pointer.
+Passing `--export-root`, `--ledger` and `--summary` together also replays the
+reviewed source cursors against the current JsonData ledger. The command
+prints its audit and exits nonzero unless it validates. It proves stored
+header bytes; entity-death events, spawner lookup and output values remain
+unobserved.
+
+The header stores an entity output, a signed 32-bit typed death filter
+(`OnSpawnerEntityDie.FilterType`, whose underlying type is checked), group
+and wave key filters and outputs, and a `Param<SpawnerPtr>` filter; the
+reader is chained and the contract covers eight typed parameter contexts.
+"""
 
 from __future__ import annotations
 

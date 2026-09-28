@@ -1,4 +1,17 @@
-"""Byte-pinned named schemas for polymorphic GameplayConfig JSON tables."""
+"""Byte-pinned named schemas for polymorphic GameplayConfig JSON tables.
+
+Covers ``ForbidByGameplayTagTable``, ``GameModeTable``, ``LevelMapMark``,
+``ScriptTaskExtraInfoTable`` and ``SubGameInstanceDataTable`` through the
+reviewed declarative contract ``gameplay_config_polymorphic_schema.json``
+under ``contracts/`` (schema nodes plus the stored ``$type`` identities),
+walked by ``schemas.named_schema``.  Only the contract's explicitly named authored-ID
+dictionaries are dynamic; an unknown field, shape, scalar type or ``$type``
+discriminator fails closed.  ``GameModeTable`` keys must equal ``modeId``.
+
+This is ``exact`` stored configuration structure.  For ``LevelMapMark`` the
+numeric root key is a marker group key, never a scene id; its cross-table
+joins are audited separately by ``scripts.game_data.map_mark_relations``.
+"""
 
 from __future__ import annotations
 

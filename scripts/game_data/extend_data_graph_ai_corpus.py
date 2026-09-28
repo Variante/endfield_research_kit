@@ -5,6 +5,32 @@ blackboard graph-mode RID -> exact managed-reference canvasGraph pointer ->
 BehaviourTree asset -> authenticated archive ordinal. The selected native
 synchronous path reads EnemyTable.aiTemplateId and forms an AIConfig asset
 path; each reported Table-to-config match must also have that path.
+
+Contract ``extend_data_graph_ai.json``. Within each graph source CAB, the
+exported AssetBundle ``m_Container`` gives the exact path and local PathID of
+every compressed BehaviourTree asset (a stored pointer, not a filename guess).
+An ``EnemyAIConfigData.aiBB`` PPtr names an ``EnemyAIBlackboard`` in the same
+CAB, whose checked graph modes map a stored tag to a managed-reference RID
+whose exactly decoded ``canvasGraph`` PPtr names the BehaviourTree. Every step
+requires the exporter-resolved PPtr receipt, a unique target object and the
+existing ordinal map; null graph pointers and uninterpreted modes are kept
+separate, and mutated RIDs, graph pointers and decode status are rejected.
+
+The Table side requires each ``EnemyTable`` row key to equal its stored
+``enemyId`` and each ``aiTemplateId`` match to have the case-folded,
+natively formatted ``AIConfig`` path in the container before reporting the
+config and graph ordinal. The matched subset closes; AI configs under a
+``Settlement`` subdirectory are outside the synchronous path, other Table keys
+have no exact path, and ``AIConfig/EnemyTemplateDataSummary`` maps template
+IDs to EnemyData paths without selecting a graph. The source graph's
+``enemy_uses_ai_config`` edge is a query aid over the same Table field, not
+another witness. Table and Unity freshness rests on the export-summary
+fingerprint fallback, not per-object authentication of installed bytes.
+
+Pass ``--game-root`` (the installed ``Endfield_Data``) and the VFS audit's
+``inputSetSha256``; the report is
+``reports/animestudio/extend_data_graph_ai_latest.json``. It records authored
+references, not a live enemy, asset load or graph execution.
 """
 
 from __future__ import annotations

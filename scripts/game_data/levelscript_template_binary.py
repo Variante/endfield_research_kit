@@ -1,4 +1,34 @@
-"""Partial exact-range reader for ``LevelScriptTemplateData`` payloads."""
+"""Partial exact-range reader for ``LevelScriptTemplateData`` payloads.
+
+The root is the six-field generated wrapper ``actionMap``, ``maxStage``,
+``properties``, ``propertyIdToKeyMap``, ``taskMap``, ``templateId``.
+``actionMap`` is an ``ActionMapAssetRaw`` of two members: the three-list
+``ActionSerializedMap`` read by ``codecs.levelscript.action_map`` and the
+one-member ``ParamListForGraph`` blackboard. With empty lists and an empty
+blackboard the action map ends at byte 20; the serialized map alone ends at
+byte 15. A nonempty blackboard is admitted only while the
+``levelscript_param_list_native`` contract validates. An older byte-7
+framing covered only the first list count and is not a complete action map.
+
+After the action map, ``maxStage``, ``ParamKeyValue`` properties and the
+paired ``Dictionary<int, string>`` IDs are read sequentially. A null task map
+joins the terminal ``templateId`` directly; a positive task map reuses the
+LevelScript task-map entry and condition-union codec and must consume exactly
+to the ``templateId`` boundary, which is the unique UTF-8 field closing at
+physical EOF. Only then is a template ``named_exact``.
+
+Populated action maps use the same reviewed action/getter/header layouts as
+LevelScript and Interactive data. The ``LST_Sdg_*`` progression templates
+close through the ``ScriptEvent_OnCustomEvent`` header; ``LST_Test_1``
+closes its one-entry task map through the ``InteractiveCheckBool``
+condition (four common condition members, then ``compareValue``,
+``entityId``, ``key``, ``levelId``), whose switch branch and inheritance are
+checked by the reviewed task-condition contract. A template whose action map
+stops at an unreviewed record keeps only exact endpoint ranges around an
+opaque middle: the terminal ID does not make the intervening bytes exact.
+This proves stored layout, not server evaluation, entity resolution or the
+resulting interactive state.
+"""
 
 from __future__ import annotations
 

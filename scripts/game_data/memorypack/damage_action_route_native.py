@@ -2,6 +2,27 @@
 
 This authenticates the native branch and simple intermediate expression. It
 does not observe a DamageUnit running, a patch choice, or final damage.
+
+``DamageAction._CalculateDamageResultForNormalEntity`` on its normally
+returning unpatched path tests ``takeAtkSnapshot`` first. With it false,
+``simpleCalculation == true`` resolves the DamageUnit's own ``atkScale``
+through ``GetValue``, widens the ``Single`` result to ``Double`` and multiplies
+it by ``DamagePackData.attackerAttributes[2]`` (the byref pack's unboxed array
+field and index-two length check are part of the proof). With
+``simpleCalculation == false`` the caller requires a nonnull stored
+``atkCalculation`` and passes it to a calculation-object dispatch helper,
+skipping the simple branch. A true ``takeAtkSnapshot`` takes a separate branch
+whose semantics are not assigned; the helper's complete subtype dispatch and
+the later damage pipeline stay open.
+
+The same contract covers ``CalculationBase.GetAttribute``: a supplied override
+array returns its indexed ``Double`` after a bounds check, only a null array
+falls back to ``source.attributes.GetValue(attributeType)``, and a present
+short array fails its bounds check. Override-array construction is not
+established.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair; the default report
+is ``reports/game_data/damage_action_normal_route_native.json``.
 """
 from __future__ import annotations
 

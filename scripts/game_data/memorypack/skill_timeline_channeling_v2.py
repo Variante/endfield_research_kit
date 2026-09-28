@@ -1,6 +1,11 @@
 """Selected-build SkillData ChannelingActionV2 0x0030 storage framing.
 
 The stored ten-member source profile has no proved runtime channeling effect.
+
+After the inherited action fields it stores a finite SequenceActionData
+child, a TargetSettings child, and count and interval words.  The pinned
+reader checks six own setter calls and three generic contexts.  Its structure
+matches a reviewed sibling, but the two wrappers are not equated.
 """
 from __future__ import annotations
 

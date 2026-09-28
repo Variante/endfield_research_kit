@@ -4,6 +4,83 @@
 The builder reuses maintained data-side readers. It publishes decoded records
 and bounded summaries, while large exported Unity JSON stays in ``export_full``
 and is fetched only when a user asks to inspect its raw source.
+
+Datasets (``DATASET_IDS``):
+
+* ``animation-config`` -- the complete ``frame_animation_config`` result:
+  framing/evidence status, member order and byte ranges, controller path ids,
+  extra-data subtype and values, montage rows and clip data, NPC montages,
+  sync-group and time-reference curves. ``extraDataFields`` is only the list
+  of decoded member names; scalar values are in ``extraDataValues`` and every
+  value stays under ``payload.fields.extraData``; montages and curves are
+  under ``payload.fields.montages``, ``syncGroupCurves`` and
+  ``timeRefCurves``.
+* ``npc-montage`` -- the complete ``frame_npc_montage`` result.
+* ``animator-controller`` / ``animator-override-controller`` -- a selected
+  ``projection`` of the complete AnimeStudio JSON from the Unity store
+  (layer/state/transition counts, condition tuples, controller hashes by
+  source field, string table, curve fields; or the controller reference and
+  every original/override clip reference). The mounted raw JSON stays the
+  exact source.
+* ``level-config`` -- the complete ``decode_level_config`` result.
+* ``level-data`` -- ``frame_leveldata_named_prefix`` per file: named exact
+  fields and byte boundaries where reached, an explicit open field and opaque
+  remainder elsewhere, stored spline rows when their collection decodes
+  (``has-splines``/``has-knots`` tags). Stored geometry only.
+* ``skill-data`` -- the selected build's generated-wrapper values
+  (``derived_values.decode_file``). A record is ``structural_only`` only when
+  the native plan validates, the cursor reaches EOF and the stored
+  ``skillId`` equals the filename; nested union assignments keep that
+  structural tier even with an exact cursor, and a failed file stays visible
+  as ``decode_error``. Missing or mismatched native inputs publish an
+  unavailable dataset with a diagnostic, never cached rows; the input
+  signature includes the selected native hashes. Stored
+  ``AllowNextSkillAction`` (``0x000E``) ``allowedSkillIdList`` ids become
+  ``references`` resolved by unique filename stem. ``searchTerms`` and
+  ``directStoredActionTypes`` count direct timeline and passive-event action
+  unions only; an unfamiliar array shape withholds the whole inventory. The
+  independent SkillData VFS corpus still owns the narrower reviewed
+  timeline-action framing claims.
+* ``buff-action-receipts`` -- optional; see ``buff_action_receipts``.
+* ``char-interact-perform`` -- ``decode_char_interact_complete_frame``; a
+  file the complete frame rejects falls back to ``frame_char_interact_prefix``
+  and is published as a bounded row, never dropped.
+* ``navmesh`` -- ``decode_luna_area`` / ``decode_navmesh_state_container``
+  framed to EOF; an unrouted NavMesh filename stays ``unsupported``.
+* ``level-mount-point`` -- validated ``decode_level_mount_points`` trees.
+* ``config-table`` -- ``CONFIG_TABLE_READERS``, the single-instance tables
+  that each have an exact reader, routed as ``scripts.game_data.jsondata_corpus``
+  routes them. ``LevelScriptTeleportValidationDataTable.json`` ships as
+  indented UTF-8 JSON while its four siblings are MemoryPack; its earlier
+  "table member count changed" error was a plaintext file sent to the binary
+  reader, not build drift, and it routes to
+  ``decode_teleport_validation_json_table``. A second container always gets
+  its own reader, never a widened one.
+
+Adapter rules: a family is published only when a maintained
+``scripts/game_data`` reader owns it, and the adapter never softens it --
+status comes from the reader's own ``schemaStatus``/``status``, a fail-closed
+variant becomes a visible ``decode_error`` row with its reason, and an
+unrouted file becomes ``unsupported`` rather than omitted. WebUI code never
+duplicates binary framing; a family without a reader gets a reader and corpus
+gate in ``scripts/game_data`` first.
+
+Deliberately absent: LipSync (exact reader, but needs a paged catalog),
+LevelScriptData and complete BuffData (bounded readers), and Terrain,
+Streaming, irradiance volumes and BundleManifest (anonymous ranges with no
+per-record identity worth browsing).
+
+Build cache: a dataset is reused when its stored ``inputSignature`` (paths,
+sizes and modification times, or store-row SHA256s) and ``PUBLISHER_REVISION``
+match; ``--force`` bypasses it. Bump ``PUBLISHER_REVISION`` whenever a
+projection or normalization changes. The stored signature must be compared
+through ``contract.json_safe``, because publication rewrites integers outside
+JavaScript's exact range as decimal strings and ``latestMtimeNs`` is always
+outside it. The cache is not game-data evidence.
+
+    python -m scripts.webui.data_inspector.build_data_inspector
+    python -m scripts.webui.data_inspector.build_data_inspector --dataset skill-data
+    python -m scripts.webui.data_inspector.build_data_inspector --force
 """
 
 from __future__ import annotations

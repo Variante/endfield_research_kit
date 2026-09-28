@@ -4,6 +4,23 @@ The Buff reader already closes this physical action anonymously. This adapter
 attaches generated wrapper setter names to its eight source-ordered spans only
 after authenticating the selected dispatcher, reader, generic child provider,
 installed native build, logical file hash, and exact action end.
+
+The selected dispatcher, complete source reader and three identical
+``SequenceActionData`` MethodSpec callsites fix an eight-member read order
+(``IF_ELSE_ACTION_READ_KINDS`` in ``buff_actions``); the generated wrapper
+setters name the inherited action prefix, ``alwaysNext``,
+``conditionAction``, ``failActions`` and ``succeedActions``. For each
+authenticated corpus union span the adapter requires the selected
+candidate's certified child union ranges, rechecks the three
+SequenceActionData headers, counts and terminal booleans, and rejoins the
+exact outer action end.
+
+The standalone anonymous action reader stops at a reached ``0x0082`` child,
+so it cannot independently replay every current ``0x00C9`` record; the
+adapter therefore fails closed when a certified child range is absent or
+mismatched. Nested union bodies stay at the corpus's existing structural or
+derived tier. Neither this receipt nor the child ranges prove an evaluated
+condition or runtime branch selection, and whole BuffData stays open.
 """
 from __future__ import annotations
 

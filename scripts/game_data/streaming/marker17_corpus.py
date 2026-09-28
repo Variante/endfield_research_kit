@@ -3,6 +3,13 @@
 This gate consumes the authenticated v15 marker17 directory.  It does
 not rerun the larger Streaming parser, but it rereads and authenticates every
 directory reference, including profile-excluded opaque references.
+
+Run after ``streaming.corpus`` with the same ``--input-set-sha256`` (the VFS
+audit value); it reads that gate's
+``reports/animestudio/streaming_root_subgraphs_latest.json`` and publishes
+``reports/animestudio/streaming_marker17_bodies_latest.{json,md}``. A
+``--max-files`` run is a diagnostic probe, not complete-corpus evidence, and
+its output belongs in ``tmp/`` or ``scratch/``.
 """
 from __future__ import annotations
 

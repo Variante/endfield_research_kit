@@ -1,5 +1,39 @@
 #!/usr/bin/env python3
-"""Decode story audio into export_full and link playable files into WebUI data."""
+"""Decode story audio into export_full and link playable files into WebUI data.
+
+This is the single Audio command. It owns decode, Wwise bank/HIRC indexing,
+relinking, the Gameplay sound sidecars and Audio's Story conversation
+sidecars, then publishes the semantic page data in the same process
+(``--semantics-only`` republishes only that from the existing decoded index,
+for example after importing a verified runtime trace).
+
+Shared SFX/music is written once under ``<export root>/game/Audio/shared/``
+and language voice under ``game/Audio/<LANG>/``. Known HIRC Event categories
+are resolved before extraction and the final ``voice/`` or
+``wwise/<category>/`` path is passed to AnimeStudio, which returns a source
+manifest, so the builder never rescans the tree to learn what changed. The
+manifest keeps PCK bank provenance after the physical bank folders are
+skipped. Old ``unmapped/`` and voice layouts are migrated only when present;
+otherwise only media whose category cannot be established before decode need
+a later path correction.
+
+AnimeStudio streams decoded PCM into lossless FLAC with no intermediate WAV
+and no ``ffmpeg``; decode and WebUI output are FLAC-only, and existing
+WAV/WEM files stay readable on an index-only run but are never produced.
+WEM decoding uses the pinned 64-bit vgmstream CLI under ``tools/vgmstream/``
+(installed by ``setup.bat`` or ``setup_vgmstream.bat``). ``--skip-decode``
+reuses the event-media/HIRC cache; ``--skip-decode --refresh-hirc`` gives a
+fresh HIRC bank pass over already-current decoded audio.
+
+Typed Wwise effect parameters are published only when the selected
+``GameAssembly.dll``, metadata and ``AkSoundEngine.dll`` pass the reviewed
+``wwise_effect_parameters_native.json`` gate, including its stock
+``SetParamsBlock`` windows. A mismatched build keeps raw class IDs, parameter
+lengths and hashes visible and withholds native-derived values; the
+proprietary Convolution Reverb and Mastering Suite rows remain opaque.
+Native claims take the selected pair from ``--game-root`` and never fall
+back to a module-global game path.
+"""
 
 from __future__ import annotations
 
@@ -152,6 +186,13 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-japanese",
     "audio-korean",
 )
+# The Event pass streams only bank and hotfix packages. The structural HIRC
+# gate (``hirc_action_corpus``) audits every AKPK package, so the two count
+# different corpora: they differ by the type-0x03 object(s) inside media
+# stream packages such as ``audit_stream.pck``, which this regex excludes by
+# design. Quote which corpus a count came from; do not widen the regex to
+# reconcile them. Stream packages are also too large to base64 through the
+# CLI's JSONL stream (``default_chinese_stream.pck`` runs out of memory).
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])(?:[^\\/]*banks|hotfix[^\\/]*)\.pck$"
 # 44 adds the authored serialized-payload Event-name source. Bumping it retires
 # every cached Event index built before those names existed, so a stale cache

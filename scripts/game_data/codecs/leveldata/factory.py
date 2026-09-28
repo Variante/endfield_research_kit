@@ -1,4 +1,27 @@
-"""Exact generated-wrapper codecs for LevelData factory records."""
+"""Exact generated-wrapper codecs for LevelData factory records.
+
+These replace the former stop at the positive list counts of LevelData's
+factory members:
+
+- ``factoryMines``: a list of the seven-member
+  ``LevelFactoryRegionMineInstanceData`` with typed density levels, item and
+  prototype IDs, logic ID, height/offset and a three-member grid transform.
+- ``factoryRegions``: the 26-member derived wrapper, i.e. the inherited
+  14-member ``LevelEntityData`` prefix followed by twelve region members in
+  generated setter order. This module also owns the nested area /
+  single-level / bound, buildable range and mask, bus, belt/path,
+  initial-building, mine and settlement wrappers. Current positive region
+  rows exercise typed areas and buses; the other nested collections are
+  empty in the current corpus.
+- ``doodadGroup``: the nine-field owner with center/outer identities,
+  integer grid position and the four progression lists.
+
+Unsupported member counts, malformed booleans, non-finite floats and
+non-null repair-item ``instData`` fail closed. A file that formerly stopped
+at a factory member hands off exactly to its later ``guideHints`` or
+``predefinedParams`` record. Evidence tier: exact stored layout; it does not
+prove runtime factory construction or settlement behavior.
+"""
 
 from __future__ import annotations
 

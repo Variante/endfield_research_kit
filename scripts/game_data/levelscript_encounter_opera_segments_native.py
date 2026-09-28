@@ -1,4 +1,15 @@
-"""Authenticate positive Encounter opera-segment wrappers and source cursors."""
+"""Authenticate positive Encounter opera-segment wrappers and source cursors.
+
+The reviewed contract pins four generated wrappers --
+`EncounterData.OperaSegment`, `ParamKeyValue`, `ParamValue` and
+`ParamValueAtom` -- and their complete native `Deserialize` method windows,
+which establish nested member order. Passing `--export-root`, `--ledger` and
+`--summary` together also replays the ledger-joined nested source cursors,
+whose physical EOF establishes the positive stored list variant. The command
+prints its audit and exits nonzero unless it validates. Stored opera types
+and parameter values do not prove that any cutscene or encounter operation
+executes at runtime.
+"""
 
 from __future__ import annotations
 

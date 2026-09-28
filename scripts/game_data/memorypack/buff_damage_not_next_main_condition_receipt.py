@@ -1,4 +1,13 @@
-"""Exact selected NotNextCheckAction/main-character damage condition."""
+"""Exact selected NotNextCheckAction/main-character damage condition.
+
+``memorypack.buff_corpus`` admits this condition pair with the scalar
+processor tag four through all 30 root fields, source ID and EOF; this
+receipt names the condition span and promotes no root itself.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_not_next_main_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

@@ -3,6 +3,19 @@
 This contract is isolated from the first task-map batch. Missing or changed
 installed native inputs return no routes, and source receipts are optional
 until a caller supplies the current JsonData export and ledger.
+
+Routes in ``levelscript_taskmap_followon_native.json``: ``CheckMapVar``,
+``CheckAliveCharNumInCurTeam``, ``CheckRemoteCommFinish``,
+``CheckInteractiveIsActivated``, ``CompareInteractivePropertyBool``,
+``CheckUnlockTech``, ``CheckLsmCompleted``,
+``Conditions.CheckIsInFactoryMode``, ``Conditions.CheckIsItemInQuickBar``
+and ``InMainHud``.  Generated fields and ordered native reads distinguish
+scalar comparison parameters, signed map values, entity pointers, LSM and
+LevelScript pointers, and null or authored string parameters.  Each reached
+condition has an exact source cursor joined to the current JsonData ledger;
+the codec is ``codecs.levelscript.taskmap_followon_conditions``.  The
+sequential task-map reader still promotes only complete owners at physical
+EOF, and nothing here proves runtime evaluation.
 """
 
 from __future__ import annotations

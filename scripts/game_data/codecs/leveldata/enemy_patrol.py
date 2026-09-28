@@ -1,4 +1,14 @@
-"""Exact current-wrapper codec for authored LevelData enemy patrols."""
+"""Exact current-wrapper codec for authored LevelData enemy patrols.
+
+``enemyPatrol`` closes its generated three-member owner
+(``enemyPatrolLoopType``, ``patrolId``, ``points``), three-member point
+(``actions``, ``patrolGait``, ``position``) and fixed 13-member action
+wrapper. The action retains end/type enums, animation and template strings,
+duration, wait/rotation values, event/radio IDs and repeat/root-motion
+flags. Null list elements and null collections stay distinct; changed
+member counts or malformed scalars fail closed. Exact stored layout; not
+proof of runtime traversal.
+"""
 
 from __future__ import annotations
 

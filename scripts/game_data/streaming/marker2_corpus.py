@@ -3,6 +3,14 @@
 This module reuses only the provenance/I/O helpers already
 exercised by the marker13 corpus gate.  Marker2 directory, parser and native
 evidence remain separate maintained dependencies.
+
+Run after ``streaming.corpus`` with the same ``--input-set-sha256`` (the VFS
+audit value); ``--root-report`` defaults to that gate's
+``reports/animestudio/streaming_root_subgraphs_latest.json``. It publishes
+``reports/animestudio/streaming_marker2_latest.{json,md}`` plus the per-file
+inventory ``streaming_marker2_inventory_latest.jsonl.gz``. A ``--max-files``
+run is a diagnostic probe, not complete-corpus evidence, and its output
+belongs in ``tmp/`` or ``scratch/``.
 """
 from __future__ import annotations
 

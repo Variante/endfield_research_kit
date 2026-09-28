@@ -1,4 +1,14 @@
-"""Native selected DataPair ownership and exact child framing for BuffData."""
+"""Native selected DataPair ownership and exact child framing for BuffData.
+
+The root ``blackboard`` list has a selected native
+``List<Blackboard.DataPair>`` argument and a generated four-member child
+setter order: ``isDynamic``, ``key``, raw double ``valueDouble`` and
+``valueStr``. The BuffData gate decodes every reached list against its exact
+field endpoint, including positive children, with a source fingerprint for
+the reader and native contract. This closes the list's stored child layout
+at those cursors; it does not authenticate other recursive root fields or
+promote a whole file by itself, and no blackboard runtime value is implied.
+"""
 from __future__ import annotations
 
 import hashlib

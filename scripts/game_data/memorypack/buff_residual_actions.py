@@ -1,4 +1,61 @@
-"""Current-build BuffData action additions kept outside frozen SkillData readers."""
+"""Current-build BuffData action additions kept outside frozen SkillData readers.
+
+``_ResidualReader`` extends the anonymous ``buff_actions.Reader`` with union
+routes that the selected Buff action dispatcher authenticates in
+``buff_residual_actions_native.json`` and the frontier contracts loaded by
+``scripts.game_data.buff_frontiers_native``. Tag meanings are local to the
+Buff dispatcher; none is borrowed from SkillData or LevelScript, because a
+numeric match across union families is not a layout (the same number can
+select a different wrapper and member count elsewhere).
+
+Routes in ``buff_residual_actions_native.json`` (every wrapper reads the
+inherited action prefix first: byte, scalar32, scalar32, scalar32):
+
+- ``0x130`` ``ReturnFalseAction``: fieldless; four-member base body.
+- ``0xEE`` ``ModifyPartsDamageRatio`` and ``0xEF`` ``ModifyPartsPoiseRatio``:
+  seven members; one bounded ``BlackboardDouble`` profile, one bounded
+  ``GameplayTagQuery`` and a terminal byte. The two wrappers reverse the
+  order of the nested profiles, in accord with their generated setters and
+  selected readers.
+- ``0xF5`` ``MoveTickAction``: seven members; bounded ``TargetSettings``,
+  ``SequenceActionData`` and ``BlackboardDouble`` in generated setter order,
+  with fail-closed recursion for unknown child actions.
+- ``0x10A`` ``PassiveJumpAction.Data``: sixteen members.
+- ``0x6C`` ``CheckPartTagMatch``: target then tag query.
+- ``0x29`` ``ChangeMoveGaitMultiplier``: nine members, three of them
+  ``SerializeFieldDictionary<GroundedMoveGait, float>``. A non-null
+  dictionary has a one-member object header, a signed count and fixed
+  enum/float pairs (``gait_multiplier_map``); it is not framed like a bare
+  ``Dictionary``.
+- ``0x46`` ``CheckMoveSpeed``: seven members; a direct compare scalar,
+  ``BlackboardDouble`` and ``TargetSettings``.
+- ``0xD0`` ``IgnoreModelIntervalCheck``: four-member base body.
+
+The frontier contracts add the base-only, six-member, residual-twelve and
+final nineteen routes described in ``buff_frontiers_native``. The
+``frontier9_counts`` table in ``_action`` carries the member counts of the
+final frontier. Union tag ``0x00FF`` is accepted only with extended width
+(``FA FF 00``); a one-byte ``FF`` stays the null-union sentinel, and a null
+wrapper (``FF`` after the tag) is a separate state.
+
+``root_continuation`` retries the frozen members 1-5 reader with these
+routes only when the base reader stopped. ``frame_buff_named_middle`` retries
+the named middle only when the ``damageModifier`` list reaches a tag declared
+by one of the reviewed contracts (every contract must match the selected
+input set); it then splices the recovered list back in front of the base
+middle reader and requires that reader to reach the ``id`` marker. This is
+how the ``ReturnFalseAction`` and ``CheckTwoDirectionAngle`` condition
+routes inside damage-modifier condition sequences rejoin the middle.
+``_close_icon_config`` then replaces the older named-opaque ``iconConfig``
+range with the exact ``buff_icon_config`` cursor.
+
+Evidence tier: the routes are ``exact`` stored member counts and read order
+for the pinned build and ``direct`` cursor advance in the reached files. The
+results stay ``structuralOnly`` (``wholeSchemaExact`` is always false here):
+they do not prove runtime action behavior, enum or scalar meaning, live
+provider choice, or whole-BuffData ownership. Unsupported nested bodies stay
+opaque even inside a closed outer frame.
+"""
 from __future__ import annotations
 
 import copy

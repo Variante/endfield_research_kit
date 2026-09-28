@@ -1,4 +1,13 @@
-"""Audit every binary GPU UI configuration against the current VFS ledger."""
+"""Audit every binary GPU UI configuration against the current VFS ledger.
+
+Run as ``python -m scripts.game_data.gpu_ui_corpus``. Every
+``GPUISystemConfig`` export is authenticated against the current VFS ledger,
+and each file must reach physical EOF through its named reader in
+``scripts.game_data.gpu_ui_binary`` (root16 or the native-gated DamageText
+schema). Pass the VFS audit's ``--expected-input-set-sha256``. The generated
+report is local output, ``reports/animestudio/gpu_ui_current_latest.json``;
+the durable interpretation is in ``gpu_ui_binary``'s docstring.
+"""
 
 from __future__ import annotations
 

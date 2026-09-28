@@ -611,7 +611,17 @@ def load_gameplay_tag_registry(
     export_root: Path,
     runtime_capture: Path | None = None,
 ) -> dict[str, Any]:
-    """Load exact current-build GameplayTag names and contexts."""
+    """Load exact current-build GameplayTag names and contexts.
+
+    ``GameplayTagPredefineTable`` rows join by signed-Int32/unsigned-hex id;
+    serialized ``GameplayTagConfig`` object-index paths join by the validated
+    CRC32(UTF-8 full path) rule. Exact predefined/config names are published
+    and unmapped applied tags stay visible as raw ids. A missing immunity path
+    is named only through ``_derive_gameplay_tag_context_names`` and labelled
+    ``exact-context-derived`` with its proof context. Ids absent from the
+    serialized registry carry a structured unresolved reason; no name is
+    inferred from Buff ids.
+    """
 
     config_roots = [
         (label, export_root / relative)
@@ -1746,7 +1756,20 @@ def load_skill_damage_context() -> dict[str, Any]:
 def build_skill_damage_catalog(
     export_root: Path, skill_ids: set[str], context: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    """Project only exact, identifier-matched SkillData DamageUnit records."""
+    """Project only exact, identifier-matched SkillData DamageUnit records.
+
+    A file is accepted only when the selected native plan decodes it through
+    EOF and its internal identifier equals the filename. Each unit keeps its
+    serialized source path, stored raw enum integers beside native names, the
+    ``simpleCalculation`` and ``takeAtkSnapshot`` route flags, the
+    attack-scale blackboard values, the ``atkCalculation``/``poiseCalculation``
+    subtype tags and the raw ``damageDecorateMask``. A missing or mismatched
+    native pair publishes no units. These are authored setup rows, not
+    evaluated damage, selected branches, mitigation or hits; the conditional
+    formula badges the page derives from them are gated by the
+    ``*Evidence`` statuses of ``load_skill_damage_context`` (see
+    ``scripts.webui.gameplay.route_audit``).
+    """
 
     context = context or {}
     if (context.get("evidence") or {}).get("status") != "validated":
@@ -1978,7 +2001,15 @@ def enrich_buff_native_action_names(
 def enrich_buff_target_settings_names(
     record: dict[str, Any], native_semantics: dict[str, Any] | None,
 ) -> None:
-    """Label only exact TargetSettings objects under a validated enum join."""
+    """Label only exact TargetSettings objects under a validated enum join.
+
+    The join is the selected native field types against the serialized
+    MemoryPack plan. Exact target objects are enriched even inside an
+    otherwise partial action, and every stored numeric value is kept.
+    ``ActionTargetType``, ``DirectionType`` and ``TargetSource`` names label
+    authored settings; they do not prove the evaluated target, finder
+    execution, enclosing branch selection or live playback.
+    """
     native_semantics = native_semantics or {}
     if (native_semantics.get("targetSettingsEnumEvidence") or {}).get("status") != "validated":
         return

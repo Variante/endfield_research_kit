@@ -2,6 +2,14 @@
 
 The native contract proves the selected reader and two string parameters.
 Source receipts prove reached bytes, not runtime dialog behavior.
+
+The route stores `dialogId` and `proxyId` as `Param<string>` after the
+inherited action fields, the same stored shape as `OverrideNPCDialog` under a
+different wrapper. The shared ActionMap reader admits it only while this
+validator passes; a whole-owner projection made after registration stays
+provisional until the full JsonData corpus gate runs.
+
+Run as: python -m scripts.game_data.levelscript_remove_npc_dialog_native
 """
 
 from __future__ import annotations

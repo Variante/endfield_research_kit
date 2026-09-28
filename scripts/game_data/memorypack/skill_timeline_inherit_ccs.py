@@ -2,6 +2,9 @@
 
 The wrapper reads eight ordered members. The key and owner are stored inputs;
 the native source proof does not establish live CCS ownership or blend effects.
+
+After the inherited action fields the native reader pins a blend-out float,
+a bounded CCS key, a TargetSettings owner and an override flag.
 """
 from __future__ import annotations
 

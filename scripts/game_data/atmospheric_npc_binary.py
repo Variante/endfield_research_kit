@@ -1,4 +1,16 @@
-"""Fail-closed outer framing for ``NpcAtmosphericDataTable`` payloads."""
+"""Fail-closed outer framing for ``NpcAtmosphericDataTable`` payloads.
+
+Populated AtmosphericNpcData tables decode every dictionary entry through
+the next key or physical EOF. Each 118-member value flattens
+``LevelEntityData`` (14), ``LevelNpcData`` (77) and ``NpcRuntimeProxyData``
+(27); the value body is read by the same codec LevelData uses for its
+``npcs`` member (``codecs.leveldata.npc_runtime``), so the complete row is
+named once. Strict strings, booleans, finite transforms, nested member
+counts and supported polymorphic routes advance a real cursor through the
+bounded value. An unsupported positive nested variant stays fail-closed at
+exact framing or at a named entity prefix; it is never promoted to a
+complete schema. These are authored placements, not observed spawning.
+"""
 
 from __future__ import annotations
 

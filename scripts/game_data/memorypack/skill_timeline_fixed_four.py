@@ -3,6 +3,11 @@
 The installed wrapper derivation supplies their read plans and dispatcher
 identities. The reviewed Buff frontier independently authenticates 0x009E's
 complete native reader. Values stay anonymous; this module only frames bytes.
+
+The routes are DisableRootMotionAction ``0x009E`` and MarkCanInterrupt
+``0x00E8``; each stores only the common four-member action prefix, and the
+decoder admits only those physical tags with that header.  The stored flags
+do not show root-motion or interruption behavior at runtime.
 """
 from __future__ import annotations
 

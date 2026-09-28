@@ -1,4 +1,30 @@
-"""Authenticate and exact-frame current DynamicStreaming fb_version files."""
+"""Authenticate and exact-frame current DynamicStreaming fb_version files.
+
+Run ``python -m scripts.game_data.dynamic_version_native --gameassembly PATH
+--metadata PATH --input-root DUMP_ROOT --expected-input-set-sha256
+INPUT_SET_SHA256``, where ``DUMP_ROOT`` is a targeted ``AnimeStudio.CLI dump``
+of the ``fb_version`` files. It authenticates the selected ``fb_version`` root
+as an ``Entries`` vector with ``Major`` and ``Minor``, checks its 16-byte
+``Id``/``Version`` entries against the current VFS ledger and the dump, and
+writes ``reports/animestudio/dynamic_version_native_latest.{json,md}``. The
+runtime version decision remains unresolved.
+
+Layout (direct, ``dynamic_version_native.json``). ``FBDynamicSceneVersionData``
+field zero is an ``Entries`` vector, followed by signed ``Major`` and
+``Minor`` scalars; an earlier generic reader treated all three fields as
+scalars. The generated indexed accessor and vector builder agree on a
+16-byte, eight-byte-aligned ``FBDynamicSceneVersionEntry``: ``UInt64 Id`` at
+zero, ``Int32 Version`` after it, and four bytes of alignment. The contract
+checks accessor identities, code windows, vector stride, builder width and
+field operands.
+
+Framing (exact). Every current file is rejoined to the VFS ledger by path,
+length and MD5; each ``Entries`` count word sits right after the root and
+each vector body ends at payload EOF. All current roots carry a non-null
+vector; most are empty. ``dynamic_streaming`` uses only a one-byte vector
+lower bound until this width is supplied, avoiding an ungated 16-byte
+assumption.
+"""
 
 from __future__ import annotations
 

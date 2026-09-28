@@ -9,7 +9,15 @@ installed client and can be read directly.
 In this client the whole corpus points at **one** MonoScript container. That is
 what makes the table tractable: a single CAB supplies the names for every
 exported MonoBehaviour, so understanding the corpus does not require walking
-the bundle tree.
+the bundle tree. Two independent routes name that CAB
+(``CAB-5f527d7b7706baccdad9f794cf46420c``, about a thousand MonoScripts with
+``m_ClassName``, ``m_Namespace`` and ``m_AssemblyName``): every resolved
+``m_Script`` in the corpus points at it across both VFS roots, and it is the
+most depended-on container in both CABMaps, at dependency slot 1 in nearly
+every streaming CAB that references it while declaring no dependencies
+itself. Resolve its chunk through the CABMap at the time of use rather than
+recording a path: its block ships a different chunk file name in each VFS
+root, so a recorded literal picks one root and rots.
 
 This module parses a MonoScript dump directory into a `pathId -> class`
 catalog. It neither locates the container nor runs the exporter: resolving a

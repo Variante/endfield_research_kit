@@ -5,6 +5,49 @@ every paired dump against the VFS ledger's length and FileDataMd5. This module
 checks the managed-to-UnityPlayer route, separate native resource requests,
 the consumer's paired FlatBuffer root-slot reads, and its descriptor-major
 copy builder. It does not assign semantic names to root fields or descriptors.
+
+``python -m scripts.game_data.dynamic_aux_bridge_native --gameassembly PATH
+--metadata PATH`` checks the selected managed calls from the DynamicStreaming
+ECS load transition through both auxiliary path getters to the UnityPlayer
+runtime-chunk allocator, the internal-call registration, and the native
+helper's separate storage of the two paths. It also checks the indexed native
+resource requests, ready-buffer root resolution, the consumer's reads of
+first-root field seven and second-root field six, and the paired ID,
+descriptor and blob handoff to the descriptor-major copy builder. It writes
+``reports/animestudio/dynamic_aux_bridge_native_latest.json``. Field meanings,
+the selected provider, concrete VFS file identity and live selection remain
+open.
+
+Route (direct, conditional on the unpatched managed and successful native
+branches; ``dynamic_aux_bridge_native.json``). On
+``DynamicSceneEcsSystem.TransitionFromUnLoadedToLoaded``,
+``DynamicStreamingScene.GetDataHandle`` calls both auxiliary path getters and
+passes the results as separate arguments to
+``StreamingGameplayManager.AllocateRuntimeChunk_Injected``. The managed stub
+resolves the fully qualified internal-call name, which the UnityPlayer
+parallel name/function arrays pair with a native callback; that forwards the
+two converted strings to a helper storing them in separate members of the
+native streaming object. Request branches use those members as indexed path
+keys; each successful lookup goes to the same resource-lookup helper and
+builds a stream handle in one indexed 80-byte record, first at ``+0x18`` and
+second at ``+0x20``. The lookup, stream constructor and ready-buffer helper
+are the ones independently checked by ``irradiance_path_native``; sharing
+them does not identify the provider or VFS file a request chose.
+
+A later branch addresses the same record by index, gets both handles' ready
+buffer pointers, adds each opening FlatBuffer root offset and stores the
+roots at ``+0x28`` and ``+0x30``. A consumer reads both roots by the same
+indexed form, uses vtable slot ``0x12`` (field seven) of the first and slot
+``0x10`` (field six) of the second, and indexes both vectors with one
+ordinal: the complementary nonempty positions seen in every current pair. It
+passes the second-root row's field-zero ID vector and the first-root row's
+field-three descriptors and nested field-zero blob to one builder, which
+loops over the eight-byte descriptors, reads a signed 16-bit ID and stride,
+multiplies the stride by the group ID count and copies that segment from the
+blob into a per-ID destination, advancing its source cursor by the same
+length. This descriptor-major consumer agrees with the exact blob, partition
+and descriptor-21 checks in ``dynamic_aux_pair_corpus``; it names no field
+or descriptor and does not prove any pair or ordinal was loaded in play.
 """
 
 from __future__ import annotations

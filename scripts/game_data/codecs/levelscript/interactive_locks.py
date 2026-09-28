@@ -1,4 +1,15 @@
-"""Exact current ``Dictionary<uint, InteractiveLockData>`` codec."""
+"""Exact current ``Dictionary<uint, InteractiveLockData>`` codec.
+
+Each value is the generated two-member ``InteractiveLockData`` owner whose
+nested ``InteractiveSingleLockData`` values have 18 members, in order:
+interactive identity, mini-game ids, nine one-string ``LangKey`` wrappers,
+panel configuration, quest/submit strings, blend/submit flags and the
+six-value unlock enum (``_UNLOCK_TYPES``), then the global logic id.  An
+unknown unlock value or changed nested wrapper fails closed.  LevelData's
+``interactiveLockData`` list reuses the same value codec without dictionary
+keys.  This is authored lock and localized UI configuration; it does not
+show which lock the runtime presents.
+"""
 
 from __future__ import annotations
 

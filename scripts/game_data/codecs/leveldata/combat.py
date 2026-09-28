@@ -1,4 +1,9 @@
-"""Exact generated-wrapper codecs for compact LevelData combat records."""
+"""Exact generated-wrapper codecs for compact LevelData combat records.
+
+``enemyGroup`` closes its eight generated members plus nested three-field
+slots and ``EntityPtr`` identities. Later enemy patrol, spawner or lock
+records remain owned by their own LevelData fields. Exact stored layout.
+"""
 
 from __future__ import annotations
 

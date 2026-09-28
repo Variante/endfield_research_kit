@@ -1,4 +1,10 @@
-"""Exact current-wrapper codec for LevelData dynamic occlusion areas."""
+"""Exact current-wrapper codec for LevelData dynamic occlusion areas.
+
+``dynamicOccludeAreas`` closes the generated three-field area and grid
+wrappers plus the two-field integer line shape. Each area's condition goes
+through the shared ``function_area.decode_condition_runtime`` union; a
+condition route outside that union fails closed. Exact stored layout only.
+"""
 
 from __future__ import annotations
 

@@ -1,3 +1,17 @@
+// Text page behavior contract (webui/README.md links here; evidence limits
+// are in memory/webui/text.md).
+//   * Search plus filter sections basic, group and source. Known row shapes
+//     render as rows; every row keeps its raw JSON beside the rendered view,
+//     so an unsupported shape stays searchable instead of being dropped.
+//   * A row may carry `fields`, rendered above its localized text as
+//     Structured fields: maintained label, verbatim exported value, and the
+//     owning `table / row` when the builder resolved an exact lookup. A
+//     resolved reference whose table is in the index is a button that selects
+//     that table and scrolls to the row inside Text; an unresolved one shows
+//     `unresolved` and is never linked. Field values join the row search, a
+//     table covered by a maintained renderer carries renderer: "structured" in
+//     the Text index, and a table with structured fields but no localized text
+//     is still listed.
 (() => {
   const REF_TEXTS = {
     zh: {

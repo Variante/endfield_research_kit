@@ -1,4 +1,16 @@
-"""Selected-build ownership and raw-byte decoder for BuffData.dispelConfig."""
+"""Selected-build ownership and raw-byte decoder for BuffData.dispelConfig.
+
+Field seven is copied, not member-read: the root reader checks and copies
+eight source bytes directly into the installed ``BuffData.dispelConfig``
+value. Current metadata places ``canBeDispelled`` at byte zero and the
+signed ``DispelLevel`` value at byte four; the three intervening bytes are
+preserved as padding. The validator checks the generated setter, source
+advance, destination store, field offsets and value size before the corpus
+attaches named spans. Missing or changed native inputs keep the raw eight
+bytes and the naming blocker. The reader does not constrain padding or enum
+values to current corpus observations, and the stored values do not prove
+runtime dispel decisions or enum effects.
+"""
 from __future__ import annotations
 
 import hashlib

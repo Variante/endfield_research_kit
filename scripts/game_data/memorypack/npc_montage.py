@@ -5,6 +5,24 @@ members and a 24-member montage record. The current generated formatter setter
 order names both objects and their nested ``AnimClipInfo``, ``DynamicEntity``,
 ``EventInfo``, extra-effect, and transition-override records. Both variable
 collections are count-framed and the complete current shape closes at EOF.
+
+The root is ``animType``, ``data``, ``tag``; ``data`` closes all 24 named
+``NPCMontageAnim`` members, including clip info, dynamic entities with
+their show/hide events, and transition overrides. Fixed async-clip and
+transition values pass finite-float and boolean gates. Each twelve-member
+dynamic entity reads effect path, hide/show events, event string, then a
+counted list of four-member ``DynamicEntityExtraEffect`` rows (effect path,
+two consecutive 12-byte ``Vector3`` values ``localEulerAngles`` and
+``localPosition``, mount-node path), then ``hideAccName``, the loop flag,
+integer ``mountPoint``, a 16-byte prefab GUID, the prefab path hash, the
+sync flag and the entity ``type``.
+
+Negative kept on purpose: an earlier reading gave the extra-effect vectors a
+20-byte span, which misread the last vector word as an empty string. The
+two 12-byte vectors are the corrected layout.
+
+Evidence tier: complete named schema for every current MontageNew binary.
+Runtime montage selection and playback remain separate evidence.
 """
 
 from __future__ import annotations

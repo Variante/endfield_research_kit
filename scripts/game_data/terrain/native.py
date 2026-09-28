@@ -1,4 +1,17 @@
-"""Fail-closed validation for the selected-build Terrain TRET consumer."""
+"""Fail-closed validation for the selected-build Terrain TRET consumer.
+
+``terrain_tret_native.json`` pins the installed GameAssembly, metadata and
+UnityPlayer. This checks the UnityPlayer reader body ranges, the
+GraphicsFormat descriptor footprint table and the GraphicsFormat enum names
+read from metadata defaults; ``terrain.tret`` states what they establish.
+
+Terrain constants in IL2CPP metadata come from the ``fieldDefaultValues``
+index and the compressed default-value data (``il2cpp.protocol``); reading
+those bytes as plain four-byte integers gives wrong values. Selected
+examples, ``HGTerrainGroundLayer.TEXTURE_SIZE = 2048`` and
+``VirtualTextureRenderer.VT_CACHE_PAGE_RESOLUTION = 512``, describe renderer
+configuration and establish no ``LAYER_*`` destination.
+"""
 
 from __future__ import annotations
 

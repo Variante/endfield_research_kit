@@ -1,8 +1,12 @@
 """Join IFix external declarations to unique selected IL2CPP method definitions.
 
-This matches complete parameter types after substituting constructed owner and
-method generic arguments. It does not observe reflection selection or runtime
-execution. Patch bytes are caller supplied; the native pair is explicit and
+This restores generic parameters to their file positions, matches complete
+parameter types after substituting constructed owner and method generic
+arguments, requires a unique full match, and reports each definition's return
+type and static flag. Byref parameters are part of the match, and every
+external declaration in the current patch files has exactly one definition;
+the return type and static flag are direct selected-build facts. It does not
+observe reflection selection or runtime execution. Patch bytes are caller supplied; the native pair is explicit and
 must match the reviewed IFix VM contract before any row is projected.
 """
 

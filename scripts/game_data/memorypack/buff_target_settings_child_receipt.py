@@ -4,6 +4,19 @@ Each parent adapter replays its complete action and certifies a bounded target
 field. The selected derived plan and native TargetSettings reader then name the
 thirteen direct stored members. Nested direction and selector bodies retain
 their existing structural tier; no runtime targeting is inferred.
+
+Composed parents: ``CreateBuffAction``, ``EffectAction``,
+``FinishBuffAdvanced`` and ``ModifyDynamicBlackboard``. The direct stored
+order is ``advancedDirection``, ``centerContextKey``, ``centerToGround``,
+``centerType``, ``enableAdvancedDirection``, ``ownerContextKey``,
+``selectorData``, ``selectorDirection``, ``selectorOwner``, ``target``,
+``targetContextKey``, ``targetGroupKey`` and ``targetSource``. Each parent
+action is reparsed before its target fields are admitted, and the child
+reader must end at that exact field boundary. Null and malformed target
+branches fail closed. ``advancedDirection`` and ``selectorData`` are named
+one level further by ``buff_direction_settings_child_receipt`` and
+``buff_selector_data_child_receipt``; this receipt does not establish their
+recursive ownership, live target selection, or a whole BuffData schema.
 """
 from __future__ import annotations
 

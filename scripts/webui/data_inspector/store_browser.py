@@ -11,6 +11,12 @@ questions and the Data page renders them:
 * ``run_sql``: one read-only SQL statement with ``inflate(data)`` and
   ``doc(data, '$.path')`` registered, a row cap and a time limit.
 
+``/api/stores/rows`` takes repeated ``group=`` parameters, orders rows by
+``type, name`` and returns each row's ``group``, so the Data page can page
+several groups and sources as one sequence. A PathID match is an index
+lookup, not a resolved reference: a PPtr with a non-zero ``m_FileID`` points
+into another file. Loose and undecoded rows match by name only.
+
 Beside the two SQLite stores, the ``loose`` source lists the decoded files
 that stay loose under ``game/`` -- tables, JsonData outside the packed
 folders, Lua, Terrain, and the converted Unity classes no other page shows

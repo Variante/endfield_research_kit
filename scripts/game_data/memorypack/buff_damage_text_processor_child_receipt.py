@@ -1,4 +1,14 @@
-"""Native-gated tag-six DamageTextProcessor child and selected [5,6] list join."""
+"""Native-gated tag-six DamageTextProcessor child and selected [5,6] list join.
+
+It checks the selected native tag-six two-member route and replays ordered
+tag-five/tag-six processor lists against current VFS logical hashes.
+``memorypack.buff_corpus`` admits the pair with an empty condition through
+all 30 root fields, source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_text_processor_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

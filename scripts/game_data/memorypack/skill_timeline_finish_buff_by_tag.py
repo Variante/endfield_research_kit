@@ -2,6 +2,10 @@
 
 The route and twelve-member source order reuse the reviewed Buff frontier
 for the same AbilityActionData union. This consumes stored bytes only.
+
+After the primitive members its finite child sequence holds three
+TargetSettings objects, a BlackboardDouble and a GameplayTagQuery.  The
+stored selection parameters do not prove that a live buff ended.
 """
 from __future__ import annotations
 

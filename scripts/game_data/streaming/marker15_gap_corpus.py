@@ -4,6 +4,11 @@ This gate reopens authenticated StreamingChunkData files, uses the maintained
 FlatBuffer framing to find certified ranges and nested target pointers, and
 reports where one Marker15 pointer is alone in a 16-byte complement. It does
 not name or claim ownership of those bytes or infer a general record width.
+
+``--scene`` selects the scene; every ``StreamingChunkData`` file in it is
+read, and only the physically isolated 16-byte Marker15 target gaps are
+reported. Pass the VFS audit's ``--expected-input-set-sha256``; the default
+report is ``reports/animestudio/streaming_marker15_gap_latest.json``.
 """
 
 from __future__ import annotations

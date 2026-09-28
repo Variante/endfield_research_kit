@@ -1,6 +1,6 @@
 """Find the MonoBehaviour fields whose values are keys into an exported Table.
 
-[`monobehaviour_field_semantics.py`](monobehaviour_field_semantics.py) says
+[`field_semantics.py`](field_semantics.py) says
 which fields hold strings and what those strings look like. It deliberately
 stops there: calling a string an id is a reading, and the field census refuses
 to make one from a field's name. This module supplies the evidence that reading
@@ -36,6 +36,14 @@ The values checked are the ones the field census recorded, which is a bounded
 sample of each field's distinct values, taken in sorted order. Every row
 carries how many values were available to check, because a field matched on two
 values is not a field matched on sixty-four.
+
+Read the statuses as a ladder: ``key_of`` and ``key_of_several`` mean every
+checked value belongs; ``mostly_key_of`` lists its exceptions, which are the
+interesting part; ``partial`` values are not reported as unresolved ids. It
+reads the field-semantics report rather than the corpus, so it runs in
+seconds; ``--min-objects N`` works the corpus down by class size.
+
+    python -m scripts.game_data.monobehaviour.table_keys --report reports/assets/monobehaviour_table_keys.json
 """
 
 from __future__ import annotations

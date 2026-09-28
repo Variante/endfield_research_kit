@@ -1,4 +1,25 @@
-"""Authenticate and exact-frame the current DynamicStreaming FBStreamArea corpus."""
+"""Authenticate and exact-frame the current DynamicStreaming FBStreamArea corpus.
+
+``python -m scripts.game_data.dynamic_stream_area_corpus
+--expected-input-set-sha256 INPUT_SET_SHA256`` is the maintained
+DynamicStreaming ``stream_area`` gate. It revalidates the authenticated outer
+VFS inputs (``--outer-report``/``--ledger``), streams only the current
+``FBStreamArea.bytes`` files through AnimeStudio, checks every payload against
+its ledger identity, and writes
+``reports/animestudio/dynamic_stream_area_current_latest.{json,md}``.
+
+It bounds the root fields and requires all six vector count words and bodies to
+tile the tail from the root object through payload EOF. The first three vectors
+have four-byte elements; a ``Get*Bytes`` accessor does not make them byte
+vectors. Field names come only from the separate native audit,
+``scripts.game_data.dynamic_stream_area_native``.
+
+An earlier reader treated ``RootVisible`` and ``AreaVisibleGroups`` as byte
+vectors because the generated root exposes ``Get*Bytes`` helpers, which
+return a raw byte view; the indexed accessors return ``Int32`` and advance by
+four bytes, as do the ``TotalAreas`` reads. The old apparent gaps were the
+remaining vector elements, not unowned data.
+"""
 
 from __future__ import annotations
 

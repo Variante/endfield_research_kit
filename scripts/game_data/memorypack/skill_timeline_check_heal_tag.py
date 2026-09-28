@@ -3,6 +3,9 @@
 The Buff action reader owns the finite five-member payload profile. This
 module authenticates its independent SkillData union route and source order
 before that profile can be admitted into the shared passive sequence reader.
+
+Its own member is a finite GameplayTagQuery child.  The stored query does not
+show whether a healing condition was true at runtime.
 """
 from __future__ import annotations
 

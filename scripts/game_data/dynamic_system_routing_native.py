@@ -4,6 +4,28 @@ The body called by GetSystemByDataType uses a native jump table. A separately
 registered switch implements the same mapping; both must agree for every
 selected EDynamicSceneData member. Current DataIndex records are authenticated
 and joined to the route, without claiming live grid activation.
+
+``DynamicStreamingScene.GetSystemByDataType`` calls the bounded jump-table
+route and passes its result to ``GetSystem``; the separately registered
+``GetSystemTypeByDataType`` switch agrees with that route for every member.
+Every ``DataIndex.Type`` observed in current valid records has a nonzero,
+named system route. The count-only rivals in ``dynamic_data_index_native``
+route apart: NavModifyAreaComp selects NavmeshModify while ErosionRootComp
+selects Erosion; TreeRootComp selects Tree while NatureResourceComp selects
+NatureResource. A callable route establishes what this code would select for
+a supplied data-type value, not that the value is supplied in play.
+
+``EDynamicSystem`` is byte-backed in the selected registration. Reading its
+defaults as signed compressed ``Int32`` produced false negative enum IDs, so
+the audit decodes the selected primitive type before naming a system.
+``EDynamicSceneData`` is ``Int32``-backed.
+
+Run ``python -m scripts.game_data.dynamic_system_routing_native --gameassembly
+PATH --metadata PATH --input-root DUMP_ROOT --expected-input-set-sha256
+INPUT_SET_SHA256`` over the targeted ``fb_main`` dump. It writes
+``reports/animestudio/dynamic_system_routing_native_latest.{json,md}`` with the
+named system routes; stored records do not establish live lookup or
+activation.
 """
 
 from __future__ import annotations

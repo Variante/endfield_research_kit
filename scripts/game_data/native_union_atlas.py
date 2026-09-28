@@ -7,6 +7,20 @@ identities, and writes generated evidence under reports/.
 It does not discover union layouts or promote schemas.  Unsupported contract
 facts remain present only through their contract hash and are listed as trust
 gaps in the report.
+
+It covers the reviewed Skill, Buff and LevelScript union contracts through one
+shared current-build PE/metadata context.  Every tag stays qualified by its
+``dispatcherFamily`` -- a numeric tag means nothing outside its own union --
+and conflicting identities for one key fail closed.  Setter types, nested
+layouts and exact cursors still come from the owning reviewed contract and
+reader.  Its purpose is recovery acceleration: frontier ranking reads the
+atlas instead of repeating native discovery per route, while publication
+still requires the complete family and JsonData corpus gates.  The
+``generatedMemberEnrichment`` block (see ``_enrich_generated_members``)
+names members from ``memorypack.wrapper_members`` and reports a member-count
+conflict instead of overwriting a reviewed row.
+
+The default output is ``reports/animestudio/jsondata_union_atlas_current.json``.
 """
 from __future__ import annotations
 

@@ -2,6 +2,8 @@
 
 The reviewed native wrapper fixes nine ordered primitive reads. Stored fields
 remain structural evidence rather than a claim about runtime weapon placement.
+
+The own reads are stored mount-point words, override flags and a weapon index.
 """
 from __future__ import annotations
 

@@ -1,4 +1,12 @@
-"""Exact current-wrapper codec for authored LevelData character patrols."""
+"""Exact current-wrapper codec for authored LevelData character patrols.
+
+``charPatrol`` follows the generated three-member ``CharacterPatrolData``
+owner and point wrappers, parallel to ``enemy_patrol``. Its fixed 18-member
+action retains blend/duration/timing values, animation, environment-talk,
+event, radio/template IDs, montage GameplayTag, flags and bounded action
+enums. Null elements stay distinct and changed wrappers fail closed. Exact
+stored layout only.
+"""
 
 from __future__ import annotations
 

@@ -1,4 +1,20 @@
-"""Selected-build ownership receipt for BuffData.globalModifier lists."""
+"""Selected-build ownership receipt for BuffData.globalModifier lists.
+
+The selected native root owns the list read and the field store. This
+formatter contract authenticates the four-member item header and all four
+setter calls in order: ``applyToReturnAtbGain`` (a leading boolean),
+``formulaItem``, ``param`` (a bounded ``BlackboardDouble``) and ``type``.
+The authenticated BuffData corpus rejoins every reached positive list to
+this exact child cursor and its source identity.
+
+Recorded negative: an earlier three-setter inspection missed this generated
+wrapper; it is not evidence that the first member is anonymous.
+
+Evidence tier: ``exact`` child layout for the selected build; missing or
+mismatched native inputs yield no child labels. This child proof does not
+close the parent -- the complete root reader must consume the same bytes
+through physical EOF -- and it does not prove modifier arithmetic.
+"""
 from __future__ import annotations
 
 import hashlib

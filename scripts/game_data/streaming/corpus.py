@@ -1,4 +1,26 @@
-"""Fail-closed current-corpus gate for authenticated block-15 Streaming files."""
+"""Fail-closed current-corpus gate for authenticated block-15 Streaming files.
+
+Each level's ``Data/Streaming/PC/<level>/Streaming/`` directory holds exactly
+three families: ``InitChunkData`` and ``StreamingChunkData`` (numeric
+``_<x>_<y>_<z>_<w>`` or ``_Global_<a>_<b>`` names, paired by suffix) and one
+raw ``StreamingChunkInfo.bytes``. A stream of the block filtered to exclude
+those names returns nothing, so the gate covers the whole block. It rereads
+every logical file from its VFS ledger chunk, parses it with
+``framing.parse_streaming_file``, and publishes the Info catalog join, the
+ordered Init/Streaming root witnesses and the native field-2 contract status
+(run as ``python -m scripts.game_data.streaming.corpus``).
+
+``RAW_DATA_EXCEPTIONS`` names the DevOnly Global pair. The inverted-LZ4
+decoder refuses them (an earlier pass recorded that refusal as two decode
+failures); they are raw FlatBuffers whose root matches the standard shape,
+and they are accepted only through this explicit list.
+
+Pass the VFS audit's ``inputSetSha256`` as ``--input-set-sha256``; the gate
+reauthenticates the outer ledger before it publishes
+``reports/animestudio/streaming_root_subgraphs_latest.{json,md}``, which the
+marker gates (``marker17_corpus``, ``marker13_corpus``, ``marker2_corpus``)
+read as their root report.
+"""
 
 from __future__ import annotations
 
@@ -43,6 +65,18 @@ def _join_info_catalog(infos, data_files):
     All inputs are parser projections of already authenticated logical files.
     Unsupported Info shapes exclude only their exact directory, not a substring
     of the path. Missing Info directories remain unmatched evidence.
+
+    Each projected row is (row x, row y, element word 0, element word 1).
+    A relation spells ``StreamingChunkData_<a>_<b>_<c>_<d>.bytes``, or
+    ``StreamingChunkData_Global_<c>_<d>.bytes`` when a == b == INT32_MIN,
+    and must reproduce the same-directory filename multiset exactly. The
+    index therefore has one row per (x, y) column and one element per file.
+    An earlier check compared only the sets of (x, y) pairs; it passed for
+    every standard level (its cross-level control fired once, on levels that
+    really share an instanced layout) but proved nothing about multiplicity.
+    The Info Global sentinel (INT32_MIN, INT32_MIN) differs from the
+    (INT32_MAX, INT32_MIN) origin that Global chunk files store, so a join on
+    origin values instead of filenames would wrongly score zero.
     """
     infos = sorted(infos, key=lambda row: row['virtualPath'])
     data_files = sorted(data_files, key=lambda row: row['virtualPath'])
@@ -116,6 +150,13 @@ def _join_root_witnesses(files: list[dict[str, Any]]) -> dict[str, Any]:
 
     A missing or differing pair never publishes a matched relation. Native
     path/ordinal evidence is a separate gate, not assumed by this helper.
+
+    The two families share the root layout, the version 47 and the chunk
+    origin, but not a population: StreamingChunkData carries no field-7
+    groups while its field-2 terminal vector is populated. Equal ordered
+    field-3/field-4 vectors mean the pair indexes the same rows; the row
+    field-0 digest is recorded separately because it differs in pairs and
+    is not an identity key.
     """
     by_path = {}
     for record in files:

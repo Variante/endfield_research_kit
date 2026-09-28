@@ -1,4 +1,14 @@
-"""Selected compound damage conditions made from independently proved actions."""
+"""Selected compound damage conditions made from independently proved actions.
+
+It composes the selected native readers for the ordered
+StackNumAdvanced/DamageType and DecorateMask/StackNumAdvanced/TagMatch
+conditions on current source bytes. ``memorypack.buff_corpus`` admits both
+with processor tag five through 30 root fields, source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_known_compound_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

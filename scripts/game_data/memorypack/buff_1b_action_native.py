@@ -1,4 +1,27 @@
-"""Audit the selected BlowOffAction source fields and runtime call boundary."""
+"""Audit the selected BlowOffAction source fields and runtime call boundary.
+
+``contracts/buff_1b_action_native.json`` goes beyond the anonymous tag-0x1B
+layout that ``buff_1b_corpus`` frames. The selected member-17 reader assigns
+thirteen ``BlowOffAction.Data`` fields after the inherited
+enable/priority/index prefix, in this source order: ``attackerTargetSettings``,
+``blowOffDistance``, ``blowOffHeight``, ``deadOption``,
+``directionAngleOffset``, ``directionSettings``, ``distanceRandomRange``,
+``forceMoveColliderToGround``, ``modelHeightRecoverTime``, ``overwriteHeight``,
+``targetSettings``, ``teammateBigStagger``, ``totalTime``. Each source
+position joins a direct named setter call and the destination field's metadata
+type and offset. Six are ``BlackboardDouble`` profiles and two
+``TargetSettings`` profiles; neither ``Double`` names nor destination offsets
+change their independently proven source widths.
+
+The unpatched ``BlowOffAction.ExecuteInternal`` body directly calls
+``ControlledStateComponent.ApplyBlowOff`` on a guarded branch, after target,
+state, direction and blackboard processing. That establishes a runtime
+consumer for the named action (``direct``), not the per-field expression,
+units, direction convention, target choice, patch state, live formatter
+choice, whole-BuffData EOF or an observed execution. The audit fails closed on
+a different installed pair; its result goes to
+``reports/game_data/buff_1b_action_native.json``.
+"""
 from __future__ import annotations
 
 import argparse

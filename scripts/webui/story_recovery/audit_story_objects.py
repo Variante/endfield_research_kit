@@ -1,4 +1,9 @@
-"""Build AnimeStudio Story-object evidence through one staged command."""
+"""Build AnimeStudio Story-object evidence through one staged command.
+
+``--stage reverse`` publishes the fail-closed playback-alias evidence the Story
+builders consume; ``carrier`` and ``hierarchy`` are optional candidate
+diagnostics; ``all`` (the default) runs the three in dependency order.
+"""
 from __future__ import annotations
 
 import argparse

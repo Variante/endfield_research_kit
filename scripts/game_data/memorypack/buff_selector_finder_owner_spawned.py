@@ -1,4 +1,13 @@
-"""Selected one-member OwnerSpawnedEntityFinder child inside Buff selectors."""
+"""Selected one-member OwnerSpawnedEntityFinder child inside Buff selectors.
+
+``SelectorFinder`` tag 13 selects ``OwnerSpawnedEntityFinder``. Its
+generated setter names the sole ``spawnedObjectType`` member as
+``ObjectType``; the native reader checks a one-member header, takes four
+source bytes and passes the result to that setter. Every reached tag-13 span
+ends after exactly the tag, the header and one raw signed 32-bit member, at
+the parent finder field's fixed boundary. The enum value is not interpreted
+and no runtime finder behavior is claimed.
+"""
 from __future__ import annotations
 
 import hashlib

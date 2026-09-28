@@ -1,3 +1,34 @@
+"""Framing entry points for current ``LevelScriptData`` MemoryPack payloads.
+
+``LevelScriptData`` is the 27-member generated wrapper whose first member is
+``actionMap``.  The lanes below differ only in how they prove the action-map
+boundary; all of them hand the rest of the file to one generated-order owner
+walk (``codecs.levelscript.sequential_owner``):
+
+- ``frame_levelscript_null_action_map_sequential``: a null ``actionMap``
+  (one ``0xff`` byte), owner at offset 2;
+- ``frame_levelscript_empty_action_map_sequential``: the exact 20-byte empty
+  ``ActionMapAssetRaw`` (three empty lists plus the one-member
+  ``ParamListForGraph``);
+- ``codecs.levelscript.current_action_sequence``: a positive
+  ``ActionSerializedMap`` whose every node and the blackboard close.
+
+Weaker, still exact-where-claimed readers remain for files outside those
+profiles: ``frame_levelscript_action_map_named_prefix`` (named map, list
+count and first-record envelope, everything later opaque),
+``frame_levelscript_empty_action_map_prefix`` (root plus empty-map prefix),
+and ``frame_levelscript_terminal_suffix`` (a unique byte-grammar tail at
+EOF; preceding members opaque, so a named partial).
+``frame_levelscript_declared_root`` and ``frame_levelscript_declared_action_map``
+read from the managed-image declarations and are the ``direct`` tier; callers
+publishing an ``exact`` boundary keep to the native-gated lanes.
+
+The JsonData registry (``scripts.game_data.jsondata_corpus``) classifies a
+file as schema decoded only when one lane reaches physical EOF.  Nothing in
+this module proves runtime action execution, condition evaluation or mission
+ownership; UID-shaped bytes found by scanning never establish a cursor.
+"""
+
 from __future__ import annotations
 
 import re

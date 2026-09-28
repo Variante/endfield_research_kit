@@ -10,6 +10,66 @@ a stronger bounded relation than a same-session string overlap.
 Native hooks also carry an exact same-thread parent capture id for synchronous
 native-hook nesting; only resolved parent/child call pairs are summarized.
 
+Every native row is execution evidence only. The published relations, each
+with its ceiling (none is a handle, decoder stream, PCM buffer or audibility
+join; the native key-to-provider path and decode mapping are claimed only
+when one capture correlates the external descriptor and opened path with the
+selected stream callback and the resulting decoded data flow):
+
+* ``nativePairing.keyLifecycle``: bounded key intersections, descriptor and
+  file-open paths, and the ``registrationManagerJoinRequestedKeys`` /
+  ``registrationManagerJoinStateKeys268`` comparisons, which directly test the
+  statically open generated-serial versus source-state-key equality but stay
+  same-session evidence unless pointer or managed call-chain data narrows
+  them to one request;
+* ``registrationManagerEntryPointers``, ``managerJoinEntryPointers`` and
+  ``sharedRegistrationJoinEntryPointers`` (plus the lookup equivalents): the
+  agent resolves the external-source manager hash-table node by serial at
+  constructor return and at join/lookup entry, so a shared pointer proves the
+  values reached one manager entry in that capture;
+* ``managerEntryDescriptorInfoPointers`` / ``sharedManagerDescriptorAllocationBases``
+  and ``sharedDescriptorAllocationBases``: retention of the same copied
+  descriptor allocation -- ownership, not a sourceInfo/path/file join;
+* ``registrationStatuses``: the manager constructor's decoded success versus
+  allocation-failure return, so a missing join can be told from a
+  registration that never completed;
+* ``nativePairing.nativeCallRelations`` (``synchronousNativeHookNesting``):
+  exact resolved parent/child pairs only; missing or adjacent ids are omitted
+  and no asynchronous ownership is inferred;
+* ``nativePairing.managedExternalPathLifecycle`` and
+  ``managedNativeContextCorrelations``: the optional
+  ``VoicePlayer.ExternalSourcePreparation`` path (with its sampled
+  ``voicePreparationCodecs``) joined to the Adapter external post only through
+  the parent-capture chain, then compared with descriptor/provider/open path
+  strings; stronger than a string overlap, still not a later asynchronous
+  sourceInfo, handle or decoder join;
+* ``nativePairing.callbackLifecycle``: resolver/queue descriptor pointer equal
+  to the managed ``_OnExternalSourceEventCallback`` cookie -- that pointer is
+  the temporary callback mapping object, not the Wwise external-source cookie
+  -- plus ``managedExternalCallbackChains`` when the parent chain includes
+  ``AkCallbackManager.PostCallbacks`` and ``_ProcessEventCallback``, which
+  prove managed callback delivery for that capture only;
+* ``openHandle`` / ``descriptorProviderHandle``: the default-open provider
+  context holds the ``CreateFileW`` handle and size, and the async batch
+  descriptor's provider object is sampled the same way, so one capture can
+  show one native handle crossing open into ``ReadFileEx`` -- stronger than a
+  path overlap, not source-key ownership or decoder selection;
+* decoder-entry rows (``decoder``, float-output slot, frame-count slot, with
+  the owner's source-state key, provider interface, float buffer, frame count
+  and return address): key-registry/decoder-call,
+  source-provider/decoder-call and source-state/decoder-call intersections
+  are bounded continuity evidence, and ``sourceOwner`` versus ``decoderOwner``
+  is a same-owner check for the sourceInfo/provider instance. The
+  sourceInfo-selector, source-info consumer and source-state initializer
+  samples add selector-to-source-owner and initialization continuity, never
+  proof that the managed external key selected that instance.
+
+The provider-preparation sample reports only exact path-string overlap with the
+default-I/O open hook, without assuming its flags select the path. The
+catalog rows these hooks come from are named by their expected role; their
+matched SDK symbols live beside them in ``audio_runtime_trace_hooks.json``,
+and where the two disagree the symbol is the fact.
+
 Run through ``python -m scripts.webui.story_recovery.runtime_trace import --profile audio``.
 """
 from __future__ import annotations

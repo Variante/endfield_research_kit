@@ -2,6 +2,9 @@
 
 The reviewed Buff frontier-eight route pins the six ordered source reads.
 This finite adapter consumes stored bytes without inferring teleport behavior.
+
+After the inherited action fields it stores a bounded string and a
+float-width value; neither proves a runtime patrol or teleport decision.
 """
 from __future__ import annotations
 

@@ -3,6 +3,15 @@
 The installed switch, complete Deserialize bodies, nine ordered read/setter
 pairs, and one Param<List<BuffPtr>> generic chain establish the reached null
 list field. Positive list elements and runtime buff effects remain unobserved.
+
+The generic context is followed through `List<BuffPtr>` to its `BuffPtr`
+element type. Every reached source span carries a null list value with a
+local parameter path, so `codecs.levelscript.finish_buffs` accepts that form
+and refuses positive list elements. A focused owner replay reaches physical
+EOF for some files while others stop later on distinct unreviewed unions;
+the JsonData gate decides published whole-file status.
+
+Run as: python -m scripts.game_data.levelscript_finish_buffs_native
 """
 
 from __future__ import annotations

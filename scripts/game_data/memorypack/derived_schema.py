@@ -30,18 +30,56 @@ two routes for it:
   from ``codecs.levelscript.action_map``, whose CharInteractPerform reader
   reaches EOF on all 202 current owners reading them, and the
   ``<GroundedMoveGait, float>`` instantiation is separately walked by the
-  ``buff_residual_actions`` exact-build contract.  Only an unmanaged key *and*
-  value are modelled, because that is the shape the pair layout is proven for;
+  ``buff_residual_actions`` exact-build contract.  The padded-pair layout is
+  used only when key *and* value are unmanaged; with a managed side the same
+  reviewed ``declared_dictionary`` framing reads the key and then the value
+  with nothing between them, which ``_plan_counted_map`` models too (refusing
+  that case had blocked every family carrying one).  ``AnimationCurve``,
+  ``StringPathHash`` and ``AudioId`` are modelled on their own recorded
+  evidence (see ``MODELLED_FORMATTER_TYPES``): a short formatter body -- one
+  reader call, one store, no null test, no header, no loop -- fixes the wire
+  as the stored value, so its store width is a readable proof route;
 * **refused**, for every other formatter-backed type.
   ``levelscript_union_layouts.FORMATTER_BACKED_TYPES`` enumerates them from the
   managed image, and that lane records that the ones outside the two settled
   cases "are read from their field lists on the strength of nothing".  Reading
   such a member list here would desynchronise the stream, so the route is left
-  open with the type named rather than resolved on a guess.
+  open with the type named rather than resolved on a guess.  None of them
+  (``SerializeReferenceDictionary``, ``BezierKnot``, ``Gradient``,
+  ``RectOffset``, ``SendLuaEvent1``/``2``) is reached by a current route, so
+  the refusal guards a future build rather than blocking a live one; where a
+  payload may leave such a position null, a ``nullOnly`` plan accepts exactly
+  the null byte and refuses anything else.
 
 Anything else whose type does not resolve to a wrapper, a primitive, a counted
 map or a list of those is likewise reported undetermined, with the blocking
 member named.
+
+**A framing is a property of a type in a position, not of the type.**  A
+struct member is raw memory at its aligned size; the same struct as a counted
+map pair carries .NET pair padding; as a ``List<T>`` element it is written
+through ``T``'s own formatter, with a member-count header before each element
+(the frozen reader's ``tag_elements`` frames each ``List<GameplayTag>``
+element as ``FF`` or a one-member header plus four bytes), while ``T[]`` of an
+unmanaged ``T`` is a packed array of raw widths (its ``raw_dword_array``
+copies ``count*4`` bytes, and a ``GameplayTag`` member is four raw bytes).  The
+corpus decided it: framing every struct element through its wrapper, or none,
+each left exported SkillData or BuffData files refused; splitting on the
+container closed both families exactly to EOF with no BuffData cursor moved.
+
+Three other type-level readings were refuted by reviewed readers and stay
+refused: having a subclass is not being a union (``frames_as_union``); a
+memberless wrapper or union subtype is an object header of zero, not an
+unresolvable type (``FacOcclusionHandle``, and seven of the fifteen
+``selector_finder_profile`` tags); and a struct's extent is its aligned size
+from the build's size table, not its members' summed widths
+(``wrapper_members.unmanaged_value_sizes_from_image``).  ``plan()`` also walks
+a map's key and value, not only a member and its list element.
+
+The report (``reports/game_data/memorypack_derived_schema.json``) holds one
+recursive read plan per action tag over nested records, lists, arrays and
+nested unions, with each route's evidence tier and the named type blocking
+the rest.
 """
 from __future__ import annotations
 

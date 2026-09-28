@@ -2,6 +2,10 @@
 
 The stored keys and flags are decoded as ordered spans, without assigning
 runtime projectile, ricochet, or affix behavior to their values.
+
+After the inherited action fields the eighteen-member wrapper stores bounded
+blackboard-key strings and boolean save flags for projectile, ricochet, split
+and trajectory settings; selected source calls and setter types pin the order.
 """
 from __future__ import annotations
 

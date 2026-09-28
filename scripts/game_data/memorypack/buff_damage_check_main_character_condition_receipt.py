@@ -1,4 +1,15 @@
-"""Exact selected CheckMainCharacterCondition simple-target damage condition."""
+"""Exact selected CheckMainCharacterCondition simple-target damage condition.
+
+It checks the selected native five-member action and simple
+TargetSettings/DirectionSettings/SelectorData children, then replays one
+``CheckMainCharacterCondition`` condition against current VFS logical hashes.
+``memorypack.buff_corpus`` admits its sole tag-five processor through all 30
+root fields, source ID and EOF.
+
+Takes the shared ``buff_damage_*`` receipt arguments (see
+``buff_damage_modifier_receipt``); the conventional ``--output`` is
+``reports/animestudio/buff_damage_check_main_character_condition_current_latest.json``.
+"""
 from __future__ import annotations
 
 import hashlib

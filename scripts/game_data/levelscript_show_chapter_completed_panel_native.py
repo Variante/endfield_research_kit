@@ -2,6 +2,13 @@
 
 The native contract proves the selected reader, parameter and enum types.
 Source receipts prove reached bytes, not runtime chapter-panel behavior.
+
+The branch stores the same four chapter parameters as
+`ShowChapterPanelDirect` (Int32-backed `ChapterEffectType`, chapter ID,
+continuation flag, version string) but has its own native switch branch and
+generated reader, so it has its own contract and enum check.
+
+Run as: python -m scripts.game_data.levelscript_show_chapter_completed_panel_native
 """
 
 from __future__ import annotations

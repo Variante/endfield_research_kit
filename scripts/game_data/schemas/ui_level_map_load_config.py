@@ -1,4 +1,17 @@
-"""Exact JSON schema for current UI level-map load configuration files."""
+"""Exact JSON schema for current UI level-map load configuration files.
+
+Two root shapes exist under ``UILevelMapLoadConfig/``.  The level-list file is
+``{"loadLevelList": [strings]}``.  Each level file validates, in stored order,
+the ``basic`` map rectangle and movement/view-grid settings, every supported
+``staticElements`` variant (``STATIC_SHAPES``) with its visibility, image and
+text condition phases, the ``tierNames`` dictionary, the three LOD chunk
+dictionaries (``lowChunks``/``mediumChunks``/``highChunks``, with ``lodType``
+0/1/2), and the ``gridInfos``, ``mistInfos`` and ``tierInfos`` dictionaries.
+Every dictionary key must equal the value's stored id, vectors are finite
+numbers, and scalar types are exact; an unknown field, static-element shape or
+condition variant fails closed.  This is authored map-UI configuration, not
+observed runtime visibility.
+"""
 
 from __future__ import annotations
 

@@ -2,6 +2,14 @@
 
 The native contract proves the selected reader and boolean parameter type.
 Source receipts prove reached bytes, not runtime display behavior.
+
+The route stores one `isShow` `Param<bool>` after the inherited action
+fields. It is a distinct wrapper from the older `ToggleClearScreenButRadio`
+row. The shared ActionMap reader admits it only while this validator passes;
+a whole-owner projection made after registration stays provisional until the
+full JsonData corpus gate runs.
+
+Run as: python -m scripts.game_data.levelscript_toggle_clear_screen_but_radio_v2_native
 """
 
 from __future__ import annotations

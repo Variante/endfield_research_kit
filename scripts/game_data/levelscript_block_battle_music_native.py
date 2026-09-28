@@ -2,6 +2,20 @@
 
 The native contract proves the selected reader and boolean parameter type.
 Source receipts prove reached bytes, not runtime music behavior.
+
+The reviewed contract pins ActionBase `BlockBattleMusic` (tag 0x002B in the
+contract): the selected switch jump and wrapper, the complete generated reader
+and formatter, nine ordered reads and setters, and the one typed boolean
+parameter context (`block`). Passing `--export-root`, `--ledger` and
+`--summary` together also replays the reviewed first-stop spans against the
+current JsonData ledger with exact cursor replay. The command prints its audit
+and exits nonzero unless it validates.
+
+This is an isolated validator: the route is not registered in the shared
+ActionMap layout (`codecs/levelscript/action_map_layouts.json`), so the
+sequential LevelScript owner does not admit it yet. Derived root ID and EOF
+stay direct-tier corroboration until the route is integrated and the
+production source corpus is replayed; make no whole-owner claim before then.
 """
 
 from __future__ import annotations

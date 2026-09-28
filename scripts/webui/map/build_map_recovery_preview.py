@@ -23,6 +23,26 @@ The result is still an inferred diagnostic backdrop, not an exact scene
 transform, and every manifest publishes the fit that produced it - coverage,
 sample size and how many origins tied - so a weak background is visible as weak.
 A level whose fit is under-determined publishes no background at all.
+
+Where exact evidence exists it supersedes the inferred grid. Map01/Map02 HLOD
+clusters join their `InitChunkData` 4x4 matrix by exact level, HLOD level,
+grid i/j and signed cluster hash; unmatched or non-unique rows are omitted
+with no name-prefix or spatial fallback. Seamless members vote on a shared
+HLOD origin but use it only when their own multi-LOD marker coverage stays
+within `COVERAGE_TOLERANCE`; rejected regional origins stay in the manifest.
+Cluster color follows the generated material's exact `_BaseColorMap` PPtr to
+the exported atlas; a missing or duplicate link falls back to the elevation
+palette (unlit base color only, no environment lighting or post-processing).
+
+Layer rules: surface and elevation keep every joined triangle; the point
+layer samples those exact surfaces on a deterministic world-space X/Z lattice
+(`--surface-point-density`, samples per square metre) and excludes explicitly
+named floor/roof/ceiling/ground/terrain meshes plus broad near-horizontal
+non-prop slabs. Explicitly named roof/ceiling instances are omitted from every
+geometry layer. Point overlays keep a sparse sample set per projected pixel so
+the browser can composite height slabs low to high and a height filter reveals
+geometry below an excluded slab. Rendered scenes checkpoint and are reused on
+later runs; `--no-render-cache` forces a rerender.
 """
 
 from __future__ import annotations

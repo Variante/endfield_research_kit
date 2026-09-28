@@ -2,6 +2,12 @@
 
 The native contract proves the selected reader and parameter types.
 Source receipts prove reached bytes, not runtime HUD behavior.
+
+The branch stores `actionType` as `Param<string>` and `playIgnoreMainHud` as
+`Param<bool>` after the eight inherited action members. Reached records
+store true flags and authored action-type strings with spacing variants.
+
+Run as: python -m scripts.game_data.levelscript_toggle_main_hud_ignore_native
 """
 
 from __future__ import annotations

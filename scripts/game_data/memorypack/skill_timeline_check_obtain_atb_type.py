@@ -3,6 +3,8 @@
 The Buff action reader supplies the finite eight-member wire profile. This
 module independently authenticates its SkillData route and source order.
 Stored flags and list values do not prove a live ATB change.
+
+The own members include two bounded typed enum lists.
 """
 from __future__ import annotations
 

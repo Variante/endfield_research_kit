@@ -1,4 +1,18 @@
-"""Authenticate the selected OnEncounterBattlePartBegin ActionHeader reader."""
+"""Authenticate the selected OnEncounterBattlePartBegin ActionHeader reader.
+
+The reviewed contract pins ActionHeader `LevelEvent.OnEncounterBattlePartBegin`
+(tag 0x0059 in the contract): the selected switch branch and wrapper, the
+complete reader and forwarding formatter, ordered reads and setters, and its
+typed pointer and Boolean parameter contexts. Passing `--export-root`,
+`--ledger` and `--summary` together also replays the reviewed source cursors
+against the current JsonData ledger. The command prints its audit and exits
+nonzero unless it validates. It proves stored header bytes; the runtime
+battle-part start and parameter output values remain unobserved.
+
+The header stores an `LsmPtr` filter and output under the field names
+`lsvPtr` and `lsvPtrOutput`; the names differ from `OnEncounterActivated`
+but the stored pointer type is the same.
+"""
 
 from __future__ import annotations
 

@@ -2,7 +2,198 @@
 
 Reads the shipped HIRC layout for the selected bank version. Everything here is
 serialized structure -- a decoded property or reference is authored evidence, not
-proof of playback, selection, or audibility."""
+proof of playback, selection, or audibility.
+
+Where the layouts come from
+---------------------------
+``BKHD`` reads bank version 150 in every shipped bank, measured rather than
+assumed. The field order below is the Wwise 2023.1.17 SDK's own deserializer,
+read with symbols from its Profile static libraries (``AkSoundEngine.lib``,
+``AkMusicEngine.lib``) and PDBs -- the exact engine version the shipped
+``AkSoundEngine.dll`` names. The AnimeStudio reader
+(``Endfield/Audio/EndfieldAkpkPackage.cs``) frames every shipped type with the
+same grammar and ``hirc_action_corpus`` gates each lane for byte-exact closure;
+this module is the typed reading of the same bytes. Enum names come from
+``wwise_enums`` (contract ``wwise_sdk_enums.json``). Tier: ``exact`` for
+extents and order, ``direct`` for field names taken from the SDK reader.
+
+HIRC item: ``u8 type, u32 size, u32 id`` and ``size - 4`` body bytes.
+
+Node frame, in ``CAkParameterNodeBase::SetNodeBaseParams`` call order (the
+report group letters in parentheses):
+
+- (A) ``SetInitialFxParams``: u8 bIsOverrideParentFX, u8 uNumFx; when nonzero
+  u8 bitsFXBypass, then uNumFx x {u8 uFXIndex, u32 fxID, u8 flags} with bit0
+  bypass, bit1 bIsShareSet, bit2 bIsRendered.
+- (B) ``SetInitialMetadataParams``: u8 bOverrideParentMetadata, u8 uNumFx,
+  uNumFx x {u8 uFXIndex, u32 fxID, u8 bIsShareSet}. Never nonempty in the
+  shipped banks, so the six-byte entry is pinned by fixture.
+- u32 OverrideBusId (0 = none), u32 DirectParentID (0 = none), u8 byBitVector
+  (bit0 priority overrides parent, bit1 priority applies distance factor,
+  bits 2-5 MIDI overrides).
+- (C, D) ``CAkParameterNode::SetInitialParams``: u8 cProps, cProps x u8
+  AkPropID, cProps x u32 value; then the ranged bundle u8 cProps, keys, cProps
+  x {f32 min, f32 max}. Keys and values are parallel runs, not pairs.
+- (E) ``SetPositioningParams``: u8 uBitsPositioning (bit0 override, bit1
+  bHasListenerRelativeRouting, bits 2-3 panner, bits 5-6 e3DPositionType).
+  The reader returns when bit0 is clear, then when bit1 is clear; otherwise
+  u8 uBits3D and, only for e3DPositionType 1 or 2, u8 ePathMode, s32
+  TransitionTime, u32 n x 16-byte AkPathVertex, u32 m x 8-byte playlist item,
+  then m x 12-byte {xRange, yRange, zRange}.
+- (F) ``SetAuxParams``: u8 byBitVector (bit0 override game aux sends, bit1
+  use game aux sends, bit2 override user aux sends, bit3 bHasAux, bit4
+  override reflections aux bus); bit3 gates 4 x u32 auxID; then always u32
+  reflectionsAuxBus.
+- (G) ``SetAdvSettingsParams``: u8 flags (kill newest, use virtual behavior,
+  ignore parent max instances, global limit, virtual-voice override), u8
+  eVirtualQueueBehavior, u16 u16MaxNumInstance, u8 eBelowThresholdBehavior,
+  u8 byBitVector2.
+- (H) ``CAkStateAware::ReadStateChunk``: varint ulNumStateProps x {varint
+  AkPropID, u8 accumType, u8 inDb}; varint ulNumStateGroups x {u32 group, u8
+  eStateSyncType, varint ulNumStates x {u32 state, u16 n, n x u16 AkPropID, n
+  x u32 value}}. The engine rejects a state whose ids do not increase.
+- (I) ``AK::RTPC::ReadRtpcCurves``: u16 uNumCurves x {u32 RTPCID, u8 rtpcType
+  (AkGameSyncType), u8 rtpcAccum, varint ParamID, u32 rtpcCurveID, u8
+  eScaling, u16 n x {f32 from, f32 to, u32 interpolation}}. The same 12-byte
+  point is used by clip automation, layer and attenuation curves and the
+  ``ENVS`` section.
+
+Per type (after the frame unless stated):
+
+- 0x02 ``CAkSound``: before the frame, ``CAkBankMgr::LoadSource`` -- u32
+  ulPluginID, u8 StreamType (0 in-bank, 1-2 streamed), u32 sourceID, u32
+  uInMemoryMediaSize, u8 uSourceBits (bit0 language-specific); a source
+  plug-in (type nibble 2) adds u32 size and its params. 0x0B shares this
+  14-byte record. StreamType is a buffering policy, not a PCK location.
+- 0x05 ``CAkRanSeqCntr``: a 24-byte policy block (u16 loop count, loop min,
+  loop max; f32 transition time, min, max; u16 avoid-repeat count; u8
+  transition mode, u8 random mode, u8 eMode with 1 = sequence, u8 flags);
+  u32 children; u16 playlist x {u32 id, u32 weight} (50000 default).
+  Playlist order is authored selection order and may differ from Children.
+- 0x06 ``CAkSwitchCntr``: u8 eGroupType (1 = state), u32 ulGroupID, u32
+  ulDefaultSwitch, u8 bIsContinuousValidation; u32 children; u32 switch
+  groups x {u32 switchID, u32 n x u32 nodeID}; u32 params x {u32 node, u8
+  bits, u8 eOnSwitchMode, s32 fade out, s32 fade in}. Group items and param
+  node ids are stored without an index lookup, so some match no bank object.
+- 0x07 ``CAkActorMixer``: u32 children.
+- 0x09 ``CAkLayerCntr``: u32 children; u32 layers x {u32 layerID, a group-I
+  curve list, u32 rtpcID, u8 rtpcType, u32 assoc x {u32 child, u32 n x
+  12-byte points}}; u8 bIsContinuousValidation.
+- 0x03 ``CAkAction``: u16 actionType (``AkActionType``; the high byte picks
+  the operation and layout, the low byte the scope), u32 idExt, u8 idExt_4
+  (bit0 isBus), the property and ranged bundles (DelayTime and TransitionTime
+  in ms), then per class: Play u8 fade curve, u32 bankID, u32 bankType;
+  SetState and SetSwitch u32 group, u32 value; the Active/SetValue family u8
+  fade curve, its class params, then varint n x {u32 id, u8 isBus}
+  exceptions -- SetAkProp u8 value meaning, f32 base, min, max;
+  SetGameParameter u8 bypass transition then the same four;
+  Stop/Pause/Resume one flag byte (bit1 apply to state transitions, bit2
+  apply to dynamic sequence); Seek u8 relative-to-duration, f32 value, min,
+  max, u8 snap to marker; SetFX u8 device element, u8 slot, u32 fxID, u8
+  shared; BypassFX u8 bypass, u8 target mask; Release, PlayEvent,
+  ResetPlaylist, Break, Trigger, Mute and UseState add nothing.
+- 0x04 ``CAkEvent``: varint action count x u32 actionID;
+  ``hirc_event_action_ids`` reads only the one-byte short form.
+- 0x08 and 0x12 ``CAkBus`` (audio and aux bus): u32 OverrideBusId (the parent
+  bus), u32 idDeviceShareset only when that is 0; ``CAkBus::SetInitialParams``
+  -- the property bundle (no ranged bundle), groups E and F, u8 flags, u16 max
+  instances, u32 uChannelConfig, u8 HDR flags (bit3 background music); s32
+  recoveryTime (ms), f32 fMaxDuckVolume, u32 ducks x 18 bytes {u32 id, f32
+  volume, s32 fade out, s32 fade in, u8 curve, u8 target prop}; groups A, B,
+  I, then H. InitialRTPC precedes StateChunk here, the reverse of the node
+  frame, and InitialFX follows the ducks rather than the parent id.
+- 0x0E ``CAkAttenuation``: u8 height spread, u8 cone enabled (then five f32
+  cone values), u8 curveToUse[19] (one per AkAttenuationCurveType), u8 curves
+  x {u8 eScaling, u16 n x 12-byte points}, group I.
+- 0x0F ``CAkDialogueEvent``: u8 probability, u32 tree depth, depth x u32
+  argument ids then depth x u8 types, u32 tree size, u8 mode, the tree, then
+  the two bundles. No object ships; the framing is fixture-checked only.
+- 0x10 and 0x11 ``CAkFxBase`` (share set, custom): u32 fxID, u32 uSize and the
+  plug-in params, u8 n x {u8 index, u32 sourceID} bank media, group I, group
+  H, u16 n x {varint AkPropID, u8 accum, f32 value}. 0x15 ``CAkAudioDevice``
+  adds ``AkOwnedEffectSlots``: u8 n, u8 bypass bits when nonzero, n x {u8
+  index, u32 fxID, u8 flags}.
+- 0x13, 0x14, 0x16 ``CAkModulator`` (LFO, envelope, time): the property
+  bundle (``AkModulatorPropID`` keys), the ranged bundle, group I.
+
+Music types are read by ``AkMusicBank::LoadBankItem`` in the music engine.
+``CAkMusicNode::SetMusicNodeParams`` is u8 uFlags, the node frame, u32
+children, the 23-byte AkMeterInfo (f64 grid period, f64 grid offset, f32
+tempo, u8 beats per bar, u8 beat value, u8 flag) and u32 stingers x 24 bytes
+(trigger, segment, sync-play-at, cue filter hash, s32 don't-repeat time,
+look-ahead count). ``SetMusicTransNodeParams`` adds u32 rules x {u32 n x
+source id, u32 m x destination id, 21-byte source rule, 26-byte destination
+rule, u8 alloc flag and an optional 30-byte transition object}.
+
+- 0x0A ``CAkMusicSegment``: f64 duration; u32 markers x {u32 id, f64
+  position, NUL-terminated name}.
+- 0x0B ``CAkMusicTrack``, node frame last: u8 flags; u32 sources x the 14-byte
+  source record; u32 playlist x 44 bytes (track, source and event ids, f64 play
+  at, begin trim, end trim, source duration); u32 numSubTrack only when the
+  playlist is nonempty; u32 clip automations x {u32 clip, u32 type, u32 n x
+  12-byte points}; the node frame; u8 eTrackType, and for type 3 a switch block
+  (u8 group type, u32 group, u32 default, u32 n x u32) plus a 32-byte
+  transition block; s32 iLookAheadTime.
+- 0x0C ``CAkMusicSwitchCntr``: transition rules; u8 continue playback; u32
+  tree depth, depth x u32 group ids then depth x u8 group types; u32 tree size,
+  u8 mode, the tree bytes for ``AkDecisionTree::SetTree``.
+- 0x0D ``CAkMusicRanSeqCntr``: transition rules; u32 items x 30 bytes
+  (segment, item id, u32 NumChildren, rs type, s16 loop, min, max, u32
+  weight, u16 avoid repeat, u8 using weight, u8 shuffle), nested by
+  NumChildren in the engine and read flat.
+
+Decision tree (0x0C, 0x0F), per ``AkDecisionTree::ResolvePath``: 12-byte nodes
+of u32 key, then u32 audioNodeId or {u16 childrenIdx, u16 childCount}, u16
+weight, u16 probability (0..100). The resolver checks the argument count
+against the stored depth and starts at node zero; at positive depth the root
+is a sentinel whose key is not an argument. A branch's children are one
+contiguous range, binary-searched by key, and a first child keyed zero is the
+fallback when the requested key is absent. Weights are relative; probability
+gates a resolved leaf, and sibling probabilities need not sum to 100.
+``hirc_v150_music_switch_structure`` records path keys for argument levels
+only and rejects out-of-range, unsorted or unreachable nodes. This is authored
+possibility, not a live argument value or chosen branch.
+
+Reading rules the PDB forced:
+
+- Varints are seven-bit groups accumulated most-significant first
+  (``v = (v << 7) | (b & 0x7F)``). The engine has no width cap; readers here
+  stop at five bytes. The shipped two-byte keys ``82 30`` and ``84 30`` are
+  0x130 and 0x230, effect slots 1 and 2 of AkPropID_BypassFX (0x30);
+  little-endian decoding gives 6146 and 6148, which name nothing.
+- The RTPC and state ParamID is the AkPropID itself (the PDB has no separate
+  RTPC id enum), so ``HIRC_RTPC_PARAMETER_LABELS`` aliases the
+  initial-property table. wwiser's pre-2019 RTPC numbering is wrong for v150.
+- ``AkRtpcCurveParams.rtpcType`` is typed ``AkGameSyncType`` in the PDB field
+  list; its five real members name stored values 0-4.
+- The other label tables (interpolation, accumulation, scaling, sync type,
+  bank type, plug-in type, source type, value meaning, initial properties)
+  agree with the PDB up to spelling.
+
+What the typed parse publishes, and where it stops:
+
+- NodeBase effect slots, output-bus override and the hierarchy parent. Slot bit
+  vectors are authored flags (bypass, ShareSet and rendered on node slots;
+  bypass and ShareSet on bus slots, bit 2 kept raw there), separate from the
+  node-level ``bypassAll`` and from dynamic BypassFX controls.
+- The NodeBase tail through AuxParams (bit vector, four conditional
+  user-defined aux slots, the early-reflections bus), AdvSettings, StateChunk
+  and InitialRTPC, fail-closed with field-level diagnostics. Game-defined aux
+  bus ids, listeners and send levels are runtime inputs and are never
+  projected as static routes.
+- Initial AkPropID bundles with raw u32 and finite-float forms; typed id and
+  integer unions keep integer labels instead of tiny floats. Initial
+  BypassFX/BypassAllFX property ids do not occur in the shipped banks. Ids the
+  table does not name stay numeric custom ids, never guessed DSP names.
+- Buses: the full ``CAkBus`` order through InitialFX, then InitialRTPC before
+  StateChunk; every published bus resolves to a parent bus or an explicit root.
+- Effect definitions keep PCK and bank scope, class id and parameter hash;
+  typed parameter values need the ``wwise_effect_native`` gate.
+- Non-playback Action tails are typed only when the whole body is consumed;
+  anything else is ``failedClosed`` with an offset and a reason.
+
+None of this is runtime DSP, effective inheritance, live State/RTPC/modulator
+values, branch choice, or audibility."""
 
 from __future__ import annotations
 

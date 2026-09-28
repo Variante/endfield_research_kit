@@ -3,6 +3,77 @@
 The adjacent reviewed contract owns selected-build union identities and
 typed field order. This reader never searches for UIDs or guesses a body end.
 It establishes stored data, not that an action or event executes at runtime.
+
+Wire shape. An `ActionSerializedMap` is a member-count byte (3, or `0xFF`
+for null) followed by three int32-counted lists: ActionBase, PureGetter
+(`GetterBase` here) and ActionHeader. Each element is a union: one tag byte,
+where `0xFA` introduces a little-endian uint16 wide tag and other bytes at or
+above `0xFA` are refused, then a member-count byte, then the row's fields in
+generated setter order. `GameCondition` unions nested inside a
+`WaitForCondition` or task map use the separate `conditionLayouts` table.
+The four dispatcher domains stay separate: identical scalar layouts never
+merge a header, getter, action or condition row, and an outer wrapper never
+licenses parsing past a nested polymorphic member it does not own.
+
+Tiers. Reviewed rows in `action_map_layouts.json` are `exact`: each carries
+its `nativeIdentity` (dispatcher switch target, registered type usage,
+generated setter order). `decode_reviewed_node` refuses a build whose native
+inputs differ from the contract's `nativeInputs`, and
+`python -m scripts.game_data.levelscript_route_deserialize_native` re-checks
+the rows' Deserialize order on a selected build. A caller that passes the
+derived `Declarations` from `scripts.game_data.levelscript_union_layouts`
+reads at the `direct` tier and must say so.
+
+Native gates. `_required_native_gates` reads the route identity of every
+per-route contract listed there (the integrated gate list). A layout row for
+one of those routes must name the matching `nativeGate`, and
+`_require_selected_native` refuses the row unless that validator returns
+`validated` with the same wrapper and field list; build or body drift makes
+the route unavailable instead of plausible. A route with a tracked contract
+and validator that is absent from that list and from the layout rows is
+isolated and stops the reader at its first byte.
+
+Promotion. A route moves in three steps, never skipped: an isolated contract,
+validator and focused tests; then a layout row, a gate-list entry,
+production source replay and a clean union derivation; then whole-owner
+closure, which only the full authenticated JsonData gate
+(`scripts.game_data.jsondata_corpus`) decides at physical EOF. Advancing a
+cursor to a later union promotes nothing, and a projection made between the
+second and third step is provisional. Template and Interactive owners reuse
+this reader, but reuse never bypasses their own dispatcher or EOF gate.
+
+Shapes worth knowing, beyond what the rows state:
+
+* Action-level `Param<GameplayTag>` is a raw int32; it lacks the standalone
+  GameplayTag reader's nested one-member header.
+* `LevelScriptPtr` has no decimal-magnitude framing rule: a short local ID is
+  a valid uint64 with the same zero reserved word and Param tail as a long
+  one.
+* `Param<SpawnerPtr>` is a four-member Param whose constant is one unmanaged
+  uint64 ID. Some reached getters store ID zero and bind the value through
+  source `200` properties instead; others store nonzero constants.
+* The `FinishBuff` `Param<BuffPtr>` value follows the generated 4/1/2 member
+  chain, a cached unsigned identity and a null object marker before the
+  ordinary Param tail.
+* `PlayFmvAction` stores `moviePath`, a `CommonMaskBlendData` `param`,
+  `shouldWaitForFinish`, the `afterMask` mask, then `beforeMask` and
+  `overrideAfterMaskConfig` as booleans. Field names do not decide wire
+  types; the generated setters do.
+* `PlayDialogAndHideSceneObjectAction` inherits the
+  `StartCinematicAndHideSceneObject` fields (interactive and scene-object
+  hide lists, two override booleans, after/before masks) and adds its own
+  `dialogId` last.
+* `ScriptEvent_OnCustomEvent` follows the inherited script-event fields with
+  `eventArgsPtr` as `ParamOutput<EventArgsPtr>` and `eventKey` as
+  `Param<string>`; it closes the `LST_Sdg_*` progression templates.
+* Enum backings differ by route: the two `AudioBlackScreenBehaviour` enums
+  of `BlackScreenFadeInAndOut` are byte-backed, `PostAudioCue` uses the
+  generated default Int32, `ShowUIToast` keeps an Int32-backed alias, and
+  several others are signed-int aliases. The width comes from the enum
+  alias table in `_Cursor.value`, never from the enum's name.
+* Positive `Param<List<PosRot>>` and `Param<List<GameplayTag>>` elements and
+  non-null `CameraControllerBase` constants remain unsupported and fail
+  closed (see the contract's `supportedBoundary`).
 """
 
 from __future__ import annotations

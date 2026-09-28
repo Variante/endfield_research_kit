@@ -1,4 +1,34 @@
-"""Fail-closed validation for the selected-build Streaming field-2 layout."""
+"""Fail-closed validation for the selected-build Streaming field-2 layout.
+
+The block-15 reader is engine code in the unpacked ``UnityPlayer.dll``
+(HyperGryph symbols, ``FlatBufferConvertContext``, intact ``HG_ALWAYS_ASSERT``
+expressions), entered through
+``UnityEngine.HyperGryph.Streaming.StreamingSceneV2::Create_Injected``. The
+virtualised ``EndfieldBase.dll`` and ``HGP.dll`` (``.tvm0`` sections holding
+most of each file at entropy near 7.6) contain no chunk strings and are not
+the reader; an earlier "static ceiling" came from probing them instead of
+following the strings. The chunk paths are built in UnityPlayer from
+``{0}/{1}{2}ChunkData_{3}_{4}_{5}_{6}.bytes`` and
+``{0}/{1}{2}ChunkData_Global_{3}_{4}.bytes`` beside the literals ``Init``
+and ``Streaming``, which is why no complete ``InitChunkData_`` literal exists
+in ``global-metadata.dat`` or ``GameAssembly.dll``. A negative string search
+bounds where a literal is, not where the behaviour is.
+
+The reviewed ``streaming_field2_native.json`` contract pins the StreamingChunk
+field-2 row consumer, the Info-to-path key producer, the paired-root
+shared-ordinal chain and the first-root group loop that passes each group's
+descriptor and wrapped byte vectors to a descriptor-major byte consumer. That
+consumer sign-extends both descriptor words, copies ``id count * stride``
+bytes per descriptor, and only logs a length mismatch. Its
+``groupComponentNameCandidate`` block records why neither
+``PropertySerializeId.GetComponentIndexFromType`` (it returns the first set
+bit of an input mask) nor
+``FlatBufferConvertContextV2.get_componentScopeEntityName_Injected`` (a
+context-pointer read with no getter method in the selected IL2CPP type and
+no checked path from descriptor 21) names a descriptor: the bounded literal
+call census finds only three callers of the column-prefix helper. Indirect
+or inlined column selection is not excluded.
+"""
 
 from __future__ import annotations
 

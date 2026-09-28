@@ -3,6 +3,28 @@
 The report identifies authored destination vectors. Native claims prove the
 conditional assignment and loading route, but this tool does not observe a
 portal interaction or a live selected streaming center.
+
+Run ``python -m scripts.game_data.portal_center_join --gameassembly PATH
+--metadata PATH --game-root GAME_DATA_ROOT --export-root EXPORT_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256``. It rechecks the selected
+native claims (``dynamic_visibility_runtime_native``), the LevelScript union
+tags, the interactive component enum, the VFS audit and export freshness. It
+joins exact portal templates to exact LevelData interactives, keeping template
+defaults, placed source positions and destination overrides separate, and
+retains each placed dependency-group ID and authored force-load flag. It
+writes ``reports/game_data/portal_center_join_latest.json``. The native claims
+trace the LevelData override into a component blackboard and the conditional
+AOI-to-spawn route into the placed-data allocator; live execution and the
+actually selected center remain open.
+
+Stored relation (structural). The loading and seamless portal
+``InteractiveData`` templates each carry a ``tp_position`` property with a
+zero-vector default. The matching placed interactives carry separate,
+nondefault ``tp_position`` overrides in their portal component entries
+beside ``tp_level_id``; the interactive's own world position is a distinct
+field and is not the destination. The joined rows store an unsigned
+``dependencyGroupId`` of zero and ``forceLoad`` false; the latter is not
+proved to be the runtime skip-AOI flag.
 """
 
 from __future__ import annotations

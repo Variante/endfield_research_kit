@@ -1,4 +1,11 @@
-"""Selected-build SkillData ThrowPickupItemStartAction 0x0180 storage framing."""
+"""Selected-build SkillData ThrowPickupItemStartAction 0x0180 storage framing.
+
+A separate selected four-member wrapper with no own setters: after its
+three-byte physical tag it stores the inherited bool, Priority enum and two
+scalar words.  It is a first timeline root; the following
+ThrowPickupItemAction ``0x017F`` has its own route.  Stored assignments do not
+prove an item was thrown.
+"""
 from __future__ import annotations
 
 import hashlib

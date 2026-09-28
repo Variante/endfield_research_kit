@@ -2,6 +2,65 @@
 
 Moved verbatim out of ``context_audit``; that module owns the audit
 contract and the report it assembles.
+
+Each function returns pinned native windows plus a ``boundary`` string that is
+the maintained statement of what the window proves. The wire-side rules they
+establish, all ``direct`` conditional control flow of the selected build:
+
+* ``wrapper_consumer`` / ``nested_reader_context`` -- the generated wrapper
+  reader takes a one-byte fast-path header (``FF`` null, else the member
+  count) and forwards the same reader to a ``ReadPackable<List<...>>``
+  carrier; the nested body follows relative slot zero through ReadPackable
+  -> ReadValue -> GetFormatter -> that MVAR. Each edge joins one ordinal-zero
+  parameter owned by the preceding method; they are distinct records, not
+  interchangeable MVAR identities, and the concrete argument propagates only
+  conditionally on context inflation;
+* ``list_formatter_candidate`` -- the registered ``ListFormatter`` shares the
+  list instantiation and supplies one static Deserialize candidate. Its fast
+  path takes a signed four-byte count and compares it, unscaled, with the
+  remaining length. Header -1 clears the output; below -1 reaches an error
+  helper only on the new-output path, while the existing-output path clears
+  its length and skips the nonpositive loop. Maintained parsers keep
+  rejecting negative counts regardless. The four-byte element output slot is
+  not a serialized width;
+* ``list_element_dispatch`` -- the element dispatcher reloads the object's
+  class and takes its target/companion pair; the non-specialized branch calls
+  the target with object, reader, output and companion; incoming RCX is not
+  a caller-selected slot;
+* ``list_element_shared_context`` -- the comparison target joins a shared
+  GameplayTag/Object adapter candidate; never replace the loaded companion's
+  context with that candidate's Object argument;
+* ``list_element_null_probe`` -- the helper peeks for ``FF`` and only on a
+  match consumes one byte, returns true and clears the output; the byte
+  consumer's own boolean is not forwarded, and a non-match does not advance
+  the cursor directly (ensure may still replace the segment);
+* ``list_element_value_flow`` / ``adapter_conversion_context`` -- the non-FF
+  path dispatches the formatter with the reader and a writable object slot,
+  then converts the object through ``IMemoryPackDeSerializeWrapper<T0>``
+  (adapter ordinal zero, distinct from the formatter query's ordinal one;
+  the adjacent ``GetValue`` MethodSpec's metadata slot is zero) without
+  forwarding the reader. The four-byte output is a converted result width,
+  not serialized consumption;
+* ``element_provider_state_flow`` -- the provider takes a companion, not the
+  reader: method-context slot zero yields a type-derived lookup key and slot
+  one the returned-object check; carrier table, formatter cache, generation
+  and writeback paths are state-dependent. The class helper's identity return
+  is conditional on an initialized flag;
+* ``reader_construction`` / ``reader_cursor_consumers`` /
+  ``serializer_return_consumers`` / ``resource_carrier_consumers`` -- reader
+  state is built from a 24-byte descriptor or a 16-byte pointer/length
+  carrier with zero consumption; getters name consumed and remaining roles;
+  cold advance and ensure can replace the segment, so a pointer delta is not
+  a source offset. Every reviewed caller returns, discards or forwards the
+  consumed count; none compares it with a length, so cursor state is never an
+  EOF test;
+* ``skill_resource_context`` -- exact ``Core.SkillData`` arguments join
+  ResourceManager MethodSpecs (not the same-named nested AI type); Object
+  MethodSpecs are shared-code candidates, not observed sharing.
+
+None of these establishes live provider or formatter selection, cache
+contents, a fixed element width, source consumption, or EOF, and none
+eliminates a SkillData terminal candidate.
 """
 from __future__ import annotations
 

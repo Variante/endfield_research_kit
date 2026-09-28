@@ -4,6 +4,15 @@ Only the authenticated extended union tag ``0x0116`` is admitted.  The
 member-30 wrapper inherits the exact PlayAnimation member-16 prefix and then
 reads fourteen generated properties.  Unknown nested TargetSettings selector
 routes fail at their first byte rather than inheriting a guessed boundary.
+
+In generated setter order the fourteen are ``animBlendInAfterStep``,
+``battlePoseWhenStep``, ``frameToOriginAnim``, ``hideWeapon``,
+``hideWeaponFrame``, ``montageName``, ``snapDistance``, ``snapFrame``,
+``speed`` (BlackboardDouble), ``speedCurveKey``, ``stepBlendIn``,
+``stepDistance``, ``stepTarget`` (TargetSettings) and ``useFixSpeed``.  The
+shared sequence reader calls this same bounded reader for later ``0x0116``
+actions, so later-timeline stops can advance and rejoin EOF where every
+following child is admitted.  No runtime animation behavior is assigned.
 """
 from __future__ import annotations
 

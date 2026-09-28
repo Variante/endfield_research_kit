@@ -24,6 +24,43 @@ as six 32-bit floating-point loads, and every field-5 vector element as a
 small DevOnly subset is raw despite sharing the first two path families, so the
 decoder accepts raw only after independently validating the observed root
 shape.
+
+Root layout (both data families, every file): eight fields at vtable offsets
+(4, 8, 16, 20, 24, 28, 32, 36) in a 40-byte object. Field 0 is a u32 that is
+47 in every file. Field 1 is eight inline bytes, two int32 that equal the
+``<x>_<y>`` filename coordinates times 128 (the chunk origin; 128 is the
+chunk edge in world units, and the Global files store INT32_MAX, INT32_MIN).
+That join to the filename is exact in both families, with the axis-swapped
+and other-scale controls matching only the x == y and origin chunks. Fields
+2--7 are all uoffsets to vectors: field 2 is the terminal vector framed by
+``_parse_field2_terminal_subgraph`` (always empty in InitChunkData, populated
+in StreamingChunkData), fields 3/4/5 the parallel vectors, and 6/7 the
+paired groups. These readings are structural; they come from dereferencing,
+not from a schema.
+
+Retracted readings kept so they are not retried (memory:
+``world_chunks_families.md`` and ``world_chunk_union_vectors.md``). Fields 2,
+3 and 4 were first typed as scalar sizes because every InitChunkData file
+satisfies ``field2 == len - root - 20`` and ``field3 == len - root - 28 -
+4 * len(field 5)``. Those identities are where the uoffsets land when the
+empty field-2 vector's count word is the last four bytes of the file and the
+field-3 vector sits a fixed distance before it; every StreamingChunkData file
+fails both because its field 2 is populated. The same mistake recurred for
+the group field 3, the group field 4, root field 6's wrapper field and the
+StreamingChunkInfo row field 1: each stored value (often the short offset 4)
+is a uoffset, not a size or constant. Dereference a width-4 field before
+typing it; an arithmetic identity over every file proves a value, not a type.
+
+No managed schema matches this root. ``FBDynamicSceneChunkData`` (five
+fields) was refused: reading its Grids and TotalStr over the eight fields
+gave identical length distributions, no Grids element resolved to a table,
+and none of the six IL2CPP types with a ``GetRootAs`` accessor has eight
+fields. ``MapManager+LoaderChunkStaticData`` (grids, tiers, mists) was refused
+as fields 5/6/7: the loader config widths do not match the group widths,
+fields 6 and 7 have equal counts in every file, and the resolved field types
+make tiers and mists dictionaries while grids is a list. No ``*.fbs``,
+``*.bfbs``, ``*.schema`` or ``*.proto`` file ships in the table, json-data or
+extend-data blocks, so field names can only come from the native reader.
 """
 
 from __future__ import annotations
@@ -194,7 +231,17 @@ def _info_slot_partition(layout, widths, label):
 
 
 def _parse_info_inner(data: bytes, root: dict[str, Any]) -> dict[str, Any]:
-    """Exactly frame the selected-build anonymous StreamingChunkInfo graph."""
+    """Exactly frame the selected-build anonymous StreamingChunkInfo graph.
+
+    StreamingChunkInfo is a plain FlatBuffer, not inverted-LZ4 like its
+    directory neighbours. The standard root has four fields (object 20) with
+    field 3 the row vector; the one DevOnly file keeps a three-field legacy
+    root and is left out of the catalog projection. A standard row holds
+    eight inline bytes (two int32, the raw ``x, y`` grid indices, not scaled
+    by 128) and a uoffset -- stored as 4 and once misread as a constant -- to
+    a counted vector of 8-byte elements. The four words of each (row,
+    element) pair are what ``corpus._join_info_catalog`` joins to filenames.
+    """
 
     ranges: list[tuple[int, int]] = [(0, 4)]
     shapes: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
@@ -342,7 +389,36 @@ def _parse_paired_group_subgraph(
     data: bytes, root: dict[str, Any], family: str,
     *, range_sink: list[tuple[int, int, str]] | None = None,
 ) -> dict[str, Any]:
-    """Frame one selected-build paired group subgraph without naming fields."""
+    """Frame one selected-build paired group subgraph without naming fields.
+
+    Root field 6 holds one-field wrapper tables whose field 0 reaches a
+    counted u32 ID vector; root field 7 holds the parallel group tables (five
+    fields, object 56 or 60 bytes). Group field 1 is an inline count that
+    must equal the paired ID-vector count. Group field 3 is a forward uoffset
+    to a counted vector of 8-byte descriptors (u16 id, u16 stride, u32 that
+    must be zero). Group field 4 stores a short forward uoffset (4 in the
+    current corpus) to a one-field wrapper whose field 0 reaches a counted
+    byte vector; its length must equal ``count * sum(strides)``. Raising one
+    stride by one makes a real file fail this check, so the equality is
+    tested, not assumed. StreamingChunkData files carry no groups.
+
+    The selected native consumer (``streaming_field2_native.json``) reads the
+    byte vector descriptor-major: one ``count * stride`` column per descriptor
+    in descriptor order, advancing by that extent and only logging a length
+    mismatch. This reader is stricter and rejects it. Descriptor 21 (stride
+    64) holds NUL-terminated name prefixes that join by index to the root
+    IDs and names (``descriptor_names``); other descriptor IDs are anonymous
+    bit positions of a 128-bit mask (``descriptor_mask_native``), not
+    ``StreamingComponentType`` indices (``descriptor_component_index_gate``).
+    Group fields 0 (16 or 20 inline bytes) and 2 (24 inline bytes, measured
+    as a centre and non-negative extents) are not read here.
+
+    Retracted readings: group field 3 as a byte offset into a runtime
+    "slot-4 region", or as an alternating (code, 0) list of 4-byte words
+    (that read stopped halfway through each 8-byte descriptor); group field 4
+    and root field 6's wrapper field as the constant 4 (a uoffset to the next
+    object); root field 6 as a vector carrying no information.
+    """
 
     ranges: list[tuple[int, int, str, str]] = []
     shapes: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
@@ -702,6 +778,18 @@ def _parse_parallel_root_subgraph(
     representation is compatible with both a FlatBuffer string and a byte
     vector followed by alignment, so this parser deliberately keeps the
     serialized type ambiguous.
+
+    Measured readings that this parser records but does not check (memory:
+    ``world_chunk_union_vectors.md``): root field 3 holds 32-bit object IDs,
+    never offsets, and a row's field-0 text has the form
+    ``<base>#<N>_<HEX>`` with ``HEX == ID & 0x07FFFFFF`` at the same index
+    (the 28-bit mask misses on bit 27). The root field-4 byte (1, 2 or 3)
+    fixes the row's vtable slot count (5, 6 and 4 slots), which is the shape
+    a FlatBuffers union type vector produces; ``field4ByteToRowShapes``
+    publishes that join by exact index only. Censuses of row fields must be
+    taken per tag: pooling the three row shapes mixes different fields under
+    one index. Paired Init/Streaming files carry identical ordered field-3
+    and field-4 vectors (``corpus._join_root_witnesses``).
     """
 
     ranges: list[tuple[int, int, str, str]] = []
@@ -1215,6 +1303,11 @@ def _parse_field2_terminal_subgraph(
     key namespace, and meanings remain unresolved. The current-corpus gate
     independently revalidates that native contract before publishing these
     representations as current evidence.
+
+    In InitChunkData the vector is always empty and its count word is the
+    last four bytes of the file. That fixed position is why root fields 2
+    and 3 satisfied the retracted "payload size" formulas in every Init file
+    and in no StreamingChunkData file (module docstring).
     """
 
     root_layout = {
@@ -1583,6 +1676,12 @@ def parse_streaming_file(
     ``include_certified_ranges`` exposes only successfully checked structural
     ranges and marker13 reference identities for downstream gap analysis. It
     does not own those targets, infer their lengths, or fill unknown gaps.
+
+    Measure file coverage from these certified ranges, not from a generic
+    FlatBuffers walker. The deleted walker behind the coverage figures in
+    ``memory/game_data/world_chunk_unread_region.md`` accepted only vectors
+    of tables, offsets or strings, so it never marked the byte vectors behind
+    the group field-4 wrappers; its "unreached" share measured the walker.
     """
 
     if kind not in {"init", "streaming", "info"}:

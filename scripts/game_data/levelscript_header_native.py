@@ -3,6 +3,22 @@
 The contract proves stored header bytes only. Runtime event registration and
 dispatch require separate evidence. A failed or different installed build
 leaves the reviewed header routes unavailable to the LevelScript reader.
+
+Routes: `LevelEvent_OnSnapShotEnter` and `LevelEvent_OnSnapShotLeave`. Both
+store the same 14-member shape and add no own wrapper fields: the selected
+`ActionHeader` switch resolves each registered wrapper directly, and each
+complete native `Deserialize` body reads the inherited `NodeBase` and
+event-header members in order, ending with `validate` as `Param<bool>`. The
+checked generic context and inherited setter identify that last member
+independently of the source bytes. The shared ActionMap reader admits these
+rows only while this gate confirms the switch, full method windows, ordered
+helper calls and current build. Snapshot entry or exit bytes do not prove
+that the event ran; owners that continue to later unions stay partial.
+
+The command takes no options and prints the selected native audit, exiting
+nonzero unless it validates; it has no source-replay mode.
+
+Run as: python -m scripts.game_data.levelscript_header_native
 """
 
 from __future__ import annotations

@@ -5,6 +5,33 @@ native contract authenticates root source order; child validators authenticate
 the nested records decoded here. The positive damage branch requires separately
 checked condition and processor children. Other positive recursive collections
 remain refused.
+
+This is the only route that makes a whole BuffData root a named schema. It
+admits a unique outer-frame cohort (``is_no_positive_candidate``,
+``is_positive_damage_candidate``) whose child layouts are independently
+validated (``CHILD_VALIDATORS``): the null/empty recursive-list branch, a
+positive ``blackboard`` DataPair list (``buff_datapair_native``) plus
+``globalModifier`` list, and one positive ``damageModifier`` whose sole
+nested blocker is that list. The damage branch composes the
+``buff_damage_modifier_receipt`` item partition with the selected condition
+receipts (``buff_damage_*_condition_receipt``) and processor receipts
+(``buff_damage_*_processor_*receipt``); a condition or processor without its
+own receipt refuses the file. The narrow sole-CreateBuffAction branch lives
+in ``buff_create_action_root_receipt``.
+
+Each admitted file is reread from byte zero through 30 contiguous named
+fields on the original logical bytes, checks the stored ``id`` against its
+source stem and ends at physical EOF. The caller authenticates the stream
+against the VFS ledger length and MD5 and records its logical SHA;
+``scripts.game_data.jsondata_corpus`` revalidates the native inputs and
+replays the exported bytes against the entire receipt before classifying a
+row as schema decoded.
+
+Refused: nonzero condition actions or processors without a selected receipt,
+positive heal and other action lists, ``stackEffects`` and timeline
+interiors -- each keeps its own named-ownership blocker. Evidence tier:
+``exact`` stored layout for the selected rows; live formatter-provider
+choice and gameplay behavior stay open.
 """
 from __future__ import annotations
 

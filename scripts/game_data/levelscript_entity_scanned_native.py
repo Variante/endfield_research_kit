@@ -2,6 +2,17 @@
 
 This proves the selected native reader and source framing. It does not prove
 when the event fires or which runtime system owns a scan.
+
+The header has 18 inherited stored members and no own wrapper fields. After
+the common event-header fields come `targetEntity` as `Param<EntityPtr>`,
+`targetEntityList` as `Param<List<EntityPtr>>`, `targetEntityListOutput` as
+`ParamOutput<EntityPtr>` and a stored `triggerTarget` enum. The validator
+authenticates the selected switch and registered wrapper, complete reader
+and formatter bodies, all 18 ordered reads and setters, and the nested
+generic contexts; source receipts rejoin exact event-header cursors. The
+shared ActionMap reader admits the route only while this validator passes.
+
+Run as: python -m scripts.game_data.levelscript_entity_scanned_native
 """
 
 from __future__ import annotations

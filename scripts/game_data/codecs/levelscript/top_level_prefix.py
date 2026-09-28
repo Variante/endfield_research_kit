@@ -1,10 +1,26 @@
 """Sequential prefix codec for the current 27-member ``LevelScriptData``.
 
 The generated current wrapper fixes the member order.  This codec is narrow:
-it starts immediately after a proved complete empty ``ActionMapAssetRaw`` and
-advances through primitive members and null/empty collections only.  A positive
-collection whose element codec is not owned here is returned as a named stop;
-no later byte is scanned to guess its extent.
+it starts immediately after a proved action-map boundary (by default the
+complete 20-byte empty ``ActionMapAssetRaw``) and advances through primitive
+members and null/empty collections.  A positive collection whose element codec
+is not owned here is returned as a named stop; no later byte is scanned to
+guess its extent.
+
+Order after ``actionMap``: ``activeShapeList``, ``allowStartOnTravelPole``,
+``allowTick``, ``enablePreload``, ``endType``, ``enemies``, ``exitBuffer``,
+``exitBufferOverride``, ``interactiveLocks``, ``interactives``,
+``levelScriptType``, ``lstTemplatePath``, ``maxStage``, ``modules``, ``npcs``,
+``parentLevelScriptId``, ``properties``, ``propertyIdToKeyMap``,
+``refWorldEntityIdList``, ``resetModeWhenActive``, ``resetModeWhenEnd``; the
+final five (``scriptId`` through ``triggerVolumes``) belong to
+``top_level_tail``.  Shapes, signed enums (``END_TYPE_NAMES``,
+``LEVEL_SCRIPT_TYPE_NAMES``, ``RESET_MODE_NAMES``), finite floats, strict
+booleans and UTF-8 strings are validated at the physical cursor.  Positive
+``enemies``, ``interactiveLocks``, ``interactives``, ``modules`` and ``npcs``
+dictionaries are delegated to their exact codecs; a codec refusal becomes the
+named stop for that field.  ``properties``, ``propertyIdToKeyMap`` and
+``refWorldEntityIdList`` are accepted only null or empty.
 """
 
 from __future__ import annotations

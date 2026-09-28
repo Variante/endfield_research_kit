@@ -2,6 +2,21 @@
 
 The contract ties its piecewise arithmetic and iFix bypass to exact selected
 build bytes. It does not observe a DamageUnit executing or final damage.
+
+On the normally returning unpatched path the stored ``value:
+BlackboardDouble`` reaches ``ActionBlackboardExtensions.GetDoubleValue``.
+With ``applyScale == false`` that ``Double`` becomes ``CalcResult.value``
+unchanged; with ``applyScale == true`` the stored ``valueScale`` reaches
+``GetValue`` and its ``Single`` return, converted to ``Double``, multiplies
+the resolved value. The intermediate is therefore ``base`` or ``base *
+double(scale)``, selected by ``applyScale``; the server debug-args branch
+rejoins the same return. When the iFix check is patched the body calls
+``GetPatch`` and a wrapper and skips the ordinary return, so no expression is
+claimed for that path. Poise routes that store this subtype reuse the same
+conditional expression (see ``damage_action_poise_route_native``).
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair; the default report
+is ``reports/game_data/definite_value_calculation_native.json``.
 """
 from __future__ import annotations
 

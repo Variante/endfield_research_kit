@@ -1,7 +1,22 @@
 """MonoBehaviour audio-id contexts and the runtime model.
 
 Scans published MonoBehaviour objects for audio-id carriers and projects the
-runtime-system model. A carrier is a serialized field, not a playback claim."""
+runtime-system model. A carrier is a serialized field, not a playback claim.
+
+For ``monoBehaviourAudioIdField`` contexts the serialized path is the
+evidence; the ``component*`` role is a static field label, with layout, raw
+values and exact GameObject placement searchable separately. Complete
+``AudioMapData`` schemas admit their exact trigger enter/exit, level
+lifecycle and outdoor-room-tone ``uint32`` Event fields; the schema gate
+rejects incomplete lookalikes before a numeric match becomes a context.
+
+The External Source rows record static native facts: the serialized External
+Source source records share one source id equal to the constant the
+VoicePlayer helper writes before ``PostEventExternal`` (closing the
+source-cookie identity and callback-family selection), and the managed
+``externalSourceKey`` becomes ``AkExternalSourceInfo.szFile`` before native
+descriptor copying. Neither identifies a per-request path, a sourceInfo
+instance, an opened handle or audible PCM."""
 
 from __future__ import annotations
 from scripts.source_paths import INSTALLED_LAYERS, ExportLayout

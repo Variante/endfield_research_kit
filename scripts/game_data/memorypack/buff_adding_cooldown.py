@@ -1,4 +1,21 @@
-"""Selected-build ownership and bounded child spans for BuffData field one."""
+"""Selected-build ownership and bounded child spans for BuffData field one.
+
+The selected root reader's ``BlackboardDouble`` source call stores its
+result in the installed ``BuffData.addingCooldown`` field (``exact`` native
+source-to-field join). The current generated wrapper, checked separately
+against the selected build, orders the child's ``blackboardKey``,
+``useBlackboardKey`` and ``value`` setters. Missing or stale optional
+DummyDll evidence leaves the native source-to-field claim intact but
+suppresses these child labels. The selected child reader consumes a
+nullable signed-length byte payload, one byte and four raw value bytes;
+source-hash-checked current files rejoin the existing field endpoint with
+those named spans.
+
+This removes only field one's anonymous member-ownership blocker. The key
+bytes, boolean byte and value bits remain raw: no string-decoder parity,
+live provider choice, blackboard lookup or evaluated cooldown is proved.
+The same child reader is reused by ``buff_blackboard_double_child_receipt``.
+"""
 from __future__ import annotations
 
 import hashlib

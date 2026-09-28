@@ -2,6 +2,45 @@
 // Loads data/manifest.json and language sidecars, then lazy-loads conversations.
 // Left pane is a 3-level tree (kind / story-line / mission) with a
 // virtualized scroll that supports mixed row heights.
+//
+// Story page behavior contract (webui/README.md links here):
+//   * Controls: search, sort (sort-story, sort-natural, sort-lines-asc,
+//     sort-lines-desc), filter sections basic, kind, media, recovery-method
+//     and type, the issue filter (#story-issue-filter), #reveal-current, and
+//     the toggles Show empty rows (#show-empty), Show raw JSON / text sources
+//     (#show-raw) and Show raw tags (#inline-tag-mode). The Endministrator
+//     variant (#gender-variant, Female/Male) switches dialogue text, voice,
+//     images, video and gender-specific cutscenes, and stays synchronized with
+//     Gameplay through the shared storage key.
+//   * Reset returns to Story sort and default filters while preserving
+//     expanded mission groups. Issue and recovery-method filters stay visible
+//     in every mode.
+//   * Source/debug blocks, Timeline evidence, cutscene diagnostics and the
+//     order-edit controls (#story-order-editor-row, #story-order-save-status)
+//     render only under Show debug info.
+//   * sns_emoji_* renders as ordinary inline emoji with no hover or modal
+//     preview; other SNS images and stickers keep natural proportions with
+//     bounded hover and modal previews.
+//   * A cutscene row shows the automatic unused badge only when the current
+//     build's complete, non-degraded playback-carrier census finds no exact or
+//     uniquely case-insensitive consumer. Case collisions and incomplete scans
+//     stay unresolved and unmarked. The badge is separate from the
+//     user-managed possiblyUnused tag in overrides/story_order.json.
+//   * overrides/options.json manual option coverage adds a separate
+//     filterable override tag; the generated option-evidence issue and its
+//     count stay unchanged, so source-state classifications such as
+//     unregistered table-only placement are never replaced.
+//   * overrides/narrative_videos.json controls inline video attachment,
+//     suppression and optional audio inheritance.
+//   * Voice lines, conversation and cutscene event audio and dialog lifecycle
+//     hooks come from the Audio page's audio/conv/<key>.json sidecar, fetched
+//     only for keys listed in audio/conv/index.json and merged into the loaded
+//     conversation before option overrides. A line row applies to the line at
+//     its `index` while the `id` matches, else to the first line with that
+//     `id`. Without an Audio build the page shows no voice.
+//   * data/mission_pipeline/index.json supplies
+//     storyCoverage.storyTriggerManifest; its absence is a degraded trigger
+//     state, not an error.
 
 const ROW_GROUP_H = 28;
 const ROW_ITEM_H = 50;

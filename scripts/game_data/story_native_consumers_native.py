@@ -13,6 +13,22 @@ bytes; any change to either re-evaluates. A group whose claims fail, one marked
 ``pendingReview`` because its code moved and the reviewed meaning was not
 re-checked, or a missing install yields a non-validated group, and consumers
 must publish no native conclusion from it.
+
+Readings the current build re-proved, which a later build may move:
+
+- ``DialogTreeIfNode`` delegates its outgoing index to
+  ``DialogManager.GetIfNextIndex``; outgoing index 1 is taken exactly when
+  ``GameCondition.result == 1``.
+- The Timeline option index travels ``DialogTimelineOptionData.optionIndex``
+  -> ``DialogChooseOption`` -> ``TimelineRuntimeUtils.TrySetNewOptionIndex``
+  (every director under the root) -> ``TimelinePlayable.newOptionIndex``.
+  ``Evaluate`` commits it to ``curOptionIndex`` and keeps the previous value
+  in ``lastOptionIndex``; ``CheckWillRuntimeElementEnabled`` enables an
+  element whose option index is zero or equals the current *or previous*
+  selection, a wider gate than the previous build's single match during a
+  switch.
+- Branch-sequence order edges are admitted only while the ``Branch.Execute``
+  list-order claim holds.
 """
 from __future__ import annotations
 

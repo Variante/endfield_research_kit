@@ -32,6 +32,43 @@ the fact.
 
 Fails closed: without the SDK or the installed DLL there is no map, and the
 report says which input was missing rather than returning a short list.
+
+What the shipped HIRC loader shows. Re-derive its addresses with this map
+(``python -m scripts.game_data.wwise_sdk_symbols``) rather than carrying them
+in prose; the structure below held on the build that established it.
+
+- The bank chunk switch is a flat fourcc compare chain (DATA, DIDX, ENVS,
+  HIRC, STID, STMG). The DIDX/DATA path allocates and registers each media
+  block by id straight from the chunk and never consults HIRC, so a bank-embedded
+  media needs no HIRC source record to load.
+- The HIRC loop reads ``u8 type, u32 size`` per item and dispatches through a
+  21-entry jump table on ``type - 2``, covering 0x02-0x16 exactly. Shared arms:
+  0x02/0x05/0x06/0x07/0x09, 0x08/0x12, 0x03/0x04, 0x13/0x14/0x16. Types
+  0x0A-0x0D share one arm that calls an optional registered global hook and,
+  when none handles the item, skips ``size`` bytes with a buffered-stream skip
+  that errors only on a short read. The shipped DLL carries no music-engine
+  strings: the built-in parser never reads the music types; the SDK's
+  ``AkMusicBank::LoadBankItem`` is what the hook would be.
+- Loader conventions: the node id is consumed by the caller; a virtual type-tag
+  check gates entry; the cursor is passed by reference so nested readers
+  advance it. 0x10 and 0x11 have different vtables and one deserializer that
+  reads fxID and the parameter size and hands the parameter block to the
+  plug-in the id selects (fxID 0xFFFFFFFF: no plug-in, nothing more read).
+  0x09 calls its reader directly rather than through a vtable slot. 0x09 and
+  0x12 resolve their object reference through the same global id-keyed node
+  registry.
+- The per-class node blocks sit at vtable slots 0x28 bytes later than the
+  stock SDK's; the byte layout they read is unchanged. This is an in-house
+  modification showing through, not a format change.
+
+Routes that do not work on this DLL, so they are not retried: scanning
+``.rdata`` for runs of code pointers merges adjacent vtables and RTTI is
+stripped to a dozen ``std::`` descriptors, so tables cannot be split; the slot
+at ``+0x28`` resolves on every node vtable but is a parent/flag setter for the
+node types, so only reading the callers shows which slot a loader invokes; an
+indirect-call search cannot find 0x09's direct call; and a file-to-VA delta is
+section-specific (the ``.text`` delta misplaces a ``.data`` global into
+``.pdata``).
 """
 from __future__ import annotations
 

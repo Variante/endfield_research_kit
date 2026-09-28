@@ -1,6 +1,6 @@
 """Name the exported MonoBehaviour script classes from IL2CPP metadata.
 
-[`monobehaviour_census.py`](monobehaviour_census.py) collapses the exported
+[`census.py`](census.py) collapses the exported
 MonoBehaviour corpus to a few hundred anonymous script identities and records
 the serialized field layout of each. This module supplies the missing half:
 which managed class each layout belongs to, read out of the selected build's

@@ -1,4 +1,11 @@
-"""Strict decoder for Endfield's bit-inverted LZ4 block variant."""
+"""Strict decoder for Endfield's bit-inverted LZ4 block variant.
+
+One codec serves families that no naming convention connects: TRET terrain
+streams, DynamicStreaming files, and the block-15 ``InitChunkData`` and
+``StreamingChunkData`` payloads (a u32 decoded length, then one block). The
+block-15 ``StreamingChunkInfo`` index beside them is raw, and so is a small
+DevOnly pair that the Streaming gate names explicitly.
+"""
 
 from __future__ import annotations
 

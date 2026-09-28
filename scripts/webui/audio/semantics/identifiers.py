@@ -1,4 +1,15 @@
-"""Stable audio identifier codecs shared by index and semantic builders."""
+"""Stable audio identifier codecs shared by index and semantic builders.
+
+Two 32-bit FNV-1 hash domains live here and must not be confused.
+``audio_hash_generator_compute`` mirrors the game's
+``AudioHashGenerator.Compute(string)``: managed UTF-16 code units, ASCII
+``A``-``Z`` folded, whitespace significant (no trim). ``fnv1_32`` hashes the
+UTF-8 bytes of a builder Event-name candidate, which callers lowercase first.
+For ASCII the two agree; for non-ASCII they differ. A page identity computed
+with the game-side hash is not a HIRC object receipt, and the current corpus
+establishes no Wwise Event naming rule for non-ASCII strings (one decoded
+``_soundEvent`` member holds a Chinese sound-design note, not an Event).
+"""
 
 from __future__ import annotations
 

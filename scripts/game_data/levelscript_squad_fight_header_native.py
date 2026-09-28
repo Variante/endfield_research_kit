@@ -3,6 +3,16 @@
 The selected switch and generated reader prove the wire layout. Source checks
 join each receipt to the current JsonData ledger and replay its exact cursor.
 No runtime squad combat state or event firing is inferred.
+
+The header inherits the common 14 stored header members and adds `inFight`
+as `ParamOutput<bool>`. The contract authenticates the direct switch
+branch, registered wrapper, complete generated reader including owned
+fragments, forwarding formatter, every ordered read and setter, and both
+generic parameter contexts. Reached output paths are stored local property
+references. The shared ActionMap reader requires this validation; neither a
+stored output path nor the event name proves the live squad combat state.
+
+Run as: python -m scripts.game_data.levelscript_squad_fight_header_native
 """
 
 from __future__ import annotations

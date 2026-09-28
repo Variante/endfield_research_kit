@@ -4,6 +4,47 @@ The selected native bridge separately proves consumption of paired root rows.
 This gate reports stored FlatBuffer framing, paired byte/count relations, and
 the ID/descriptor/blob structure. It also compares descriptor 21's bytes with
 the same file's root ID/name-string rows.
+
+Run ``python -m scripts.game_data.dynamic_aux_pair_corpus --input-root
+DUMP_ROOT --expected-input-set-sha256 INPUT_SET_SHA256``, where ``DUMP_ROOT``
+holds a targeted dump of the paired ``fb_init``/``fb_streaming`` files. It
+authenticates every pair against the current VFS ledger and checks their
+anonymous root framing, same-index table shapes, bounded byte/count
+equalities, the grouped-ID partition of root field three, blob lengths equal
+to descriptor stride times ID count, and descriptor 21's 63-byte stored-name
+projection. It writes ``reports/animestudio/dynamic_aux_pair_latest.{json,md}``.
+Other descriptor meanings and live file selection remain open.
+
+Stored pair relations (exact). Every current filename has its other-family
+counterpart; both files pass the compressed-envelope and eight-field root
+framing. Root scalar fields zero and one agree; vector fields two and three
+have equal bodies. Field four has an equal checked count-byte prefix
+followed by zero bytes up to the next aligned count word; without a native
+element-width witness this is prefix equality, not a full-width element
+comparison. Field five holds the same number of valid nested tables on each
+side at the same index, with equal six-slot present-field masks and equal
+first four bytes of slots one and two when present; slots three to five
+differ. Init field seven and streaming field six hold the same number of
+nested tables while the opposite fields are empty.
+
+Group rows (exact). Streaming field-six row field zero is a four-byte ID
+vector; init field-seven row field three is an eight-byte descriptor vector
+(two signed 16-bit words, ID and stride, then a zero reserved word) and row
+field four leads to a nested field-zero byte blob. Positive stride times the
+group's ID count gives one descriptor-major segment, and the segments tile
+the blob exactly. The grouped IDs, as a multiset, partition the same file's
+root field-three IDs, although group order can differ from root ID order.
+
+Descriptor 21 (exact stored projection). Init root field-five rows carry a
+field-zero FlatBuffer string parallel by ordinal with root field-three IDs.
+Each group has exactly one descriptor ID 21 with stride 64, one zero-padded
+name slot per paired ID, and the ``(ID, name)`` multiset equals the root
+``(ID, string)`` multiset after clipping strings to 63 bytes. Descriptor 21
+is therefore a stored name column with a 63-byte content limit, not a
+lossless copy of every root name. It does not identify a runtime component:
+the reviewed ordinary-Streaming getter and prefix-mask census found no edge
+from descriptor 21 to their entity-name context field, and no reviewed
+accessor names the other descriptor IDs or nested slots.
 """
 
 from __future__ import annotations

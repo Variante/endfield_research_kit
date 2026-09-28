@@ -3,6 +3,34 @@
 The selected native builder and getters establish the inline record layout.
 The separate main-vector contract establishes the target vector extents. This
 audit checks stored references only; it does not claim runtime activation.
+
+Layout (direct). The selected ``FBDynamicSceneDataIndex`` builder creates a
+16-byte inline record: ``IsInvalid`` at byte zero, three padding bytes, then
+``Type``, ``Grid`` and ``Index`` as four-byte values; the generated getters
+confirm the three integer offsets (``dynamic_data_index_native.json``).
+
+Stored relation (structural). In every authenticated current main grid, each
+valid ``DataIndex.Grid`` equals its containing ``SingleGrid.UniqueId``, which
+can differ from the file root's ``UniqueId``. For each observed ``Type`` the
+selected ``EDynamicSceneData`` member has the same numeric value and name as
+a ``SingleGrid`` vector accessor, and the ``Index`` values partition that
+named vector exactly within each grid: no element is skipped or indexed
+twice. The generated getter returns ``Int32``; the enum association rests on
+that numeric/name agreement plus the complete grid-local partition.
+
+Counts alone cannot always pick the target vector: ``NavModifyAreaComp`` and
+``ErosionRootComp`` have indistinguishable count/index partitions, as do
+``TreeRootComp`` and ``NatureResourceComp``. The native enum and accessor
+names decide; the report keeps those ``corpusOnlyRivals`` instead of
+promoting the weaker count evidence. ``dynamic_system_routing_native`` shows
+the rivals route to distinct systems.
+
+Run ``python -m scripts.game_data.dynamic_data_index_native --gameassembly
+PATH --metadata PATH --input-root DUMP_ROOT --expected-input-set-sha256
+INPUT_SET_SHA256`` over the same targeted ``fb_main`` dump that
+``dynamic_main_native`` reads. It writes
+``reports/animestudio/dynamic_data_index_native_latest.{json,md}``. It does not
+prove a runtime dereference of any stored reference.
 """
 
 from __future__ import annotations

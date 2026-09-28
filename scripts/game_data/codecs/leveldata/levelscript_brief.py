@@ -1,4 +1,13 @@
-"""Exact MemoryPack codec for LevelData member 22 LevelScriptBriefData."""
+"""Exact MemoryPack codec for LevelData member 22 LevelScriptBriefData.
+
+Member 22 is the complete ``Dictionary<ulong, LevelScriptBriefData>``; each
+value closes its eight named fields in generated order.
+``decode_levelscript_brief_dictionary_at`` is the exact sequential entry
+used by ``leveldata_binary``. The search helpers
+(``find_levelscript_brief_data_entries``,
+``parse_leveldata_levelscript_brief_dictionary``) serve Story ownership
+lookups and are not framing evidence by themselves.
+"""
 
 from __future__ import annotations
 

@@ -2,6 +2,18 @@
 
 The native and exported-source checks establish serialized bytes. They do not
 establish when the getter evaluates or which synchronized mission state wins.
+
+The branch inherits seven node fields and adds `missionId` as
+`Param<string>`. The contract checks the dispatcher and registered wrapper,
+complete chained reader and forwarding formatter bodies, eight ordered
+native reads and setters, and the string parameter's generic context.
+
+The command takes no options and prints the native audit only, exiting
+nonzero unless it validates. Source cursor replay goes through
+`validate_get_mission_state_native_contract`, which accepts an explicit
+JsonData export root, per-file ledger and summary.
+
+Run as: python -m scripts.game_data.levelscript_get_mission_state_native
 """
 
 from __future__ import annotations

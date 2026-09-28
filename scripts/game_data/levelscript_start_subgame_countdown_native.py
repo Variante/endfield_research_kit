@@ -2,6 +2,16 @@
 
 The native contract proves the selected reader, parameter and enum types.
 Source receipts prove reached bytes, not a live timer or UI countdown.
+
+After the inherited members the branch stores a raw finite signed-integer
+`countDownType`, a `ParamOutput<uint>` handle, a current-script
+`Param<LevelScriptPtr>` and a string timer ID, with three distinct generic
+parameter contexts and the enum declaration checked. Reached countdown type
+is the `Center` member and the handles are local output paths, which
+`StopSubGameCountDownByHandle` records reference (see
+`levelscript_stop_subgame_countdown_by_handle_native`).
+
+Run as: python -m scripts.game_data.levelscript_start_subgame_countdown_native
 """
 
 from __future__ import annotations

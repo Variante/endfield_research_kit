@@ -3,6 +3,15 @@
 The selected native dispatcher and complete generated reader prove the inherited
 header bytes. Source receipts join the current JsonData ledger and exact cursor.
 They do not establish that the event fires during gameplay.
+
+The header contains only the common 14 inherited header members. The
+contract authenticates the direct switch branch and registered wrapper,
+complete generated reader and formatter, ordered reads and setters, and the
+`Param<bool>` generic context of the final `validate` member. A derived
+root replay independently reached script ID and physical EOF for the reached
+sources; the authenticated whole-corpus gate still decides owner status.
+
+Run as: python -m scripts.game_data.levelscript_squad_all_die_header_native
 """
 
 from __future__ import annotations

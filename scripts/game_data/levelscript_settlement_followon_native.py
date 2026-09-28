@@ -1,4 +1,17 @@
-"""Validate selected native and source evidence for simple settlement actions."""
+"""Validate selected native and source evidence for simple settlement actions.
+
+The reviewed contract pins three ActionBase routes: the facility switch
+`FacShowForceUpdateSwitch` (a `Param<bool>` member) and the two settlement
+follow-on actions `AddListenerToSettlementReady` and `LandMarkUpgradeShow`
+(each a `Param<string>` member), with tags 0x00DE, 0x000F and 0x011C in the
+contract. Each check covers the dispatcher branch and registered wrapper,
+complete method windows, member count, ordered reads, own setter and typed
+parameter context. Passing `--export-root`, `--ledger` and
+`--summary` together also replays the reviewed source cursors against the
+current JsonData ledger. The command prints its audit and exits nonzero
+unless it validates. Stored arguments do not show a live facility switch,
+settlement listener or landmark display.
+"""
 
 from __future__ import annotations
 

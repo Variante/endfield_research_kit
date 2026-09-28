@@ -35,6 +35,35 @@ observed declaration in the build's own managed image, corroborated on the
 reviewed rows, but nothing here reads the dispatcher that assigns the tag. Keep the
 two tiers apart in anything a consumer gates on.
 
+Scope.  The walk seeds four union families -- ActionBase, GetterBase,
+ActionHeader and GameCondition -- plus the serialized roots in `ROOT_TYPES`
+(`LevelScriptData`, `LevelScriptTemplateData` and the other whole-file
+roots), closes every struct and enum those layouts name, and derives a family
+for each union base the closure discovers, repeating to a fixed point.  Each
+struct records `containsReferences` (framed as an object or written raw) and,
+when established, a `rawLayout` of memory offsets; each enum records the
+underlying width read from its own `value__` field.
+
+Gates.  It checks the installed native inputs recorded in
+`tools/DummyDll/generation.json`, recomputes every reviewed row of
+`action_map_layouts.json` (`layouts` and `conditionLayouts`), and holds the
+declarations to that contract's `primitiveEvidence`; any disagreement writes
+nothing.  `--allow-build-drift` skips only the native gate, for inspecting a
+DummyDll set that is not the selected build.  The report goes to
+`reports/game_data/levelscript_union_layouts.json` (`--report`).
+
+Consumers.  `codecs.levelscript.action_map.Declarations.from_report` loads
+the report, and `decode_action_serialized_map(..., declarations=...)` admits
+the derived tier only when a caller passes it; with nothing passed the codec
+stays at the reviewed `exact` tier every production consumer publishes at.
+`levelscript_binary.frame_levelscript_declared_root` frames a whole file on
+it and refuses any cursor that misses physical EOF, with
+`frame_levelscript_declared_action_map` as the partial fallback.
+`python -m scripts.game_data.jsondata_schema_coverage --declarations REPORT`
+measures coverage at this tier and records it as `evidenceTier`; keep the
+reviewed-tier coverage report beside it so the derived contribution stays
+visible.
+
 Run as: python -m scripts.game_data.levelscript_union_layouts
 """
 

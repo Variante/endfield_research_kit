@@ -1,4 +1,9 @@
-"""Selected-build SkillData MoveToTargetAction 0x00FB framing."""
+"""Selected-build SkillData MoveToTargetAction 0x00FB framing.
+
+The selected seventeen-member reader's source calls and setter order fix
+LayerMask, TargetSettings and AnimationCurve children among primitive flags
+and raw float bits.  Stored movement parameters do not prove actual motion.
+"""
 from __future__ import annotations
 
 import hashlib

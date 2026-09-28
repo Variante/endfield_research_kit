@@ -1,4 +1,29 @@
-"""Exact current-wrapper codec for ``LevelDataBlackbox``."""
+"""Exact current-wrapper codec for ``LevelDataBlackbox``.
+
+The current 15-member ``LevelDataBlackbox`` wrapper is read in generated
+order from ``basic`` through ``statistics``: the 13-member basic flags, the
+four completion flags, nullable one-list craft/blueprint/statistics
+objects, discard restrictions, task and fail-task rows, general-ability
+states, intro-effect vectors and inventory bundles.
+
+Positive ``predefinedTemplates`` are an object list whose two-member wrapper
+reads ``predefinedParam`` and then ``templateId``. The generated
+``PredefinedParam`` wrapper (``decode_predefined_param_at``) has 20
+nullable component slots, in order: cache, common,
+env-generator-with-activator, fluid-container, fluid-reaction, grid-box,
+hub, miner, power-diffuser, power-gate, power-pole, power-port, producer,
+selector, the two sewage-plant endpoints, sign, travel-pole,
+underground-pipe and valve. Each slot is accepted only with its current
+generated member count and typed body, including the nested two-member
+item/social records, the three-member hub selector ports and the nested
+fluid container. The same 20-slot codec serves top-level
+``predefinedParams`` (see ``predefined_params``).
+
+Member counts, booleans, finite floats, UTF-8 strings and collection bounds
+fail closed, so all current positive, empty and null shapes continue from
+the exact end of the blackbox into later LevelData members. Exact stored
+configuration; it does not prove runtime factory behavior.
+"""
 
 from __future__ import annotations
 

@@ -2,6 +2,26 @@
 
 This is deliberately separate from the full IL2CPP context audit, whose
 terminal sample witnesses require an already selected SkillData corpus.
+
+The full audit stops on an all-unselected basis at its ``ambiguous``
+boundary before emitting a context, and that selected-sample prerequisite
+stays intact.  This path instead validates a complete-shaped, all-ambiguous
+current basis and its live source/tool provenance, pins the exact basis
+report digest, and checks the selected native method identities, body windows
+and every top-level and ActionGroup observer callsite.  It does not re-stream
+the corpus or turn a static observer coordinate into an executed cursor.  A
+context from an earlier input set cannot substitute, even with unchanged
+native binaries.  The receipt verifiers' preflight consumes this context
+without promoting a candidate.
+
+Build it with ``--corpus-report`` set to the unselected basis
+(``reports/animestudio/skilldata_cursor_basis_latest.json``), an optional
+``--target-contract`` (for example
+``contracts/skill_cursor_capture_purrche_combo_target.json``) and an
+``--output`` per target (default
+``reports/animestudio/skill_cursor_native_context_current_latest.json``);
+``--preflight`` revalidates an existing context, and with
+``--capture-binding`` prints the input set and exact target source SHA-256.
 """
 
 from __future__ import annotations

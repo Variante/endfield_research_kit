@@ -2,6 +2,24 @@
 
 The result proves a conditional intermediate PoisePackData input. It does not
 observe action execution or calculate an applied or displayed Poise amount.
+
+``DamageAction._ProcessDamage`` indexes ``DamageActionData.damageUnits``,
+saves that ``DamageUnit`` and tests its ``poiseCalculation`` for null. On the
+normally returning unpatched branch with a nonnull field it constructs
+``PoisePackData``, calls ``ApplyPoiseModifier(BeforeCalculation)``, passes the
+stored calculation pointer to the calculation-object helper, and copies the
+returned ``CalcResult.value`` into the unboxed ``PoisePackData.calcResult.value``
+slot when the post-evaluator guard allows continuation. This route does not use
+the ``simpleCalculation`` attack selector. It does not prove which virtual
+subtype ran or what the blackboard resolved. Where a row stores
+``DefiniteValueCalculation`` and dispatch selects it, that evaluator's own
+contract gives the conditional input (``GetDoubleValue(value)``, times
+``Double(GetValue(valueScale))`` when ``applyScale``); the value entering
+``PoisePackData`` is not a final Poise amount. The per-row partition of stored
+Poise subtypes lives in the generated ``character_damage_routes.json`` report.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair; the default report
+is ``reports/game_data/damage_action_poise_route_native.json``.
 """
 from __future__ import annotations
 

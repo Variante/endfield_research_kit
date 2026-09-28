@@ -21,6 +21,23 @@ Story files reach the map only through authored identity bindings:
 Mission-area pins, quest centroids, script conditions, and spatial proximity
 remain useful mission context, but they do not identify the point that plays a
 Story file and therefore never add Story files to a map marker.
+
+``export.bat map`` runs this data stage, then
+``recover_map_streaming_instances --all-published-map-scenes``, then preview
+publication; a sidecar failure stops the phase instead of degrading to
+registry points. The streaming recovery streams installed-game
+``InitChunkData`` through AnimeStudio.CLI and joins the exported AssetMap and
+Mesh; colored output also needs Material JSON and Texture2D. Directly,
+``--with-preview`` builds data plus previews and ``--preview-only`` reuses
+current data and sidecars. ``--jobs N`` bounds both the per-level data
+workers and preview processes; maps sharing one exact Streaming scene stay
+together so their shared bounds and outputs cannot race.
+``build_map_recovery_preview --refresh-exact-fallbacks-only`` cheaply
+refreshes registry/quest point fallbacks. Preview rendering checkpoints each exact streaming, point and
+inferred HLOD render under ``reports/assets/map_recovery/render_cache/``;
+matching inputs reuse the published PNG/sample set, changed or missing ones
+invalidate only that checkpoint, and ``build_map_recovery_preview
+--no-render-cache`` forces a rerender.
 """
 
 from __future__ import annotations

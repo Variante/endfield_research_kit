@@ -2,6 +2,11 @@
 
 The selected source reads markerInfo as an eight-byte unmanaged copy. Its
 separate wrapper is not invoked on this path, so those bytes stay opaque.
+
+The native copy-size instructions and the ordered source calls of the
+sixteen-member reader constrain that boundary; the final TargetSettings
+child uses its reviewed profile.  Stored movement settings do not establish
+an AI path taken during play.
 """
 from __future__ import annotations
 

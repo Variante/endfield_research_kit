@@ -57,6 +57,25 @@ Two things a caller must not skip:
   and MonoScripts the WebUI export scope never writes, so knowing the container
   is frequently as far as the export can go, and that is a different fact from
   an unresolved reference.
+
+The rule applies only where the export records the referrer's container.
+MonoBehaviour, PlayableDirector and AnimatorController carry an
+``$animestudio`` block with ``sourceFile``, and Animator carries the same
+fields at top level. Material, TextAsset and AnimatorOverrideController carry
+none in the current export, so their cross-file references (including the
+material-to-texture links, almost all cross-file, with ``m_Texture.Name``
+empty) rest on a global PathID match that cannot be checked. The AnimeStudio
+fork emits the block for every typed asset class (inserted first, leaving the
+asset's own member order unchanged); on a bounded single-chunk dump the only
+other differences were ``m_FileID`` values of the same objects read from a
+different container, which is the point: an ``m_FileID`` means nothing
+without its referring container. The export must be rebuilt before a
+consumer sees the block, so a reader must tolerate its absence.
+
+Joining a CABMap source root, relative chunk path and offset to a verified
+VFS logical Bundle span gives each Bundle file one named CAB. That is an
+exact container-location join; a CABMap dependency still does not establish
+object ownership or runtime use.
 """
 
 from __future__ import annotations

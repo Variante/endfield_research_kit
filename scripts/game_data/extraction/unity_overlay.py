@@ -12,6 +12,26 @@ chunk. An export output is kept exactly when its source slot is in the
 effective slot set. That single rule covers replaced bundles (their
 StreamingAssets slot is not effective), new bundles, and bundles the update
 deleted. Outputs whose slot cannot be established are reported, never guessed.
+
+The exporter applies the rule before export: each layer's Unity run gets
+``--skip_sources_file`` listing its superseded bundle slots, so staging holds
+live objects only. ``meta/`` stays per layer, because the base catalogue is
+what proves a replacement. Loading fails closed (:class:`OverlayError`) on a
+missing, incomplete or older Persistent manifest, and on a chunk file name
+that denotes two chunks across the layers, since slots match by (chunk file
+name, offset). Every AnimeStudio extraction, including Story-only, therefore
+regenerates both layers' lightweight VFS indexes before writing skip lists:
+on a first export there is no earlier catalogue, and the overlay cannot decide
+which bundles are live without both.
+
+An object index built before the skip existed (every migrated root) still
+lists replaced-bundle rows; readers of a raw per-layer index keep only rows
+whose slot is effective through
+``animestudio_index_io.EffectiveObjectRows``, which still counts every
+``object`` row for the integrity check. A stale chunk (its block folder is
+indexed, neither catalogue lists it, and it is gone from the install) marks
+output left by a run against an older build; a chunk outside every indexed
+block, or one still on disk, stays unproven.
 """
 from __future__ import annotations
 

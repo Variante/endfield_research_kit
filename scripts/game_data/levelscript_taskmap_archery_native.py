@@ -3,6 +3,15 @@
 The stored route is admitted only when the installed GameCondition branch,
 complete native reader and formatter, nested generic contexts and source
 spans still match the reviewed contract.
+
+Stored order: the four shared condition members, then ``Param<string>``
+``levelId``, ``Param<List<LsmPtr>>`` ``lsm`` and ``Param<LevelScriptPtr>``
+``scriptId``.  The nested MethodSpec context resolves the list element to the
+one-member ``LsmPtr``.  Authenticated source spans carry a positive LSM list
+and a current-script pointer, and the sequential task-map reader closes the
+reached archery dungeon owners at physical EOF (codec
+``codecs.levelscript.taskmap_archery_condition``).  These stored values do
+not establish runtime condition evaluation or challenge completion.
 """
 
 from __future__ import annotations

@@ -1,4 +1,21 @@
-"""Authored table, cue, and runtime-configuration Audio contexts."""
+"""Authored table, cue, and runtime-configuration Audio contexts.
+
+The AudioCue expression tree is an operand projection, never an evaluation.
+The complete validated tree is retained (scope, side, source path,
+parent/depth, ``exprType``, scalar fields, child paths, node class, bounded
+diagnostics): behavior ``exprType=3`` leaves are authored Event requests,
+``exprType=8`` leaves are ``runtimeCueVariable`` evidence, non-empty child
+lists are ``compositeOpaque``, and everything else is opaque. A node over the
+children bound is rejected at the parent (``childrenLimit``). Enum and
+operator names appear only under the validated native contract
+(``audio_cue_native``). Nothing here conditions truth, a variable value,
+branch execution or playback.
+
+LevelScript ``SetAudioCueVar`` stores LEVEL-scoped BOOL variable names, some
+of which exactly equal ``exprType=8`` operand strings in the current
+``AudioCueTable``; others stay unmatched. That authored name join selects no
+runtime cue (see ``levelscript`` for the native boundary).
+"""
 
 from __future__ import annotations
 from scripts.source_paths import INSTALLED_LAYERS, ExportLayout

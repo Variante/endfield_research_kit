@@ -2,6 +2,13 @@
 
 The native contract proves the selected reader and parameter types.
 Source receipts prove reached bytes, not a live toast or displayed UI.
+
+After the inherited action members the branch stores `desc` and `title` as
+`Param<LangKey>`, `iconName` as `Param<string>` and `isSucc` as
+`Param<bool>`. Reached race records store a false success value; that does
+not prove a displayed failure toast.
+
+Run as: python -m scripts.game_data.levelscript_show_finish_toast_native
 """
 
 from __future__ import annotations

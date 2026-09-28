@@ -1,4 +1,13 @@
-"""Authenticate the reviewed DamageText GPUI serialization field layouts."""
+"""Authenticate the reviewed DamageText GPUI serialization field layouts.
+
+The contract ``gpu_ui_damage_text_native.json`` pins the current native
+inputs, the generated reader order, the original field types and offsets,
+and the selected reader windows for the six-field
+``PrefabGroupSerializeData`` and its nested records. Missing or mismatched
+native inputs withhold the exact schema, and the DamageText reader in
+``scripts.game_data.gpu_ui_binary`` then fails closed on drift instead of
+guessing a layout.
+"""
 
 from __future__ import annotations
 

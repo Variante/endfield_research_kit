@@ -2,6 +2,21 @@
 
 This proves stored bytes and their selected reader. It does not infer when the
 getter executes or what gameplay state supplies its value.
+
+`GetterInt` has no own serialized fields: it inherits eight members from
+`Getter<int>`, ending with `value` as `Param<int>`. The contract
+authenticates the wide-tag formatter tail jump, the complete source body
+including chained fragments, eight native reads, the inherited setter and
+the generic parameter context. A source-hash and JsonData-ledger receipt
+places the record at its exact cursor; the shared ActionMap reader keeps the
+getter gated on this route.
+
+The command takes no options: after a validated native check it replays the
+source receipt against
+`reports/animestudio/jsondata_current_files_latest.jsonl.gz`, prints the
+audit and exits nonzero unless both validate.
+
+Run as: python -m scripts.game_data.levelscript_getter_int_native
 """
 
 from __future__ import annotations

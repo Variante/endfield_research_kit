@@ -4,6 +4,12 @@ The contract owns the member read order. This module reuses the bounded
 MemoryPack profiles that the selected native source calls identify, and leaves
 all stored values anonymous to callers. A SkillData action is exact only when
 its enclosing timeline and top-level continuation independently rejoin.
+
+The route is Skill-only: the selected formatter reads a 24-member wrapper
+with bounded Blackboard, curve, target, LayerMask and byte-payload children.
+The reviewed contract rechecks the dispatcher, method bodies, ordered
+callsites and nested type instantiations.  Stored root-motion data does not
+establish live movement.
 """
 from __future__ import annotations
 

@@ -1,4 +1,10 @@
-"""Selected-build SkillData FinishAngryOnEnd action 0x00B3 framing."""
+"""Selected-build SkillData FinishAngryOnEnd action 0x00B3 framing.
+
+An independent selected dispatcher and reader contract pin four members: the
+common byte and three scalar words, including the Priority generic context.
+The route lets a timeline advance to its next member without claiming that an
+angry state ever ran.
+"""
 from __future__ import annotations
 
 import hashlib

@@ -1,4 +1,14 @@
-"""Authenticate current BuffData and name reached EffectActionCfg direct members."""
+"""Authenticate current BuffData and name reached EffectActionCfg direct members.
+
+It replays ``EffectAction.effectActionCfg`` under the selected native readers
+and each file's source hash into its directly stored named members. Opaque
+nested value meaning, positive effect arrays, runtime behavior and the
+whole-BuffData schema stay open.
+
+Takes the shared Buff child-corpus arguments (see
+``buff_shared_nested_receipt_corpus``); the default output is
+``reports/animestudio/buff_effect_config_children_current_latest.json``.
+"""
 from __future__ import annotations
 
 import argparse

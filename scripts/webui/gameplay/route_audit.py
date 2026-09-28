@@ -1,4 +1,26 @@
-"""Summarize exact character DamageUnit branch rows from built Gameplay data."""
+"""Summarize exact character DamageUnit branch rows from built Gameplay data.
+
+A stored evaluator subtype does not imply that its ``Evaluate`` body is
+selected: in the exact character SkillData set ``simpleCalculation`` is true
+even for some rows that store ``AtkScaleCalculation`` or
+``DefiniteValueCalculation``, and the normal-entity caller then takes the
+simple branch. This audit records the per-branch counts and examples after the
+CN Gameplay build, and requires both the selected native route contract and
+whole-record character SkillData evidence. The WebUI therefore gates the
+simple-path badge on the caller contract, attack-evaluator badges on the caller
+route plus the evaluator's own contract (limited to authored Hp units), and
+the Poise input badge on the Poise caller route plus
+``DefiniteValueCalculation.Evaluate``; a badge names an intermediate
+calculation, never a displayed amount.
+
+The partition is by authored snapshot/simple attack flags and stored Poise
+calculation subtype/scale, and it requires the validated generated DamageUnit
+evidence, both native caller routes and the DefiniteValue evaluator contract.
+Run ``python -m scripts.webui.gameplay.route_audit`` after the CN Gameplay
+base build (``--index`` defaults to
+``webui/data/lang/CN/gameplay/index.json``); the report is
+``reports/game_data/character_damage_routes.json``.
+"""
 from __future__ import annotations
 
 import argparse

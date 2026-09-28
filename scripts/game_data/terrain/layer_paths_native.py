@@ -1,4 +1,35 @@
-"""Validate selected UnityPlayer Terrain layer and tile path construction."""
+"""Validate selected UnityPlayer Terrain layer and tile path construction.
+
+``python -m scripts.game_data.terrain.layer_paths_native --game-root
+.../Endfield_Data`` checks the selected native inputs and the nine
+path-template loads of one ``UnityPlayer.dll`` routine, including its entry,
+path continuation and shared epilogue, against
+``contracts/terrain_layer_paths_native.json``. It validates two separate record
+families: the grouped ``LAYER_C/D/N`` 32-byte record appended under owner
++0x70, and the packed-tile ``Terrain_H/N/T/A/S/C`` 56-byte record appended
+under owner +0xC0, including each formatter-to-helper forwarding, the tile
+argument split, the tile formatter's root/high/low/middle argument order and
+both collection appends. It writes ``reports/terrain/layer_paths_native.json``
+and withholds the result when any input or checked instruction differs.
+
+Neither path record identifies decoded channel roles, VirtualTextureRenderer
+bindings, layer compositing, live selection or rendering. The separate
+``LAYER_C/D/N`` render-property route is checked by
+``scripts.game_data.terrain.layer_slots_native``.
+
+Record details. The templates are ``{0}/Layers/LAYER_C_{1}.bytes`` (and
+``_D_``, ``_N_``). The layer record stores the numeric argument used to
+format all three paths at ``+0``, initializes three result slots and passes
+each formatted path with its slot (``D`` at ``+8``, ``N`` at ``+16``, ``C``
+at ``+24``) to one common helper: one grouped record per numeric argument.
+These are local record offsets, not ``VirtualTextureRenderer`` field
+offsets. The tile branch splits its packed 32-bit argument into high 4,
+middle 14 and low 14 bits, stores the original word at the record start,
+and gives the formatter the root, then the high 4, low 14 and middle 14
+bits; six result slots are built in H/N/T/A/S/C order. The two families use
+distinct collections and no checked edge joins them. The path window once
+treated as a whole function is a continuation after the entry and prelude.
+"""
 
 from __future__ import annotations
 

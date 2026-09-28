@@ -2,6 +2,12 @@
 
 The stored radius and target-settings children are structural data. This
 reader does not assign live snap-point or target-selection behavior.
+
+The selected ``SelectorFinder`` dispatcher authenticates the reached nested
+tag, and the generated wrapper reads ``radius`` as a structurally framed
+BlackboardDouble before ``snapTargetSettings`` as TargetSettings.  The exact
+child cursor lets enclosing sequences advance; a later unsupported action
+union still stops its file.
 """
 from __future__ import annotations
 

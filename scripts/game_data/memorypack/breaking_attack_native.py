@@ -2,6 +2,20 @@
 
 The reviewed contract binds stored fields, attribute operands, mixed-precision
 arithmetic and the iFix bypass to one explicit installed IL2CPP pair.
+
+On the normally returning unpatched path, attacker ``AttributeType.Atk (2)``
+(``A``) and defender ``BreakingAttackDamageTakenScalar (27)`` (``D``) reach
+``CalculationBase.GetAttribute`` with their override arrays, and the stored
+``multiplier`` (``M``) and ``atkScale`` (``S``) ``BlackboardDouble`` fields
+reach ``GetValue``. The attributes return ``Double`` and the scales
+``Single``; the body multiplies the attributes in ``Double``, the scales in
+``Single``, narrows the attribute product to ``Single``, multiplies the two
+``Single`` values and widens the result: ``Double(Single(S * M) * Single(D *
+A))``. The server debug-args path rejoins that arithmetic; the patched iFix
+path returns a wrapper result instead and carries no formula claim.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair; the default report
+is ``reports/game_data/breaking_attack_calculation_native.json``.
 """
 from __future__ import annotations
 

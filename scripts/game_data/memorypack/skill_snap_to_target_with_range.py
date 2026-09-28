@@ -3,6 +3,11 @@
 The finite member sequence comes from the selected native Deserialize body.
 Nested TargetSettings, AnimationCurve and BlackboardDouble fields reuse the
 existing bounded profiles. Whole-file status remains the caller's decision.
+
+The contract pins the dispatcher, the complete normal reader body of the
+18-member ``Data`` wrapper, its ordered source calls and nested generic type
+contexts.  The stored target and curve fields describe serialized inputs only;
+they do not observe a snap motion or a selected target.
 """
 from __future__ import annotations
 

@@ -4,6 +4,22 @@ The current Buff and named-action receipts supply authenticated source identitie
 and completed union ranges. Each selected child adapter reparses its parent
 action, verifies the exact field extent, and names only stored child members.
 The enclosing BuffData schema remains blocked.
+
+It replays the direct ``BlackboardDouble``, ``TargetSettings``,
+``DirectionSettings`` and ``SelectorData`` members; the selected
+``CharacterTeamFinder`` and ``OwnerSpawnedEntityFinder`` finder children;
+the zero-member ``ExcludeOwner`` and ``MainCharacter`` validators; and the
+direct ``TagValidator.query`` member with a structurally framed
+``GameplayTagQuery`` body, all inside named Buff actions. Other nested
+selector bodies and the recursive/whole-BuffData gaps remain.
+
+Usage (shared by the Buff child corpora): ``--buff-report`` is the complete
+``memorypack.buff_corpus`` report, ``--action-report`` the
+``buff_action_receipt_corpus`` JSON
+(``reports/animestudio/buff_action_receipts_current_latest.json``),
+``--export-root`` the export root, and ``--expected-input-set-sha256`` the VFS
+audit value both reports were built from. The default output is
+``reports/animestudio/buff_shared_nested_children_current_latest.json``.
 """
 from __future__ import annotations
 

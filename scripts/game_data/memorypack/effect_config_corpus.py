@@ -5,6 +5,27 @@ wrapper reference and consume its bytes to EOF. This audit joins fifteen of
 its stored scalar members to the selected build's declaring field types and
 enum defaults. It does not observe effect spawning, runtime overrides, or
 which branch executes.
+
+The joined members cover the effect, movement, position, rotation, camera,
+visibility and mount-point fields; each record must reach EOF with its decoded
+id equal to its filename. This replaced the older blanket reading of
+``EffectActionCfg`` as unresolved: its stored enum fields and serialized
+boundaries are exact for the selected build. A declared name such as
+``FollowTarget`` is still an authored option, not evidence that the game
+followed a target; spawn, branch selection, overrides, units and renderer
+binding stay unresolved. Missing or mismatched native inputs, an unresolved
+field type, an unknown value or a non-EOF record makes the audit incomplete
+rather than publishing a plausible label.
+
+The Gameplay projectile builder decodes the same managed type from projectile
+MonoBehaviour TypeTrees and reuses this field-to-enum join only after checking
+every published projectile effect value, including its alert config. That
+cross-format agreement supports the labels on authored projectile effects, not
+which of them activate.
+
+Pass the explicit ``--gameassembly``/``--metadata`` pair and optionally
+``--export-root``; the default report is
+``reports/game_data/memorypack_effect_config_enums.json``.
 """
 from __future__ import annotations
 

@@ -7,6 +7,43 @@ current instruction, selects the VM's string/field tables, and uses a
 ``StackSpace`` header for frame slots. Actual execution remains open.
 The selected ``Constrained`` path also projects the preceding instruction's
 operand to a conditional evaluation-slot conversion and Object-index store.
+The native facts each projection relies on are listed in
+:func:`validate_vm_operand_contract`.
+
+The command checks the reviewed ``ifix_vm_operands_native.json`` loader and
+interpreter bodies, then joins operands of caller-supplied, MD5-verified patch
+dumps (``--input``, repeatable):
+
+- ``Call``, ``Callvirt``, ``CallExtern`` and ``Newobj`` low halves to declared
+  file rows; the signed upper half of ``Call``/``Callvirt`` is the recursive
+  ``argsCount``. For ``CallExtern`` the signed upper half rewinds that many
+  12-byte evaluation-stack slots to the external argument base; ``Newobj``
+  uses the same rewind when the resolved constructor's declaring-type base is
+  not ``System.MulticastDelegate`` (the delegate path is separate).
+  ``CallExtern``'s encoded MethodDef delegate target and the conditional
+  reflected-result path through ``ReflectionMethodInvoker.Invoke`` and
+  ``Call.PushObjectAsResult`` are validated too.
+- ``Br``, ``Brtrue`` and ``Brfalse`` signed relative targets; ``Leave`` as an
+  absolute pending target (zero kept as a sentinel) and ``Endfinally -1`` as
+  a conditional resume from that pending target.
+- ``Ldstr`` and nonnegative ``Ldfld``/``Ldsfld``/``Stfld``/``Stsfld`` to
+  declared string and field rows; ``Initobj`` and ``Constrained`` to the
+  loader's ordered ``externTypes`` table, with out-of-range indices visible.
+- ``StackSpace`` local and evaluation-stack counts, local-slot bounds for
+  ``Ldloc``/``Ldloca``/``Stloc``, named ``Ldarg`` slots without assuming a
+  runtime argument count (with coverage under authored recursive call edges),
+  and whether ``Ret`` selects a stack value.
+- the loader's six ``ReadInt32`` calls and field stores per 24-byte exception
+  record: handler type, catch-type id, instruction boundary indices and their
+  bounds against the VM method.
+
+Supplying ``--outer-summary``, ``--outer-ledger`` and
+``--expected-input-set-sha256`` together requires the current VFS audit and
+every IFix patch file's verified length and MD5; without them the report
+covers caller-supplied bytes only. It writes the ``--output`` report
+(conventionally ``reports/animestudio/ifix_vm_operands_current.json``). These
+are authored control-flow edges, not an execution trace; the negative
+field-operand path and execution remain open.
 """
 
 from __future__ import annotations
@@ -1183,7 +1220,60 @@ def _validate_reflection_dispatch(
 def validate_vm_operand_contract(
     contract_path: Path, *, gameassembly: Path, metadata_path: Path
 ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-    """Authenticate reviewed loader/consumer bodies and table identities."""
+    """Authenticate reviewed loader/consumer bodies and table identities.
+
+    The contract pins the selected ``PatchManager.LoadInternal`` and
+    ``VirtualMachine.Execute`` bodies, their helpers and the VM table fields;
+    this checks the explicit native pair, both method identities and complete
+    body bytes, field offsets, the opcode enum, and each decisive call, branch
+    and store before any operand is projected. What the pinned bodies show:
+
+    - ``LoadInternal`` reads the file tables in order and stores each at the
+      same index: VM bodies in ``unmanagedCodes``, resolved external methods in
+      ``externMethods`` (``externInvokers`` is allocated from its length),
+      external types through a helper in ``externTypes``, and the
+      ``internStrings`` and ``fieldInfos`` rows. It reads each 24-byte
+      exception record as six signed ``ReadInt32`` values stored, in file
+      order, as ``HandlerType``, ``CatchTypeId``, ``TryStart``, ``TryEnd``,
+      ``HandlerStart`` and ``HandlerEnd``.
+    - ``Execute`` treats the first ``StackSpace`` instruction as a frame
+      header (signed upper 16 bits reserve local slots, unsigned lower 16 bits
+      evaluation-stack slots) and starts at the next instruction. ``Ldarg``
+      indexes the runtime ``argumentBase``; ``Ldloc``, ``Ldloca`` and
+      ``Stloc`` index the local base after the runtime argument count. ``Ret
+      0`` returns no stack value; a nonzero operand selects the top value.
+    - ``Leave`` stores its signed operand as a pending absolute instruction
+      index; ``Endfinally -1`` with a nonzero pending value multiplies it by
+      the eight-byte instruction size, adds the code base, clears the pending
+      value and re-enters dispatch. A zero pending value takes another path,
+      so ``Leave 0`` is a sentinel, not a resume edge.
+    - ``CallExtern`` on a cache miss builds a ``ReflectionMethodInvoker`` whose
+      encoded MethodDef usage cell resolves to ``ReflectionMethodInvoker.Invoke``;
+      for a normally returning nonconstructor with a nonvoid return, ``Invoke``
+      calls ``Call.PushObjectAsResult``, which pushes the reflected result and
+      updates the stack top ``Execute`` reads afterwards. ``Newobj`` compares
+      the resolved constructor's declaring type's base (through the selected
+      virtual slots) with ``System.MulticastDelegate`` before sharing the
+      ``CallExtern`` rewind.
+    - ``Initobj`` indexes ``externTypes`` (bounds-checked), takes the
+      preceding evaluation slot as its destination reference, calls
+      ``System.Activator.CreateInstance(Type)`` and passes the result to
+      ``EvaluationStackOperation.UpdateReference``; for the ``StackReference``
+      a ``Ldloca`` pushes, that branch calls ``PushObject`` on the referenced
+      local slot and updates its value tag.
+    - ``Constrained`` indexes ``externTypes`` on its own dispatch path, then
+      selects the slot at ``top - 1 - precedingOperand`` (the preceding
+      instruction's signed operand, in 12-byte slots), passes it with the type
+      to ``EvaluationStackOperation.ToObject``, and on normal return stores
+      the object in ``managedStack`` at the slot's evaluation-base index,
+      writing that index and the native ``ValueType.Object`` tag.
+    - Negative ``Ldfld``/``Ldsfld``/``Stfld``/``Stsfld`` operands take a
+      different native path that is left unresolved.
+
+    A row join is direct under the selected build and the caller's bytes;
+    every stack, slot or resume effect is conditional on the path returning
+    normally. None of it observes patch loading, dispatch or execution.
+    """
     raw = Path(contract_path).read_bytes()
     contract = json.loads(raw)
     if not isinstance(contract, dict) or contract.get("schema") != SCHEMA:

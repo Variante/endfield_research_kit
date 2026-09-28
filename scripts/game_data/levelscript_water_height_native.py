@@ -1,4 +1,20 @@
-"""Authenticate the selected WaterVolumeInfiniteSetHeight stored action."""
+"""Authenticate the selected WaterVolumeInfiniteSetHeight stored action.
+
+The reviewed contract pins ActionBase `WaterVolumeInfiniteSetHeight` (tag
+0x0516 in the contract): the selected branch, the complete chained reader and
+forwarding formatter, twelve ordered native reads and setters, and four
+`Param<T>` contexts (`isFixedSpeed`, `isSmooth`, the water-volume pointer
+`target`, and `value`). The command takes no options: it always replays the
+source cursors against `export_full/game/Json` and the current JsonData
+per-file ledger and summary under `reports/animestudio/`, prints the audit and
+exits nonzero unless it validates. `validate_water_height_native_contract`
+accepts explicit export-root, ledger and summary paths instead. It proves
+stored water-height settings; runtime water state remains unobserved.
+
+`isFixedSpeed` and `isSmooth` are `Param<bool>`, `value` is `Param<float>`,
+and the current native reader resolves the `Param<WaterVolumePtr>` target to
+a raw eight-byte ID record.
+"""
 
 from __future__ import annotations
 

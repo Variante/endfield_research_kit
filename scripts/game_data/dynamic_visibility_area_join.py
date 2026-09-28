@@ -4,6 +4,21 @@ The two source audits establish their selected native layouts independently.
 This audit rechecks their contracts, installed native inputs, input-set identity,
 report rows, and dumped payload hashes before comparing stored IDs. It does not
 observe live area selection or controller execution.
+
+Stored relation (structural). For every current main file under
+``Scene/<name>/``, each value selected by ``VisibleAreaGroup`` belongs to that
+scene's ``FBStreamArea.TotalAreas`` ID set, including the shared zero ID;
+nonzero values are authored area IDs in the matching area file. Main files
+under ``Extra/SpaceshipCabins/`` have no paired area file, so their zero
+values stay outside the join. Membership does not show which area is active.
+
+Run ``python -m scripts.game_data.dynamic_visibility_area_join --gameassembly
+PATH --metadata PATH --main-input-root MAIN_DUMP_ROOT --area-input-root
+AREA_DUMP_ROOT --expected-input-set-sha256 INPUT_SET_SHA256``. It reads the
+RootComp native report, the FBStreamArea native report and the current area
+corpus report (all under ``reports/animestudio/``), rechecks their selected
+inputs, predicate receipt and dump hashes, and writes
+``reports/animestudio/dynamic_visibility_area_join_latest.{json,md}``.
 """
 
 from __future__ import annotations

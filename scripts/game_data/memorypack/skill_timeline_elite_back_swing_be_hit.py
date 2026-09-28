@@ -1,4 +1,9 @@
-"""Selected-build SkillData EliteBackSwingBeHit 0x00A5 framing."""
+"""Selected-build SkillData EliteBackSwingBeHit 0x00A5 framing.
+
+The selected seven-member reader's source calls and setter order identify a
+BlackboardDouble duration, a stored finish flag and a BlackboardInt limit
+after the inherited action fields.  The fields do not prove a reaction played.
+"""
 from __future__ import annotations
 
 import hashlib

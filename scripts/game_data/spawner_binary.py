@@ -1,11 +1,47 @@
 """Fail-closed readers for current Endfield ``SpawnerConfig`` MemoryPack data.
 
-The leading ``enemyLibrary`` and final ``waveMap`` fields are decoded here.
 The current generated formatters serialize ``SpawnerConfig`` as five fields,
 ``SpawnerEnemyLibraryItem`` as thirteen fields, ``SpawnerWaveData`` as eleven
-fields, and ``SpawnerGroupData`` as twelve fields.  Action maps in the middle
-of group rows remain opaque: the wave decoder accepts a file only when one
-unique, complete wave/group parse reaches the physical end of the file.
+fields, and ``SpawnerGroupData`` as twelve fields.
+
+Primary path (one sequential owner cursor):
+
+1. ``decode_spawner_named_prefix`` reads ``configId``, the exact
+   enemy-library prefix (named 13-member rows, the nullable born-behavior
+   boundary), then the route profile: generated two-field
+   ``SpawnerRouteData`` values, 39-field ``PatrolData`` values whose action
+   list holds exact four-member ``PatrolAction`` values (type, position,
+   nested subactions, subpositions), and the complete six-field settings
+   object. Subactions retain all 26 generated members; their
+   blackboard-pair lists are empty and polymorphic ``subActionData`` is null
+   in the current corpus, so a future positive body fails closed. This
+   proves the ``waveMap`` offset as an exact generated-order cursor.
+2. ``decode_spawner_wave_map_sequential`` reads the 11-field wave and
+   12-field group values and every current action map to physical EOF. The
+   admitted action wrappers are pause, play-audio, preview-route,
+   raise-event and spawn-monster (``SpawnMonsterFromTemplateV2``), each in
+   generated order.
+
+``decode_spawner_wave_map`` is the older unique-tail fallback, kept for a
+changed future route profile: it accepts a frame only when exactly one
+complete wave/group parse reaches physical EOF. If both readers fail, the
+exact enemy-library prefix is kept as bounded partial evidence.
+
+Negative kept on purpose: the enemy row's ``preWarnEffectFixedRotation`` is
+a 16-byte ``Optional<Vector3>`` (presence byte, three zero padding bytes,
+three floats). The earlier four-float reading reached the same cursor but
+turned the presence byte into a tiny false axis (float bits ``0x00000001``);
+present values have the form ``(0, yaw, 0)``. It is the lane's proof that EOF
+closure is necessary, not sufficient: a same-width wrong reading also closes,
+so a framing conclusion needs a second signal (a boundary on a known marker, a
+coherent value distribution, or a closed field domain).
+
+The wave map's MemoryPack dictionary key and the serialized ``waveKey`` are
+independent fields (keys such as ``1`` with values such as ``w1``); both are
+retained.
+
+Evidence tier: exact stored schema for the current corpus; it does not
+prove spawn timing, wave progression or audio playback.
 """
 from __future__ import annotations
 
@@ -288,8 +324,8 @@ def _decode_patrol_sub_action(
 ) -> tuple[dict[str, Any], int]:
     """Decode the authored member-26 ``PatrolSubAction`` profile.
 
-    The current corpus has 97 rows.  Their blackboard-pair lists are empty and
-    their polymorphic ``subActionData`` values are null; both boundaries stay
+    In the current corpus the blackboard-pair lists are empty and the
+    polymorphic ``subActionData`` values are null; both boundaries stay
     fail-closed until an authored positive fixture exists.
     """
 
@@ -468,9 +504,11 @@ def _decode_patrol_data(
 def decode_spawner_named_prefix(data: bytes) -> dict[str, Any]:
     """Decode configId, enemyLibrary, routeMap and settings at one cursor.
 
-    Route patrols are accepted only for the current profile whose polymorphic
-    action list is null or empty. The returned ``waveMapOffset`` is therefore
-    an exact generated-order cursor, not a byte-pattern candidate.
+    Route patrols are accepted only for the current profile: positive
+    ``PatrolAction`` lists are read exactly, but each subaction's
+    blackboard-pair list must be empty and its polymorphic ``subActionData``
+    null. The returned ``waveMapOffset`` is therefore an exact
+    generated-order cursor, not a byte-pattern candidate.
     """
 
     enemy_prefix = decode_spawner_enemy_library(data)

@@ -2,6 +2,12 @@
 
 This is a static consumer check. It does not join a decoded graph record to a
 runtime instance or infer the behavior tag's meaning.
+
+The contract ``extend_data_tasks_native.json`` proves that the matching
+``EnemySwitchBehavior`` type declares a ``behavior`` field and that its
+checked ``OnExecute`` body reads that field from its own instance: a direct
+static field read. The stored tag's writer, comparison and behavior semantics
+remain open.
 """
 
 from __future__ import annotations

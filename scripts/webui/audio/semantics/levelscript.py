@@ -1,7 +1,21 @@
 """LevelScript audio semantics: controls, cue invocations, and radio contexts.
 
 Reads authored LevelScript output and its lifecycle sources. A decoded control or
-binding is authored evidence; it does not establish that the action ran."""
+binding is authored evidence; it does not establish that the action ran.
+
+Lifecycle producer/consumer links are admitted only for an exact
+same-LevelScript source-root and source-path identity with one active final
+serialized slot and one unique output path. ``scripts.webui.story.level_bindings``
+resolves ``ParamSource=200`` dynamic string properties only through the strict
+``LevelScriptBriefData`` property formatter; ``ParamSource=100`` and unknown
+sources stay runtime-unresolved and never become handles. All of it is
+authored topology, not runtime handle state, branch selection or audibility.
+
+``SetAudioCueVar`` rows are cue-variable writes. Their stored route is
+authenticated by ``scripts.game_data.levelscript_audio_cue_native`` and the
+named ``Execute`` body by ``scripts.game_data.levelscript_audio_cue_execute_native``;
+neither proves a live setter call, a variable update or an AudioCueTable
+selection."""
 
 from __future__ import annotations
 from scripts.source_paths import ExportLayout

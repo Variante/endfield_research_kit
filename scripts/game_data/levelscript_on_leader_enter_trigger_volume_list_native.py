@@ -1,4 +1,20 @@
-"""Authenticate the selected OnLeaderEnterTriggerVolumeList ActionHeader reader."""
+"""Authenticate the selected OnLeaderEnterTriggerVolumeList ActionHeader reader.
+
+The reviewed contract pins ActionHeader
+`ScriptEvent.OnLeaderEnterTriggerVolumeList` (tag 0x00C0 in the contract):
+the selected switch branch and wrapper, the complete hot and chained reader
+plus forwarding formatter, ordered reads and setters, the generic contexts
+including the typed unsigned slot list (`List<uint>`), and the TriggerTarget
+enum width. Passing `--export-root`, `--ledger` and `--summary` together also
+replays the reviewed source cursors against the current JsonData ledger. The
+command prints its audit and exits nonzero unless it validates. It proves
+stored header bytes; live trigger entry, list membership checks and event
+execution remain unobserved.
+
+After the common event fields the header stores a `targetScript` parameter,
+a `TriggerTarget` enum with signed 32-bit storage, and `triggerSlotIds` as
+`Param<List<uint>>`. Reached cursors include positive slot lists.
+"""
 
 from __future__ import annotations
 
