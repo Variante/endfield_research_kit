@@ -304,8 +304,8 @@ what a reader of that file would still get wrong.
   Name only the pages a change affects; with `--from-game` the run extracts
   exactly what those pages read or show. `story` is the text-only Story/Text
   export (tables, JsonData, the Story Unity classes; no image, video or
-  audio); `story-media` adds Story's images and videos (`story_media.json`)
-  and the voice lines the Audio build attaches, rebuilding Audio too; `data` serves every decodable output the other pages do not show, so
+  audio); `story-media` adds Story's images and videos (`story_media.json`);
+  `data` serves every decodable output the other pages do not show, so
   an all-page run extracts as much as `debug` (every structured block and
   Unity class). `--show-plan` prints the tasks, scope and freshness
   requirements without running anything.
@@ -313,6 +313,13 @@ what a reader of that file would still get wrong.
   `scripts/webui/pages.py`. A builder that starts reading a new export input
   must add it to its task there, or page runs will neither extract it nor check
   that it is current.
+- A page builds only itself. `needs` never crosses pages
+  (`check_pages_independent` refuses it); a page that shows another page's
+  data reads that page's last publication, so it appears once that page is
+  built. This holds only because no builder writes another page's output:
+  Audio publishes what it links to Story's conversations as its own
+  `lang/<code>/audio/conv/` sidecars, which the Story page merges. Give a new
+  cross-page link the same shape instead of editing the other page's files.
 - For a focused Mission Pipeline edit loop use the direct Python sequences in
   `.codex/skills/endfield-mission-pipeline-build/SKILL.md`. The wrapper no
   longer owns a Mission Pipeline scope.

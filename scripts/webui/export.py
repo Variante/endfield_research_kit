@@ -64,22 +64,24 @@ Pages (default: every page; Updates compares two exports, see build_updates.bat)
   story        Story and Text Tables, text only: Table, JsonData and the Story
                carrier JSON (TextAsset, MonoBehaviour, PlayableDirector); no
                image, video or audio. `text` is an alias.
-  story-media  Story and Text Tables with their media: Story's images and
-               videos, and the voice lines the Audio build attaches (the Audio
-               page is rebuilt too). With --from-game it extracts those inputs
-               and decodes CN audio.
+  story-media  Story and Text Tables with Story's images and videos; with
+               --from-game it extracts those media too.
   map          Map recovery, its streaming sidecars and rendered previews.
-               Includes the Assets index, whose relations colour the render.
-  characters   Characters, through the Assets index.
+  characters   Characters.
   gameplay     Gameplay, projectiles, the curated source graph and combat.
-               Includes the Assets index for its asset links.
-  audio        Audio. With --from-game it also decodes CN audio.
+  audio        Audio, including the voice lines Story plays. With --from-game
+               it also decodes CN audio.
   assets       The Assets index.
   data         The Data page: its decoded datasets, and as files every
                decodable output the other pages do not show.
   all          Every page above; the same as naming none. With --from-game
                this extracts everything, because Data shows the rest.
   debug        Every page, extracting every structured block and Unity class.
+
+A page builds only itself. What it shows from another page -- Story's voice
+lines from Audio, the render colours and asset links from the Assets index --
+is that page's last publication, so it appears once that page is built;
+--show-plan lists them.
 
 Where the data comes from:
   (default)         The current export, after checking that everything the
@@ -267,6 +269,8 @@ def print_plan(plan: BuildPlan, args: argparse.Namespace) -> None:
           f"Unity {', '.join(requirements.unity) or '-'}")
     print(f"current when present: structured {', '.join(requirements.optional_structured) or '-'}; "
           f"Unity {', '.join(requirements.optional_unity) or '-'}")
+    if plan.published:
+        print(f"reads the last publication of: {', '.join(plan.published)}")
     print("build tasks:")
     for line in plan_lines(plan.tasks):
         print(f"  {line}")

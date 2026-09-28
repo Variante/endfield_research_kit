@@ -34,10 +34,11 @@ or built, and the page renders text when the media inputs are absent.
 `export.bat story-media` adds the media: the `story_media` task
 (`build_assets --publish story-media`) projects Story's inline, CG, BigLogo and
 remote-comm images and its videos onto the exported Texture2D, Sprite and video
-as `webui/data/assets/story_media.json`, and the Audio build attaches voice
-lines to `conv/*.json`. That rebuilds the Audio page too, because the voice
-links come from its one builder. A text-only Story rebuild drops those links
-until Audio runs again.
+as `webui/data/assets/story_media.json`. Voice lines are neither mode's:
+the Audio page publishes them, with event audio and dialog lifecycle hooks, as
+`lang/<LANG>/audio/conv/<key>.json` sidecars that the page merges when it opens
+a conversation, so they appear once Audio is built and survive any later Story
+rebuild. Story's own `conv/*.json` never carries them.
 
 ## Evidence boundary
 

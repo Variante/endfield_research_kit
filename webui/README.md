@@ -186,6 +186,7 @@ webui/data/lang/<LANG>/audio/{index,events,media}.json
 webui/data/lang/<LANG>/audio/media.NNN.json
 webui/data/lang/<LANG>/audio/{event_details,media_details}/**
 webui/data/lang/<LANG>/audio/scene_backgrounds.json
+webui/data/lang/<LANG>/audio/conv/{index,<key>}.json
 webui/data/gameplay/projectiles.json
 webui/data/map_recovery/index.json
 webui/data/map_recovery/maps/<levelId>.json
@@ -394,6 +395,12 @@ cutscenes, and stays synchronized with Gameplay.
   unregistered table-only placement.
 - `overrides/narrative_videos.json` controls inline video attachment,
   suppression, and optional audio inheritance.
+- Voice lines, conversation and cutscene event audio, and dialog lifecycle
+  hooks come from the Audio page's `audio/conv/<key>.json` sidecar, fetched
+  only for keys listed in `audio/conv/index.json` and merged into the loaded
+  conversation before option overrides. A line row applies to the line at its
+  `index` while the `id` matches, else to the first line with that `id`.
+  Without an Audio build the page shows no voice.
 
 Story evidence typing, ordering, and reconstruction gaps belong to
 [`memory/webui/story.md`](../memory/webui/story.md) and

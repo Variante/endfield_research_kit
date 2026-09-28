@@ -37,6 +37,7 @@ if __package__ in {None, ""}:
 from scripts.source_paths import ExportLayout
 
 from scripts.common import sha256_file as file_sha256
+from scripts.webui.audio.semantics import conversation_sidecar
 from scripts.webui.audio.semantics import native_callsite_rederivation
 from scripts.webui.audio.semantics.entity_contexts import build_custom_footstep_model, collect_ability_voice_trigger_contexts, collect_char_interact_audio_semantics, collect_gameplay_contexts, collect_patrol_sub_action_audio_semantics, collect_spawner_pre_warn_semantics
 from scripts.webui.audio.semantics.levelsequence import build_levelsequence_audio_contexts, collect_levelsequence_play_actions
@@ -2200,26 +2201,16 @@ def build_audio_semantic_data(
         trigger_context_catalog.get("contexts") or (),
         conversation_ids,
     )
-    previous_audio_index = load_json(out_root / "index.json", {})
-    previous_lifecycle_ids = set(
-        ((previous_audio_index.get("storyDialogLifecycleAudio") or {}).get(
-            "conversationIds"
-        ) or ())
-        if isinstance(previous_audio_index, dict)
-        else ()
-    )
     lifecycle_by_conversation = dialog_lifecycle_story.get("conversations") or {}
-    for conversation_id in sorted(previous_lifecycle_ids | set(lifecycle_by_conversation)):
-        conversation_path = conversation_dir / f"{conversation_id}.json"
-        conversation = load_json(conversation_path, {})
-        if not isinstance(conversation, dict) or not conversation:
-            continue
-        rows = lifecycle_by_conversation.get(conversation_id) or []
-        if rows:
-            conversation["dialogLifecycleAudio"] = rows
-        else:
-            conversation.pop("dialogLifecycleAudio", None)
-        json_dump(conversation_path, conversation)
+    # Published beside Story's conversations, never into them.
+    conversation_sidecar.update_sidecars(
+        conversation_sidecar.sidecar_dir(webui_root, language),
+        conversation_sidecar.LIFECYCLE_FIELDS,
+        {
+            conversation_id: {"dialogLifecycleAudio": rows}
+            for conversation_id, rows in lifecycle_by_conversation.items()
+        },
+    )
     payload["storyDialogLifecycleAudio"] = {
         "schemaVersion": dialog_lifecycle_story.get("schemaVersion"),
         "counts": dialog_lifecycle_story.get("counts") or {},

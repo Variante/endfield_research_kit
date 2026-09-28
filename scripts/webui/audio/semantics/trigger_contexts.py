@@ -16,6 +16,7 @@ from scripts.webui.audio.semantics import managed_literals
 from scripts.webui.audio.semantics import model_view_projection
 from scripts.webui.audio.semantics import native_evidence
 from scripts.webui.audio.semantics import table_contexts
+from scripts.webui.audio.semantics import conversation_sidecar
 from scripts.webui.audio.semantics.context_utils import load_json as load_json
 from scripts.webui.audio.semantics.context_utils import normalize_posix as normalize_posix
 from scripts.webui.audio.semantics.build_contracts import TIMELINE_AUDIO_RUNTIME_CONTRACTS as TIMELINE_AUDIO_RUNTIME_CONTRACTS
@@ -253,8 +254,13 @@ def _build_envtalk_trigger_contexts(
     conv_root = webui_root / f"data/lang/{language.upper()}/conv"
     if not conv_root.is_dir():
         return contexts
+    # Line voice files are Audio's own sidecars, not fields of Story's lines.
+    sidecar_directory = conversation_sidecar.sidecar_dir(webui_root, language)
     for path in sorted(conv_root.glob("env_*.json")):
         payload = load_json(path, {})
+        audio_rows = conversation_sidecar.line_rows_by_index(
+            conversation_sidecar.load_sidecar(sidecar_directory, path.stem)
+        )
         if not isinstance(payload, dict):
             continue
         env_id = str(payload.get("title") or payload.get("key") or "").strip()
@@ -306,9 +312,10 @@ def _build_envtalk_trigger_contexts(
                     proxy_rows.append(proxy_row)
             media = media_by_id.get(audio_id.casefold(), {})
             media_ref = _trigger_media_ref(media, fallback_id=audio_id)
-            if not media_ref.get("src") and line.get("audioSrc"):
-                media_ref["src"] = line.get("audioSrc")
-            audio_meta = line.get("audioMeta") if isinstance(line.get("audioMeta"), dict) else {}
+            line_audio = conversation_sidecar.line_audio(audio_rows, line_index, line)
+            if not media_ref.get("src") and line_audio.get("audioSrc"):
+                media_ref["src"] = line_audio.get("audioSrc")
+            audio_meta = line_audio.get("audioMeta") if isinstance(line_audio.get("audioMeta"), dict) else {}
             for key in ("duration", "audioDialogPath", "speakerChannel", "audioCategory"):
                 if media_ref.get(key) in (None, "") and audio_meta.get(key) not in (None, ""):
                     media_ref[key] = audio_meta[key]
@@ -687,8 +694,13 @@ def _build_dialog_timeline_trigger_contexts(
     conv_root = webui_root / f"data/lang/{language.upper()}/conv"
     if not conv_root.is_dir():
         return contexts
+    # Line voice files are Audio's own sidecars, not fields of Story's lines.
+    sidecar_directory = conversation_sidecar.sidecar_dir(webui_root, language)
     for path in sorted(conv_root.glob("dlg_*.json")):
         payload = load_json(path, {})
+        audio_rows = conversation_sidecar.line_rows_by_index(
+            conversation_sidecar.load_sidecar(sidecar_directory, path.stem)
+        )
         if not isinstance(payload, dict) or payload.get("kind") != "dlg":
             continue
         dialog_key = str(payload.get("key") or path.stem).strip()
@@ -717,9 +729,10 @@ def _build_dialog_timeline_trigger_contexts(
             audio_id = str(line.get("audio") or "").strip()
             media = media_by_id.get(audio_id.casefold(), {})
             media_ref = _trigger_media_ref(media, fallback_id=audio_id)
-            if not media_ref.get("src") and line.get("audioSrc"):
-                media_ref["src"] = line.get("audioSrc")
-            audio_meta = line.get("audioMeta") if isinstance(line.get("audioMeta"), dict) else {}
+            line_audio = conversation_sidecar.line_audio(audio_rows, line_index, line)
+            if not media_ref.get("src") and line_audio.get("audioSrc"):
+                media_ref["src"] = line_audio.get("audioSrc")
+            audio_meta = line_audio.get("audioMeta") if isinstance(line_audio.get("audioMeta"), dict) else {}
             for key in (
                 "duration", "audioDialogPath", "speakerChannel", "audioCategory",
             ):

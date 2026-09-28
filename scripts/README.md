@@ -32,6 +32,7 @@ axis. A path appears under exactly one owner.
 | | `game_data/memorypack/derived_actions.py` | the narrow flat-body case of the same idea: adds only the routes whose members are all fixed-width or strings, with no plan registry. `derived_plans` is the superset |
 | | `webui/story_recovery/refresh_audio_hook_catalog.py` | re-pins the audio hook catalog the capture host reads to the installed build: managed RVAs re-resolved by name, native RVAs kept only when still a `.pdata` function start. The host writes the activation manifest itself, and each native row is named from the Wwise SDK on every re-pin, an annotation cleared rather than carried when the match is lost |
 | | `webui/audio/semantics/runtime_capture_import.py` | validates one bounded EndfieldCapture audio session against the provider's own completeness counters, decodes its callback payloads with the writer's own `AudioEventPayload` layout, and reports the Events posted and files opened without joining them |
+| | `webui/audio/semantics/conversation_sidecar.py` | Audio's per-conversation Story sidecars (`lang/<code>/audio/conv/<key>.json` plus `index.json`): the voice files, event audio and dialog lifecycle hooks Audio links to a conversation, each Audio stage replacing only its own fields. The Story page merges them; no Audio run writes Story's `conv` files |
 | | `webui/audio/semantics/decoded_payload_event_names.py` | Wwise Event-name candidates from exact decoded payload members, gated by selected native inputs and promoted by the source Audio index's HIRC inventory; also feeds `build_audio` |
 | | `game_data/memorypack/derived_values.py` | decodes a plan into named values rather than only framing it, and checks each decoded record's own identifier against its filename |
 | | `game_data/memorypack/derived_plans.py` | opt-in reader that executes a `derived_schema` read plan with the frozen reader's own primitives, so a nested record, list, counted map or union is consumed rather than only described; `--corpus` is its adoption gate against exported BuffData |
@@ -416,8 +417,9 @@ script-schema recovery needs it.
 argument to `python -m scripts.webui.export`; `--help` lists the options. The
 one source of truth for what a page needs is `scripts/webui/pages.py`: each
 build task declares the export inputs it `reads` (must exist and be current),
-the ones it reads when present (`optional`), the producer tasks it `needs`
-(pulled into a page run), and the tasks it runs `after` when both are in one
+the ones it reads when present (`optional`), the producer tasks of the same
+page it `needs` (pulled into a page run; `check_pages_independent` refuses a
+`needs` edge into another page), the tasks it runs `after` when both are in one
 build, and the inputs it `uses`: read when present but extracted only by
 another page (Story's narrative video), reported as reused when that page is not
 in the run. A page may also `serve` outputs it shows as files at browse time (the
@@ -431,11 +433,12 @@ freshness requirements without running anything.
 | Target | Extracted with `--from-game` | Built |
 | --- | --- | --- |
 | `story` (`text`) | text only: Table, JsonData; TextAsset, MonoBehaviour, PlayableDirector JSON. Narrative video is read when another run extracted it (`uses`), reported as reused otherwise | Story and Text |
-| `story-media` | `story` plus video, Texture2D, Sprite, and the Audio inputs (animator-controller JSON, AnimationClip); CN audio decode | Story and Text, `story_media.json` (`build_assets --publish story-media`), Audio's voice links |
-| `map` | Table, JsonData, video, Terrain height grids; Material JSON; Texture2D, Mesh, Sprite, Animator | Map and the Assets index its render colours from |
-| `characters`, `assets` | Table, video; Material JSON; Texture2D, Mesh, Sprite, Animator | the page (Characters through the Assets index, `build_assets --publish index`) |
-| `gameplay` | Table, JsonData, video; MonoBehaviour, PlayableDirector, MonoScript, Material JSON; the Assets media | Gameplay, projectiles, source graph, combat, Assets index |
-| `audio` | Table, JsonData; MonoBehaviour, PlayableDirector, animator-controller JSON; AnimationClip; CN audio decode | Audio |
+| `story-media` | `story` plus video, Texture2D, Sprite | Story and Text, `story_media.json` (`build_assets --publish story-media`) |
+| `map` | Table, JsonData, Terrain height grids; Material JSON; Texture2D, Mesh | Map; its render colours come from the published Assets index |
+| `characters` | Table; Texture2D, Mesh, Sprite, Animator | Characters, resolving media through the published Assets index |
+| `assets` | Table, video; Material JSON; Texture2D, Mesh, Sprite, Animator | the Assets index (`build_assets --publish index`) |
+| `gameplay` | Table, JsonData; MonoBehaviour, PlayableDirector, MonoScript, Material JSON | Gameplay, projectiles, source graph, combat; asset links from the published Assets index |
+| `audio` | Table, JsonData; MonoBehaviour, PlayableDirector, animator-controller JSON; AnimationClip; CN audio decode | Audio, and the Story voice-line sidecars (`lang/CN/audio/conv/`) |
 | `data` | everything decodable except other pages' media: Table, JsonData, Lua, whole Terrain; every Unity JSON class; AnimationClip, Shader, Font, TextAsset | the Data page's decoded datasets; its file viewer serves the rest |
 | none, `all` | the union of the above, which with Data is everything | every page except Updates |
 | `debug` | every structured block and Unity class (`scope.EVERYTHING`) | every page except Updates |
@@ -447,12 +450,13 @@ Behaviour `--help` does not give you:
   a missing optional input only degrades its builder, but a present one from an
   older build fails the run and names it. `--skip-freshness` bypasses the check
   for one run without refreshing anything.
-- A page reads other pages' generated output (Story's `lang/CN`, the asset
-  index, the gameplay index) as published. `after` edges order those tasks
-  only when both run; Audio, for example, uses the existing Map streaming
-  sidecars and gameplay index rather than rebuilding them. Audio rewrites
-  Story's `conv` files, so after a Story-only build run `export.bat audio` to
-  reattach its links.
+- A page builds only itself. It reads other pages' generated output (Story's
+  `lang/CN`, the Assets index, the gameplay index, Map's streaming sidecars)
+  as last published, and `--show-plan` names those pages; `after` edges order
+  the tasks only when both run. No builder writes another page's output, so
+  any build order is safe: Audio publishes what it links to Story's
+  conversations as `lang/CN/audio/conv/` sidecars, and a Story rebuild keeps
+  its voice lines.
 - MonoBehaviour and PlayableDirector are always exported together, and every
   run that exports them republishes the object index (`--animestudio-object-index`);
   Story, Gameplay and Audio read it.
@@ -1061,7 +1065,7 @@ truncated, errored, or incomplete parts are not evidence.
 ### Audio decode and Wwise indexing
 
 `build_audio.py` owns decode, Wwise bank/HIRC indexing, relinking, and the
-Gameplay sidecars. It writes shared SFX/music once under
+Gameplay and Story conversation sidecars. It writes shared SFX/music once under
 `<export root>/game/Audio/shared/` and language voice under
 `<export root>/game/Audio/<LANG>/`. Every wrapper that builds Audio uses this
 same decoder: it resolves known HIRC Event categories before extraction and

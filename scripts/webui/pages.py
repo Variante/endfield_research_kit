@@ -4,10 +4,11 @@ This registry is the one place that says which export a page needs. A page is
 a set of root build tasks. Each task declares:
 
 * ``commands`` -- the builder invocations, run in order;
-* ``needs`` -- producer tasks whose output it cannot do without; selecting the
-  task selects them too;
+* ``needs`` -- producer tasks of the same page whose output it cannot do
+  without; selecting the task selects them too;
 * ``after`` -- tasks it must follow when they run in the same build, because it
-  reads their output; an earlier publication is acceptable otherwise;
+  reads their output; otherwise it reads what they last published, or goes
+  without;
 * ``reads`` -- export inputs that must exist and be current;
 * ``optional`` -- export inputs it reads when present (its builder degrades
   without them), which must be current when they exist;
@@ -25,6 +26,13 @@ A build selects pages. Its tasks are the closure of their roots over
 requires each ``reads`` input to exist and every present task input to come
 from the installed build. Updates compares two complete exports and is not a
 page here (``build_updates.bat``).
+
+Pages are independent: one page never builds another. ``needs`` stays inside a
+page (``check_pages_independent`` enforces it), and a page that shows another
+page's data -- Story's voice lines from Audio, Map's texture colours from the
+Assets index -- reads what that page last published, so that data appears only
+once the other page is built. No builder writes another page's output, which
+is what makes any build order safe.
 """
 from __future__ import annotations
 
@@ -46,8 +54,8 @@ from scripts.source_paths import ExportLayout
 #: would publish an index without the other's rows.
 CARRIERS = tuple(sorted(OBJECT_INDEX_JSON_TYPES))
 #: The Story export is text only: tables, JsonData and the Story carrier JSON.
-#: No media and no audio -- narrative video comes from the Assets page's
-#: extraction when it has run -- so first-time setup reaches Story and Text as
+#: No media and no audio -- narrative video file names are bound when another
+#: run has extracted video -- so first-time setup reaches Story and Text as
 #: fast as possible.
 STORY_TEXT = ExtractionScope.of(("table", "json-data"), ("TextAsset", *CARRIERS))
 #: Exported files other pages show as media: the Assets page's videos, images,
@@ -99,10 +107,9 @@ PAGES: dict[str, Page] = {
     for page in (
         # Text only: no image, video or audio is extracted or built.
         Page("story", "Story and Text Tables", ("story",)),
-        # The same pages with their media: Story's images and videos
-        # (story_media.json) and the voice lines Audio attaches to its lines.
-        Page("story-media", "Story and Text Tables with images, video and audio",
-             ("story", "story_media", "audio")),
+        # The same pages with Story's images and videos (story_media.json).
+        # Voice lines come from the Audio page's own publication.
+        Page("story-media", "Story and Text Tables with images and video", ("story", "story_media")),
         Page("map", "Map", ("map_recovery_preview",)),
         Page("characters", "Characters", ("characters",)),
         Page("gameplay", "Gameplay", (
@@ -203,12 +210,14 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
         needs=("map_recovery",),
         optional=of(convert_types=("Mesh",)),
     ))
-    # Reads the streaming sidecars and webui/data/assets/index.json relations,
-    # the mesh -> material -> base-colour texture chain that colours the render.
+    # Reads the streaming sidecars, and the Assets page's published
+    # webui/data/assets/index.json relations when present: the mesh ->
+    # material -> base-colour texture chain that colours the render.
     tasks.append(TaskSpec(
         "map_recovery_preview",
         (module("scripts.webui.map.build_map_recovery_data", "--preview-only", "--jobs", jobs),),
-        needs=("map_streaming_instances", "assets"),
+        needs=("map_streaming_instances",),
+        after=("assets",),
         optional=of(("json-data",), ("Material",), ("Texture2D", "Mesh")),
     ))
 
@@ -224,24 +233,22 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     ))
 
     # ---- Assets and Characters ----------------------------------------------
-    # Indexes converted media plus Material relations.
+    # Indexes converted media plus Material relations; reads no other page.
     tasks.append(TaskSpec(
         "assets",
         (module("scripts.webui.assets.build_assets", "--mode", options.asset_mode, "--publish", "index"),),
-        after=("story",),
         optional=of(
             ("table", "video", "audit-video"),
             ("Material",),
             ("Texture2D", "Sprite", "Mesh", "Animator"),
         ),
     ))
-    # Resolves media through the asset index (scanning game/Unity only when it
-    # is missing) and actor names through Story's actors.json.
+    # Resolves media through the published asset index (scanning game/Unity
+    # when it is missing) and actor names through Story's actors.json.
     tasks.append(TaskSpec(
         "characters",
         (module("scripts.webui.characters.build_character_data", "--languages", "CN", "--default-language", "CN"),),
-        needs=("assets",),
-        after=("story",),
+        after=("assets", "story"),
         reads=of(("table",)),
         optional=of(convert_types=("Texture2D", "Sprite", "Mesh", "Animator")),
     ))
@@ -266,15 +273,17 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     ))
 
     def asset_refs(name: str, needs: tuple[str, ...]) -> TaskSpec:
-        # Joins lang/CN/gameplay/index.json with webui/data/assets/index.json,
-        # adding source-graph proof when the graph sqlite is current.
+        # Joins lang/CN/gameplay/index.json with the Assets page's published
+        # webui/data/assets/index.json (skipped when there is none), adding
+        # source-graph proof when the graph sqlite is current.
         return TaskSpec(
             name,
             (module("scripts.webui.gameplay.build_gameplay", "--stage", "asset-refs", "--default-language", "CN"),),
             needs=needs,
+            after=("assets",),
         )
 
-    tasks.append(asset_refs("gameplay_asset_refs", ("gameplay", "assets")))
+    tasks.append(asset_refs("gameplay_asset_refs", ("gameplay",)))
     graph_args = ["build", "--language", "CN"]
     if not options.full_source_graph:
         graph_args += ["--relevant-asset-maps", "--skip-reference-rows", "--skip-followups"]
@@ -302,8 +311,10 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     ))
 
     # ---- Audio --------------------------------------------------------------
-    # Reads and rewrites Story's lang/CN/conv, so it must follow Story. The
-    # gameplay index, projectiles and the Map streaming sidecars
+    # Reads Story's lang/CN/conv and publishes what it links to them -- line
+    # voice files, event audio, dialog lifecycle hooks -- as its own
+    # lang/CN/audio/conv sidecars, which the Story page merges. The gameplay
+    # index, projectiles and the Map streaming sidecars
     # (webui/data/_build/map/world_placements) enrich its contexts when present.
     audio_args: list[str] = [] if options.decode_audio else ["--skip-decode"]
     if options.game_root:
@@ -341,6 +352,34 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     return by_name
 
 
+def task_closure(tasks: dict[str, TaskSpec], roots: tuple[str, ...]) -> set[str]:
+    """The roots and every task they transitively ``need``."""
+    selected: set[str] = set()
+    pending = list(roots)
+    while pending:
+        name = pending.pop()
+        if name not in selected:
+            selected.add(name)
+            pending.extend(tasks[name].needs)
+    return selected
+
+
+def check_pages_independent(tasks: dict[str, TaskSpec]) -> None:
+    """Refuse a registry in which building one page builds another.
+
+    Two pages share build tasks only when one is a mode of the other, its roots
+    containing all of the other's (story-media and story).
+    """
+    closures = {name: task_closure(tasks, page.roots) for name, page in PAGES.items()}
+    for name, page in PAGES.items():
+        for other_name, other in PAGES.items():
+            if name >= other_name or set(page.roots) <= set(other.roots) or set(other.roots) <= set(page.roots):
+                continue
+            shared = closures[name] & closures[other_name]
+            if shared:
+                raise ValueError(f"pages {name} and {other_name} both build {', '.join(sorted(shared))}")
+
+
 def resolve_pages(names: list[str] | tuple[str, ...]) -> tuple[str, ...]:
     """Canonical page names in registry order; no names means every page."""
     if not names:
@@ -363,22 +402,14 @@ class BuildPlan:
     #: Union of every selected task's inputs and every selected page's served outputs.
     scope: ExtractionScope
     requirements: Requirements
+    #: Tasks outside this build whose last publication a selected task reads.
+    published: tuple[str, ...] = ()
 
 
 def plan_build(pages: tuple[str, ...], options: BuildOptions) -> BuildPlan:
     tasks = build_tasks(options)
-    selected: set[str] = set()
-
-    def include(name: str) -> None:
-        if name in selected:
-            return
-        selected.add(name)
-        for dependency in tasks[name].needs:
-            include(dependency)
-
-    for page in pages:
-        for root in PAGES[page].roots:
-            include(root)
+    check_pages_independent(tasks)
+    selected = task_closure(tasks, tuple(root for page in pages for root in PAGES[page].roots))
     ordered = [task for name, task in tasks.items() if name in selected]
     resolved = tuple(
         replace(task, after=tuple(dict.fromkeys(
@@ -431,7 +462,8 @@ def plan_build(pages: tuple[str, ...], options: BuildOptions) -> BuildPlan:
         partial_ok=partial_ok,
     )
     scope = inputs | served
-    return BuildPlan(pages, resolved, scope, requirements)
+    published = tuple(sorted({name for task in ordered for name in task.after if name not in selected}))
+    return BuildPlan(pages, resolved, scope, requirements, published)
 
 
 def extraction_scope(plan: BuildPlan, *, everything: bool = False) -> ExtractionScope:

@@ -45,17 +45,26 @@ scripts.webui.export`. Do not use `--from-game` for a data-only rebuild.
 **What a page needs is declared once, per build task, in
 `scripts/webui/pages.py`.** A task names the export inputs it `reads` (must
 exist and be current), the ones it reads when present (`optional`), the
-producer tasks it `needs`, and the tasks it follows when both run (`after`).
-A page is a set of root tasks; a run takes their closure over `needs`, extracts
-the union of those tasks' inputs, and checks exactly those inputs. So a
-single-page run neither extracts nor rebuilds another page's inputs, except the
-producers it cannot do without: Map, Characters and Gameplay include the Assets
-index. Audio reads Story, gameplay, projectile and Map-sidecar output as
-published instead of rebuilding them. `story` extracts text only (tables,
+producer tasks of the same page it `needs`, and the tasks it follows when
+both run (`after`). A page is a set of root tasks; a run takes their closure
+over `needs`, extracts the union of those tasks' inputs, and checks exactly
+those inputs.
+
+**Pages are independent.** A page run builds only that page. What it shows
+from another page -- Story's voice lines from Audio, Map's render colours and
+the Characters and Gameplay asset links from the Assets index, Story and
+gameplay output in Audio -- is that page's last publication, or absent, and
+`--show-plan` names those pages. `check_pages_independent` refuses a `needs`
+edge into another page. This is sound only because no builder writes another
+page's output: Audio publishes what it links to a Story conversation (line
+voice files, event audio, dialog lifecycle hooks) as its own
+`lang/<code>/audio/conv/<key>.json` sidecar, which the Story page merges at
+load, so a Story rebuild keeps its voice and Audio never edits `conv/`. A new
+cross-page link takes the same shape. `story` extracts text only (tables,
 JsonData, the Story Unity classes); the video override gate reports its stem
 checks as skipped when no video was exported. `story-media` is the same page
-with its media: it also extracts video, Texture2D, Sprite and the Audio inputs,
-publishes `story_media.json`, and runs the Audio build for voice lines.
+with its images and videos: it also extracts video, Texture2D and Sprite and
+publishes `story_media.json`.
 The Data page also serves every decodable output the other pages do not show
 (everything except their media), so an all-page extraction already equals
 `debug`, which extracts every structured block and Unity class.
@@ -81,8 +90,6 @@ The flow is:
 `--webui-jobs N` bounds concurrent builders and supplies Map's internal
 workers. `--asset-jobs N` limits AnimeStudio workers. Use
 `--full-source-graph` only for exhaustive Unity object/PathID investigation.
-Story rewrites `lang/CN/conv` without Audio's links, so rebuild Audio after a
-Story-only build.
 
 `--changed-only` is a local refresh, not an Updates comparison. It runs the
 same complete build of every page while reusing existing bundle-derived

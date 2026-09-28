@@ -75,6 +75,9 @@ const STATE = {
   storySearchLanguage: "",
   storyMediaPayload: null,
   storyMediaPromise: null,
+  audioSidecarKeys: null,
+  audioSidecarPromise: null,
+  audioSidecarLanguage: "",
   storyTriggerManifest: {},
   storyTriggerPromise: null,
   storyTriggerLoadState: "idle",
@@ -1425,6 +1428,74 @@ function storyOrderPositionForEntry(entry) {
   const detail = storyOrderDetailForEntry(entry);
   const pos = detail && Number(detail.position);
   return Number.isFinite(pos) ? pos : null;
+}
+
+// The Audio page publishes what it links to a Story conversation -- line voice
+// files, event audio, dialog lifecycle hooks -- as its own sidecar, listed in
+// audio/conv/index.json. Story's conversation files never carry them, so voice
+// lines appear once the Audio page is built, in whatever order the pages were.
+function loadAudioSidecarIndex(languageCode) {
+  if (STATE.audioSidecarLanguage === languageCode) {
+    if (STATE.audioSidecarKeys) return Promise.resolve(STATE.audioSidecarKeys);
+    if (STATE.audioSidecarPromise) return STATE.audioSidecarPromise;
+  }
+  STATE.audioSidecarLanguage = languageCode;
+  STATE.audioSidecarKeys = null;
+  STATE.audioSidecarPromise = fetchJson(dataPath("audio/conv/index.json", languageCode))
+    .then(async (res) => {
+      if (!res.ok) return new Set();
+      const payload = await res.json();
+      return new Set(Array.isArray(payload && payload.conversations) ? payload.conversations : []);
+    })
+    .catch(() => new Set())
+    .then((keys) => {
+      if (STATE.audioSidecarLanguage === languageCode) {
+        STATE.audioSidecarKeys = keys;
+        STATE.audioSidecarPromise = null;
+      }
+      return keys;
+    });
+  return STATE.audioSidecarPromise;
+}
+
+async function loadConvAudioSidecar(key, languageCode, { fresh = false } = {}) {
+  const keys = await loadAudioSidecarIndex(languageCode);
+  if (!keys.has(key)) return null;
+  try {
+    const res = await fetchJson(dataPath(`audio/conv/${encodeURIComponent(key)}.json`, languageCode), { fresh });
+    return res.ok ? await res.json() : null;
+  } catch (_error) {
+    return null;
+  }
+}
+
+// A sidecar line row names its line by position and id; a line that moved in a
+// later Story build is found by id instead.
+function applyAudioSidecarToConv(conv, sidecar) {
+  if (!conv || !sidecar || typeof sidecar !== "object") return;
+  const lines = Array.isArray(conv.lines) ? conv.lines : [];
+  const firstIndexById = new Map();
+  lines.forEach((line, index) => {
+    const id = line && line.id != null ? String(line.id) : "";
+    if (id && !firstIndexById.has(id)) firstIndexById.set(id, index);
+  });
+  for (const row of Array.isArray(sidecar.lines) ? sidecar.lines : []) {
+    if (!row || typeof row !== "object") continue;
+    const id = String(row.id || "");
+    let line = lines[row.index];
+    if (!line || String(line.id || "") !== id) line = lines[firstIndexById.get(id)];
+    if (!line || typeof line !== "object") continue;
+    for (const field of ["audioSrc", "audioMeta", "audioVariants"]) {
+      if (row[field] !== undefined) line[field] = row[field];
+    }
+  }
+  if (Array.isArray(sidecar.audioFiles)) conv.audioFiles = sidecar.audioFiles;
+  const cutscene = sidecar.cutscene;
+  if (cutscene && conv.cutscene && typeof conv.cutscene === "object") {
+    if (Array.isArray(cutscene.audioEvents)) conv.cutscene.audioEvents = cutscene.audioEvents;
+    if (Array.isArray(cutscene.audioFiles)) conv.cutscene.audioFiles = cutscene.audioFiles;
+  }
+  if (Array.isArray(sidecar.dialogLifecycleAudio)) conv.dialogLifecycleAudio = sidecar.dialogLifecycleAudio;
 }
 
 function loadOptionOverridePayload() {
@@ -3966,14 +4037,17 @@ async function loadConv(key, { force = false } = {}) {
   syncStoryTriggerPanel(key);
 
   try {
-    const [res, optionOverrides] = await Promise.all([
+    const [res, optionOverrides, audioSidecar] = await Promise.all([
       fetchJson(dataPath(`conv/${encodeURIComponent(key)}.json`, languageCode), {
         fresh: force || wasSelected,
       }),
       loadOptionOverridePayload(),
+      loadConvAudioSidecar(key, languageCode, { fresh: force || wasSelected }),
     ]);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const conv = await res.json();
+    // Audio rows index Story's published line order, so they go on first.
+    applyAudioSidecarToConv(conv, audioSidecar);
     applyOptionOverridesToConv(conv, optionOverrides);
     if (STATE.selectedKey === key && STATE.language === languageCode) {
       STATE.convCache.set(key, conv);

@@ -78,8 +78,10 @@ COMPANION_LANGUAGE_FEATURE_RE = re.compile(r"^data/lang/[^/]+/(?:characters|game
 
 PAGE_REFERENCE_PREFIXES = ("data/gameplay/", "data/map_recovery/")
 PAGE_REFERENCE_FILES = {"data/assets/gameplay_refs.json", "data/assets/story_media.json"}
+# audio/conv holds Audio's Story voice-line sidecars (the voice files a Story
+# line plays), which Story's own conv files do not carry.
 PAGE_REFERENCE_LANGUAGE_RE = re.compile(
-    r"^data/lang/[^/]+/(?:conv|mission|characters|gameplay)(?:/|$)"
+    r"^data/lang/[^/]+/(?:conv|mission|characters|gameplay|audio/conv)(?:/|$)"
 )
 RESOURCE_DATA_PREFIXES = ("data/audio/", "data/game_data/", "data/decoded/")
 # Builder output that is not a page file (evidence indexes, caches, comparison

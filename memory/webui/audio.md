@@ -26,7 +26,12 @@ user research notes without modifying generated evidence.
    the local server.
 
 Primary outputs are `webui/data/lang/<LANG>/audio/{index,events,media}.json`,
-semantic shards, scene backgrounds, and Gameplay audio sidecars.
+semantic shards, scene backgrounds, Gameplay audio sidecars, and the Story
+conversation sidecars under `audio/conv/`. Story relinking reads Story's
+published `conv/*.json` and writes only those sidecars; the relink owns their
+line, conversation-event and cutscene fields, the semantic refresh owns the
+dialog lifecycle hooks, and each replaces only its own. Without published
+Story, Audio builds and links no voice lines.
 
 ## Evidence boundary
 
