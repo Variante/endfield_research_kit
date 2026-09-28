@@ -1,0 +1,281 @@
+{
+  "schema": "endfield.string-path-hash-native-contract.v1",
+  "status": "validated",
+  "evidenceBoundary": "direct",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "hashValueType": {
+    "index": 32028,
+    "name": "Beyond.Resource.StringPathHash",
+    "field": "hash",
+    "boxedFieldOffset": 16,
+    "fieldType": "long"
+  },
+  "methods": [
+    [
+      248364,
+      "Beyond.Resource.StringPathHash",
+      ".ctor",
+      96302896
+    ],
+    [
+      248388,
+      "Beyond.Resource.HashStringPathProcessor",
+      "GetABStringPathHash",
+      96279772
+    ],
+    [
+      248389,
+      "Beyond.Resource.HashStringPathProcessor",
+      "GetABStringPathHashWithoutBurst",
+      96221908
+    ],
+    [
+      248392,
+      "Beyond.Resource.HashStringPathProcessor",
+      "GetStringPathHash",
+      96279780
+    ],
+    [
+      248393,
+      "Beyond.Resource.HashStringPathProcessor",
+      "RawGetStringPathHash",
+      96280896
+    ],
+    [
+      248635,
+      "Beyond.Resource.StringPathHashBinary",
+      "_GetMappingStrByHash",
+      96300752
+    ],
+    [
+      274810,
+      "System.String",
+      "StartsWith",
+      46707136
+    ],
+    [
+      452602,
+      "Beyond.Cryptor.Crc32Utils",
+      "XXHash64",
+      50247664
+    ],
+    [
+      247863,
+      "Beyond.ManifestBinary.ManifestDataBinary+HashCodeEx",
+      "HashCodeEx4AutoLowerUTF16$BurstManaged",
+      96216500
+    ]
+  ],
+  "codeWindows": [
+    {
+      "role": "valueConstructor",
+      "startRva": 96302896,
+      "endRva": 96302983,
+      "sha256": "A65F0258089C7C47DE8F0FBD273FD06ADBC45A434F8D5D52538CE10E5C232B25",
+      "boundary": "exact"
+    },
+    {
+      "role": "constructorHashRoute",
+      "startRva": 55692704,
+      "endRva": 55693425,
+      "sha256": "3AA17134BE22AB018344BD1FDEFA2FE03CCE44116485A168B225A23C9BFA3400",
+      "boundary": "exact"
+    },
+    {
+      "role": "processorHashRoute",
+      "startRva": 96279780,
+      "endRva": 96280269,
+      "sha256": "C044C2D48683C6FB586B2AF15AC608E40D972C3413F5E12863E5EF9DF880D71F",
+      "boundary": "exact"
+    },
+    {
+      "role": "rawHashRoute",
+      "startRva": 96280896,
+      "endRva": 96281157,
+      "sha256": "DCE609813618E40E2B0B62FC0FBC0F9297AA58D29F1F86515F1D94957BA0FC39",
+      "boundary": "exact"
+    },
+    {
+      "role": "prefixQualifier",
+      "startRva": 55693440,
+      "endRva": 55693525,
+      "sha256": "04A97A2E3606FD7CC9110B05E12C18E9804FB1F02E9C417398DDC89E72110C2E",
+      "boundary": "exact"
+    },
+    {
+      "role": "dataHashForwarder",
+      "startRva": 55693536,
+      "endRva": 55693724,
+      "sha256": "17DBF757A68C9E1541E6E0B43012ED8DC3A4BA54108F6B3D10616F6FB93716EE",
+      "boundary": "exact"
+    },
+    {
+      "role": "xxHash64String",
+      "startRva": 50247664,
+      "endRva": 50248723,
+      "sha256": "FD28D7B03765F33E1F7988F9259C793585AF81EFC99C9677E7A7F70CA34C8079",
+      "boundary": "exact"
+    },
+    {
+      "role": "xxHashCoreEntry",
+      "startRva": 50248736,
+      "endRva": 50248781,
+      "sha256": "ED94ACE9EE7D905738F875A454387357A10A73DDFEE812B6813618FA5BA0E63B",
+      "boundary": "exact"
+    },
+    {
+      "role": "abHashForwarder",
+      "startRva": 96279772,
+      "endRva": 96279780,
+      "sha256": "05E64E3DA43314BE0A4BB09908279F1EE86F0492CDDD62E958C45DBA692CD017",
+      "boundary": "exact"
+    },
+    {
+      "role": "autoLowerWrapper",
+      "startRva": 64284496,
+      "endRva": 64284576,
+      "sha256": "65BFD73271CCAE416D260A89B70F44EAE31F904633C1E4A6B0F8B9846D2C8930",
+      "boundary": "exact"
+    },
+    {
+      "role": "abWithoutBurst",
+      "startRva": 96221908,
+      "endRva": 96221943,
+      "sha256": "7F61956283C5E996F6B04D30FA66017D9B05CD8F41F11C1C9018AB8E89760F39",
+      "boundary": "exact"
+    },
+    {
+      "role": "autoLowerManaged",
+      "startRva": 96216500,
+      "endRva": 96216647,
+      "sha256": "8006C87C2AC2FF26B96A7120E8C33AE13D45E205D282230C1137418D1B430040",
+      "boundary": "exact"
+    },
+    {
+      "role": "binaryLookup",
+      "startRva": 96300752,
+      "endRva": 96300980,
+      "sha256": "7869E42E4775F29AEEAA059D33195271F66902DBAD9E14315F2594EB2A09CC01",
+      "boundary": "exact"
+    },
+    {
+      "role": "multiHashLookup",
+      "startRva": 52059648,
+      "endRva": 52060008,
+      "sha256": "3127A399A598E2A6E7616165727410A1DA687C09068F03FCF1BB3A1F8063E989",
+      "boundary": "exact"
+    }
+  ],
+  "qualifier": {
+    "literal": "data/",
+    "literalLoadRva": 55693463,
+    "comparisonEnumValue": 5,
+    "comparisonInstructionRva": 55693473,
+    "startsWithMethodIndex": 274810
+  },
+  "callEdges": [
+    [
+      96302964,
+      55692704
+    ],
+    [
+      55692811,
+      55693440
+    ],
+    [
+      55692978,
+      55693536
+    ],
+    [
+      55693044,
+      64284496
+    ],
+    [
+      96279873,
+      55693440
+    ],
+    [
+      96279991,
+      55693536
+    ],
+    [
+      96280041,
+      64284496
+    ],
+    [
+      96280972,
+      55693440
+    ],
+    [
+      96281090,
+      55693536
+    ],
+    [
+      96281140,
+      64284496
+    ],
+    [
+      55693482,
+      46707136
+    ],
+    [
+      50248346,
+      50248736
+    ],
+    [
+      50248580,
+      50248736
+    ],
+    [
+      96221929,
+      96216500
+    ],
+    [
+      96300856,
+      52059648
+    ],
+    [
+      96300899,
+      52059648
+    ],
+    [
+      96300933,
+      52059648
+    ]
+  ],
+  "jumpEdges": [
+    [
+      55693640,
+      50247664
+    ],
+    [
+      96279772,
+      64284496
+    ],
+    [
+      64284550,
+      15679136
+    ]
+  ],
+  "instructionBytes": [
+    [
+      96302974,
+      "488907",
+      "constructor-store-hash"
+    ],
+    [
+      55693473,
+      "41B805000000",
+      "ordinal-ignore-case-enum"
+    ]
+  ],
+  "semanticLimits": {
+    "dataRoute": "Selected StringPathHash construction and GetStringPathHash route case-insensitive data/ prefix through a method named Crc32Utils.XXHash64. Current stored rows must be compared independently with the VFS filename hash.",
+    "assetRoute": "The non-data branch calls an auto-lower UTF-16 wrapper; the managed fallback byte window is authenticated, and a separate current corpus comparison joins its outputs to BundleManifest AssetInfo.",
+    "execution": "Static selected-build route only. Dynamic Burst dispatch, catalog writer execution, all possible inputs, and concrete comparer selection remain unresolved."
+  }
+}
