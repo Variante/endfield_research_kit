@@ -153,19 +153,26 @@ count x point:  f32 x, f32 y, u32 interpolation
 
 ```
 u32 count                22
-count x entry:  u16 company, u16 plugin, NUL-terminated ASCII name
+count x entry:  u16 encoded type/company, u16 plugin, NUL-terminated ASCII name
 ```
 
 Closes byte-exactly on 347 bytes. A wrong field order would not land on the section
 end, which is the whole check for a section that appears once.
 
-- **The plugin id word at the front of the 14-byte source record decomposes as
-  `(plugin << 16) | company`**, and every company-2 value the corpus carries is named
-  here: `0x00640002` **AkSineTone**, `0x00650002` **AkSilenceGenerator**, `0x00940002`
-  **AkSynthOne**, `0x01990002` **AkMotion**. **973 of 147,262** source records name a
-  plugin the game itself names.
-- **Everything unnamed is company 1** -- `0x00040001` (132,056), `0x00140001` (12,512),
-  `0x00080001` (1,721). INIT lists plugin DLLs; company 1 is the built-in codec set,
-  which the engine does not need named. The gate requires the absences to be company 1
-  *exactly*, because a company-2 id missing would mean the decomposition is wrong.
+- **The class-id word at the front of the 14-byte source record decomposes as
+  `(plugin << 16) | (company << 4) | type`**, with `type` in its low nibble.
+  The reviewed `AkPluginType` enum names `2` Source and `7` Sink. The `INIT` table
+  names both `0x01990002` (Source plug-in 409) and `0x01FB0007` (Sink plug-in 507)
+  **AkMotion**. A fresh targeted dump of the installed `init_banks.pck` independently
+  consumed the sole 347-byte section through all 22 entries and read both names;
+  this is an authored plug-in identity, not proof that either class was instantiated.
+  It also names the source classes `0x00640002` **AkSineTone**,
+  `0x00650002` **AkSilenceGenerator**, and `0x00940002` **AkSynthOne**.
+  The source-record count and distribution belong to the authenticated corpus
+  report, since a later game-data refresh may change them.
+- The unnamed source IDs have encoded low word `0x0001`, which the enum names
+  Codec with company zero; this is **not company 1**. `INIT` lists plug-in classes
+  rather than the built-in codec set. The corpus gate requires any unnamed source
+  class to have that exact low word, so an unknown Source class cannot silently
+  pass as a codec.
 - `PLAT` is a single NUL-terminated platform name: **`Windows`**.

@@ -224,8 +224,10 @@ matched config-object/path counts and marks IDs absent from that serialized
 registry with a structured unresolved reason; it does not infer names from
 Buff ids.
 
-The Audio builder publishes a separate Gameplay sound sidecar from exact
-whole-record SkillData/BuffData PlaySound unions. It keeps each raw sound
+The Audio builder publishes a separate Gameplay sound sidecar from selected
+derived-plan SkillData/BuffData records that reach EOF. This closure does not
+promote the stricter Buff child corpus to a whole named BuffData schema. The
+sidecar keeps each raw sound
 literal, action path, enclosing frame or Buff/Ability trigger, typed target
 settings, and source hash. Selected HIRC Event identity and authored
 Skill/Buff/born-Buff owner links are separate gates. A missing native decode,

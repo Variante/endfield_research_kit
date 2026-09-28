@@ -1256,15 +1256,24 @@ belong to generated Audio evidence and reports, not here.
   or runtime roles. Earlier private SetParam-ID/consumer-role claims came from
   the previous DLL and are withheld until the selected consumer bodies are
   revalidated.
-- **Convolution Reverb** and **Mastering Suite** remain opaque parameter blocks
-  on the selected client. Current DLL vtables expose plausible methods, but
-  there is no reviewed SDK-object comparison or direct current class-ID
-  registration proof for either family. Earlier native forwarding/storage-role
-  claims were tied to the older DLL and do not establish current semantics.
-  The old decoder branches carrying those previous-build addresses and labels
-  have been removed; the current publisher still leaves both parameter blocks
-  opaque. Reintroducing typed fields requires a reviewed current
-  class-ID-to-method join and parameter layout.
+- **Convolution Reverb** and **Mastering Suite** now have a direct selected
+  class-to-method join, but their authored parameter *meanings* remain opaque.
+  The shipped sound DLL holds four-word static effect registrations: plug-in
+  type, plug-in ID, effect factory and parameter factory. The parameter
+  factories install vtables whose `+0x28` slot points to `SetParamsBlock`.
+  Gain and RoomVerb provide independently SDK-named slot controls, and all
+  twelve reviewed effect classes have the same registration/slot pattern.
+  The selected native contract checks the registration words, factory and
+  constructor bodies, vtable target, slot pointer and method bodies before
+  recording a structural claim. Convolution's method reads a contiguous
+  57-byte input span; Mastering Suite's reads a contiguous 304-byte span.
+  The published Audio index contains definitions of both classes, but this
+  native contract does not prove their shipped `uSize` distributions. Neither
+  method checks its supplied length, so these spans are
+  direct reads rather than a general `uSize` acceptance rule. No field names,
+  value labels, forwarding roles or runtime DSP behavior follow from these
+  offsets alone. The publisher still leaves both blocks opaque. Earlier
+  native forwarding/storage-role claims from an older DLL remain withheld.
   Convolution's bounded impulse-response plug-in media IDs remain exact bank
   data and are not emitted as playable WEM leaves.
 

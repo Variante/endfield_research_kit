@@ -59,7 +59,7 @@ Story, Audio builds and links no voice lines.
   `eventNameSources` still records raw decoded-member candidates for cache
   provenance; use `decodedPayloadEventNameRecovery.promotedNames` or the final
   `eventNames` to decide whether that source supplied an Event identity.
-- Whole-record SkillData/BuffData PlaySound actions are retained in the
+- Selected derived-plan EOF SkillData/BuffData PlaySound actions are retained in the
   Gameplay sound sidecar with raw literals, exact action paths, enclosing
   frame or event slots, native enum labels, and typed target settings. Only
   actions with a selected HIRC Event-object hash join Audio Event contexts;

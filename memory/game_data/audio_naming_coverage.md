@@ -192,7 +192,16 @@ audibility.
   `runtimeCueVariable` evidence, non-empty child lists are `compositeOpaque`, all
   else opaque; `childrenLimit` rejects the parent first; enum and operator names
   appear only under a validated native contract. Never condition truth, variable
-  value, branch execution or playback.
+  value, branch execution or playback. The separately authenticated
+  LevelScript `SetAudioCueVar` action stores LEVEL-scoped BOOL variable names
+  that exactly match some `exprType=8` operand strings in the current
+  `AudioCueTable`. A build-independent named-body claim, revalidated against
+  the selected installed client, establishes that `SetAudioCueVar.Execute`
+  reads the seven authored parameter fields and contains ordered call sites
+  for the iFix state check, string, float, int, and bool cue-variable setters,
+  then the patch lookup. This native body and the authored name join do not
+  select a runtime cue or prove a live setter
+  call or variable update. Other stored names remain unmatched in that table.
 - **Serialized components: the path is the evidence.** For MonoBehaviour
   `monoBehaviourAudioIdField` contexts the serialized path is the evidence; the
   `component*` role is a static field label, with layout, raw values and exact
@@ -364,14 +373,21 @@ posting, branch selection, or audibility.
 
 ## A typed PlaySound member is broader than the local timeline envelope
 
-The exact whole-record `SkillData` and `BuffData` plans decode every current
-payload to EOF and expose `PlaySoundActionData` union records in their authored
-tree. `play_sound_action_corpus` records each union's source hash and path, raw
+The selected-build derived whole-record `SkillData` and `BuffData` plans reach
+EOF on every file in the current VFS-authenticated JsonData set. This is a
+source-set and derived-plan closure, not the stricter independently named Buff
+schema claimed by the separate Buff corpus gate. In current-corpus mode, the
+Audio audit joins each exported file to the JsonData ledger by path, length,
+and logical SHA256 before decoding; it refuses source drift, omissions, and
+extra files. The registry report's ledger digest is checked first. Runs without
+that ledger declare only export-local coverage.
+These plans expose `PlaySoundActionData` union records in their authored tree.
+`play_sound_action_corpus` records each union's source hash and path, raw
 sound string, enclosing timeline frame window when present, Buff or Ability
 event code when present, and enclosing action types. The selected native
 `BuffActionMap.buffEvent` and `AbilityActionMap.abilityEvent` field types resolve
 to `Buff.Event` and `AbilitySystem.Event`; their default-value tables supply
-the exact enum labels for those serialized codes. Its current-corpus comparison
+the exact enum labels for those serialized codes. Its current-source comparison
 proves the earlier local action reader is a strict subset: it accepts locally bounded
 single-item timeline envelopes, while exact records also place PlaySound under
 multi-item timelines, nested conditional/channeling actions, Buff event actions,

@@ -21,6 +21,11 @@ Audio recovery separates six layers:
 Evidence may advance only one layer at a time. A stronger downstream fact does
 not retroactively make every upstream candidate unique.
 
+Some counts in the investigation history below describe earlier authenticated
+input sets. Use the `inputSetSha256` and inventories in the latest generated
+Audio reports for current counts; the durable conclusions are the parser
+boundaries, witnessed joins and named gaps recorded here.
+
 ## Per-type structural gates
 
 Stable conclusions:
@@ -242,6 +247,17 @@ Stable conclusions:
   remains is inside effect plug-in parameter blocks (owned by the typed v150
   effect parse). Live tree selection belongs to layers 5 and 6, which need a
   host process.
+- **A refreshed client can add many bank objects without changing the grammar.**
+  The latest authenticated VFS audit exposed a source-heavy `HotfixAudio` cohort.
+  Re-running `hirc_action_corpus.py` against that input set closed every shipped
+  type and every graph reference with zero failed or unsupported bodies. The
+  `Audio`, `AudioChinese` and `InitAudio` contributions to the large type-`0x02`
+  and type-`0x05` changes stayed stable; `HotfixAudio` accounted for the change.
+  A fresh `hirc_named_reach.py` run found the same metadata-literal identifiers,
+  media reach and music reach as the prior authenticated run. That named gate
+  covers only its selected managed-literal identities, so it does not rule out
+  new playable media or authored Events from other name sources. The changing
+  inventories and input-set receipts belong in the current reports, not here.
 
 ## Naming: what the shipped literals actually reach
 
@@ -446,10 +462,12 @@ Stable conclusions:
   compiled into an unpacked 2.66 MB `.text` that ships with the game, with the
   parser's entry region located. **"Blocked on a licence" and "blocked on
   disassembly effort" are different states**, and only the second is true here.
-- **The SDK is installed, and it is the exact engine version:**
-  `D:\Program Files\Wwise_2023.1.17.8841`, SDK plus Authoring. The version matches
-  the shipped DLL's own `wwise_v2023.1.17` string, so nothing read from it is a
-  patch-line prior. The vendored `E:\Engine\RM42.Beyond\Audio\Wwise` tree still
+- **The earlier SDK witness matched the exact engine version.** Recovery used
+  Wwise 2023.1.17.8841 SDK plus Authoring; its earlier local installation is
+  no longer present, so future readers must select and gate SDK inputs afresh.
+  The version matches the shipped DLL's own `wwise_v2023.1.17` string, so the
+  recorded SDK-derived layouts were not a patch-line prior. The vendored
+  `E:\Engine\RM42.Beyond\Audio\Wwise` tree still
   means in-house modification is possible, so every stock-SDK layout must meet the
   bank bytes; the corpus gates are that check, and so far every layout has.
 - **The witness is the static library, not the headers.** The bank *format* is not
@@ -471,10 +489,14 @@ Stable conclusions:
   running game. A host process linking the SDK's Profile libraries and loading the
   game's packages through the sample file-package I/O can be profiled and queried
   instead; that is the route to layer-5/6 evidence and has not been built.
-- Plug-in ids, from the Authoring plug-in XML: `100` Wwise Sine, `101` Wwise
-  Silence, `148` Synth One, `200` Audio Input. `409` (the `0x01990002` source
-  plug-in) is not in the stock XML; the game DLL compiles in Motion Source, which
-  is the likely owner but is not proven.
+- Plug-in ids `100` Wwise Sine, `101` Wwise Silence, `148` Synth One and `200`
+  Audio Input appear in the Authoring plug-in XML. The game's own `INIT` bank
+  section directly names `0x01990002` (Source plug-in `409`) **AkMotion**, and
+  also names `0x01FB0007` (Sink plug-in `507`) **AkMotion**. The current installed
+  `init_banks.pck` still closes its 347-byte `INIT` table exactly on these two
+  names. The low nibble is plug-in type, not company ID; see
+  [`audio_bank_format.md`](audio_bank_format.md). This proves authored class
+  identity, not registration, instantiation, motion output or audibility.
 
   *A process note, since it cost a batch.* This DLL was already identified in these
   notes, with its SHA-256 and version string, **and with an explicit warning not to
@@ -528,11 +550,14 @@ contract every step below builds on.
    v150 effect parse owns the reviewed built-in layouts. Its current contract
    binds selected native hashes and SDK-matched `SetParamsBlock` bodies; the
    older unchecked DLL pin had allowed stale native-derived labels into the
-   Audio page. Convolution Reverb and Mastering Suite still have no proved
-   current class-to-method join, so their parameter bytes remain opaque even
-   where a method-shaped body is nearby. The SDK's `SDK/samples/Plugins` and
-   `include/AK/Plugin` headers are the witness for further public fields. Do
-   not fit these from the corpus.
+   Audio page. The selected sound DLL now supplies a direct static registration
+   -> parameter factory -> constructed vtable -> `SetParamsBlock` join for
+   Convolution Reverb and Mastering Suite, checked against independently
+   SDK-named slot controls. Native reads establish only contiguous input spans;
+   both blocks remain opaque in the page. The next witness is plug-in-specific
+   SDK/private parameter definitions or exact native consumers that assign
+   meanings to those bytes. Do not fit names or runtime roles from corpus
+   correlations. See [`audio_hirc_graph.md`](audio_hirc_graph.md).
 5. **Layers 5 and 6 need a host, not a reader.** The shipped DLL has no
    profiler communication layer. Build a small process that links the SDK's
    Profile libraries, loads the game's `.pck` files through the sample

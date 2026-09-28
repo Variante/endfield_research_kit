@@ -1,13 +1,15 @@
 """Audit exact SkillData/BuffData PlaySound actions and local-reader coverage.
 
-Whole-record MemoryPack decoding supplies the action path and its enclosing
-timeline or Buff event. The strings are retained exactly as serialized; a
+Selected-build derived-plan EOF decoding supplies the action path and its
+enclosing timeline or Buff event. This is not the independent Buff child-schema
+gate. The strings are retained exactly as serialized; a
 PlaySound member alone does not establish a current Wwise Event object.
 """
 
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import struct
@@ -28,6 +30,84 @@ from scripts.webui.audio.semantics.play_sound_actions import (
 
 
 DEFAULT_OUTPUT = REPO_ROOT / "reports/audio/play_sound_action_corpus.json"
+
+
+def _current_source_index(
+    report_path: Path, files_path: Path, *, expected_input_set_sha256: str,
+    json_dir: Path,
+) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
+    """Bind this semantic sweep to the current VFS-authenticated JsonData set."""
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    expected = expected_input_set_sha256.upper()
+    if not isinstance(report, dict):
+        raise ValueError("playSoundCurrentSource:JsonData-report-shape")
+    summary = report.get("summary")
+    if not isinstance(summary, dict):
+        raise ValueError("playSoundCurrentSource:JsonData-report-shape")
+    recorded_input = report.get("inputSetSha256")
+    export_path = report.get("exportRoot")
+    if (
+        len(expected) != 64 or any(char not in "0123456789ABCDEF" for char in expected)
+        or report.get("format") != "endfield-jsondata-current-corpus-v1"
+        or report.get("status") != "complete"
+        or not isinstance(recorded_input, str) or recorded_input.upper() != expected
+        or summary.get("filesSelected") != summary.get("filesJoined")
+        or not isinstance(export_path, str)
+        or Path(export_path).resolve() != json_dir.resolve()
+    ):
+        raise ValueError("playSoundCurrentSource:JsonData-report-status-or-identity")
+    files_bytes = files_path.read_bytes()
+    files_sha256 = hashlib.sha256(files_bytes).hexdigest().upper()
+    provenance = report.get("provenance")
+    output_files = provenance.get("outputFiles") if isinstance(provenance, dict) else None
+    if not isinstance(output_files, dict):
+        raise ValueError("playSoundCurrentSource:JsonData-ledger-digest-missing")
+    if (
+        output_files.get("length") != len(files_bytes)
+        or output_files.get("sha256") != files_sha256
+    ):
+        raise ValueError(
+            "playSoundCurrentSource:JsonData-ledger-digest:"
+            f"expected={output_files.get('length')}/{output_files.get('sha256')}:"
+            f"actual={len(files_bytes)}/{files_sha256}"
+        )
+    counts = summary.get("families")
+    if not isinstance(counts, dict) or any(
+        not isinstance(counts.get(family), dict)
+        or type(counts[family].get("files")) is not int
+        for family in FAMILIES
+    ):
+        raise ValueError("playSoundCurrentSource:JsonData-family-counts")
+    rows: dict[str, dict[str, Any]] = {}
+    with gzip.open(files_path, "rt", encoding="utf-8") as stream:
+        for line in stream:
+            row = json.loads(line)
+            if not isinstance(row, dict):
+                raise ValueError("playSoundCurrentSource:JsonData-ledger-row-shape")
+            family = row.get("family")
+            if family not in FAMILIES:
+                continue
+            name = row.get("exportRelativePath")
+            if (
+                not isinstance(name, str) or not name.startswith(f"{family}/")
+                or name in rows or not isinstance(row.get("logicalSha256"), str)
+                or type(row.get("length")) is not int
+            ):
+                raise ValueError(f"playSoundCurrentSource:invalid-or-duplicate-row:{name}")
+            rows[name] = row
+    for family in FAMILIES:
+        selected = sum(row["family"] == family for row in rows.values())
+        if selected != counts[family]["files"]:
+            raise ValueError(
+                f"playSoundCurrentSource:family-count:{family}:"
+                f"expected={counts[family]['files']}:actual={selected}"
+            )
+    return rows, {
+        "status": "validated-current-jsondata-file-set",
+        "inputSetSha256": expected,
+        "jsonDataReportSha256": hashlib.sha256(report_path.read_bytes()).hexdigest().upper(),
+        "jsonDataFilesSha256": files_sha256,
+    }
 
 
 def local_action_keys(export_root: Path, family: str) -> tuple[Counter, dict[str, Any]]:
@@ -55,6 +135,9 @@ def build(
     export_root: Path | None = None,
     gameassembly: Path,
     metadata: Path,
+    jsondata_report: Path | None = None,
+    jsondata_files: Path | None = None,
+    expected_input_set_sha256: str | None = None,
 ) -> dict[str, Any]:
     registry, native_audit = load_registry(gameassembly=gameassembly, metadata=metadata)
     if native_audit.get("status") != "validated":
@@ -62,6 +145,19 @@ def build(
     event_enum_names, event_enum_audit = selected_event_enum_names(gameassembly, metadata)
 
     layout = ExportLayout(root=export_root) if export_root else ExportLayout.configured()
+    current_args = (jsondata_report, jsondata_files, expected_input_set_sha256)
+    if any(value is not None for value in current_args) and not all(
+        value is not None for value in current_args
+    ):
+        raise ValueError("playSoundCurrentSource:all-three-current-source-options-required")
+    current_rows = None
+    current_audit = None
+    if jsondata_report is not None and jsondata_files is not None and expected_input_set_sha256 is not None:
+        current_rows, current_audit = _current_source_index(
+            jsondata_report, jsondata_files,
+            expected_input_set_sha256=expected_input_set_sha256,
+            json_dir=layout.json_dir,
+        )
     actions: list[dict[str, Any]] = []
     families: dict[str, Any] = {}
     for family in FAMILIES:
@@ -79,6 +175,20 @@ def build(
             source = file.relative_to(layout.root).as_posix()
             digest = hashlib.sha256(raw).hexdigest()
             counts["files"] += 1
+            if current_rows is not None:
+                current_name = f"{family}/{file.name}"
+                current = current_rows.pop(current_name, None)
+                if current is None:
+                    raise ValueError(f"playSoundCurrentSource:extra-export-file:{current_name}")
+                if (
+                    current["length"] != len(raw)
+                    or current["logicalSha256"].upper() != digest.upper()
+                ):
+                    raise ValueError(
+                        f"playSoundCurrentSource:source-drift:{current_name}:"
+                        f"expected={current['length']}/{current['logicalSha256']}:"
+                        f"actual={len(raw)}/{digest.upper()}"
+                    )
             try:
                 value, reached = derived_values.decode_file(
                     raw, definition, registry, source=source
@@ -146,6 +256,11 @@ def build(
         }
         actions.extend(family_actions)
 
+    if current_rows:
+        raise ValueError(
+            f"playSoundCurrentSource:missing-export-files:{sorted(current_rows)[:4]}"
+        )
+
     apply_event_enum_names(actions, event_enum_names)
 
     report = {
@@ -159,6 +274,7 @@ def build(
         "nativeAudit": native_audit,
         "nativeEventEnums": event_enum_audit,
         "sourceRoot": str(layout.root),
+        "currentVfsJoin": current_audit,
         "families": families,
         "actions": actions,
     }
@@ -176,6 +292,9 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--export-root", type=Path)
     parser.add_argument("--game-root", type=Path)
+    parser.add_argument("--jsondata-report", type=Path)
+    parser.add_argument("--jsondata-files", type=Path)
+    parser.add_argument("--expected-input-set-sha256")
     args = parser.parse_args()
     gameassembly, metadata = (
         (args.game_root.parent / "GameAssembly.dll",
@@ -186,6 +305,9 @@ def main() -> int:
         report = build(
             args.output, export_root=args.export_root,
             gameassembly=gameassembly, metadata=metadata,
+            jsondata_report=args.jsondata_report,
+            jsondata_files=args.jsondata_files,
+            expected_input_set_sha256=args.expected_input_set_sha256,
         )
     except (OSError, ValueError, KeyError, TypeError) as error:
         print(json.dumps({"status": "failed", "detail": str(error)}), file=sys.stderr)

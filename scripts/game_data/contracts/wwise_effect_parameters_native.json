@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.wwise-effect-parameters-native.v1",
+  "schema": "endfield.wwise-effect-parameters-native.v2",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
     "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
@@ -11,7 +11,7 @@
     "version": "Wwise 2023.1.17.8841",
     "variant": "SDK/x64_vc170/Release/lib"
   },
-  "evidenceBoundary": "Current AkSoundEngine SetParamsBlock method bodies match named SDK COFF methods exactly outside SDK relocation operand bytes. Selected native hashes and each current method body hash gate only the listed parameter schemas. Unreviewed proprietary class IDs remain opaque.",
+  "evidenceBoundary": "Reviewed public SetParamsBlock method bodies match named SDK COFF methods outside relocation bytes. Direct selected AkSoundEngine registration records, parameter factories, constructed vtables and slot controls join two proprietary class IDs to their SetParamsBlock bodies. Their contiguous input read spans are structuralOnly: authored field names, values and runtime roles remain opaque. Selected native hashes and code windows gate every claim.",
   "parameterSchemas": {
     "0x00690003": {
       "schema": "wwiseParametricEqFxParamsV1",
@@ -570,6 +570,94 @@
         "matchBoundary": "exactCodeExcludingSdkRelocations"
       },
       "status": "reviewed"
+    }
+  },
+  "registrationWitnesses": {
+    "0x008b0003": {
+      "role": "slotControl",
+      "registrationRva": "0x0033a0c8",
+      "pluginType": 3,
+      "pluginId": 139,
+      "factoryRva": "0x001f5270",
+      "parameterFactoryRva": "0x001f5470",
+      "parameterFactoryBodyLength": 53,
+      "parameterFactoryBodySha256": "be47227b9369676da18b2e3cffba7915c204315ea096f9d88e3b60bf28fe2929",
+      "vtableLeaRva": "0x001f5491",
+      "vtableLeaPrefixHex": "488d0d",
+      "vtableRva": "0x002b8c60",
+      "setParamsBlockSlot": 40
+    },
+    "0x00760003": {
+      "role": "slotControl",
+      "registrationRva": "0x0033a548",
+      "pluginType": 3,
+      "pluginId": 118,
+      "factoryRva": "0x0022a5d0",
+      "parameterFactoryRva": "0x002313f0",
+      "parameterFactoryBodyLength": 53,
+      "parameterFactoryBodySha256": "7e2d5d1ff89c63a5832234ab80fc205c95b958b80f921e5576a04c7290a58cad",
+      "vtableLeaRva": "0x00231411",
+      "vtableLeaPrefixHex": "488d0d",
+      "vtableRva": "0x002d9d90",
+      "setParamsBlockSlot": 40
+    },
+    "0x007f0003": {
+      "role": "structuralOnly",
+      "registrationRva": "0x0033aaf8",
+      "pluginType": 3,
+      "pluginId": 127,
+      "factoryRva": "0x002544e0",
+      "parameterFactoryRva": "0x00257f10",
+      "parameterFactoryBodyLength": 131,
+      "parameterFactoryBodySha256": "1b56be3465d72100a908be53f5f0c4ef55dc48136045f26d58022e249ece40d6",
+      "vtableLeaRva": "0x00257f31",
+      "vtableLeaPrefixHex": "488d0d",
+      "vtableRva": "0x002dc0f0",
+      "setParamsBlockSlot": 40
+    },
+    "0x00ba0003": {
+      "role": "structuralOnly",
+      "registrationRva": "0x0033a828",
+      "pluginType": 3,
+      "pluginId": 186,
+      "factoryRva": "0x002431c0",
+      "parameterFactoryRva": "0x00243290",
+      "parameterFactoryBodyLength": 50,
+      "parameterFactoryBodySha256": "ebc11727045ca66b47e06e36b050fc4468e9a129e3eaa0343ea3515448a28627",
+      "constructorJumpRva": "0x002432b8",
+      "parameterConstructorRva": "0x00249630",
+      "parameterConstructorBodyLength": 117,
+      "parameterConstructorBodySha256": "a5c7b769d8b51a78bfff0056700dffbf10a3401be520a9e4e59c883c43272078",
+      "vtableLeaRva": "0x00249630",
+      "vtableLeaPrefixHex": "488d05",
+      "vtableRva": "0x002db2d0",
+      "setParamsBlockSlot": 40
+    }
+  },
+  "structuralSchemas": {
+    "0x007f0003": {
+      "schema": "wwiseConvolutionReverbFxParamsStructuralV1",
+      "status": "structuralOnly",
+      "setParamsBlock": {
+        "rva": "0x00258340",
+        "bodyLength": 311,
+        "bodySha256": "dedcdc71fa39a7bc6429df5987e15fec6fa97e480af7e6203749d8b13e12147e"
+      },
+      "contiguousInputReadBytes": 57,
+      "shippedInputLengthStatus": "notProvedByThisNativeContract",
+      "evidenceBoundary": "Direct native reads cover the 57-byte input span; method does not check the supplied length. Names and runtime roles are unresolved."
+    },
+    "0x00ba0003": {
+      "schema": "wwiseMasteringSuiteFxParamsStructuralV1",
+      "status": "structuralOnly",
+      "setParamsBlock": {
+        "rva": "0x00249fd0",
+        "bodyLength": 1394,
+        "bodySha256": "4a73cc4b0f0ed455958007aafd131b27b59a4918d67e79409a9313c8ecd84099"
+      },
+      "contiguousInputReadBytes": 304,
+      "shippedInputLengthStatus": "notProvedByThisNativeContract",
+      "evidenceBoundary": "Direct native reads cover the 304-byte input span; method does not check the supplied length. Authored names and runtime roles remain unresolved."
     }
   },
   "unreviewedClassIds": [

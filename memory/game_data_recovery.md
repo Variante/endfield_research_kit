@@ -329,8 +329,10 @@ and before/after evidence belongs in `tmp/<topic>/`.
   character-specific applied Poise amount remain unresolved.
 - Audio: the HIRC layout and shipped decision-tree traversal are structurally
   closed against the Wwise SDK and current bank corpus. A current-build
-  SDK/native gate types twelve stock effect families; proprietary Convolution
-  Reverb and Mastering Suite parameters remain opaque. Remaining value naming,
+  SDK/native gate types twelve stock effect families. Direct registration and
+  vtable paths now bound the proprietary Convolution Reverb and Mastering Suite
+  parameter reads structurally, while their field meanings remain opaque.
+  Remaining value naming,
   other plug-in blocks, and a host process for layers 5 and 6 remain in the queue
   in [`game_data/audio_overview.md`](game_data/audio_overview.md). Keep closing
   authored and observed consumers through exact Event/media traversal while

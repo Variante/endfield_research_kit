@@ -1205,13 +1205,19 @@ python -m scripts.webui.audio.semantics.play_sound_action_corpus
 python -m scripts.webui.audio.semantics.native_play_sound_string --gameassembly GA --metadata META
 ```
 
-`play_sound_action_corpus` is a focused exact-decoding audit, not a page build.
+`play_sound_action_corpus` is a focused selected derived-plan EOF audit, not a page build.
 It writes `reports/audio/play_sound_action_corpus.json` with SkillData/BuffData
 PlaySound paths, enclosing timeline, Buff/Ability event context, selected native
 enum labels, raw literals, and a comparison to the narrower local action reader.
 It requires the selected
 `GameAssembly.dll` and `global-metadata.dat`, refuses incomplete whole-record
-decodes, and does not promote a sound string into a Wwise Event.
+decodes, and does not promote a sound string into a Wwise Event. To bind the
+result to the current installed JsonData set, pass `--jsondata-report`
+(`reports/animestudio/jsondata_current_latest.json`), `--jsondata-files`
+(`reports/animestudio/jsondata_current_files_latest.jsonl.gz`), and
+`--expected-input-set-sha256` from the current VFS audit together. This checks
+every SkillData/BuffData export file by path, length, and SHA256; without the
+three options, the audit describes only the selected export directory.
 `decoded_payload_event_names.py` collects those same exact SkillData/BuffData
 action rows during its one-pass native-gated source decode; `build_audio.py`
 publishes their Gameplay sound catalog and owner links after HIRC identity is

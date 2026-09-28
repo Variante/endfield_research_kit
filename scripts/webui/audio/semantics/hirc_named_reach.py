@@ -561,20 +561,21 @@ def init_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
 def the_init_table_names_the_plugins_the_records_use(init: dict[str, Any]) -> bool:
     """INIT closes byte-exactly, and it names the plugins the source records carry.
 
-    INIT is self-describing: a u32 count, then 22 entries of `u16 company, u16 plugin,
-    NUL-terminated name`, closing exactly on 347 bytes. A wrong field order would not
-    land on the section end, which is the whole check for a section that appears once.
+    INIT is self-describing: a u32 count, then 22 entries of
+    `u16 encoded type/company, u16 plugin, NUL-terminated name`, closing
+    exactly on 347 bytes. A wrong field order would not land on the section
+    end, which is the whole check for a section that appears once.
 
     The plugin id word at the front of the 14-byte source record decomposes as
-    `(plugin << 16) | company`, and **every company-2 value the corpus carries is in the
-    table**: 0x00640002 AkSineTone, 0x00650002 AkSilenceGenerator, 0x00940002
-    AkSynthOne, 0x01990002 AkMotion.
+    `(plugin << 16) | (company << 4) | type`, and **every type-2 (Source)
+    value the corpus carries is in the table**: 0x00640002 AkSineTone,
+    0x00650002 AkSilenceGenerator, 0x00940002 AkSynthOne, 0x01990002 AkMotion.
 
-    The company-1 values are not, and that is not a shortfall. INIT lists plugin DLLs;
-    company 1 is the built-in codec set, which the engine does not need named. So the
+    The encoded low-word 0x0001 values are not, and that is not a shortfall.
+    Type 1 is the built-in Codec set, which the engine does not need named. So the
     gate asks that the table close, that it name some records, and that **everything it
-    fails to name be company 1** -- because a company-2 id missing from the table would
-    mean the decomposition is wrong.
+    fails to name have the exact low word 0x0001** -- because a Source id
+    missing from the table would mean the decomposition is wrong.
     """
     if not isinstance(init, dict):
         return False
