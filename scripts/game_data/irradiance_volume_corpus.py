@@ -10,7 +10,9 @@ and room against the full authenticated VFS ledger (``--outer-summary`` and
 ``--outer-ledger`` default to the ``reports/animestudio/vfs_understanding_*``
 pair) and writes ``reports/irradiance/volume_corpus_latest.json``. It reports
 directory arithmetic and the ordered V3 Gacha character/weapon word agreement
-without assigning those words a renderer meaning.
+without assigning those words a renderer meaning. Report schema v2 adds
+``indexWordRelations`` and keeps every v1 key; a failed run writes
+``status: failed`` with ``firstFailure`` and the structured ``failures``.
 
 The two installed V3 Gacha ``character`` and ``weapon`` indexes have the same
 ordered record count, and every positional pair agrees on anonymous words 0,
@@ -18,6 +20,18 @@ ordered record count, and every positional pair agrees on anonymous words 0,
 agreement changes. This is a shared stored key and order (structural), not
 evidence that the records load together, that the words are coordinates, or
 that the payloads hold the same lighting.
+
+Index-word additive relations (``indexWordRelations``, exact stored
+arithmetic, unnamed). ``index_word_relations`` counts, per index magic, the
+records with ``w4 = w5 + w6`` and with ``w3 = w4 + w5``, and fails unless:
+every scene V3 (``0x03000003``) record has ``w4 = w5 + w6``; every Gacha V3
+(``0x03000002``) record has ``w3 = w4 + w5``; neither relation holds for every
+legacy (``0x01000043``) record; and the scene counterexamples to an interval
+split are still present (some ``w4`` exceeds the interval length ``w3`` and
+some ``w3`` is shorter than ``w5``). Each failure names the check, the magic
+and the first counterexample index path, record ordinal and words. The
+relations are not compression sizes, texture roles, selection rules or
+physical splits; no consumer names the parts.
 """
 
 from __future__ import annotations
@@ -29,7 +43,7 @@ import io
 import json
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from scripts.game_data.corpus_common import atomic_write_text, validate_provenance
 from scripts.game_data import irradiance_volume
@@ -39,6 +53,7 @@ from scripts.game_data.irradiance_volume import (
     INDEX_MAGIC_V3_SCENE,
     REGION_HEADER_SIZE,
     REGION_RECORD_SIZE,
+    LegacyIndexedPayloadRange,
     parse_grouped_indexed_payload_framing,
     parse_index_bytes,
     parse_indexed_payload_framing,
@@ -48,13 +63,103 @@ from scripts.game_data.irradiance_volume import (
 from scripts.repo_paths import REPO_ROOT
 
 
-SCHEMA = "endfield.irradiance-volume-corpus.v1"
+SCHEMA = "endfield.irradiance-volume-corpus.v2"
 BLOCK_TYPE = 14
 GACHA_KINDS = ("character", "weapon")
+W4_SUM = "word4EqualsWord5PlusWord6"
+W3_SUM = "word3EqualsWord4PlusWord5"
+# The one additive relation each V3 magic holds for every record; legacy holds neither.
+CHECKED_RELATIONS = {INDEX_MAGIC_V3_SCENE: W4_SUM, INDEX_MAGIC_V3_GACHA: W3_SUM}
 
 
 class IrradianceCorpusError(ValueError):
-    """A current-corpus provenance or framing check failed."""
+    """A current-corpus provenance, framing or stored-relation check failed."""
+
+    def __init__(self, message: str, failures: list[dict[str, Any]] | None = None) -> None:
+        super().__init__(message)
+        self.failures = list(failures or [])
+
+
+def _magic_name(magic: int) -> str:
+    return f"0x{magic:08X}"
+
+
+def _relation_holds(name: str, words: tuple[int, ...]) -> bool:
+    if len(words) < 7:
+        return False
+    if name == W4_SUM:
+        return words[4] == words[5] + words[6]
+    return words[3] == words[4] + words[5]
+
+
+def index_word_relations(
+    records: Iterable[tuple[int, str, int, tuple[int, ...], tuple[int, int]]],
+) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    """Count and check the stored additive relations of every index directory record.
+
+    ``records`` yields ``(magic, indexPath, recordOrdinal, words, intervalWordPair)``.
+    Returns the per-magic families and every failed check (empty when all hold).
+    """
+    grouped: dict[int, list[tuple[str, int, tuple[int, ...], tuple[int, int]]]] = {}
+    for magic, path, ordinal, words, pair in records:
+        grouped.setdefault(magic, []).append((path, ordinal, tuple(words), tuple(pair)))
+    families: dict[str, dict[str, Any]] = {}
+    failures: list[dict[str, Any]] = []
+
+    def fail(check: str, magic: int, expected: Any, actual: Any, sample: Any = None) -> None:
+        failures.append({"check": check, "magic": _magic_name(magic), "expected": expected,
+                         "actual": actual, "firstCounterexample": sample})
+
+    def sample(row: tuple[str, int, tuple[int, ...], tuple[int, int]]) -> dict[str, Any]:
+        return {"indexPath": row[0], "record": row[1], "words": list(row[2])}
+
+    for magic in (INDEX_MAGIC_V3_SCENE, INDEX_MAGIC_V3_GACHA):
+        if not grouped.get(magic):
+            fail(f"{CHECKED_RELATIONS[magic]}:family-present", magic, "at least one record", 0)
+    for magic, rows in sorted(grouped.items()):
+        widths = sorted({len(words) for _path, _ordinal, words, _pair in rows})
+        pairs = sorted({pair for _path, _ordinal, _words, pair in rows})
+        family: dict[str, Any] = {
+            "indexCount": len({path for path, _ordinal, _words, _pair in rows}),
+            "recordCount": len(rows),
+            "recordWidthWords": widths[0] if len(widths) == 1 else widths,
+            W4_SUM: sum(_relation_holds(W4_SUM, words) for _p, _o, words, _i in rows),
+            W3_SUM: sum(_relation_holds(W3_SUM, words) for _p, _o, words, _i in rows),
+            "payloadIntervalWordPair": list(pairs[0]) if len(pairs) == 1 else [list(p) for p in pairs],
+        }
+        if len(widths) != 1 or len(pairs) != 1:
+            fail("record-shape", magic, "one record width and interval word pair",
+                 {"widths": widths, "pairs": [list(p) for p in pairs]})
+        checked = CHECKED_RELATIONS.get(magic)
+        if checked is not None and family[checked] != len(rows):
+            broken = next(row for row in rows if not _relation_holds(checked, row[2]))
+            fail(checked, magic, len(rows), family[checked], sample(broken))
+        if checked is None:
+            for name in (W4_SUM, W3_SUM):
+                if rows and family[name] == len(rows):
+                    fail(f"{name}:not-universal", magic, f"fewer than {len(rows)}", family[name])
+        if magic == INDEX_MAGIC_V3_SCENE:
+            longer = [row for row in rows if row[2][4] > row[2][row[3][1]]]
+            equal = sum(row[2][4] == row[2][row[3][1]] for row in rows)
+            shorter_than_w5 = sum(row[2][row[3][1]] < row[2][5] for row in rows)
+            family["word4VsIntervalLengthWord3"] = {
+                "greater": len(longer), "equal": equal, "less": len(rows) - len(longer) - equal,
+            }
+            family["intervalLengthWord3LessThanWord5"] = shorter_than_w5
+            if not longer or not shorter_than_w5:
+                fail("scene-interval-split-counterexamples", magic,
+                     "some w4 > w3 and some w3 < w5",
+                     {"word4GreaterThanWord3": len(longer), "word3LessThanWord5": shorter_than_w5})
+        families[_magic_name(magic)] = family
+    return families, failures
+
+
+def _interval_word_pair(record: Any) -> tuple[int, int]:
+    """The directory words the reader exposes as the proven payload interval."""
+    pair = (7, 8) if isinstance(record, LegacyIndexedPayloadRange) else (2, 3)
+    if (record.words[pair[0]], record.words[pair[1]]) != (record.offset, record.length):
+        raise IrradianceCorpusError(f"reader interval words moved: expected words {pair}")
+    return pair
 
 
 def _load_rows(summary_path: Path, ledger_path: Path, expected_input_set: str) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
@@ -140,6 +245,7 @@ def sweep(summary_path: Path, ledger_path: Path, expected_input_set: str) -> dic
     index_sources: list[dict[str, Any]] = []
     indexed_payloads: set[str] = set()
     gacha_records: dict[str, list[tuple[int, ...]]] = {}
+    word_records: list[tuple[int, str, int, tuple[int, ...], tuple[int, int]]] = []
 
     for path, row in sorted(indexes.items()):
         data = _read_file(row)
@@ -153,17 +259,22 @@ def sweep(summary_path: Path, ledger_path: Path, expected_input_set: str) -> dic
 
         if index.magic == INDEX_MAGIC_V3_SCENE and len(index.filenames) > 1:
             framing = parse_grouped_indexed_payload_framing(data, siblings)
-            records = [record.words for group in framing.groups for record in group.records]
+            ranges = [record for group in framing.groups for record in group.records]
         elif index.magic == INDEX_MAGIC_LEGACY_GACHA:
             framing = parse_legacy_grouped_indexed_payload_framing(data, siblings)
-            records = [record.words for group in framing.groups for record in group.records]
+            ranges = [record for group in framing.groups for record in group.records]
         else:
             if len(index.filenames) != 1:
                 raise IrradianceCorpusError(f"unsupported IV index layout: {path}")
             framing = parse_indexed_payload_framing(data, siblings[index.filenames[0]])
-            records = [record.words for record in framing.records]
+            ranges = list(framing.records)
+        records = [record.words for record in ranges]
+        word_records.extend(
+            (index.magic, path, ordinal, record.words, _interval_word_pair(record))
+            for ordinal, record in enumerate(ranges)
+        )
 
-        magic = f"0x{index.magic:08X}"
+        magic = _magic_name(index.magic)
         magic_counts[magic] += 1
         record_counts[magic] += len(records)
         if index.magic == INDEX_MAGIC_V3_SCENE:
@@ -199,14 +310,27 @@ def sweep(summary_path: Path, ledger_path: Path, expected_input_set: str) -> dic
             "V3 Gacha stored-key relation changed: expected full agreement "
             f"at words 0,1,6,7; actual={pair}"
         )
+    families, relation_failures = index_word_relations(word_records)
+    if relation_failures:
+        first = relation_failures[0]
+        raise IrradianceCorpusError(
+            f"index-word relation changed: {first['check']} for {first['magic']}: "
+            f"expected {first['expected']!r}, actual {first['actual']!r}, "
+            f"first counterexample {first['firstCounterexample']}",
+            relation_failures,
+        )
     return {
         "schema": SCHEMA,
         "status": "validated",
-        "evidenceBoundary": "exact index and room framing against a current full VFS ledger; cross-index word equality is structural only",
+        "evidenceBoundary": "exact index and room framing against a current full VFS ledger; exact stored index-word arithmetic with no field names; cross-index word equality is structural only",
         "source": provenance,
         "summary": {"ivFiles": len(rows), "indexes": len(indexes), "payloads": len(payloads),
                     "rooms": len(regions), "magicCounts": dict(sorted(magic_counts.items())),
                     "recordCounts": dict(sorted(record_counts.items())), "relations": dict(sorted(relations.items()))},
+        "indexWordRelations": {
+            "checked": {_magic_name(magic): name for magic, name in sorted(CHECKED_RELATIONS.items())},
+            "families": families,
+        },
         "gachaV3Pair": pair,
         "indexSources": index_sources,
     }
@@ -227,6 +351,7 @@ def main() -> int:
             "status": "failed",
             "expectedInputSetSha256": args.expected_input_set_sha256.upper(),
             "firstFailure": f"{type(exc).__name__}: {exc}",
+            "failures": getattr(exc, "failures", []),
         }
         atomic_write_text(args.output, json.dumps(failure, indent=2) + "\n")
         print(f"irradiance corpus failed: {failure['firstFailure']}; report={args.output}")

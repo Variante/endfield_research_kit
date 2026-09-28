@@ -211,9 +211,11 @@ residual that cannot be resolved offline.
 1. **LevelScript batch.** Integrate the tracked `0x0366` PlayEffectOnNpc route
    into the shared ActionMap/layout with focused tests and production replay,
    then `0x002B` BlockBattleMusic and `0x002A` BlockAutoMusicChangeCancel.
-   Continue the highest first stops (ActionBase `0x00C9`
-   FacGetBuildingPosition, `0x0007` AddBuffsToTargetSelves, ActionHeader
-   `0x006A` LevelEvent_OnEntityHpChanged) as independent routes; turn the
+   Continue the highest first stops in
+   `scripts.game_data.levelscript_first_stop_census` (ActionBase `0x00C9`
+   FacGetBuildingPosition, `0x0007` AddBuffsToTargetSelves, ActionHeaders
+   `0x0040` LevelEvent_OnAetherEnergyLockEndPointScanned and `0x006A`
+   LevelEvent_OnEntityHpChanged) as independent routes; turn the
    `0x0032` BuildingPosHintShow probe into a contract once its enum alias is
    resolved. At the batch boundary run the full authenticated JsonData gate
    once, rerank first stops, and replace provisional whole-owner projections.

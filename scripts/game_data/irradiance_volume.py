@@ -30,8 +30,9 @@ version. The Gacha directory's reach to index EOF is this reader's strict
 corpus-framing rule; the selected native parser has no final EOF comparison
 (``irradiance_path_native``), so it is not a native acceptance condition.
 
-Stored arithmetic seen in the current corpus (not checked here): scene V3
-``w4 = w5 + w6`` and Gacha V3 ``w3 = w4 + w5``; legacy has neither. They are
+Stored arithmetic in the current corpus (checked by
+``irradiance_volume_corpus.index_word_relations``, not by this reader): scene
+V3 ``w4 = w5 + w6`` and Gacha V3 ``w3 = w4 + w5``; legacy has neither. They are
 not interval splits (some scene intervals are shorter than ``w5``), and no
 consumer names the parts.
 

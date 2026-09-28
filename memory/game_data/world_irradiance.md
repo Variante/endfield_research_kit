@@ -31,8 +31,9 @@ established.
 - **Stored arithmetic (exact, unnamed).** Rejoined to the VFS ledger with
   each index MD5 checked, the current corpus shows two magic-specific
   relations. They are not compression sizes, texture roles or selection
-  rules. No tracked module recomputes them; the per-index evidence was the
-  local `reports/animestudio/iv_index_additive_relations.json`.
+  rules. `irradiance_volume_corpus.py` recomputes them per magic
+  (`indexWordRelations`) and fails if a V3 relation stops holding for every
+  record, if legacy gains one, or if the scene counterexamples below vanish.
 
 | Index magic | Exact stored relation | Limit |
 | --- | --- | --- |

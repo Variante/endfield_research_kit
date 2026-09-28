@@ -314,8 +314,11 @@ The ordered queue across families is in
 items this topic owns.
 
 - **LevelScript.** The gate rerun, first-stop leaders and route integration
-  order are item 1 of the queue; no tracked tool produces the first-stop
-  census yet. Unsupported values: positive `PosRot`/`GameplayTag`/`BuffPtr`
+  order are item 1 of the queue;
+  [`levelscript_first_stop_census.py`](../../scripts/game_data/levelscript_first_stop_census.py)
+  reruns the owner over the JsonData receipt's partial files and ranks first
+  stops by whole files. Unsupported values: positive
+  `PosRot`/`GameplayTag`/`BuffPtr`
   list elements, non-null `CameraControllerBase` and target-script values,
   non-constant patrol `EntityPtr`, positive dynamic AI blackboards, camera
   poses and curve keys; `SendLuaEvent2` is unobserved; partial templates stop
