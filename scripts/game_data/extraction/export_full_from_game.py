@@ -6471,7 +6471,9 @@ def main() -> int:
     structured_dump_plan = structured_dump_steps(extraction.structured_blocks)
     stage_options = animestudio_stage_options(extraction)
     # Overlay skip lists need both layers' indexes even for Story-only exports.
-    # A first-time Story export has no cached indexes to reuse.
+    # A first-time Story export has no cached indexes to reuse. noddy55168
+    # reported this and proposed the fix in
+    # https://github.com/Variante/endfield_research_kit/pull/6.
     vfs_index_enabled = should_build_vfs_indexes(
         skip_vfs_index=args.skip_vfs_index,
         skip_animestudio=args.skip_animestudio,
