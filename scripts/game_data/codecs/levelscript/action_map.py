@@ -15,6 +15,7 @@ import struct
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 from . import params
 from . import send_lua_event
 
@@ -29,7 +30,7 @@ class ActionMapCodecError(ValueError):
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
     contract = json.loads(CONTRACT_PATH.read_bytes())
-    if contract.get("schema") != "endfield.action-map-layouts.v2":
+    if contract.get("schema") != "endfield.action-map-layouts.v3":
         raise ActionMapCodecError("actionMap.layoutContract:unsupported-schema")
     return contract
 
@@ -42,6 +43,1639 @@ def _layouts() -> dict[tuple[str, int], dict[str, Any]]:
 @lru_cache(maxsize=1)
 def _condition_layouts() -> dict[int, dict[str, Any]]:
     return {row["tag"]: row for row in _contract().get("conditionLayouts", [])}
+
+
+@lru_cache(maxsize=1)
+def _finish_scene_effect_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_finish_scene_effect_native import (
+        validate_finish_scene_effect_native_contract,
+    )
+
+    return validate_finish_scene_effect_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _npc_proxy_patrol_stop_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_npc_proxy_patrol_stop_native import (
+        validate_npc_proxy_patrol_stop_native_contract,
+    )
+
+    return validate_npc_proxy_patrol_stop_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _post_audio_status_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_post_audio_status_native import (
+        validate_post_audio_status_native_contract,
+    )
+
+    return validate_post_audio_status_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _entities_visibility_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_entities_visibility_native import (
+        validate_entities_visibility_native_contract,
+    )
+
+    return validate_entities_visibility_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _track_camera_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_track_camera_native import (
+        validate_track_camera_native_contract,
+    )
+
+    return validate_track_camera_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _enemy_patrol_start_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_enemy_patrol_start_native import (
+        validate_enemy_patrol_start_native_contract,
+    )
+
+    return validate_enemy_patrol_start_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _archery_stage_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_archery_stage_native import (
+        validate_archery_stage_native_contract,
+    )
+
+    return validate_archery_stage_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _typhoea_chip_id_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_typhoea_chip_id_native import (
+        validate_typhoea_chip_id_native_contract,
+    )
+
+    return validate_typhoea_chip_id_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _finish_buffs_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_finish_buffs_native import (
+        validate_finish_buffs_native_contract,
+    )
+
+    return validate_finish_buffs_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _mark_task_condition_failed_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_mark_task_condition_failed_native import (
+        validate_levelscript_mark_task_condition_failed_native_contract,
+    )
+
+    return validate_levelscript_mark_task_condition_failed_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _archery_advanced_headers_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_archery_advanced_headers_native import (
+        validate_levelscript_archery_advanced_headers_native_contract,
+    )
+
+    return validate_levelscript_archery_advanced_headers_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_train_level_event_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_train_level_event_native import (
+        validate_levelscript_on_train_level_event_native_contract,
+    )
+
+    return validate_levelscript_on_train_level_event_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_map_var_changed_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_map_var_changed_native import (
+        validate_levelscript_on_map_var_changed_native_contract,
+    )
+
+    return validate_levelscript_on_map_var_changed_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_enemy_in_fight_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_enemy_in_fight_native import (
+        validate_levelscript_on_enemy_in_fight_native_contract,
+    )
+
+    return validate_levelscript_on_enemy_in_fight_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_enemy_take_last_attack_damage_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_enemy_take_last_attack_damage_native import (
+        validate_levelscript_on_enemy_take_last_attack_damage_native_contract,
+    )
+
+    return validate_levelscript_on_enemy_take_last_attack_damage_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_spell_infliction_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_spell_infliction_native import (
+        validate_levelscript_on_spell_infliction_native_contract,
+    )
+
+    return validate_levelscript_on_spell_infliction_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_spawner_entity_spawn_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_spawner_entity_spawn_native import (
+        validate_levelscript_on_spawner_entity_spawn_native_contract,
+    )
+
+    return validate_levelscript_on_spawner_entity_spawn_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_spawner_group_begin_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_spawner_group_begin_native import (
+        validate_levelscript_on_spawner_group_begin_native_contract,
+    )
+
+    return validate_levelscript_on_spawner_group_begin_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_spawner_entity_die_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_spawner_entity_die_native import (
+        validate_levelscript_on_spawner_entity_die_native_contract,
+    )
+
+    return validate_levelscript_on_spawner_entity_die_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_encounter_activated_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_encounter_activated_native import (
+        validate_levelscript_on_encounter_activated_native_contract,
+    )
+
+    return validate_levelscript_on_encounter_activated_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_encounter_battle_part_begin_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_encounter_battle_part_begin_native import (
+        validate_levelscript_on_encounter_battle_part_begin_native_contract,
+    )
+
+    return validate_levelscript_on_encounter_battle_part_begin_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_encounter_battle_part_end_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_encounter_battle_part_end_native import (
+        validate_levelscript_on_encounter_battle_part_end_native_contract,
+    )
+
+    return validate_levelscript_on_encounter_battle_part_end_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_entity_cast_skill_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_entity_cast_skill_native import (
+        validate_levelscript_on_entity_cast_skill_native_contract,
+    )
+
+    return validate_levelscript_on_entity_cast_skill_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_leader_enter_trigger_volume_list_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_leader_enter_trigger_volume_list_native import (
+        validate_levelscript_on_leader_enter_trigger_volume_list_native_contract,
+    )
+
+    return validate_levelscript_on_leader_enter_trigger_volume_list_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _list_add_value_entity_ptr_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_list_add_value_entity_ptr_native import (
+        validate_levelscript_list_add_value_entity_ptr_native_contract,
+    )
+
+    return validate_levelscript_list_add_value_entity_ptr_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _add_tracking_point_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_add_tracking_point_native import (
+        validate_levelscript_add_tracking_point_native_contract,
+    )
+
+    return validate_levelscript_add_tracking_point_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _set_forbid_map_teleport_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_set_forbid_map_teleport_native import (
+        validate_levelscript_set_forbid_map_teleport_native_contract,
+    )
+
+    return validate_levelscript_set_forbid_map_teleport_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _resume_spawner_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_resume_spawner_native import (
+        validate_levelscript_resume_spawner_native_contract,
+    )
+
+    return validate_levelscript_resume_spawner_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _start_seq_loop_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_start_seq_loop_native import (
+        validate_start_seq_loop_native_contract,
+    )
+
+    return validate_start_seq_loop_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _entity_scanned_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_entity_scanned_native import (
+        validate_entity_scanned_native_contract,
+    )
+
+    return validate_entity_scanned_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _squad_fight_header_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_squad_fight_header_native import (
+        validate_squad_fight_header_native_contract,
+    )
+
+    return validate_squad_fight_header_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _leader_enter_trigger_volume_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_leader_enter_trigger_volume_native import (
+        validate_leader_enter_trigger_volume_native_contract,
+    )
+
+    return validate_leader_enter_trigger_volume_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _squad_all_die_header_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_squad_all_die_header_native import (
+        validate_squad_all_die_header_native_contract,
+    )
+
+    return validate_squad_all_die_header_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _tracking_point_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_tracking_point_native import (
+        validate_tracking_point_native_contract,
+    )
+
+    return validate_tracking_point_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _mission_changed_header_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_mission_changed_header_native import (
+        validate_mission_changed_header_native_contract,
+    )
+
+    return validate_mission_changed_header_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _cutscene_teleport_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_cutscene_teleport_native import (
+        validate_cutscene_teleport_native_contract,
+    )
+
+    return validate_cutscene_teleport_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _manually_stop_guide_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_manually_stop_guide_native import (
+        validate_manually_stop_guide_native_contract,
+    )
+
+    return validate_manually_stop_guide_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _remove_tracking_point_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_remove_tracking_point_native import (
+        validate_remove_tracking_point_native_contract,
+    )
+
+    return validate_remove_tracking_point_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _get_is_leader_in_trigger_volume_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_get_is_leader_in_trigger_volume_native import (
+        validate_get_is_leader_in_trigger_volume_native_contract,
+    )
+
+    return validate_get_is_leader_in_trigger_volume_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _send_lua_event1_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_send_lua_event1_native import (
+        validate_send_lua_event1_native_contract,
+    )
+
+    return validate_send_lua_event1_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _start_subgame_countdown_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_start_subgame_countdown_native import (
+        validate_start_subgame_countdown_native_contract,
+    )
+
+    return validate_start_subgame_countdown_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _show_start_toast_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_show_start_toast_native import (
+        validate_show_start_toast_native_contract,
+    )
+
+    return validate_show_start_toast_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _show_finish_toast_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_show_finish_toast_native import (
+        validate_show_finish_toast_native_contract,
+    )
+
+    return validate_show_finish_toast_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _toggle_main_hud_ignore_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_toggle_main_hud_ignore_native import (
+        validate_toggle_main_hud_ignore_native_contract,
+    )
+
+    return validate_toggle_main_hud_ignore_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _show_chapter_panel_direct_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_show_chapter_panel_direct_native import (
+        validate_show_chapter_panel_direct_native_contract,
+    )
+
+    return validate_show_chapter_panel_direct_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _show_chapter_completed_panel_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_show_chapter_completed_panel_native import (
+        validate_show_chapter_completed_panel_native_contract,
+    )
+
+    return validate_show_chapter_completed_panel_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _switch_to_camera_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_switch_to_camera_native import (
+        validate_switch_to_camera_native_contract,
+    )
+
+    return validate_switch_to_camera_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _start_track_camera_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_start_track_camera_native import (
+        validate_start_track_camera_native_contract,
+    )
+
+    return validate_start_track_camera_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _exit_camera_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_exit_camera_native import (
+        validate_exit_camera_native_contract,
+    )
+
+    return validate_exit_camera_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _reset_follow_camera_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_reset_follow_camera_native import (
+        validate_reset_follow_camera_native_contract,
+    )
+
+    return validate_reset_follow_camera_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _fac_set_interact_locked_state_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_fac_set_interact_locked_state_native import (
+        validate_fac_set_interact_locked_state_native_contract,
+    )
+
+    return validate_fac_set_interact_locked_state_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _toggle_clear_screen_but_radio_v2_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_toggle_clear_screen_but_radio_v2_native import (
+        validate_toggle_clear_screen_but_radio_v2_native_contract,
+    )
+
+    return validate_toggle_clear_screen_but_radio_v2_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _remove_npc_dialog_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_remove_npc_dialog_native import (
+        validate_remove_npc_dialog_native_contract,
+    )
+
+    return validate_remove_npc_dialog_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _stop_subgame_countdown_by_handle_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_stop_subgame_countdown_by_handle_native import (
+        validate_stop_subgame_countdown_by_handle_native_contract,
+    )
+
+    return validate_stop_subgame_countdown_by_handle_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _require_settlement_show_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_require_settlement_show_native import (
+        validate_require_settlement_show_native_contract,
+    )
+
+    return validate_require_settlement_show_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _settlement_followon_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_settlement_followon_native import (
+        validate_settlement_followon_native_contract,
+    )
+
+    return validate_settlement_followon_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _bool_compare_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_bool_compare_native import (
+        validate_bool_compare_native_contract,
+    )
+
+    return validate_bool_compare_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _fac_top_view_range_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_fac_top_view_range_native import (
+        validate_fac_top_view_range_native_contract,
+    )
+
+    return validate_fac_top_view_range_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _fac_build_effect_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_fac_build_effect_native import (
+        validate_fac_build_effect_native_contract,
+    )
+
+    return validate_fac_build_effect_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _fac_change_building_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_fac_change_building_native import (
+        validate_fac_change_building_native_contract,
+    )
+
+    return validate_fac_change_building_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _npc_proxy_effect_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_npc_proxy_effect_native import (
+        validate_npc_proxy_effect_native_contract,
+    )
+
+    return validate_npc_proxy_effect_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _event_args_float_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_event_args_float_native import (
+        validate_event_args_float_native_contract,
+    )
+
+    return validate_event_args_float_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _audio_cue_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_audio_cue_native import (
+        validate_audio_cue_native_contract,
+    )
+
+    return validate_audio_cue_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _override_npc_dialog_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_override_npc_dialog_native import (
+        validate_override_npc_dialog_native_contract,
+    )
+
+    return validate_override_npc_dialog_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _getter_compare_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_getter_compare_native import (
+        validate_getter_compare_native_contract,
+    )
+
+    return validate_getter_compare_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _get_mission_state_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_get_mission_state_native import (
+        validate_get_mission_state_native_contract,
+    )
+
+    return validate_get_mission_state_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _water_height_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_water_height_native import (
+        validate_water_height_native_contract,
+    )
+
+    return validate_water_height_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _set_fac_mode_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_set_fac_mode_native import (
+        validate_set_fac_mode_native_contract,
+    )
+
+    return validate_set_fac_mode_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _required_native_gates() -> dict[tuple[str, int], str]:
+    """Read selected route identities from their reviewed contracts."""
+    required: dict[tuple[str, int], str] = {}
+    for filename, schema, gate in (
+        ("levelscript_header_native.json", "endfield.levelscript-header-native-contract.v1", "levelscript_header_native"),
+        ("levelscript_finish_scene_effect_native.json", "endfield.levelscript-finish-scene-effect-native-contract.v1", "levelscript_finish_scene_effect_native"),
+        ("levelscript_getter_int_native.json", "endfield.levelscript-getter-int-native-contract.v1", "levelscript_getter_int_native"),
+        ("levelscript_getter_compare_native.json", "endfield.levelscript-getter-compare-native-contract.v1", "levelscript_getter_compare_native"),
+        ("levelscript_get_mission_state_native.json", "endfield.levelscript-get-mission-state-native-contract.v1", "levelscript_get_mission_state_native"),
+        ("levelscript_water_height_native.json", "endfield.levelscript-water-height-native-contract.v1", "levelscript_water_height_native"),
+        ("levelscript_set_fac_mode_native.json", "endfield.levelscript-set-fac-mode-native-contract.v1", "levelscript_set_fac_mode_native"),
+        ("levelscript_npc_proxy_patrol_stop_native.json", "endfield.levelscript-npc-proxy-patrol-stop-native-contract.v1", "levelscript_npc_proxy_patrol_stop_native"),
+        ("levelscript_post_audio_status_native.json", "endfield.levelscript-post-audio-status-native-contract.v1", "levelscript_post_audio_status_native"),
+        ("levelscript_entities_visibility_native.json", "endfield.levelscript-entities-visibility-native-contract.v1", "levelscript_entities_visibility_native"),
+        ("levelscript_track_camera_native.json", "endfield.levelscript-track-camera-native-contract.v1", "levelscript_track_camera_native"),
+        ("levelscript_enemy_patrol_start_native.json", "endfield.levelscript-enemy-patrol-start-native-contract.v1", "levelscript_enemy_patrol_start_native"),
+        ("levelscript_archery_stage_native.json", "endfield.levelscript-enable-typhoea-archery-stage-native-contract.v1", "levelscript_archery_stage_native"),
+        ("levelscript_typhoea_chip_id_native.json", "endfield.levelscript-typhoea-chip-id-native-contract.v1", "levelscript_typhoea_chip_id_native"),
+        ("levelscript_finish_buffs_native.json", "endfield.levelscript-finish-buffs-native-contract.v1", "levelscript_finish_buffs_native"),
+        ("levelscript_mark_task_condition_failed_native.json", "endfield.levelscript-mark-task-condition-failed-native.v1", "levelscript_mark_task_condition_failed_native"),
+        ("levelscript_archery_advanced_headers_native.json", "endfield.levelscript-archery-advanced-headers-native.v1", "levelscript_archery_advanced_headers_native"),
+        ("levelscript_on_train_level_event_native.json", "endfield.levelscript-on-train-level-event-native.v1", "levelscript_on_train_level_event_native"),
+        ("levelscript_on_map_var_changed_native.json", "endfield.levelscript-on-map-var-changed-native.v1", "levelscript_on_map_var_changed_native"),
+        ("levelscript_on_enemy_in_fight_native.json", "endfield.levelscript-on-enemy-in-fight-native.v1", "levelscript_on_enemy_in_fight_native"),
+        ("levelscript_on_enemy_take_last_attack_damage_native.json", "endfield.levelscript-on-enemy-take-last-attack-damage-native.v1", "levelscript_on_enemy_take_last_attack_damage_native"),
+        ("levelscript_on_spell_infliction_native.json", "endfield.levelscript-on-spell-infliction-native.v1", "levelscript_on_spell_infliction_native"),
+        ("levelscript_on_spawner_entity_spawn_native.json", "endfield.levelscript-on-spawner-entity-spawn-native.v1", "levelscript_on_spawner_entity_spawn_native"),
+        ("levelscript_on_spawner_group_begin_native.json", "endfield.levelscript-on-spawner-group-begin-native.v1", "levelscript_on_spawner_group_begin_native"),
+        ("levelscript_on_spawner_entity_die_native.json", "endfield.levelscript-on-spawner-entity-die-native.v1", "levelscript_on_spawner_entity_die_native"),
+        ("levelscript_on_encounter_activated_native.json", "endfield.levelscript-on-encounter-activated-native.v1", "levelscript_on_encounter_activated_native"),
+        ("levelscript_on_encounter_battle_part_begin_native.json", "endfield.levelscript-on-encounter-battle-part-begin-native.v1", "levelscript_on_encounter_battle_part_begin_native"),
+        ("levelscript_on_encounter_battle_part_end_native.json", "endfield.levelscript-on-encounter-battle-part-end-native.v1", "levelscript_on_encounter_battle_part_end_native"),
+        ("levelscript_on_entity_cast_skill_native.json", "endfield.levelscript-on-entity-cast-skill-native.v1", "levelscript_on_entity_cast_skill_native"),
+        ("levelscript_on_leader_enter_trigger_volume_list_native.json", "endfield.levelscript-on-leader-enter-trigger-volume-list-native.v1", "levelscript_on_leader_enter_trigger_volume_list_native"),
+        ("levelscript_list_add_value_entity_ptr_native.json", "endfield.levelscript-list-add-value-entity-ptr-native.v1", "levelscript_list_add_value_entity_ptr_native"),
+        ("levelscript_add_tracking_point_native.json", "endfield.levelscript-add-tracking-point-native.v1", "levelscript_add_tracking_point_native"),
+        ("levelscript_set_forbid_map_teleport_native.json", "endfield.levelscript-set-forbid-map-teleport-native.v1", "levelscript_set_forbid_map_teleport_native"),
+        ("levelscript_resume_spawner_native.json", "endfield.levelscript-resume-spawner-native.v1", "levelscript_resume_spawner_native"),
+        ("levelscript_start_seq_loop_native.json", "endfield.levelscript-start-level-seq-loop-segment-native-contract.v1", "levelscript_start_seq_loop_native"),
+        ("levelscript_entity_scanned_native.json", "endfield.levelscript-entity-scanned-native-contract.v1", "levelscript_entity_scanned_native"),
+        ("levelscript_squad_fight_header_native.json", "endfield.levelscript-squad-fight-header-native-contract.v1", "levelscript_squad_fight_header_native"),
+        ("levelscript_leader_enter_trigger_volume_native.json", "endfield.levelscript-leader-enter-trigger-volume-native-contract.v1", "levelscript_leader_enter_trigger_volume_native"),
+        ("levelscript_squad_all_die_header_native.json", "endfield.levelscript-squad-all-die-header-native-contract.v1", "levelscript_squad_all_die_header_native"),
+        ("levelscript_tracking_point_native.json", "endfield.levelscript-tracking-point-native-contract.v1", "levelscript_tracking_point_native"),
+        ("levelscript_mission_changed_header_native.json", "endfield.levelscript-mission-changed-header-native-contract.v1", "levelscript_mission_changed_header_native"),
+        ("levelscript_cutscene_teleport_native.json", "endfield.levelscript-cutscene-teleport-native-contract.v1", "levelscript_cutscene_teleport_native"),
+        ("levelscript_manually_stop_guide_native.json", "endfield.levelscript-manually-stop-guide-native-contract.v1", "levelscript_manually_stop_guide_native"),
+        ("levelscript_remove_tracking_point_native.json", "endfield.levelscript-remove-tracking-point-native-contract.v1", "levelscript_remove_tracking_point_native"),
+        ("levelscript_get_is_leader_in_trigger_volume_native.json", "endfield.levelscript-get-is-leader-in-trigger-volume-native-contract.v1", "levelscript_get_is_leader_in_trigger_volume_native"),
+        ("levelscript_send_lua_event1_native.json", "endfield.levelscript-send-lua-event1-native-contract.v1", "levelscript_send_lua_event1_native"),
+        ("levelscript_start_subgame_countdown_native.json", "endfield.levelscript-start-subgame-countdown-native-contract.v1", "levelscript_start_subgame_countdown_native"),
+        ("levelscript_show_start_toast_native.json", "endfield.levelscript-show-start-toast-native-contract.v1", "levelscript_show_start_toast_native"),
+        ("levelscript_show_finish_toast_native.json", "endfield.levelscript-show-finish-toast-native-contract.v1", "levelscript_show_finish_toast_native"),
+        ("levelscript_toggle_main_hud_ignore_native.json", "endfield.levelscript-toggle-main-hud-ignore-native-contract.v1", "levelscript_toggle_main_hud_ignore_native"),
+        ("levelscript_show_chapter_panel_direct_native.json", "endfield.levelscript-show-chapter-panel-direct-native-contract.v1", "levelscript_show_chapter_panel_direct_native"),
+        ("levelscript_show_chapter_completed_panel_native.json", "endfield.levelscript-show-chapter-completed-panel-native-contract.v1", "levelscript_show_chapter_completed_panel_native"),
+        ("levelscript_switch_to_camera_native.json", "endfield.levelscript-switch-to-camera-native-contract.v1", "levelscript_switch_to_camera_native"),
+        ("levelscript_start_track_camera_native.json", "endfield.levelscript-start-track-camera-native-contract.v1", "levelscript_start_track_camera_native"),
+        ("levelscript_exit_camera_native.json", "endfield.levelscript-exit-camera-native-contract.v1", "levelscript_exit_camera_native"),
+        ("levelscript_reset_follow_camera_native.json", "endfield.levelscript-reset-follow-camera-native-contract.v1", "levelscript_reset_follow_camera_native"),
+        ("levelscript_fac_set_interact_locked_state_native.json", "endfield.levelscript-fac-set-interact-locked-state-native-contract.v1", "levelscript_fac_set_interact_locked_state_native"),
+        ("levelscript_toggle_clear_screen_but_radio_v2_native.json", "endfield.levelscript-toggle-clear-screen-but-radio-v2-native-contract.v1", "levelscript_toggle_clear_screen_but_radio_v2_native"),
+        ("levelscript_remove_npc_dialog_native.json", "endfield.levelscript-remove-npc-dialog-native-contract.v1", "levelscript_remove_npc_dialog_native"),
+        ("levelscript_stop_subgame_countdown_by_handle_native.json", "endfield.levelscript-stop-subgame-countdown-by-handle-native-contract.v1", "levelscript_stop_subgame_countdown_by_handle_native"),
+        ("levelscript_require_settlement_show_native.json", "endfield.levelscript-require-settlement-show-native-contract.v1", "levelscript_require_settlement_show_native"),
+        ("levelscript_settlement_followon_native.json", "endfield.levelscript-settlement-followon-native-contract.v1", "levelscript_settlement_followon_native"),
+        ("levelscript_bool_compare_native.json", "endfield.levelscript-bool-compare-native-contract.v1", "levelscript_bool_compare_native"),
+        ("levelscript_fac_top_view_range_native.json", "endfield.levelscript-fac-top-view-range-native-contract.v1", "levelscript_fac_top_view_range_native"),
+        ("levelscript_fac_build_effect_native.json", "endfield.levelscript-fac-build-effect-native-contract.v1", "levelscript_fac_build_effect_native"),
+        ("levelscript_fac_change_building_native.json", "endfield.levelscript-fac-change-building-native-contract.v1", "levelscript_fac_change_building_native"),
+        ("levelscript_npc_proxy_effect_native.json", "endfield.levelscript-npc-proxy-effect-native-contract.v1", "levelscript_npc_proxy_effect_native"),
+        ("levelscript_event_args_float_native.json", "endfield.levelscript-event-args-float-native-contract.v1", "levelscript_event_args_float_native"),
+        ("levelscript_audio_cue_native.json", "endfield.levelscript-audio-cue-native-contract.v1", "levelscript_audio_cue_native"),
+        ("levelscript_override_npc_dialog_native.json", "endfield.levelscript-override-npc-dialog-native-contract.v1", "levelscript_override_npc_dialog_native"),
+    ):
+        contract = json.loads((CONTRACTS_DIR / filename).read_bytes())
+        if contract.get("schema") != schema or contract.get("status") != "exact-current-build":
+            raise ActionMapCodecError(f"actionMap.nativeGate:contract-status={filename}")
+        routes = contract.get("routes", [contract.get("route")])
+        for route in routes:
+            if not isinstance(route, dict):
+                raise ActionMapCodecError(f"actionMap.nativeGate:contract-route={filename}")
+            key = (route.get("codecFamily", route.get("family")), route.get("tag"))
+            if key in required or not isinstance(key[0], str) or not isinstance(key[1], int):
+                raise ActionMapCodecError(f"actionMap.nativeGate:contract-identity={filename}")
+            required[key] = gate
+    return required
+
+
+def _require_selected_native(family: str, tag: int, layout: dict[str, Any]) -> None:
+    """Keep selected native routes unavailable on build or body drift."""
+    reviewed = _layouts().get((family, tag))
+    if reviewed is None:
+        return
+    native_gate = reviewed.get("nativeGate")
+    required = _required_native_gates().get((family, tag))
+    if required is not None and native_gate != required:
+        raise ActionMapCodecError(
+            f"actionMap.nativeGate:missing-gate={family}:0x{tag:04x},required={required}"
+        )
+    if native_gate is None:
+        return
+    if native_gate == "levelscript_entity_scanned_native":
+        audit = _entity_scanned_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.entityScannedNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_squad_fight_header_native":
+        audit = _squad_fight_header_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.squadFightHeaderNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_leader_enter_trigger_volume_native":
+        audit = _leader_enter_trigger_volume_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.leaderEnterTriggerVolumeNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_squad_all_die_header_native":
+        audit = _squad_all_die_header_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.squadAllDieHeaderNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_tracking_point_native":
+        audit = _tracking_point_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.trackingPointNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_mission_changed_header_native":
+        audit = _mission_changed_header_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.missionChangedHeaderNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_cutscene_teleport_native":
+        audit = _cutscene_teleport_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.cutsceneTeleportNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_manually_stop_guide_native":
+        audit = _manually_stop_guide_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.manuallyStopGuideNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_remove_tracking_point_native":
+        audit = _remove_tracking_point_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.removeTrackingPointNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_get_is_leader_in_trigger_volume_native":
+        audit = _get_is_leader_in_trigger_volume_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.getIsLeaderInTriggerVolumeNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_send_lua_event1_native":
+        audit = _send_lua_event1_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.sendLuaEvent1Native: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_start_subgame_countdown_native":
+        audit = _start_subgame_countdown_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.startSubGameCountDownNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate in (
+        "levelscript_show_start_toast_native",
+        "levelscript_show_finish_toast_native",
+        "levelscript_toggle_main_hud_ignore_native",
+        "levelscript_show_chapter_panel_direct_native",
+        "levelscript_show_chapter_completed_panel_native",
+        "levelscript_switch_to_camera_native",
+        "levelscript_start_track_camera_native",
+        "levelscript_exit_camera_native",
+        "levelscript_reset_follow_camera_native",
+        "levelscript_fac_set_interact_locked_state_native",
+        "levelscript_toggle_clear_screen_but_radio_v2_native",
+        "levelscript_remove_npc_dialog_native",
+        "levelscript_stop_subgame_countdown_by_handle_native",
+    ):
+        audit = (
+            _show_start_toast_native_audit() if native_gate == "levelscript_show_start_toast_native"
+            else _show_finish_toast_native_audit() if native_gate == "levelscript_show_finish_toast_native"
+            else _toggle_main_hud_ignore_native_audit() if native_gate == "levelscript_toggle_main_hud_ignore_native"
+            else _show_chapter_panel_direct_native_audit() if native_gate == "levelscript_show_chapter_panel_direct_native"
+            else _show_chapter_completed_panel_native_audit() if native_gate == "levelscript_show_chapter_completed_panel_native"
+            else _switch_to_camera_native_audit() if native_gate == "levelscript_switch_to_camera_native"
+            else _start_track_camera_native_audit() if native_gate == "levelscript_start_track_camera_native"
+            else _exit_camera_native_audit() if native_gate == "levelscript_exit_camera_native"
+            else _reset_follow_camera_native_audit() if native_gate == "levelscript_reset_follow_camera_native"
+            else _fac_set_interact_locked_state_native_audit() if native_gate == "levelscript_fac_set_interact_locked_state_native"
+            else _toggle_clear_screen_but_radio_v2_native_audit() if native_gate == "levelscript_toggle_clear_screen_but_radio_v2_native"
+            else _remove_npc_dialog_native_audit() if native_gate == "levelscript_remove_npc_dialog_native"
+            else _stop_subgame_countdown_by_handle_native_audit()
+        )
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                f"actionMap.{native_gate}: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_require_settlement_show_native":
+        audit = _require_settlement_show_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.requireSettlementShowNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_settlement_followon_native":
+        audit = _settlement_followon_native_audit()
+        selected = next(
+            (row for row in audit.get("routes", [])
+             if row.get("family") == family and row.get("tag") == tag), None,
+        )
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.settlementFollowonNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_bool_compare_native":
+        audit = _bool_compare_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.boolCompareNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_fac_top_view_range_native":
+        audit = _fac_top_view_range_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.facTopViewRangeNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_fac_build_effect_native":
+        audit = _fac_build_effect_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.facBuildEffectNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_fac_change_building_native":
+        audit = _fac_change_building_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.facChangeBuildingNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_npc_proxy_effect_native":
+        audit = _npc_proxy_effect_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.npcProxyEffectNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_event_args_float_native":
+        audit = _event_args_float_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.eventArgsFloatNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_audio_cue_native":
+        audit = _audio_cue_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.audioCueNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_override_npc_dialog_native":
+        audit = _override_npc_dialog_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.overrideNpcDialogNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_finish_scene_effect_native":
+        audit = _finish_scene_effect_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.finishSceneNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_npc_proxy_patrol_stop_native":
+        audit = _npc_proxy_patrol_stop_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.npcPatrolNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_post_audio_status_native":
+        audit = _post_audio_status_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.postAudioStatusNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_entities_visibility_native":
+        audit = _entities_visibility_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.entitiesVisibilityNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_track_camera_native":
+        audit = _track_camera_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.trackCameraNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_enemy_patrol_start_native":
+        audit = _enemy_patrol_start_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.enemyPatrolStartNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_archery_stage_native":
+        audit = _archery_stage_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.archeryStageNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_typhoea_chip_id_native":
+        audit = _typhoea_chip_id_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.typhoeaChipIdNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_finish_buffs_native":
+        audit = _finish_buffs_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.finishBuffsNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_mark_task_condition_failed_native":
+        audit = _mark_task_condition_failed_native_audit()
+        selected = audit.get("route")
+        selected_fields = (
+            [[name, "int32" if kind == "enum32" else kind] for name, kind in selected["fields"]]
+            if isinstance(selected, dict) else None
+        )
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected_fields != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.markTaskConditionFailedNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_archery_advanced_headers_native":
+        audit = _archery_advanced_headers_native_audit()
+        selected = next(
+            (route for route in audit.get("routes", [])
+             if route.get("family") == family and route.get("tag") == tag),
+            None,
+        )
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.archeryAdvancedHeadersNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_on_train_level_event_native":
+        audit = _on_train_level_event_native_audit()
+        selected = next(
+            (route for route in audit.get("routes", [])
+             if route.get("family") == family and route.get("tag") == tag),
+            None,
+        )
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.onTrainLevelEventNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate in {
+        "levelscript_on_map_var_changed_native",
+        "levelscript_on_enemy_in_fight_native",
+        "levelscript_on_enemy_take_last_attack_damage_native",
+        "levelscript_on_spell_infliction_native",
+        "levelscript_on_spawner_entity_spawn_native",
+        "levelscript_on_spawner_group_begin_native",
+        "levelscript_on_spawner_entity_die_native",
+        "levelscript_on_encounter_activated_native",
+        "levelscript_on_encounter_battle_part_begin_native",
+        "levelscript_on_encounter_battle_part_end_native",
+        "levelscript_on_entity_cast_skill_native",
+        "levelscript_on_leader_enter_trigger_volume_list_native",
+        "levelscript_add_tracking_point_native",
+        "levelscript_set_forbid_map_teleport_native",
+        "levelscript_resume_spawner_native",
+    }:
+        audit = {
+            "levelscript_on_map_var_changed_native": _on_map_var_changed_native_audit,
+            "levelscript_on_enemy_in_fight_native": _on_enemy_in_fight_native_audit,
+            "levelscript_on_enemy_take_last_attack_damage_native": _on_enemy_take_last_attack_damage_native_audit,
+            "levelscript_on_spell_infliction_native": _on_spell_infliction_native_audit,
+            "levelscript_on_spawner_entity_spawn_native": _on_spawner_entity_spawn_native_audit,
+            "levelscript_on_spawner_group_begin_native": _on_spawner_group_begin_native_audit,
+            "levelscript_on_spawner_entity_die_native": _on_spawner_entity_die_native_audit,
+            "levelscript_on_encounter_activated_native": _on_encounter_activated_native_audit,
+            "levelscript_on_encounter_battle_part_begin_native": _on_encounter_battle_part_begin_native_audit,
+            "levelscript_on_encounter_battle_part_end_native": _on_encounter_battle_part_end_native_audit,
+            "levelscript_on_entity_cast_skill_native": _on_entity_cast_skill_native_audit,
+            "levelscript_on_leader_enter_trigger_volume_list_native": _on_leader_enter_trigger_volume_list_native_audit,
+            "levelscript_add_tracking_point_native": _add_tracking_point_native_audit,
+            "levelscript_set_forbid_map_teleport_native": _set_forbid_map_teleport_native_audit,
+            "levelscript_resume_spawner_native": _resume_spawner_native_audit,
+        }[native_gate]()
+        selected = next(
+            (route for route in audit.get("routes", [])
+             if route.get("family") == family and route.get("tag") == tag),
+            None,
+        )
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.selectedLevelEventNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_list_add_value_entity_ptr_native":
+        audit = _list_add_value_entity_ptr_native_audit()
+        selected = next(
+            (route for route in audit.get("routes", [])
+             if route.get("family") == family and route.get("tag") == tag),
+            None,
+        )
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.listAddValueEntityPtrNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_start_seq_loop_native":
+        audit = _start_seq_loop_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.startSeqLoopNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_getter_int_native":
+        from scripts.game_data.levelscript_getter_int_native import (
+            load_current_getter_int_native,
+        )
+
+        selected, audit = load_current_getter_int_native()
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("codecFamily") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.getterIntNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_getter_compare_native":
+        audit = _getter_compare_native_audit()
+        selected = next(
+            (route for route in audit.get("routes", [])
+             if route.get("family") == family and route.get("tag") == tag),
+            None,
+        )
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.getterCompareNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_get_mission_state_native":
+        audit = _get_mission_state_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.getMissionStateNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_water_height_native":
+        audit = _water_height_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.waterHeightNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate == "levelscript_set_fac_mode_native":
+        audit = _set_fac_mode_native_audit()
+        selected = audit.get("route")
+        if (
+            audit.get("status") != "validated"
+            or selected is None
+            or selected.get("family") != family
+            or selected.get("tag") != tag
+            or selected.get("wrapperName") != reviewed.get("wrapperName")
+            or selected.get("fields") != reviewed.get("fields")
+            or layout.get("wrapperName") != reviewed.get("wrapperName")
+            or layout.get("fields") != reviewed.get("fields")
+        ):
+            raise ActionMapCodecError(
+                "actionMap.setFacModeNative: "
+                f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+                f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
+        return
+    if native_gate != "levelscript_header_native":
+        raise ActionMapCodecError(
+            f"actionMap.headerNative:unsupported-gate={native_gate}"
+        )
+    from scripts.game_data.levelscript_header_native import load_current_header_native
+
+    routes, audit = load_current_header_native()
+    selected = routes.get(tag) if routes is not None else None
+    if (
+        audit.get("status") != "validated"
+        or selected is None
+        or selected.get("wrapperName") != reviewed.get("wrapperName")
+        or selected.get("fields") != reviewed.get("fields")
+        or layout.get("wrapperName") != reviewed.get("wrapperName")
+        or layout.get("fields") != reviewed.get("fields")
+    ):
+        raise ActionMapCodecError(
+            "actionMap.headerNative: "
+            f"family={family},tag=0x{tag:04x},status={audit.get('status')},"
+            f"check={audit.get('failedCheck')},detail={audit.get('detail')}"
+        )
 
 
 #: Fixed-width primitives a derived declaration can name directly.  These are
@@ -250,6 +1884,21 @@ class _Cursor:
         return value
 
     def value(self, kind: str, field: str) -> Any:
+        if kind == "Param<TaskObjectiveEnum>":
+            return self.value("Param<int>", field)
+        if kind == "Param<EnergyShardType>":
+            return self.value("Param<int>", field)
+        if kind == "Param<OnSpawnerEntitySpawn.FilterType>":
+            return self.value("Param<int>", field)
+        if kind == "Param<OnSpawnerEntityDie.FilterType>":
+            return self.value("Param<int>", field)
+        if kind == "Param<SkillTypeMask>":
+            return self.value("Param<int>", field)
+        if kind == "Param<ScriptTaskPtr>":
+            from .mark_task_condition_failed import decode_script_task_ptr_param
+
+            detail, self.offset = decode_script_task_ptr_param(self.data, self.offset)
+            return detail
         if kind == "GameCondition":
             return self.condition(field)
         if kind == "List<GameCondition>":
@@ -341,6 +1990,34 @@ class _Cursor:
         if self.data[self.offset] == 0xFF:
             self.offset += 1
             return None
+        if kind == "Param<EnterDollyTrackCamera.TrackCameraMoveState>":
+            from .track_camera import decode_move_state_param
+
+            audit = _track_camera_native_audit()
+            if audit.get("status") != "validated":
+                raise ActionMapCodecError(
+                    "actionMap.trackCameraEnumNative: "
+                    f"status={audit.get('status')},detail={audit.get('detail')}"
+                )
+            enum_values = {value: name for name, value in audit["enumMembers"]}
+            decoded, self.offset = decode_move_state_param(
+                self.data, self.offset, enum_values,
+            )
+            return decoded
+        if kind == "Param<ModelVisibleType>":
+            from .visibility_action import decode_visible_source_param
+
+            audit = _entities_visibility_native_audit()
+            if audit.get("status") != "validated":
+                raise ActionMapCodecError(
+                    "actionMap.entitiesVisibilityEnumNative: "
+                    f"status={audit.get('status')},detail={audit.get('detail')}"
+                )
+            enum_values = {value: name for name, value in audit["enumMembers"]}
+            decoded, self.offset = decode_visible_source_param(
+                self.data, self.offset, enum_values,
+            )
+            return decoded
         if kind in ("Param<List<PosRot>>", "Param<List<GameplayTag>>"):
             marker = self.byte(field + ".memberCount")
             if marker != 4:
@@ -405,6 +2082,20 @@ class _Cursor:
                         "valueString": self.string(item + ".valueString"),
                     })
             return self.param_tail(values, field)
+        if kind == "Param<List<uint>>":
+            marker = self.byte(field + ".memberCount")
+            if marker != 4:
+                raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
+            count = self.i32(field + ".value.count")
+            if count == -1:
+                values = None
+            elif not 0 <= count <= 10_000:
+                raise ActionMapCodecError(f"{field}:unsupported-count={count}")
+            else:
+                self.need(count * 4, field + ".value")
+                values = list(struct.unpack_from(f"<{count}I", self.data, self.offset))
+                self.offset += count * 4
+            return self.param_tail(values, field)
         if kind in (
             "Param<List<int>>", "Param<List<ulong>>", "Param<List<string>>",
             "Param<List<Vector3>>", "Param<List<float>>",
@@ -443,14 +2134,67 @@ class _Cursor:
             return self.param_tail(
                 {"tagId": self.i32(field + ".value.tagId")}, field
             )
+        if kind in (
+            "Param<CommonTrackingPointStyleType>",
+            "Param<CommonTrackingType>",
+        ):
+            audit = _tracking_point_native_audit()
+            allowed = audit.get("enumValues", {}).get(kind) if audit.get("status") == "validated" else None
+            if not isinstance(allowed, list) or not allowed:
+                raise ActionMapCodecError(f"{field}:tracking-point-enum-native={audit.get('status')}")
+            result = self.value("Param<int>", field)
+            if result["value"] not in allowed:
+                raise ActionMapCodecError(f"{field}:unsupported-tracking-point-enum={result['value']}")
+            return result
+        if kind == "Param<OnMissionStateChanged.FilterMissionStateEnum>":
+            audit = _mission_changed_header_native_audit()
+            allowed = audit.get("enumValues", {}).get(kind) if audit.get("status") == "validated" else None
+            if not isinstance(allowed, list) or not allowed:
+                raise ActionMapCodecError(f"{field}:mission-filter-enum-native={audit.get('status')}")
+            result = self.value("Param<int>", field)
+            if result["value"] not in allowed:
+                raise ActionMapCodecError(f"{field}:unsupported-mission-filter-enum={result['value']}")
+            return result
+        if kind == "Param<TeleportUIType>":
+            audit = _cutscene_teleport_native_audit()
+            allowed = audit.get("enumValues", {}).get(kind) if audit.get("status") == "validated" else None
+            if not isinstance(allowed, list) or not allowed:
+                raise ActionMapCodecError(f"{field}:teleport-ui-enum-native={audit.get('status')}")
+            result = self.value("Param<int>", field)
+            if result["value"] not in allowed:
+                raise ActionMapCodecError(f"{field}:unsupported-teleport-ui-enum={result['value']}")
+            return result
+        if kind == "Param<ChapterEffectType>":
+            # Both selected chapter-panel readers authenticate this same enum.
+            audit = _show_chapter_panel_direct_native_audit()
+            if audit.get("status") != "validated":
+                audit = _show_chapter_completed_panel_native_audit()
+            allowed = audit.get("enumValues", {}).get(kind) if audit.get("status") == "validated" else None
+            if not isinstance(allowed, list) or not allowed:
+                raise ActionMapCodecError(f"{field}:chapter-effect-enum-native={audit.get('status')}")
+            result = self.value("Param<int>", field)
+            if result["value"] not in allowed:
+                raise ActionMapCodecError(f"{field}:unsupported-chapter-effect-enum={result['value']}")
+            return result
+        if kind in ("Param<EAudioVarScope>", "Param<EAudioCueVarType>"):
+            audit = _audio_cue_native_audit()
+            allowed = audit.get("enumValues", {}).get(kind) if audit.get("status") == "validated" else None
+            if not isinstance(allowed, list) or not allowed:
+                raise ActionMapCodecError(f"{field}:audio-cue-enum-native={audit.get('status')}")
+            result = self.value("Param<int>", field)
+            if result["value"] not in allowed:
+                raise ActionMapCodecError(f"{field}:unsupported-audio-cue-enum={result['value']}")
+            return result
         # These enums have signed Int32 underlying types in the reviewed
         # wrappers. Their raw values do not select another wire layout.
         if kind in (
             "Param<BoolComparer>", "Param<NumberComparer>",
+            "Param<MissionSystem.MissionState>", "Param<EntityPtrComparer>",
             "Param<SP_INTERACTIVE_OP_TYPE>",
             "Param<InteractiveAudioComponent.EAudioTriggerState>",
             "Param<TweenManager.TweenEase>",
             "Param<FacBuildingState>",
+            "Param<FCNodeMode>",
             "Param<CinemachineBlendDefinition.Style>",
             "Param<CommonBlendCamResetType>",
             "Param<AudioCueSystem.EBehaviourType>",
@@ -462,6 +2206,7 @@ class _Cursor:
             "Param<OnQuestStateChanged.FilterQuestStateEnum>",
             "Param<MovementComponent.GroundedMoveGait>",
             "Param<MountPoint>",
+            "Param<NpcEffectType>",
             "Param<PlayerController.InputActionType>",
             "Param<EnemyAIModeType>",
             "Param<ENPCAnimationAvatarMaskType>",
@@ -480,6 +2225,7 @@ class _Cursor:
             "Param<GeneralAbilitySystem.TempAbilityActiveState>",
             "Param<CastTargetType>",
             "Param<PlayerController.InputActionType>",
+            "Param<ScriptEndReason>",
         ):
             kind = "Param<int>"
         # Both AudioBlackScreenBehaviour enums explicitly use Byte as their
@@ -511,7 +2257,7 @@ class _Cursor:
             if not all(math.isfinite(value) for value in values):
                 raise ActionMapCodecError(f"{field}:non-finite")
             return self.param_tail(values[0], field)
-        if kind in ("Param<LsmPtr>", "Param<FunctionAreaPtr>"):
+        if kind in ("Param<LsmPtr>", "Param<FunctionAreaPtr>", "Param<SpawnerPtr>", "Param<WaterVolumePtr>"):
             marker = self.byte(field + ".memberCount")
             if marker != 4:
                 raise ActionMapCodecError(
@@ -574,6 +2320,11 @@ class _Cursor:
             return self.param_tail(
                 {"ptr": {"cachedUid": cached_uid, "obj": None}}, field
             )
+        if kind == "Param<List<BuffPtr>>":
+            from .finish_buffs import decode_null_buff_list_param
+
+            detail, self.offset = decode_null_buff_list_param(self.data, self.offset)
+            return detail
         if kind == "Param<List<EntityPtr>>":
             marker = self.byte(field + ".memberCount")
             if marker != 4:
@@ -704,6 +2455,14 @@ class _Cursor:
                 "maskType": mask_type,
                 "useCurve": bool(use_curve),
             }, field)
+        if kind == "SendLuaEvent1" and field.endswith(".manualValue"):
+            try:
+                value, self.offset = send_lua_event.decode_nested_send_lua_event(
+                    self.data, self.offset, field, 1,
+                )
+            except send_lua_event.SendLuaEventDecodeError as exc:
+                raise ActionMapCodecError(str(exc)) from exc
+            return value
         decoder = (
             params.decode_param_output if kind.startswith("ParamOutput<") else {
                 "Param<string>": params.decode_string_param,
@@ -1150,6 +2909,7 @@ class _Cursor:
                 f"{field}:unsupported-declared-union={family}#0x{tag:04x},"
                 f"memberCount={members}"
             )
+        _require_selected_native(family, tag, layout)
         return {
             "unionTag": tag,
             "wrapperName": layout["wrapperName"],
@@ -1207,6 +2967,7 @@ class _Cursor:
             raise ActionMapCodecError(
                 f"{field}:unsupported-union=0x{tag:04x},memberCount={members},offset={start}"
             )
+        _require_selected_native(family, tag, layout)
         values = {name: self.value(kind, field + "." + name) for name, kind in layout["fields"]}
         return {
             "sourceOffset": start, "endOffset": self.offset,

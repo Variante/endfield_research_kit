@@ -1,0 +1,785 @@
+{
+  "schema": "endfield.levelscript-start-track-camera-native-contract.v1",
+  "status": "exact-current-build",
+  "evidenceBoundary": "exact",
+  "evidenceNote": "Selected ActionBase switch jump and wrapper, complete generated reader and formatter, fourteen ordered reads/setters, and six typed parameter contexts prove stored record shape. Joined source receipts and exact cursor replay prove eight chained spans; derived root ID and EOF remain direct-tier corroboration until whole-owner corpus closure. No runtime camera behavior is inferred.",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "route": {
+    "family": "ActionBase",
+    "tag": 1213,
+    "typeName": "Beyond.Gameplay.Actions.StartTrackCamera",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartTrackCameraForMemoryPack",
+    "typeDefinition": 18411,
+    "registeredTypeIndex": 105795,
+    "serializedMemberCount": 14,
+    "inheritedMemberCount": 8,
+    "fields": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int32"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "int32"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "nextID",
+        "int32"
+      ],
+      [
+        "cameraCtrl",
+        "Param<CameraControllerBase>"
+      ],
+      [
+        "follow",
+        "Param<EntityPtr>"
+      ],
+      [
+        "followOffset",
+        "Param<float>"
+      ],
+      [
+        "lookAt",
+        "Param<EntityPtr>"
+      ],
+      [
+        "trackName",
+        "Param<string>"
+      ],
+      [
+        "tweenTime",
+        "Param<float>"
+      ]
+    ],
+    "nativeDeclaredTypes": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "Beyond.GEnums.ScopeName"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "nextID",
+        "int"
+      ],
+      [
+        "cameraCtrl",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.View.CameraControllerBase>"
+      ],
+      [
+        "follow",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>"
+      ],
+      [
+        "followOffset",
+        "Beyond.Gameplay.Actions.Param`1<float>"
+      ],
+      [
+        "lookAt",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>"
+      ],
+      [
+        "trackName",
+        "Beyond.Gameplay.Actions.Param`1<string>"
+      ],
+      [
+        "tweenTime",
+        "Beyond.Gameplay.Actions.Param`1<float>"
+      ]
+    ]
+  },
+  "dispatcher": {
+    "switchTableRva": 43598100,
+    "switchEntryCount": 1342,
+    "switchTableSha256": "A4B75AA63B2B4EA43A6D2FC11B08085893F62543E3A9B367C34E60E916730C88",
+    "switchTargetRva": 43225176,
+    "switchEntryHex": "E90AF60400",
+    "bodyRva": 43550311,
+    "usageCellRva": 218466896,
+    "usageRawHex": "873A032000000000",
+    "branchWindow": {
+      "startRva": 43550311,
+      "endRva": 43550423,
+      "sha256": "8FAD14B28F8A5C97459DAD1573C77692F5E998CD75A34B353E782810DD60E9F6",
+      "boundary": "selected wrapper usage branch prefix"
+    },
+    "typeLoadRva": 43550346,
+    "typeLoadHex": "488B15BF036D0A"
+  },
+  "methods": [
+    [
+      136295,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartTrackCameraForMemoryPack",
+      "Deserialize",
+      155032800
+    ],
+    [
+      136296,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartTrackCameraForMemoryPack+Beyond_Gameplay_Actions_StartTrackCameraForMemoryPackFormatter",
+      "Deserialize",
+      155032560
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 155032800,
+      "endRva": 155033622,
+      "sha256": "2046353D6DB35304C7FC0FA2AB3B6C23D7BA2D1CFDD2B9AFA41AA20DCD44137A",
+      "boundary": "complete source reader hot body"
+    },
+    {
+      "startRva": 155032560,
+      "endRva": 155032649,
+      "sha256": "0A6BDCD6D5523B96EC189D5983C64F10A01CC0A8AC2487F08F1B05270D414673",
+      "boundary": "complete forwarding formatter body"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 155033025,
+    "hex": "807C24380E"
+  },
+  "readerHelpers": {
+    "bool": 46827712,
+    "int32": 46827184,
+    "string": 46827264,
+    "Param<CameraControllerBase>": 47864976,
+    "Param<EntityPtr>": 47864976,
+    "Param<float>": 47864976,
+    "Param<string>": 47864976
+  },
+  "orderedReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "dontLogWarning",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155033042,
+      "sourceCallHex": "E8E9EA8CF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "ID",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155033075,
+      "sourceCallHex": "E8B8E88CF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "releaseWhenExecutionFinished",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155033108,
+      "sourceCallHex": "E8A7EA8CF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "uid",
+      "readKind": "string",
+      "sourceCallsiteRva": 155033141,
+      "sourceCallHex": "E8C6E88CF9",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "scopeMask",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155033182,
+      "sourceCallHex": "E84DE88CF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "useCurrentScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155033215,
+      "sourceCallHex": "E83CEA8CF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "useGraphScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155033248,
+      "sourceCallHex": "E81BEA8CF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "nextID",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155033281,
+      "sourceCallHex": "E8EAE78CF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "cameraCtrl",
+      "readKind": "Param<CameraControllerBase>",
+      "sourceCallsiteRva": 155033321,
+      "sourceCallHex": "E8A2BD9CF9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "follow",
+      "readKind": "Param<EntityPtr>",
+      "sourceCallsiteRva": 155033362,
+      "sourceCallHex": "E879BD9CF9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 10,
+      "fieldName": "followOffset",
+      "readKind": "Param<float>",
+      "sourceCallsiteRva": 155033403,
+      "sourceCallHex": "E850BD9CF9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 11,
+      "fieldName": "lookAt",
+      "readKind": "Param<EntityPtr>",
+      "sourceCallsiteRva": 155033440,
+      "sourceCallHex": "E82BBD9CF9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 12,
+      "fieldName": "trackName",
+      "readKind": "Param<string>",
+      "sourceCallsiteRva": 155033477,
+      "sourceCallHex": "E806BD9CF9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 13,
+      "fieldName": "tweenTime",
+      "readKind": "Param<float>",
+      "sourceCallsiteRva": 155033514,
+      "sourceCallHex": "E8E1BC9CF9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "setters": [
+    {
+      "memberIndex": 0,
+      "callsiteRva": 155033064,
+      "callHex": "E8B34FCAFB",
+      "targetRva": 84405664,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126158,
+      "setterName": "set____dontLogWarning__"
+    },
+    {
+      "memberIndex": 1,
+      "callsiteRva": 155033097,
+      "callHex": "E84646CAFB",
+      "targetRva": 84403284,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126159,
+      "setterName": "set____ID__"
+    },
+    {
+      "memberIndex": 2,
+      "callsiteRva": 155033130,
+      "callHex": "E84D51CAFB",
+      "targetRva": 84406140,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126160,
+      "setterName": "set____releaseWhenExecutionFinished__"
+    },
+    {
+      "memberIndex": 3,
+      "callsiteRva": 155033164,
+      "callHex": "E8FFFFE2F9",
+      "targetRva": 52469328,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126161,
+      "setterName": "set____uid__"
+    },
+    {
+      "memberIndex": 4,
+      "callsiteRva": 155033204,
+      "callHex": "E85360CAFB",
+      "targetRva": 84410060,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126162,
+      "setterName": "set___scopeMask__"
+    },
+    {
+      "memberIndex": 5,
+      "callsiteRva": 155033237,
+      "callHex": "E80674CAFB",
+      "targetRva": 84415136,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126163,
+      "setterName": "set___useCurrentScope__"
+    },
+    {
+      "memberIndex": 6,
+      "callsiteRva": 155033270,
+      "callHex": "E8F169CAFB",
+      "targetRva": 84412588,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126164,
+      "setterName": "set___useGraphScope__"
+    },
+    {
+      "memberIndex": 7,
+      "callsiteRva": 155033303,
+      "callHex": "E824AD5BFA",
+      "targetRva": 60378112,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ActionBaseForMemoryPack",
+      "methodIndex": 117182,
+      "setterName": "set____nextID__"
+    },
+    {
+      "memberIndex": 8,
+      "callsiteRva": 155033344,
+      "callHex": "E8BB020000",
+      "targetRva": 155034048,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartTrackCameraForMemoryPack",
+      "methodIndex": 136287,
+      "setterName": "set___cameraCtrl__"
+    },
+    {
+      "memberIndex": 9,
+      "callsiteRva": 155033385,
+      "callHex": "E8FA020000",
+      "targetRva": 155034152,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartTrackCameraForMemoryPack",
+      "methodIndex": 136288,
+      "setterName": "set___follow__"
+    },
+    {
+      "memberIndex": 10,
+      "callsiteRva": 155033422,
+      "callHex": "E8A1020000",
+      "targetRva": 155034100,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartTrackCameraForMemoryPack",
+      "methodIndex": 136289,
+      "setterName": "set___followOffset__"
+    },
+    {
+      "memberIndex": 11,
+      "callsiteRva": 155033459,
+      "callHex": "E8E4020000",
+      "targetRva": 155034204,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartTrackCameraForMemoryPack",
+      "methodIndex": 136290,
+      "setterName": "set___lookAt__"
+    },
+    {
+      "memberIndex": 12,
+      "callsiteRva": 155033496,
+      "callHex": "E8F3020000",
+      "targetRva": 155034256,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartTrackCameraForMemoryPack",
+      "methodIndex": 136291,
+      "setterName": "set___trackName__"
+    },
+    {
+      "memberIndex": 13,
+      "callsiteRva": 155033533,
+      "callHex": "E802030000",
+      "targetRva": 155034308,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartTrackCameraForMemoryPack",
+      "methodIndex": 136292,
+      "setterName": "set___tweenTime__"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 8,
+      "instructionRva": 155033308,
+      "instructionHex": "488B15A503C203",
+      "cellRva": 218079880,
+      "usageRawHex": "65E912C000000000",
+      "methodSpecIndex": 619698,
+      "methodSpec": [
+        428464,
+        -1,
+        13577
+      ],
+      "argumentRawHex": "6884208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647244856,
+        "typeRawHex": "6884208D010000000000150000000000",
+        "carrierPointerVa": 6662685800,
+        "carrierRawHex": "28C0248D01000000709DE78A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6625402224,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 14021,
+        "table_slot_va": 6626086344,
+        "record_va": 6625402224,
+        "argument_vector_va": 6668204560,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6662097048,
+            "raw_type_record_hex": "E5200000000000000000120000000000"
+          }
+        ]
+      },
+      "elementRawHex": "E5200000000000000000120000000000",
+      "elementTypeKind": 18,
+      "elementTypeDefinition": null,
+      "elementTypeName": "Beyond.Gameplay.View.CameraControllerBase",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    },
+    {
+      "memberIndex": 9,
+      "instructionRva": 155033349,
+      "instructionHex": "488B15ACAACD03",
+      "cellRva": 218843576,
+      "usageRawHex": "93E912C000000000",
+      "methodSpecIndex": 619721,
+      "methodSpec": [
+        428464,
+        -1,
+        13600
+      ],
+      "argumentRawHex": "E861208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647238488,
+        "typeRawHex": "E861208D010000000000150000000000",
+        "carrierPointerVa": 6662676968,
+        "carrierRawHex": "28C0248D01000000303EFE8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6626885168,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 802,
+        "table_slot_va": 6625980592,
+        "record_va": 6626885168,
+        "argument_vector_va": 6669022000,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664859592,
+            "raw_type_record_hex": "C8300000000000000000118000000000"
+          }
+        ]
+      },
+      "elementRawHex": "C8300000000000000000118000000000",
+      "elementTypeKind": 17,
+      "elementTypeDefinition": 12488,
+      "elementTypeName": "Beyond.Gameplay.Core.EntityPtr",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    },
+    {
+      "memberIndex": 10,
+      "instructionRva": 155033390,
+      "instructionHex": "488B15739FC603",
+      "cellRva": 218381992,
+      "usageRawHex": "F1E912C000000000",
+      "methodSpecIndex": 619768,
+      "methodSpec": [
+        428464,
+        -1,
+        13647
+      ],
+      "argumentRawHex": "E859208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647234168,
+        "typeRawHex": "E859208D010000000000150000000000",
+        "carrierPointerVa": 6662674920,
+        "carrierRawHex": "28C0248D01000000203BFE8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6626884384,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 882,
+        "table_slot_va": 6625981232,
+        "record_va": 6626884384,
+        "argument_vector_va": 6669020960,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664874648,
+            "raw_type_record_hex": "6B8D00000000000000000C8000000000"
+          }
+        ]
+      },
+      "elementRawHex": "6B8D00000000000000000C8000000000",
+      "elementTypeKind": 12,
+      "elementTypeDefinition": null,
+      "elementTypeName": "float",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    },
+    {
+      "memberIndex": 11,
+      "instructionRva": 155033427,
+      "instructionHex": "488B155EAACD03",
+      "cellRva": 218843576,
+      "usageRawHex": "93E912C000000000",
+      "methodSpecIndex": 619721,
+      "methodSpec": [
+        428464,
+        -1,
+        13600
+      ],
+      "argumentRawHex": "E861208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647238488,
+        "typeRawHex": "E861208D010000000000150000000000",
+        "carrierPointerVa": 6662676968,
+        "carrierRawHex": "28C0248D01000000303EFE8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6626885168,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 802,
+        "table_slot_va": 6625980592,
+        "record_va": 6626885168,
+        "argument_vector_va": 6669022000,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664859592,
+            "raw_type_record_hex": "C8300000000000000000118000000000"
+          }
+        ]
+      },
+      "elementRawHex": "C8300000000000000000118000000000",
+      "elementTypeKind": 17,
+      "elementTypeDefinition": 12488,
+      "elementTypeName": "Beyond.Gameplay.Core.EntityPtr",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    },
+    {
+      "memberIndex": 12,
+      "instructionRva": 155033464,
+      "instructionHex": "488B15D9C2CC03",
+      "cellRva": 218784344,
+      "usageRawHex": "FFE912C000000000",
+      "methodSpecIndex": 619775,
+      "methodSpec": [
+        428464,
+        -1,
+        13654
+      ],
+      "argumentRawHex": "0858208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647233496,
+        "typeRawHex": "0858208D010000000000150000000000",
+        "carrierPointerVa": 6662674440,
+        "carrierRawHex": "28C0248D01000000C039FE8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6626884032,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 891,
+        "table_slot_va": 6625981304,
+        "record_va": 6626884032,
+        "argument_vector_va": 6669020808,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664879672,
+            "raw_type_record_hex": "C78C00000000000000000E0000000000"
+          }
+        ]
+      },
+      "elementRawHex": "C78C00000000000000000E0000000000",
+      "elementTypeKind": 14,
+      "elementTypeDefinition": null,
+      "elementTypeName": "string",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    },
+    {
+      "memberIndex": 13,
+      "instructionRva": 155033501,
+      "instructionHex": "488B15049FC603",
+      "cellRva": 218381992,
+      "usageRawHex": "F1E912C000000000",
+      "methodSpecIndex": 619768,
+      "methodSpec": [
+        428464,
+        -1,
+        13647
+      ],
+      "argumentRawHex": "E859208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647234168,
+        "typeRawHex": "E859208D010000000000150000000000",
+        "carrierPointerVa": 6662674920,
+        "carrierRawHex": "28C0248D01000000203BFE8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6626884384,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 882,
+        "table_slot_va": 6625981232,
+        "record_va": 6626884384,
+        "argument_vector_va": 6669020960,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664874648,
+            "raw_type_record_hex": "6B8D00000000000000000C8000000000"
+          }
+        ]
+      },
+      "elementRawHex": "6B8D00000000000000000C8000000000",
+      "elementTypeKind": 12,
+      "elementTypeDefinition": null,
+      "elementTypeName": "float",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    }
+  ],
+  "enumTypes": [],
+  "sourceReceipts": [
+    [
+      "LevelScriptData/dung01_rdg001/13000020000.json",
+      "5ED1BE94ECCED5ADE9B3E47EEB795D850C16DD9DD24F5D496BF0E1293F413A75",
+      886,
+      1077,
+      "7EE0621A7FD9A43C27EB6F6EE6EDDF5EE853436F1364B12A725C3262DCA883CC",
+      2693,
+      13000020000
+    ],
+    [
+      "LevelScriptData/dung01_rdg002/13100010008.json",
+      "1A33598268B57710B43D3AA60DF71495875BA929FA5D85FBE507611B73CCB0D1",
+      609,
+      799,
+      "935E8E89A7621E8B443FA2ED3480BF84A09BEA1026B2E8B8A554D76D76815E87",
+      3151,
+      13100010008
+    ],
+    [
+      "LevelScriptData/dung01_rdg004/24200010002.json",
+      "A366206B1C9E34F879CD774CC557B57FC694638E9B59AC00488907D2FFC29F51",
+      850,
+      1041,
+      "1CF57BC2424EFC381F343B57C3883ADE01454F19D105F73CBD4BF7BBCE6874E0",
+      2114,
+      24200010002
+    ],
+    [
+      "LevelScriptData/dung01_rdg005/24300010004.json",
+      "DD6726FC8D401753789CE2A4F2021090BF0323C020BA21A0BF51C40896BB0960",
+      356,
+      546,
+      "593C03611D6339ED661C192BED7A9DE92AC89CE8BB660F5375664740476635B2",
+      2636,
+      24300010004
+    ],
+    [
+      "LevelScriptData/dung02_rdg002/24400020037.json",
+      "9DFF0708A3DFE922E8D65727ACAB1E5F875E73ED10244C44CBEEFCBAAD90D48F",
+      1863,
+      2059,
+      "FED4775B448D1B1E39DFE635DF9A9C2C980DB7403A131FEA4B2A9B43B4E54739",
+      15764,
+      24400020037
+    ],
+    [
+      "LevelScriptData/map01_lv006/3500060005.json",
+      "2AF34EA1DC4CE1196FC26D15C3319742A577C7A88A157D327C862A8B6DF5771F",
+      1381,
+      1572,
+      "A30B47353349320DB0E5B0623232B3A27AE795BA2827B236D87FACFF09F37904",
+      5904,
+      3500060005
+    ],
+    [
+      "LevelScriptData/map02_lv001/10100510001.json",
+      "89F23B2437DB582232D70F2C8DB732F5541697E850EBDBB31253E114E3E1538C",
+      2809,
+      2994,
+      "C9E3B5E300FDDAEA62371F3B6EE9F0F1B89DDE65DDB8134C5103BC26C3DE2B76",
+      4389,
+      10100510001
+    ],
+    [
+      "LevelScriptData/map02_lv002/22800780011.json",
+      "2AC9C6D17B2D04C125A9516136EE02BA056028BF95D106BBDCB87DA5D76287ED",
+      1135,
+      1319,
+      "D17455C74E2EA2B7DC34EA4F911FCB768CEA3CF634D28A0AA55CA32390520E79",
+      8430,
+      22800780011
+    ]
+  ]
+}

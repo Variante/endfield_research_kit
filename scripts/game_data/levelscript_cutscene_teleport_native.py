@@ -1,0 +1,473 @@
+"""Authenticate StartCutsceneAndTeleportAction's stored ActionBase layout.
+
+The native contract proves the generated union reader, parameter types and
+enum storage. Source receipts prove reached bytes, not a live teleport.
+"""
+
+from __future__ import annotations
+
+import argparse
+import gzip
+import hashlib
+import json
+import struct
+from pathlib import Path
+from typing import Any
+
+from scripts.common import check_installed_native_inputs, sha256_file
+from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.il2cpp import protocol
+from scripts.game_data.il2cpp.body_claims import BodyIndex
+from scripts.game_data.il2cpp.context import (
+    generic_type_carrier, method_spec_record, method_spec_usage_index,
+    unresolved_usage_index,
+)
+from scripts.game_data.il2cpp.native_image import open_native_image
+from scripts.game_data.memorypack.union_dispatch import read_union_switch
+from scripts.game_data.memorypack.wrapper_members import derive_from_image
+
+
+SCHEMA = "endfield.levelscript-cutscene-teleport-native-contract.v1"
+LABEL = "levelscriptCutsceneTeleportNative"
+DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_cutscene_teleport_native.json"
+_PARAM_KINDS = [
+    "Param<CommonMaskBlendData>", "Param<CommonMaskBlendData>",
+    "Param<string>", "Param<Vector3>", "Param<Vector3>",
+    "Param<string>", "Param<TeleportUIType>", "Param<string>",
+    "Param<List<EntityPtr>>", "Param<List<EntityPtr>>", "Param<List<ulong>>",
+    "Param<Vector3>", "Param<bool>",
+]
+_ELEMENT_TYPES = [
+    "Beyond.Gameplay.CommonMaskBlendData", "Beyond.Gameplay.CommonMaskBlendData",
+    "string", "UnityEngine.Vector3", "UnityEngine.Vector3", "string",
+    "Beyond.Gameplay.TeleportUIType", "string",
+    "System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>",
+    "System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>",
+    "System.Collections.Generic.List`1<ulong>", "UnityEngine.Vector3", "bool",
+]
+
+
+def _contract(path: Path) -> dict[str, Any]:
+    data = json.loads(path.read_bytes())
+    route = data.get("route", {})
+    fields = route.get("fields", [])
+    reads = data.get("orderedReads", [])
+    setters = data.get("setters", [])
+    contexts = data.get("nestedContexts", [])
+    enums = data.get("enumTypes", [])
+    receipts = data.get("sourceReceipts", [])
+    if (
+        data.get("schema") != SCHEMA
+        or data.get("status") != "exact-current-build"
+        or data.get("evidenceBoundary") != "exact"
+        or route.get("family") != "ActionBase"
+        or route.get("tag") != 0x4AF
+        or route.get("typeName") != "Beyond.Gameplay.Actions.StartCutsceneAndTeleportAction"
+        or route.get("serializedMemberCount") != 22
+        or route.get("inheritedMemberCount") != 15
+        or len(fields) != 22 or len(route.get("nativeDeclaredTypes", [])) != 22
+        or [kind for _, kind in fields[8:21]] != _PARAM_KINDS
+        or fields[21] != ["nodeEnablePreload", "bool"]
+        or [row[0] for row in route["nativeDeclaredTypes"]] != [row[0] for row in fields]
+        or len(reads) != 22 or len(setters) != 22
+        or [row.get("memberIndex") for row in reads] != list(range(22))
+        or [row.get("memberIndex") for row in setters] != list(range(22))
+        or [[row.get("fieldName"), row.get("readKind")] for row in reads] != fields
+        or set(data.get("readerHelpers", {})) != {kind for _, kind in fields}
+        or [row.get("memberIndex") for row in contexts] != list(range(8, 21))
+        or [row.get("elementTypeName") for row in contexts] != _ELEMENT_TYPES
+        or any(row.get("baseTypeName") != "Beyond.Gameplay.Actions.Param`1" for row in contexts)
+        or [row.get("memberIndex") for row in enums] != [14]
+        or [row.get("typeName") for row in enums]
+        != ["Beyond.Gameplay.TeleportUIType"]
+        or any(row.get("backingType") != "int" or not row.get("members") for row in enums)
+        or [(row.get("memberIndex"), row.get("nestedList", {}).get("elementTypeName"))
+            for row in contexts if row.get("nestedList") is not None]
+        != [(16, "Beyond.Gameplay.Core.EntityPtr"),
+            (17, "Beyond.Gameplay.Core.EntityPtr"), (18, "ulong")]
+        or len(data.get("methods", [])) != 2 or len(data.get("codeWindows", [])) != 2
+        or bytes.fromhex(data["memberCountInstruction"]["hex"])[-1] != 22
+        or not receipts or any(len(row) != 7 for row in receipts)
+        or len({(row[0], row[2]) for row in receipts}) != len(receipts)
+    ):
+        raise ValueError(f"{LABEL}.contract:shape")
+    return data
+
+
+def _call_target(image: Any, rva: int, expected_hex: str) -> int:
+    raw = image.pe.bytes_at_va(image.pe.image_base+rva, 5)
+    if raw[0] != 0xE8 or raw.hex().upper() != expected_hex.upper():
+        raise ValueError(f"{LABEL}.native:call={rva:#x}")
+    return rva+5+struct.unpack_from("<i", raw, 1)[0]
+
+
+def _validate_context(image: Any, context: dict[str, Any]) -> None:
+    cell, usage = image.nested_usage_cell(context, label=LABEL)
+    index = method_spec_usage_index(
+        usage, image.registration["methodSpecsCount"], source=LABEL, offset=cell,
+    )
+    if index != context["methodSpecIndex"]:
+        raise ValueError(f"{LABEL}.native:param-spec-index={context['memberIndex']}")
+    address = int(image.registration["methodSpecs"], 16)+index*12
+    spec = method_spec_record(
+        image.pe.bytes_at_va(address, 12), len(image.metadata.methods),
+        image.registration["genericInstsCount"], source=LABEL, offset=address,
+    )
+    method = image.metadata.methods[spec[0]]
+    instance = image.instantiations.resolve(spec[2])
+    if (
+        list(spec) != context["methodSpec"] or len(instance.arguments) != 1
+        or image.type_name(method.declaring_type) != "MemoryPack.MemoryPackReader"
+        or image.metadata.string(method.name_index) != "ReadValue"
+    ):
+        raise ValueError(f"{LABEL}.native:param-readvalue={context['memberIndex']}")
+    argument = instance.arguments[0]
+    raw = bytes.fromhex(argument.raw_type_record_hex)
+    if raw.hex().upper() != context["argumentRawHex"].upper() or raw[10] != context["typeKind"] != 0x15:
+        raise ValueError(f"{LABEL}.native:param-generic-type={context['memberIndex']}")
+    carrier_pointer = struct.unpack_from("<Q", raw)[0]
+    carrier_raw = image.pe.bytes_at_va(carrier_pointer, 32)
+    base_raw = image.pe.bytes_at_va(struct.unpack_from("<Q", carrier_raw)[0], 16)
+    carrier = generic_type_carrier(
+        raw, carrier_raw, base_raw, type_pointer=argument.type_pointer_va,
+        type_count=len(image.metadata.types), source=LABEL,
+    )
+    if (
+        carrier != context["classCarrier"]
+        or image.type_name(carrier["baseDefinitionIndex"]) != "Beyond.Gameplay.Actions.Param`1"
+    ):
+        raise ValueError(f"{LABEL}.native:param-carrier={context['memberIndex']}")
+    child = image.instantiations.resolve_pointer(carrier["classInstantiationPointerVa"])
+    child_row = child.as_dict()
+    child_row["arguments"] = list(child_row["arguments"])
+    if len(child.arguments) != 1 or child_row != context["classInstantiation"]:
+        raise ValueError(f"{LABEL}.native:param-instantiation={context['memberIndex']}")
+    element_argument = child.arguments[0]
+    element = bytes.fromhex(element_argument.raw_type_record_hex)
+    actual_name = protocol.runtime_type_name(image.pe, image.metadata, element_argument.type_pointer_va)
+    expected_kind = {
+        "bool": 2, "string": 14,
+        "Beyond.Gameplay.CommonMaskBlendData": 18,
+        "System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>": 21,
+        "System.Collections.Generic.List`1<ulong>": 21,
+    }.get(context["elementTypeName"], 17)
+    if (
+        actual_name != context["elementTypeName"]
+        or element.hex().upper() != context["elementRawHex"].upper()
+        or element[10] != context["elementTypeKind"] != expected_kind
+    ):
+        raise ValueError(f"{LABEL}.native:param-element={context['memberIndex']}")
+    if expected_kind == 17:
+        definition = struct.unpack_from("<Q", element)[0]
+        if definition != context["elementTypeDefinition"] or image.type_name(definition) != actual_name:
+            raise ValueError(f"{LABEL}.native:param-value-type={context['memberIndex']}")
+    elif context["elementTypeDefinition"] is not None:
+        raise ValueError(f"{LABEL}.native:param-primitive={context['memberIndex']}")
+    nested = context.get("nestedList")
+    if expected_kind == 21:
+        if not isinstance(nested, dict):
+            raise ValueError(f"{LABEL}.native:missing-list-context={context['memberIndex']}")
+        pointer = struct.unpack_from("<Q", element)[0]
+        carrier_raw = image.pe.bytes_at_va(pointer, 32)
+        base_raw = image.pe.bytes_at_va(struct.unpack_from("<Q", carrier_raw)[0], 16)
+        list_carrier = generic_type_carrier(
+            element, carrier_raw, base_raw, type_pointer=element_argument.type_pointer_va,
+            type_count=len(image.metadata.types), source=LABEL,
+        )
+        if list_carrier != nested["carrier"] or image.type_name(list_carrier["baseDefinitionIndex"]) != "System.Collections.Generic.List`1":
+            raise ValueError(f"{LABEL}.native:list-carrier={context['memberIndex']}")
+        list_child = image.instantiations.resolve_pointer(list_carrier["classInstantiationPointerVa"])
+        list_row = list_child.as_dict()
+        list_row["arguments"] = list(list_row["arguments"])
+        if len(list_child.arguments) != 1 or list_row != nested["instantiation"]:
+            raise ValueError(f"{LABEL}.native:list-instantiation={context['memberIndex']}")
+        item = list_child.arguments[0]
+        raw_item = bytes.fromhex(item.raw_type_record_hex)
+        item_name = protocol.runtime_type_name(image.pe, image.metadata, item.type_pointer_va)
+        item_kind = 17 if context["memberIndex"] in (16, 17) else 11
+        if (raw_item.hex().upper() != nested["elementRawHex"].upper()
+                or raw_item[10] != nested["elementTypeKind"] != item_kind
+                or item_name != nested["elementTypeName"]):
+            raise ValueError(f"{LABEL}.native:list-element={context['memberIndex']}")
+        if item_kind == 17:
+            definition = struct.unpack_from("<Q", raw_item)[0]
+            if definition != nested["elementTypeDefinition"] or image.type_name(definition) != item_name:
+                raise ValueError(f"{LABEL}.native:list-value-type={context['memberIndex']}")
+        elif nested["elementTypeDefinition"] is not None:
+            raise ValueError(f"{LABEL}.native:list-primitive={context['memberIndex']}")
+    elif nested is not None:
+        raise ValueError(f"{LABEL}.native:unexpected-list-context={context['memberIndex']}")
+
+
+def _validate_enum(image: Any, enum: dict[str, Any], defaults: dict[int, tuple[int, int]]) -> None:
+    name = enum["typeName"]
+    owner = next((row for row in image.metadata.types if image.metadata.type_full_name(row) == name), None)
+    if owner is None or owner.index != enum["typeDefinition"]:
+        raise ValueError(f"{LABEL}.native:enum-type={name}")
+    backing = [row for row in image.metadata.fields_for(owner)
+               if image.metadata.string(row.name_index) == "value__"]
+    if len(backing) != 1:
+        raise ValueError(f"{LABEL}.native:enum-backing-field={name}")
+    pointer = image.pe.u64_at_va(int(image.registration["types"], 16)+backing[0].type_index*8)
+    if protocol.runtime_type_name(image.pe, image.metadata, pointer) != enum["backingType"] != "int":
+        raise ValueError(f"{LABEL}.native:enum-backing={name}")
+    if protocol.native_enum_members(image.metadata, defaults, image.pe, image.registration, name) != enum["members"]:
+        raise ValueError(f"{LABEL}.native:enum-members={name}")
+
+
+def _validate_native(image: Any, contract: dict[str, Any]) -> None:
+    base = image.pe.image_base
+    route, dispatch = contract["route"], contract["dispatcher"]
+    wrappers = derive_from_image(image)
+    switch = read_union_switch(
+        image, "Beyond_Gameplay_Actions_ActionBaseForMemoryPack", wrappers=wrappers,
+    )
+    if (
+        switch["entryCount"] != dispatch["switchEntryCount"]
+        or int(switch["tableVa"], 16) != base+dispatch["switchTableRva"]
+        or not 0 <= route["tag"] < switch["entryCount"]
+    ):
+        raise ValueError(f"{LABEL}.native:switch-shape")
+    table = image.pe.bytes_at_va(base+dispatch["switchTableRva"], switch["entryCount"]*4)
+    if hashlib.sha256(table).hexdigest().upper() != dispatch["switchTableSha256"].upper():
+        raise ValueError(f"{LABEL}.native:switch-hash")
+    target = struct.unpack_from("<I", table, route["tag"]*4)[0]
+    jump = image.pe.bytes_at_va(base+target, 5)
+    entry = switch["entries"][route["tag"]]
+    if (
+        target != dispatch["switchTargetRva"] or jump[0] != 0xE9
+        or jump.hex().upper() != dispatch["switchEntryHex"].upper()
+        or target+5+struct.unpack_from("<i", jump, 1)[0] != dispatch["bodyRva"]
+        or int(entry["targetVa"], 16) != base+target
+        or int(entry["bodyVa"], 16) != base+dispatch["bodyRva"]
+        or entry["wrapperName"] != route["wrapperName"]
+        or entry["typeDefinition"] != route["typeDefinition"]
+        or entry["registeredTypeIndex"] != route["registeredTypeIndex"]
+    ):
+        raise ValueError(f"{LABEL}.native:switch-entry")
+    branch = dispatch["branchWindow"]
+    if branch["startRva"] != dispatch["bodyRva"]:
+        raise ValueError(f"{LABEL}.contract:branch-window")
+    image.check_windows([branch], label=LABEL)
+    load_rva = dispatch["typeLoadRva"]
+    load = image.pe.bytes_at_va(base+load_rva, 7)
+    if (
+        not branch["startRva"] <= load_rva < branch["endRva"]-7
+        or load[:3] != b"\x48\x8b\x15"
+        or load.hex().upper() != dispatch["typeLoadHex"].upper()
+    ):
+        raise ValueError(f"{LABEL}.native:type-load")
+    cell = base+load_rva+7+struct.unpack_from("<i", load, 3)[0]
+    usage = image.pe.bytes_at_va(cell, 8)
+    index = unresolved_usage_index(usage, image.registration["typesCount"], tag=1,
+                                   source=LABEL, offset=cell)
+    pointer = image.pe.u64_at_va(int(image.registration["types"], 16)+index*8)
+    definition = struct.unpack_from("<Q", image.pe.bytes_at_va(pointer, 16))[0]
+    if (
+        cell-base != dispatch["usageCellRva"]
+        or usage.hex().upper() != dispatch["usageRawHex"].upper()
+        or index != route["registeredTypeIndex"]
+        or definition != route["typeDefinition"]
+        or image.type_name(definition) != route["wrapperName"]
+    ):
+        raise ValueError(f"{LABEL}.native:registered-wrapper")
+    wrapper = wrappers[definition]
+    native_types = [[member.name.lstrip("_"), member.declared_type] for member in wrapper.members]
+    normalized = {
+        "bool": "bool", "int": "int32", "string": "string",
+        "Beyond.GEnums.ScopeName": "int32",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.CommonMaskBlendData>": "Param<CommonMaskBlendData>",
+        "Beyond.Gameplay.Actions.Param`1<string>": "Param<string>",
+        "Beyond.Gameplay.Actions.Param`1<UnityEngine.Vector3>": "Param<Vector3>",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.TeleportUIType>": "Param<TeleportUIType>",
+        "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>>": "Param<List<EntityPtr>>",
+        "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<ulong>>": "Param<List<ulong>>",
+        "Beyond.Gameplay.Actions.Param`1<bool>": "Param<bool>",
+    }
+    if (
+        wrapper.name != route["wrapperName"] or wrapper.wrapped_type != route["typeName"]
+        or len(wrapper.members) != 22 or len(wrapper.inherited_members) != 15
+        or len(wrapper.own_members) != 7 or native_types != route["nativeDeclaredTypes"]
+        or [[name, normalized.get(kind)] for name, kind in native_types] != route["fields"]
+    ):
+        raise ValueError(f"{LABEL}.native:wrapper-fields")
+    method_indices = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
+    windows = contract["codeWindows"]
+    image.check_windows(windows, label=LABEL)
+    image.check_instruction_windows([
+        [contract["memberCountInstruction"]["rva"], contract["memberCountInstruction"]["hex"]]
+    ], label=LABEL)
+    if (
+        contract["methods"][0][1] != wrapper.name
+        or not contract["methods"][1][1].startswith(wrapper.name+"+")
+    ):
+        raise ValueError(f"{LABEL}.contract:method-owner")
+    reader_ptr = image.method_pointer_va(image.metadata.methods[method_indices[0]])
+    formatter_ptr = image.method_pointer_va(image.metadata.methods[method_indices[1]])
+    body = BodyIndex(image)
+    if (
+        windows[0]["startRva"] != reader_ptr-base
+        or windows[0]["endRva"] != body.extents.get(reader_ptr, 0)-base
+        or windows[1]["startRva"] != formatter_ptr-base
+        or windows[1]["endRva"] != body.extents.get(formatter_ptr, 0)-base
+        or body.chained_fragments.get(reader_ptr)
+    ):
+        raise ValueError(f"{LABEL}.native:complete-method-windows")
+    source_window = windows[0]
+    count = contract["memberCountInstruction"]
+    if not source_window["startRva"] <= count["rva"] < source_window["endRva"]:
+        raise ValueError(f"{LABEL}.native:member-count-range")
+    previous = count["rva"]
+    for read, setter, member in zip(contract["orderedReads"], contract["setters"], wrapper.members):
+        i, site = read["memberIndex"], read["sourceCallsiteRva"]
+        if (
+            not previous < site < source_window["endRva"]
+            or _call_target(image, site, read["sourceCallHex"]) != read["sourceTargetRva"]
+            or read["sourceTargetRva"] != contract["readerHelpers"][read["readKind"]]
+        ):
+            raise ValueError(f"{LABEL}.native:ordered-read={i}")
+        method_index = setter["methodIndex"]
+        method = image.metadata.methods[method_index]
+        callsite = setter["callsiteRva"]
+        if (
+            member.method_index != method_index
+            or member.declaring_wrapper != setter["declaringWrapper"]
+            or image.type_name(method.declaring_type) != member.declaring_wrapper
+            or image.metadata.string(method.name_index) != setter["setterName"]
+            or not site < callsite < (contract["orderedReads"][i+1]["sourceCallsiteRva"] if i < 21 else source_window["endRva"])
+            or _call_target(image, callsite, setter["callHex"]) != setter["targetRva"]
+            or image.method_pointer_va(method) != base+setter["targetRva"]
+        ):
+            raise ValueError(f"{LABEL}.native:setter={i}")
+        previous = callsite
+    for context in contract["nestedContexts"]:
+        i = context["memberIndex"]
+        if not contract["orderedReads"][i-1]["sourceCallsiteRva"] < context["instructionRva"] < contract["orderedReads"][i]["sourceCallsiteRva"]:
+            raise ValueError(f"{LABEL}.native:context-order={i}")
+        _validate_context(image, context)
+    defaults = protocol.field_defaults(image.metadata)
+    for enum in contract["enumTypes"]:
+        _validate_enum(image, enum, defaults)
+
+
+def _validate_sources(
+    contract: dict[str, Any], export_root: Path, ledger_path: Path, summary_path: Path,
+) -> int:
+    summary = json.loads(summary_path.read_bytes())
+    output = summary.get("provenance", {}).get("outputFiles", {})
+    if (
+        summary.get("status") != "complete"
+        or output.get("length") != ledger_path.stat().st_size
+        or output.get("sha256", "").upper() != sha256_file(ledger_path).upper()
+    ):
+        raise ValueError(f"{LABEL}.source:summary-ledger-join")
+    ledger: dict[str, dict[str, Any]] = {}
+    with gzip.open(ledger_path, "rt", encoding="utf8") as stream:
+        for line in stream:
+            row = json.loads(line)
+            if row.get("family") == "LevelScriptData":
+                ledger[row["exportRelativePath"]] = row
+    if not ledger:
+        raise ValueError(f"{LABEL}.source:missing-LevelScript-ledger")
+    from scripts.game_data.codecs.levelscript.action_map import _Cursor
+
+    allowed = {
+        row["memberIndex"]: {item["id"] for item in row["members"]}
+        for row in contract["enumTypes"]
+    }
+    for path, digest, start, end, span_digest, id_offset, script_id in contract["sourceReceipts"]:
+        data = (export_root/path).read_bytes()
+        if (
+            not 0 <= start < end <= len(data)
+            or not 0 <= id_offset <= len(data)-8
+            or data[start:start+4] != bytes((0xFA, 0xAF, 0x04, 22))
+            or hashlib.sha256(data).hexdigest().upper() != digest.upper()
+            or hashlib.sha256(data[start:end]).hexdigest().upper() != span_digest.upper()
+            or ledger.get(path, {}).get("logicalSha256", "").upper() != digest.upper()
+            or ledger.get(path, {}).get("length") != len(data)
+            or int.from_bytes(data[id_offset:id_offset+8], "little") != script_id
+            or not Path(path).stem.isdecimal() or int(Path(path).stem) != script_id
+        ):
+            raise ValueError(f"{LABEL}.source:receipt={path}")
+        cursor = _Cursor(data, start)
+        if cursor.byte("cutsceneTeleport.wideMarker") != 0xFA:
+            raise ValueError(f"{LABEL}.source:union-header={path}")
+        if (cursor.byte("cutsceneTeleport.tagLo") != 0xAF
+                or cursor.byte("cutsceneTeleport.tagHi") != 0x04
+                or cursor.byte("cutsceneTeleport.memberCount") != 22):
+            raise ValueError(f"{LABEL}.source:union-header={path}")
+        for index, (name, kind) in enumerate(contract["route"]["fields"]):
+            wire_kind = "Param<int>" if index in allowed else kind
+            value = cursor.value(wire_kind, "cutsceneTeleport."+name)
+            if index in allowed and value["value"] not in allowed[index]:
+                raise ValueError(f"{LABEL}.source:enum-value={path}:{name}:{value['value']}")
+        if cursor.offset != end:
+            raise ValueError(f"{LABEL}.source:end-offset={path}")
+    return len(contract["sourceReceipts"])
+
+
+def validate_cutscene_teleport_native_contract(
+    *, contract_path: Path = DEFAULT_CONTRACT, game_root: Path | None = None,
+    export_root: Path | None = None, ledger_path: Path | None = None,
+    summary_path: Path | None = None,
+) -> dict[str, Any]:
+    """Validate selected native route and optionally joined source receipts."""
+    try:
+        contract = _contract(Path(contract_path))
+        expected = contract["nativeInputs"]
+        root = Path(game_root) if game_root is not None else None
+        gate = check_installed_native_inputs(
+            expected["GameAssembly.dll"], expected["global-metadata.dat"],
+            gameassembly=root.parent/"GameAssembly.dll" if root else None,
+            metadata=root/"il2cpp_data/Metadata/global-metadata.dat" if root else None,
+        )
+        if gate.status != "validated":
+            return {"status": gate.status, "validator": LABEL,
+                    "failedCheck": "installed-native-inputs", "detail": gate.detail}
+        unity = gate.gameassembly.parent/"UnityPlayer.dll"
+        if not unity.is_file() or sha256_file(unity).upper() != expected["UnityPlayer.dll"].upper():
+            return {"status": "mismatched", "validator": LABEL,
+                    "failedCheck": "UnityPlayer.dll", "detail": "selected UnityPlayer.dll missing or different"}
+        image = open_native_image(gate.gameassembly, gate.metadata)
+        _validate_native(image, contract)
+        checked = 0
+        if export_root is not None:
+            if ledger_path is None or summary_path is None:
+                raise ValueError(f"{LABEL}.source:explicit-ledger-and-summary-required")
+            checked = _validate_sources(contract, Path(export_root), Path(ledger_path), Path(summary_path))
+        route = contract["route"]
+        return {"status": "validated", "validator": LABEL, "evidenceBoundary": "exact",
+                "route": {"family": route["family"], "tag": route["tag"],
+                          "wrapperName": route["wrapperName"], "fields": route["fields"]},
+                "enumValues": {route["fields"][row["memberIndex"]][1]:
+                               [item["id"] for item in row["members"]]
+                               for row in contract["enumTypes"]},
+                "sourceReceiptsChecked": checked, "nativeInputs": expected}
+    except (KeyError, IndexError, TypeError, ValueError, OSError, RuntimeError) as exc:
+        failure = str(exc)
+        check = (failure.split(".contract:", 1)[1] if ".contract:" in failure
+                 else failure.split(".native:", 1)[1] if ".native:" in failure
+                 else failure.split(".source:", 1)[1] if ".source:" in failure
+                 else "contract-native-or-source")
+        return {"status": "validation_failed", "validator": LABEL,
+                "failedCheck": check, "detail": failure,
+                "validationFailures": [{"gate": check, "actual": failure[:500]}]}
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--game-root", type=Path)
+    parser.add_argument("--export-root", type=Path)
+    parser.add_argument("--ledger", type=Path)
+    parser.add_argument("--summary", type=Path)
+    args = parser.parse_args()
+    audit = validate_cutscene_teleport_native_contract(
+        game_root=args.game_root, export_root=args.export_root,
+        ledger_path=args.ledger, summary_path=args.summary,
+    )
+    print(json.dumps(audit, indent=2))
+    return 0 if audit["status"] == "validated" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,52 @@
+"""Selected stored ActionHeader cursor for OnEncounterBattlePartEnd."""
+
+from __future__ import annotations
+
+from typing import Any
+
+from .action_map import ActionMapCodecError, _Cursor
+
+
+_TYPE = "Beyond.Gameplay.Actions.LevelEvent.OnEncounterBattlePartEnd"
+_FIELDS = [
+    ["dontLogWarning", "bool"], ["ID", "int32"],
+    ["releaseWhenExecutionFinished", "bool"], ["uid", "string"],
+    ["scopeMask", "int32"], ["useCurrentScope", "bool"],
+    ["useGraphScope", "bool"], ["filterLevel", "int32"],
+    ["filterMask", "int32"], ["filterMode", "bool"],
+    ["nextID", "int32"], ["priority", "int32"],
+    ["triggerActiveDuring", "int32"], ["validate", "Param<bool>"],
+    ["isCompleted", "Param<bool>"],
+    ["isCompletedOutput", "ParamOutput<bool>"],
+    ["lsmPtr", "Param<LsmPtr>"],
+    ["lsmPtrOutput", "ParamOutput<LsmPtr>"],
+]
+
+
+def decode_on_encounter_battle_part_end_header(
+    data: bytes, offset: int, route: dict[str, Any],
+) -> tuple[dict[str, Any], int]:
+    """Read one selected event header from its authenticated member order."""
+    if (
+        route.get("family") != "ActionHeader"
+        or route.get("typeName") != _TYPE
+        or route.get("tag") != 0x005a
+        or route.get("serializedMemberCount") != 18
+        or route.get("fields") != _FIELDS
+    ):
+        raise ActionMapCodecError("onEncounterBattlePartEnd:invalid-route")
+    if offset < 0 or data[offset:offset + 2] != b"\x5a\x12":
+        raise ActionMapCodecError(f"onEncounterBattlePartEnd:invalid-header,offset={offset}")
+    cursor = _Cursor(data, offset + 2)
+    values: dict[str, Any] = {}
+    spans: dict[str, list[int]] = {}
+    for name, kind in _FIELDS:
+        start = cursor.offset
+        values[name] = cursor.value(kind, f"onEncounterBattlePartEnd.{name}")
+        spans[name] = [start, cursor.offset]
+    return {
+        "sourceOffset": offset, "endOffset": cursor.offset,
+        "unionTag": 0x005a, "memberCount": 18,
+        "wrapperName": route["wrapperName"],
+        "fields": values, "fieldSpans": spans,
+    }, cursor.offset

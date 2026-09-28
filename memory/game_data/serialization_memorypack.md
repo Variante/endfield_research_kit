@@ -769,18 +769,68 @@ The final current task-map tags are also authenticated against the selected
 dispatcher and decoded in generated property order: `CheckScanInteractive`
 (`0x008b`, entity then level), `CheckTerminalReadingDone` (`0x00a7`, terminal
 unique ID), and `Conditions.CheckCurrentDungeonBoth` (`0x00bc`, dungeon ID).
-These close the current positive task-map frontier; an unseen tag or changed
-member count still fails before the task entry is promoted.
+These close their reached positive task maps; an unseen tag or changed member
+count still fails before the task entry is promoted.
+
+A further selected-native GameCondition batch closes positive task maps reached
+after complete action maps: `CheckMonsterSpawnerCompleteState`,
+`CheckSnapshotIdentifySuccess`, `CheckSNSDialogComplete`, and
+`Conditions.OnEnterMainHud`. Their selected dispatcher entries, generated
+member lists, complete reader and formatter bodies, and ordered field reads
+authenticate the stored layouts. The first condition carries a level string and
+`Param<SpawnerPtr>`; that pointer stores one unsigned 64-bit id. The snapshot
+and SNS conditions each carry one string parameter; the HUD condition has only
+the four shared condition fields. Current exported cursor spans are joined to
+the JsonData ledger. The enclosing sequential task parser promotes a file only
+when every condition, task entry, and final trigger-volume map closes at
+physical EOF. Other positive maps remain partial at their first unsupported
+condition; these stored conditions do not establish runtime evaluation or
+mission ownership.
+
+The followon selected-native task-map set closes the reached
+`CheckMapVar`, `CheckAliveCharNumInCurTeam`, `CheckRemoteCommFinish`,
+`CheckInteractiveIsActivated`, `CompareInteractivePropertyBool`,
+`CheckUnlockTech`, `CheckLsmCompleted`, `Conditions.CheckIsInFactoryMode`,
+`Conditions.CheckIsItemInQuickBar`, and `InMainHud` conditions. Their
+generated fields and ordered native reads distinguish scalar comparison
+parameters, signed map values, entity pointers, LSM and LevelScript pointers,
+and null or authored string parameters. Each reached condition has an exact
+source cursor joined to the current JsonData ledger. The sequential task-map
+reader still promotes only complete owners at physical EOF.
+
+`CheckInteractiveSubmitSuccess` has a short hot reader followed by a chained
+native continuation. The continuation checks the seven-member payload and
+reads four inherited fields, then `Param<EntityPtr>` for `entityId`,
+`Param<bool>` for `expectedSubmitSuccess`, and `Param<string>` for `levelId`.
+Each read reaches its generated setter in order; the generic Param contexts
+and complete chained reader and forwarding formatter are authenticated. The
+current source spans parse as three complete conditions, and the enclosing
+sequential LevelScript reader reaches physical EOF. This closes the remaining
+reached positive task-map condition route, while live submission success and
+condition evaluation remain unobserved.
+
+`CheckTyphoeaArcheryUnitsComplete` stores the shared four condition members,
+then `Param<string>` `levelId`, `Param<List<LsmPtr>>` `lsm`, and
+`Param<LevelScriptPtr>` `scriptId`. Its selected GameCondition branch,
+complete reader and forwarding formatter, ordered read/setter calls, and
+nested MethodSpec context resolve the list element to the one-member
+`LsmPtr`. Authenticated source spans contain a positive LSM list and a
+current-script pointer. The sequential task-map reader closes the reached
+archery dungeon owners at physical EOF. These stored values establish neither
+runtime condition evaluation nor completion of the archery challenge.
 
 The generated-order LevelScript lane also starts after a null `actionMap`.
 The outer wrapper's first member is a nullable reference, and MemoryPack's
 one-byte `0xff` null marker closes it exactly, so `activeShapeList` begins at
 physical offset 2. The reader advances from that boundary through the same
 owner collections, terminal task map, and `triggerVolumes` EOF gate; it does
-not use the independently found terminal suffix. Current null-map exceptions
-stop inside a positive Encounter module whose `introPart` has a non-empty
-opera-segment list. Closing those records requires the generated opera-segment
-wrapper member order or equivalent authenticated formatter IL.
+not use the independently found terminal suffix. A selected positive
+Encounter `introPart.operaSegments` route now closes through the generated
+`OperaSegment`, `ParamKeyValue`, `ParamValue`, and `ParamValueAtom` wrappers.
+The current source spans carry one segment, one keyed parameter, and one atom;
+the nested cursor rejoins the sequential owner, which reaches physical EOF.
+Other positive shapes remain fail-closed, and these stored values do not
+establish runtime encounter behavior.
 
 Positive `ActionSerializedMap` now has one complete selected-build lane. The
 authenticated `ActionBase` dispatcher identifies tag `0x0035` as `CallServer`,
@@ -794,9 +844,15 @@ script-event fields, and the two slot-filter fields. An empty one-member
 `ParamListForGraph` then closes `ActionMapAssetRaw`, and the existing sequential
 owner reader can continue through physical EOF. The broader sequence lane below
 adds supported actions, getters and headers without changing those member
-boundaries. Non-null target-script values and positive parameter blackboards
-remain unsupported. Scanning UID-shaped bytes is not an acceptable substitute
-for sequential record extents.
+boundaries. Its populated `ParamListForGraph` branch now reuses the exact
+`List<ParamKeyValue>` codec and requires the selected native owner contract
+before reading a positive count. It consumes each nested `ParamValue` and atom
+at the physical cursor, then hands the resulting action-map endpoint to the
+same generated-order owner reader. The current source-authenticated LevelScript
+replay promotes only files that reach EOF, with no earlier exact file regressing;
+current totals are in the JsonData and focused replay reports. Non-null
+target-script values remain unsupported. Scanning UID-shaped bytes is not an
+acceptable substitute for sequential record extents.
 
 That selected-build action cursor now also advances `StartDialogAction`
 (`0x04b0`, seven concrete members), `Split` (`0x04a7`, one integer list),
@@ -805,7 +861,8 @@ That selected-build action cursor now also advances `StartDialogAction`
 condition and two branch IDs). `CheckBoolIfTrue` (`0x0053`) is included because
 it is the common terminal action after current dialog and radio records. Exact
 map promotion requires every declared action, getter and header to use a
-supported layout, followed by an empty `ParamListForGraph`. `SwitchInt` and
+supported layout, followed by an exact `ParamListForGraph` and owner cursor.
+`SwitchInt` and
 `IfElseAction` commonly carry positive `getterList` rows, which require their
 own authenticated PureGetter layouts. `StartDialogAction.afterMask` and
 `beforeMask` are both the same current `Param<CommonMaskBlendData>` wrapper:
@@ -894,8 +951,10 @@ ActionHeader tag `0x00bb`, member count 18, is the current
 `ParamOutput<EventArgsPtr>` and `eventKey` as `Param<string>`. The exact cursor
 closes all currently reached records and rejoins 59 complete serialized maps.
 In the isolated 5,030-file LevelScript comparison this promotes 53 whole files
-to named exact schemas with no regression; the other reached maps stop at a
-different reviewed boundary or a positive `ParamListForGraph` count. The same
+to named exact schemas with no regression; other reached maps historically
+stopped at a different reviewed boundary or a positive `ParamListForGraph`
+count. The current shared list decoder closes that latter boundary when its
+selected native gate validates and every later owner member reaches EOF. The same
 layout closes the final header lists in the six progression templates described
 below. This identifies stored event arguments and keys, not runtime event
 dispatch or handler ownership.
@@ -1061,8 +1120,17 @@ All current positive dictionaries reach their next top-level member with one
 sequential cursor; files with later positive modules or unsupported task maps
 remain partial at those later named fields.
 
+Positive LevelScript `npcs` dictionaries are `uint -> NpcRuntimeProxyData`,
+using the same flattened 14 + 77 + 27 member reader as placed LevelData and
+AtmosphericNpc rows. The dictionary reader validates each key and advances
+each value at its real cursor; an unsupported nested NPC value leaves the
+whole dictionary unread rather than guessing the next top-level offset.
+Current source-hash-joined focused replays reach the final LevelScript tail
+and physical EOF with the stored `scriptId` matching the source identity.
+These are authored NPC placements, not proof of spawning at runtime.
+
 Positive LevelScript `modules` dictionaries have the same exact sequential
-handoff for all eight current concrete wrappers. The selected native
+handoff for the reviewed concrete wrappers. The selected native
 `LevelScriptModuleData` dispatcher binds tag `0x0006` to the 27-member
 `GhostWallModuleData`, `0x000d` to the four-member
 `SpecialSightControllerData`, `0x000e` to the nine-member
@@ -1083,9 +1151,30 @@ Tag `0x0011` closes the eight-member `TyphoeaArcheryUnitData` and its
 scale configurations, spawn transforms and VFX connection lists. Tag `0x0002`
 closes the 16-member `EncounterData`, including AirWall/enemy pointers and the
 generated battle, intro, alternate-intro, teleport-slot and tail shapes. The
-current encounter opera arrays are null or empty; a future positive
-`OperaSegment` array remains fail-closed until its nested `ParamKeyValue`
-sequence is separately proved.
+selected positive opera arrays have one segment with one keyed parameter and
+one value atom. A separate selected-native contract checks all four nested
+wrapper layouts and complete reader windows before the positive branch runs;
+authenticated source spans then close their enclosing LevelScript files at
+physical EOF. Other positive array shapes remain fail-closed. The stored
+opera type, key and value do not establish when or whether an encounter
+operation executes.
+
+The selected dispatcher also identifies `EncounterDataV2` at tag `0x0003`
+with the same 16-member stored shape as `EncounterData`, and
+`MatrixRepairControllerData` at tag `0x0009` with a center `EntityPtr` and a
+list of element pointers. The generated wrapper order supports the
+`TianshizhuangData` tag `0x000f` LangKey, pointer, transform and vector-list
+fields, and `WaterAbsorbedImpactData` tag `0x0012` curve, UI and pointer-list
+fields. Tag `0x0010` is `TyphoeaArcheryUnitAdvancedData`; its positive
+eight-member obstacle records carry stage and time lists, a destructible flag,
+model strings, spawn transform and spline ID, followed by shooting-unit and
+stage-type lists. The codec admits each route only when the current native
+union tag and member count agree with its reviewed body. Source-hash-joined
+replays advance every current module-first-stop dictionary through its exact
+module span. Whole-file results require the subsequent sequential cursor to
+reach physical EOF; mixed archery files currently stop later at positive
+`taskMap.entries`. These stored module settings do not establish when or
+whether the client activates them at runtime.
 
 The independent terminal fallback remains for files outside that sequential
 profile. Its final five members are `scriptId`, `startShapeList`, `startType`,
@@ -1094,6 +1183,12 @@ filename-independent byte-grammar candidate closes at physical EOF. Because
 the preceding members are opaque there, that result remains a named partial
 schema. Other nonempty-action-map shapes retain their weaker exact prefixes;
 changing coverage belongs in the corpus report.
+
+When an exact sequential owner reaches a positive `taskMap` but one entry
+fails, its partial result and authenticated corpus file row retain the first
+bounded condition diagnostic,
+including the task key and checked union tag when readable. This makes the
+next reader frontier identifiable without promoting any later bytes.
 
 LevelData exposes full schemas or bounded top-level frames only when its
 sequential cursor and any independent suffix ranges are exact. Its current
@@ -1435,6 +1530,872 @@ identity, null object marker, and ordinary parameter tail. `ShowUIToast` keeps
 its generated toast type as an Int32-backed enum alias. The two traversal-only
 routes remain valuable cursor advances but do not count as whole-file gains;
 only later physical EOF closure promotes their owners.
+
+The current selected-build ActionBase dispatcher also binds tag `0x0002`,
+member count nine, to
+`ActionForSubGame.ManuallySyncMainTaskTrackingStage`. The generated wrapper
+has one concrete member after the eight common action fields:
+`subGameId` as `Param<string>`. Its reviewed row consumes the parameter at
+the exact action cursor, including the observed null constant and its binding
+tail. In the source-hash-authenticated current LevelScriptData corpus, this
+advances every file whose first stop was that union to a later declared
+action or getter boundary, with no regression or whole-file promotion from
+this isolated route. Most of that cohort next stops at an
+unsupported PureGetter union; its member count and apparent position do not
+authorize a guessed child layout. Native switch identity, generated setter
+order, and observed sequential extents establish stored fields only, not
+SubGame task-tracking behavior at runtime.
+
+The next reached PureGetter boundary is `SpawnerGetSpawnedEntityList` at the
+selected getter dispatcher tag `0x041f`, member count eight. Its generated
+wrapper adds one `Param<SpawnerPtr>` after `NodeBase`. The independently
+reviewed SpawnerPtr parameter contract and selected generated raw layout
+establish a four-member parameter whose constant is one unmanaged UInt64 ID;
+the ordinary binding tail follows it. In the source-authenticated files
+whose first stop was this getter after the SubGame action, the stored constant
+ID is zero and the binding instead names source `200` properties `wave01`,
+`wave02`, or `wave03`. Those exact getter cursors now advance to independently
+unsupported getter or header unions. Elsewhere the same reviewed shape lets
+whole LevelScript files reach physical EOF with nonzero stored SpawnerPtr
+constants. The full-family replay shows no regression; its current totals and
+the distinct next-stop counts remain in the generated receipts. Neither form
+establishes that a spawned entity list is evaluated or which runtime spawner
+instance ultimately supplies it.
+
+The leading current LevelScript first stop after those routes was
+`PlayFmvAction`. Its selected ActionBase dispatcher entry and generated
+14-member wrapper add six fields after the common action envelope, in this
+order: `moviePath` as `Param<string>`, `param` as
+`Param<CommonMaskBlendData>`, `shouldWaitForFinish` as `Param<bool>`,
+`afterMask` as another mask parameter, then `beforeMask` and
+`overrideAfterMaskConfig` as boolean parameters. The names do not determine
+the wire types: the generated setters establish that `beforeMask` is boolean.
+The reviewed nested mask codec accepts the observed null or empty curve and
+strict audio and mask values, then consumes each parameter's own binding tail.
+All 19 source-authenticated first-stop files advance through the action at
+their physical cursors; 17 now close their entire owner at EOF, while the
+other two stop at distinct unsupported getter and action unions. The complete
+LevelScript replay has no regression. A stored FMV path and masks do not prove
+that playback occurs or establish its runtime order.
+
+The next ActionBase first stop is `EntityShowList`, whose selected dispatcher
+and generated wrapper put `allowMissing` as `Param<bool>` before
+`entityListPtr` as `Param<List<EntityPtr>>` after the common action fields.
+The already reviewed list codec consumes a null count or each declared
+three-member `EntityPtr` value, then the enclosing parameter binding tail.
+Current source-authenticated files exercise both null and populated lists; the
+populated lists contain one or three exact pointer records. Every reached
+first-stop action advances at its physical cursor, and some owners now close
+at EOF; the rest stop at later independent action or header unions. The
+selected route proves stored pointer lists and the allow-missing flag, not
+entity visibility, resolved entity identity, or action execution. Current
+whole-file totals and subsequent stop frequencies live in the generated
+LevelScript replay and cursor receipts.
+
+The selected `ListAddValueEntityPtr` ActionBase wrapper carries the common
+action fields followed by `Param<List<EntityPtr>>` and `Param<EntityPtr>`.
+Its complete native reader and forwarding formatter authenticate the ordered
+reads and setters, including a generic list context whose element is
+`EntityPtr`. The reviewed cursor reuses the established list and pointer
+grammar and closes ledger-joined source spans. The reached lists in this
+source set are null and bound to paths; a populated list for this action has
+not been observed. Whole-owner replay reaches EOF in one file and encounters
+independent earlier or later unions in the others. These stored bindings do
+not establish a runtime list mutation or resolved entity identity.
+
+The next source-authenticated first-stop cohort reaches
+`SetEntityEulerAnglesLookAt` at ActionBase tag `0x0408`. Its selected native
+dispatcher binds the 11-member generated wrapper. After the eight common
+action fields, the generated setters read `lookatTarget` as
+`Param<EntityPtr>`, `target` as a second `Param<EntityPtr>`, and `yawOnly` as
+`Param<bool>`. The two pointer parameters each retain the nested
+three-member logic-ID/slot-ID/use-slot-ID value and their own binding tail;
+the boolean parameter has its own tail too. Exact sequential cursors advance
+every reached first-stop action. Six of those owners now close at physical
+EOF; the rest stop at separately unsupported action or getter unions. The
+full-family source-hash-authenticated replay has no regression. These stored
+targets and flags do not establish runtime orientation or action execution.
+
+Three more first-refusal unions now use reviewed rows in
+`codecs/levelscript/action_map_layouts.json`. The selected PureGetter
+dispatcher resolves `InteractiveGetSavePropertyInt` to the generated wrapper
+whose two members after `NodeBase` are `entity` as `Param<EntityPtr>` and
+`key` as `Param<string>`. The selected ActionBase dispatcher resolves
+`EndCustomAbility` to a wrapper with no own members after the eight common
+action fields. It also resolves `PlayDialogAndHideSceneObjectAction` through
+the inherited `StartCinematicAndHideSceneObject` fields: interactive and
+scene-object hide lists, two override booleans, then after/before masks, with
+its own `dialogId` string parameter last. The native formatter branches,
+registered types, and inherited generated setter order establish these
+stored layouts; the shared reviewed codec advances each reached physical
+cursor. A complete current-VFS and export-hash replay promotes only owners
+that reach named physical EOF, with no regression. The same replay checks
+every `LevelScriptTemplateData` file; these three routes do not yet close
+its remaining partial files. Current counts and exact source-span receipts
+are in the generated LevelScript route replay. Stored getter keys, ability
+ends, and dialog requests do not prove evaluation, action execution, or
+runtime order.
+
+The next ranked first-stop batch authenticates `LevelEvent_OnBattleSignal`,
+`EnterFocusMode`, and `LevelEvent_OnGuideGroupComplete` through their separate
+ActionHeader and ActionBase native dispatcher branches. The two headers inherit
+the common event fields and append, respectively, a float output plus signal
+string and a guide string output plus guide filter string. `EnterFocusMode`
+adds one instance-ID string parameter after the common action fields. The
+selected registered wrapper, inherited setter order, member count, and exact
+parameter cursors agree for each route. A complete current-source replay
+advances every file stopped at one of these unions; only owners that rejoin
+their terminal fields and physical EOF become named exact. The same replay
+checks the Template family, whose remaining partial files still stop at other
+unions. Stored battle signals, guide filters, and focus-mode IDs do not prove
+runtime dispatch or execution. The ranked projection and per-file receipts
+stay in generated reports.
+
+The next five source-authenticated first stops are `ForceShowDecorationWithHandle`,
+`SetSquadLeaderBySlot`, `EnterFocusModeFadeOut`, `ScriptEvent_OnScriptStart`,
+and `GetterVector3`. The selected ActionBase, ActionHeader, and PureGetter
+formatter switches bind each compact tag to its registered wrapper, and the
+generated inherited setters fix member order. The first action adds
+`targetDynamicEntity` as `Param<ulong>` and `visible` as `Param<bool>`; the
+second adds `slot` as `Param<int>`. `EnterFocusModeFadeOut` has only the eight
+common action members. `OnScriptStart` inherits the common event fields and
+then reads `targetScript` as `Param<LevelScriptPtr>` and `triggerTarget` as an
+integer. `GetterVector3` adds `value` as `Param<Vector3>` to the common getter.
+The reviewed codec consumes the exact current source spans without searching
+for another node boundary. In the current VFS/structured-export hash-joined
+replay, the five routes together advance every one of their 56 first-stop
+files and promote 42 whole LevelScriptData owners to named physical EOF,
+raising exact closure to 3,944 of 5,091 with zero regression. The 25 partial
+LevelScriptTemplateData files remain partial at other boundaries. The
+generated replay retains each source hash, union span hash, and next stop;
+stored members do not prove action or getter execution.
+
+The next selected ActionBase first stop is `RepeatAction`. Its reviewed
+dispatcher row binds the generated wrapper and the common action fields,
+followed by `doID` as an integer, `repeatIndex` as `ParamOutput<int>`, and
+`repeatTimes` as `Param<int>`. The shared reader consumes those members at the
+actual source cursor and rejoins either a later independently unsupported
+union or the owner's physical EOF. Malformed member counts and truncated
+parameters stop before promotion. Source-authenticated focused replay and the
+native row validator agree; current coverage and exact promoted owners belong
+in the generated LevelScript report. Stored repeat settings do not establish
+runtime loop execution.
+
+The current reviewed LevelScript batch admits `ScriptEvent_OnScriptEnd`,
+`NpcProxyGetter`, `BoolGetterOr`, `EntityHide`, and `ResetSummonTeamAI` at their
+current first-stop cursors. Selected union branches establish wrapper identity;
+the generated native `Deserialize` bodies establish the member counts and
+ordered field reads. `OnScriptEnd` adds a `ScriptEndReason` parameter whose
+underlying value is a signed integer, while `NpcProxyGetter` adds a string
+parameter. `BoolGetterOr` adds two boolean parameters, `EntityHide` adds an
+allow-missing boolean and entity pointer, and `ResetSummonTeamAI` has only the
+inherited action fields. The shared reviewed reader consumes these records at
+their actual cursors. Current source-hash-checked focused replay takes some
+owners to physical EOF and exposes a distinct later stop in the others. The
+full authenticated JsonData sweep publishes only the physical-EOF owners as
+whole named schemas; per-file receipts and changing totals remain in generated
+output. These stored records do not establish evaluation, action execution,
+or event causality.
+
+A following selected-native batch admits `LevelEvent_OnSpawnerComplete`,
+`GetMainLevelCameraController`, `EntityAttachToParent`, and
+`SetNpcAtmosphericClusterVisible`. The spawner header adds a spawner pointer
+filter and a separately framed spawner output after the inherited event fields;
+the camera getter has only its inherited node fields. Entity attachment adds
+child and parent entity pointers, a follow-node name, local position and
+rotation, and a boolean offset flag. The cluster action adds a cluster string
+and visibility boolean. Each native union branch resolves the generated
+wrapper, and the selected `Deserialize` body checks its member count and
+reads the declared fields in order. Source-hash-checked focused replay joins
+these records at their actual cursors, reaching physical EOF for some owners
+and leaving explicit later stops for others. The full authenticated JsonData
+gate publishes only the owners that reach physical EOF as whole named schemas.
+The counts and source receipts remain in generated output; the stored values
+do not prove gameplay effects.
+
+The selected `DeadZoneDoRepatriate` ActionBase route adds a ninth member,
+`damageRatioPerFall` as `Param<float>`, after the eight inherited action
+fields. The native dispatcher, generated read/setter order, and `System.Single`
+generic context are authenticated against the installed build. Its reviewed
+layout also carries a source-hash cursor record; the native route validator
+checks that the layout's fields and cursor evidence still agree with the
+selected route. Focused current-source replay consumes the action at its
+declared cursor, while the authenticated JsonData gate promotes only owners
+that then reach physical EOF. The parameter is a stored setting, not evidence
+that repatriation ran or damage was applied.
+
+The two reached snapshot event headers, `LevelEvent_OnSnapShotEnter` and
+`LevelEvent_OnSnapShotLeave`, have the same stored 14-member shape. Their
+generated wrappers add no own fields: the selected `ActionHeader` switch
+resolves each registered wrapper directly, and each complete native
+`Deserialize` body reads the inherited `NodeBase` and event-header members in
+order, ending with `Param<bool>` validation. The checked generic context and
+inherited setter identify that last member independently of its source bytes.
+The reviewed layout admits these routes only while their dedicated selected
+native validator confirms the switch, full method windows, ordered helper
+calls and current build. Ledger-joined source replay consumes both records at
+their declared cursors. Some owners close at physical EOF; others advance to
+the distinct `FinishSceneEffect` ActionBase union or remain partial for an
+independent owner boundary. The generated replay holds exact source and span
+receipts. Snapshot entry or exit bytes alone do not prove the event ran.
+
+The selected `FinishSceneEffect` ActionBase branch has ten stored members:
+the eight inherited action fields, `effectSaveId` as `Param<int>`, and
+`forceImm` as `Param<bool>`. Its separate current-build contract checks the
+switch target and registered wrapper, the complete source and formatter
+bodies, ten ordered native reads, two own setters, and both generic parameter
+contexts. Source-hash and ledger-joined focused replay consumes the reached
+records at their declared cursors. The reviewed reader admits this route only
+while that native validator passes; the full corpus gate decides whole-file
+status at physical EOF. Some owners continue to later ActionBase or getter
+unions. The stored effect settings do not establish that the effect executed.
+
+The selected `GetterInt` PureGetter branch has no own serialized fields; it
+inherits eight members from `Getter<int>`, ending with `value` as
+`Param<int>`. Its formatter tail jump, complete source body including chained
+fragments, eight native reads, inherited setter and generic parameter context
+are authenticated on the current build. A source-hash and JsonData-ledger
+receipt places the wide-tagged record at its exact cursor. The reviewed
+reader keeps this getter gated on that native route, and the full JsonData
+corpus decides whole-owner status at physical EOF. Stored getter bytes do not
+establish that it was evaluated or which gameplay value it returned.
+
+The selected `CompareMissionState` and `EntityCompare` PureGetter branches
+each inherit seven node fields and add `comparer`, `valueA`, and `valueB` as
+`Param<T>` members. Their comparer and mission-state enums have four-byte
+storage; the entity values contain three-member `EntityPtr` records with
+independent source/path tails, including authored property references. The
+current-build contract authenticates both dispatcher branches, complete
+chained readers and forwarding formatters, ordered reads and setters, and all
+three generic parameter contexts for each branch. Current JsonData source
+hashes and ledger joins place the reached getters at exact cursors, and the
+reviewed reader consumes those spans only while native validation passes.
+This proves stored comparisons, not their runtime inputs, evaluation, or
+result.
+
+The selected `GetMissionState` PureGetter branch inherits seven node fields
+and adds `missionId` as `Param<string>`. Its current-build contract checks the
+dispatcher and registered wrapper, complete chained reader and forwarding
+formatter bodies, eight ordered native reads and setters, and the string
+parameter's generic reader context. Source hashes joined through the current
+JsonData summary and per-file ledger place the reached getters at exact
+cursors; reviewed ActionMap replay consumes their spans while the native gate
+passes. Whole-file status still depends on the corpus EOF gate. The stored
+mission ID does not prove when the getter evaluates or what state it returns.
+
+The selected `NpcProxyPatrolStop` ActionBase branch adds `levelId` and
+`targetProxy`, both `Param<string>`, after the eight inherited action fields.
+The reviewed current-build route checks the dispatcher, complete reader and
+formatter bodies, ten ordered reads, two setters and both `System.String`
+generic contexts. Source hashes and the JsonData ledger place reached records
+at exact cursors. The reader admits the branch only while that native route
+validates, and later union stops remain partial until separately reviewed.
+The stored patrol targets do not prove that a proxy stopped at runtime.
+
+The selected `StartLevelSeqLoopSegment` ActionBase branch adds four stored
+members after the inherited action fields: two `Param<string>` values,
+`segmentList` as `Param<List<string>>`, and `setMultipleSegment` as
+`Param<bool>`. Its selected native contract checks the switch jump and
+registered wrapper, full reader and formatter extents, twelve ordered reads,
+four setters, and the nested generic contexts down to the list's string
+element. Source-hash and JsonData-ledger receipts locate the reached wide-tag
+records, and reviewed cursor replay consumes each span exactly. Later unions
+and owner EOF still require independent closure. Stored loop settings do not
+show that a sequence ran.
+
+The selected `EntityEvent.OnBeingScanned` ActionHeader branch has 18 inherited
+stored members and no own wrapper fields. Its final four parameters are
+`Param<bool>`, `Param<EntityPtr>`, `Param<List<EntityPtr>>`, and
+`ParamOutput<EntityPtr>`, followed by a stored trigger-target enum. The
+current-build validator authenticates the selected switch and registered
+wrapper, complete reader and formatter bodies, all 18 ordered reads and
+setters, and the four nested generic contexts. Seven source-hash and
+JsonData-ledger receipts rejoin exact event-header cursors; the reviewed
+reader admits this route only while the validator passes. The full corpus
+gate decides whether each owner reaches physical EOF. The serialized event
+does not establish that a scan fired or which runtime system owned it.
+
+The selected `LevelEvent.OnSquadInFightChanged` ActionHeader branch inherits
+the common 14 stored header members and adds `inFight` as
+`ParamOutput<bool>`. Its current-build contract authenticates the direct
+switch branch, registered wrapper, complete generated reader including owned
+fragments, forwarding formatter, every ordered read and setter, and both
+generic parameter contexts. The reached output paths are stored local property
+references; source hashes, the JsonData summary and ledger, and exact cursor
+replay place them at current header spans. The reviewed ActionMap reader
+requires that native validation. Some enclosing files close at physical EOF;
+others still stop at later unions. Neither a stored output path nor the event
+name proves the live squad combat state or that the event fired.
+
+The selected `LevelEvent.OnSquadAllMemberDie` ActionHeader branch contains only
+the common 14 inherited header members. Its native contract authenticates the
+direct switch branch and registered wrapper, complete generated reader and
+formatter, ordered reads and setters, and the `Param<bool>` generic context.
+Current source hashes join the JsonData ledger, and the reviewed cursor replays
+the reached event spans exactly. A derived root independently reached script ID
+and physical EOF for those sources; the authenticated whole-corpus gate decides
+their final owner status. The stored event name does not prove a runtime squad
+death or event firing.
+
+The selected `LevelEvent.OnMissionStateChanged` ActionHeader branch has the
+common inherited header plus stored filters for mission ID, new state, and
+succeed ID, and four `ParamOutput` references for the observed IDs and states.
+Its current-build contract checks the direct switch branch, registered
+wrapper, complete generated reader with owned fragments and formatter, all
+ordered reads and setters, and eight nested parameter contexts. The filter
+state is a finite signed-integer enum authenticated against the native
+declaration. Current source hashes join to the JsonData ledger, and reviewed
+cursor replay consumes each event span exactly. A derived root reaches script
+ID and physical EOF in the reached files; the full reviewed corpus gate alone
+promotes an enclosing owner to exact. These stored filters and output paths do
+not establish a runtime mission transition or event firing.
+
+The selected `AddTrackingPointForEntity` ActionBase branch stores six
+parameters after the eight inherited action members: an entity pointer,
+guiding-area float, level ID, tracking-point style, tracking-point ID, and
+tracking type. Its current-build contract authenticates the selected switch
+branch and wrapper, complete generated reader and formatter, all ordered
+reads and setters, six generic parameter contexts, and both signed-integer
+enum declarations with finite members. Source hashes join to the current
+JsonData ledger, and reviewed cursor replay consumes the reached action spans
+exactly. A derived root replay corroborates script ID and physical EOF, but
+whole-owner exactness still depends on the reviewed sequential reader clearing
+later unions and its corpus gate. Stored tracking-point arguments do not prove
+that a marker appeared in a live game.
+
+The selected `AddTrackingPoint` ActionBase branch stores a building-instance
+key, an unsigned entity logic ID, guiding area, level ID, position, tracking
+style, tracking-point ID, and tracking type after the common action fields.
+Its native contract authenticates the selected switch branch, complete
+fragmented reader and forwarding formatter, ordered setters, eight typed
+parameter contexts, and both tracking enums' signed 32-bit storage. Current
+ledger-joined action spans include positive and null entity IDs and concrete
+positions. The reviewed whole-owner reader closes some enclosing scripts at
+physical EOF and reaches later unsupported unions in others. These stored
+arguments do not establish that a tracking marker appeared at runtime.
+
+The selected `SetForbidMapTeleport` ActionBase stores `allowGetUnstuckPoint`
+and `forbid` as Boolean parameters after the common action fields. Its native
+contract authenticates the switch branch, complete fragmented reader and
+forwarding formatter, ordered setters, and both typed parameter contexts.
+Ledger-joined cursors consume the reached action spans exactly. The stored
+flags do not show whether map teleport was restricted during live play.
+
+The selected `ResumeSpawner` ActionBase stores a pause key and spawner
+pointer as typed parameters after the common action fields. Its native
+contract authenticates the selected dispatcher branch, complete reader and
+forwarding formatter, ordered setters, and both generic parameter contexts.
+Ledger-joined source cursors include concrete spawner IDs and consume each
+reached action span exactly. The enclosing files continue to later unsupported
+unions, so stored pointers do not show live spawner resumption.
+
+The selected `StartCutsceneAndTeleportAction` ActionBase branch stores mask
+blends, destination and teleport IDs, position and rotation vectors, a
+cutscene ID, existing entity and scene-object lists, extra streaming settings,
+and a preload flag. Its current-build contract authenticates the selected
+switch jump and wrapper, complete generated reader and formatter, all ordered
+reads and setters, thirteen `Param` contexts including the element types of
+three nested lists, and a finite signed-integer teleport UI enum. Ledger-joined
+source hashes and reviewed cursor replay consume the reached action spans
+exactly. Derived root ID and physical EOF corroborate framing; the full
+reviewed corpus gate decides whole-owner status when later unions remain.
+Stored cutscene and teleport arguments do not establish live playback or
+movement.
+
+The selected `ManuallyStopGuideGroup` ActionBase branch stores `groupId` as a
+`Param<string>` after the eight inherited action fields. The current-build
+contract authenticates the selected switch jump and wrapper, complete reader
+and forwarding formatter, all ordered reads and setters, and the generic
+string parameter context. Current source hashes join to the JsonData ledger,
+and reviewed cursor replay consumes the reached action spans exactly. The
+reached group IDs are concrete authored strings, with no local parameter path.
+Derived root ID and physical EOF corroborate framing; the full reviewed
+corpus gate decides enclosing-owner status. A stored group ID does not show a
+live guide transition.
+
+The selected `RemoveTrackingPoint` ActionBase branch stores `trackingPointId`
+as `Param<string>` after the eight inherited action fields. Its current-build
+contract authenticates the selected switch jump and registered wrapper, the
+complete generated reader including owned fragments and forwarding formatter,
+all ordered reads and setters, and the generic string parameter context.
+Current source hashes join the JsonData ledger, and the shared reader consumes
+every reached action span exactly. The reached IDs are authored string values
+without a local parameter path or reference; root replay corroborates script
+ID and physical EOF. Most enclosing owners continue to unsupported fields or
+unions, so the full corpus EOF gate remains the owner-level boundary. Stored
+IDs do not show a live tracking-point removal.
+
+The selected `GetIsLeaderInTriggerVolume` GetterBase branch stores
+`scriptPtr` as `Param<LevelScriptPtr>` and `triggerSlotId` as `Param<uint>`
+after the seven inherited getter fields. The native contract authenticates
+the selected switch jump and wrapper, complete reader including owned
+fragments and formatter, ordered reads and setters, and both distinct generic
+parameter contexts. Current source hashes join the JsonData ledger, and
+shared cursor replay consumes each reached getter span exactly. Observed
+script pointers select the current script, while the slot IDs are authored
+constants. A derived root reaches script ID and physical EOF; the full
+reviewed corpus gate decides which enclosing files are exact when later
+unions remain. These stored arguments do not establish a live leader or
+trigger-volume state.
+
+The selected `SendLuaEvent1` ActionBase branch stores `manualValue` after the
+inherited action fields. Its generated outer reader has eight ordinary setter
+calls, then `ReadValue<SendLuaEvent1>` and an instance assignment; it does not
+call the wrapper's declared `manualValue` setter. The nested wire value has
+seven members: ID, UID, two boolean positions and one integer position that
+retain neutral names, an event-name `Param<string>`, and a string containing
+a JSON parameter descriptor. The native switch, wrapper, complete reader and
+formatter, and nested type context authenticate the outer route; current
+ledger-joined source cursors establish the inner seven-member shape and every
+reached span. Derived roots reach script ID and physical EOF. Enclosing files
+continue to later unions in the reviewed decoder, and a stored Lua event name
+does not prove the event fires at runtime.
+
+The selected `StartSubGameCountDownByTimer` ActionBase branch stores a finite
+signed-integer countdown type, `ParamOutput<uint>` handle, current-script
+`Param<LevelScriptPtr>`, and string timer ID after the inherited members. Its
+native contract authenticates the selected switch and wrapper, complete
+generated reader and formatter, ordered reads and setters, three distinct
+generic parameter contexts, and the enum declaration. Current ledger-joined
+source cursors consume the reached spans exactly. Observed countdown type is
+the `Center` enum member; handle references are local output paths. Derived
+roots reach script ID and physical EOF, while enclosing owners can continue
+to other unsupported actions. Stored timer arguments do not show a live
+countdown or UI state.
+
+The selected `ShowStartToast` ActionBase branch has four parameter fields
+after its inherited action members: description and title are `LangKey`
+values; icon and toast object names are strings. The selected
+`StopSubGameCountDownByHandle` branch has one `Param<uint>` handle after the
+same inherited members. Both native contracts authenticate their switch
+branches, complete generated readers and formatters, ordered setter calls,
+and generic parameter contexts. Current ledger-joined source spans replay
+exactly. Every observed stop handle path names a countdown output handle path
+in the same serialized owner, establishing a stored reference between these
+actions. The reached owners still stop at later unions in the reviewed reader;
+the stored reference does not establish that a countdown or toast appears at
+runtime.
+
+The selected `ShowFinishToast` ActionBase branch has description and title
+`LangKey` parameters, an icon-name string parameter, and a boolean success
+parameter after the inherited members. Its complete native reader and
+formatter, ordered setter calls, and typed parameter contexts authenticate the
+stored order. Current ledger-joined source spans replay exactly; the reached
+race records store a false success value. Their enclosing reviewed action
+maps contain subsequent header unions, so this action alone does not prove a
+whole owner or a displayed failure toast.
+
+The selected `ToggleMainHudActionPlayIgnoreMainHud` ActionBase branch stores
+`Param<string> actionType` and `Param<bool> playIgnoreMainHud` after the eight
+inherited action members. Its selected switch branch, complete native reader
+and formatter, ordered reads and setters, and both typed parameter contexts
+authenticate the stored shape; ledger-joined source cursors replay exactly.
+The reached records store true boolean values and authored action-type strings
+with spacing variants. Their enclosing action maps continue to later chapter
+panel unions, so these stored values do not establish runtime HUD behavior or
+whole-owner exactness.
+
+The selected `ShowChapterPanelDirect` ActionBase branch stores an Int32 backed
+`ChapterEffectType` parameter, chapter ID string, continuation boolean, and
+version string after the inherited members. Its native switch, complete reader
+and formatter, ordered setters, four typed parameter contexts, and finite enum
+declaration authenticate the stored order. Ledger-joined source spans replay
+exactly. Several enclosing action maps now reach their script ID and physical
+EOF; another continues to an unsupported header. The corpus gate decides
+whole-owner promotion. Stored chapter fields do not prove a panel displayed.
+
+The selected `ShowChapterCompletedPanel` ActionBase branch has the same four
+stored chapter parameters but a distinct native switch branch and generated
+reader. Its own contract validates that branch, the finite enum, and current
+ledger-joined source spans, including a reached owner after the HUD-action
+route. Production framing now reaches script ID and physical EOF for its
+reached owners. The corpus gate remains the whole-owner promotion boundary;
+no displayed chapter panel is inferred from the stored fields.
+
+The selected `SwitchToCamera` ActionBase branch stores blend style and time,
+a `ParamOutput<CameraControllerBase>` path, camera name, two boolean controls,
+optional entity look-at and bone fields, optional spawn position, and a spawn
+position flag. Its native switch, complete reader and formatter, ordered
+setters, ten typed generic contexts, and finite Int32 blend-style enum
+authenticate the stored order. Ledger-joined source spans replay exactly,
+including non-null camera output paths and authored entity or vector values.
+Reached owners continue to other camera actions in the reviewed reader; stored
+camera parameters do not prove a camera transition at runtime.
+
+The chained `StartTrackCamera` ActionBase branch stores a camera-controller
+parameter, follow and look-at entity pointers, follow offset, track name, and
+tween time after the inherited action fields. `ExitCamera` has a separate
+branch with blend style and time, camera name, and two boolean controls. Their
+selected native switches, complete readers and formatters, ordered setters,
+typed generic contexts, and the ExitCamera finite Int32 blend-style enum
+authenticate the stored fields. Current ledger-joined spans replay exactly in
+the reviewed decoder. Some enclosing camera action maps reach script ID and
+physical EOF; others stop at later unsupported unions. The corpus gate decides
+whole-owner promotion. Stored fields do not establish a live camera sequence.
+
+`ResetFollowCamera` is a separate inherited-only ActionBase branch. Its
+selected native switch, complete reader and formatter, and eight ordered
+reads and setters authenticate the stored record. Current ledger-joined spans
+replay exactly in the reviewed decoder; several enclosing action maps reach
+script ID and physical EOF while others stop at later unions. The corpus gate
+decides whole-owner promotion, and the record does not prove a runtime reset.
+
+Three additional ActionBase branches have independently reviewed native and
+current source layouts. `FacSetInteractLockedState` stores an instance key,
+lock flag, and radio ID as typed parameters; `ToggleClearScreenButRadioV2`
+stores an `isShow` boolean parameter; `RemoveNPCDialog` stores dialog and proxy
+ID string parameters. Their selected switches, complete readers and
+formatters, ordered setters, typed generic contexts, and ledger-joined source
+cursors replay exactly in the reviewed decoder. Some enclosing action maps
+reach script ID and physical EOF while others continue to later unions. The
+corpus gate decides whole-owner promotion; stored fields do not prove a live
+lock, display, or dialog change.
+
+The selected `ScriptEvent.OnLeaderEnterTriggerVolume` ActionHeader branch
+stores an unsigned trigger-slot filter and nullable unsigned output parameter
+after its inherited header fields. Its native contract authenticates the
+direct switch branch, complete fragmented generated reader and formatter,
+ordered reads and setters, and four typed generic contexts across the
+inherited and own fields. Current ledger-joined source spans replay exactly;
+their stored slot filters are authored constants and their output parameters
+are null. With the related leave header also reviewed, the reached race
+owners now close their complete action maps, and the derived root reaches
+script ID and physical EOF. The corpus gate remains the owner-level promotion
+step; the stored header does not prove a live trigger-volume entry.
+
+The selected `RequireSettlementShow` ActionBase branch stores constant
+`targetDynamicEntity` (`Param<ulong>`), `targetLevel` (`Param<int>`), and
+`targetSettlementId` (`Param<string>`) after the inherited action fields. Its
+native contract authenticates the selected switch jump and registered wrapper,
+complete reader and formatter, ordered reads, own setters, and all three
+generic parameter contexts. Current source hashes join the JsonData ledger,
+and reviewed cursor replay consumes each reached action span exactly. The
+authored settlement IDs have tundra and hongs families with level values; this
+is stored configuration, not an observed display. Enclosing owners still
+require the full corpus gate and can stop at other unions.
+
+Three related nine-member ActionBase routes, `FacShowForceUpdateSwitch`,
+`AddListenerToSettlementReady`, and `LandMarkUpgradeShow`, each add one
+typed parameter after the inherited fields: a boolean switch or a settlement
+ID string. Their shared native contract authenticates each selected switch
+jump and registered wrapper, complete generated reader and formatter, ordered
+reads, own setter, and generic parameter context. Ledger-joined direct source
+cursors and the reviewed decoder establish the reached stored spans. These
+values describe authored facility and settlement behavior; no runtime effect
+is inferred from the stored actions. Whole-owner status remains subject to the
+current JsonData EOF gate.
+
+The selected `BoolCompare` ActionBase route stores a `Param<BoolComparer>`
+and two `Param<bool>` operands after the inherited action fields. Its native
+contract authenticates the dispatcher and registered wrapper, complete hot
+reader plus owned fragments and formatter, ordered reads and setters, and
+three generic parameter contexts. The enum is a four-byte value type in the
+selected native reader; current ledger-joined source cursors and the reviewed
+decoder establish reached stored spans. An authored comparison is not a live
+comparison result. In reached sources the comparer is stored as the same
+enum value, while the first boolean operand often points to an ID reference
+or a named path; its serialized constant slot is then a placeholder, not a
+resolved runtime value. The second operand is usually an authored constant.
+Only the whole-file JsonData gate closes an owner.
+
+The selected `SetFacTopViewCustomRange` ActionBase route stores two
+`Param<Vector3>` coordinates after the inherited action fields. Its native
+contract authenticates the selected jump and wrapper, complete generated
+reader and formatter, ordered reads, own setters, and both value-type
+parameter contexts. Current ledger-joined source cursors and reviewed replay
+close the reached spans. Both coordinates use constant parameter sources;
+some authored pairs are zero and others are nonzero spatial bounds. They do
+not demonstrate a live camera or facility view change. Whole-owner status
+still requires the JsonData EOF gate.
+
+The selected `FacPlayBuildEffect` ActionBase route stores a boolean build
+effect switch, a float effect duration, and an instance-key string after the
+inherited fields. Its selected-build contract authenticates the switch jump,
+registered wrapper, complete reader and formatter, ordered reads and setters,
+and all three generic parameter contexts. Ledger-joined source cursors and
+reviewed replay close every reached action span. The current authored spans
+store a false switch, a unit duration, and sub-hub instance keys across
+several map regions. These are stored configuration values, not an observed
+effect. Enclosing owners can still stop at later unions and require the
+whole-file JsonData gate for closure.
+
+The selected `FacChangeBuildingTemplate` ActionBase route stores a building
+instance key, level, `FCNodeMode`, new template name, build-effect switch,
+and duration as typed parameters. Its native contract authenticates the
+selected wrapper and complete reader/formatter, ordered reads and own setters,
+all six generic contexts, and the enum's Int32 backing and declared members.
+Ledger-joined source spans and reviewed replay establish the stored fields.
+Reached authored actions describe sub-hub template changes across several map
+regions and levels, with the normal mode and a build-effect duration. They do
+not show a live building transition; enclosing scripts still require their
+later unions and the whole-file JsonData gate.
+
+The selected `PlayEffectOnNpcProxy` ActionBase route stores an effect ID,
+`NpcEffectType`, `MountPoint`, and NPC proxy ID as four typed parameters.
+Its native contract authenticates the wide selected tag, registered wrapper,
+complete reader and formatter, ordered reads and setters, all four generic
+contexts, and both enum Int32 backings and member catalogs. Ledger-joined
+source spans and reviewed replay prove the stored records. Reached authored
+IDs name map transmission and character expression effects; enum values
+include normal/material effects and no mount point, head, or custom point.
+These values do not prove an effect played on a live NPC, and enclosing owners
+still depend on their later unions and the whole-file JsonData gate.
+
+The selected `EventArgsAssignFloat` ActionBase route stores an
+`EventArgsPtr`, key, and float value as typed parameters. Its native contract
+authenticates the selected reader and formatter, ordered reads and setters,
+and all three generic contexts; ledger-joined source cursors close the reached
+spans. Authored records mostly target a `ratio` key with a unit float, but
+the `EventArgsPtr` parameter is path-sourced in those records. Its serialized
+wrapped-string slot does not resolve the event-argument object or demonstrate
+a live mutation. Enclosing scripts still stop at other unions pending the
+whole-file JsonData gate.
+
+The selected `SetAudioCueVar` ActionBase route stores a boolean, float,
+integer, string, variable name, `EAudioVarScope`, and `EAudioCueVarType` as
+typed parameters. The selected native jump, complete reader and formatter,
+ordered setter calls, seven generic contexts, and both Int32 enum catalogs
+authenticate that layout. Current ledger-joined source spans replay exactly
+in the production decoder. In the reached cohort, the authored scope is
+`LEVEL`, type is `BOOL`, and only the boolean value and variable name are
+populated. Some variable names exactly match `AudioCueTable` `exprType=8`
+operand strings; other names have no such match in the current table. This is
+an authored name join, without a proved runtime cue selection or variable
+update. A separate build-independent named-body claim revalidated on the
+selected installed client establishes that `SetAudioCueVar.Execute` reads all
+seven authored parameter fields and contains ordered iFix state-check,
+string/float/int/bool cue-variable setter, and patch lookup call sites. This
+is native body topology, not proof of which branch or
+setter ran. The generated source and table audit owns the changing inventory.
+
+The selected `OverrideNPCDialog` ActionBase route stores `Param<string>`
+dialog and NPC proxy IDs after the inherited fields. Its selected-build
+contract authenticates the wide ActionBase tag, registered wrapper, complete
+reader and formatter, ordered reads and own setters, and both string parameter
+contexts. Ledger-joined source spans and reviewed cursor replay prove the
+stored IDs. The reached parameter values are authored constants; the dialog
+IDs often prefix `DialogTextTable` row keys, while some do not join by that
+rule; the proxy IDs name NPC variants. This establishes a stored reference
+shape, not which
+dialog a live NPC displays. Whole-owner status remains with the JsonData EOF
+gate.
+
+The selected `EnterDollyTrackCamera` ActionBase branch has a larger stored
+body after the eight inherited action fields. Its current-build validator
+authenticates the switch, complete generated reader and formatter bodies, every
+ordered reader/setter pair, and each nested `Param<T>` method context. The
+`moveWay` member is a `Param<TrackCameraMoveState>` whose enum has four-byte
+`int` storage and exactly two declared values, `Distance` and `WayPoints`.
+Both are present in current source. A dedicated finite enum codec reads the
+four-member `Param` envelope and shared source/path tail; unknown enum values
+fail closed. Ledger-joined source hashes and cursor replay establish the
+reached route spans, and the reviewed ActionMap reader admits this branch only
+while the selected native validator passes. Whole-file status still requires
+the JsonData corpus EOF gate. These bytes record authored camera settings,
+not camera movement observed at runtime.
+
+The selected `PostAudioStatusEvent` ActionBase branch adds
+`onlyTriggerExitAfterNodeTriggered` as `Param<bool>` and the entry and exit
+event names as `Param<string>` after the inherited action fields. Its
+current-build validator authenticates the dispatcher and registered wrapper,
+complete reader and formatter bodies, ordered native reads, own setters, and
+the three generic parameter contexts. Source hashes joined through the
+JsonData summary and per-file ledger reproduce the reviewed action cursors;
+the ActionMap reader requires that native validation before admitting the
+route. Whole-file status still depends on the corpus EOF gate. The stored
+event names and exit flag do not establish observed audio status changes.
+
+The selected `SetEntitiesVisibility` ActionBase branch adds two boolean
+parameters, a list of entity pointers, and the `ModelVisibleType` parameter
+after the inherited action fields. Its current-build contract checks the
+selected dispatcher, registered wrapper, complete generated reader and
+formatter, all ordered reads and setters, and four nested generic contexts.
+The enum has signed four-byte storage and a finite set of declared values;
+unknown values fail closed. Ledger-joined source cursors reparse every reached
+span, including populated entity-pointer lists, through the shared ActionMap
+reader. Whole-file promotion still requires the JsonData EOF gate. The
+serialized target list and visibility settings do not establish an observed
+runtime visibility change.
+
+The selected `WaterVolumeInfiniteSetHeight` ActionBase branch adds
+`isFixedSpeed` and `isSmooth` as `Param<bool>`, `target` as
+`Param<WaterVolumePtr>`, and `value` as `Param<float>` after the inherited
+action fields. The current native reader resolves the water-volume pointer
+to a raw eight-byte ID record. Its selected contract checks the dispatcher,
+complete chained reader and forwarding formatter, all ordered reads and
+setters, and the four generic parameter contexts. Ledger-joined source hashes
+and reviewed cursor replay close the reached spans. Whole-file status still
+depends on the JsonData EOF gate. The stored target and value do not show a
+runtime water-height change.
+
+The selected `SetFacMode` ActionBase branch adds one `Param<bool>` member,
+`toFacMode`, after the inherited action fields. Its native gate authenticates
+the dispatcher and registered wrapper, the complete reader and forwarding
+formatter, ordered reads and setters, and the generic boolean context.
+Ledger-joined source hashes and reviewed cursor replay close the reached
+action spans. The enclosing LevelScript file becomes exact only if the full
+JsonData gate reaches physical EOF. The stored mode flag does not prove a
+facility mode changed at runtime.
+
+The selected `EnemyPatrolStart` ActionBase branch adds a `Param<ulong>`
+patrol ID and `Param<EntityPtr>` target after the inherited action fields.
+Its native gate authenticates the selected dispatcher, registered wrapper,
+complete reader and forwarding formatter, ordered field reads and setters,
+and both generic parameter contexts. Current source cursors are joined to
+the JsonData summary and per-file ledger, then replayed through the exact
+field codec to the pinned action end. The reached target values use the
+reviewed constant `EntityPtr` form; other pointer forms remain explicit
+stops. Whole-file status still requires the JsonData EOF gate. Stored patrol
+arguments do not establish that an enemy began patrolling at runtime.
+
+The selected `EnableTyphoeaArcheryStage` ActionBase branch stores a level ID,
+an LSM module pointer, a LevelScript pointer, and a stage index as four
+`Param<T>` members after the inherited action fields. Its current-build gate
+checks the dispatcher and registered wrapper, complete generated reader and
+forwarding formatter, all ordered reads and setters, and four nested generic
+`ReadValue<Param<T>>` contexts. Source hashes joined to the JsonData ledger
+replay the exact action cursors; the shared ActionMap reader admits the route
+only while the native gate passes. The full JsonData EOF gate determines
+whether enclosing files become exact. Stored stage arguments do not establish
+that an archery stage was enabled in a live session.
+
+The selected `TyphoeaArcherySetChipId` ActionBase branch stores `mainChipId`
+and `subChipId` as two `Param<string>` members after the inherited action
+fields. Its current-build gate checks the dispatcher and registered wrapper,
+complete generated reader and forwarding formatter, every ordered read and
+setter, and both generic `ReadValue<Param<string>>` contexts. Current source
+hashes join to the JsonData ledger and replay the exact action cursors. The
+shared ActionMap reader admits this route only while that native gate passes.
+Whole-file exactness still depends on the JsonData EOF gate. Stored chip IDs
+do not establish which chip a live game selected.
+
+The selected `FinishBuffs` ActionBase branch stores a
+`Param<List<BuffPtr>>` member after the inherited action fields. Its native
+gate checks the selected dispatcher, registered wrapper, complete reader and
+forwarding formatter, nine ordered reads and setters, and the generic
+`ReadValue<Param<List<BuffPtr>>>` context through `List<BuffPtr>` to its
+`BuffPtr` element type. Current ledger-joined source spans all carry a null
+list value with a local parameter path, so the exact codec accepts that form
+and refuses positive list elements. A focused enclosing-owner replay reaches
+physical EOF for some files; the other reached files stop later on distinct
+unreviewed unions. The full JsonData gate decides published whole-file status.
+The stored pointer list does not show any live buff ending.
+
+The selected `MarkTaskConditionFailed` ActionBase branch stores a
+`Param<TaskObjectiveEnum>` and a `Param<ScriptTaskPtr>` after the inherited
+action fields. The pointer is a one-member `key` string wrapper. The native
+gate checks the selected dispatcher and generated wrapper, complete reader
+and forwarding formatter, ordered reads and setters, and both generic
+parameter contexts. Ledger-joined LevelScript and template source receipts
+replay their exact action cursors. The reached dungeon files continue through
+the separately authenticated archery ActionHeader variants below; the tower
+files advance to positive task-map entries. The Battle Tower template's action
+map is exact,
+while later owner fields remain partial. These stored task arguments do not
+establish that a task condition failed at runtime.
+
+The paired `OnTyphoeaArcheryUnitAdvancedStageComplete` and
+`OnTyphoeaArcheryUnitAdvancedStageListComplete` ActionHeader branches share
+the inherited header fields and add, respectively, a filtered module ID with
+module and stage outputs plus a stage index, or a filtered module ID with a
+positive integer stage list. Their selected native gate checks both dispatcher
+branches, complete readers and forwarding formatters, ordered setters, and
+the generic `Param` and `ParamOutput` contexts. Ledger-joined source cursors
+close the stored headers; some enclosing dungeon owners now reach physical
+EOF, while others first stop at a task-map condition. Stored event arguments
+do not establish that either event fired in a live game.
+
+The selected `CheckGameInstStartDuration` GameCondition has the four inherited
+condition fields followed by `Param<CompareOperator>`, `Param<int>`,
+`Param<string>` for the level, `Param<LevelScriptPtr>` for the script, and
+`Param<string>` for the sub-game. Its native contract authenticates the
+dispatcher, generated wrapper and script pointer, complete reader and
+forwarding formatter, nine ordered reads and setters, and all five generic
+parameter contexts. Ledger-joined source receipts close each selected
+condition cursor; the reached dungeon owners now advance through their task
+maps and final trigger volumes to physical EOF. The stored comparison and
+parameter sources do not establish elapsed runtime or the condition's truth.
+
+The selected `OnTrainLevelEvent` ActionHeader adds an event-key
+`Param<string>` and a `ParamOutput<object>` to the inherited header. Its
+native contract authenticates the dispatcher branch, complete reader and
+forwarding formatter, ordered reads and setters, and the three generic
+parameter contexts. Current ledger-joined source cursors close the stored
+headers and advance the enclosing dungeon files to later, unsupported event
+headers. The object output stores a parameter source and path; it does not
+show a runtime value or prove that the train event fired.
+
+The selected `OnEnemyTakeLastAttackDamage` and `OnSpellInfliction` headers
+share the inherited event fields. The damage header adds a damage output,
+an entity filter and output, and two Boolean filters. The spell header adds
+count, entity, source and type outputs plus entity and energy-shard type
+filters. Their native contracts check the selected dispatcher branches,
+complete readers and forwarding formatters, ordered setters, and each typed
+generic parameter context. Ledger-joined cursors include null entity fields
+in the damage header and a positive stored entity pointer in the spell
+header. The enclosing dungeon files advance to later unsupported event
+headers. Stored filters and outputs do not establish that either event fired
+or what value an output held at runtime.
+
+The selected `OnSpawnerEntitySpawn` ActionHeader adds entity, group-key, and
+wave-key outputs; a typed filter enum; group and wave key filters; and a
+`Param<SpawnerPtr>` filter. Its native contract authenticates the selected
+dispatcher branch, complete reader and forwarding formatter, ordered reads
+and setters, and all typed parameter contexts. Ledger-joined cursors include
+both explicit spawner IDs and parameter paths that name a spawner at runtime.
+Whole-owner replay reaches physical EOF for some sources and advances the
+others to later unsupported headers. The stored pointer and output paths do
+not prove a spawn event, spawner lookup, or runtime output value.
+
+The selected `OnSpawnerGroupBegin` ActionHeader stores group-key and spawner
+filters together with corresponding string and spawner-pointer outputs. Its
+native contract authenticates the dispatcher branch, complete reader and
+forwarding formatter, ordered setters, and five typed parameter contexts.
+Ledger-joined source cursors replay exactly. Two enclosing LevelScript files
+reach physical EOF; the others advance to later unsupported headers. These
+stored filters and output paths do not establish that a group began or what
+values the outputs held at runtime.
+
+The selected `OnSpawnerEntityDie` ActionHeader stores an entity output, a
+signed 32-bit typed death filter, group and wave key filters and outputs, and
+a spawner pointer filter. Its native contract authenticates the dispatcher
+branch, complete chained reader and forwarding formatter, ordered setters,
+eight typed parameter contexts, and the filter enum's underlying type.
+Ledger-joined stored cursors replay exactly. Most enclosing LevelScript files
+reach physical EOF; the remaining file advances to a later encounter header.
+Stored paths and pointer IDs do not prove a death event or runtime output.
+
+Three selected encounter ActionHeaders now have separate native contracts:
+`OnEncounterActivated` stores an `LsmPtr` filter and output;
+`OnEncounterBattlePartBegin` stores the same pointer type under `lsvPtr`
+field names; and `OnEncounterBattlePartEnd` adds a Boolean completion filter
+and output. Their complete readers, forwarding formatters, ordered setters,
+and typed parameter contexts authenticate the stored layouts. Ledger-joined
+cursors replay exactly across the encounter sources. Combined owner replay
+closes some files at physical EOF and exposes later header or positive module
+branches in others. Stored pointer IDs and output paths do not establish live
+encounter state or completion.
+
+The selected `OnEntityCastSkill` ActionHeader adds entity, entity-template,
+first-target and skill ID outputs, a Boolean character filter, and a typed
+`SkillTypeMask` filter. The native contract authenticates its dispatcher
+branch, complete reader and forwarding formatter, ordered setters, all seven
+generic parameter contexts, and the filter enum's signed 32-bit underlying
+type. Ledger-joined cursors include consecutive headers in one source. Several
+enclosing owners now close at physical EOF; the others advance to later
+unsupported headers. The stored output paths do not establish a cast event,
+target identity, or runtime output values.
+
+The selected `OnLeaderEnterTriggerVolumeList` ActionHeader inherits the
+common event fields and adds a target-script parameter, a `TriggerTarget`
+enum with signed 32-bit storage, and `Param<List<uint>>` trigger slot IDs.
+Its native contract authenticates the selected dispatcher branch, complete
+fragmented reader and forwarding formatter, ordered setters, all three typed
+parameter contexts, and the list's unsigned element type. Ledger-joined
+source cursors include positive slot lists. Whole-owner replay closes some
+LevelScript files at physical EOF and advances others to later unsupported
+headers. The stored slot IDs do not establish live trigger membership or
+event execution.
 
 ## The SkillData formatter and wrapper registration
 

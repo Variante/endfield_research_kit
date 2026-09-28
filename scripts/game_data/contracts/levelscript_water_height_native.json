@@ -1,0 +1,1369 @@
+{
+  "schema": "endfield.levelscript-water-height-native-contract.v1",
+  "status": "exact-current-build",
+  "evidenceBoundary": "exact",
+  "evidenceNote": "Selected ActionBase branch, complete chained reader and forwarding formatter, twelve ordered native reads/setters, four Param<T> contexts, and current source hash/ledger cursors prove stored water-height settings; runtime water state remains unobserved.",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "UnityPlayer.dll": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "dispatcher": {
+    "switchTableRva": 43598100,
+    "switchEntryCount": 1342,
+    "switchTableSha256": "A4B75AA63B2B4EA43A6D2FC11B08085893F62543E3A9B367C34E60E916730C88"
+  },
+  "route": {
+    "family": "ActionBase",
+    "tag": 1302,
+    "typeName": "Beyond.Gameplay.Actions.WaterVolumeInfiniteSetHeight",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaterVolumeInfiniteSetHeightForMemoryPack",
+    "typeDefinition": 19663,
+    "registeredTypeIndex": 105919,
+    "memberCount": 12,
+    "inheritedMemberCount": 8,
+    "fields": [
+      [
+        "dontLogWarning",
+        "bool",
+        "bool"
+      ],
+      [
+        "ID",
+        "int32",
+        "int"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool",
+        "bool"
+      ],
+      [
+        "uid",
+        "string",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "int32",
+        "Beyond.GEnums.ScopeName"
+      ],
+      [
+        "useCurrentScope",
+        "bool",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool",
+        "bool"
+      ],
+      [
+        "nextID",
+        "int32",
+        "int"
+      ],
+      [
+        "isFixedSpeed",
+        "Param<bool>",
+        "Beyond.Gameplay.Actions.Param`1<bool>"
+      ],
+      [
+        "isSmooth",
+        "Param<bool>",
+        "Beyond.Gameplay.Actions.Param`1<bool>"
+      ],
+      [
+        "target",
+        "Param<WaterVolumePtr>",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.WaterVolumePtr>"
+      ],
+      [
+        "value",
+        "Param<float>",
+        "Beyond.Gameplay.Actions.Param`1<float>"
+      ]
+    ],
+    "dispatcher": {
+      "switchTargetRva": 43226066,
+      "switchEntryHex": "E9634F0500",
+      "bodyRva": 43574074,
+      "usageCellRva": 218465448,
+      "usageRawHex": "7F3B032000000000",
+      "branchWindow": {
+        "startRva": 43574074,
+        "endRva": 43574178,
+        "sha256": "B6EA6531973B7334E73EF2C20268C3C857B3AD5619AA30B98268CE4BD534F063"
+      },
+      "typeLoadRva": 43574109,
+      "typeLoadHex": "488B1544A16C0A"
+    },
+    "methods": [
+      [
+        144854,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaterVolumeInfiniteSetHeightForMemoryPack",
+        "Deserialize",
+        67970320
+      ],
+      [
+        144855,
+        "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaterVolumeInfiniteSetHeightForMemoryPack+Beyond_Gameplay_Actions_WaterVolumeInfiniteSetHeightForMemoryPackFormatter",
+        "Deserialize",
+        67970224
+      ]
+    ],
+    "codeWindows": [
+      {
+        "startRva": 67970320,
+        "endRva": 67970387,
+        "sha256": "B5C7FB6937DC39B4E9643C392B7BDF1C69497B5C279835715D6B3C529125F295"
+      },
+      {
+        "startRva": 67970387,
+        "endRva": 67970899,
+        "sha256": "DB6F5DCA5EB9D7A46E9284D964E4ACDF4C499BFF7E89F985424B638AB7177405"
+      },
+      {
+        "startRva": 67970899,
+        "endRva": 67971006,
+        "sha256": "5896D231E3F7011EEAFEF5B632136F6A1335B40135C5F0C860A9063B48E6A54F"
+      },
+      {
+        "startRva": 67971006,
+        "endRva": 67971012,
+        "sha256": "0B36B76255B7159276D1FFDCDA6C3E41A671D8B9EBF79DD981B6AD94AC539B42"
+      },
+      {
+        "startRva": 83327718,
+        "endRva": 83327731,
+        "sha256": "B8FAF3C22EE54A179EB3A984D228FA91CCEEE7A2AFF919B4B1E7839BF48566D9"
+      },
+      {
+        "startRva": 83327731,
+        "endRva": 83327787,
+        "sha256": "80B6B95CAF5A0C518D377E2211C345A877F68BD6F7269DDCDE16D516273C3EA9"
+      },
+      {
+        "startRva": 83327787,
+        "endRva": 83327808,
+        "sha256": "72222710133F4A19D887E77C06155D3DEA669E10B0C5447D5A311106CFD60B98"
+      },
+      {
+        "startRva": 67970224,
+        "endRva": 67970317,
+        "sha256": "933AA2DF406FBE2AECD62BE1A5BA2A38543767D247B96FB7560B9F1685AF536C"
+      }
+    ],
+    "memberCountInstruction": {
+      "rva": 67970448,
+      "hex": "4080FE0C"
+    },
+    "readOrder": [
+      {
+        "memberIndex": 0,
+        "fieldName": "dontLogWarning",
+        "readKind": "bool",
+        "readCallRva": 67970464,
+        "readCallHex": "E81B63BDFE",
+        "readTargetRva": 46827712,
+        "setterCallRva": 67970487,
+        "setterCallHex": "E8E4C7FA00",
+        "setterTargetRva": 84405664,
+        "setterMethodIndex": 126158,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack"
+      },
+      {
+        "memberIndex": 1,
+        "fieldName": "ID",
+        "readKind": "int32",
+        "readCallRva": 67970498,
+        "readCallHex": "E8E960BDFE",
+        "readTargetRva": 46827184,
+        "setterCallRva": 67970520,
+        "setterCallHex": "E877BEFA00",
+        "setterTargetRva": 84403284,
+        "setterMethodIndex": 126159,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack"
+      },
+      {
+        "memberIndex": 2,
+        "fieldName": "releaseWhenExecutionFinished",
+        "readKind": "bool",
+        "readCallRva": 67970531,
+        "readCallHex": "E8D862BDFE",
+        "readTargetRva": 46827712,
+        "setterCallRva": 67970554,
+        "setterCallHex": "E87DC9FA00",
+        "setterTargetRva": 84406140,
+        "setterMethodIndex": 126160,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack"
+      },
+      {
+        "memberIndex": 3,
+        "fieldName": "uid",
+        "readKind": "string",
+        "readCallRva": 67970565,
+        "readCallHex": "E8F660BDFE",
+        "readTargetRva": 46827264,
+        "setterCallRva": 67970588,
+        "setterCallHex": "E82F7813FF",
+        "setterTargetRva": 52469328,
+        "setterMethodIndex": 126161,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack"
+      },
+      {
+        "memberIndex": 4,
+        "fieldName": "scopeMask",
+        "readKind": "int32",
+        "readCallRva": 67970606,
+        "readCallHex": "E87D60BDFE",
+        "readTargetRva": 46827184,
+        "setterCallRva": 67970628,
+        "setterCallHex": "E883D8FA00",
+        "setterTargetRva": 84410060,
+        "setterMethodIndex": 126162,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack"
+      },
+      {
+        "memberIndex": 5,
+        "fieldName": "useCurrentScope",
+        "readKind": "bool",
+        "readCallRva": 67970639,
+        "readCallHex": "E86C62BDFE",
+        "readTargetRva": 46827712,
+        "setterCallRva": 67970662,
+        "setterCallHex": "E835ECFA00",
+        "setterTargetRva": 84415136,
+        "setterMethodIndex": 126163,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack"
+      },
+      {
+        "memberIndex": 6,
+        "fieldName": "useGraphScope",
+        "readKind": "bool",
+        "readCallRva": 67970673,
+        "readCallHex": "E84A62BDFE",
+        "readTargetRva": 46827712,
+        "setterCallRva": 67970696,
+        "setterCallHex": "E81FE2FA00",
+        "setterTargetRva": 84412588,
+        "setterMethodIndex": 126164,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack"
+      },
+      {
+        "memberIndex": 7,
+        "fieldName": "nextID",
+        "readKind": "int32",
+        "readCallRva": 67970707,
+        "readCallHex": "E81860BDFE",
+        "readTargetRva": 46827184,
+        "setterCallRva": 67970729,
+        "setterCallHex": "E852258CFF",
+        "setterTargetRva": 60378112,
+        "setterMethodIndex": 117182,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ActionBaseForMemoryPack"
+      },
+      {
+        "memberIndex": 8,
+        "fieldName": "isFixedSpeed",
+        "readKind": "Param<bool>",
+        "readCallRva": 67970747,
+        "readCallHex": "E8D035CDFE",
+        "readTargetRva": 47864976,
+        "setterCallRva": 67970770,
+        "setterCallHex": "E8F9000000",
+        "setterTargetRva": 67971024,
+        "setterMethodIndex": 144848,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaterVolumeInfiniteSetHeightForMemoryPack"
+      },
+      {
+        "memberIndex": 9,
+        "fieldName": "isSmooth",
+        "readKind": "Param<bool>",
+        "readCallRva": 67970788,
+        "readCallHex": "E8A735CDFE",
+        "readTargetRva": 47864976,
+        "setterCallRva": 67970811,
+        "setterCallHex": "E810010000",
+        "setterTargetRva": 67971088,
+        "setterMethodIndex": 144849,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaterVolumeInfiniteSetHeightForMemoryPack"
+      },
+      {
+        "memberIndex": 10,
+        "fieldName": "target",
+        "readKind": "Param<WaterVolumePtr>",
+        "readCallRva": 67970829,
+        "readCallHex": "E87E35CDFE",
+        "readTargetRva": 47864976,
+        "setterCallRva": 67970852,
+        "setterCallHex": "E827010000",
+        "setterTargetRva": 67971152,
+        "setterMethodIndex": 144850,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaterVolumeInfiniteSetHeightForMemoryPack"
+      },
+      {
+        "memberIndex": 11,
+        "fieldName": "value",
+        "readKind": "Param<float>",
+        "readCallRva": 67970870,
+        "readCallHex": "E85535CDFE",
+        "readTargetRva": 47864976,
+        "setterCallRva": 67970889,
+        "setterCallHex": "E842010000",
+        "setterTargetRva": 67971216,
+        "setterMethodIndex": 144851,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaterVolumeInfiniteSetHeightForMemoryPack"
+      }
+    ],
+    "paramContexts": [
+      {
+        "memberIndex": 8,
+        "instructionRva": 67970734,
+        "instructionHex": "488B15CB39FD08",
+        "cellRva": 218783872,
+        "usageRawHex": "5BE912C000000000",
+        "methodSpecIndex": 619693,
+        "methodSpec": [
+          428464,
+          -1,
+          13572
+        ],
+        "argumentRawHex": "9886208D010000000000150000000000",
+        "classCarrier": {
+          "typePointerVa": 6647245576,
+          "typeRawHex": "9886208D010000000000150000000000",
+          "carrierPointerVa": 6662686360,
+          "carrierRawHex": "28C0248D010000004048FE8A0100000000000000000000000000000000000000",
+          "basePointerVa": 6662963240,
+          "baseRawHex": "141A0000000000000000120000000000",
+          "baseDefinitionIndex": 6676,
+          "classInstantiationPointerVa": 6626887744,
+          "opaqueCarrierTailHex": "00000000000000000000000000000000"
+        },
+        "classInstantiation": {
+          "index": 768,
+          "table_slot_va": 6625980320,
+          "record_va": 6626887744,
+          "argument_vector_va": 6669024216,
+          "padding_hex": "00000000",
+          "arguments": [
+            {
+              "index": 0,
+              "type_pointer_va": 6664809048,
+              "raw_type_record_hex": "FA8C0000000000000000028000000000"
+            }
+          ]
+        },
+        "elementRawHex": "FA8C0000000000000000028000000000",
+        "elementTypeKind": 2,
+        "elementTypeName": "System.Boolean",
+        "elementTypeDefinition": null
+      },
+      {
+        "memberIndex": 9,
+        "instructionRva": 67970775,
+        "instructionHex": "488B15A239FD08",
+        "cellRva": 218783872,
+        "usageRawHex": "5BE912C000000000",
+        "methodSpecIndex": 619693,
+        "methodSpec": [
+          428464,
+          -1,
+          13572
+        ],
+        "argumentRawHex": "9886208D010000000000150000000000",
+        "classCarrier": {
+          "typePointerVa": 6647245576,
+          "typeRawHex": "9886208D010000000000150000000000",
+          "carrierPointerVa": 6662686360,
+          "carrierRawHex": "28C0248D010000004048FE8A0100000000000000000000000000000000000000",
+          "basePointerVa": 6662963240,
+          "baseRawHex": "141A0000000000000000120000000000",
+          "baseDefinitionIndex": 6676,
+          "classInstantiationPointerVa": 6626887744,
+          "opaqueCarrierTailHex": "00000000000000000000000000000000"
+        },
+        "classInstantiation": {
+          "index": 768,
+          "table_slot_va": 6625980320,
+          "record_va": 6626887744,
+          "argument_vector_va": 6669024216,
+          "padding_hex": "00000000",
+          "arguments": [
+            {
+              "index": 0,
+              "type_pointer_va": 6664809048,
+              "raw_type_record_hex": "FA8C0000000000000000028000000000"
+            }
+          ]
+        },
+        "elementRawHex": "FA8C0000000000000000028000000000",
+        "elementTypeKind": 2,
+        "elementTypeName": "System.Boolean",
+        "elementTypeDefinition": null
+      },
+      {
+        "memberIndex": 10,
+        "instructionRva": 67970816,
+        "instructionHex": "488B15B96EFD08",
+        "cellRva": 218797504,
+        "usageRawHex": "15EA12C000000000",
+        "methodSpecIndex": 619786,
+        "methodSpec": [
+          428464,
+          -1,
+          13666
+        ],
+        "argumentRawHex": "5857208D010000000000150000000000",
+        "classCarrier": {
+          "typePointerVa": 6647232408,
+          "typeRawHex": "5857208D010000000000150000000000",
+          "carrierPointerVa": 6662674264,
+          "carrierRawHex": "28C0248D01000000D047EA8A0100000000000000000000000000000000000000",
+          "basePointerVa": 6662963240,
+          "baseRawHex": "141A0000000000000000120000000000",
+          "baseDefinitionIndex": 6676,
+          "classInstantiationPointerVa": 6625576912,
+          "opaqueCarrierTailHex": "00000000000000000000000000000000"
+        },
+        "classInstantiation": {
+          "index": 8506,
+          "table_slot_va": 6626042224,
+          "record_va": 6625576912,
+          "argument_vector_va": 6668315016,
+          "padding_hex": "00000000",
+          "arguments": [
+            {
+              "index": 0,
+              "type_pointer_va": 6664669528,
+              "raw_type_record_hex": "F4300000000000000000118000000000"
+            }
+          ]
+        },
+        "elementRawHex": "F4300000000000000000118000000000",
+        "elementTypeKind": 17,
+        "elementTypeName": "Beyond.Gameplay.Core.WaterVolumePtr",
+        "elementTypeDefinition": 12532
+      },
+      {
+        "memberIndex": 11,
+        "instructionRva": 67970857,
+        "instructionHex": "488B157817F708",
+        "cellRva": 218381992,
+        "usageRawHex": "F1E912C000000000",
+        "methodSpecIndex": 619768,
+        "methodSpec": [
+          428464,
+          -1,
+          13647
+        ],
+        "argumentRawHex": "E859208D010000000000150000000000",
+        "classCarrier": {
+          "typePointerVa": 6647234168,
+          "typeRawHex": "E859208D010000000000150000000000",
+          "carrierPointerVa": 6662674920,
+          "carrierRawHex": "28C0248D01000000203BFE8A0100000000000000000000000000000000000000",
+          "basePointerVa": 6662963240,
+          "baseRawHex": "141A0000000000000000120000000000",
+          "baseDefinitionIndex": 6676,
+          "classInstantiationPointerVa": 6626884384,
+          "opaqueCarrierTailHex": "00000000000000000000000000000000"
+        },
+        "classInstantiation": {
+          "index": 882,
+          "table_slot_va": 6625981232,
+          "record_va": 6626884384,
+          "argument_vector_va": 6669020960,
+          "padding_hex": "00000000",
+          "arguments": [
+            {
+              "index": 0,
+              "type_pointer_va": 6664874648,
+              "raw_type_record_hex": "6B8D00000000000000000C8000000000"
+            }
+          ]
+        },
+        "elementRawHex": "6B8D00000000000000000C8000000000",
+        "elementTypeKind": 12,
+        "elementTypeName": "System.Single",
+        "elementTypeDefinition": null
+      }
+    ],
+    "formatterTailJump": {
+      "instructionRva": 67970284,
+      "instructionHex": "E91F000000",
+      "targetRva": 67970320
+    },
+    "sourceReceipts": [
+      [
+        "LevelScriptData/dung02_cdg004/28000000001.json",
+        "7A3C9C6E96CF210258029ED2AB3FBA8BF6FFA5844908E4C583C2689E9DA09912",
+        51,
+        149,
+        "CC82A4FD0FFBE8731CF0D55D3DC957FF63F57546E3F457E54BBB86123B86AD80"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000001.json",
+        "7A3C9C6E96CF210258029ED2AB3FBA8BF6FFA5844908E4C583C2689E9DA09912",
+        255,
+        353,
+        "C83396F5565E497F660BB4AAE5D3C2A624A64F9CC38851A538026F33AD82999C"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000002.json",
+        "17EB24BB21AF040AC77D95CA18C6FC77161689DC6D267E85A6F6596595D16330",
+        56,
+        154,
+        "B6214A67D88F9A7F9E9EB71BD636970F8EF1ABFCC66694B53DDAB124B18ACA86"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000002.json",
+        "17EB24BB21AF040AC77D95CA18C6FC77161689DC6D267E85A6F6596595D16330",
+        878,
+        976,
+        "06522D1165A92DE6D5DE80D46858DD82589B2BCA4123D93D57C4A964624DAA0F"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000006.json",
+        "26499BEC96D98DEB36786A3AD2DE3028B3C01C6FEC83FA2B46E6974528FD20B9",
+        2648,
+        2746,
+        "9FDD10A91E3D10807BCE6AE2976B29F849B3837654692E115419F3B312B14369"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000007.json",
+        "4661A57D4799F09BFD3CEE9607F8C4D1313EC633FB899A4F842967ACFA398DC4",
+        1333,
+        1431,
+        "B3E699E822087E19BEA0ECB6D2C264CDC92613E7F719689940273D9886102FE3"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000013.json",
+        "933C1F9CAEEB2D558CA4A11D6344084ABAD677E2E874259DB111EB608F36454D",
+        1166,
+        1264,
+        "3EFF5427EEE64F5BC32F464361DAAF0F97A5C1551D03D2A8B53A887A4DD9A317"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000013.json",
+        "933C1F9CAEEB2D558CA4A11D6344084ABAD677E2E874259DB111EB608F36454D",
+        3352,
+        3450,
+        "7C1EF4655458B886DFD83D915E0FC6ABD87DA04E01C335F285832C5CA848BCA4"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000014.json",
+        "FB518E0BD8C1719AB794402D1C0C4986A22D4A8737522EA0702AE001E48C3B0F",
+        345,
+        443,
+        "5E823E41AA9AA41728604293AA278ACF31F43FE76345D5546D01AE4B97F9239D"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000016.json",
+        "F5C3ED2EDDD5CFBA17806403C680891CF0E56F2547EF568FFA35C7B64835904F",
+        653,
+        751,
+        "1042164C7DAE5C7D5FD0B26E4FC1F563F90D5F5518D5C522851D9F8389B12CD8"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000016.json",
+        "F5C3ED2EDDD5CFBA17806403C680891CF0E56F2547EF568FFA35C7B64835904F",
+        751,
+        849,
+        "AB25142CF062622E73AD7F3582A97DF0694644A8849D2CF32D980A619EE602FE"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000022.json",
+        "1E4C5146D915F2A50BA09A0E501CF69706FFF0DE03705C5DAF309AD7CC796ED7",
+        3609,
+        3707,
+        "9DD403C30F6B4A2853A4AF50191857DA01734FBFBC658ADBE768C50C5D1C8245"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000022.json",
+        "1E4C5146D915F2A50BA09A0E501CF69706FFF0DE03705C5DAF309AD7CC796ED7",
+        4424,
+        4522,
+        "1D6C3B2C3654AFF41BB586A713E95A4ACFFAC1A09D25E4D94A92373AB9708A71"
+      ],
+      [
+        "LevelScriptData/dung02_cdg004/28000000022.json",
+        "1E4C5146D915F2A50BA09A0E501CF69706FFF0DE03705C5DAF309AD7CC796ED7",
+        4716,
+        4814,
+        "05B92637D2B3112203F5FA6FFA5E0AC5168E41D9EA7D7E460ECECD1B1CDF85C9"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000002.json",
+        "AA4B246369F2D9BEEDBB148659A07EC3F95D2B0B6790AC193532CB7D89D85EE6",
+        141,
+        239,
+        "799BB39C58EACC35E730ED73EBF9087C3B16A9D684C72627137695850589604A"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000002.json",
+        "AA4B246369F2D9BEEDBB148659A07EC3F95D2B0B6790AC193532CB7D89D85EE6",
+        1543,
+        1641,
+        "6C7FA5A83BB77F1E53E685AD62991FDD922FE4BB602DA1883E992FC0F8438818"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000002.json",
+        "AA4B246369F2D9BEEDBB148659A07EC3F95D2B0B6790AC193532CB7D89D85EE6",
+        1641,
+        1739,
+        "BE01999B55F76959063EA71F6C5B9946BE8210D4A63E113C702107C0D722B75E"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000002.json",
+        "AA4B246369F2D9BEEDBB148659A07EC3F95D2B0B6790AC193532CB7D89D85EE6",
+        1739,
+        1837,
+        "E8BF47E696118C8219190CAD74C4870663744BE44D7F321CEC02507E9097E86D"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000006.json",
+        "CE257A0DD8D09C2BFF08E9CA528AF89A28879A6ED4E663B3F73093750239A779",
+        4105,
+        4203,
+        "6795C42CC0AA92C45053E3A9FCC5678ECECBB91834973C31DEF4F54F05138C8C"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        105,
+        203,
+        "3232FDF1FA7D2EFF689F10565784EB19290193089A79F3FA3E03D7948FE00834"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        327,
+        425,
+        "126F9EDCFE0F4254886B87E942A460D0CF5C02F34A02D54E00B9C88C2553BF4C"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        479,
+        577,
+        "6A7655047B5E11B7FB0067C89616223F10A4155B18D8E32F89D49A0762403654"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        647,
+        745,
+        "6521A1C96568CEB53CA325CACD42A0FED23AD18220C03D01A0AA4EC7643E32D7"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        799,
+        897,
+        "B7CCD63080527FAD9FAFD344D476FE4920CC65038004636F365DF2C87F337554"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        967,
+        1065,
+        "7701BB4BFC57679C3BDC899701F974F84EEAC81D615FB259B048C2127B092AD5"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        1119,
+        1217,
+        "B4B7DB3E2604894467E63BBF993AF7FC8E116CEBA75D99608A4D850CC3EDCE83"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        1287,
+        1385,
+        "5EE0BA94EACA139B1BDCC003C869EE1BF7D25721831E0150D7BA05161953F5CC"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        1439,
+        1537,
+        "46F6AB69712C2D86B861922813E81958429A0DF68E5B0BF00951D3B95512B902"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        1607,
+        1705,
+        "7F77E4A1E5ED29EF9E9EC2C0312A07F718CAF5EE86B44FBDE739F69170E90D78"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        1759,
+        1857,
+        "0E43FD4957D673509ECC5B9FC639C09744FAE26C0458785579E019129FC4DF47"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        1927,
+        2025,
+        "68679A8A9CCC2EA2BDFBC8129C2B22285AE7299E213AD9E037EBCCAC13F1ED1B"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        2079,
+        2177,
+        "E8E5D88007DE02B960E31EBA88F4DA1D5371CE8E53280EF7622DE1B351DBD550"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        2247,
+        2345,
+        "53B8E2DB9D66E3FEAC62E79477A3E71ACBDB0C52EF8C55E37D83246D0B868FFD"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        2399,
+        2497,
+        "2BA01391F54489EC3D9B9A082EEFDA1C8E93F595036FB27EA14ED569362BBFD9"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        2567,
+        2665,
+        "A7946EEDDB3A70AC6B65674A0CBE13CB0316FA0C08E23D755640ED230FF7464E"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        2719,
+        2817,
+        "ED6CEAAAEA4C8F2F588382E54B85D4FF8E7188EEDF6ACAA9AB0DF51D19BDB1D8"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        2887,
+        2985,
+        "2F1C6D17EAD867E2572D5ECFC75CA247CB44BC3BB68AE740BA9B7CE0B01328EF"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        3039,
+        3137,
+        "720C8820464E4B3A161DB76AFBD4D35AF7FC0374BE37E8CF0D89DB4FA36B6BE5"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        3207,
+        3305,
+        "79CF31760238DF1AE0016D8FC4585F3F170B8F45B6B59855AD654E18F9B7FDAA"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        3305,
+        3403,
+        "AC90CD1C9BC9C18B67A19522EFB502083590A4A906FF204F97219175653BBF79"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        3473,
+        3571,
+        "D4AEF74C7B1C98B41B2E0371EFBF83B2FC3A175FDE6BEF3CDCB09BDA92CB872B"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        5545,
+        5643,
+        "0A0BCBAF6CC49203E40C2D7C3DB180FDDDEA0750CDB2A65CD633573855A9BBC3"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        6037,
+        6135,
+        "A4083BBFC353C430CBE4EF14323577367B66824CD86C7CA4493ACE7C9052C6DA"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        7438,
+        7536,
+        "3A84F4B614E3CDE172AECFB62D56FDBF0613484DCF2EC3E3577CEF4E271B5470"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        7930,
+        8028,
+        "C0E22C05E2858468D01CF18EF2E10ACD911C2DC7D1390642BE5227A2D21C9629"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        9248,
+        9346,
+        "EC52E831BDA1BF54F0F953767E265DFFE80FCECE174A37639FD18D916A99794D"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        9740,
+        9838,
+        "B5A2EF8F5295EB8A01CD5AD14783591471B0D1FE545BD639D2AE679C7162A57F"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        17530,
+        17628,
+        "E5EC3B9541C9FFD193D5FC9F76C2B9BFCB3C5CEF08048D762D6A9729EFF1D6E8"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        17628,
+        17726,
+        "EFF0E0D6F801D9659B17E2478BA82C201FA64F9EF2BBFD01EC5346AE90A1F65C"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        17726,
+        17824,
+        "B85E2E6D56F1C58E6F378A51277FF7F7BB4D26ADCE02C1B436D830B1E97C616B"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        17894,
+        17992,
+        "6D4505BC138B5D35AEE2A1C84337432B47605394C749F5669A25B5ECDB5626C1"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        18275,
+        18373,
+        "59ABB862C00A7E9E66B9120BACE5753CE13292E23622F671D3DFCCCD868A8BE5"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        18373,
+        18471,
+        "99DF05C5EAE43AAADF1C236902588F5B74137D378D657B67A10FD06CA5405424"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        18541,
+        18639,
+        "D1AC19E1F876A7450D852E8D5AF8770DBC26C7BC311D1486A51634F41AC3B6FE"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        18922,
+        19020,
+        "8169A693EDB0CD7FE5F6B534C9E83051D3D9EC0C9E8D18312012708EA65CE2DD"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        19020,
+        19118,
+        "F9515B643AD65E0D1D4BBACE2226FC0F780787349F46F8D38430900CC15836DD"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300000013.json",
+        "3B50E09A158FF7D0D686A94D7FE6363F1A4E9DE03333BA748ACEF8C3B31B00FD",
+        19188,
+        19286,
+        "6A5F0753B34E992488695C5CB03D6AA369EC08A29FB48BFEED2BFD9B15AB309C"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300010007.json",
+        "2FC798C0056AAD4F3AF371BD2402DB09431DE705B248ACB9B7D5CBD3732E57F0",
+        61,
+        159,
+        "997A55157716A766BA717A9E7C27A086A3BD0D51402FCF10DAD7F8D552918C1A"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300010007.json",
+        "2FC798C0056AAD4F3AF371BD2402DB09431DE705B248ACB9B7D5CBD3732E57F0",
+        159,
+        257,
+        "84F9A154BC926AD30E20CF34ADFF5CB22C7134DA9C6CC736ECC46C34E4DA0DE2"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300010007.json",
+        "2FC798C0056AAD4F3AF371BD2402DB09431DE705B248ACB9B7D5CBD3732E57F0",
+        327,
+        425,
+        "E9D671254A6A4A7207A17E705829185758B6E3AD789866EBF6736F5E2BC321ED"
+      ],
+      [
+        "LevelScriptData/indie_dg016/46300010007.json",
+        "2FC798C0056AAD4F3AF371BD2402DB09431DE705B248ACB9B7D5CBD3732E57F0",
+        425,
+        523,
+        "F924F11005F70DDFF935C6DE1410FEC6B1DBC05895E0600B2A699FFB9097DDD6"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040002.json",
+        "4A5862B9FFD77E773C6C4DA855E89AC7ECE3C0C27E05A8139ED4D357E4C8B107",
+        389,
+        487,
+        "241EABD2589D5043F62217F7E2407B3FE0CB8EDBE0356C40C68EDA89BFB0221A"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040002.json",
+        "4A5862B9FFD77E773C6C4DA855E89AC7ECE3C0C27E05A8139ED4D357E4C8B107",
+        870,
+        968,
+        "58CC90381BF5994FEBDB9147D555D635C632AE0EC2375E579158B2495CEBA369"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040002.json",
+        "4A5862B9FFD77E773C6C4DA855E89AC7ECE3C0C27E05A8139ED4D357E4C8B107",
+        1471,
+        1569,
+        "9B01EBCBB092117BE1195BA0A853A9E5DFDF9D5D9F09E20C8B8BAD668C5C8B26"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040002.json",
+        "4A5862B9FFD77E773C6C4DA855E89AC7ECE3C0C27E05A8139ED4D357E4C8B107",
+        2163,
+        2261,
+        "3BE04A52AF196ABE18F9100631E8DBE6E48CEC8824732023FB02F8D575E34B11"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040002.json",
+        "4A5862B9FFD77E773C6C4DA855E89AC7ECE3C0C27E05A8139ED4D357E4C8B107",
+        2665,
+        2763,
+        "EA7FEB65E8BD9495ED3B725A63BF571422FBE811E8136064C3A6B46802110D63"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040002.json",
+        "4A5862B9FFD77E773C6C4DA855E89AC7ECE3C0C27E05A8139ED4D357E4C8B107",
+        2763,
+        2861,
+        "CCC98204B004D64DF8CD4ABA2463C5E11A233F7803EEE32C5511B61E4B802FCC"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040002.json",
+        "4A5862B9FFD77E773C6C4DA855E89AC7ECE3C0C27E05A8139ED4D357E4C8B107",
+        2861,
+        2959,
+        "410B7EC43B45181FCD2545E733893888023AFF643DBBD618EA79C0555DEDB140"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040002.json",
+        "4A5862B9FFD77E773C6C4DA855E89AC7ECE3C0C27E05A8139ED4D357E4C8B107",
+        3036,
+        3134,
+        "B517BB483DB9550BEDF9B3C9E3646595B1D2134BABBF259C8953CCCE77793EBD"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040002.json",
+        "4A5862B9FFD77E773C6C4DA855E89AC7ECE3C0C27E05A8139ED4D357E4C8B107",
+        3134,
+        3232,
+        "32D7EEC6E25BF195599EC163F1537B4438E75B2555F8AB6F3F548FA654E2C1ED"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040007.json",
+        "1327B18DF7BB5350C27C40C7EEA1E22AE98850842EE1D301D3B4B45CCB216B9B",
+        701,
+        799,
+        "DA638A7098637E1465B99FA095DEF1C01342C662DFBFFF53F0A8453EAA252D5E"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040007.json",
+        "1327B18DF7BB5350C27C40C7EEA1E22AE98850842EE1D301D3B4B45CCB216B9B",
+        799,
+        897,
+        "AB68F77174F053A26EED5DF5274B7B2A1B8CE19493BCEFA31E289A11E9085BE1"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040007.json",
+        "1327B18DF7BB5350C27C40C7EEA1E22AE98850842EE1D301D3B4B45CCB216B9B",
+        897,
+        995,
+        "57989988BE7D896B33735525FE46573BCCF0367AFCBFC0F6B504B60BEBB449BA"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040007.json",
+        "1327B18DF7BB5350C27C40C7EEA1E22AE98850842EE1D301D3B4B45CCB216B9B",
+        1971,
+        2069,
+        "D9B928E9287A196715FCBA9325C1C157EF39601ED22E7A88ADEE8667F5FE56E5"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040007.json",
+        "1327B18DF7BB5350C27C40C7EEA1E22AE98850842EE1D301D3B4B45CCB216B9B",
+        2069,
+        2167,
+        "EEE3059C170003E99660E2F08319FC7DA3835E5F309941425CA4A0A0C4E7AA01"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040007.json",
+        "1327B18DF7BB5350C27C40C7EEA1E22AE98850842EE1D301D3B4B45CCB216B9B",
+        2167,
+        2265,
+        "8D1DEBF20101E36A6A0E8573850A4F0EE26CF22F1D5642423B8B611F95864F30"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040009.json",
+        "21076A97BBF63F94B5792CBFBD431026CF73C9AE929B6D3DCDAF8C35DA51B7A4",
+        606,
+        704,
+        "22A76BD469F3027DF57ED22327E4C12C3B1C2C398623CA87F79040AB6DFB2011"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040009.json",
+        "21076A97BBF63F94B5792CBFBD431026CF73C9AE929B6D3DCDAF8C35DA51B7A4",
+        704,
+        802,
+        "15490853DF7C11786E99D6B2305AD95DC071D1016D4545434EB82A3752A8DA3E"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040009.json",
+        "21076A97BBF63F94B5792CBFBD431026CF73C9AE929B6D3DCDAF8C35DA51B7A4",
+        1237,
+        1335,
+        "E287DEADAA5BC7E9C358BDBC6361E1C4EAD40F3488D7C1C261181C3B2421D61F"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800040009.json",
+        "21076A97BBF63F94B5792CBFBD431026CF73C9AE929B6D3DCDAF8C35DA51B7A4",
+        1335,
+        1433,
+        "C950117822B421A0AAD1C1433436BAEB6919B7EA072257346ABACC59872346EA"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800060048.json",
+        "CCF9C44C17C782C1733A81EF45739212E4209108EDAAB5007F5A74B38E34077F",
+        108,
+        206,
+        "0A9DAF48275AB053A9AADEA698F209ED48B77E0DAC0C35FD7357A272E5B6745D"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800060048.json",
+        "CCF9C44C17C782C1733A81EF45739212E4209108EDAAB5007F5A74B38E34077F",
+        206,
+        304,
+        "884390D545E7514E0E5B016C6944EDCF3AA5AE9A0C441D6A84B9CF3D11A62E4A"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800060048.json",
+        "CCF9C44C17C782C1733A81EF45739212E4209108EDAAB5007F5A74B38E34077F",
+        304,
+        402,
+        "CA4A687C8C7833C3C3864AC14F1F56C3845618D70252999E81D1B6920AFA6342"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800060048.json",
+        "CCF9C44C17C782C1733A81EF45739212E4209108EDAAB5007F5A74B38E34077F",
+        402,
+        500,
+        "7E9484D1D231CF9D41C5480350DA3F760411542452A2C8E837F5A6CAFEDFD2D6"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800060048.json",
+        "CCF9C44C17C782C1733A81EF45739212E4209108EDAAB5007F5A74B38E34077F",
+        500,
+        598,
+        "841882C32F8F15A02D4CCEF3748F4EC574F8B92EF988771E1E8A2939C073B5D1"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800060048.json",
+        "CCF9C44C17C782C1733A81EF45739212E4209108EDAAB5007F5A74B38E34077F",
+        598,
+        696,
+        "8C9634A7CD9FB2A6857CE4D4BEA9DA57CA8DB323B6AB196B1C68F610CE2E6CAE"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800060048.json",
+        "CCF9C44C17C782C1733A81EF45739212E4209108EDAAB5007F5A74B38E34077F",
+        696,
+        794,
+        "AB7609DF6F19B790959605F35A1099DEE94952E1150F25841E5B15C99F2AF817"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800060048.json",
+        "CCF9C44C17C782C1733A81EF45739212E4209108EDAAB5007F5A74B38E34077F",
+        794,
+        892,
+        "383A604EE65FCBDB8A0FF9D6EC3F4BC5E363666B8F91A540BDCA1953911131B7"
+      ],
+      [
+        "LevelScriptData/map02_lv002/22800300001.json",
+        "CFA16B643AF663A02AA6994D362FA1D8F4AFF63BC42DCB9EFA56948D9154C0C6",
+        7,
+        105,
+        "75AEC5425D58AA584618A035D8E09503CEAC1769B518D9097819F33487715A90"
+      ],
+      [
+        "LevelScriptData/map02_lv003/23300000064.json",
+        "2C1B316C97229E234FDB55A251077B44AB9D8AC7C160CD2B7E6BE34AFB51E114",
+        61,
+        159,
+        "7A8E8E61568B750D7584D50E787CF30A8488A1B960C530BD2BD4D1CAF1255269"
+      ],
+      [
+        "LevelScriptData/map02_lv003/23300000064.json",
+        "2C1B316C97229E234FDB55A251077B44AB9D8AC7C160CD2B7E6BE34AFB51E114",
+        159,
+        257,
+        "E16FBF7B37E49A36F9D7C922D7C2F4A832A68E0CCE0BB6466EB49DED2D6F9BBF"
+      ],
+      [
+        "LevelScriptData/map02_lv003/23300000064.json",
+        "2C1B316C97229E234FDB55A251077B44AB9D8AC7C160CD2B7E6BE34AFB51E114",
+        257,
+        355,
+        "54F5A1E863C876B86B7BD5BABE471A00F69B4AADC35F824B2035AAD98DF79C59"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080000.json",
+        "05E9277E8AEA82988DA500F8A443F78145E1EA09F7BE932E476EF2B6B04455C5",
+        84,
+        182,
+        "2FF7747B87D8601AD1C0F2D213366D58D0F3F87D87BAF3A998EBB6EDEE6FB94E"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080000.json",
+        "05E9277E8AEA82988DA500F8A443F78145E1EA09F7BE932E476EF2B6B04455C5",
+        182,
+        280,
+        "9DB3AB84EA39208344CF27E3E04E9CCE7235BCC392A932BA5B27C3BA3B9518EC"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080000.json",
+        "05E9277E8AEA82988DA500F8A443F78145E1EA09F7BE932E476EF2B6B04455C5",
+        750,
+        848,
+        "6CEC571EEB575BF8D0A11B6EB652F2D67DF29968E1C7FCB445ADD393066B86CE"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080000.json",
+        "05E9277E8AEA82988DA500F8A443F78145E1EA09F7BE932E476EF2B6B04455C5",
+        848,
+        946,
+        "F56E425CEF18CD19777043860644448120098DE70F3CCB9AED2DBE09F2B967D5"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        84,
+        182,
+        "E8DDCCBA392A131B1C21684F213CAE5E6C2E9D811B77CE3198C10682F349927A"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        259,
+        357,
+        "658874B1331D55E7A59D099D477C86FDDF50A1E7C4AB88C16A68B761079AF983"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        434,
+        532,
+        "6A59FDB67F7165F952C93D118FCAE3EDCB8EBA008430919817D10639B0FE798A"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        532,
+        630,
+        "2644ABF5D9BE8A96FF6F7757BEFB119E050E8E213CE2C918473ADA65C4E827F3"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        1015,
+        1113,
+        "8BFF0D40A300E53C852F7FD8EE8EB9E4CE9670ACC3BFFE87445AA05659B74B3C"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        1113,
+        1211,
+        "32EB6CFF315648DD426DFF321FCD13BAC33BF2D04F847AE899BEA1B7E3E024B2"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        1863,
+        1961,
+        "610A749FFC712E972C85A3C3BD0353AA97E45DFECB72578210EFABAF35E946CD"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        1961,
+        2059,
+        "472E9248126165783894C97B928CEC753565C7E837D92FA8A719EE705E0A6E9A"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        4233,
+        4331,
+        "1E81D48B224F32B54E97382D1A714138A100F4364643239321B72005083ED514"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        5532,
+        5630,
+        "C66530F70A9E8C78211463F7B8E2CEB375C973339B3C72C06DA7C836402B5D66"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400080001.json",
+        "503022C1F0E034A16FD59D24269AE5463B5B8F63C134CBC905E1761F3FB4121C",
+        5630,
+        5728,
+        "CC5B239624C03F48B2FDFDC9456D44D70783F88D31D7A13F3387ADB01C8D7DE0"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400083014.json",
+        "EFF5B0E00E19666F32C81DA936944919BF2B48D9C248D3179AAF027CF26BBAFD",
+        84,
+        182,
+        "30E0FEDD96906679F7733065502AC05B643AA242E8A1CA0B7EDEFEBA5767359A"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400083014.json",
+        "EFF5B0E00E19666F32C81DA936944919BF2B48D9C248D3179AAF027CF26BBAFD",
+        182,
+        280,
+        "8ED345FA944B31D054B3DF53074179DAB2FB8E41BBE2890C4F793199E3DDD95E"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400083014.json",
+        "EFF5B0E00E19666F32C81DA936944919BF2B48D9C248D3179AAF027CF26BBAFD",
+        1554,
+        1652,
+        "A605BEB0D9C190B247345775A93B034181978C80726034C22A1598431E8423DE"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130001.json",
+        "9F29BCC1E2CC5CE23C635AF8BD145D90F363DB69E7537EF2D3E82481BDE7F555",
+        84,
+        182,
+        "62ED8EB3D051F5FB2EFC7ED21489EDD9A3B42AC8150CE30833534E7480229E91"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130001.json",
+        "9F29BCC1E2CC5CE23C635AF8BD145D90F363DB69E7537EF2D3E82481BDE7F555",
+        182,
+        280,
+        "ECF8190B54FA4D227C78B5588F8A38A763904DE53747EE23BEB81500FED6E134"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130001.json",
+        "9F29BCC1E2CC5CE23C635AF8BD145D90F363DB69E7537EF2D3E82481BDE7F555",
+        437,
+        535,
+        "9B34B82BDD05C03E69D6B00F12FC3DD352D7449CEFA60B76066148C5D4EE1FFC"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130001.json",
+        "9F29BCC1E2CC5CE23C635AF8BD145D90F363DB69E7537EF2D3E82481BDE7F555",
+        535,
+        633,
+        "9BBD3C415A109496E8DDE768690B0FA28D511E826500B463AB4521F1919E1C30"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130002.json",
+        "47BEEDE74A4E496F967AEE74C5FFB620B6EE7606BFD42437688C4F9D0D46508F",
+        1608,
+        1706,
+        "29CD83D112CB9163D259FAA0FE15040CB89F8675D7F280E555AA38DF4A6388B0"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130002.json",
+        "47BEEDE74A4E496F967AEE74C5FFB620B6EE7606BFD42437688C4F9D0D46508F",
+        1706,
+        1804,
+        "08392DFF68A5598D97FD2AE3015B3D2B44E9D78C7FCDF98183E25AB3FA3EA06D"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130002.json",
+        "47BEEDE74A4E496F967AEE74C5FFB620B6EE7606BFD42437688C4F9D0D46508F",
+        1972,
+        2070,
+        "82209D8A0351DB6BD3C21DBBD981A931EB310731C8280824FF2A9A49AFC4B9C8"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130002.json",
+        "47BEEDE74A4E496F967AEE74C5FFB620B6EE7606BFD42437688C4F9D0D46508F",
+        2070,
+        2168,
+        "30948EC018B113C50BA239B8DF84302CD6CB360E389A99F7CC2CAA334D52B630"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130003.json",
+        "53E45446B1CE76E8B88A3701F0531DAA775CF06A24A59B3248BEC4A2FC02C22C",
+        520,
+        618,
+        "2721369C4600D8607EF54FC43A46452999C1273355B88F64C98BD34F2555CFE4"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130003.json",
+        "53E45446B1CE76E8B88A3701F0531DAA775CF06A24A59B3248BEC4A2FC02C22C",
+        851,
+        949,
+        "A8A82F3FDC3E627464C8132E081292AAC9A0620D2036B20875B5005D6CA2D76E"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130003.json",
+        "53E45446B1CE76E8B88A3701F0531DAA775CF06A24A59B3248BEC4A2FC02C22C",
+        1539,
+        1637,
+        "6C97581AE1E317A29930CD4EAB9532ED5D858264572FE396142C19FBA6C98CDE"
+      ],
+      [
+        "LevelScriptData/map02_lv004/23400130003.json",
+        "53E45446B1CE76E8B88A3701F0531DAA775CF06A24A59B3248BEC4A2FC02C22C",
+        1637,
+        1735,
+        "493E4A7B8417448544B644FD47F81300D6425799ACBD44DFB4077A6682AB2813"
+      ],
+      [
+        "LevelScriptData/map02_lv006/25000060017.json",
+        "F240514BFA7941341A5EE67AA30D84F14D02A14D1F20E5AB08438D38E4061EB3",
+        51,
+        149,
+        "BF72A459A97E7E698257CE239026793FF61925641D53C0CC2F655E1EAAA7305D"
+      ],
+      [
+        "LevelScriptData/map02_lv006/25000060017.json",
+        "F240514BFA7941341A5EE67AA30D84F14D02A14D1F20E5AB08438D38E4061EB3",
+        205,
+        303,
+        "62552E39571D42A19E31108897051309537C9ECCFB486271D28A920E94D4BDD7"
+      ]
+    ]
+  }
+}

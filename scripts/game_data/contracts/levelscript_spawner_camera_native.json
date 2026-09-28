@@ -1,0 +1,402 @@
+{
+  "schema": "endfield.levelscript-route-deserialize-native.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "exact",
+  "nativeInputs": {
+    "metadata": {
+      "sha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+    },
+    "gameAssembly": {
+      "sha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89"
+    }
+  },
+  "interpretation": "Selected union branches resolve the generated wrappers. Each generated Deserialize body checks its member count and calls read helpers and setters in the listed order. Source-authenticated cursors consume these records exactly; stored fields do not establish runtime effects.",
+  "routes": [
+    {
+      "family": "ActionHeader",
+      "tag": 145,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnSpawnerCompleteForMemoryPack",
+      "memberCount": 16,
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "filterLevel",
+          "int32"
+        ],
+        [
+          "filterMask",
+          "int32"
+        ],
+        [
+          "filterMode",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "priority",
+          "int32"
+        ],
+        [
+          "triggerActiveDuring",
+          "int32"
+        ],
+        [
+          "validate",
+          "Param<bool>"
+        ],
+        [
+          "spawnerFilter",
+          "Param<SpawnerPtr>"
+        ],
+        [
+          "spawnerOutput",
+          "ParamOutput<SpawnerPtr>"
+        ]
+      ],
+      "nativeIdentity": {
+        "dispatcherVa": "0x183f42b40",
+        "switchTableVa": "0x183f458c0",
+        "switchTargetVa": "0x183f433ef",
+        "branchBodyVa": "0x183f433ef",
+        "usageCellVa": "0x18d07e4b8",
+        "registeredTypeIndex": 103984,
+        "typeDefinition": 22223,
+        "branchCodeHex": "488b15c2b01309488b0fe822040cfc488bcb4885c00f854fa40001488b15af9e1309e882053dfc488bd0488907488bcfe8cc740ffce9b1f7ffff488b15c8b11309488b0fe8e8030cfc488bcb4885c00f857baa0001488b1525971309e854053d",
+        "usageRawHex": "612c032000000000"
+      },
+      "sourceEvidence": {
+        "source": "LevelScriptData/base01_dg003/30300060002.json",
+        "sha256": "4C4B5ABA4FC10E274ED9073E1E3EC74F757CBB6B684EC9D068B8CA00007B3495",
+        "unionOffset": 1899,
+        "endOffset": 1982,
+        "wholeFileStatus": "complete:named_exact"
+      },
+      "deserializeMethodIndex": 161364,
+      "deserializeRva": 66575728,
+      "normalBodyLength": 851,
+      "normalBodySha256": "F9B9A7B4AA6AC56540FCF6BB63D593CC125EDB2B9080C25C63F4293D472CA99B",
+      "readOrder": [
+        {
+          "name": "dontLogWarning",
+          "declaredType": "bool",
+          "setterMethodIndex": 126158,
+          "readCallRva": 66575995,
+          "readTargetRva": 46827712,
+          "setterCallRva": 66576018,
+          "setterTargetRva": 84405664,
+          "setterName": "set____dontLogWarning__"
+        },
+        {
+          "name": "ID",
+          "declaredType": "int",
+          "setterMethodIndex": 126159,
+          "readCallRva": 66576029,
+          "readTargetRva": 46827184,
+          "setterCallRva": 66576051,
+          "setterTargetRva": 84403284,
+          "setterName": "set____ID__"
+        },
+        {
+          "name": "releaseWhenExecutionFinished",
+          "declaredType": "bool",
+          "setterMethodIndex": 126160,
+          "readCallRva": 66576062,
+          "readTargetRva": 46827712,
+          "setterCallRva": 66576085,
+          "setterTargetRva": 84406140,
+          "setterName": "set____releaseWhenExecutionFinished__"
+        },
+        {
+          "name": "uid",
+          "declaredType": "string",
+          "setterMethodIndex": 126161,
+          "readCallRva": 66576096,
+          "readTargetRva": 46827264,
+          "setterCallRva": 66576119,
+          "setterTargetRva": 52469328,
+          "setterName": "set____uid__"
+        },
+        {
+          "name": "scopeMask",
+          "declaredType": "Beyond.GEnums.ScopeName",
+          "setterMethodIndex": 126162,
+          "readCallRva": 66576137,
+          "readTargetRva": 46827184,
+          "setterCallRva": 66576159,
+          "setterTargetRva": 84410060,
+          "setterName": "set___scopeMask__"
+        },
+        {
+          "name": "useCurrentScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126163,
+          "readCallRva": 66576170,
+          "readTargetRva": 46827712,
+          "setterCallRva": 66576193,
+          "setterTargetRva": 84415136,
+          "setterName": "set___useCurrentScope__"
+        },
+        {
+          "name": "useGraphScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126164,
+          "readCallRva": 66576204,
+          "readTargetRva": 46827712,
+          "setterCallRva": 66576227,
+          "setterTargetRva": 84412588,
+          "setterName": "set___useGraphScope__"
+        },
+        {
+          "name": "filterLevel",
+          "declaredType": "Beyond.Gameplay.Actions.FilterLevel",
+          "setterMethodIndex": 117229,
+          "readCallRva": 66576245,
+          "readTargetRva": 46827184,
+          "setterCallRva": 66576267,
+          "setterTargetRva": 60372448,
+          "setterName": "set____filterLevel__"
+        },
+        {
+          "name": "filterMask",
+          "declaredType": "Beyond.Gameplay.Actions.FilterMask",
+          "setterMethodIndex": 117230,
+          "readCallRva": 66576285,
+          "readTargetRva": 46827184,
+          "setterCallRva": 66576307,
+          "setterTargetRva": 60372688,
+          "setterName": "set____filterMask__"
+        },
+        {
+          "name": "filterMode",
+          "declaredType": "bool",
+          "setterMethodIndex": 117231,
+          "readCallRva": 66576318,
+          "readTargetRva": 46827712,
+          "setterCallRva": 66576341,
+          "setterTargetRva": 60372496,
+          "setterName": "set____filterMode__"
+        },
+        {
+          "name": "nextID",
+          "declaredType": "int",
+          "setterMethodIndex": 117232,
+          "readCallRva": 66576352,
+          "readTargetRva": 46827184,
+          "setterCallRva": 66576374,
+          "setterTargetRva": 60372544,
+          "setterName": "set____nextID__"
+        },
+        {
+          "name": "priority",
+          "declaredType": "int",
+          "setterMethodIndex": 117233,
+          "readCallRva": 66576385,
+          "readTargetRva": 46827184,
+          "setterCallRva": 66576407,
+          "setterTargetRva": 60372592,
+          "setterName": "set____priority__"
+        },
+        {
+          "name": "triggerActiveDuring",
+          "declaredType": "Beyond.Gameplay.Actions.TriggerActiveDuring",
+          "setterMethodIndex": 117234,
+          "readCallRva": 66576425,
+          "readTargetRva": 46827184,
+          "setterCallRva": 66576447,
+          "setterTargetRva": 60372640,
+          "setterName": "set____triggerActiveDuring__"
+        },
+        {
+          "name": "validate",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<bool>",
+          "setterMethodIndex": 117235,
+          "readCallRva": 66576465,
+          "readTargetRva": 47864976,
+          "setterCallRva": 66576484,
+          "setterTargetRva": 60372736,
+          "setterName": "set____validate__"
+        },
+        {
+          "name": "spawnerFilter",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.SpawnerPtr>",
+          "setterMethodIndex": 161360,
+          "readCallRva": 66576502,
+          "readTargetRva": 47864976,
+          "setterCallRva": 66576521,
+          "setterTargetRva": 66576592,
+          "setterName": "set____spawnerFilter__"
+        },
+        {
+          "name": "spawnerOutput",
+          "declaredType": "Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.Core.SpawnerPtr>",
+          "setterMethodIndex": 161361,
+          "readCallRva": 66576539,
+          "readTargetRva": 47864976,
+          "setterCallRva": 66576558,
+          "setterTargetRva": 66576656,
+          "setterName": "set____spawnerOutput__"
+        }
+      ]
+    },
+    {
+      "family": "GetterBase",
+      "tag": 313,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetMainLevelCameraControllerForMemoryPack",
+      "memberCount": 7,
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ]
+      ],
+      "nativeIdentity": {
+        "dispatcherVa": "0x182995610",
+        "switchTableVa": "0x1829ecab0",
+        "switchTargetVa": "0x18299ff60",
+        "branchBodyVa": "0x1829b64b3",
+        "usageCellVa": "0x18d077e80",
+        "registeredTypeIndex": 103724,
+        "typeDefinition": 21639,
+        "branchCodeHex": "488b8424501501004889842450800000488b842450800000488b004889842458800000488b15a3196c0a488b8c2458800000e836d364fd4885c07504eb5eeb5c488b8424481501004889842470800000488b8424501501004889842460800000",
+        "usageRawHex": "592a032000000000"
+      },
+      "sourceEvidence": {
+        "source": "LevelScriptData/base01_lv001/9800020006.json",
+        "sha256": "EE075788794EDC100F3EB0AA80E6C4FAB168E9503C5572A85362056C6856DF96",
+        "unionOffset": 1022,
+        "endOffset": 1050,
+        "wholeFileStatus": "complete:named_exact"
+      },
+      "deserializeMethodIndex": 157500,
+      "deserializeRva": 157214108,
+      "normalBodyLength": 495,
+      "normalBodySha256": "D7501E5385FEF8D7A9D91C57EC855890B15BB2BDCC4D9E5EC80CBB062C5F9C6A",
+      "readOrder": [
+        {
+          "name": "dontLogWarning",
+          "declaredType": "bool",
+          "setterMethodIndex": 126158,
+          "readCallRva": 157214302,
+          "readTargetRva": 46827712,
+          "setterCallRva": 157214324,
+          "setterTargetRva": 84405664,
+          "setterName": "set____dontLogWarning__"
+        },
+        {
+          "name": "ID",
+          "declaredType": "int",
+          "setterMethodIndex": 126159,
+          "readCallRva": 157214335,
+          "readTargetRva": 46827184,
+          "setterCallRva": 157214357,
+          "setterTargetRva": 84403284,
+          "setterName": "set____ID__"
+        },
+        {
+          "name": "releaseWhenExecutionFinished",
+          "declaredType": "bool",
+          "setterMethodIndex": 126160,
+          "readCallRva": 157214368,
+          "readTargetRva": 46827712,
+          "setterCallRva": 157214390,
+          "setterTargetRva": 84406140,
+          "setterName": "set____releaseWhenExecutionFinished__"
+        },
+        {
+          "name": "uid",
+          "declaredType": "string",
+          "setterMethodIndex": 126161,
+          "readCallRva": 157214401,
+          "readTargetRva": 46827264,
+          "setterCallRva": 157214420,
+          "setterTargetRva": 52469328,
+          "setterName": "set____uid__"
+        },
+        {
+          "name": "scopeMask",
+          "declaredType": "Beyond.GEnums.ScopeName",
+          "setterMethodIndex": 126162,
+          "readCallRva": 157214438,
+          "readTargetRva": 46827184,
+          "setterCallRva": 157214456,
+          "setterTargetRva": 84410060,
+          "setterName": "set___scopeMask__"
+        },
+        {
+          "name": "useCurrentScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126163,
+          "readCallRva": 157214467,
+          "readTargetRva": 46827712,
+          "setterCallRva": 157214485,
+          "setterTargetRva": 84415136,
+          "setterName": "set___useCurrentScope__"
+        },
+        {
+          "name": "useGraphScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126164,
+          "readCallRva": 157214496,
+          "readTargetRva": 46827712,
+          "setterCallRva": 157214514,
+          "setterTargetRva": 84412588,
+          "setterName": "set___useGraphScope__"
+        }
+      ]
+    }
+  ]
+}

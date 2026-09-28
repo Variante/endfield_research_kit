@@ -1,0 +1,33 @@
+{
+  "schema": "endfield.levelscript-audio-cue-execute-claims.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "conditional",
+  "evidenceNote": "The named native Execute body reads all seven authored Param fields and contains ordered call sites for an iFix state check, four typed GameAction cue-variable setters, and an iFix patch lookup. These checks prove native body topology, not live branch selection, setter execution, or an AudioCueTable lookup.",
+  "methods": {
+    "SetAudioCueVar.Execute": {
+      "type": "Beyond.Gameplay.Actions.SetAudioCueVar",
+      "method": "Execute",
+      "contract": "The selected native body reads the authored cue variable name, type, scope, and four typed values, and contains ordered call sites for an iFix state check, string, float, int, and bool cue-variable setters, and a patch lookup.",
+      "claims": [
+        { "readsField": "Beyond.Gameplay.Actions.SetAudioCueVar::_varName" },
+        { "readsField": "Beyond.Gameplay.Actions.SetAudioCueVar::_varType" },
+        { "readsField": "Beyond.Gameplay.Actions.SetAudioCueVar::_scope" },
+        { "readsField": "Beyond.Gameplay.Actions.SetAudioCueVar::_boolValue" },
+        { "readsField": "Beyond.Gameplay.Actions.SetAudioCueVar::_intValue" },
+        { "readsField": "Beyond.Gameplay.Actions.SetAudioCueVar::_floatValue" },
+        { "readsField": "Beyond.Gameplay.Actions.SetAudioCueVar::_stringValue" },
+        {
+          "calls": [
+            "IFix.WrappersManagerImpl.IsPatched",
+            "Beyond.Gameplay.Actions.GameAction.SetAudioCueStringVar",
+            "Beyond.Gameplay.Actions.GameAction.SetAudioCueFloatVar",
+            "Beyond.Gameplay.Actions.GameAction.SetAudioCueIntVar",
+            "Beyond.Gameplay.Actions.GameAction.SetAudioCueBoolVar",
+            "IFix.WrappersManagerImpl.GetPatch"
+          ],
+          "ordered": true
+        }
+      ]
+    }
+  }
+}

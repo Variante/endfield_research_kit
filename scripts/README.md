@@ -20,6 +20,7 @@ axis. A path appears under exactly one owner.
 | **1. Game data** | `game_data/extraction/` | installed client to `export_full/`: the export and changed-file exporters, `scope.py` (the structured-block and Unity-class vocabulary an export selects), the freshness guard with its per-output provenance, export benchmark, AnimeStudio object index, and `animestudio/` maintenance commands; never publishes page data |
 | | `game_data/` | the exact framing readers, one per payload family (`irradiance_volume.py`, `extend_data_binary.py`, `bundle_manifest.py`, `ifix_patch.py`, `inverted_lz4.py`, `dynamic_streaming.py`, the serialized-gameplay `*_binary.py` readers, and the MemoryPack JsonData readers such as `levelconfig_binary.py`, `navmesh_binary.py`, `gpu_ui_binary.py`); the `*_corpus.py` current-corpus gates (`jsondata_corpus.py`, `gpu_ui_corpus.py`, `dynamic_stream_area_corpus.py`) and `jsondata_schema_coverage.py`; the `*_native.py` loaders and validators for the reviewed native facts the Story, Mission Pipeline, Map and recovery tools consume; `native_union_atlas.py`, which re-validates every union contract; `dummydll_metadata.py`, `levelscript_union_layouts.py` and `dependency_snapshot.py`; `media_resolver.py` (game-media naming) and `cabmap.py` (the CABMap container index and the `m_FileID` -> dependency-slot rule) |
 | | `game_data/codecs/` | all per-record LevelScript and LevelData byte decoding behind the `*_binary.py` readers, which keep only the file-level framing walk, the record dispatcher and the result assembly; includes `send_lua_event.py` for the one nested value the derived declaration cannot describe |
+| | `game_data/codecs/levelscript/modules.py` | sequential positive `modules` dictionary codec: resolves each concrete route through the current native union tag and member count, advances nested module fields, and leaves unsupported values at a named partial stop; the LevelScript owner accepts a whole file only at physical EOF |
 | | `game_data/contracts/` | the reviewed contract JSON that every reader, loader and validator loads; `CONTRACTS_DIR` from the package is the only path anchor; git, not a pinned digest, owns each file's integrity |
 | | `game_data/streaming/` | the block-15 Streaming lane: `framing.py`, `pairs.py`, the marker parsers, their `*_native.py` validators and `*_corpus.py` gates |
 | | `game_data/terrain/` | the TRET container reader (`tret.py`), Map's `_H` texture-byte diagnostic (`height.py`), the native consumer and layer-path validators, and the corpus gate |
@@ -1490,7 +1491,7 @@ offsets when that is established. Each enum carries the underlying width read
 from its own `value__` field.
 
 It gates on the installed native inputs recorded in
-`tools\DummyDll\generation.json`, then recomputes all 277 rows of
+`tools\DummyDll\generation.json`, then recomputes every reviewed row of
 `codecs/levelscript/action_map_layouts.json`, checks the derived declarations
 against that contract's `primitiveEvidence`, and writes nothing if anything
 disagrees. `--allow-build-drift` skips only the native gate, for inspecting a
@@ -1517,6 +1518,314 @@ python -m scripts.game_data.jsondata_schema_coverage ^
 The report records which tier it was measured at as `evidenceTier`. Keep the
 reviewed-tier report beside it rather than replacing it; the pair is what makes
 the derived tier's contribution visible.
+
+The production sequential LevelScript owner also reads positive `npcs`
+dictionary values through the shared 118-member
+`codecs.leveldata.npc_runtime` row codec. Unsupported nested rows leave the
+dictionary at a named partial stop; a whole-file result still requires the
+terminal cursor to reach physical EOF in the authenticated JsonData sweep.
+
+`python -m scripts.game_data.levelscript_route_deserialize_native --report reports/game_data/levelscript_route_deserialize_native.json`
+validates the reviewed selected-reader body hashes and ordered read/setter calls
+for promoted LevelScript routes; a missing or different installed build returns
+no validated rows.
+
+`python -m scripts.game_data.levelscript_header_native` validates the two
+reviewed snapshot `ActionHeader` routes. `python -m
+scripts.game_data.levelscript_finish_scene_effect_native` validates the
+reviewed `FinishSceneEffect` action route. `python -m
+scripts.game_data.levelscript_getter_int_native` validates the selected
+`GetterInt` route and its current source cursor. These commands print their
+selected native audit; the reader admits those routes only when the current
+build validates.
+`python -m scripts.game_data.levelscript_getter_compare_native` validates
+the selected `CompareMissionState` and `EntityCompare` PureGetter routes,
+including their current source hashes and JsonData ledger spans. Its validator
+accepts an explicit export root, summary, and per-file ledger for source
+replay.
+`python -m scripts.game_data.levelscript_get_mission_state_native` validates
+the selected `GetMissionState` PureGetter route, including its ordered reads
+and string parameter context. Its validator accepts an explicit JsonData
+export root, summary, and per-file ledger for source cursor replay.
+`python -m scripts.game_data.levelscript_npc_proxy_patrol_stop_native` checks
+the selected `NpcProxyPatrolStop` native route; its validator also accepts an
+explicit JsonData export root, summary and per-file ledger for source replay.
+`python -m scripts.game_data.levelscript_start_seq_loop_native` checks the
+selected `StartLevelSeqLoopSegment` route and accepts an export root plus
+JsonData per-file ledger for source replay.
+`python -m scripts.game_data.levelscript_entity_scanned_native` checks the
+selected `EntityEvent.OnBeingScanned` header and accepts the same explicit
+export root and per-file ledger for its source receipts.
+`python -m scripts.game_data.levelscript_squad_fight_header_native` checks
+the selected `LevelEvent.OnSquadInFightChanged` header, including its boolean
+output parameter. Pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json` to replay its
+current source receipts.
+`python -m scripts.game_data.levelscript_squad_all_die_header_native` checks
+the selected inherited-only `LevelEvent.OnSquadAllMemberDie` header. Pass
+`--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json` to replay its
+current source receipts.
+`python -m scripts.game_data.levelscript_mission_changed_header_native` checks
+the selected `LevelEvent.OnMissionStateChanged` header, its nested parameter
+contexts, and finite filter-state enum. Pass `--export-root
+export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` to replay current source
+receipts.
+`python -m scripts.game_data.levelscript_tracking_point_native` checks the
+selected `AddTrackingPointForEntity` action, its six parameter contexts and
+finite style and tracking-type enums. Pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json` to replay its
+current source receipts.
+`python -m scripts.game_data.levelscript_add_tracking_point_native` checks
+the selected `AddTrackingPoint` action, its typed parameters and tracking
+enum widths, and current source cursors. Pass `--export-root
+export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` for joined source replay.
+`python -m scripts.game_data.levelscript_cutscene_teleport_native` checks the
+selected `StartCutsceneAndTeleportAction` action, including nested list element
+types and the finite teleport UI enum. Pass `--export-root
+export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` to replay current source
+receipts.
+`python -m scripts.game_data.levelscript_set_forbid_map_teleport_native`
+checks the selected `SetForbidMapTeleport` action, its Boolean parameters,
+and current source cursors. Pass the same `--export-root`, `--ledger`, and
+`--summary` arguments for joined source replay.
+`python -m scripts.game_data.levelscript_resume_spawner_native` checks the
+selected `ResumeSpawner` action, its typed spawner pointer, and current
+source cursors. Pass the same `--export-root`, `--ledger`, and `--summary`
+arguments for joined source replay.
+`python -m scripts.game_data.levelscript_manually_stop_guide_native` checks
+the selected `ManuallyStopGuideGroup` action and its string parameter context.
+Pass `--export-root export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` to replay current source
+receipts.
+`python -m scripts.game_data.levelscript_remove_tracking_point_native` checks
+the selected `RemoveTrackingPoint` action, its string parameter context and
+current source cursors. Pass `--export-root export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_get_is_leader_in_trigger_volume_native`
+checks the selected `GetIsLeaderInTriggerVolume` getter, its two parameter
+contexts and current source cursors. Pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_send_lua_event1_native` checks the
+selected `SendLuaEvent1` action, including its nested value and current source
+cursors. Pass `--export-root export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_start_subgame_countdown_native`
+checks the selected `StartSubGameCountDownByTimer` action, three parameter
+contexts, finite countdown enum and current source cursors. Pass
+`--export-root export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_show_start_toast_native` checks the
+selected `ShowStartToast` action and its four typed parameters;
+`python -m scripts.game_data.levelscript_stop_subgame_countdown_by_handle_native`
+checks the selected `StopSubGameCountDownByHandle` action and its unsigned
+handle parameter. Pass the same `--export-root`, `--ledger`, and `--summary`
+arguments for joined source replay.
+`python -m scripts.game_data.levelscript_show_finish_toast_native` checks the
+selected `ShowFinishToast` action, its four typed parameters, and optionally
+the same joined source inputs.
+`python -m scripts.game_data.levelscript_toggle_main_hud_ignore_native` checks
+the selected `ToggleMainHudActionPlayIgnoreMainHud` action, its string and
+boolean parameter contexts, and optionally the same joined source inputs.
+`python -m scripts.game_data.levelscript_show_chapter_panel_direct_native`
+checks the selected `ShowChapterPanelDirect` action, its finite chapter-effect
+enum and four parameter contexts, and optionally the same joined source inputs.
+`python -m scripts.game_data.levelscript_show_chapter_completed_panel_native`
+checks the selected `ShowChapterCompletedPanel` branch with the same parameter
+types, its own native reader, and optionally the same joined source inputs.
+`python -m scripts.game_data.levelscript_switch_to_camera_native` checks the
+selected `SwitchToCamera` action, its ten parameter/output contexts and finite
+blend-style enum, and optionally the same joined source inputs.
+`python -m scripts.game_data.levelscript_start_track_camera_native` checks the
+selected `StartTrackCamera` action and its six typed parameter contexts;
+`python -m scripts.game_data.levelscript_exit_camera_native` checks the selected
+`ExitCamera` branch, five typed parameter contexts and finite blend-style
+enum. Both optionally replay the same joined source inputs.
+`python -m scripts.game_data.levelscript_reset_follow_camera_native` checks
+the selected inherited-only `ResetFollowCamera` branch and optionally replays
+its joined source receipts.
+`python -m scripts.game_data.levelscript_fac_set_interact_locked_state_native`,
+`python -m scripts.game_data.levelscript_toggle_clear_screen_but_radio_v2_native`,
+and `python -m scripts.game_data.levelscript_remove_npc_dialog_native` check
+their selected ActionBase readers, typed parameters, and optionally the same
+joined source inputs.
+`python -m scripts.game_data.levelscript_leader_enter_trigger_volume_native`
+checks the selected `OnLeaderEnterTriggerVolume` header, its fragmented
+generated reader, four typed parameter contexts, and optionally the same
+joined source inputs.
+`python -m scripts.game_data.levelscript_require_settlement_show_native`
+checks the selected `RequireSettlementShow` action, its three typed parameter
+contexts, and current source cursors. Pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_settlement_followon_native` checks
+the selected facility switch and two settlement follow-on actions, their
+typed parameter contexts, and current source cursors. Pass `--export-root
+export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_bool_compare_native` checks the
+selected `BoolCompare` action, its fragmented native reader, three typed
+parameters, and current source cursors. Pass `--export-root
+export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_fac_top_view_range_native` checks
+the selected `SetFacTopViewCustomRange` action, both typed Vector3
+parameters, and current source cursors. Pass `--export-root
+export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_fac_build_effect_native` checks
+the selected `FacPlayBuildEffect` action, its boolean, float, and string
+parameters, and current source cursors. Pass the same `--export-root`,
+`--ledger`, and `--summary` arguments for joined source replay.
+`python -m scripts.game_data.levelscript_fac_change_building_native` checks
+the selected `FacChangeBuildingTemplate` action, six typed parameters, the
+`FCNodeMode` enum backing and current source cursors. Pass the same
+`--export-root`, `--ledger`, and `--summary` arguments for joined source replay.
+`python -m scripts.game_data.levelscript_npc_proxy_effect_native` checks the
+selected wide-tag `PlayEffectOnNpcProxy` action, four typed parameters, two
+enum backings and current source cursors. Pass the same `--export-root`,
+`--ledger`, and `--summary` arguments for joined source replay.
+`python -m scripts.game_data.levelscript_event_args_float_native` checks the
+selected `EventArgsAssignFloat` action, its `EventArgsPtr`, string and float
+parameters, and current source cursors. Pass the same `--export-root`,
+`--ledger`, and `--summary` arguments for joined source replay.
+`python -m scripts.game_data.levelscript_audio_cue_native` checks the
+selected wide-tag `SetAudioCueVar` action, seven typed parameters, both
+Int32 enum catalogs, and current source cursors. Pass the same
+`--export-root`, `--ledger`, and `--summary` arguments for joined source replay.
+`python -m scripts.game_data.levelscript_audio_cue_execute_native --game-root
+"...\\Endfield_Data"` re-proves the build-independent named-body claims for
+`SetAudioCueVar.Execute` against the explicitly selected installed native pair
+and writes its audit under `reports/game_data/`. Its ordered call sites do not
+establish live branch selection or a cue-variable update.
+`python -m scripts.game_data.levelscript_override_npc_dialog_native` checks
+the selected wide-tag `OverrideNPCDialog` action, its two string parameters,
+and current source cursors. Pass the same `--export-root`, `--ledger`, and
+`--summary` arguments for joined source replay.
+`python -m scripts.game_data.levelscript_on_spawner_entity_spawn_native`
+checks the selected `OnSpawnerEntitySpawn` header, its typed filter and
+spawner pointer parameter, and current source cursors. Pass `--export-root
+export_full/game/Json`, `--ledger
+reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and `--summary
+reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_on_spawner_group_begin_native`
+checks the selected `OnSpawnerGroupBegin` header, typed group and spawner
+filters and outputs, and current source cursors. Pass the same `--export-root`,
+`--ledger`, and `--summary` arguments for joined replay.
+`python -m scripts.game_data.levelscript_on_spawner_entity_die_native` checks
+the selected `OnSpawnerEntityDie` header, typed death filter and spawner
+pointer, and current source cursors. Pass the same source-replay arguments.
+`python -m scripts.game_data.levelscript_on_encounter_activated_native`,
+`python -m scripts.game_data.levelscript_on_encounter_battle_part_begin_native`,
+and `python -m scripts.game_data.levelscript_on_encounter_battle_part_end_native`
+check the three selected encounter headers, their typed pointer and Boolean
+parameters, and joined source cursors with the same source-replay arguments.
+`python -m scripts.game_data.levelscript_on_entity_cast_skill_native` checks
+the selected `OnEntityCastSkill` header, its typed skill filter, UInt64 output
+context, and current source cursors. Pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_list_add_value_entity_ptr_native`
+checks the selected entity-pointer list action, its nested list-element type,
+and current source cursors. Pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json` for source replay.
+`python -m scripts.game_data.levelscript_on_leader_enter_trigger_volume_list_native`
+checks the selected trigger-volume event header, typed unsigned slot list,
+and current source cursors. Pass the same `--export-root`, `--ledger`, and
+`--summary` arguments for joined source replay.
+`python -m scripts.game_data.levelscript_track_camera_native` checks the
+selected `EnterDollyTrackCamera` action, its finite move-state enum, and all
+ordered parameter contexts. Pass `--export-root export_full/game/Json` and
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz` to
+replay its current source receipts.
+`python -m scripts.game_data.levelscript_post_audio_status_native` checks the
+selected `PostAudioStatusEvent` action. Its validator accepts an explicit
+JsonData export root, summary, and per-file ledger for source receipts.
+`python -m scripts.game_data.levelscript_entities_visibility_native` checks the
+selected `SetEntitiesVisibility` action, its entity-pointer list and finite
+visibility-source enum. Pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json` to replay its
+current source receipts.
+`python -m scripts.game_data.levelscript_water_height_native` checks the
+selected `WaterVolumeInfiniteSetHeight` action, including its water-volume
+pointer storage and current source cursors. Its validator accepts an explicit
+JsonData export root, summary, and per-file ledger.
+`python -m scripts.game_data.levelscript_set_fac_mode_native` checks the
+selected `SetFacMode` action and its current source cursors. Its validator
+accepts an explicit JsonData export root, summary, and per-file ledger.
+`python -m scripts.game_data.levelscript_enemy_patrol_start_native` checks
+the selected `EnemyPatrolStart` action, including the patrol ID and target
+parameter contexts. For source replay, pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json`.
+`python -m scripts.game_data.levelscript_archery_stage_native` checks the
+selected `EnableTyphoeaArcheryStage` action and its four parameter contexts.
+For current source replay, pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json`.
+`python -m scripts.game_data.levelscript_typhoea_chip_id_native` checks the
+selected `TyphoeaArcherySetChipId` action and its two string parameter
+contexts. It accepts the same `--export-root`, `--ledger`, and `--summary`
+arguments for current source replay.
+`python -m scripts.game_data.levelscript_finish_buffs_native` checks the
+selected `FinishBuffs` action, including its nested list element type and
+reached null-list source cursors. It accepts the same explicit source replay
+arguments.
+`python -m scripts.game_data.levelscript_mark_task_condition_failed_native`
+checks the selected action, its objective and task-pointer parameter contexts,
+and ledger-joined LevelScript and template cursors with the same source flags.
+`python -m scripts.game_data.levelscript_archery_advanced_headers_native`
+checks both selected archery advanced-stage headers, their generic parameter
+contexts, and current LevelScript cursors with the same source flags.
+`python -m scripts.game_data.levelscript_on_train_level_event_native` checks
+the selected train event header, its generic parameter contexts, and current
+ledger-joined source cursors with the same source flags.
+`python -m scripts.game_data.levelscript_on_enemy_take_last_attack_damage_native`
+and `python -m scripts.game_data.levelscript_on_spell_infliction_native` check
+the selected damage and spell event headers, their generic parameter
+contexts, and ledger-joined source cursors with the same source flags.
+`python -m scripts.game_data.levelscript_taskmap_condition_native` checks the
+selected positive `taskMap` GameCondition readers and their ordered stored
+fields. For current source spans, pass `--export-root export_full/game/Json`,
+`--ledger reports/animestudio/jsondata_current_files_latest.jsonl.gz`, and
+`--summary reports/animestudio/jsondata_current_latest.json`. The sequential
+LevelScript reader uses only routes whose selected native check validates.
+`python -m scripts.game_data.levelscript_taskmap_followon_native` checks the
+additional selected task-map conditions. It accepts the same explicit
+`--export-root`, `--ledger`, and `--summary` paths for current source receipts.
+`python -m scripts.game_data.levelscript_taskmap_submit_native` checks the
+chained interactive-submit reader, forwarding formatter, Param contexts, and
+selected source spans with the same source flags.
+`python -m scripts.game_data.levelscript_taskmap_archery_native` checks the
+selected archery-completion condition, including its nested `List<LsmPtr>`
+MethodSpec and current source spans; it accepts the same source flags.
+`python -m scripts.game_data.levelscript_check_game_inst_start_duration_native`
+checks the selected game-instance duration condition's ordered parameter
+reads, generic contexts, and ledger-joined source cursors with the same source
+flags.
+`python -m scripts.game_data.levelscript_encounter_opera_segments_native`
+checks the positive Encounter opera-segment wrappers, complete native reader
+windows, and ledger-joined nested source cursors. Pass `--export-root`,
+`--ledger`, and `--summary` for current source receipts.
 
 `scripts/game_data/dummydll_metadata.py` is the stdlib ECMA-335 reader beneath
 it: PE to metadata root, the table row sizes, TypeDef base chains, setter

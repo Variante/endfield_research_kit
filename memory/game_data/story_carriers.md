@@ -103,6 +103,95 @@ model these carriers feed, and everything about presenting the result, is
   public `CheckIsBuilding*Locked` checks call `CheckBuildingLock` and build the
   radio).
 
+## Current mission JsonData carrier boundary
+
+The selected VFS ledger and exported `game/Json` bytes agree for the active
+LevelScriptData, LevelData, LevelConfig, SpawnerConfig, and
+MissionRuntimeAsset families. The current corpus comparison and focused
+changed-file probe are in `reports/story/recovery/current_json_mission_carriers.json`
+and `current_json_mission_parser_probe.json`. This direct byte comparison is
+needed because the existing export lacks per-output extraction provenance;
+`verify_export_freshness` alone cannot authenticate every file's content.
+
+The changed LevelScriptData, LevelData, and SpawnerConfig files close at
+physical EOF with `levelscript_binary.frame_levelscript_declared_root` and
+declarations derived from the **matching installed native build**. The byte
+boundary is complete, while member names remain at the `direct` declaration
+tier. Changed LevelConfig files close under `decode_level_config`'s exact
+reader. Both current MissionRuntimeAsset main and meta sets pass their complete
+named JSON schema readers. The main schema contract now admits two previously
+known condition types at their newly observed nested positions and one
+`_nextID` guide action shape. Its `currentCorpus` header still identifies the
+older reviewed baseline; it is not a current-corpus gate. The current
+validation uses the active VFS byte comparison and separately recorded
+parser probe.
+
+The exact source path chain is LevelConfig's signed `levelDataPaths` int64 ->
+the authenticated `StringPathHash.bin` bucket/path-offset pair -> active
+LevelData logical path. The changed LevelData `levelScriptBriefDataDict`
+stores a `dataPath.hash`; a unique catalog path plus equality of its
+dictionary key, embedded `scriptId`, and LevelScriptData filename stem proves
+that authored script reference. Its `spawners[].configId` matches the
+SpawnerConfig root `configId` and logical path. The current joins are in
+`reports/story/recovery/current_levelconfig_path_joins.json` and
+`current_leveldata_carrier_joins.json`. These are JsonData source-path and
+typed-id joins; Unity CAB/PathID identity applies only when crossing into
+serialized Unity objects, and a filename resemblance alone is insufficient.
+
+For example, the new `gm02m27` main/meta pair explicitly stores
+`map02_lv002` as its level, while `gm02m27d1` through `d6` store
+`indie_dg016`; the related LevelConfig and LevelData files are now bounded
+through the path chain above. Their authored mission-name keys, and each
+nonempty mission-description key, resolve directly in the current byte-verified
+`TextTable`; matching prefixes in Dialog tables are only candidates until a
+typed mission-to-dialog field connects them. A level field, matching mission
+name in a LevelData filename, script brief, condition, or `mainPathQuests` array proves
+authored definition or reference, **not** that the client activated the
+mission, that the server selected a quest branch, or that a particular Story
+played. Runtime producer-to-mission/quest ownership and the selected
+activation/order path are still unresolved until an exact consumer trace or
+observed runtime event joins those identities. Do not turn the new source
+joins into a Story edge or chronological order on their own.
+
+## LevelScript FMV path to installed Video
+
+The current `PlayFmvAction` layout in the selected
+`levelscript_union_tags.json` contract and the strict
+`codecs/levelscript/fmv.py` field decoder identify `_moviePath` as a stored
+constant `Param<string>`, not a string inferred from a neighboring action.
+The focused current LevelScript replay reaches 19 such actions in 19
+source-authenticated files. Rechecking each export's SHA256 and VFS data MD5,
+then the tagged string inside that action's physical byte range, finds 19
+distinct `cs_video_*` values. Exact audited Video logical paths resolve six
+values as a base `<id>.usm` file; the other 13 have one `f_<id>.usm` and one
+`m_<id>.usm` file each, all under `Data/Video/PC/Narrative/Cutscene/`.
+The per-source and per-file identities are in the generated
+`reports/story/recovery/current_levelscript_fmv_video_join.json` receipt.
+`levelscript_fmv_video_corpus.py` rechecks this join against the reviewed
+`levelscript_fmv_video_native.json` consumer contract, selected native hashes,
+the current VFS input set, each source's exported bytes, and each Video file's
+audited path/data identity; it fails on a missing base or incomplete gender
+pair rather than promoting a name resemblance.
+
+The selected native `PlayFmvAction.Execute` reads its `_moviePath` parameter
+and calls `GameAction.PlayFmv`, the route independently listed in the reviewed
+`cinematic_queue.json` contract. In the unpatched bodies,
+`GameAction.PlayFmv` forwards the name to
+`NarrativeUtils.GetGenderedFMVId`, then checks a
+`GetCSVideoAssetSubPath` result with `VideoManager.CheckCanPlay`.
+`GetGenderedFMVId` selects the literal `f_` or `m_` prefix by narrative
+gender, concatenates it with the original id, checks the candidate through
+`_CheckIfFMVExists`, and falls back to the unprefixed id if that check fails.
+`GetCSVideoAssetSubPath` formats `Narrative/Cutscene/{0}`;
+`VideoManager.GetVideoAssetPath` appends `.usm` when needed, and
+`TryGetVideoPlayFullPath` calls `Beyond.VFS.VirtualFileSystem.TryGetAssetFullPathInfo`.
+The selected method bodies, literal usage cells and branch bytes are recorded
+in `reports/story/recovery/current_levelscript_fmv_video_native.json` with
+the installed native hashes. This is **conditional** source-to-video name
+resolution: the selected gender, active iFix patch state, action activation,
+actual playback, mission ownership and chronological order are not proved by
+these static bytes or VFS matches.
+
 ## Spatial carriers
 
 Story may be placed on Map only through the exact carrier's own authored

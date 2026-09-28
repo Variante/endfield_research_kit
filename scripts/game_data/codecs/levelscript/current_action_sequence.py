@@ -13,6 +13,10 @@ from scripts.game_data.codecs.levelscript import call_server as levelscript_call
 from scripts.game_data.codecs.levelscript import camera_look_at as levelscript_camera_look_at
 from scripts.game_data.codecs.levelscript import params as levelscript_params
 from scripts.game_data.codecs.levelscript import set_enable_player as levelscript_set_enable_player
+from scripts.game_data.codecs.levelscript.interactives import (
+    LevelInteractiveCodecError,
+    decode_param_key_value_list,
+)
 from scripts.game_data.codecs.levelscript.anonymous_bodies import _read_levelscript_node_envelope
 from scripts.game_data.codecs.levelscript.anonymous_bodies import _read_nullable_levelscript_param
 from scripts.game_data.codecs.levelscript.condition_params import _decode_entity_ptr_list_param
@@ -31,6 +35,7 @@ from scripts.game_data.codecs.levelscript.primitives import i32 as _i32
 from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
 from scripts.game_data.codecs.levelscript.sequential_owner import _frame_levelscript_sequential_owner
 from scripts.game_data.codecs.levelscript.uid_records import _decode_levelscript_uid_record
+from scripts.game_data.levelscript_param_list_native import load_param_list_for_graph_contract
 from typing import Any
 
 _CURRENT_SEQUENTIAL_ACTION_MEMBERS = {
@@ -1094,11 +1099,26 @@ def frame_levelscript_current_action_sequence_leader_enter(
     if cursor + 5 > len(data) or data[cursor] != 1:
         raise LevelScriptTopLevelFramingError("ParamListForGraph member count mismatch")
     param_count = _i32(data, cursor + 1)
-    if param_count != 0:
+    if param_count is None or param_count < 0:
         raise LevelScriptTopLevelFramingError(
-            f"selected action sequence requires empty ParamListForGraph: actual={param_count}"
+            f"unsupported ParamListForGraph value count: actual={param_count}"
         )
-    action_map_end = cursor + 5
+    if param_count:
+        layout, audit = load_param_list_for_graph_contract()
+        if layout is None:
+            raise LevelScriptTopLevelFramingError(
+                "actionMap.paramBlackboard.nativeContract: "
+                f"status={audit['status']}, count={param_count}, "
+                f"detail={audit.get('detail', '')}"
+            )
+    try:
+        values, action_map_end = decode_param_key_value_list(
+            data, cursor + 1, "actionMap.paramBlackboard.value"
+        )
+    except LevelInteractiveCodecError as error:
+        raise LevelScriptTopLevelFramingError(str(error)) from error
+    if values["count"] != param_count:
+        raise LevelScriptTopLevelFramingError("ParamListForGraph count drift")
     action_map = {
         "startOffset": 1,
         "endOffset": action_map_end,
@@ -1119,7 +1139,8 @@ def frame_levelscript_current_action_sequence_leader_enter(
             "startOffset": cursor,
             "endOffset": action_map_end,
             "serializedMemberCount": 1,
-            "valueCount": 0,
+            "valueCount": param_count,
+            "value": values["values"],
         },
     }
     return _frame_levelscript_sequential_owner(

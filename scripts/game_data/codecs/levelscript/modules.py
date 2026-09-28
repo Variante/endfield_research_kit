@@ -20,17 +20,19 @@ _MAX_STRING_BYTES = 1 << 20
 # LevelScriptModuleData union by type name, never written down.
 _MODULE_TYPES = (
     "EncounterData",
+    "EncounterDataV2",
     "FogNestControllerData",
     "GhostWallModuleData",
     "GuideButterflyModuleData",
+    "MatrixRepairControllerData",
     "SpecialSightControllerData",
     "SuperPressureBoardGroupData",
+    "TianshizhuangData",
+    "TyphoeaArcheryUnitAdvancedData",
     "TyphoeaArcheryUnitData",
+    "WaterAbsorbedImpactData",
     "WaterProgressSyncData",
 )
-MODULE_TAG_NAMES = {
-    union_tags.pair("LevelScriptModuleData", name)[0]: name for name in _MODULE_TYPES
-}
 
 
 def _need(data: bytes, cursor: int, size: int, field: str) -> None:
@@ -142,6 +144,30 @@ def _i32_item(data: bytes, cursor: int, field: str) -> tuple[int, int]:
 
 def _f32_item(data: bytes, cursor: int, field: str) -> tuple[float, int]:
     return _f32(data, cursor, field)
+
+
+def _vector3(data: bytes, cursor: int, field: str) -> tuple[dict[str, float], int]:
+    out = {}
+    for axis in "xyz":
+        out[axis], cursor = _f32(data, cursor, f"{field}.{axis}")
+    return out, cursor
+
+
+def _quaternion(data: bytes, cursor: int, field: str) -> tuple[dict[str, float], int]:
+    out = {}
+    for axis in "xyzw":
+        out[axis], cursor = _f32(data, cursor, f"{field}.{axis}")
+    return out, cursor
+
+
+def _lang_key(data: bytes, cursor: int, field: str) -> tuple[dict[str, str | None], int]:
+    _need(data, cursor, 1, f"{field}.memberCount")
+    if data[cursor] != 1:
+        raise LevelScriptModuleCodecError(
+            f"invalid LangKey member count: offset={cursor} value={data[cursor]}"
+        )
+    key, cursor = _string(data, cursor + 1, f"{field}.key")
+    return {"key": key}, cursor
 
 
 def _parse_ghost_wall(
@@ -481,13 +507,29 @@ def _enum(
 def _encounter_opera_segments(
     data: bytes, cursor: int, field: str
 ) -> tuple[dict[str, Any], int]:
+    start = cursor
     count, cursor = _count(data, cursor, field)
     if count is None:
         return {"status": "null", "count": None, "values": None}, cursor
     if count:
-        raise LevelScriptModuleCodecError(
-            f"unsupported positive {field} count={count}"
+        from scripts.game_data.levelscript_encounter_opera_segments_native import (
+            validate_levelscript_encounter_opera_segments_native_contract,
         )
+
+        from .encounter_opera_segments import decode_positive_encounter_opera_segments
+
+        audit = validate_levelscript_encounter_opera_segments_native_contract()
+        if audit.get("status") != "validated":
+            raise LevelScriptModuleCodecError(
+                f"unvalidated positive {field}: status={audit.get('status')},"
+                f"check={audit.get('failedGate')},detail={audit.get('detail')}"
+            )
+        try:
+            return decode_positive_encounter_opera_segments(
+                data, start, field, audit["contract"],
+            )
+        except ValueError as error:
+            raise LevelScriptModuleCodecError(str(error)) from error
     return {"status": "present", "count": 0, "values": []}, cursor
 
 
@@ -641,16 +683,147 @@ def _parse_encounter(
     }, cursor
 
 
+def _typhoea_obstacle(
+    data: bytes, cursor: int, field: str
+) -> tuple[dict[str, Any], int]:
+    _need(data, cursor, 1, f"{field}.memberCount")
+    if data[cursor] != 8:
+        raise LevelScriptModuleCodecError(
+            f"invalid TyphoeaArcheryObstacleData member count: "
+            f"offset={cursor} value={data[cursor]}"
+        )
+    cursor += 1
+    min_stages, cursor = _list(
+        data, cursor, f"{field}.curveAvailableMinStage", _i32_item
+    )
+    curve_time, cursor = _list(data, cursor, f"{field}.curveTime", _f32_item)
+    destructible, cursor = _bool(data, cursor, f"{field}.destructible")
+    level_id, cursor = _string(data, cursor, f"{field}.levelId")
+    post_model_id, cursor = _string(data, cursor, f"{field}.postModelId")
+    spawn_point, cursor = _vector3(data, cursor, f"{field}.spawnPoint")
+    spawn_rotation, cursor = _quaternion(data, cursor, f"{field}.spawnRotation")
+    spline_id, cursor = _i32(data, cursor, f"{field}.splineId")
+    return {
+        "curveAvailableMinStage": min_stages,
+        "curveTime": curve_time,
+        "destructible": destructible,
+        "levelId": level_id,
+        "postModelId": post_model_id,
+        "spawnPoint": spawn_point,
+        "spawnRotation": spawn_rotation,
+        "splineId": spline_id,
+    }, cursor
+
+
+def _parse_typhoea_archery_advanced(
+    data: bytes, cursor: int, field: str
+) -> tuple[dict[str, Any], int]:
+    obstacles, cursor = _list(
+        data, cursor, f"{field}.obstacleDatas", _typhoea_obstacle
+    )
+    shooting, cursor = _list(data, cursor, f"{field}.shootingStageUnits", _lsm_ptr)
+    stage_types, cursor = _list(data, cursor, f"{field}.stageTypes", _i32_item)
+    return {
+        "obstacleDatas": obstacles,
+        "shootingStageUnits": shooting,
+        "stageTypes": stage_types,
+    }, cursor
+
+
+def _parse_matrix_repair(
+    data: bytes, cursor: int, field: str
+) -> tuple[dict[str, Any], int]:
+    center, cursor = _entity_ptr(data, cursor, f"{field}.matrixCenter")
+    elements, cursor = _list(data, cursor, f"{field}.matrixElements", _entity_ptr)
+    return {"matrixCenter": center, "matrixElements": elements}, cursor
+
+
+def _parse_tianshizhuang(
+    data: bytes, cursor: int, field: str
+) -> tuple[dict[str, Any], int]:
+    activate, cursor = _lang_key(data, cursor, f"{field}.activateOption")
+    deco_id, cursor = _u64(data, cursor, f"{field}.decoId")
+    finish, cursor = _lang_key(data, cursor, f"{field}.finishOption")
+    proxy, cursor = _entity_ptr(data, cursor, f"{field}.proxyInteractive")
+    small, cursor = _list(data, cursor, f"{field}.smallList", _entity_ptr)
+    mask, cursor = _i32(data, cursor, f"{field}.targetConditionMask")
+    dialog_id, cursor = _string(data, cursor, f"{field}.vfxLifeCycleBindDlgId")
+    delay, cursor = _f32(data, cursor, f"{field}.yaoActiveDelay")
+    vfx_pos, cursor = _vector3(data, cursor, f"{field}.yaoRightVfxPos")
+    vfx_rot, cursor = _vector3(data, cursor, f"{field}.yaoRightVfxRotEuler")
+    world_pos, cursor = _list(data, cursor, f"{field}.yaoWorldPosList", _vector3)
+    world_rot, cursor = _list(data, cursor, f"{field}.yaoWorldRotList", _vector3)
+    return {
+        "activateOption": activate,
+        "decoId": str(deco_id),
+        "finishOption": finish,
+        "proxyInteractive": proxy,
+        "smallList": small,
+        "targetConditionMask": mask,
+        "vfxLifeCycleBindDlgId": dialog_id,
+        "yaoActiveDelay": delay,
+        "yaoRightVfxPos": vfx_pos,
+        "yaoRightVfxRotEuler": vfx_rot,
+        "yaoWorldPosList": world_pos,
+        "yaoWorldRotList": world_rot,
+    }, cursor
+
+
+def _parse_water_absorbed_impact(
+    data: bytes, cursor: int, field: str
+) -> tuple[dict[str, Any], int]:
+    curve_id, cursor = _string(data, cursor, f"{field}.curveId")
+    delay_show, cursor = _bool(data, cursor, f"{field}.delayShow")
+    delay_time, cursor = _f32(data, cursor, f"{field}.delayTime")
+    entities, cursor = _list(data, cursor, f"{field}.entityPtrList", _entity_ptr)
+    hide_cd, cursor = _f32(data, cursor, f"{field}.hideUICd")
+    description, cursor = _string(data, cursor, f"{field}.progressDesc")
+    forward, cursor = _vector3(data, cursor, f"{field}.uiForward")
+    ui_name, cursor = _string(data, cursor, f"{field}.uiName")
+    world_pos, cursor = _vector3(data, cursor, f"{field}.uiWorldPos")
+    return {
+        "curveId": curve_id,
+        "delayShow": delay_show,
+        "delayTime": delay_time,
+        "entityPtrList": entities,
+        "hideUICd": hide_cd,
+        "progressDesc": description,
+        "uiForward": forward,
+        "uiName": ui_name,
+        "uiWorldPos": world_pos,
+    }, cursor
+
+
 _PARSERS = {
     "EncounterData": (16, _parse_encounter),
+    "EncounterDataV2": (16, _parse_encounter),
     "FogNestControllerData": (7, _parse_fog_nest),
     "GhostWallModuleData": (27, _parse_ghost_wall),
     "GuideButterflyModuleData": (9, _parse_guide_butterfly),
+    "MatrixRepairControllerData": (4, _parse_matrix_repair),
     "SpecialSightControllerData": (4, _parse_special_sight),
     "SuperPressureBoardGroupData": (9, _parse_pressure_group),
+    "TianshizhuangData": (14, _parse_tianshizhuang),
+    "TyphoeaArcheryUnitAdvancedData": (5, _parse_typhoea_archery_advanced),
     "TyphoeaArcheryUnitData": (8, _parse_typhoea_archery),
+    "WaterAbsorbedImpactData": (11, _parse_water_absorbed_impact),
     "WaterProgressSyncData": (7, _parse_water_progress),
 }
+
+
+def _resolved_module_tags(
+    resolve: Callable[[str, str], tuple[int, int]],
+) -> dict[int, str]:
+    """Admit only native tag/arity pairs that match a reviewed body codec."""
+    routes = {}
+    for name in _MODULE_TYPES:
+        pair = resolve("LevelScriptModuleData", name)
+        if len(pair) == 2 and isinstance(pair[0], int) and pair[1] == _PARSERS[name][0]:
+            routes[pair[0]] = name
+    return routes
+
+
+MODULE_TAG_NAMES = _resolved_module_tags(union_tags.pair)
 _SUPPORTED = {tag: _PARSERS[name] for tag, name in MODULE_TAG_NAMES.items()}
 
 

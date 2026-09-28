@@ -1,0 +1,429 @@
+{
+  "schema": "endfield.levelscript-encounter-opera-segments-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "evidenceBoundary": {
+    "exact": "Four current generated wrappers and their complete native Deserialize method windows establish nested member order; ledger-joined source cursors and physical EOF establish the positive stored list variant.",
+    "unresolved": "Stored opera type and parameter values do not prove that any cutscene or encounter operation executes at runtime."
+  },
+  "structs": {
+    "EncounterData.OperaSegment": {
+      "containsReferences": true,
+      "fields": [
+        [
+          "operaType",
+          "int32"
+        ],
+        [
+          "parameters",
+          "ParamKeyValue[]"
+        ]
+      ],
+      "isUnionBase": false,
+      "memberCount": 2,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_EncounterData_OperaSegmentForMemoryPack"
+    },
+    "ParamKeyValue": {
+      "containsReferences": true,
+      "fields": [
+        [
+          "key",
+          "string"
+        ],
+        [
+          "value",
+          "ParamValue"
+        ]
+      ],
+      "isUnionBase": false,
+      "memberCount": 2,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ParamKeyValueForMemoryPack"
+    },
+    "ParamValue": {
+      "containsReferences": true,
+      "fields": [
+        [
+          "type",
+          "int32"
+        ],
+        [
+          "valueArray",
+          "ParamValueAtom[]"
+        ]
+      ],
+      "isUnionBase": false,
+      "memberCount": 2,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ParamValueForMemoryPack"
+    },
+    "ParamValueAtom": {
+      "containsReferences": true,
+      "fields": [
+        [
+          "valueBit64",
+          "int64"
+        ],
+        [
+          "valueString",
+          "string"
+        ]
+      ],
+      "isUnionBase": false,
+      "memberCount": 2,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ParamValueAtomForMemoryPack"
+    }
+  },
+  "records": [
+    {
+      "name": "EncounterData.OperaSegment",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_EncounterData_OperaSegmentForMemoryPack",
+      "wrappedType": "Beyond.Gameplay.EncounterData+OperaSegment",
+      "nativeDeclaredTypes": [
+        [
+          "operaType",
+          "Beyond.Gameplay.EncounterData+OperaType"
+        ],
+        [
+          "parameters",
+          "Beyond.Gameplay.ParamKeyValue[]"
+        ]
+      ],
+      "methods": [
+        [
+          162542,
+          "Beyond.MemoryPack.Beyond_Gameplay_EncounterData_OperaSegmentForMemoryPack",
+          "Deserialize",
+          157851656
+        ],
+        [
+          162543,
+          "Beyond.MemoryPack.Beyond_Gameplay_EncounterData_OperaSegmentForMemoryPack+Beyond_Gameplay_EncounterData_OperaSegmentForMemoryPackFormatter",
+          "Deserialize",
+          157851524
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 157851656,
+          "endRva": 157851974,
+          "sha256": "32CE10A5C5DB7E263D75490835A50BAA8033B4EFF688F55CCC7D1571BB575302",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 157851524,
+          "endRva": 157851613,
+          "sha256": "7106E491FBA9DDEDFC070BD9A8ABC46720667AD14B8C86C8E684FFD16322CD13",
+          "boundary": "complete-native-body-window"
+        }
+      ]
+    },
+    {
+      "name": "ParamKeyValue",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ParamKeyValueForMemoryPack",
+      "wrappedType": "Beyond.Gameplay.ParamKeyValue",
+      "nativeDeclaredTypes": [
+        [
+          "key",
+          "string"
+        ],
+        [
+          "value",
+          "Beyond.Gameplay.ParamValue"
+        ]
+      ],
+      "methods": [
+        [
+          104008,
+          "Beyond.MemoryPack.Beyond_Gameplay_ParamKeyValueForMemoryPack",
+          "Deserialize",
+          53291216
+        ],
+        [
+          104009,
+          "Beyond.MemoryPack.Beyond_Gameplay_ParamKeyValueForMemoryPack+Beyond_Gameplay_ParamKeyValueForMemoryPackFormatter",
+          "Deserialize",
+          53290432
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 53291216,
+          "endRva": 53291436,
+          "sha256": "EACACAA9AAAFB43130419D1963FB3B361F73FF30DA050928A4A4B8B22F010335",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53291436,
+          "endRva": 53291867,
+          "sha256": "136C8EA8550638A0476DC4FAB0CDF576F1AB99E28D8D6B6F417CD07A1EB823C7",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53291867,
+          "endRva": 53291898,
+          "sha256": "BCBD88AB1D6BF25BD10DB37AFC43C73C90910567BFDCDAC4C8285952B250FFB1",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53291898,
+          "endRva": 53291926,
+          "sha256": "C61BEB81ABE69808300BE050954225A677B4FDDFE3EFED8D2514CE3081AD0A72",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53291926,
+          "endRva": 53291982,
+          "sha256": "DA6C1B62DFE3B6B27635CC336FB05EC1A71E856D91CEAF17A71061707400B04F",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53290432,
+          "endRva": 53290640,
+          "sha256": "7E091223DA22269F570B44F1F6148F5A0091D746D98ACB4EFC0D644C4A36C1FA",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53290640,
+          "endRva": 53291099,
+          "sha256": "812F1C21825AFA34711C7F9AA85F83B050E437F4F6D5BB524642E9050EAFD0E6",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53291099,
+          "endRva": 53291124,
+          "sha256": "7BFFAACA86F9BA76085D07B8F7234F924F1F18B81FA87F0E8A4AA001D46C52FB",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53291124,
+          "endRva": 53291202,
+          "sha256": "4D8BFDF926DAC5E199BC35D1925447BA48146218A421F90EE5A969230275CAC0",
+          "boundary": "complete-native-body-window"
+        }
+      ]
+    },
+    {
+      "name": "ParamValue",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ParamValueForMemoryPack",
+      "wrappedType": "Beyond.Gameplay.ParamValue",
+      "nativeDeclaredTypes": [
+        [
+          "type",
+          "Beyond.GEnums.ParamRealType"
+        ],
+        [
+          "valueArray",
+          "Beyond.Gameplay.ParamValueAtom[]"
+        ]
+      ],
+      "methods": [
+        [
+          107087,
+          "Beyond.MemoryPack.Beyond_Gameplay_ParamValueForMemoryPack",
+          "Deserialize",
+          57663264
+        ],
+        [
+          107088,
+          "Beyond.MemoryPack.Beyond_Gameplay_ParamValueForMemoryPack+Beyond_Gameplay_ParamValueForMemoryPackFormatter",
+          "Deserialize",
+          57661984
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 57663264,
+          "endRva": 57663510,
+          "sha256": "FDC23BB6A02D6893848B506732A2100430B60B7CFECC1AF619F84601F559581D",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 57663510,
+          "endRva": 57664396,
+          "sha256": "E35A4FB9664731D345410AF892A7E2D3E837A56302B98953DB67111F41F4D6AD",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 57664396,
+          "endRva": 57664458,
+          "sha256": "F451036ABFDD8C8F803F9636D29DDB7BC1CCCEB5447D7F2751DEADD9FD98A1CD",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 57664458,
+          "endRva": 57664470,
+          "sha256": "72271F8172FB994599F4A15F7A69D6F4BE9A3BAC74D3D11BD64E613E089BF573",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 57664470,
+          "endRva": 57664498,
+          "sha256": "B2A763D4CC8BEE8299FCC58B5C4630102F59B52643501C3F4B8906FA169FB33C",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 57661984,
+          "endRva": 57662218,
+          "sha256": "027BA522CF531D51CE2319A0BEE6DE01625254492C36B69C1DBED571A24F7680",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 57662218,
+          "endRva": 57663164,
+          "sha256": "9119728D808F2D734B031523E8D60316DB57A5A1D66026620FD1A94730CC4E84",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 57663164,
+          "endRva": 57663220,
+          "sha256": "970EFD43B40E0B2A749E3184020DC052B6C150E8E53E741C8BF4DE29FAE79C81",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 57663220,
+          "endRva": 57663248,
+          "sha256": "224438C628F5A668CF03A802BAF58D4FB1CA38AF0D7E0C768F6BF18117A4939D",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 57663248,
+          "endRva": 57663254,
+          "sha256": "D40FA13120FC54FE73F81A1E1A767A3E47FFCD90B08E81C459363165435CCDCC",
+          "boundary": "complete-native-body-window"
+        }
+      ]
+    },
+    {
+      "name": "ParamValueAtom",
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ParamValueAtomForMemoryPack",
+      "wrappedType": "Beyond.Gameplay.ParamValueAtom",
+      "nativeDeclaredTypes": [
+        [
+          "valueBit64",
+          "long"
+        ],
+        [
+          "valueString",
+          "string"
+        ]
+      ],
+      "methods": [
+        [
+          118136,
+          "Beyond.MemoryPack.Beyond_Gameplay_ParamValueAtomForMemoryPack",
+          "Deserialize",
+          53292688
+        ],
+        [
+          118137,
+          "Beyond.MemoryPack.Beyond_Gameplay_ParamValueAtomForMemoryPack+Beyond_Gameplay_ParamValueAtomForMemoryPackFormatter",
+          "Deserialize",
+          53291984
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 53292688,
+          "endRva": 53292890,
+          "sha256": "8A3469762CFFB8E4C62829ED0639416203F655878AB696BB76DD7B29DA4D1519",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53292890,
+          "endRva": 53293251,
+          "sha256": "DCE360CE96BA5E80BA8F83746E7B84EF7D446B71FBE1E43DDFD1FAAFFB38DD3B",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53293251,
+          "endRva": 53293282,
+          "sha256": "26D528189E24F3875D15674D5559F84DACF430BA39B490FC116D47E1A87BCA30",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53293282,
+          "endRva": 53293304,
+          "sha256": "AB7F801ABE65EBE01D0A7FA0A2A066CD53D8208819BB11F152533382531138A7",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53293304,
+          "endRva": 53293360,
+          "sha256": "8374A6CD8424588CEE0749F9A0A086723DBD471AE94A206EAF9C9CC68AD8B6A2",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53291984,
+          "endRva": 53292180,
+          "sha256": "600A3EBA1FE13A6E41F4B372A7345DFEB6D5A65094B81A967B3867E89B0FFD9D",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53292180,
+          "endRva": 53292579,
+          "sha256": "ADAFBB7BE76B9821C976C76D0F02313CD6DA5C80AE971A40CFC9FF98AF721CBB",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53292579,
+          "endRva": 53292604,
+          "sha256": "66877A097C19E2B2AD5A1C57C318A4F4D5F8302AF6842B6FF7C81017DFF14434",
+          "boundary": "complete-native-body-window"
+        },
+        {
+          "startRva": 53292604,
+          "endRva": 53292676,
+          "sha256": "8E0D095DE4DC04073BF35F05FB49B7130BE9EA743E50BB71DE975D91B6BE4E97",
+          "boundary": "complete-native-body-window"
+        }
+      ]
+    }
+  ],
+  "sourceReceipts": [
+    [
+      "LevelScriptData/map01_lv007/2800340007.json",
+      "10642B238BEC3875F95A28420BC37FAAD6D500865372F1380967F9D368E6F0AF",
+      2497,
+      2551,
+      "EF90E33637E5F1FD0F4FC6183AEB863587B81C560DBFFDC95D84185F6A6C390E"
+    ],
+    [
+      "LevelScriptData/map02_lv008/23100010184.json",
+      "EF05BD7BFBEF44D89CEE391AC10FE622D9278F2DC222F6768D4DA24E2342023A",
+      2064,
+      2112,
+      "891283FBBBC0ECB4F93D91B8FBCEB9A6236A0477F635D288A501A9A56AE99F56"
+    ],
+    [
+      "LevelScriptData/map02_lv008/23100010200.json",
+      "EEEB4E149A7A875AE394FE22818BEC90F1208FD088C36B9FF8D46A12710E4239",
+      2028,
+      2076,
+      "891283FBBBC0ECB4F93D91B8FBCEB9A6236A0477F635D288A501A9A56AE99F56"
+    ],
+    [
+      "LevelScriptData/map02_lv008/23100010201.json",
+      "AD468F1F93E266890B6A6FF3195C2A3F3F59D7D464A78B40369A11775BA2BE80",
+      3237,
+      3285,
+      "891283FBBBC0ECB4F93D91B8FBCEB9A6236A0477F635D288A501A9A56AE99F56"
+    ],
+    [
+      "LevelScriptData/map02_lv008/23100020052.json",
+      "9E8EA31DF953C4CEA60FF2A4C7D8DA236100DCAC8EFF5A32BECC4EC78CE4D74E",
+      2947,
+      2995,
+      "891283FBBBC0ECB4F93D91B8FBCEB9A6236A0477F635D288A501A9A56AE99F56"
+    ],
+    [
+      "LevelScriptData/map02_lv008/23100030113.json",
+      "DE0C060140760D5AED178A039153C7EE096D98317B0D7A42113C5BDCC21F41CD",
+      2544,
+      2592,
+      "891283FBBBC0ECB4F93D91B8FBCEB9A6236A0477F635D288A501A9A56AE99F56"
+    ]
+  ]
+}

@@ -1,7 +1,7 @@
 """Derive the current-build LevelScript union layout table from the DummyDll.
 
-`codecs/levelscript/action_map_layouts.json` is the reviewed contract: 277
-rows recovered one at a time from the native dispatcher switch, each carrying
+`codecs/levelscript/action_map_layouts.json` is the reviewed contract: its
+rows were recovered one at a time from the native dispatcher switch, each carrying
 its own `nativeIdentity` provenance.  It is exact, and it is small.  The
 serialized corpus uses far more unions than that, so `action_map.py` fails
 closed on the rest and the family's named-byte coverage stalls.
@@ -15,12 +15,12 @@ are proved against the reviewed contract rather than assumed:
   key restores `.` and a generic's closing `>`: ranking the flattened name
   itself puts `IFixAction1.Data` before `IFixAction.Data` and
   `ClientOnce<bool>` before `ClientOnce<bool, Vector2Int>`, the reverse of
-  the generator.  All 277 reviewed rows agree with that rank, and so does
+  the generator. Every reviewed row agrees with that rank, and so does
   every entry of every family whose formatter switch was read natively.
 * **Layout.**  A wrapper's members are its `set____name__` setters in
   declaration order, with the base chain's setters first, root first.  The
-  declared type of each member is that setter's parameter type.  All 277
-  reviewed field lists reproduce exactly.
+  declared type of each member is that setter's parameter type. Every reviewed
+  field list reproduces exactly.
 
 So the derivation is a cross-check, not a guess: `derive()` recomputes every
 reviewed row and refuses to return anything if one disagrees.  A build whose
@@ -31,8 +31,8 @@ wrong layout.
 What this does *not* establish is the native identity of a derived row.  The
 reviewed contract's `evidenceBoundary` is `exact` because each row was read
 out of the dispatcher.  A derived row's boundary is `direct`: it is an
-observed declaration in the build's own managed image, corroborated on 277
-rows, but nothing here reads the dispatcher that assigns the tag.  Keep the
+observed declaration in the build's own managed image, corroborated on the
+reviewed rows, but nothing here reads the dispatcher that assigns the tag. Keep the
 two tiers apart in anything a consumer gates on.
 
 Run as: python -m scripts.game_data.levelscript_union_layouts

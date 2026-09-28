@@ -1,0 +1,45 @@
+{
+  "schema": "endfield.levelscript-fmv-video-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "evidenceBoundary": "conditional",
+  "source": {
+    "actionType": "Beyond.Gameplay.Actions.PlayFmvAction",
+    "wireUnionMarkerHex": "FA",
+    "unionTag": 873,
+    "memberCount": 14,
+    "field": "_moviePath",
+    "valueType": "Param<string>",
+    "constantIdRef": -1,
+    "constantParamSource": 0
+  },
+  "resolution": {
+    "genderPrefixes": ["f_", "m_"],
+    "fallback": "unprefixed-id-when-prefixed-file-missing",
+    "videoSubPathFormat": "Narrative/Cutscene/{0}",
+    "videoExtension": ".usm",
+    "vfsLogicalPrefix": "Data/Video/PC/"
+  },
+  "consumerMethods": {
+    "Beyond.Gameplay.Actions.PlayFmvAction.Execute": "79001F5FF3EA4AF22749E0049248B8B1D84762B923386049D962341B1387D960",
+    "Beyond.Gameplay.Actions.GameAction.PlayFmv": "5A39E95D9DC652F80C898ADBB94B96C842AD13D73E4C96D099BB69FE5FB6BF36",
+    "Beyond.Gameplay.Actions.GameAction.DoPlayFmv": "4FE59F797F5F8DA31E3B3E3C05226A51FA0A9E7E16BBE7359825CCA76079EF29",
+    "Beyond.Gameplay.NarrativeUtils.GetGenderedFMVId": "E8DA8C5EC7D67E5D190CCCA3D3B7C1EB6D73765FF2E9ED3E25EB964D35836AA7",
+    "Beyond.Gameplay.NarrativeUtils._CheckIfFMVExists": "AD6159D88A514544750A6004DD245354D65F1CAC71A9ECCAA1BF77F52F8ECE4F",
+    "Beyond.Gameplay.NarrativeUtils.GetCSVideoAssetSubPath": "57315CE9C862FFC2D629E7AA38E38FAD2F6A8304FDCC6687F741B1CB0F895E12",
+    "Beyond.Gameplay.View.VideoManager.CheckCanPlay": "5444216FD3C248A92800B00EF476E117E9FFC0598C72E116926155BC857E4B97",
+    "Beyond.Gameplay.View.VideoManager.TryGetVideoPlayFullPath": "7A90A252BE61590F7FD6B30723B108FFF21377EE85985995D28BE546E1A09CC5",
+    "Beyond.Gameplay.View.VideoManager.GetVideoAssetPath": "25922653A4889AC1CDEB90C2B608301CEFE4C284641682F64EF6D87FC81076DF"
+  },
+  "branchProof": {
+    "moviePathRuntimeFieldOffset": "0xd8",
+    "genderSelection": "GetGenderedFMVId defaults to m_; enum value 2 conditionally selects f_",
+    "missingVariantFallback": "After _CheckIfFMVExists, test al; cmove rbx, original fmvId",
+    "source": "Selected native body and IL2CPP metadata; generated row-level receipt under reports/story/recovery/current_levelscript_fmv_video_native.json"
+  },
+  "limits": "Describes the selected unpatched native route and installed VFS names. It does not establish iFix runtime patch state, selected gender, action activation, playback, mission ownership, or Story order."
+}

@@ -50,7 +50,7 @@ SUPPORTED_SCHEMAS: dict[str, tuple[str, frozenset[str | None]]] = {
     "endfield.buff-frontier9-native-contract.v1": ("actions", frozenset({"exact-current-build"})),
     "endfield.buff-residual-frontier-native-contract.v1": ("actions", frozenset({"exact-current-build"})),
     "endfield.levelscript-task-condition-native.v1": ("levelscript_condition", frozenset({"validated"})),
-    "endfield.action-map-layouts.v2": ("levelscript_actions", frozenset({None})),
+    "endfield.action-map-layouts.v3": ("levelscript_actions", frozenset({None})),
     "endfield.skill-timeline-continuous-find-target-native-contract.v1": ("selector_routes", frozenset({"exact-current-build"})),
     "endfield.skill-timeline-create-buff-native-contract.v1": ("dispatcher", frozenset({"exact-current-build"})),
     "endfield.skill-timeline-find-target-native-contract.v1": ("selector_routes", frozenset({"exact-current-build"})),

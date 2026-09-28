@@ -185,6 +185,7 @@ def _frame_levelscript_sequential_owner(
             "fields": fields,
             "ranges": ranges,
             "stopField": "taskMap.entries",
+            "taskDiagnostics": task_diagnostics[:1],
             "opaqueRemainder": {
                 "startOffset": task_map_end,
                 "endOffset": len(data),

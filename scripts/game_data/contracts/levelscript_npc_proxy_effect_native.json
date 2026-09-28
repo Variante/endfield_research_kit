@@ -1,0 +1,1299 @@
+{
+  "schema": "endfield.levelscript-npc-proxy-effect-native-contract.v1",
+  "status": "exact-current-build",
+  "evidenceBoundary": "exact",
+  "evidenceNote": "Selected ActionBase jump and registered wrapper, complete reader and formatter, twelve ordered reads, four own setters and typed Param MethodSpecs, and ledger-joined source cursors prove stored fields. Runtime NPC effects remain unobserved.",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "route": {
+    "family": "ActionBase",
+    "tag": 871,
+    "typeName": "Beyond.Gameplay.Actions.PlayEffectOnNpcProxy",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayEffectOnNpcProxyForMemoryPack",
+    "typeDefinition": 19447,
+    "registeredTypeIndex": 105365,
+    "serializedMemberCount": 12,
+    "inheritedMemberCount": 8,
+    "fields": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int32"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "int32"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "nextID",
+        "int32"
+      ],
+      [
+        "effectId",
+        "Param<string>"
+      ],
+      [
+        "effectType",
+        "Param<NpcEffectType>"
+      ],
+      [
+        "mountPoint",
+        "Param<MountPoint>"
+      ],
+      [
+        "npcProxyId",
+        "Param<string>"
+      ]
+    ],
+    "nativeDeclaredTypes": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "Beyond.GEnums.ScopeName"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "nextID",
+        "int"
+      ],
+      [
+        "effectId",
+        "Beyond.Gameplay.Actions.Param`1<string>"
+      ],
+      [
+        "effectType",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.NPC.Config.NpcEffectType>"
+      ],
+      [
+        "mountPoint",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MountPoint>"
+      ],
+      [
+        "npcProxyId",
+        "Beyond.Gameplay.Actions.Param`1<string>"
+      ]
+    ]
+  },
+  "dispatcher": {
+    "switchTableRva": 43598100,
+    "switchEntryCount": 1342,
+    "switchTableSha256": "A4B75AA63B2B4EA43A6D2FC11B08085893F62543E3A9B367C34E60E916730C88",
+    "switchTargetRva": 43221756,
+    "switchEntryHex": "E9B49E0300",
+    "bodyRva": 43458997,
+    "usageCellRva": 218470664,
+    "usageRawHex": "2B37032000000000",
+    "branchWindow": {
+      "startRva": 43458997,
+      "endRva": 43459125,
+      "sha256": "748106E3F385EA7AA52BAAF25BA8F51AC64088488EC43ADCD9D96D98454BFD1A",
+      "boundary": "selected wrapper usage and branch prefix"
+    },
+    "typeLoadRva": 43459032,
+    "typeLoadHex": "488B1529776E0A"
+  },
+  "methods": [
+    [
+      143414,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayEffectOnNpcProxyForMemoryPack",
+      "Deserialize",
+      155685076
+    ],
+    [
+      143415,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayEffectOnNpcProxyForMemoryPack+Beyond_Gameplay_Actions_PlayEffectOnNpcProxyForMemoryPackFormatter",
+      "Deserialize",
+      155684836
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 155685076,
+      "endRva": 155685804,
+      "sha256": "8E107E105AFF9E1D50842F9552B0BFF778542144B37090E3BA916E58E880F75F",
+      "boundary": "complete source reader body"
+    },
+    {
+      "startRva": 155684836,
+      "endRva": 155684925,
+      "sha256": "982763D9762875B0563D03B66C1FB3DEC6EBF7B114095AD0DD4EB5A8708C1D01",
+      "boundary": "complete forwarding formatter body"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 155685289,
+    "hex": "807C24380C"
+  },
+  "readerHelpers": {
+    "bool": 46827712,
+    "int32": 46827184,
+    "string": 46827264,
+    "Param<string>": 47864976,
+    "Param<NpcEffectType>": 47864976,
+    "Param<MountPoint>": 47864976
+  },
+  "orderedReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "dontLogWarning",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155685306,
+      "sourceCallHex": "E801F782F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "ID",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155685339,
+      "sourceCallHex": "E8D0F482F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "releaseWhenExecutionFinished",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155685372,
+      "sourceCallHex": "E8BFF682F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "uid",
+      "readKind": "string",
+      "sourceCallsiteRva": 155685405,
+      "sourceCallHex": "E8DEF482F9",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "scopeMask",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155685446,
+      "sourceCallHex": "E865F482F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "useCurrentScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155685479,
+      "sourceCallHex": "E854F682F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "useGraphScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155685512,
+      "sourceCallHex": "E833F682F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "nextID",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155685545,
+      "sourceCallHex": "E802F482F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "effectId",
+      "readKind": "Param<string>",
+      "sourceCallsiteRva": 155685585,
+      "sourceCallHex": "E8BAC992F9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "effectType",
+      "readKind": "Param<NpcEffectType>",
+      "sourceCallsiteRva": 155685622,
+      "sourceCallHex": "E895C992F9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 10,
+      "fieldName": "mountPoint",
+      "readKind": "Param<MountPoint>",
+      "sourceCallsiteRva": 155685659,
+      "sourceCallHex": "E870C992F9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 11,
+      "fieldName": "npcProxyId",
+      "readKind": "Param<string>",
+      "sourceCallsiteRva": 155685696,
+      "sourceCallHex": "E84BC992F9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "ownSetters": [
+    {
+      "memberIndex": 8,
+      "callsiteRva": 155685604,
+      "callHex": "E86B020000",
+      "targetRva": 155686228,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayEffectOnNpcProxyForMemoryPack",
+      "methodIndex": 143408,
+      "setterName": "set____effectId__"
+    },
+    {
+      "memberIndex": 9,
+      "callsiteRva": 155685641,
+      "callHex": "E87A020000",
+      "targetRva": 155686280,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayEffectOnNpcProxyForMemoryPack",
+      "methodIndex": 143409,
+      "setterName": "set____effectType__"
+    },
+    {
+      "memberIndex": 10,
+      "callsiteRva": 155685678,
+      "callHex": "E889020000",
+      "targetRva": 155686332,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayEffectOnNpcProxyForMemoryPack",
+      "methodIndex": 143410,
+      "setterName": "set____mountPoint__"
+    },
+    {
+      "memberIndex": 11,
+      "callsiteRva": 155685715,
+      "callHex": "E898020000",
+      "targetRva": 155686384,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayEffectOnNpcProxyForMemoryPack",
+      "methodIndex": 143411,
+      "setterName": "set____npcProxyId__"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 8,
+      "instructionRva": 155685572,
+      "instructionHex": "488B158DCFC203",
+      "cellRva": 218784344,
+      "usageRawHex": "FFE912C000000000",
+      "methodSpecIndex": 619775,
+      "methodSpec": [
+        428464,
+        -1,
+        13654
+      ],
+      "argumentRawHex": "0858208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647233496,
+        "typeRawHex": "0858208D010000000000150000000000",
+        "carrierPointerVa": 6662674440,
+        "carrierRawHex": "28C0248D01000000C039FE8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6626884032,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 891,
+        "table_slot_va": 6625981304,
+        "record_va": 6626884032,
+        "argument_vector_va": 6669020808,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664879672,
+            "raw_type_record_hex": "C78C00000000000000000E0000000000"
+          }
+        ]
+      },
+      "elementRawHex": "C78C00000000000000000E0000000000",
+      "elementTypeKind": 14,
+      "elementTypeDefinition": null,
+      "elementTypeName": "System.String",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    },
+    {
+      "memberIndex": 9,
+      "instructionRva": 155685609,
+      "instructionHex": "488B15B816C803",
+      "cellRva": 219130280,
+      "usageRawHex": "D7E912C000000000",
+      "methodSpecIndex": 619755,
+      "methodSpec": [
+        428464,
+        -1,
+        13634
+      ],
+      "argumentRawHex": "E85C208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647239784,
+        "typeRawHex": "E85C208D010000000000150000000000",
+        "carrierPointerVa": 6662675688,
+        "carrierRawHex": "28C0248D01000000F0EBED8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6625815536,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 26616,
+        "table_slot_va": 6626187104,
+        "record_va": 6625815536,
+        "argument_vector_va": 6668515008,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6662507448,
+            "raw_type_record_hex": "2A010000000000000000118000000000"
+          }
+        ]
+      },
+      "elementRawHex": "2A010000000000000000118000000000",
+      "elementTypeKind": 17,
+      "elementTypeDefinition": 298,
+      "elementTypeName": "Beyond.NPC.Config.NpcEffectType",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    },
+    {
+      "memberIndex": 10,
+      "instructionRva": 155685646,
+      "instructionHex": "488B15DB0FB803",
+      "cellRva": 218079984,
+      "usageRawHex": "CFE912C000000000",
+      "methodSpecIndex": 619751,
+      "methodSpec": [
+        428464,
+        -1,
+        13630
+      ],
+      "argumentRawHex": "485C208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647240424,
+        "typeRawHex": "485C208D010000000000150000000000",
+        "carrierPointerVa": 6662675528,
+        "carrierRawHex": "28C0248D01000000B03DEA8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6625574320,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 8642,
+        "table_slot_va": 6626043312,
+        "record_va": 6625574320,
+        "argument_vector_va": 6668313656,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664702488,
+            "raw_type_record_hex": "80050000000000000000118000000000"
+          }
+        ]
+      },
+      "elementRawHex": "80050000000000000000118000000000",
+      "elementTypeKind": 17,
+      "elementTypeDefinition": 1408,
+      "elementTypeName": "Beyond.Gameplay.MountPoint",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    },
+    {
+      "memberIndex": 11,
+      "instructionRva": 155685683,
+      "instructionHex": "488B151ECFC203",
+      "cellRva": 218784344,
+      "usageRawHex": "FFE912C000000000",
+      "methodSpecIndex": 619775,
+      "methodSpec": [
+        428464,
+        -1,
+        13654
+      ],
+      "argumentRawHex": "0858208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647233496,
+        "typeRawHex": "0858208D010000000000150000000000",
+        "carrierPointerVa": 6662674440,
+        "carrierRawHex": "28C0248D01000000C039FE8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6626884032,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 891,
+        "table_slot_va": 6625981304,
+        "record_va": 6626884032,
+        "argument_vector_va": 6669020808,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664879672,
+            "raw_type_record_hex": "C78C00000000000000000E0000000000"
+          }
+        ]
+      },
+      "elementRawHex": "C78C00000000000000000E0000000000",
+      "elementTypeKind": 14,
+      "elementTypeDefinition": null,
+      "elementTypeName": "System.String",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    }
+  ],
+  "enumTypes": [
+    {
+      "memberIndex": 9,
+      "typeDefinition": 298,
+      "typeName": "Beyond.NPC.Config.NpcEffectType",
+      "underlyingType": "int",
+      "members": [
+        {
+          "id": 0,
+          "name": "ET_Normal",
+          "fieldIndex": 1937,
+          "token": "0x04000792"
+        },
+        {
+          "id": 1,
+          "name": "ET_Material",
+          "fieldIndex": 1938,
+          "token": "0x04000793"
+        }
+      ]
+    },
+    {
+      "memberIndex": 10,
+      "typeDefinition": 1408,
+      "typeName": "Beyond.Gameplay.MountPoint",
+      "underlyingType": "int",
+      "members": [
+        {
+          "id": 0,
+          "name": "None",
+          "fieldIndex": 9452,
+          "token": "0x040024ed"
+        },
+        {
+          "id": 1,
+          "name": "HeadBar",
+          "fieldIndex": 9453,
+          "token": "0x040024ee"
+        },
+        {
+          "id": 2,
+          "name": "FootBar",
+          "fieldIndex": 9454,
+          "token": "0x040024ef"
+        },
+        {
+          "id": 3,
+          "name": "LockPoint",
+          "fieldIndex": 9455,
+          "token": "0x040024f0"
+        },
+        {
+          "id": 4,
+          "name": "HeadStatus",
+          "fieldIndex": 9456,
+          "token": "0x040024f1"
+        },
+        {
+          "id": 5,
+          "name": "DmgTxtSpawnPoint",
+          "fieldIndex": 9457,
+          "token": "0x040024f2"
+        },
+        {
+          "id": 6,
+          "name": "AirborneEffect",
+          "fieldIndex": 9458,
+          "token": "0x040024f3"
+        },
+        {
+          "id": 50,
+          "name": "ModelStart",
+          "fieldIndex": 9459,
+          "token": "0x040024f4"
+        },
+        {
+          "id": 51,
+          "name": "Head",
+          "fieldIndex": 9460,
+          "token": "0x040024f5"
+        },
+        {
+          "id": 52,
+          "name": "VBHit",
+          "fieldIndex": 9461,
+          "token": "0x040024f6"
+        },
+        {
+          "id": 53,
+          "name": "Muzzle",
+          "fieldIndex": 9462,
+          "token": "0x040024f7"
+        },
+        {
+          "id": 54,
+          "name": "Foot",
+          "fieldIndex": 9463,
+          "token": "0x040024f8"
+        },
+        {
+          "id": 55,
+          "name": "Hip",
+          "fieldIndex": 9464,
+          "token": "0x040024f9"
+        },
+        {
+          "id": 56,
+          "name": "HipL",
+          "fieldIndex": 9465,
+          "token": "0x040024fa"
+        },
+        {
+          "id": 57,
+          "name": "HipR",
+          "fieldIndex": 9466,
+          "token": "0x040024fb"
+        },
+        {
+          "id": 58,
+          "name": "Spine1",
+          "fieldIndex": 9467,
+          "token": "0x040024fc"
+        },
+        {
+          "id": 59,
+          "name": "Spine2",
+          "fieldIndex": 9468,
+          "token": "0x040024fd"
+        },
+        {
+          "id": 60,
+          "name": "Spine3",
+          "fieldIndex": 9469,
+          "token": "0x040024fe"
+        },
+        {
+          "id": 61,
+          "name": "WepM",
+          "fieldIndex": 9470,
+          "token": "0x040024ff"
+        },
+        {
+          "id": 62,
+          "name": "WepL",
+          "fieldIndex": 9471,
+          "token": "0x04002500"
+        },
+        {
+          "id": 63,
+          "name": "WepR",
+          "fieldIndex": 9472,
+          "token": "0x04002501"
+        },
+        {
+          "id": 64,
+          "name": "KneeL",
+          "fieldIndex": 9473,
+          "token": "0x04002502"
+        },
+        {
+          "id": 65,
+          "name": "KneeR",
+          "fieldIndex": 9474,
+          "token": "0x04002503"
+        },
+        {
+          "id": 66,
+          "name": "AnkleL",
+          "fieldIndex": 9475,
+          "token": "0x04002504"
+        },
+        {
+          "id": 67,
+          "name": "AnkleR",
+          "fieldIndex": 9476,
+          "token": "0x04002505"
+        },
+        {
+          "id": 68,
+          "name": "ToesL",
+          "fieldIndex": 9477,
+          "token": "0x04002506"
+        },
+        {
+          "id": 69,
+          "name": "ToesR",
+          "fieldIndex": 9478,
+          "token": "0x04002507"
+        },
+        {
+          "id": 70,
+          "name": "Chest",
+          "fieldIndex": 9479,
+          "token": "0x04002508"
+        },
+        {
+          "id": 71,
+          "name": "Neck",
+          "fieldIndex": 9480,
+          "token": "0x04002509"
+        },
+        {
+          "id": 72,
+          "name": "ScapulaL",
+          "fieldIndex": 9481,
+          "token": "0x0400250a"
+        },
+        {
+          "id": 73,
+          "name": "ScapulaR",
+          "fieldIndex": 9482,
+          "token": "0x0400250b"
+        },
+        {
+          "id": 74,
+          "name": "ShoulderL",
+          "fieldIndex": 9483,
+          "token": "0x0400250c"
+        },
+        {
+          "id": 75,
+          "name": "ShoulderR",
+          "fieldIndex": 9484,
+          "token": "0x0400250d"
+        },
+        {
+          "id": 76,
+          "name": "WristL",
+          "fieldIndex": 9485,
+          "token": "0x0400250e"
+        },
+        {
+          "id": 77,
+          "name": "WristR",
+          "fieldIndex": 9486,
+          "token": "0x0400250f"
+        },
+        {
+          "id": 78,
+          "name": "FingerL",
+          "fieldIndex": 9487,
+          "token": "0x04002510"
+        },
+        {
+          "id": 79,
+          "name": "FingerR",
+          "fieldIndex": 9488,
+          "token": "0x04002511"
+        },
+        {
+          "id": 80,
+          "name": "LookAtPoint",
+          "fieldIndex": 9489,
+          "token": "0x04002512"
+        },
+        {
+          "id": 81,
+          "name": "ModelRoot",
+          "fieldIndex": 9490,
+          "token": "0x04002513"
+        },
+        {
+          "id": 82,
+          "name": "RootM",
+          "fieldIndex": 9491,
+          "token": "0x04002514"
+        },
+        {
+          "id": 83,
+          "name": "ThrowPoint",
+          "fieldIndex": 9492,
+          "token": "0x04002515"
+        },
+        {
+          "id": 84,
+          "name": "IKWepL",
+          "fieldIndex": 9493,
+          "token": "0x04002516"
+        },
+        {
+          "id": 85,
+          "name": "IKWepR",
+          "fieldIndex": 9494,
+          "token": "0x04002517"
+        },
+        {
+          "id": 86,
+          "name": "NarrativeFx",
+          "fieldIndex": 9495,
+          "token": "0x04002518"
+        },
+        {
+          "id": 87,
+          "name": "GoldCoinPoint",
+          "fieldIndex": 9496,
+          "token": "0x04002519"
+        },
+        {
+          "id": 151,
+          "name": "Custom1",
+          "fieldIndex": 9497,
+          "token": "0x0400251a"
+        },
+        {
+          "id": 152,
+          "name": "Custom2",
+          "fieldIndex": 9498,
+          "token": "0x0400251b"
+        },
+        {
+          "id": 153,
+          "name": "Custom3",
+          "fieldIndex": 9499,
+          "token": "0x0400251c"
+        },
+        {
+          "id": 154,
+          "name": "Custom4",
+          "fieldIndex": 9500,
+          "token": "0x0400251d"
+        },
+        {
+          "id": 155,
+          "name": "Custom5",
+          "fieldIndex": 9501,
+          "token": "0x0400251e"
+        },
+        {
+          "id": 156,
+          "name": "Custom6",
+          "fieldIndex": 9502,
+          "token": "0x0400251f"
+        },
+        {
+          "id": 157,
+          "name": "Custom7",
+          "fieldIndex": 9503,
+          "token": "0x04002520"
+        },
+        {
+          "id": 158,
+          "name": "Custom8",
+          "fieldIndex": 9504,
+          "token": "0x04002521"
+        },
+        {
+          "id": 159,
+          "name": "Custom9",
+          "fieldIndex": 9505,
+          "token": "0x04002522"
+        },
+        {
+          "id": 160,
+          "name": "Custom10",
+          "fieldIndex": 9506,
+          "token": "0x04002523"
+        },
+        {
+          "id": 161,
+          "name": "Custom11",
+          "fieldIndex": 9507,
+          "token": "0x04002524"
+        },
+        {
+          "id": 162,
+          "name": "Custom12",
+          "fieldIndex": 9508,
+          "token": "0x04002525"
+        },
+        {
+          "id": 163,
+          "name": "Custom13",
+          "fieldIndex": 9509,
+          "token": "0x04002526"
+        },
+        {
+          "id": 164,
+          "name": "Custom14",
+          "fieldIndex": 9510,
+          "token": "0x04002527"
+        },
+        {
+          "id": 165,
+          "name": "Custom15",
+          "fieldIndex": 9511,
+          "token": "0x04002528"
+        },
+        {
+          "id": 166,
+          "name": "Custom16",
+          "fieldIndex": 9512,
+          "token": "0x04002529"
+        },
+        {
+          "id": 167,
+          "name": "Custom17",
+          "fieldIndex": 9513,
+          "token": "0x0400252a"
+        },
+        {
+          "id": 168,
+          "name": "Custom18",
+          "fieldIndex": 9514,
+          "token": "0x0400252b"
+        },
+        {
+          "id": 169,
+          "name": "Custom19",
+          "fieldIndex": 9515,
+          "token": "0x0400252c"
+        },
+        {
+          "id": 170,
+          "name": "Custom20",
+          "fieldIndex": 9516,
+          "token": "0x0400252d"
+        },
+        {
+          "id": 171,
+          "name": "Custom21",
+          "fieldIndex": 9517,
+          "token": "0x0400252e"
+        },
+        {
+          "id": 172,
+          "name": "Custom22",
+          "fieldIndex": 9518,
+          "token": "0x0400252f"
+        },
+        {
+          "id": 173,
+          "name": "Custom23",
+          "fieldIndex": 9519,
+          "token": "0x04002530"
+        },
+        {
+          "id": 174,
+          "name": "Custom24",
+          "fieldIndex": 9520,
+          "token": "0x04002531"
+        },
+        {
+          "id": 175,
+          "name": "Custom25",
+          "fieldIndex": 9521,
+          "token": "0x04002532"
+        },
+        {
+          "id": 176,
+          "name": "Custom26",
+          "fieldIndex": 9522,
+          "token": "0x04002533"
+        },
+        {
+          "id": 177,
+          "name": "Custom27",
+          "fieldIndex": 9523,
+          "token": "0x04002534"
+        },
+        {
+          "id": 178,
+          "name": "Custom28",
+          "fieldIndex": 9524,
+          "token": "0x04002535"
+        },
+        {
+          "id": 179,
+          "name": "Custom29",
+          "fieldIndex": 9525,
+          "token": "0x04002536"
+        },
+        {
+          "id": 180,
+          "name": "Custom30",
+          "fieldIndex": 9526,
+          "token": "0x04002537"
+        },
+        {
+          "id": 181,
+          "name": "Custom31",
+          "fieldIndex": 9527,
+          "token": "0x04002538"
+        },
+        {
+          "id": 182,
+          "name": "Custom32",
+          "fieldIndex": 9528,
+          "token": "0x04002539"
+        },
+        {
+          "id": 183,
+          "name": "Custom33",
+          "fieldIndex": 9529,
+          "token": "0x0400253a"
+        },
+        {
+          "id": 184,
+          "name": "Custom34",
+          "fieldIndex": 9530,
+          "token": "0x0400253b"
+        },
+        {
+          "id": 185,
+          "name": "Custom35",
+          "fieldIndex": 9531,
+          "token": "0x0400253c"
+        },
+        {
+          "id": 186,
+          "name": "Custom36",
+          "fieldIndex": 9532,
+          "token": "0x0400253d"
+        },
+        {
+          "id": 187,
+          "name": "Custom37",
+          "fieldIndex": 9533,
+          "token": "0x0400253e"
+        },
+        {
+          "id": 188,
+          "name": "Custom38",
+          "fieldIndex": 9534,
+          "token": "0x0400253f"
+        },
+        {
+          "id": 189,
+          "name": "Custom39",
+          "fieldIndex": 9535,
+          "token": "0x04002540"
+        },
+        {
+          "id": 190,
+          "name": "Custom40",
+          "fieldIndex": 9536,
+          "token": "0x04002541"
+        },
+        {
+          "id": 191,
+          "name": "Custom41",
+          "fieldIndex": 9537,
+          "token": "0x04002542"
+        },
+        {
+          "id": 192,
+          "name": "Custom42",
+          "fieldIndex": 9538,
+          "token": "0x04002543"
+        },
+        {
+          "id": 193,
+          "name": "Custom43",
+          "fieldIndex": 9539,
+          "token": "0x04002544"
+        },
+        {
+          "id": 194,
+          "name": "Custom44",
+          "fieldIndex": 9540,
+          "token": "0x04002545"
+        },
+        {
+          "id": 195,
+          "name": "Custom45",
+          "fieldIndex": 9541,
+          "token": "0x04002546"
+        },
+        {
+          "id": 196,
+          "name": "Custom46",
+          "fieldIndex": 9542,
+          "token": "0x04002547"
+        },
+        {
+          "id": 197,
+          "name": "Custom47",
+          "fieldIndex": 9543,
+          "token": "0x04002548"
+        },
+        {
+          "id": 198,
+          "name": "Custom48",
+          "fieldIndex": 9544,
+          "token": "0x04002549"
+        },
+        {
+          "id": 199,
+          "name": "Custom49",
+          "fieldIndex": 9545,
+          "token": "0x0400254a"
+        },
+        {
+          "id": 200,
+          "name": "Custom50",
+          "fieldIndex": 9546,
+          "token": "0x0400254b"
+        },
+        {
+          "id": 1000,
+          "name": "HeadLabel",
+          "fieldIndex": 9547,
+          "token": "0x0400254c"
+        }
+      ]
+    }
+  ],
+  "sourceLedger": {
+    "summary": "reports/animestudio/jsondata_current_latest.json",
+    "ledger": "reports/animestudio/jsondata_current_files_latest.jsonl.gz",
+    "family": "LevelScriptData"
+  },
+  "sourceReceipts": [
+    [
+      "LevelScriptData/dung02_rdg009/38100010010.json",
+      "C39BF4A78B8CF0BB18E6E5881CDBF1D8C0D1546FF8E9F68A39B6812E2EDD29F4",
+      2758,
+      2937,
+      "F38C26237665030FB815656B355B62B4F3F6CDE2B89E884AFBAA6A696DFB0B8C"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020013.json",
+      "9B190E95E75E2AF17189D2942119F4B58091593640BA3CB744080CFA0371E21F",
+      365,
+      526,
+      "769A50CCCF4D154FD590AC2F419F8E052224BF625C9548B459B3B9AC38CC49BB"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020013.json",
+      "9B190E95E75E2AF17189D2942119F4B58091593640BA3CB744080CFA0371E21F",
+      1556,
+      1717,
+      "A42FBDAA223938B951808A0DB3C29473CC95D4548FBCF95633DE64C8A1B194CA"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020013.json",
+      "9B190E95E75E2AF17189D2942119F4B58091593640BA3CB744080CFA0371E21F",
+      1947,
+      2124,
+      "64AB9388D7DCD7052DDC98D9141DD83CC7A7E5665035C388F83DAA12067423E3"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020013.json",
+      "9B190E95E75E2AF17189D2942119F4B58091593640BA3CB744080CFA0371E21F",
+      2124,
+      2279,
+      "CAB6E84CE8F21CFF6D78E0E29BBB145F1C52542C9926BC5A6AAE61247ED678DF"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020013.json",
+      "9B190E95E75E2AF17189D2942119F4B58091593640BA3CB744080CFA0371E21F",
+      3126,
+      3285,
+      "BB8E30E0162D00E7BED52EB5C597189C29135050A87FD5396FCF3156AC886F63"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020014.json",
+      "F4EEBFCB22CE1C3D1EB67CBB987A19E33A8513C49FD2BA7EFDCF4AE4FAD10945",
+      248,
+      409,
+      "4F3BDDDE47F0ABA7794B553E5E1A216F12216C43C5A026D9483D9EE1E86A4786"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020014.json",
+      "F4EEBFCB22CE1C3D1EB67CBB987A19E33A8513C49FD2BA7EFDCF4AE4FAD10945",
+      1605,
+      1766,
+      "F5A732E6193C4846EB0FF5ED2CA2F7D84B09E4B17F86CDFA5CFE92C8DDCA9FDC"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020014.json",
+      "F4EEBFCB22CE1C3D1EB67CBB987A19E33A8513C49FD2BA7EFDCF4AE4FAD10945",
+      1999,
+      2176,
+      "9489A8DA740AF658A615CEF16D6AAD73D5F08EE24182844DEA5AE03D50AE6CB6"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020014.json",
+      "F4EEBFCB22CE1C3D1EB67CBB987A19E33A8513C49FD2BA7EFDCF4AE4FAD10945",
+      2176,
+      2331,
+      "67DCB1C6D80BCBC822E69FBB10ED1B53A80469C4538B0457D70B9E0C65F65349"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020014.json",
+      "F4EEBFCB22CE1C3D1EB67CBB987A19E33A8513C49FD2BA7EFDCF4AE4FAD10945",
+      3224,
+      3383,
+      "FEA262D3636AEDC6EC0CC45E58FFB906DB37BE015A069A59121256D03F89BB37"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020015.json",
+      "96F5ABC358E2D306BCF8478BB98045C7644A7EF2FC978FA5943C309E91B2FE97",
+      301,
+      462,
+      "9E14B811D07BD1A6F5A443AB076A76C5E4CEF30B6F1F66AAEE4C307A70D2268D"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020015.json",
+      "96F5ABC358E2D306BCF8478BB98045C7644A7EF2FC978FA5943C309E91B2FE97",
+      1778,
+      1939,
+      "47A357D5082DD60B79507E3E923697130B86156EA6FB0D775F89CDD470CB0FA9"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020015.json",
+      "96F5ABC358E2D306BCF8478BB98045C7644A7EF2FC978FA5943C309E91B2FE97",
+      2174,
+      2351,
+      "7E998429E0DA0ED7D1F32CC60AE249E8F908D6E4E22D315EACBBD6954618089C"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020015.json",
+      "96F5ABC358E2D306BCF8478BB98045C7644A7EF2FC978FA5943C309E91B2FE97",
+      2351,
+      2506,
+      "265D1D400B98F7671E503FD81377B1ED46A5941E3A6D50347BB42B963127F036"
+    ],
+    [
+      "LevelScriptData/indie_dg007/26200020015.json",
+      "96F5ABC358E2D306BCF8478BB98045C7644A7EF2FC978FA5943C309E91B2FE97",
+      3400,
+      3559,
+      "D4F8164F13B37A20859A408C7A21169D32B48350D7CB9CCC0D0C97540C5ACD8E"
+    ],
+    [
+      "LevelScriptData/indie_dg016/46300030010.json",
+      "F1DD15F72975B8692DA47FFDB8AA671F9C2645EE9F702A6F3E56B6C5DA906D1C",
+      51,
+      245,
+      "5BE6DB0C1332617DB16C80FB8864508258112887456BC986D772684AF927ACF0"
+    ],
+    [
+      "LevelScriptData/indie_dg016/46300030010.json",
+      "F1DD15F72975B8692DA47FFDB8AA671F9C2645EE9F702A6F3E56B6C5DA906D1C",
+      245,
+      440,
+      "D0A92EFACCDBA82BAC0646B1B78D5635514E9DAEF49FBCBC3B4DC1C509E41B90"
+    ],
+    [
+      "LevelScriptData/map01_lv005/3400310009.json",
+      "B6CC1F01043C58F50096E8C4123D9E9199C1ABAD241B60FBB67F509D5ACBC31B",
+      520,
+      698,
+      "519EFD985582AFEB4C474F2FF627BD605C2322B9F537A22D1BC323B2B1C54372"
+    ],
+    [
+      "LevelScriptData/map01_lv005/3400310010.json",
+      "ED66F38BA564BCDBB2C2FBD8566A175E88516A6B5E5A1CF5AA0FDD31B4C81A2E",
+      552,
+      730,
+      "5952557E8BBE1A1CAA68A55883EAC6C1D22AEB0D14CBA4FD5E077D2053C03A8C"
+    ],
+    [
+      "LevelScriptData/map01_lv005/3400310011.json",
+      "A649D0AC30BCC437E339C623BCD225F73000F1A1F5EF69145E9692229828A961",
+      521,
+      699,
+      "283F242CAF05B12D74CE7CD00F1779FF4A4DAF466958F01B5854AA6F91BEDB64"
+    ],
+    [
+      "LevelScriptData/map01_lv006/3500240005.json",
+      "1402A0D97195DD682B5153743A096984AA1C6709B12921D6C37D2A2C21F4C78E",
+      599,
+      779,
+      "09F4310A1BDA511A484197B8FD0AF358D6335E3B6BC12749C030B4EA59C85232"
+    ],
+    [
+      "LevelScriptData/map01_lv006/3500240005.json",
+      "1402A0D97195DD682B5153743A096984AA1C6709B12921D6C37D2A2C21F4C78E",
+      779,
+      959,
+      "5781E194D78D072B745CDB631EE3E19D60D4387CDFD2D44707E0B1D39276667A"
+    ],
+    [
+      "LevelScriptData/map01_lv006/3500240022.json",
+      "8E53A451DCE33ABA0E3B03E9FC738B10A90D75F4529F35058558CEC4969A8E3F",
+      70,
+      220,
+      "F9EBF3C362F876BD3ED3A44416BCB0491AA23A4C6BF49836A43292106559997A"
+    ],
+    [
+      "LevelScriptData/map02_lv005/23200050015.json",
+      "68AC938AF25039D058B9F4AA39762A9A90D1584BA25117CA9CC87A4F0B825E0A",
+      1892,
+      2056,
+      "EA03198077B2880DCC1C23805F831EA2A2E6105D1BCF71196F96F9F1BEC8022B"
+    ],
+    [
+      "LevelScriptData/map02_lv005/23200050015.json",
+      "68AC938AF25039D058B9F4AA39762A9A90D1584BA25117CA9CC87A4F0B825E0A",
+      2056,
+      2220,
+      "96A103D19B1808E8B9D248CF1428347D7AE7C9AB8456746096B782818672FD7A"
+    ],
+    [
+      "LevelScriptData/map02_lv005/23200050015.json",
+      "68AC938AF25039D058B9F4AA39762A9A90D1584BA25117CA9CC87A4F0B825E0A",
+      2220,
+      2390,
+      "C257F809D144F97269A7CAEF713A5D0449B825BEAB3AF536EE540E4E7BFDD8BD"
+    ]
+  ]
+}

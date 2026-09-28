@@ -420,6 +420,45 @@ def _decode_levelscript_task_condition(
                 "endfield.levelscript-task-condition-native.v1:"
                 + supplemental_audit["contractSha256"]
             )
+    if identity is None:
+        # These positive taskMap conditions carry their own selected native
+        # reader proof. Import here to keep the primitive readers reusable by
+        # that isolated codec without a module import cycle.
+        from scripts.game_data.codecs.levelscript.taskmap_selected_conditions import (
+            decode_selected_taskmap_condition,
+        )
+
+        selected = decode_selected_taskmap_condition(data, start, limit)
+        if selected is not None:
+            return selected
+        from scripts.game_data.codecs.levelscript.taskmap_followon_conditions import (
+            decode_followon_taskmap_condition,
+        )
+
+        followon = decode_followon_taskmap_condition(data, start, limit)
+        if followon is not None:
+            return followon
+        from scripts.game_data.codecs.levelscript.taskmap_submit_condition import (
+            decode_taskmap_submit_condition,
+        )
+
+        submit = decode_taskmap_submit_condition(data, start, limit)
+        if submit is not None:
+            return submit
+        from scripts.game_data.codecs.levelscript.taskmap_archery_condition import (
+            decode_taskmap_archery_condition,
+        )
+
+        archery = decode_taskmap_archery_condition(data, start, limit)
+        if archery is not None:
+            return archery
+        from scripts.game_data.codecs.levelscript.taskmap_game_inst_duration_condition import (
+            decode_selected_game_inst_duration_condition,
+        )
+
+        game_inst_duration = decode_selected_game_inst_duration_condition(data, start, limit)
+        if game_inst_duration is not None:
+            return game_inst_duration
     if identity is None or identity[1] != member_count:
         return None
     condition_type = identity[0]

@@ -402,6 +402,16 @@ def _decode_npc_runtime_proxy_row(
     }, cursor)
 
 
+def decode_npc_runtime_proxy_at(
+    data: bytes, cursor: int, index: int = 0
+) -> tuple[dict[str, Any], int]:
+    """Read one NPC proxy at an enclosing collection cursor.
+
+    The caller owns the enclosing collection and its later EOF check.
+    """
+    return _decode_npc_runtime_proxy_row(data, cursor, index)
+
+
 def decode_npc_runtime_proxy_row(data: bytes) -> dict[str, Any]:
     """Decode one exact ``NpcRuntimeProxyData`` value through physical EOF."""
     row, cursor = _decode_npc_runtime_proxy_row(data, 0, 0)

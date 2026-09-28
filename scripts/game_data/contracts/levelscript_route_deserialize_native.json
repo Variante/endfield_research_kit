@@ -1,0 +1,297 @@
+{
+  "schema": "endfield.levelscript-route-deserialize-native.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "exact",
+  "nativeInputs": {
+    "metadata": {
+      "sha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+    },
+    "gameAssembly": {
+      "sha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89"
+    }
+  },
+  "interpretation": "For each selected union route, its generated Deserialize checks the recorded member count and calls the recorded read helper then generated setter in the listed order. The byte hash pins the contiguous reader body from entry through its first normal return, including the observed ordered path. This proves serialized read order and does not establish runtime execution or event causality.",
+  "routes": [
+    {
+      "family": "ActionHeader",
+      "tag": 198,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ScriptEvent_OnScriptEndForMemoryPack",
+      "memberCount": 17,
+      "deserializeMethodIndex": 162221,
+      "deserializeRva": 72983792,
+      "normalBodyLength": 907,
+      "normalBodySha256": "73CDBA404144713BF9E699D10A0459B388A74FA19455D54E1B799A0E42B92CF0",
+      "readOrder": [
+        {
+          "name": "dontLogWarning",
+          "declaredType": "bool",
+          "setterMethodIndex": 126158,
+          "readCallRva": 72984075,
+          "readTargetRva": 46827712,
+          "setterCallRva": 72984098,
+          "setterTargetRva": 84405664,
+          "setterName": "set____dontLogWarning__"
+        },
+        {
+          "name": "ID",
+          "declaredType": "int",
+          "setterMethodIndex": 126159,
+          "readCallRva": 72984109,
+          "readTargetRva": 46827184,
+          "setterCallRva": 72984131,
+          "setterTargetRva": 84403284,
+          "setterName": "set____ID__"
+        },
+        {
+          "name": "releaseWhenExecutionFinished",
+          "declaredType": "bool",
+          "setterMethodIndex": 126160,
+          "readCallRva": 72984142,
+          "readTargetRva": 46827712,
+          "setterCallRva": 72984165,
+          "setterTargetRva": 84406140,
+          "setterName": "set____releaseWhenExecutionFinished__"
+        },
+        {
+          "name": "uid",
+          "declaredType": "string",
+          "setterMethodIndex": 126161,
+          "readCallRva": 72984176,
+          "readTargetRva": 46827264,
+          "setterCallRva": 72984199,
+          "setterTargetRva": 52469328,
+          "setterName": "set____uid__"
+        },
+        {
+          "name": "scopeMask",
+          "declaredType": "Beyond.GEnums.ScopeName",
+          "setterMethodIndex": 126162,
+          "readCallRva": 72984217,
+          "readTargetRva": 46827184,
+          "setterCallRva": 72984239,
+          "setterTargetRva": 84410060,
+          "setterName": "set___scopeMask__"
+        },
+        {
+          "name": "useCurrentScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126163,
+          "readCallRva": 72984250,
+          "readTargetRva": 46827712,
+          "setterCallRva": 72984273,
+          "setterTargetRva": 84415136,
+          "setterName": "set___useCurrentScope__"
+        },
+        {
+          "name": "useGraphScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126164,
+          "readCallRva": 72984284,
+          "readTargetRva": 46827712,
+          "setterCallRva": 72984307,
+          "setterTargetRva": 84412588,
+          "setterName": "set___useGraphScope__"
+        },
+        {
+          "name": "filterLevel",
+          "declaredType": "Beyond.Gameplay.Actions.FilterLevel",
+          "setterMethodIndex": 117229,
+          "readCallRva": 72984325,
+          "readTargetRva": 46827184,
+          "setterCallRva": 72984347,
+          "setterTargetRva": 60372448,
+          "setterName": "set____filterLevel__"
+        },
+        {
+          "name": "filterMask",
+          "declaredType": "Beyond.Gameplay.Actions.FilterMask",
+          "setterMethodIndex": 117230,
+          "readCallRva": 72984365,
+          "readTargetRva": 46827184,
+          "setterCallRva": 72984387,
+          "setterTargetRva": 60372688,
+          "setterName": "set____filterMask__"
+        },
+        {
+          "name": "filterMode",
+          "declaredType": "bool",
+          "setterMethodIndex": 117231,
+          "readCallRva": 72984398,
+          "readTargetRva": 46827712,
+          "setterCallRva": 72984421,
+          "setterTargetRva": 60372496,
+          "setterName": "set____filterMode__"
+        },
+        {
+          "name": "nextID",
+          "declaredType": "int",
+          "setterMethodIndex": 117232,
+          "readCallRva": 72984432,
+          "readTargetRva": 46827184,
+          "setterCallRva": 72984454,
+          "setterTargetRva": 60372544,
+          "setterName": "set____nextID__"
+        },
+        {
+          "name": "priority",
+          "declaredType": "int",
+          "setterMethodIndex": 117233,
+          "readCallRva": 72984465,
+          "readTargetRva": 46827184,
+          "setterCallRva": 72984487,
+          "setterTargetRva": 60372592,
+          "setterName": "set____priority__"
+        },
+        {
+          "name": "triggerActiveDuring",
+          "declaredType": "Beyond.Gameplay.Actions.TriggerActiveDuring",
+          "setterMethodIndex": 117234,
+          "readCallRva": 72984505,
+          "readTargetRva": 46827184,
+          "setterCallRva": 72984527,
+          "setterTargetRva": 60372640,
+          "setterName": "set____triggerActiveDuring__"
+        },
+        {
+          "name": "validate",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<bool>",
+          "setterMethodIndex": 117235,
+          "readCallRva": 72984545,
+          "readTargetRva": 47864976,
+          "setterCallRva": 72984568,
+          "setterTargetRva": 60372736,
+          "setterName": "set____validate__"
+        },
+        {
+          "name": "targetScript",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>",
+          "setterMethodIndex": 162368,
+          "readCallRva": 72984586,
+          "readTargetRva": 47864976,
+          "setterCallRva": 72984605,
+          "setterTargetRva": 60372976,
+          "setterName": "set____targetScript__"
+        },
+        {
+          "name": "triggerTarget",
+          "declaredType": "Beyond.Gameplay.Actions.ScriptEventHeader+TriggerTarget",
+          "setterMethodIndex": 162369,
+          "readCallRva": 72984623,
+          "readTargetRva": 46827184,
+          "setterCallRva": 72984641,
+          "setterTargetRva": 60372928,
+          "setterName": "set____triggerTarget__"
+        },
+        {
+          "name": "reasonFilter",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.ScriptEndReason>",
+          "setterMethodIndex": 162218,
+          "readCallRva": 72984659,
+          "readTargetRva": 47864976,
+          "setterCallRva": 72984678,
+          "setterTargetRva": 72984720,
+          "setterName": "set____reasonFilter__"
+        }
+      ]
+    },
+    {
+      "family": "GetterBase",
+      "tag": 998,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyGetterForMemoryPack",
+      "memberCount": 8,
+      "deserializeMethodIndex": 145359,
+      "deserializeRva": 155952436,
+      "normalBodyLength": 548,
+      "normalBodySha256": "F6E6A4DDD98534D71B3580B4B1556E877E5D247B3D3D02DB351F2C588ADE8A54",
+      "readOrder": [
+        {
+          "name": "dontLogWarning",
+          "declaredType": "bool",
+          "setterMethodIndex": 126158,
+          "readCallRva": 155952642,
+          "readTargetRva": 46827712,
+          "setterCallRva": 155952664,
+          "setterTargetRva": 84405664,
+          "setterName": "set____dontLogWarning__"
+        },
+        {
+          "name": "ID",
+          "declaredType": "int",
+          "setterMethodIndex": 126159,
+          "readCallRva": 155952675,
+          "readTargetRva": 46827184,
+          "setterCallRva": 155952697,
+          "setterTargetRva": 84403284,
+          "setterName": "set____ID__"
+        },
+        {
+          "name": "releaseWhenExecutionFinished",
+          "declaredType": "bool",
+          "setterMethodIndex": 126160,
+          "readCallRva": 155952708,
+          "readTargetRva": 46827712,
+          "setterCallRva": 155952730,
+          "setterTargetRva": 84406140,
+          "setterName": "set____releaseWhenExecutionFinished__"
+        },
+        {
+          "name": "uid",
+          "declaredType": "string",
+          "setterMethodIndex": 126161,
+          "readCallRva": 155952741,
+          "readTargetRva": 46827264,
+          "setterCallRva": 155952764,
+          "setterTargetRva": 52469328,
+          "setterName": "set____uid__"
+        },
+        {
+          "name": "scopeMask",
+          "declaredType": "Beyond.GEnums.ScopeName",
+          "setterMethodIndex": 126162,
+          "readCallRva": 155952782,
+          "readTargetRva": 46827184,
+          "setterCallRva": 155952800,
+          "setterTargetRva": 84410060,
+          "setterName": "set___scopeMask__"
+        },
+        {
+          "name": "useCurrentScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126163,
+          "readCallRva": 155952811,
+          "readTargetRva": 46827712,
+          "setterCallRva": 155952829,
+          "setterTargetRva": 84415136,
+          "setterName": "set___useCurrentScope__"
+        },
+        {
+          "name": "useGraphScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126164,
+          "readCallRva": 155952840,
+          "readTargetRva": 46827712,
+          "setterCallRva": 155952858,
+          "setterTargetRva": 84412588,
+          "setterName": "set___useGraphScope__"
+        },
+        {
+          "name": "targetProxy",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<string>",
+          "setterMethodIndex": 145356,
+          "readCallRva": 155952876,
+          "readTargetRva": 47864976,
+          "setterCallRva": 155952895,
+          "setterTargetRva": 155953408,
+          "setterName": "set____targetProxy__"
+        }
+      ]
+    }
+  ],
+  "enumUnderlying": [
+    {
+      "typeDefinition": 12002,
+      "typeName": "Beyond.Gameplay.Core.ScriptEndReason",
+      "underlyingType": "int"
+    }
+  ]
+}

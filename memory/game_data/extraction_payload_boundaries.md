@@ -720,8 +720,10 @@ made reordering `RunePuzzleData` wrong makes reversing `PosRot` right: the
 generated formatter's member order is the wire order, and the declaration's is
 not.
 
-**LevelScriptData now frames 5,030 of 5,030.** Every JsonData family is at
-100%.
+The earlier selected LevelScriptData set reached EOF under that declaration
+reader. The current reviewed family registry still preserves partial
+LevelScriptData rows; the prior EOF count cannot promote them to a complete
+named schema on the refreshed input set.
 
 **NavMesh is closed, and what it was is worth keeping.** All twelve files
 decode to EOF with every field named, at the reviewed tier as well as the

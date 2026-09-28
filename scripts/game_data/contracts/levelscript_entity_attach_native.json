@@ -1,0 +1,244 @@
+{
+  "schema": "endfield.levelscript-route-deserialize-native.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "exact",
+  "nativeInputs": {
+    "metadata": {
+      "sha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+    },
+    "gameAssembly": {
+      "sha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89"
+    }
+  },
+  "interpretation": "Selected union branches resolve the generated wrappers. Each generated Deserialize body checks its member count and calls read helpers and setters in the listed order. Source-authenticated cursors consume these records exactly; stored fields do not establish runtime effects.",
+  "routes": [
+    {
+      "family": "ActionBase",
+      "tag": 151,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityAttachToParentForMemoryPack",
+      "memberCount": 14,
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "child",
+          "Param<EntityPtr>"
+        ],
+        [
+          "followNodeName",
+          "Param<string>"
+        ],
+        [
+          "localPos",
+          "Param<Vector3>"
+        ],
+        [
+          "localRot",
+          "Param<Vector3>"
+        ],
+        [
+          "npcOffsetUseParam",
+          "Param<bool>"
+        ],
+        [
+          "parent",
+          "Param<EntityPtr>"
+        ]
+      ],
+      "nativeIdentity": {
+        "dispatcherVa": "0x18292a2b0",
+        "switchTableVa": "0x182994114",
+        "switchTargetVa": "0x1829366dc",
+        "branchBodyVa": "0x1829432c5",
+        "usageCellVa": "0x18d05b4c0",
+        "registeredTypeIndex": 103281,
+        "typeDefinition": 18909,
+        "branchCodeHex": "488b84245050010048898424b0700000488b8424b0700000488b0048898424b8700000488b15d181710a488b8c24b8700000e824056cfd4885c07504eb5eeb5c488b84244850010048898424d0700000488b84245050010048898424c0700000",
+        "usageRawHex": "e326032000000000"
+      },
+      "sourceEvidence": {
+        "source": "LevelScriptData/map02_lv003/23300000035.json",
+        "sha256": "380CA20289AA871922E19DC92019DCBB2CD50A56C98D112C1F193BD1C2F4B863",
+        "unionOffset": 125,
+        "endOffset": 288,
+        "wholeFileStatus": "complete:named_exact"
+      },
+      "deserializeMethodIndex": 139721,
+      "deserializeRva": 70026576,
+      "normalBodyLength": 676,
+      "normalBodySha256": "A349CADE4D84675300004AE31D5729AD9581713EE87EAAEA8554DC2AC5C6E7B8",
+      "readOrder": [
+        {
+          "name": "dontLogWarning",
+          "declaredType": "bool",
+          "setterMethodIndex": 126158,
+          "readCallRva": 70026720,
+          "readTargetRva": 46827712,
+          "setterCallRva": 70026743,
+          "setterTargetRva": 84405664,
+          "setterName": "set____dontLogWarning__"
+        },
+        {
+          "name": "ID",
+          "declaredType": "int",
+          "setterMethodIndex": 126159,
+          "readCallRva": 70026754,
+          "readTargetRva": 46827184,
+          "setterCallRva": 70026776,
+          "setterTargetRva": 84403284,
+          "setterName": "set____ID__"
+        },
+        {
+          "name": "releaseWhenExecutionFinished",
+          "declaredType": "bool",
+          "setterMethodIndex": 126160,
+          "readCallRva": 70026787,
+          "readTargetRva": 46827712,
+          "setterCallRva": 70026810,
+          "setterTargetRva": 84406140,
+          "setterName": "set____releaseWhenExecutionFinished__"
+        },
+        {
+          "name": "uid",
+          "declaredType": "string",
+          "setterMethodIndex": 126161,
+          "readCallRva": 70026821,
+          "readTargetRva": 46827264,
+          "setterCallRva": 70026844,
+          "setterTargetRva": 52469328,
+          "setterName": "set____uid__"
+        },
+        {
+          "name": "scopeMask",
+          "declaredType": "Beyond.GEnums.ScopeName",
+          "setterMethodIndex": 126162,
+          "readCallRva": 70026862,
+          "readTargetRva": 46827184,
+          "setterCallRva": 70026884,
+          "setterTargetRva": 84410060,
+          "setterName": "set___scopeMask__"
+        },
+        {
+          "name": "useCurrentScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126163,
+          "readCallRva": 70026895,
+          "readTargetRva": 46827712,
+          "setterCallRva": 70026918,
+          "setterTargetRva": 84415136,
+          "setterName": "set___useCurrentScope__"
+        },
+        {
+          "name": "useGraphScope",
+          "declaredType": "bool",
+          "setterMethodIndex": 126164,
+          "readCallRva": 70026929,
+          "readTargetRva": 46827712,
+          "setterCallRva": 70026952,
+          "setterTargetRva": 84412588,
+          "setterName": "set___useGraphScope__"
+        },
+        {
+          "name": "nextID",
+          "declaredType": "int",
+          "setterMethodIndex": 117182,
+          "readCallRva": 70026963,
+          "readTargetRva": 46827184,
+          "setterCallRva": 70026985,
+          "setterTargetRva": 60378112,
+          "setterName": "set____nextID__"
+        },
+        {
+          "name": "child",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>",
+          "setterMethodIndex": 139713,
+          "readCallRva": 70027003,
+          "readTargetRva": 47864976,
+          "setterCallRva": 70027026,
+          "setterTargetRva": 70027376,
+          "setterName": "set____child__"
+        },
+        {
+          "name": "followNodeName",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<string>",
+          "setterMethodIndex": 139714,
+          "readCallRva": 70027044,
+          "readTargetRva": 47864976,
+          "setterCallRva": 70027067,
+          "setterTargetRva": 70027440,
+          "setterName": "set____followNodeName__"
+        },
+        {
+          "name": "localPos",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<UnityEngine.Vector3>",
+          "setterMethodIndex": 139715,
+          "readCallRva": 70027085,
+          "readTargetRva": 47864976,
+          "setterCallRva": 70027108,
+          "setterTargetRva": 70027504,
+          "setterName": "set____localPos__"
+        },
+        {
+          "name": "localRot",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<UnityEngine.Vector3>",
+          "setterMethodIndex": 139716,
+          "readCallRva": 70027126,
+          "readTargetRva": 47864976,
+          "setterCallRva": 70027149,
+          "setterTargetRva": 70027568,
+          "setterName": "set____localRot__"
+        },
+        {
+          "name": "npcOffsetUseParam",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<bool>",
+          "setterMethodIndex": 139717,
+          "readCallRva": 70027167,
+          "readTargetRva": 47864976,
+          "setterCallRva": 70027190,
+          "setterTargetRva": 70027632,
+          "setterName": "set____npcOffsetUseParam__"
+        },
+        {
+          "name": "parent",
+          "declaredType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>",
+          "setterMethodIndex": 139718,
+          "readCallRva": 70027208,
+          "readTargetRva": 47864976,
+          "setterCallRva": 70027231,
+          "setterTargetRva": 70027696,
+          "setterName": "set____parent__"
+        }
+      ]
+    }
+  ]
+}
