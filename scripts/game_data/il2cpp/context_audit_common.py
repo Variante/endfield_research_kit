@@ -1,11 +1,15 @@
 """Shared gate, hashing and sweep helpers for the IL2CPP context audit.
 
 Moved verbatim out of ``context_audit``; that module owns the audit
-contract and the report it assembles.
+contract and the report it assembles.  The selected build (``nativeInputs``),
+its reviewed code windows and every other build-locked value the audit checks
+(``pins``) are read here from ``contracts/il2cpp_context_audit_native.json``;
+:func:`native_gate` fails closed unless the installed client is that build.
 """
 from __future__ import annotations
 
 import hashlib
+import re
 from pathlib import Path
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
@@ -19,9 +23,10 @@ ROOT = REPO_ROOT
 # The selected build and its reviewed code windows are declarations, not
 # algorithm, so they live in a reviewed contract beside the other native contracts.
 NATIVE_CONTRACT_PATH = CONTRACTS_DIR / 'il2cpp_context_audit_native.json'
+NATIVE_CONTRACT_SCHEMA = 'endfield.il2cpp-context-audit-native-contract.v3'
 NATIVE_CONTRACT, _NATIVE_CONTRACT_DIGEST = read_reviewed_contract(
     NATIVE_CONTRACT_PATH,
-    schema='endfield.il2cpp-context-audit-native-contract.v2',
+    schema=NATIVE_CONTRACT_SCHEMA,
     label='il2cpp-context-audit',
     status='exact-current-build',
 )
@@ -33,6 +38,29 @@ CONSUMER_WINDOWS = tuple(
     (int(begin, 16), int(end, 16), digest)
     for begin, end, digest in NATIVE_CONTRACT['consumerWindows']
 )
+_HEX_PIN = re.compile(r'0x[0-9A-Fa-f]+')
+
+
+def decode_pins(value, path='pins'):
+    """Return ``value`` with every ``0x``-prefixed string read as an integer.
+
+    The contract spells RVAs, VAs and tokens as hex strings and everything
+    else (indices, counts, byte patterns, names) as-is.  A ``0x`` string that
+    is not hex is a malformed contract, not a name.
+    """
+    if isinstance(value, dict):
+        return {key: decode_pins(item, f'{path}.{key}') for key, item in value.items()}
+    if isinstance(value, list):
+        return [decode_pins(item, f'{path}[{index}]') for index, item in enumerate(value)]
+    if isinstance(value, str) and value.startswith('0x'):
+        if _HEX_PIN.fullmatch(value) is None:
+            raise ValueError(f'il2cpp-context-audit.contract:{path}={value!r}')
+        return int(value, 16)
+    return value
+
+
+# Build-locked values the audit checks and reports; see the contract's notes.
+AUDIT_PINS = decode_pins(NATIVE_CONTRACT['pins'])
 
 
 def sha(path):
@@ -47,7 +75,11 @@ def require(actual, expected, source, offset=0):
 
 def native_gate():
     gate = check_installed_native_inputs(GA_SHA, MD_SHA)
-    require(gate.status, 'validated', 'selected native inputs: ' + gate.detail)
+    require(gate.status, 'validated',
+            f'selected native inputs ({NATIVE_CONTRACT_PATH.name} nativeInputs): {gate.detail}; '
+            'its pins describe only that build, so select the pinned client '
+            '(ENDFIELD_GAME_ROOT or endfield_paths.bat) or regenerate the contract '
+            'against the installed build')
     return gate
 
 

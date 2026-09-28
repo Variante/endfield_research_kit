@@ -50,6 +50,18 @@ candidate independently of this audit.
 Redirect stdout to ``reports/animestudio/il2cpp_context_current_latest.json``;
 that is the default native-context input of ``memorypack.buff_1b_corpus``,
 ``memorypack.skill_timeline_cursor`` and ``memorypack.skill_cursor_receipt``.
+
+Pinned values.  The selected build and every build-locked value this module
+checks or reports -- registration VAs, RIP-relative reference RVAs, MethodSpec,
+generic-instantiation, type and method indices, RGCTX ranges, reviewed
+instruction bytes, and the list-formatter and UnityPlayer code windows -- live
+in ``contracts/il2cpp_context_audit_native.json`` (``nativeInputs``,
+``consumerWindows`` and ``pins``), loaded through ``context_audit_common``.
+Type and method names, IL2CPP structure offsets and element-type tags stay in
+code because a client update does not change them.  The audit starts with
+``native_gate``, which fails closed unless the installed client is the pinned
+build.  The ``context_audit_memorypack``/``_skilldata``/``_vfs`` stage modules
+still carry their own reviewed addresses.
 """
 from __future__ import annotations
 
@@ -70,7 +82,7 @@ from scripts.game_data.il2cpp.context import type_parameter_owner, rgctx_range_e
 from scripts.game_data.il2cpp.context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.protocol import load_metadata_helper, load_native_mapper
-from scripts.game_data.il2cpp.context_audit_common import CONSUMER_WINDOWS, CORPUS_REPORT_RELATIVE, GA_SHA, MD_SHA, NATIVE_CONTRACT_PATH, ROOT, UNITY_SHA, native_gate, require, sha, sweep, validate_selected_method_spec
+from scripts.game_data.il2cpp.context_audit_common import AUDIT_PINS, CONSUMER_WINDOWS, CORPUS_REPORT_RELATIVE, GA_SHA, MD_SHA, NATIVE_CONTRACT_PATH, ROOT, UNITY_SHA, native_gate, require, sha, sweep, validate_selected_method_spec
 from scripts.game_data.il2cpp.context_audit_memorypack import adapter_conversion_context, buff_action_read_order, buff_ifelse_forwarding, buff_ifelse_read_order, buff_sequence_read_order, buff_tag76_read_order, buff_union_routes, element_provider_state_flow, list_element_dispatch, list_element_null_probe, list_element_shared_context, list_element_value_flow, list_formatter_candidate, module_methods, nested_reader_context, reader_construction, reader_cursor_consumers, resource_carrier_consumers, serializer_return_consumers, skill_resource_context, wrapper_consumer
 from scripts.game_data.il2cpp.context_audit_skilldata import select_skilldata_terminal_branch_samples, skilldata_action_readers_from_locals, skilldata_action_union_c9_prefix_reader_evidence, skilldata_actiongroup_branch_sample_witness, skilldata_actiongroup_branch_static_alignment, skilldata_actiongroup_c9_nested_sequence_candidate_replay, skilldata_nested_branch_static_alignment, skilldata_positive_branch_reader_replay, skilldata_static_reader_order, skilldata_terminal_branch_sample_witness
 from scripts.game_data.il2cpp.context_audit_vfs import file_stream_open, native_file_read, resolver_key_comparison, resolver_prefix_query, stream_carrier_consumer, stream_source_identity, unity_conversion_exports, unity_loader_conversion, unity_loader_input, unity_module_lookup, unity_path_return, unity_registration_forwarder, unity_registration_pair, vfs_block_cursor, vfs_block_file_source, vfs_block_transform, vfs_bytebuf_consumer, vfs_descriptor_path, vfs_descriptor_producer, vfs_format_item, vfs_path_carrier, vfs_path_format_context, vfs_path_literals, vfs_root_resolver, vfs_stream_consumer, vfs_stream_identity, vfs_string_carrier
@@ -85,6 +97,12 @@ from scripts.game_data.il2cpp.context_audit_skilldata import (
     skilldata_timeline_branch_sample_witness,
     skilldata_timeline_branch_static_alignment,
 )
+
+
+def require_code_bytes(pe, rva, hex_bytes, source):
+    """Require the reviewed instruction bytes recorded for ``rva``."""
+    expected = bytes.fromhex(hex_bytes)
+    require(pe.bytes_at_va(pe.image_base+rva, len(expected)), expected, source, rva)
 
 
 def audit():
@@ -379,8 +397,10 @@ def audit():
     md = catalog.Metadata(gate.metadata)
     require(hashlib.sha256(pe.buf).hexdigest().upper(), GA_SHA, gate.gameassembly)
     require(hashlib.sha256(md.buf).hexdigest().upper(), MD_SHA, gate.metadata)
+    pins = AUDIT_PINS
+    registration_pins = pins['registration']
     candidates = mapper.find_code_registration_candidates(pe, {md.string(x.name_index) for x in md.images})
-    require(candidates, [0x18A88E640], gate.gameassembly)
+    require(candidates, [registration_pins['codeRegistrationVa']], gate.gameassembly)
     image_owners = type_image_owners(md.buf, len(md.types), source=str(gate.metadata))
     require(pe.u32_at_va(candidates[0]+0x68), len(md.images), gate.gameassembly, candidates[0]+0x68)
     module_pointers = pe.bytes_at_va(pe.u64_at_va(candidates[0]+0x70), len(md.images)*8)
@@ -408,18 +428,17 @@ def audit():
                                 'success':entry_count,'failed':0,'unsupported':0,
                                 'sha256':hashlib.sha256(entry_bytes).hexdigest().upper()})
     registration = mapper.find_metadata_registration(pe, candidates[0])
-    require(registration, 0x18A88E860, gate.gameassembly)
+    require(registration, registration_pins['metadataRegistrationVa'], gate.gameassembly)
     for begin, end, expected in CONSUMER_WINDOWS:
         require(hashlib.sha256(pe.bytes_at_va(pe.image_base + begin, end-begin)).hexdigest().upper(),
                 expected, gate.gameassembly, begin)
-    for rva, prefix, expected in (
-        (0x15E4C, '488D0D', candidates[0]),
-        (0x15E68, '48890D', pe.image_base+0xDEB09B8),
-        (0x12F74, '4C8B15', pe.image_base+0xDEB09B8),
-        (0x2C7555, '4C8B1D', pe.image_base+0xDEB09B8),
-        (0x37DEADB, '488D0D', pe.image_base+0xCFF4E48),
-        (0x37DE8E9, '488B15', pe.image_base+0xCFF4E48),
-    ):
+    rip_targets = {
+        'codeRegistration': candidates[0],
+        'codeRegistrationGlobal': pe.image_base+registration_pins['codeRegistrationGlobalRva'],
+        'usageCell': pe.image_base+pins['selectedUsageCell']['rva'],
+    }
+    for rva, prefix, target in registration_pins['ripReferences']:
+        expected = rip_targets[target]
         instruction = pe.bytes_at_va(pe.image_base+rva, 7)
         require(instruction[:3].hex().upper(), prefix, gate.gameassembly, rva)
         require(pe.image_base+rva+7+struct.unpack_from('<i', instruction, 3)[0], expected,
@@ -429,38 +448,45 @@ def audit():
                                      reg['genericInstsCount'], source=str(gate.gameassembly))
     summary, rows, failures = sweep(table)
     # Explicit raw MethodSpec -> pointer-table join, not an observed invocation.
-    spec_index = 516756
+    spec_pins = pins['selectedMethodSpec']
+    spec_index = spec_pins['index']
     if not 0 <= spec_index < reg['methodSpecsCount']:
         raise ContextError(str(gate.gameassembly), registration, 'bounded MethodSpec index', spec_index)
     spec_va = int(reg['methodSpecs'], 16) + spec_index * 12
     raw = pe.bytes_at_va(spec_va, 12)
     definition, class_inst, method_inst = struct.unpack('<iii', raw)
-    require((definition, class_inst, method_inst), (428394, -1, 41928), gate.gameassembly, spec_va)
+    require((definition, class_inst, method_inst), tuple(spec_pins['record']), gate.gameassembly, spec_va)
     selected = table.resolve(method_inst)
     require(len(selected.arguments), 1, gate.gameassembly, selected.record_va)
     type_raw = bytes.fromhex(selected.arguments[0].raw_type_record_hex)
     require(type_raw[10], 0x1E, gate.gameassembly, selected.arguments[0].type_pointer_va)
     owner = method_parameter_owner(md.buf, struct.unpack_from('<Q', type_raw)[0],
                                    [m.generic_container_index for m in md.methods], source=str(gate.metadata))
-    require(owner['methodIndex'], 428464, gate.metadata, owner['containerOffset'])
+    require(owner['methodIndex'], spec_pins['openMethodParameterOwner'], gate.metadata, owner['containerOffset'])
     selected_method_spec={'index':spec_index,'va':spec_va,'rawHex':raw.hex().upper(),
                           'definition':definition,'methodInstantiation':selected.as_dict(),
                           'openMethodParameterOwner':owner}
-    usage_va = pe.image_base+0xCFF4E48
+    usage_pins = pins['selectedUsageCell']
+    usage_va = pe.image_base+usage_pins['rva']
     usage_raw = pe.bytes_at_va(usage_va, 8)
     call_index = method_spec_usage_index(usage_raw, reg['methodSpecsCount'],
                                          source=str(gate.gameassembly), offset=usage_va)
-    require(call_index, 619889, gate.gameassembly, usage_va)
-    # Tag 6 selects table index 5. The pinned branch forwards the original
-    # encoding to 2D8D10, whose tag-6 path uses MethodSpec -> triple -> 8D20.
-    require(pe.u32_at_va(pe.image_base+0x4138C+5*4), 0x412AC,
-            gate.gameassembly, 0x4138C+5*4)
+    require(call_index, usage_pins['methodSpecIndex'], gate.gameassembly, usage_va)
+    # Usage tag 6 selects one entry of the lazy resolver's switch table. The
+    # pinned branch forwards the original encoding to the tag-6 path, which
+    # resolves MethodSpec -> triple -> method-pointer lookup.
+    resolver_pins = usage_pins['resolverSwitch']
+    resolver_entry = resolver_pins['tableRva']+resolver_pins['index']*4
+    require(pe.u32_at_va(pe.image_base+resolver_entry), resolver_pins['targetRva'],
+            gate.gameassembly, resolver_entry)
     if not 0 <= call_index < reg['methodSpecsCount']:
         raise ContextError(str(gate.gameassembly), registration, 'bounded call MethodSpec index', call_index)
     call_va = int(reg['methodSpecs'], 16) + call_index * 12
     call_raw = pe.bytes_at_va(call_va, 12)
     call_definition, call_class, call_method = struct.unpack('<iii', call_raw)
-    require((call_definition, call_class, call_method), (owner['methodIndex'], -1, 14693),
+    call_pins = pins['selectedCallMethodSpec']
+    require((call_definition, call_class, call_method),
+            (owner['methodIndex'], -1, call_pins['methodInstantiation']),
             gate.gameassembly, call_va)
     call_inst = table.resolve(call_method)
     ordinal = owner['ordinal']
@@ -468,20 +494,23 @@ def audit():
         raise ContextError(str(gate.gameassembly), call_inst.record_va,
                            'ordinal within selected call instantiation', ordinal)
     argument = call_inst.arguments[ordinal]
-    require(argument.raw_type_record_hex, 'B02D0000000000000000120000000000',
+    require(argument.raw_type_record_hex, call_pins['selectedRawArgument'],
             gate.gameassembly, argument.type_pointer_va)
+    formatter_pins = pins['selectedFormatterTypeCarrier']
+    range_count, entry_count = formatter_pins['rgctxRangeCount'], formatter_pins['rgctxEntryCount']
     module = modules['MemoryPack.dll']
-    require(pe.u32_at_va(module+0x40), 120, gate.gameassembly, module+0x40)
-    require(pe.u32_at_va(module+0x50), 691, gate.gameassembly, module+0x50)
+    require(pe.u32_at_va(module+0x40), range_count, gate.gameassembly, module+0x40)
+    require(pe.u32_at_va(module+0x50), entry_count, gate.gameassembly, module+0x50)
     ranges_va = pe.u64_at_va(module+0x48)
-    start, count = select_rgctx_range(pe.bytes_at_va(ranges_va,120*12),691,0x06000075,
+    start, count = select_rgctx_range(pe.bytes_at_va(ranges_va,range_count*12),entry_count,
+                                      formatter_pins['methodToken'],
                                       source=str(gate.gameassembly),offset=ranges_va)
-    require((start,count),(40,3),gate.gameassembly,ranges_va)
-    entry_va = pe.u64_at_va(module+0x58)+(start+1)*16
+    require((start,count),tuple(formatter_pins['rgctxRange']),gate.gameassembly,ranges_va)
+    entry_va = pe.u64_at_va(module+0x58)+(start+formatter_pins['relativeEntry'])*16
     entry_raw = pe.bytes_at_va(entry_va,16)
     require(struct.unpack_from('<I',entry_raw)[0],2,gate.gameassembly,entry_va)
     type_index = pe.u32_at_va(struct.unpack_from('<Q',entry_raw,8)[0])
-    require(type_index,211958,gate.gameassembly,entry_va)
+    require(type_index,formatter_pins['typeIndex'],gate.gameassembly,entry_va)
     require(type_index<reg['typesCount'],True,gate.gameassembly,entry_va)
     type_pointer = pe.u64_at_va(int(reg['types'],16)+type_index*8)
     formatter_type_raw = pe.bytes_at_va(type_pointer,16)
@@ -491,16 +520,21 @@ def audit():
                                              type_pointer=type_pointer,type_count=len(md.types),source=str(gate.gameassembly))
     formatter_inst = table.resolve_pointer(formatter_carrier['classInstantiationPointerVa'])
     require(formatter_inst.index, selected.index, gate.gameassembly,formatter_inst.record_va)
-    require(formatter_carrier['baseDefinitionIndex'],54005,gate.metadata)
-    require(md.type_full_name(md.types[54005]),'MemoryPack.MemoryPackFormatter`1',gate.metadata)
-    require(pe.u32_at_va(pe.image_base+0x9850+(0x15-0xF)*4),0x979D,gate.gameassembly,0x9850)
+    formatter_definition = formatter_pins['baseDefinitionIndex']
+    require(formatter_carrier['baseDefinitionIndex'],formatter_definition,gate.metadata)
+    require(md.type_full_name(md.types[formatter_definition]),'MemoryPack.MemoryPackFormatter`1',gate.metadata)
+    # One switch over Il2CppType tags; its GENERICINST (0x15) and VAR (0x13)
+    # entries are checked where each carrier kind is joined.
+    tag_switch = pins['typeTagSwitch']
+    tag_targets = dict(tag_switch['targets'])
+    require(pe.u32_at_va(pe.image_base+tag_switch['tableRva']+(0x15-tag_switch['firstTag'])*4),
+            tag_targets[0x15],gate.gameassembly,tag_switch['tableRva'])
     # Static immediate-registration site: identity joins only, not live state.
+    adapter_pins = pins['selectedImmediateAdapter']
     adapter_cells = []
-    for rva, opcode, tag, expected_index in (
-            (0x2B00F2B, '488B0D', 1, 205127),
-            (0x2B00F4C, '488B15', 6, 559804),
-            (0x2B00F60, '488B05', 2, 120613),
-            (0xB2830, '488B15', 6, 559804)):
+    cell_roles = {}
+    for rva, opcode, tag, expected_index, role in adapter_pins['cells']:
+        cell_roles.setdefault(role, []).append(len(adapter_cells))
         instruction = pe.bytes_at_va(pe.image_base+rva, 7)
         require(instruction[:3], bytes.fromhex(opcode), gate.gameassembly, rva)
         cell = rip_qword_load_target(instruction,pe.image_base+rva,source=str(gate.gameassembly))
@@ -510,47 +544,58 @@ def audit():
         require(index, expected_index, gate.gameassembly, cell)
         adapter_cells.append({'instructionRva':rva, 'instructionHex':instruction.hex().upper(),
                               'cellVa':cell, 'rawHex':cell_raw.hex().upper(), 'tag':tag, 'index':index})
-    require(adapter_cells[1]['cellVa'], adapter_cells[3]['cellVa'], gate.gameassembly)
-    adapter_pointer = pe.u64_at_va(int(reg['types'],16)+205127*8)
+    # Both constructor loads must read one cell; each role names one index.
+    constructor_rows = cell_roles.get('constructor', [])
+    require(len(constructor_rows), 2, NATIVE_CONTRACT_PATH)
+    require(adapter_cells[constructor_rows[0]]['cellVa'], adapter_cells[constructor_rows[1]]['cellVa'],
+            gate.gameassembly)
+    require(sorted(cell_roles), ['adapterType', 'constructor', 'keyType'], NATIVE_CONTRACT_PATH)
+    adapter_type_index = adapter_cells[cell_roles['adapterType'][0]]['index']
+    key_type_index = adapter_cells[cell_roles['keyType'][0]]['index']
+    constructor_spec_index = adapter_cells[constructor_rows[0]]['index']
+    adapter_pointer = pe.u64_at_va(int(reg['types'],16)+adapter_type_index*8)
     adapter_raw = pe.bytes_at_va(adapter_pointer,16)
     adapter_carrier_raw = pe.bytes_at_va(struct.unpack_from('<Q',adapter_raw)[0],32)
     adapter_base_raw = pe.bytes_at_va(struct.unpack_from('<Q',adapter_carrier_raw)[0],16)
     adapter = generic_type_carrier(adapter_raw,adapter_carrier_raw,adapter_base_raw,
                                    type_pointer=adapter_pointer,type_count=len(md.types),source=str(gate.gameassembly))
-    require(adapter['baseDefinitionIndex'],13633,gate.metadata)
-    require(md.type_full_name(md.types[13633]),'Beyond.MemoryPack.GenericMemoryPackFormatter`2',gate.metadata)
+    adapter_definition = adapter_pins['baseDefinitionIndex']
+    require(adapter['baseDefinitionIndex'],adapter_definition,gate.metadata)
+    require(md.type_full_name(md.types[adapter_definition]),'Beyond.MemoryPack.GenericMemoryPackFormatter`2',gate.metadata)
     adapter_inst = table.resolve_pointer(adapter['classInstantiationPointerVa'])
-    require(adapter_inst.index,38555,gate.gameassembly)
+    require(adapter_inst.index,adapter_pins['classInstantiation'],gate.gameassembly)
     require(len(adapter_inst.arguments),2,gate.gameassembly)
     adapter_module=modules['MemoryPack.Beyond.dll']
-    require(image_owners[13633],1,gate.metadata)
-    require(md.types[13633].token,0x0200000B,gate.metadata)
-    require(pe.u32_at_va(adapter_module+0x40),5,gate.gameassembly,adapter_module+0x40)
+    require(image_owners[adapter_definition],adapter_pins['imageIndex'],gate.metadata)
+    require(md.types[adapter_definition].token,adapter_pins['token'],gate.metadata)
+    adapter_range_count=adapter_pins['rgctxRangeCount']
+    require(pe.u32_at_va(adapter_module+0x40),adapter_range_count,gate.gameassembly,adapter_module+0x40)
     adapter_ranges=pe.u64_at_va(adapter_module+0x48)
     adapter_entry_base,adapter_entry_bytes=module_rgctx_bytes['MemoryPack.Beyond.dll']
-    adapter_start,adapter_count=select_rgctx_range(pe.bytes_at_va(adapter_ranges,5*12),len(adapter_entry_bytes)//16,
-                                                   md.types[13633].token,source=str(gate.gameassembly),offset=adapter_ranges)
-    require((adapter_start,adapter_count),(4,13),gate.gameassembly,adapter_ranges)
+    adapter_start,adapter_count=select_rgctx_range(pe.bytes_at_va(adapter_ranges,adapter_range_count*12),len(adapter_entry_bytes)//16,
+                                                   md.types[adapter_definition].token,source=str(gate.gameassembly),offset=adapter_ranges)
+    require((adapter_start,adapter_count),tuple(adapter_pins['rgctxRange']),gate.gameassembly,adapter_ranges)
     adapter_entries=rgctx_range_entries(adapter_entry_bytes,adapter_start,adapter_count,
                                         source=str(gate.gameassembly),offset=adapter_entry_base)
     adapter_conversion=adapter_conversion_context(pe,md,reg,table,adapter_entries,source=str(gate.gameassembly))
-    type_slot=adapter_entries[10]
-    require(pe.bytes_at_va(pe.image_base+0x2DA8E66,15),bytes.fromhex('488B4320488B98C0000000488B5B50'),
-            gate.gameassembly,0x2DA8E66)
+    slot_pins=pins['selectedAdapterClassSlot']
+    type_slot=adapter_entries[slot_pins['relativeIndex']]
+    require_code_bytes(pe,slot_pins['consumerRva'],slot_pins['consumerHex'],gate.gameassembly)
     require(type_slot['kindRaw'],1,gate.gameassembly,type_slot['entryVa'])
     slot_type_index=pe.u32_at_va(type_slot['dataPointerVa'])
-    require(slot_type_index,10486,gate.gameassembly,type_slot['dataPointerVa'])
+    require(slot_type_index,slot_pins['typeIndex'],gate.gameassembly,type_slot['dataPointerVa'])
     require(slot_type_index<reg['typesCount'],True,gate.gameassembly,type_slot['dataPointerVa'])
     slot_type_pointer=pe.u64_at_va(int(reg['types'],16)+slot_type_index*8)
     slot_type_raw=pe.bytes_at_va(slot_type_pointer,16)
     require(slot_type_raw[10],0x13,gate.gameassembly,slot_type_pointer+10)
     slot_owner=type_parameter_owner(md.buf,struct.unpack_from('<Q',slot_type_raw)[0],
                                     [t.generic_container_index for t in md.types],source=str(gate.metadata))
-    require((slot_owner['typeIndex'],slot_owner['ordinal']),(13633,1),gate.metadata,slot_owner['containerOffset'])
-    require(pe.u32_at_va(pe.image_base+0x9850+(0x13-0x0F)*4),0x9669,gate.gameassembly,0x9850)
+    require((slot_owner['typeIndex'],slot_owner['ordinal']),(adapter_definition,1),gate.metadata,slot_owner['containerOffset'])
+    require(pe.u32_at_va(pe.image_base+tag_switch['tableRva']+(0x13-tag_switch['firstTag'])*4),
+            tag_targets[0x13],gate.gameassembly,tag_switch['tableRva'])
     slot_argument=adapter_inst.arguments[slot_owner['ordinal']]
     nested_slots=[]
-    for relative,expected_definition in ((3,102198),(4,428394),(11,277939)):
+    for relative,expected_definition in pins['selectedNestedAdapterSlots']:
         entry=adapter_entries[relative]
         require(entry['kindRaw'],3,gate.gameassembly,entry['entryVa'])
         index=pe.u32_at_va(entry['dataPointerVa'])
@@ -569,7 +614,7 @@ def audit():
                 require(raw[10],0x13,gate.gameassembly,arg.type_pointer_va+10)
                 owner=type_parameter_owner(md.buf,struct.unpack_from('<Q',raw)[0],
                                             [t.generic_container_index for t in md.types],source=str(gate.metadata))
-                require(owner['typeIndex'],13633,gate.metadata,owner['containerOffset'])
+                require(owner['typeIndex'],adapter_definition,gate.metadata,owner['containerOffset'])
                 require(owner['ordinal']<len(adapter_inst.arguments),True,gate.metadata,owner['parameterOffset'])
                 concrete=adapter_inst.arguments[owner['ordinal']]
                 arguments.append({'rawHex':arg.raw_type_record_hex,'owner':owner,
@@ -578,46 +623,57 @@ def audit():
         nested_slots.append({'relativeIndex':relative,'moduleEntryIndex':entry['moduleEntryIndex'],
                              'methodSpecIndex':index,'methodSpecRawHex':spec_raw.hex().upper(),
                              'definition':definition,'methodName':md.string(md.methods[definition].name_index),'contexts':contexts})
-    require(pe.bytes_at_va(pe.image_base+0x8619,4),bytes.fromhex('48895F20'),gate.gameassembly,0x8619)
-    require(pe.bytes_at_va(pe.image_base+0x873E,17),bytes.fromhex('4D8D442408498BD5488D4DD8E8D1470300'),
-            gate.gameassembly,0x873E)
+    nested_relatives=[str(row['relativeIndex']) for row in nested_slots]
+    nested_slot_names=', '.join(nested_relatives[:-1])+' and '+nested_relatives[-1]
+    companion_pins=pins['selectedMethodCompanionConstruction']
+    require_code_bytes(pe,*companion_pins['classStore'],gate.gameassembly)
+    require_code_bytes(pe,*companion_pins['resolverCall'],gate.gameassembly)
     require([a.raw_type_record_hex for a in adapter_inst.arguments],
-            ['B02D0000000000000000120000000000','2D360000000000000000120000000000'],gate.gameassembly)
-    require(md.type_full_name(md.types[13869]),'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack',gate.metadata)
-    key_pointer = pe.u64_at_va(int(reg['types'],16)+120613*8)
+            adapter_pins['argumentRawTypes'],gate.gameassembly)
+    require(md.type_full_name(md.types[adapter_pins['wrapperTypeDefinition']]),'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack',gate.metadata)
+    key_pointer = pe.u64_at_va(int(reg['types'],16)+key_type_index*8)
     require(key_pointer,adapter_inst.arguments[0].type_pointer_va,gate.gameassembly)
-    ctor_va = int(reg['methodSpecs'],16)+559804*12
+    ctor_va = int(reg['methodSpecs'],16)+constructor_spec_index*12
     ctor_raw = pe.bytes_at_va(ctor_va,12)
-    require(struct.unpack('<iii',ctor_raw),(102200,38555,-1),gate.gameassembly,ctor_va)
-    require(md.methods[102200].declaring_type,13633,gate.metadata)
-    require(md.string(md.methods[102200].name_index),'.ctor',gate.metadata)
-    require(pe.bytes_at_va(pe.image_base+0x867C0,5),bytes.fromhex('E99BAAFBFF'),gate.gameassembly,0x867C0)
-    require(pe.bytes_at_va(pe.image_base+0xB2837,5),bytes.fromhex('E9741DFD03'),gate.gameassembly,0xB2837)
+    ctor_definition = adapter_pins['constructorDefinition']
+    require(struct.unpack('<iii',ctor_raw),(ctor_definition,adapter_pins['classInstantiation'],-1),gate.gameassembly,ctor_va)
+    require(md.methods[ctor_definition].declaring_type,adapter_definition,gate.metadata)
+    require(md.string(md.methods[ctor_definition].name_index),'.ctor',gate.metadata)
+    for rva,hex_bytes in adapter_pins['registrationJumps']:
+        require_code_bytes(pe,rva,hex_bytes,gate.gameassembly)
+    storage_pins = pins['selectedProviderStorage']
     storage_references = []
-    for rva in (0x3800409,0x2DA4806,0x2DA49F5,0x2DA4C42):
+    for rva in storage_pins['references']:
         instruction = pe.bytes_at_va(pe.image_base+rva,7)
         target = rip_qword_load_target(instruction,pe.image_base+rva,source=str(gate.gameassembly))
-        require(target,pe.image_base+0xD0EF5F0,gate.gameassembly,rva)
+        require(target,pe.image_base+storage_pins['storageRva'],gate.gameassembly,rva)
         storage_references.append({'instructionRva':rva,'instructionHex':instruction.hex().upper(),'targetVa':target})
     storage_raw = pe.bytes_at_va(storage_references[0]['targetVa'],8)
-    sharing_instruction = pe.bytes_at_va(pe.image_base+0x2C6DE0,7)
-    sharing_global = class_sharing_branch(pe.bytes_at_va(pe.image_base+0x2C6CA9,10),pe.image_base+0x2C6CA9,
-                                          sharing_instruction,pe.image_base+0x2C6DE0,
-                                          pe.bytes_at_va(pe.image_base+0x2C6DE7,4),source=str(gate.gameassembly))
-    require(sharing_global,pe.image_base+0xDE9F470,gate.gameassembly,0x2C6DE0)
+    sharing_pins = pins['selectedSharingBranch']
+    sharing_instruction = pe.bytes_at_va(pe.image_base+sharing_pins['loadRva'],7)
+    sharing_global = class_sharing_branch(pe.bytes_at_va(pe.image_base+sharing_pins['compareRva'],10),
+                                          pe.image_base+sharing_pins['compareRva'],
+                                          sharing_instruction,pe.image_base+sharing_pins['loadRva'],
+                                          pe.bytes_at_va(pe.image_base+sharing_pins['advanceRva'],4),
+                                          source=str(gate.gameassembly))
+    require(sharing_global,pe.image_base+sharing_pins['canonicalCarrierGlobalRva'],gate.gameassembly,
+            sharing_pins['loadRva'])
     require([bytes.fromhex(a.raw_type_record_hex)[10] for a in adapter_inst.arguments],[0x12,0x12],gate.gameassembly)
+    object_pins = pins['selectedObjectIdentity']
     object_identity = named_top_level_type(md.buf,b'mscorlib.dll',b'System',b'Object',source=str(gate.metadata))
     require((object_identity['imageIndex'],object_identity['typeDefinitionIndex'],object_identity['byvalTypeIndex']),
-            (6,36358,133396),gate.metadata,object_identity['typeDefinitionOffset'])
+            tuple(object_pins['metadata']),gate.metadata,object_identity['typeDefinitionOffset'])
     require(object_identity['byvalTypeIndex']<reg['typesCount'],True,gate.metadata)
     object_pointer=pe.u64_at_va(int(reg['types'],16)+object_identity['byvalTypeIndex']*8)
     object_raw=pe.bytes_at_va(object_pointer,16)
-    require(object_raw.hex().upper(),'068E00000000000000001C0000000000',gate.gameassembly,object_pointer)
-    object_pair=table.resolve(1088)
+    require(object_raw.hex().upper(),object_pins['rawTypeHex'],gate.gameassembly,object_pointer)
+    object_pair=table.resolve(object_pins['objectPairInstantiation'])
     require([a.raw_type_record_hex for a in object_pair.arguments],[object_raw.hex().upper()]*2,gate.gameassembly)
-    # The code window ends before this separately read switch-data entry.
-    switch_entry=pe.image_base+0x2CC87C+(0x1C-0x0F)*4
-    require(pe.u32_at_va(switch_entry),0x2CC840,gate.gameassembly,switch_entry)
+    # The code window ends before this separately read switch-data entry; the
+    # object (0x1C) tag selects it.
+    comparison_pins=pins['selectedObjectComparison']
+    switch_entry=pe.image_base+comparison_pins['switchTableRva']+(0x1C-comparison_pins['firstTag'])*4
+    require(pe.u32_at_va(switch_entry),comparison_pins['switchTargetRva'],gate.gameassembly,switch_entry)
     object_key=object_type_comparison_key(object_raw,source=str(gate.gameassembly),offset=object_pointer)
     require(summary['failed'],0,'complete generic-instantiation sweep before candidate enumeration')
     object_candidates=[]
@@ -632,8 +688,9 @@ def audit():
               for raw,a in zip(raw_arguments,arguments)]
         if keys==[object_key,object_key]:
             object_candidates.append(row['index'])
-    require(md.methods[102199].declaring_type,13633,gate.metadata)
-    require(md.string(md.methods[102199].name_index),'Deserialize',gate.metadata)
+    shared_definition=pins['selectedSharedMethodCandidates']['definition']
+    require(md.methods[shared_definition].declaring_type,adapter_definition,gate.metadata)
+    require(md.string(md.methods[shared_definition].name_index),'Deserialize',gate.metadata)
     specs_base=int(reg['methodSpecs'],16)
     specs_raw=pe.bytes_at_va(specs_base,reg['methodSpecsCount']*12)
     spec_records=[method_spec_record(specs_raw[index*12:(index+1)*12],len(md.methods),reg['genericInstsCount'],
@@ -642,7 +699,7 @@ def audit():
     validate_selected_method_spec(selected_method_spec,specs_raw,specs_base,len(md.methods),
                                    reg['genericInstsCount'],source=str(gate.gameassembly))
     shared_specs=[index for index,(definition,ci,mi) in enumerate(spec_records)
-                  if definition==102199 and ci in object_candidates and mi==-1]
+                  if definition==shared_definition and ci in object_candidates and mi==-1]
     code=mapper.code_registration_summary(pe,candidates[0])
     methods_base=int(reg['genericMethodTable'],16)
     methods_raw=pe.bytes_at_va(methods_base,reg['genericMethodTableCount']*16)
@@ -661,33 +718,33 @@ def audit():
                             'indices':[method,invoker,adjustor],'indicesRawHex':triple_raw.hex().upper(),
                             'methodPointerVa':pointer,'invokerPointerVa':invoker_pointer})
     producer_names=[]
-    for rva,prefix,expected in ((0x15F0D,'488D0D',b'mscorlib.dll'),
-                               (0x15F3C,'4C8D05',b'Object'),(0x15F43,'488D15',b'System')):
+    for rva,prefix,name in object_pins['producerNames']:
+        expected=name.encode('ascii')
         instruction=pe.bytes_at_va(pe.image_base+rva,7)
         require(instruction[:3],bytes.fromhex(prefix),gate.gameassembly,rva)
         pointer=pe.image_base+rva+7+struct.unpack_from('<i',instruction,3)[0]
         require(pe.bytes_at_va(pointer,len(expected)+1),expected+b'\0',gate.gameassembly,pointer)
         producer_names.append({'instructionRva':rva,'stringVa':pointer,'ascii':expected.decode('ascii')})
-    require(pe.bytes_at_va(pe.image_base+0x15F4F,7),bytes.fromhex('4889051A95E80D'),gate.gameassembly,0x15F4F)
+    require_code_bytes(pe,*object_pins['producerStore'],gate.gameassembly)
     # Independently connect the registration producer to the cache seeding loop.
     # These are reviewed instruction boundaries inside the pinned consumers.
-    producer=pe.bytes_at_va(pe.image_base+0x15E5A,7)
-    require(producer[:3],bytes.fromhex('488D05'),gate.gameassembly,0x15E5A)
-    require(pe.image_base+0x15E61+struct.unpack_from('<i',producer,3)[0],registration,gate.gameassembly,0x15E5A)
-    require(pe.bytes_at_va(pe.image_base+0x15E6F,7),bytes.fromhex('4889054AABE90D'),gate.gameassembly,0x15E6F)
-    seed_global=rip_qword_load_target(pe.bytes_at_va(pe.image_base+0x12D70,7),pe.image_base+0x12D70,source=str(gate.gameassembly))
-    require(seed_global,pe.image_base+0xDEB09C0,gate.gameassembly,0x12D70)
+    seed_pins=pins['selectedInstantiationCacheSeed']
+    producer_rva,producer_prefix=seed_pins['registrationProducer']
+    producer=pe.bytes_at_va(pe.image_base+producer_rva,7)
+    require(producer[:3],bytes.fromhex(producer_prefix),gate.gameassembly,producer_rva)
+    require(pe.image_base+producer_rva+7+struct.unpack_from('<i',producer,3)[0],registration,gate.gameassembly,producer_rva)
+    require_code_bytes(pe,*seed_pins['registrationStore'],gate.gameassembly)
+    seed_load=seed_pins['seedGlobalLoadRva']
+    seed_global=rip_qword_load_target(pe.bytes_at_va(pe.image_base+seed_load,7),pe.image_base+seed_load,source=str(gate.gameassembly))
+    require(seed_global,pe.image_base+seed_pins['registrationGlobalRva'],gate.gameassembly,seed_load)
     cache_storage=[]
-    for rva in (0x9D16,0x13248):
+    for rva in seed_pins['storageReferences']:
         target=rip_qword_load_target(pe.bytes_at_va(pe.image_base+rva,7),pe.image_base+rva,source=str(gate.gameassembly))
-        require(target,pe.image_base+0xDEB0568,gate.gameassembly,rva)
+        require(target,pe.image_base+seed_pins['storageRva'],gate.gameassembly,rva)
         cache_storage.append({'instructionRva':rva,'storageGlobalVa':target})
     return_evidence=serializer_return_consumers(pe,source=str(gate.gameassembly))
     return_evidence['methodIdentities']=module_methods(pe,md,modules,image_owners,
-        [(428657,'MemoryPack.MemoryPackSerializer','Deserialize',0x970BFBC),
-         (428658,'MemoryPack.MemoryPackSerializer','Deserialize',0x970C4A8),
-         (428655,'MemoryPack.MemoryPackSerializer','Deserialize',0x970BFF0),
-         (428667,'MemoryPack.MemoryPackSerializer+<DeserializeAsync>d__11','MoveNext',0x9711078)],
+        [tuple(row) for row in pins['serializerMethodIdentities']],
         source=str(gate.gameassembly))
     construction_evidence=reader_construction(pe,md,modules,image_owners,source=str(gate.gameassembly))
     cursor_evidence=reader_cursor_consumers(pe,source=str(gate.gameassembly))
@@ -1353,9 +1410,7 @@ def audit():
         'ActionGroupData and whole SkillData records remain ambiguous.'
     )
     list_candidate['bodyWindows']=[]
-    for start,end,digest in (
-        (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
-        (0x4ECA65C,0x4ECA705,'5B65758E858AF46037B7133644A3A9264E3FD4AA1D87B479B80A240EB0A31A90')):
+    for start,end,digest in pins['listFormatterBodyWindows']:
         require(hashlib.sha256(pe.bytes_at_va(pe.image_base+start,end-start)).hexdigest().upper(),digest,gate.gameassembly,start)
         list_candidate['bodyWindows'].append({'rva':start,'byteLength':end-start,'sha256':digest})
     resource_evidence=skill_resource_context(pe,md,modules,image_owners,table,reg,code,
@@ -1391,12 +1446,7 @@ def audit():
     unity_lookup=unity_module_lookup(unity_pe,source=str(unity_path))
     unity_input=unity_loader_input(unity_pe,source=str(unity_path))
     unity_conversion=unity_loader_conversion(unity_pe,source=str(unity_path))
-    for start,end,expected in (
-        (0x32BA20,0x32BA4F,'91C1865559D71D25761B6C551458A116EFF8627187BF5D956EE06A913D94859B'),
-        (0x32BA50,0x32BA8A,'D1A40F21F2A58620BC46D667AF2C16770354F1A5B4E2D9578ACB07AD10BAC48F'),
-        (0x2CBCC0,0x2CBCFE,'A4BF4C13EC67E4C0D35956DB7EE2B19AF80604A19E48664821050D8F2AB7D015'),
-        (0x2CBD00,0x2CBD3C,'EB78D7B88E5827D4DC6B440287BCE1AAC6C22D9550AA80B32E0163E96D2B02A0'),
-        (0x74BF0,0x74C09,'FAFE139CBBA402A8EA97D77D582388541E95BED7B63400896A7A053BB1D70C47')):
+    for start,end,expected in pins['unityPlayerWindows']:
         require(hashlib.sha256(unity_pe.bytes_at_va(unity_pe.image_base+start,end-start)).hexdigest().upper(),expected,unity_path,start)
     require(sha(unity_path),UNITY_SHA,unity_path)
     native_gate()
@@ -1692,34 +1742,35 @@ def audit():
         'selectedBuffCalc5ReadOrder':buff_calc5,
         'selectedBuffCalc1ReadOrder':buff_calc1,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
-                                      'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
-        'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
-                                                 'classStoreRva':0x8619,'methodPointerResolverCallRva':0x874A,
+                                      'boundary':f'Relative slots {nested_slot_names} independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
+        'selectedMethodCompanionConstruction': {'lookupRva':companion_pins['lookupRva'],'constructorRva':companion_pins['constructorRva'],
+                                                 'classStoreRva':companion_pins['classStore'][0],
+                                                 'methodPointerResolverCallRva':companion_pins['methodPointerResolverCallRva'],
                                                  'classFieldOffset':0x20,'pointerFieldOffsets':[0,8,16],
                                                  'level':'direct conditional native construction path',
                                                  'boundary':'On the reviewed cache-miss construction path, the original definition class and class-instantiation feed the generic-class carrier lookup/construction, then the class pointer is stored at MethodInfo+0x20. The pointer resolver receives the original definition and context pair separately, writes a stack result, and its code/adjustor/invoker pointers are copied to MethodInfo+0/+8/+0x10. Normalizing arguments for a shared code lookup therefore does not itself replace the already stored original class pointer. This is not a live MethodInfo receipt, proof of cache contents, actual target invocation, source extent or EOF.'},
         'rgctxDefinitionSweep': {'images':rgctx_inventory,
                                   'summary':{'success':sum(x['success'] for x in rgctx_inventory),'failed':0,'unsupported':0},
                                   'boundary':'Exact referenced 16-byte definitions for every matched module; numeric kinds, padding and payload pointers are preserved, not resolved runtime slots or a partition of the PE.'},
-        'selectedAdapterClassSlot': {'typeDefinition':13633,'token':md.types[13633].token,
+        'selectedAdapterClassSlot': {'typeDefinition':adapter_definition,'token':md.types[adapter_definition].token,
                                      'rangeStart':adapter_start,'rangeCount':adapter_count,'entries':adapter_entries,
-                                     'selectedRelativeIndex':10,'selectedModuleEntryIndex':type_slot['moduleEntryIndex'],
-                                     'consumerRva':0x2DA8E66,'runtimeSlotByteOffset':0x50,
+                                     'selectedRelativeIndex':slot_pins['relativeIndex'],'selectedModuleEntryIndex':type_slot['moduleEntryIndex'],
+                                     'consumerRva':slot_pins['consumerRva'],'runtimeSlotByteOffset':slot_pins['relativeIndex']*8,
                                      'typeIndex':slot_type_index,'typePointerVa':slot_type_pointer,
                                      'typeRawHex':slot_type_raw.hex().upper(),'parameterOwner':slot_owner,
                                      'conditionalContextArgument':{'pointerVa':slot_argument.type_pointer_va,'rawHex':slot_argument.raw_type_record_hex},
                                      'level':'exact static slot/VAR identity; direct conditional class-context connection',
-                                     'boundary':'The class initializer reads class+0x118 token and image+0x38 module, uses 12-byte token ranges and 16-byte definitions, emits eight-byte slots at class+0xC0, and supplies generic-carrier+8 context to substitution. Relative slot 10 is module entry 14, kind 1, a reciprocal ordinal-1 VAR of the adapter type. The VAR branch uses the class instantiation, whose second argument at the immediate registration is the wrapper type. This does not certify initialized class contents, actual method companion, formatter cache selection, source length or EOF.'},
-        'selectedSharedMethodCandidates': {'definition':102199,'methodSpecIndices':shared_specs,
+                                     'boundary':f'The class initializer reads class+0x118 token and image+0x38 module, uses 12-byte token ranges and 16-byte definitions, emits eight-byte slots at class+0xC0, and supplies generic-carrier+8 context to substitution. Relative slot {slot_pins["relativeIndex"]} is module entry {type_slot["moduleEntryIndex"]}, kind 1, a reciprocal ordinal-1 VAR of the adapter type. The VAR branch uses the class instantiation, whose second argument at the immediate registration is the wrapper type. This does not certify initialized class contents, actual method companion, formatter cache selection, source length or EOF.'},
+        'selectedSharedMethodCandidates': {'definition':shared_definition,'methodSpecIndices':shared_specs,
                                            'rows':shared_rows,'level':'exact static table relation; conditional index consumer',
                                            'boundary':'All matching MethodSpecs and generic-method table rows are preserved. The separately pinned index reader checks method/invoker indices, loads their pointer slots, and with adjustor -1 reuses the method pointer. Non-sentinel adjustors remain unsupported by this bounded decoder. This does not certify the runtime triple-map population, query success, target invocation, actual reader ABI, source length or final cursor.'},
         'selectedObjectComparison': {'key':object_key,'matchingRegisteredInstantiations':object_candidates,
-                                     'switchEntryVa':switch_entry,'switchTargetRva':0x2CC840,
+                                     'switchEntryVa':switch_entry,'switchTargetRva':comparison_pins['switchTargetRva'],
                                      'level':'direct conditional native equality/hash projection',
                                      'boundary':'For object-tag records the reviewed comparator checks the tag and bit 29 of the word at +8, then returns equal; the reviewed hash branch depends on those same two values. Record addresses and other bytes do not participate in this branch. The complete registered-instance sweep enumerates every matching two-argument candidate without selecting one. Even a singleton does not prove cache execution, returned interned pointer, method lookup success, active formatter or file cursor.'},
         'selectedInstantiationCacheSeed': {'registrationGlobalVa':seed_global,
-                                          'seedCallRva':0x12D8B,'insertRva':0x13170,
-                                          'lookupRva':0x9C70,'storageReferences':cache_storage,
+                                          'seedCallRva':seed_pins['seedCallRva'],'insertRva':seed_pins['insertRva'],
+                                          'lookupRva':seed_pins['lookupRva'],'storageReferences':cache_storage,
                                           'level':'direct conditional native producer/consumer connection',
                                           'boundary':'The initializer stores the selected MetadataRegistration and calls the seed routine. Its normal loop reads count+0x10 and pointer-table+0x18, passes each eight-byte slot to insertion, and insertion dereferences that slot to a record pointer. Insertion and lookup access the identical cache storage global and compare argument counts plus native type comparisons. This establishes a static registration-to-cache seed path, not successful initialization, cold-path completion, actual cache contents, interned pointer selection or active formatter dispatch.'},
         'selectedObjectIdentity': {'metadata':object_identity,'producerNames':producer_names,
@@ -1727,7 +1778,7 @@ def audit():
                                    'objectPairInstantiation':object_pair.as_dict(),
                                    'level':'exact static identity; direct conditional producer/class-copy connection',
                                    'boundary':'The initializer supplies mscorlib.dll/System/Object to the lookup chain and stores its return in the sharing global. Name-cache construction uses metadata namespace/name and lookup compares both strings, not only hashes. The matched TypeDef reaches the class cache; the miss constructor copies the registered byval type record to class+0x20. This links the normal producer to System.Object record bytes and the static object/object candidate pair. Runtime image/name/class-cache population, initialization execution and interned pointer identity remain unobserved; no active Deserialize or file-cursor selection follows.'},
-        'selectedSharingBranch': {'argumentTags':[0x12,0x12], 'normalizerRva':0x2C6C10,
+        'selectedSharingBranch': {'argumentTags':[0x12,0x12], 'normalizerRva':sharing_pins['normalizerRva'],
                                   'canonicalCarrierGlobalVa':sharing_global,'carrierTypeOffset':0x20,
                                   'level':'direct conditional native branch; producer identity recorded separately',
                                   'boundary':'On an original-context lookup miss, the reviewed method-pointer resolver transforms class and method argument vectors and retries the triple lookup. Each non-null class-tag argument directly becomes the same global carrier+0x20, preserving vector order/count before interning. The normal producer links to System.Object bytes, but initialization execution, interned vector identity, lookup-table population, cold paths and actual invocation are not established; this does not select the object/object Deserialize candidate. The normalizer code ends before its separately located eight-dword switch table.'},
@@ -1743,14 +1794,14 @@ def audit():
         'selectedFormatterTypeCarrier': {**formatter_carrier,'rgctxEntryVa':entry_va,
                                          'rgctxEntryRawHex':entry_raw.hex().upper(),
                                          'classInstantiationIndex':formatter_inst.index,
-                                         'baseName':md.type_full_name(md.types[54005]),
+                                         'baseName':md.type_full_name(md.types[formatter_definition]),
                                          'boundary':'Exact static pointer/range/MVAR identity; the 32-byte carrier window is not a certified allocation extent and its last 16 bytes remain opaque. Native generic inflation iterates the class-inst arguments using the supplied context. This is the open formatter check type, not the active formatter object or proof that runtime inflation/caches executed.'},
         'selectedUsageCell': {'va': usage_va, 'rawHex': usage_raw.hex().upper(),
-                              'methodSpecIndex': call_index, 'resolverSwitchEntryRva': 0x4138C+5*4,
+                              'methodSpecIndex': call_index, 'resolverSwitchEntryRva': resolver_entry,
                               'boundary': 'Direct static initialization mechanism: the guarded wrapper passes this cell address to the lazy resolver; tag 6 routes through MethodSpec/triple lookup and a non-null result is exchanged into the cell. The callsite reads the same cell. Initialization execution, cache history, active formatter and source cursor remain unobserved.'},
         'staticImageOwnership': {'typeCount': len(image_owners), 'images': image_rows,
-                                 'selectedReadValueImage': image_owners[md.methods[428464].declaring_type],
-                                 'registrationGlobalRva': 0xDEB09B8,
+                                 'selectedReadValueImage': image_owners[md.methods[spec_pins['openMethodParameterOwner']].declaring_type],
+                                 'registrationGlobalRva': registration_pins['codeRegistrationGlobalRva'],
                                  'matchingRule': 'Native bytewise name matching continues after a match; duplicate names could overwrite a prior result. This gate requires unique module names before accepting a static join.',
                                  'boundary': 'Exact metadata type partition and unique module-name joins. Native normal-path directory stores and name comparisons are separately pinned; initialization execution, cold paths and live invocation remain unobserved.'},
         'consumerWindows': CONSUMER_WINDOWS, 'summary': summary,

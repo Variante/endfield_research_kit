@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.il2cpp-context-audit-native-contract.v2",
+  "schema": "endfield.il2cpp-context-audit-native-contract.v3",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -11,7 +11,9 @@
     "The build selection for scripts.game_data.il2cpp.context_audit. These three digests were previously the module-level GA_SHA/MD_SHA/UNITY_SHA constants; they are declarations, not algorithm, so they live here and the module reads them.",
     "GameAssembly.dll and global-metadata.dat gate the audit through scripts.common.check_installed_native_inputs. UnityPlayer.dll is reported and re-hashed by the audit's UnityPlayer consumer checks.",
     "These values match the nativeInputs already recorded by 21 reviewed contracts in this directory for the same installed build.",
-    "consumerWindows are the audit's reviewed code windows as [begin RVA, end RVA, SHA256]; they pin the same build as nativeInputs and were moved here from context_audit_common."
+    "consumerWindows are the audit's reviewed code windows as [begin RVA, end RVA, SHA256]; they pin the same build as nativeInputs and were moved here from context_audit_common.",
+    "pins holds every other build-locked value context_audit checks or reports, grouped by the report key it supports and moved here from context_audit: RVAs, VAs and metadata tokens are 0x-prefixed hex strings, metadata/MethodSpec/generic-instantiation/type indices and counts are integers, and instruction or type-record bytes are bare hex. They pin the same build as nativeInputs; names, IL2CPP structure offsets and element-type tags stay in code because they do not change with a build.",
+    "pins.registration.ripReferences rows are [instruction RVA, opcode prefix, target], where the target names codeRegistration (the located CodeRegistration), codeRegistrationGlobal or usageCell. pins.selectedImmediateAdapter.cells rows are [instruction RVA, opcode prefix, usage tag, expected index, role]; the two constructor cells must share one cell."
   ],
   "consumerWindows": [
     ["0x3F7FD20", "0x3F7FD7D", "B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B"],
@@ -166,5 +168,136 @@
     ["0x2D7820", "0x2D7BBF", "BFB975F36A64975240720253EB1391D00D2DFBD48317ED38291DAB6683EA00F0"],
     ["0x9E70", "0xA500", "1B9824C30A36C141691EC195D8D3052B50A497722679DA9BAA2BC8194F68C19B"],
     ["0x15C90", "0x16F71", "EDCF30D6AEC6E2E98B7329DCA27C14DB36C754FADC8841648EDC02ADF5726023"]
-  ]
+  ],
+  "pins": {
+    "registration": {
+      "codeRegistrationVa": "0x18A88E640",
+      "metadataRegistrationVa": "0x18A88E860",
+      "codeRegistrationGlobalRva": "0xDEB09B8",
+      "ripReferences": [
+        ["0x15E4C", "488D0D", "codeRegistration"],
+        ["0x15E68", "48890D", "codeRegistrationGlobal"],
+        ["0x12F74", "4C8B15", "codeRegistrationGlobal"],
+        ["0x2C7555", "4C8B1D", "codeRegistrationGlobal"],
+        ["0x37DEADB", "488D0D", "usageCell"],
+        ["0x37DE8E9", "488B15", "usageCell"]
+      ]
+    },
+    "typeTagSwitch": {
+      "tableRva": "0x9850",
+      "firstTag": "0x0F",
+      "targets": [["0x15", "0x979D"], ["0x13", "0x9669"]]
+    },
+    "selectedMethodSpec": {
+      "index": 516756,
+      "record": [428394, -1, 41928],
+      "openMethodParameterOwner": 428464
+    },
+    "selectedUsageCell": {
+      "rva": "0xCFF4E48",
+      "methodSpecIndex": 619889,
+      "resolverSwitch": {"tableRva": "0x4138C", "index": 5, "targetRva": "0x412AC"}
+    },
+    "selectedCallMethodSpec": {
+      "methodInstantiation": 14693,
+      "selectedRawArgument": "B02D0000000000000000120000000000"
+    },
+    "selectedFormatterTypeCarrier": {
+      "rgctxRangeCount": 120,
+      "rgctxEntryCount": 691,
+      "methodToken": "0x06000075",
+      "rgctxRange": [40, 3],
+      "relativeEntry": 1,
+      "typeIndex": 211958,
+      "baseDefinitionIndex": 54005
+    },
+    "selectedImmediateAdapter": {
+      "cells": [
+        ["0x2B00F2B", "488B0D", 1, 205127, "adapterType"],
+        ["0x2B00F4C", "488B15", 6, 559804, "constructor"],
+        ["0x2B00F60", "488B05", 2, 120613, "keyType"],
+        ["0xB2830", "488B15", 6, 559804, "constructor"]
+      ],
+      "baseDefinitionIndex": 13633,
+      "imageIndex": 1,
+      "token": "0x0200000B",
+      "classInstantiation": 38555,
+      "rgctxRangeCount": 5,
+      "rgctxRange": [4, 13],
+      "argumentRawTypes": ["B02D0000000000000000120000000000", "2D360000000000000000120000000000"],
+      "wrapperTypeDefinition": 13869,
+      "constructorDefinition": 102200,
+      "registrationJumps": [["0x867C0", "E99BAAFBFF"], ["0xB2837", "E9741DFD03"]]
+    },
+    "selectedAdapterClassSlot": {
+      "relativeIndex": 10,
+      "consumerRva": "0x2DA8E66",
+      "consumerHex": "488B4320488B98C0000000488B5B50",
+      "typeIndex": 10486
+    },
+    "selectedNestedAdapterSlots": [[3, 102198], [4, 428394], [11, 277939]],
+    "selectedMethodCompanionConstruction": {
+      "lookupRva": "0x8D20",
+      "constructorRva": "0x84B0",
+      "classStore": ["0x8619", "48895F20"],
+      "resolverCall": ["0x873E", "4D8D442408498BD5488D4DD8E8D1470300"],
+      "methodPointerResolverCallRva": "0x874A"
+    },
+    "selectedProviderStorage": {
+      "storageRva": "0xD0EF5F0",
+      "references": ["0x3800409", "0x2DA4806", "0x2DA49F5", "0x2DA4C42"]
+    },
+    "selectedSharingBranch": {
+      "normalizerRva": "0x2C6C10",
+      "compareRva": "0x2C6CA9",
+      "loadRva": "0x2C6DE0",
+      "advanceRva": "0x2C6DE7",
+      "canonicalCarrierGlobalRva": "0xDE9F470"
+    },
+    "selectedObjectIdentity": {
+      "metadata": [6, 36358, 133396],
+      "rawTypeHex": "068E00000000000000001C0000000000",
+      "objectPairInstantiation": 1088,
+      "producerNames": [
+        ["0x15F0D", "488D0D", "mscorlib.dll"],
+        ["0x15F3C", "4C8D05", "Object"],
+        ["0x15F43", "488D15", "System"]
+      ],
+      "producerStore": ["0x15F4F", "4889051A95E80D"]
+    },
+    "selectedObjectComparison": {
+      "switchTableRva": "0x2CC87C",
+      "firstTag": "0x0F",
+      "switchTargetRva": "0x2CC840"
+    },
+    "selectedSharedMethodCandidates": {"definition": 102199},
+    "selectedInstantiationCacheSeed": {
+      "registrationProducer": ["0x15E5A", "488D05"],
+      "registrationStore": ["0x15E6F", "4889054AABE90D"],
+      "seedGlobalLoadRva": "0x12D70",
+      "registrationGlobalRva": "0xDEB09C0",
+      "seedCallRva": "0x12D8B",
+      "insertRva": "0x13170",
+      "lookupRva": "0x9C70",
+      "storageRva": "0xDEB0568",
+      "storageReferences": ["0x9D16", "0x13248"]
+    },
+    "serializerMethodIdentities": [
+      [428657, "MemoryPack.MemoryPackSerializer", "Deserialize", "0x970BFBC"],
+      [428658, "MemoryPack.MemoryPackSerializer", "Deserialize", "0x970C4A8"],
+      [428655, "MemoryPack.MemoryPackSerializer", "Deserialize", "0x970BFF0"],
+      [428667, "MemoryPack.MemoryPackSerializer+<DeserializeAsync>d__11", "MoveNext", "0x9711078"]
+    ],
+    "listFormatterBodyWindows": [
+      ["0x3BA40F0", "0x3BA4364", "6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA"],
+      ["0x4ECA65C", "0x4ECA705", "5B65758E858AF46037B7133644A3A9264E3FD4AA1D87B479B80A240EB0A31A90"]
+    ],
+    "unityPlayerWindows": [
+      ["0x32BA20", "0x32BA4F", "91C1865559D71D25761B6C551458A116EFF8627187BF5D956EE06A913D94859B"],
+      ["0x32BA50", "0x32BA8A", "D1A40F21F2A58620BC46D667AF2C16770354F1A5B4E2D9578ACB07AD10BAC48F"],
+      ["0x2CBCC0", "0x2CBCFE", "A4BF4C13EC67E4C0D35956DB7EE2B19AF80604A19E48664821050D8F2AB7D015"],
+      ["0x2CBD00", "0x2CBD3C", "EB78D7B88E5827D4DC6B440287BCE1AAC6C22D9550AA80B32E0163E96D2B02A0"],
+      ["0x74BF0", "0x74C09", "FAFE139CBBA402A8EA97D77D582388541E95BED7B63400896A7A053BB1D70C47"]
+    ]
+  }
 }
