@@ -17,8 +17,10 @@ licenses parsing past a nested polymorphic member it does not own.
 
 Tiers. Reviewed rows in `action_map_layouts.json` are `exact`: each carries
 its `nativeIdentity` (dispatcher switch target, registered type usage,
-generated setter order). `decode_reviewed_node` refuses a build whose native
-inputs differ from the contract's `nativeInputs`, and
+generated setter order). Every reviewed row, through any entry point, is
+refused on a build whose native inputs differ from the contract's
+`nativeInputs` (tags renumber per build, so the same pair could name another
+type there); `decode_reviewed_node` also accepts an explicit game root, and
 `python -m scripts.game_data.levelscript_route_deserialize_native` re-checks
 the rows' Deserialize order on a selected build. A caller that passes the
 derived `Declarations` from `scripts.game_data.levelscript_union_layouts`
@@ -114,6 +116,32 @@ def _layouts() -> dict[tuple[str, int], dict[str, Any]]:
 @lru_cache(maxsize=1)
 def _condition_layouts() -> dict[int, dict[str, Any]]:
     return {row["tag"]: row for row in _contract().get("conditionLayouts", [])}
+
+
+@lru_cache(maxsize=1)
+def _layout_build_status() -> tuple[str, str]:
+    """The installed build against the layout contract, checked once per process."""
+    inputs = _contract()["nativeInputs"]
+    native = check_installed_native_inputs(
+        inputs["gameAssembly"]["sha256"], inputs["metadata"]["sha256"],
+    )
+    return native.status, native.detail
+
+
+def _require_layout_build() -> None:
+    """Refuse every reviewed row on a build other than the contract's.
+
+    A union tag is its type's rank among the family's wrappers, so a client
+    update renumbers it: on another build a reviewed `(tag, memberCount)` pair
+    can name a different type and would decode plausibly. Rows with their own
+    `nativeGate` are re-proved per route; this gate covers every other row.
+    """
+    status, detail = _layout_build_status()
+    if status != "validated":
+        raise ActionMapCodecError(
+            f"actionMap.installed_native_inputs: expected=validated, "
+            f"actual={status}, detail={detail}"
+        )
 
 
 @lru_cache(maxsize=1)
@@ -3032,7 +3060,9 @@ class _Cursor:
             raise ActionMapCodecError(f"{field}:unsupported-union-marker=0x{tag:02x}")
         members = self.byte(field + ".memberCount")
         layout = _layouts().get((family, tag))
-        if layout is None and self.declarations is not None:
+        if layout is not None:
+            _require_layout_build()
+        elif self.declarations is not None:
             layout = self.declarations.layouts.get((family, tag))
         if layout is None or members != layout["memberCount"]:
             raise ActionMapCodecError(
@@ -3059,7 +3089,9 @@ class _Cursor:
             )
         members = self.byte(field + ".memberCount")
         layout = _condition_layouts().get(tag)
-        if layout is None and self.declarations is not None:
+        if layout is not None:
+            _require_layout_build()
+        elif self.declarations is not None:
             layout = self.declarations.layouts.get(("GameCondition", tag))
         if layout is None or members != layout["memberCount"]:
             raise ActionMapCodecError(
