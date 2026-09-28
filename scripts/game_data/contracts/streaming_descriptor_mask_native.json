@@ -1,0 +1,45 @@
+{
+  "schema": "endfield.streaming-descriptor-mask-native-contract.v1",
+  "status": "selected-structural",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unityPlayerImageBase": "0x180000000",
+  "codeWindows": [
+    {
+      "role": "descriptor-mask-setup",
+      "startRva": "0x443240",
+      "endRva": "0x4432FD",
+      "sha256": "06E069652DE0655EE2792599D9D6B46B2528CA9D1B78E03E625C1835E094BEA6"
+    },
+    {
+      "role": "packed-layout-constructor",
+      "startRva": "0x1C9FB0",
+      "endRva": "0x1CA247",
+      "sha256": "C7F6BD5B2B80661C29155A7AF15E1E2419E28EF70103ADF6E59AC5B2D43CE7D5"
+    }
+  ],
+  "calls": [
+    {"role": "selected-descriptor-consumer-to-mask-setup", "sourceRva": "0x1C9CB0", "targetRva": "0x443240"},
+    {"role": "mask-setup-to-packed-layout-constructor", "sourceRva": "0x4432D7", "targetRva": "0x1C9FB0"}
+  ],
+  "instructions": [
+    {"role": "zero-mask-low", "rva": "0x443274", "hex": "48895C2440"},
+    {"role": "zero-mask-high", "rva": "0x443279", "hex": "48895C2448"},
+    {"role": "signed-descriptor-id-load", "rva": "0x443282", "hex": "480FBF14DF"},
+    {"role": "select-bit-within-qword", "rva": "0x44328D", "hex": "83E23F"},
+    {"role": "select-qword", "rva": "0x443290", "hex": "48C1F806"},
+    {"role": "load-selected-qword", "rva": "0x44329C", "hex": "488B440C40"},
+    {"role": "set-selected-bit", "rva": "0x4432A1", "hex": "480FABD0"},
+    {"role": "store-selected-qword", "rva": "0x4432A5", "hex": "4889440C40"},
+    {"role": "pass-mask-pointer", "rva": "0x4432C0", "hex": "488D442440"},
+    {"role": "constructor-reads-16-byte-mask", "rva": "0x1CA06F", "hex": "0F1006"}
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected consumer calls the checked setup function; that function zeros two adjacent QWORDs, sign-extends each descriptor ID, divides it into a QWORD index and bit position, sets the bit, and passes the mask pointer to a constructor that reads 16 bytes.",
+    "structuralOnly": "A nonnegative in-range stored descriptor ID is a bit position in an anonymous 128-bit packed-column mask. This does not bind the mask position to a named StreamingComponentType or a converter.",
+    "unresolved": "The selected setup has no checked rejection for negative or at-least-128 descriptor IDs. The actual runtime instance and a descriptor-to-named-component edge remain unobserved."
+  }
+}

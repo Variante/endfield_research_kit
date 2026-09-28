@@ -269,7 +269,9 @@ width-4/1/4 vectors. The marker-17 wrapper/byte-range closure and its
 unresolved type boundary are owned by
 [`game_data/install_and_vfs.md`](install_and_vfs.md); all other
 nested targets remain opaque. Marker 15 additionally has bounded uoffset
-targets, with widths unresolved and no target-byte ownership. Root fields
+targets. A selected-scene corpus gate isolates some targets in exact 16-byte
+physical gaps, without establishing a general record width or byte ownership.
+Root fields
 6/7 retain paired-group, descriptor, and blob-length closure. Bytes outside
 the certified subgraphs stay opaque; no union, entity, component, matrix,
 descriptor, field name, or runtime meaning follows.

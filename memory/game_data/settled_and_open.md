@@ -102,12 +102,15 @@ engine, whose layouts are now framed.
 - **The other slot-7 descriptor payloads and their component labels.** The
   selected native path now follows the first paired root's slot 7 through
   each group's descriptor and wrapped byte vectors, consuming consecutive
-  `group count * descriptor stride` byte regions. A complete current-corpus
+  `group count * descriptor stride` byte regions. A complete source-authenticated
   audit joins every descriptor-21 64-byte slot by ID and first-63-byte name
   prefix to a root row, while long full names lose their suffix in that slot.
   The selected native entity-name getter is only a candidate: its
   context pointer is not joined to descriptor 21's packed column, and the
-  corresponding getter is absent from the selected IL2CPP type. The remaining
+  corresponding getter is absent from the selected IL2CPP type. A separately
+  current-authenticated Init descriptor exceeds the selected
+  `StreamingComponentType` bit-index range, ruling out a general numeric
+  ID-to-enum-index mapping. The remaining
   gap is a checked mapping from descriptor IDs to named component consumers
   and a concrete runtime root/file receipt; the large
   residual runs have no certified record extent. See

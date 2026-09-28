@@ -125,6 +125,19 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   selector-9 keys, this also requires the live mapping index and component
   pool span already missing from that route; applying the selector-5 reader
   to those keys would cross an unproved dispatch boundary.
+  A maintained current-audit gate now checks *every* `StreamingChunkData`
+  file in any explicitly selected scene and reports the Marker15 targets that
+  start an otherwise uncertified **exact 16-byte gap** before the next
+  certified range, with no other nested target reference in that gap. In the
+  two selected blackbox scenes, every such witness carries anonymous key
+  `08,01,0`; the generated gate report holds the counts, per-file MD5s,
+  offsets, and bytes. This is an independent **physical upper bound for those
+  specific target addresses**, not a producer or a general serialized
+  `sizeof`: unrecognized data could still share the gap, and the selected
+  native 16-byte candidate reader is on a different, unjoined key/selector
+  route. The gate is `streaming/marker15_gap_corpus.py`; extending the
+  conclusion requires a checked selector-8 nested-key consumer or a writer
+  carrying both source pointer and extent.
   The marker2 finite-gap parser selects only the independently gated
   selector6/full-key09020000 context. It rebuilds the complete nested target
   directory; unknown markers preserve raw slots and prevent occupancy closure.

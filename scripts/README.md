@@ -829,6 +829,23 @@ same-file root ID/name prefixes. The selected Streaming native contract separate
 validates the direct descriptor and wrapped-byte consumer; neither check names
 the other descriptor IDs as components.
 
+`python -m scripts.game_data.streaming.descriptor_component_index_gate --game-root ".../Endfield_Data" --witness-path "Data/Streaming/PC/.../Streaming/InitChunkData_...bytes" --expected-input-set-sha256 CURRENT_VFS_AUDIT_INPUT_SET_SHA256`
+checks one exact Init source against the current VFS ledger and the selected
+first-root and descriptor-mask native contracts. It writes
+`reports/chunk_data/descriptor_component_index_boundary.json` when a stored
+descriptor ID has a checked anonymous 128-bit mask position but exceeds the
+named `StreamingComponentType` bit index range. That counterexample rules out
+direct ordinal identification; it does not label the descriptor.
+
+`python -m scripts.game_data.streaming.descriptor_mask_corpus --game-root
+".../Endfield_Data" --expected-input-set-sha256 CURRENT_VFS_AUDIT_INPUT_SET_SHA256`
+checks every current authenticated Init logical file against its physical VFS
+MD5, reads all slot-7 descriptor IDs through the maintained framing reader,
+and reports their signed range and counts in
+`reports/chunk_data/descriptor_mask_corpus_latest.json`. It requires both
+selected native gates; `--limit` is diagnostic and cannot certify the corpus.
+The IDs remain anonymous packed-column positions.
+
 These are bundle-free, fail-closed diagnostics. `vfs-audit` streams each
 selected physical chunk once and intentionally returns non-zero for any missing
 or unauthenticated declaration while still publishing its terminal ledger.

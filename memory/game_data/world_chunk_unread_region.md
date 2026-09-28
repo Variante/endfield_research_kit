@@ -150,6 +150,40 @@ to the name getter, is the next discriminator. The reviewed contract's
 metadata absence, and bounded call census; it does not exclude indirect or
 inlined column selection.
 
+A current source and native negative control rules out a broader numeric
+shortcut. `streaming/descriptor_component_index_gate.py` revalidates the
+selected first-root consumer, the descriptor-mask setup contract, the
+`StreamingComponentType` metadata defaults and the named
+`PropertySerializeId.GetComponentIndexFromType` body, then reopens
+one Init logical file from the current VFS audit and ledger, checking its
+physical MD5 before the framing reader sees it. The enum is an unsigned
+64-bit one-hot mask with bit indices only through 42, and the named native
+index function returns the first set bit. That authenticated Init file has a
+slot-7 descriptor ID of 44. The separately checked UnityPlayer setup takes the
+signed first word of each descriptor, zeros two adjacent QWORDs, divides that
+word by 64 to select a QWORD and sets its remainder bit. It passes the
+two-QWORD mask to the packed layout constructor, which reads all 16 bytes.
+Under that selected static branch, the stored ID 44 would occupy **bit 44 of
+an anonymous 128-bit packed-column mask**, while the named managed enum ends
+at bit 42. These are distinct
+index namespaces; even an individual descriptor number within the enum's
+range cannot be labeled by numeric equality alone. The current source receipt is
+`reports/chunk_data/descriptor_component_index_boundary.json`. This does not
+exclude a separate ID-to-component lookup or assign descriptor 44 a name. The
+setup has no checked rejection for negative or at-least-128 IDs, so its mask
+arithmetic is **not** a general validity claim for every possible input.
+The reusable `streaming/descriptor_mask_corpus.py` gate also checks the whole
+current authenticated Init set against the same selected native bodies. Every
+source passes the physical VFS MD5 and maintained group framing; every
+observed descriptor ID is nonnegative and within the two-QWORD mask, including
+IDs that select its second QWORD. The corpus counts, signed ID histogram,
+source hashes and complete status belong to
+`reports/chunk_data/descriptor_mask_corpus_latest.json`. This is a current
+input observation, not a rule for future inputs or a component-name mapping.
+The next direct witness is a checked reader that takes a descriptor-selected
+packed column into a named converter or field, or a runtime trace joining a
+concrete Init file to that consumer.
+
 The previous complete Streaming root-subgraph corpus gate has an older
 `inputSetSha256`, so its publication status is **not refreshed** by the
 descriptor-name corpus gate. A separate
