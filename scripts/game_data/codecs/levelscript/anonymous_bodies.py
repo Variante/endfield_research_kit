@@ -1,12 +1,22 @@
 """Exact codecs for the anonymous first-record and CallServer leader bodies.
 
 Moved verbatim out of ``scripts/game_data/levelscript_binary.py``.
+
+Both lanes select their records by type name, never by tag: the first record
+must carry the current ``CallServer`` envelope and the one header must be
+``ScriptEvent_OnLeaderEnterTriggerVolume``, each resolved per build through
+``levelscript_union_tags.plain_route`` with the member count read here. An
+unvalidated build, a changed member count or a tag needing the wide ``FA``
+form selects nothing.  The ``35_0e_00`` in the anonymous reader's name and
+status records the envelope bytes on the build where it was first read; its
+reported envelope is the one actually matched.
 """
 
 from __future__ import annotations
 
 import struct
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.codecs.levelscript import call_server as levelscript_call_server
 from scripts.game_data.codecs.levelscript import params as levelscript_params
 from scripts.game_data.codecs.levelscript.framing_common import LevelScriptTopLevelFramingError
@@ -17,6 +27,33 @@ from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
 from scripts.game_data.codecs.levelscript.sequential_owner import _frame_levelscript_sequential_owner
 from scripts.game_data.codecs.levelscript.sequential_owner import frame_levelscript_action_map_named_prefix
 from typing import Any
+
+# The record types these lanes select, with the member count each reads.
+_CALL_SERVER = ("ActionBase", "CallServer", 0x0E)
+_LEADER_ENTER_HEADER = ("ActionHeader", "ScriptEvent_OnLeaderEnterTriggerVolume", 0x12)
+
+
+def _envelope_hex(route: tuple[int, int] | None) -> str:
+    """A resolved route as ``"<tag> <member count>"`` hex, or why none resolved."""
+    if route is None:
+        return f"unresolved{union_tags.unavailable_note()}"
+    return f"{route[0]:02x} {route[1]:02x}"
+
+
+def _leader_enter_header_route() -> tuple[int, int]:
+    """The current plain ``(tag, member count)`` of the leader-enter header.
+
+    Raises the framing error when no route resolves, so a caller with a
+    reviewed fallback can take it.
+    """
+    route = union_tags.plain_route(*_LEADER_ENTER_HEADER)
+    if route is None:
+        raise LevelScriptTopLevelFramingError(
+            "ScriptEvent_OnLeaderEnterTriggerVolume has no current plain-tag route"
+            f"{union_tags.unavailable_note()}"
+        )
+    return route
+
 
 def _read_anonymous_nullable_utf8(
     data: bytes,
@@ -111,10 +148,10 @@ def frame_levelscript_first_record_35_0e_00_anonymous_body(
 ) -> dict[str, Any]:
     """Advance a real cursor through the most frequent first-record body.
 
-    The selected current-corpus variant is identified only by its raw compact
-    envelope bytes ``35 0e 00``.  Its body is decoded as anonymous wire
-    segments; no type name, field name, setter order, later-record scan, or
-    later-list boundary participates in the result.
+    The selected current-corpus variant is the current build's ``CallServer``
+    envelope (resolved by type name) followed by a zero byte.  Its body is
+    decoded as anonymous wire segments; no field name, setter order,
+    later-record scan, or later-list boundary participates in the result.
     """
     prefix = frame_levelscript_action_map_named_prefix(data)
     if prefix.get("status") != (
@@ -124,17 +161,20 @@ def frame_levelscript_first_record_35_0e_00_anonymous_body(
             "selected first-record body requires a non-empty action map"
         )
     envelope = (prefix.get("ranges") or {}).get("firstRecordEnvelope") or {}
+    call_server = union_tags.plain_route(*_CALL_SERVER)
     if (
-        envelope.get("layout") != "plain"
-        or envelope.get("rawUnionTag") != 0x35
-        or envelope.get("rawSerializedMemberCount") != 0x0E
+        call_server is None
+        or envelope.get("layout") != "plain"
+        or envelope.get("rawUnionTag") != call_server[0]
+        or envelope.get("rawSerializedMemberCount") != call_server[1]
         or len(data) <= 9
         or data[9] != 0
     ):
         actual = data[7:10].hex(" ") if len(data) >= 10 else data[7:].hex(" ")
+        expected = f"{_envelope_hex(call_server)} 00" if call_server else _envelope_hex(None)
         raise LevelScriptTopLevelFramingError(
             "first polymorphic record variant mismatch: "
-            f"expected=35 0e 00 actual={actual}"
+            f"expected={expected} actual={actual}"
         )
 
     body_start = int(prefix["bytesConsumed"])
@@ -205,10 +245,10 @@ def frame_levelscript_first_record_35_0e_00_anonymous_body(
         "schemaStatus": "partial",
         "serializedMemberCount": 27,
         "selectedVariant": {
-            "envelopeHex": "35 0e 00",
+            "envelopeHex": f"{_envelope_hex(call_server)} 00",
             "unionTagEncoding": "memorypack-u8",
-            "rawUnionTag": 0x35,
-            "rawSerializedMemberCount": 0x0E,
+            "rawUnionTag": call_server[0],
+            "rawSerializedMemberCount": call_server[1],
             "rawThirdEnvelopeByte": 0,
         },
         "bytesConsumed": cursor,
@@ -326,8 +366,9 @@ def frame_levelscript_single_call_server_leader_enter(
 ) -> dict[str, Any]:
     """Close the dominant one-action current-build serialized-map lane.
 
-    The selected ActionBase tag is current-build ``CallServer`` and the header
-    tag is ``ScriptEvent_OnLeaderEnterTriggerVolume``.  Both records advance a
+    The selected ActionBase record is ``CallServer`` and the header is
+    ``ScriptEvent_OnLeaderEnterTriggerVolume``, both resolved by type name per
+    build (module docstring).  Both records advance a
     sequential cursor through their generated wrapper fields.  The reader
     accepts only an empty getter list and empty ``ParamListForGraph`` before
     handing the exact action-map boundary to the generated-order owner reader.
@@ -337,13 +378,16 @@ def frame_levelscript_single_call_server_leader_enter(
     envelope = (prefix.get("ranges") or {}).get("firstRecordEnvelope") or {}
     if action_prefix.get("actionListCount") != 1:
         raise LevelScriptTopLevelFramingError("selected action lane requires actionList count=1")
+    call_server = union_tags.plain_route(*_CALL_SERVER)
     if (
-        envelope.get("layout") != "plain"
-        or envelope.get("rawUnionTag") != 0x35
-        or envelope.get("rawSerializedMemberCount") != 0x0E
+        call_server is None
+        or envelope.get("layout") != "plain"
+        or envelope.get("rawUnionTag") != call_server[0]
+        or envelope.get("rawSerializedMemberCount") != call_server[1]
     ):
         raise LevelScriptTopLevelFramingError(
-            "selected action lane requires current CallServer tag/member-count 35 0e"
+            "selected action lane requires current CallServer tag/member-count "
+            f"{_envelope_hex(call_server)}"
         )
 
     action_body_start = int(prefix["bytesConsumed"])
@@ -363,8 +407,9 @@ def frame_levelscript_single_call_server_leader_enter(
         )
     cursor += 8
 
+    header_tag, header_members = _leader_enter_header_route()
     header_envelope, cursor = _read_levelscript_node_envelope(
-        data, cursor, union_tag=0xBF, member_count=0x12
+        data, cursor, union_tag=header_tag, member_count=header_members
     )
     header_fields_start = cursor
     if cursor + 21 > len(data):

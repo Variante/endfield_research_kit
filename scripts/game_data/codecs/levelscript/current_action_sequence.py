@@ -76,6 +76,7 @@ from scripts.game_data.codecs.levelscript.interactives import (
     LevelInteractiveCodecError,
     decode_param_key_value_list,
 )
+from scripts.game_data.codecs.levelscript.anonymous_bodies import _leader_enter_header_route
 from scripts.game_data.codecs.levelscript.anonymous_bodies import _read_levelscript_node_envelope
 from scripts.game_data.codecs.levelscript.anonymous_bodies import _read_nullable_levelscript_param
 from scripts.game_data.codecs.levelscript.condition_params import _decode_entity_ptr_list_param
@@ -947,12 +948,11 @@ def _read_current_action_fields(
     raise LevelScriptTopLevelFramingError(f"unsupported sequential action={action}")
 
 
-# PureGetter and ActionHeader types read here, by name and member count.
+# PureGetter types read here, by name and member count.
 _CURRENT_SEQUENTIAL_GETTER_MEMBERS = {
     "GetLevelScriptPropertyGenericBool": 0x09,
     "GetLevelScriptStage": 0x08,
 }
-_CURRENT_LEADER_ENTER_HEADER = {"ScriptEvent_OnLeaderEnterTriggerVolume": 0x12}
 
 
 def _read_current_getter(
@@ -1033,19 +1033,11 @@ def _read_current_leader_enter_header(
     data: bytes,
     cursor: int,
 ) -> tuple[dict[str, Any], int]:
-    # The envelope reader takes a plain one-byte tag; an extended tag or an
-    # unvalidated build leaves no route and the node falls to the reviewed map.
-    header = [
-        key for key in union_tags.routes("ActionHeader", _CURRENT_LEADER_ENTER_HEADER)
-        if key[0] < 0xFA
-    ]
-    if not header:
-        raise LevelScriptTopLevelFramingError(
-            "ScriptEvent_OnLeaderEnterTriggerVolume has no current plain-tag route"
-            f"{union_tags.unavailable_note()}"
-        )
+    # An extended tag or an unvalidated build leaves no route, and the node
+    # falls to the reviewed map.
+    header_tag, header_members = _leader_enter_header_route()
     envelope, cursor = _read_levelscript_node_envelope(
-        data, cursor, union_tag=header[0][0], member_count=header[0][1]
+        data, cursor, union_tag=header_tag, member_count=header_members
     )
     fields_start = cursor
     if cursor + 21 > len(data):

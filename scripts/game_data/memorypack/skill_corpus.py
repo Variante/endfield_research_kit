@@ -141,10 +141,12 @@ from scripts.game_data.memorypack.skill_timeline_create_buff import (
 from scripts.game_data.memorypack.skill_timeline_find_target import (
     CONTRACT_PATH as TIMELINE_FIND_TARGET_CONTRACT_PATH,
     decode_first_timeline_find_target,
+    find_target_plain_tag,
     validate_current_native_contract as validate_timeline_find_target_native_contract,
 )
 from scripts.game_data.memorypack.skill_timeline_continuous_find_target import (
     CONTRACT_PATH as TIMELINE_CONTINUOUS_FIND_TARGET_CONTRACT_PATH,
+    continuous_find_target_plain_tag,
     decode_first_timeline_continuous_find_target,
     validate_current_native_contract as validate_timeline_continuous_find_target_native_contract,
 )
@@ -1683,7 +1685,7 @@ def _join_and_frame(
         timeline_find_target_profile = None
         if (
             len(data) >= 22
-            and data[20] == 0xB2
+            and data[20] == find_target_plain_tag()
             and int.from_bytes(data[16:20], "little", signed=True) == 1
         ):
             try:
@@ -1692,13 +1694,13 @@ def _join_and_frame(
                 )
             except ValueError:
                 # The current contract intentionally covers only authenticated
-                # selector subtype routes. Other tag-B2 bodies retain the
+                # selector subtype routes. Other FindTarget bodies retain the
                 # already verified ActionGroupData prefix and stay opaque.
                 timeline_find_target_profile = None
         timeline_continuous_find_target_profile = None
         if (
             len(data) >= 22
-            and data[20] == 0x8A
+            and data[20] == continuous_find_target_plain_tag()
             and int.from_bytes(data[16:20], "little", signed=True) == 1
         ):
             try:

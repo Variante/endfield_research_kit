@@ -13,7 +13,7 @@ corpus-derived enum subset must not block the layout.
 ``progressLockCondition`` is a ``ConditionRuntimeBase`` union.  It accepts the
 null marker, the three-member ``SimpleConditionCheckMissionState`` and
 ``SimpleConditionCheckQuestState`` routes, and the recursive three-member
-``CombinedConditionRuntime`` (``_decode_progress_lock_condition``); any other
+``CombinedConditionRuntime`` (``decode_progress_lock_condition``); any other
 non-null condition fails closed.  Tags are resolved by type name per build
 through ``levelscript_union_tags``, so an unvalidated build admits no route.
 A retired literal also read tag ``0x10`` as a quest state; on the recorded
@@ -250,13 +250,19 @@ def _progress_lock_routes() -> dict[tuple[int, int], str]:
     return union_tags.routes("ConditionRuntimeBase", _PROGRESS_LOCK_LAYOUTS)
 
 
-def _decode_progress_lock_condition(
+def decode_progress_lock_condition(
     data: bytes,
     cursor: int,
     field: str,
     *,
     depth: int = 0,
 ) -> tuple[dict[str, Any], int]:
+    """Decode one non-null ``ConditionRuntimeBase`` progress lock at ``cursor``.
+
+    The one codec for this union in interactive records: LevelScript and
+    LevelData values and the Story page's progress-lock readers all call it.
+    Raises ``LevelInteractiveCodecError`` on any other condition type.
+    """
     if depth > 8:
         raise LevelInteractiveCodecError(f"{field}: condition nesting exceeds 8")
     start = cursor
@@ -296,7 +302,7 @@ def _decode_progress_lock_condition(
             )
         conditions = []
         for index in range(count):
-            condition, cursor = _decode_progress_lock_condition(
+            condition, cursor = decode_progress_lock_condition(
                 data,
                 cursor,
                 f"{field}.conditions[{index}]",
@@ -377,7 +383,7 @@ def _decode_interactive(
         progress_lock_condition = None
         cursor += 1
     else:
-        progress_lock_condition, cursor = _decode_progress_lock_condition(
+        progress_lock_condition, cursor = decode_progress_lock_condition(
             data,
             cursor,
             f"{field}.progressLockCondition",

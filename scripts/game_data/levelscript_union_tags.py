@@ -134,6 +134,16 @@ def routes(family: str, reviewed: dict[str, int]) -> dict[tuple[int, int], str]:
     return found
 
 
+def plain_route(family: str, name: str, member_count: int) -> tuple[int, int] | None:
+    """The current ``(tag, member count)`` of one reviewed layout, one-byte tags only.
+
+    For readers that match a compact ``tag, member count`` header byte for
+    byte. ``None`` when ``routes`` would leave the name out or the tag needs
+    MemoryPack's wide ``FA`` form, which such a reader does not parse.
+    """
+    return next((key for key in routes(family, {name: member_count}) if key[0] < 0xFA), None)
+
+
 def unavailable_note() -> str:
     """``""`` while the contract validates the selected build, else why not.
 

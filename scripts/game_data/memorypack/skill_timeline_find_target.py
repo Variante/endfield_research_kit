@@ -1,9 +1,11 @@
 """Exact current-build SkillData first-timeline FindTarget framing.
 
-The selected SkillData AbilityActionData union uses current physical tag
-``0x00B2`` for ``FindTargetActionData``.  Its nested selector unions are read
-through the Buff decoder's name-keyed subtype tables, restricted to the routes
-this contract reviewed, and fail closed for every other route.
+The selected SkillData AbilityActionData union routes ``FindTargetActionData``
+through a tag resolved by type name per build (``find_target_plain_tag``,
+through ``levelscript_union_tags``); an unvalidated build or a changed member
+count resolves no tag and nothing decodes.  Its nested selector unions are
+read through the Buff decoder's name-keyed subtype tables, restricted to the
+routes this contract reviewed, and fail closed for every other route.
 
 The wrapper has 18 members.  Only the finder, validator and postprocessor
 routes this contract reviewed are admitted; every other nested route stays
@@ -19,6 +21,7 @@ from functools import lru_cache
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR, LabelledReader
 from scripts.game_data.memorypack.buff import (
@@ -36,7 +39,20 @@ from scripts.game_data.memorypack.skill_timeline_play_animation import (
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_find_target_native.json"
 LABEL = "skillTimelineFindTarget"
-FIND_TARGET_TAG = 0x00B2
+# The AbilityActionData type this lane reads and the member count it reads.
+FIND_TARGET_TYPE = "Core_FindTargetAction_FindTargetActionData"
+FIND_TARGET_MEMBER_COUNT = 18
+
+
+def find_target_plain_tag() -> int | None:
+    """The build's one-byte tag of ``FindTargetActionData``, resolved by name.
+
+    ``None`` when the union-tag contract does not validate the build, the
+    member count is no longer the one read here, or the tag needs the wide
+    ``FA`` encoding this lane does not read.
+    """
+    route = union_tags.plain_route("AbilityActionData", FIND_TARGET_TYPE, FIND_TARGET_MEMBER_COUNT)
+    return route[0] if route else None
 
 
 def _reviewed_routes(table: dict, names: tuple[str, ...]) -> dict:
@@ -90,9 +106,12 @@ class _Reader(LabelledReader):
 
 
 def _decode_find_target(data: bytes, start: int, limit: int) -> tuple[dict[str, Any], int]:
-    if start + 2 > limit or data[start] != FIND_TARGET_TAG:
-        raise ValueError("skillTimelineFindTarget.unionTag:not-0x00B2")
-    if data[start + 1] != 18:
+    tag = find_target_plain_tag()
+    if tag is None:
+        raise ValueError(f"skillTimelineFindTarget.unionTag:unresolved{union_tags.unavailable_note()}")
+    if start + 2 > limit or data[start] != tag:
+        raise ValueError(f"skillTimelineFindTarget.unionTag:not-0x{tag:04X}")
+    if data[start + 1] != FIND_TARGET_MEMBER_COUNT:
         actual = "eof" if start + 1 >= limit else data[start + 1]
         raise ValueError(f"skillTimelineFindTarget.action.memberCount={actual} expected=18")
     offset = start + 2
@@ -111,7 +130,7 @@ def _decode_find_target(data: bytes, start: int, limit: int) -> tuple[dict[str, 
             subtype_tables=CURRENT_SELECTOR_SUBTYPE_TABLES,
         )
     return {
-        "tag": FIND_TARGET_TAG,
+        "tag": tag,
         "typeName": "Beyond.Gameplay.Core.FindTargetAction+FindTargetActionData",
         "start": start,
         "end": offset,
@@ -127,7 +146,7 @@ def decode_first_timeline_find_target(
     *,
     limit: int | None = None,
 ) -> dict[str, Any]:
-    """Decode one-action first TimelineActionData records beginning with tag B2."""
+    """Decode one-action first TimelineActionData records beginning with FindTarget."""
     hard_limit = len(data) if limit is None else limit
     reader = _Reader(data, hard_limit)
     reader.header(48, "skillData.memberCount")
@@ -202,7 +221,7 @@ def decode_first_timeline_find_target(
         "wholeActionGroupDataExact": timeline_count == 1,
         "wholeSkillDataExact": False,
         "evidenceBoundary": (
-            "The first one-action TimelineActionData and its current tag-0x00B2 "
+            f"The first one-action TimelineActionData and its current tag-0x{find_target['tag']:04X} "
             "FindTarget child close at exact physical cursors. Additional sequence actions, "
             "later timeline records, and selector subtypes absent from the contract fail closed."
         ),

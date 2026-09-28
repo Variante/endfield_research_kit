@@ -114,6 +114,10 @@ from scripts.game_data.codecs.leveldata.levelscript_brief import (
     find_levelscript_brief_data_entries,
     parse_leveldata_levelscript_brief_dictionary,
 )
+from scripts.game_data.codecs.levelscript.interactives import (
+    LevelInteractiveCodecError,
+    decode_progress_lock_condition,
+)
 from scripts.game_data.codecs.levelscript.params import (
     decode_bool_param,
     decode_constant_entity_ptr_param,
@@ -8488,8 +8492,9 @@ def _parse_levelscript_interactive_narrative_record(
     The current installed formatter writes 25 members.  The inherited prefix
     and ``componentProperties`` layout are shared with LevelData, while the
     derived suffix is accepted only when its collection fields are null/empty.
-    LevelScript requires a null progress lock; LevelData may opt into the exact
-    current-build mission/quest-state condition decoder. Its final
+    LevelScript requires a null progress lock; LevelData may opt into the
+    shared ``interactives.decode_progress_lock_condition`` (mission/quest state
+    and combined conditions, tags resolved by type name per build). Its final
     ``properties`` ParamValue map must be consumed completely. This deliberately
     narrow shape covers authored narrative interactives without turning nearby
     strings into Story evidence.
@@ -8756,60 +8761,65 @@ def _parse_leveldata_horn_dialog_record(
     }
 
 
-def _parse_level_interactive_simple_state_condition(
+def _story_progress_lock_node(node: dict) -> dict:
+    """Reshape one decoded ``ConditionRuntimeBase`` node for Story consumers.
+
+    Decoding belongs to ``interactives.decode_progress_lock_condition``; this
+    only renames its offsets and adds the mission/quest ``ownerKind`` that the
+    route projection and quest-lock contexts read.
+    """
+    if node["conditionType"] == "CombinedConditionRuntime":
+        return {
+            "offset": node["startOffset"],
+            "endOffset": node["endOffset"],
+            "unionTag": node["unionTag"],
+            "serializedMemberCount": node["serializedMemberCount"],
+            "conditionType": node["conditionType"],
+            "conditionOperator": node["conditionOperator"],
+            "serializedRuntimeFlag": node["serializedRuntimeFlag"],
+            "conditions": [
+                _story_progress_lock_node(child) for child in node["conditions"]
+            ],
+        }
+    return {
+        "offset": node["startOffset"],
+        "endOffset": node["endOffset"],
+        "unionTag": node["unionTag"],
+        "serializedMemberCount": node["serializedMemberCount"],
+        "conditionType": node["conditionType"],
+        "ownerKind": (
+            "mission"
+            if node["conditionType"] == "SimpleConditionCheckMissionState"
+            else "quest"
+        ),
+        "ownerId": node["ownerId"],
+        "compareOperator": node["compareOperator"],
+        "compareTarget": node["compareTarget"],
+    }
+
+
+def _decode_bounded_progress_lock(
     data: bytes,
     offset: int,
     end_limit: int,
 ) -> dict | None:
-    """Decode one exact current-build mission/quest-state condition."""
-    if (
-        offset < 0
-        or offset + 14 > end_limit
-        or data[offset] not in (0x0C, 0x10)
-        or data[offset + 1] != 3
-    ):
+    """The shared progress-lock decode at ``offset``, or ``None`` past ``end_limit``.
+
+    Condition tags are resolved by type name per build inside the shared
+    decoder, so a build the union-tag contract does not validate decodes
+    nothing here.
+    """
+    if offset < 0 or offset >= end_limit:
         return None
-    union_tag = data[offset]
-    cursor = offset + 2
-    operator_decoded = _read_leveldata_i32(data, cursor)
-    if operator_decoded is None:
+    try:
+        condition, end = decode_progress_lock_condition(
+            data,
+            offset,
+            "progressLockCondition",
+        )
+    except LevelInteractiveCodecError:
         return None
-    compare_operator, cursor = operator_decoded
-    target_decoded = _read_leveldata_i32(data, cursor)
-    if target_decoded is None:
-        return None
-    compare_target, cursor = target_decoded
-    owner_decoded = _read_leveldata_memorypack_string(
-        data,
-        cursor,
-        max_length=256,
-    )
-    if owner_decoded is None:
-        return None
-    owner_id, cursor = owner_decoded
-    if (
-        compare_operator not in (0, 1)
-        or not 0 <= compare_target <= 5
-        or not owner_id
-        or cursor > end_limit
-    ):
-        return None
-    owner_kind = "mission" if union_tag == 0x0C else "quest"
-    return {
-        "offset": offset,
-        "endOffset": cursor,
-        "unionTag": union_tag,
-        "serializedMemberCount": 3,
-        "conditionType": (
-            "SimpleConditionCheckMissionState"
-            if owner_kind == "mission"
-            else "SimpleConditionCheckQuestState"
-        ),
-        "ownerKind": owner_kind,
-        "ownerId": owner_id,
-        "compareOperator": compare_operator,
-        "compareTarget": compare_target,
-    }
+    return condition if end <= end_limit else None
 
 
 def _parse_level_interactive_progress_lock_condition(
@@ -8818,13 +8828,10 @@ def _parse_level_interactive_progress_lock_condition(
     end_limit: int,
 ) -> dict | None:
     """Decode an exact current-build narrative progress-lock condition."""
-    root = _parse_level_interactive_progress_lock_node(
-        data,
-        offset,
-        end_limit,
-    )
-    if root is None:
+    decoded = _decode_bounded_progress_lock(data, offset, end_limit)
+    if decoded is None:
         return None
+    root = _story_progress_lock_node(decoded)
     leaves: list[dict] = []
 
     def collect_leaves(node: dict) -> None:
@@ -8840,79 +8847,13 @@ def _parse_level_interactive_progress_lock_condition(
         "progressLockConditionOffset": offset,
         "progressLockConditionStatus": "decoded",
         "progressLockConditionUnionTag": root["unionTag"],
-        "progressLockConditionSerializedMemberCount": 3,
+        "progressLockConditionSerializedMemberCount": root["serializedMemberCount"],
         "progressLockConditionType": root["conditionType"],
         "progressLockConditionOperator": root.get("conditionOperator"),
         "progressLockSerializedRuntimeFlag":
             root.get("serializedRuntimeFlag"),
         "progressLockConditionTree": root,
         "progressLockConditions": leaves,
-    }
-
-
-def _parse_level_interactive_progress_lock_node(
-    data: bytes,
-    offset: int,
-    end_limit: int,
-    *,
-    depth: int = 0,
-) -> dict | None:
-    """Decode one recursive state/combined progress-lock node."""
-    if depth > 8:
-        return None
-    direct = _parse_level_interactive_simple_state_condition(
-        data,
-        offset,
-        end_limit,
-    )
-    if direct is not None:
-        return direct
-    if (
-        offset < 0
-        or offset + 11 > end_limit
-        or data[offset : offset + 2] != b"\x00\x03"
-    ):
-        return None
-    cursor = offset + 2
-    operator_decoded = _read_leveldata_i32(data, cursor)
-    if operator_decoded is None:
-        return None
-    condition_operator, cursor = operator_decoded
-    if cursor >= end_limit or data[cursor] not in (0, 1):
-        return None
-    serialized_runtime_flag = bool(data[cursor])
-    cursor += 1
-    count_decoded = _read_leveldata_count(
-        data,
-        cursor,
-        max_count=64,
-    )
-    if count_decoded is None or count_decoded[0] <= 0:
-        return None
-    condition_count, cursor = count_decoded
-    conditions: list[dict] = []
-    for _ in range(condition_count):
-        condition = _parse_level_interactive_progress_lock_node(
-            data,
-            cursor,
-            end_limit,
-            depth=depth + 1,
-        )
-        if condition is None:
-            return None
-        conditions.append(condition)
-        cursor = int(condition["endOffset"])
-    if condition_operator not in (0, 1):
-        return None
-    return {
-        "offset": offset,
-        "endOffset": cursor,
-        "unionTag": 0,
-        "serializedMemberCount": 3,
-        "conditionType": "CombinedConditionRuntime",
-        "conditionOperator": condition_operator,
-        "serializedRuntimeFlag": serialized_runtime_flag,
-        "conditions": conditions,
     }
 
 
@@ -9472,7 +9413,11 @@ def parse_level_interactive_quest_progress_lock(
     in full and then requires the complete current-build derived suffix through
     the exact record end.  Only ``SimpleConditionCheckQuestState`` equal to
     ``QuestState.Completed`` is admitted; nearby strings or partially decoded
-    records are never evidence.
+    records are never evidence.  The condition is read by the shared
+    ``interactives.decode_progress_lock_condition``, whose union tags are
+    resolved by type name per build; the literal ``0x10`` this parser once
+    required is a one-member condition on the recorded build, so it admitted
+    no quest lock at all.
     """
     if (
         offset < 0
@@ -9561,25 +9506,16 @@ def parse_level_interactive_quest_progress_lock(
         return None
 
     condition_offset = cursor
-    if cursor + 10 > end_offset or data[cursor : cursor + 2] != b"\x10\x03":
+    condition = _decode_bounded_progress_lock(data, cursor, end_offset)
+    if (
+        condition is None
+        or condition["conditionType"] != "SimpleConditionCheckQuestState"
+    ):
         return None
-    cursor += 2
-    compare_operator_decoded = _read_leveldata_i32(data, cursor)
-    if compare_operator_decoded is None:
-        return None
-    compare_operator, cursor = compare_operator_decoded
-    compare_target_decoded = _read_leveldata_i32(data, cursor)
-    if compare_target_decoded is None:
-        return None
-    compare_target, cursor = compare_target_decoded
-    quest_decoded = _read_leveldata_memorypack_string(
-        data,
-        cursor,
-        max_length=256,
-    )
-    if quest_decoded is None:
-        return None
-    quest_id, cursor = quest_decoded
+    compare_operator = condition["compareOperator"]
+    compare_target = condition["compareTarget"]
+    quest_id = condition["ownerId"]
+    cursor = condition["endOffset"]
     properties_decoded = _read_leveldata_count(data, cursor, max_count=256)
     if properties_decoded is None:
         return None
@@ -9609,9 +9545,9 @@ def parse_level_interactive_quest_progress_lock(
         "modelScale": model_scale,
         "modelScaleOffset": model_scale_offset,
         "progressLockConditionOffset": condition_offset,
-        "progressLockConditionUnionTag": 0x10,
-        "progressLockConditionSerializedMemberCount": 3,
-        "progressLockConditionType": "SimpleConditionCheckQuestState",
+        "progressLockConditionUnionTag": condition["unionTag"],
+        "progressLockConditionSerializedMemberCount": condition["serializedMemberCount"],
+        "progressLockConditionType": condition["conditionType"],
         "compareOperator": compare_operator,
         "compareOperatorName": "Equal",
         "compareTarget": compare_target,

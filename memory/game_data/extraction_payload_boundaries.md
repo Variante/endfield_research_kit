@@ -159,8 +159,10 @@ Each rule is enforced in code; the module named carries the reasoning.
 
 - **Union tags are ranks**: the case-insensitive rank of the wrapped type's
   full name among the family's wrappers (`levelscript_union_layouts`), read
-  whole from large native switches (`memorypack.union_dispatch`) and ranked
-  for compare-chain unions (`memorypack.union_subtypes`, `structuralOnly`).
+  whole from large native switches (`memorypack.union_dispatch`, which also
+  reads a table kept in a cold section behind a hot-case compare, as in
+  `SpawnerActionData`) and ranked for compare-chain unions
+  (`memorypack.union_subtypes`, `structuralOnly`).
   Reviewed rows are `exact`, derived rows `direct`.
 - **Never write a union tag as a literal**: updates renumber every later type.
   Resolve by type name (`levelscript_union_tags`) and key contract rows by it.
