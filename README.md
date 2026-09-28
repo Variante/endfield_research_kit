@@ -123,7 +123,7 @@ named) extracts everything, the same as `debug`. The page registry,
 run.
 
 <p align="center">
-  <img src="res/export_pages.svg" alt="Matrix of the structured blocks, Unity classes and indexes each export.bat page extracts, and a diagram of the page build dependencies" width="100%">
+  <img src="res/export_pages.svg" alt="Matrix of the structured blocks, Unity classes and indexes each export.bat page extracts, and a diagram of which pages read another page's published output, each arrow pointing from the publishing page to the reading page" width="100%">
 </p>
 
 `python serve.py` serves whatever has already been generated; it does not build
