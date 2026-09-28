@@ -17,9 +17,13 @@ node goes to ``action_map.decode_reviewed_node`` for its family (ActionBase,
 GetterBase, ActionHeader), which validates both selected native inputs and
 reads the reviewed ``action_map_layouts.json`` layout; an unknown union, a
 changed member count or an unsupported nested value fails at that node.
-Tag-to-type identity always comes from the family's own selected dispatcher:
-same-numbered rows in another union family (for example getter ``0x0109``
-versus action ``0x0109``) never select a layout.
+The specialized readers name their types, never their tags: each table pairs
+a type name with the member count its reader consumes, and the build's
+``(tag, member count)`` is resolved by type name per build through
+``levelscript_union_tags.routes`` within that family's own dispatcher, so
+same-numbered rows in another family (getter ``GetLevelScriptStage`` versus
+an action of the same rank) never select a layout. An unvalidated build
+admits no specialized route, and every node falls to the reviewed map.
 
 Stored-shape facts this module owns:
 
@@ -90,39 +94,42 @@ from scripts.game_data.codecs.levelscript.primitives import i32 as _i32
 from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
 from scripts.game_data.codecs.levelscript.sequential_owner import _frame_levelscript_sequential_owner
 from scripts.game_data.codecs.levelscript.uid_records import _decode_levelscript_uid_record
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.levelscript_param_list_native import load_param_list_for_graph_contract
 from typing import Any
 
+# ActionBase types this module reads, with the member count each reader
+# consumes. Tags are resolved by type name per build; never write one here.
 _CURRENT_SEQUENTIAL_ACTION_MEMBERS = {
-    0x001F: (0x11, "BlackScreenFadeIn"),
-    0x0015: (0x0A, "AirWallEnable"),
-    0x0021: (0x0B, "BlackScreenFadeOut"),
-    0x0027: (0x18, "BlendToCameraTransformWithoutBack"),
-    0x0026: (0x17, "BlendToCameraTransform"),
-    0x0035: (0x0E, "CallServer"),
-    0x0053: (0x09, "CheckBoolIfTrue"),
-    0x0052: (0x09, "CheckBoolIfFalse"),
-    0x0109: (0x0B, "IfElseAction"),
-    0x011F: (0x27, "LevelCameraLookAt"),
-    0x0312: (0x0A, "ManualStartLevelScript"),
-    0x0331: (0x0D, "NpcProxyPatrolStart"),
-    0x0358: (0x0B, "PlayAudio"),
-    0x036E: (0x0D, "PlayRadio"),
-    0x036F: (0x0D, "PlayRadioAndWait"),
-    0x0370: (0x11, "PlayRemoteComm"),
-    0x0381: (0x0C, "PreloadCutsceneAction"),
-    0x038A: (0x0A, "RaiseCustomLevelEvent"),
-    0x0392: (0x0E, "RemoveCameraControlState"),
-    0x03FF: (0x0B, "SetEnablePlayerAction"),
-    0x0496: (0x0A, "ShowSceneDecorationNew"),
-    0x049F: (0x0A, "ShowUIToast_DevOnly"),
-    0x04A7: (0x09, "Split"),
-    0x04B0: (0x0F, "StartDialogAction"),
-    0x04B1: (0x10, "StartDialogAndTeleportAction"),
-    0x04B5: (0x0A, "StartLevelCustomPerformance"),
-    0x04CF: (0x0C, "SwitchInt"),
-    0x050F: (0x09, "WaitForNpcProxyReady"),
-    0x0511: (0x09, "WaitForSeconds"),
+    "BlackScreenFadeIn": 0x11,
+    "AirWallEnable": 0x0A,
+    "BlackScreenFadeOut": 0x0B,
+    "BlendToCameraTransformWithoutBack": 0x18,
+    "BlendToCameraTransform": 0x17,
+    "CallServer": 0x0E,
+    "CheckBoolIfTrue": 0x09,
+    "CheckBoolIfFalse": 0x09,
+    "IfElseAction": 0x0B,
+    "LevelCameraLookAt": 0x27,
+    "ManualStartLevelScript": 0x0A,
+    "NpcProxyPatrolStart": 0x0D,
+    "PlayAudio": 0x0B,
+    "PlayRadio": 0x0D,
+    "PlayRadioAndWait": 0x0D,
+    "PlayRemoteComm": 0x11,
+    "PreloadCutsceneAction": 0x0C,
+    "RaiseCustomLevelEvent": 0x0A,
+    "RemoveCameraControlState": 0x0E,
+    "SetEnablePlayerAction": 0x0B,
+    "ShowSceneDecorationNew": 0x0A,
+    "ShowUIToast_DevOnly": 0x0A,
+    "Split": 0x09,
+    "StartDialogAction": 0x0F,
+    "StartDialogAndTeleportAction": 0x10,
+    "StartLevelCustomPerformance": 0x0A,
+    "SwitchInt": 0x0C,
+    "WaitForNpcProxyReady": 0x09,
+    "WaitForSeconds": 0x09,
 }
 
 
@@ -147,11 +154,13 @@ def _read_current_action_envelope(
         tag = data[cursor]
         member_count = data[cursor + 1]
         uid_offset = cursor + 12
-    expected = _CURRENT_SEQUENTIAL_ACTION_MEMBERS.get(tag)
-    if expected is None or member_count != expected[0]:
+    action = union_tags.routes("ActionBase", _CURRENT_SEQUENTIAL_ACTION_MEMBERS).get(
+        (tag, member_count)
+    )
+    if action is None:
         raise LevelScriptTopLevelFramingError(
             "unsupported current ActionBase tag/member count: "
-            f"tag=0x{tag:04x} memberCount={member_count}"
+            f"tag=0x{tag:04x} memberCount={member_count}{union_tags.unavailable_note()}"
         )
     if uid_offset + 8 > len(data):
         raise LevelScriptTopLevelFramingError(
@@ -171,7 +180,7 @@ def _read_current_action_envelope(
         )
     return {
         **record,
-        "action": expected[1],
+        "action": action,
     }, int(record["payloadStart"])
 
 
@@ -938,10 +947,12 @@ def _read_current_action_fields(
     raise LevelScriptTopLevelFramingError(f"unsupported sequential action={action}")
 
 
+# PureGetter and ActionHeader types read here, by name and member count.
 _CURRENT_SEQUENTIAL_GETTER_MEMBERS = {
-    0x0101: (0x09, "GetLevelScriptPropertyGenericBool"),
-    0x0130: (0x08, "GetLevelScriptStage"),
+    "GetLevelScriptPropertyGenericBool": 0x09,
+    "GetLevelScriptStage": 0x08,
 }
+_CURRENT_LEADER_ENTER_HEADER = {"ScriptEvent_OnLeaderEnterTriggerVolume": 0x12}
 
 
 def _read_current_getter(
@@ -960,11 +971,13 @@ def _read_current_getter(
         tag = data[cursor]
         member_count = data[cursor + 1]
         prefix = 2
-    expected = _CURRENT_SEQUENTIAL_GETTER_MEMBERS.get(tag)
-    if expected is None or member_count != expected[0]:
+    getter = union_tags.routes("PureGetter", _CURRENT_SEQUENTIAL_GETTER_MEMBERS).get(
+        (tag, member_count)
+    )
+    if getter is None:
         raise LevelScriptTopLevelFramingError(
             "unsupported current PureGetter tag/member count: "
-            f"tag=0x{tag:04x} memberCount={member_count}"
+            f"tag=0x{tag:04x} memberCount={member_count}{union_tags.unavailable_note()}"
         )
     base = cursor + prefix
     if base + 24 > len(data):
@@ -981,7 +994,6 @@ def _read_current_getter(
     ):
         raise LevelScriptTopLevelFramingError("invalid PureGetter uid")
     cursor = base + 24
-    getter = expected[1]
     if getter == "GetLevelScriptStage":
         decoded = _decode_levelscript_ptr_param(data, cursor)
         if decoded is None:
@@ -1021,8 +1033,19 @@ def _read_current_leader_enter_header(
     data: bytes,
     cursor: int,
 ) -> tuple[dict[str, Any], int]:
+    # The envelope reader takes a plain one-byte tag; an extended tag or an
+    # unvalidated build leaves no route and the node falls to the reviewed map.
+    header = [
+        key for key in union_tags.routes("ActionHeader", _CURRENT_LEADER_ENTER_HEADER)
+        if key[0] < 0xFA
+    ]
+    if not header:
+        raise LevelScriptTopLevelFramingError(
+            "ScriptEvent_OnLeaderEnterTriggerVolume has no current plain-tag route"
+            f"{union_tags.unavailable_note()}"
+        )
     envelope, cursor = _read_levelscript_node_envelope(
-        data, cursor, union_tag=0xBF, member_count=0x12
+        data, cursor, union_tag=header[0][0], member_count=header[0][1]
     )
     fields_start = cursor
     if cursor + 21 > len(data):

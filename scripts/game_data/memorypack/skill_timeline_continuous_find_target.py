@@ -10,7 +10,8 @@ closed for every route absent from the contract.
 The 19-member order is the shared four-member action prefix, fourteen
 target-selection members and a terminal ``findInterval`` float.  Current
 Skill selector routes include the two-member ``ExcludeTarget`` postprocessor
-(``excludedTargetSettings``, ``processTargetType``).  Reached first records
+(``excludedTargetSettings``, ``processTargetType``), whose tag is resolved by
+type name per build like every other selector route.  Reached first records
 close exactly; whole-file closure still needs every later timeline record.
 """
 from __future__ import annotations
@@ -39,20 +40,12 @@ from scripts.game_data.memorypack.skill_timeline_play_animation import (
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_continuous_find_target_native.json"
 LABEL = "skillTimelineContinuousFindTarget"
 CONTINUOUS_FIND_TARGET_TAG = 0x008A
-CONTINUOUS_SELECTOR_SUBTYPE_TABLES = {
-    **CURRENT_SELECTOR_SUBTYPE_TABLES,
-    "postProcessor": {
-        **CURRENT_SELECTOR_SUBTYPE_TABLES["postProcessor"],
-        # The current wrapper accepts the two-member form reached by this lane.
-        0x04: (
-            "ExcludeTarget",
-            (
-                ("excludedTargetSettings", "targetsettings"),
-                ("processTargetType", "i32"),
-            ),
-        ),
-    },
-}
+# The FindTarget contract's reviewed routes, each keyed by its subtype's tag
+# resolved by type name per build (``buff._selector_subtypes`` through
+# ``levelscript_union_tags``). They already carry the two-member
+# ``ExcludeTarget`` postprocessor this lane reaches, so no route is added
+# here: a literal tag would outlive a renumbering and a build drift.
+CONTINUOUS_SELECTOR_SUBTYPE_TABLES = CURRENT_SELECTOR_SUBTYPE_TABLES
 
 
 @lru_cache(maxsize=1)

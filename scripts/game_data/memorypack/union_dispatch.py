@@ -14,13 +14,24 @@ first ``mov rdx, [rip+disp32]`` loads the concrete wrapper's type-usage cell.
 Resolving every cell names every tag from the build itself -- the evidence the
 reviewed per-row contracts recorded one tag at a time.
 
+A profile-guided formatter may split the same switch: it tests its most
+frequent tag first and moves the table to a cold section::
+
+    cmp   tag, N-1 ; jne cold      (tag N-1 falls through)
+  cold:
+    ja    default                  (reuses the hot compare's flags)
+    lea / mov / add / jmp          (the same N-entry table)
+
+The table's last entry points back at the hot fall-through, so the cold table
+still names every tag (``SpawnerActionData``).
+
 Nothing here is pinned. The formatter is found by name, the table by
 instruction shape, and a candidate is accepted only when its entries resolve
 one-for-one onto the family's derived wrapper set with no shared targets;
 anything else raises. The branch rule was checked on every entry of six
 families (ActionBase, PureGetter, ActionHeader, AbilityActionData,
-GameCondition, BaseComponentData). Smaller unions compile to compare chains
-rather than a jump table and are refused, not guessed.
+GameCondition, BaseComponentData). A union compiled to a compare chain with
+no table is refused, not guessed.
 
 Run as: python -m scripts.game_data.memorypack.union_dispatch --base NAME
 """
@@ -45,6 +56,8 @@ WRAPPER_NAMESPACE = "Beyond.MemoryPack."
 #: belongs to a neighbouring function cannot be taken by mistake.
 SCAN_BYTES = 0x20000
 BRANCH_SCAN_BYTES = 96
+#: How far into a hot-case split's cold target the table dispatch may start.
+COLD_HEAD_BYTES = 40
 
 
 class UnionDispatchError(RuntimeError):
@@ -104,6 +117,37 @@ def _formatter_deserialize_va(image: NativeImage, base: str) -> int:
     return image.method_pointer_va(matches[0])
 
 
+def _table_dispatch(blob: bytes, index: int, blob_va: int, image_base: int) -> tuple[int, int] | None:
+    """``(mov offset, table rva)`` when ``blob[index]`` ends a table dispatch.
+
+    The shape is ``lea base, [ImageBase]; mov r32, [base + tag*4 + rva];
+    add r64, base; jmp r64``, with ``blob`` loaded from ``blob_va``.
+    """
+    if index < 12 or index + 1 >= len(blob) or blob[index] != 0xFF:
+        return None
+    if not 0xE0 <= blob[index + 1] <= 0xE7:
+        return None
+    if blob[index - 3] not in (0x48, 0x49, 0x4C, 0x4D) or blob[index - 2] != 0x03:
+        return None
+    mov = index - 3 - 7
+    if blob[mov] != 0x8B:
+        mov -= 1
+        if blob[mov + 1] != 0x8B:
+            return None
+        mov += 1
+    modrm, sib = blob[mov + 1], blob[mov + 2]
+    if modrm >> 6 != 2 or modrm & 7 != 4 or sib >> 6 != 2:
+        return None
+    table_rva = struct.unpack_from("<I", blob, mov + 3)[0]
+    if not any(
+        blob[lea] in (0x48, 0x4C) and blob[lea + 1] == 0x8D and (blob[lea + 2] & 0xC7) == 0x05
+        and blob_va + lea + 7 + struct.unpack_from("<i", blob, lea + 3)[0] == image_base
+        for lea in range(mov - 7, max(mov - 24, 0), -1)
+    ):
+        return None
+    return mov, table_rva
+
+
 def _jump_tables(image: NativeImage, start: int) -> list[tuple[int, int]]:
     """Every ``(table_va, entry_count)`` jump table in the scan window."""
     pe = image.pe
@@ -112,29 +156,46 @@ def _jump_tables(image: NativeImage, start: int) -> list[tuple[int, int]]:
     position = 0
     while (index := blob.find(b"\xff", position)) >= 0:
         position = index + 1
-        if index < 12 or index + 1 >= len(blob) or not 0xE0 <= blob[index + 1] <= 0xE7:
+        dispatch = _table_dispatch(blob, index, start, pe.image_base)
+        if dispatch is None:
             continue
-        if blob[index - 3] not in (0x48, 0x49, 0x4C, 0x4D) or blob[index - 2] != 0x03:
-            continue
-        mov = index - 3 - 7
-        if blob[mov] != 0x8B:
-            mov -= 1
-            if blob[mov + 1] != 0x8B:
-                continue
-            mov += 1
-        modrm, sib = blob[mov + 1], blob[mov + 2]
-        if modrm >> 6 != 2 or modrm & 7 != 4 or sib >> 6 != 2:
-            continue
-        table_rva = struct.unpack_from("<I", blob, mov + 3)[0]
-        if not any(
-            blob[lea] in (0x48, 0x4C) and blob[lea + 1] == 0x8D and (blob[lea + 2] & 0xC7) == 0x05
-            and start + lea + 7 + struct.unpack_from("<i", blob, lea + 3)[0] == pe.image_base
-            for lea in range(mov - 7, max(mov - 24, 0), -1)
-        ):
-            continue
+        mov, table_rva = dispatch
         count = _guard_count(blob, mov)
         if count:
             found.append((pe.image_base + table_rva, count))
+    return found
+
+
+def _hot_case_tables(image: NativeImage, start: int) -> list[tuple[int, int]]:
+    """Every ``(table_va, entry_count)`` behind a hot-case split in the window.
+
+    A ``cmp tag, N-1; jne rel32`` qualifies only when its target opens with
+    the ``ja`` that reuses those flags, directly followed by the table
+    dispatch; the table then has ``N`` entries.
+    """
+    pe = image.pe
+    blob = pe.bytes_at_va(start, SCAN_BYTES)
+    found: list[tuple[int, int]] = []
+    position = 0
+    while (jne := blob.find(b"\x0f\x85", position)) >= 0:
+        position = jne + 1
+        if jne + 6 > len(blob):
+            break
+        count = _compare_bound(blob, jne)
+        if not count:
+            continue
+        cold = start + jne + 6 + struct.unpack_from("<i", blob, jne + 2)[0]
+        try:
+            head = pe.bytes_at_va(cold, COLD_HEAD_BYTES)
+        except ValueError:
+            continue
+        if head[:2] != b"\x0f\x87":
+            continue
+        for jump in range(6 + 7 + 7 + 3, len(head) - 1):
+            dispatch = _table_dispatch(head, jump, cold, pe.image_base)
+            if dispatch is not None:
+                found.append((pe.image_base + dispatch[1], count))
+                break
     return found
 
 
@@ -143,23 +204,28 @@ def _guard_count(blob: bytes, before: int) -> int | None:
     for ja in range(before - 1, max(before - 64, 0), -1):
         if blob[ja] != 0x0F or blob[ja + 1] != 0x87:
             continue
-        for back in range(3, 12):
-            cmp = ja - back
-            if cmp < 0:
-                return None
-            opcode = blob[cmp]
-            if opcode == 0x3D and back == 5:
-                return struct.unpack_from("<I", blob, cmp + 1)[0] + 1
-            if opcode in (0x81, 0x83) and (blob[cmp + 1] >> 3) & 7 == 7:
-                mod, rm = blob[cmp + 1] >> 6, blob[cmp + 1] & 7
-                length = {3: 2, 1: 4 if rm == 4 else 3, 0: 3 if rm == 4 else 2}.get(mod)
-                if length is None:
-                    continue
-                width = 4 if opcode == 0x81 else 1
-                if cmp + length + width == ja:
-                    raw = blob[cmp + length:cmp + length + width]
-                    return int.from_bytes(raw, "little") + 1
-        return None
+        return _compare_bound(blob, ja)
+    return None
+
+
+def _compare_bound(blob: bytes, branch: int) -> int | None:
+    """``imm + 1`` of the ``cmp reg/mem, imm`` ending exactly at ``branch``."""
+    for back in range(3, 12):
+        cmp = branch - back
+        if cmp < 0:
+            return None
+        opcode = blob[cmp]
+        if opcode == 0x3D and back == 5:
+            return struct.unpack_from("<I", blob, cmp + 1)[0] + 1
+        if opcode in (0x81, 0x83) and (blob[cmp + 1] >> 3) & 7 == 7:
+            mod, rm = blob[cmp + 1] >> 6, blob[cmp + 1] & 7
+            length = {3: 2, 1: 4 if rm == 4 else 3, 0: 3 if rm == 4 else 2}.get(mod)
+            if length is None:
+                continue
+            width = 4 if opcode == 0x81 else 1
+            if cmp + length + width == branch:
+                raw = blob[cmp + length:cmp + length + width]
+                return int.from_bytes(raw, "little") + 1
     return None
 
 
@@ -202,8 +268,10 @@ def read_union_switch(
     wrappers = wrappers if wrappers is not None else derive_from_image(image)
     family = _family(wrappers, base)
     dispatcher = _formatter_deserialize_va(image, base)
+    tables = _jump_tables(image, dispatcher)
+    tables += [table for table in _hot_case_tables(image, dispatcher) if table not in tables]
     accepted = []
-    for table_va, count in _jump_tables(image, dispatcher):
+    for table_va, count in tables:
         if count != len(family):
             continue
         entries = [_entry(image, table_va, tag) for tag in range(count)]

@@ -6,14 +6,20 @@ family's wrappers, so any inserted type shifts everything after it. Code that
 names a pair as a literal therefore goes stale silently. Name the type
 instead and resolve it here.
 
-``contracts/levelscript_union_tags.json`` records, for the three LevelScript
-families, every wrapper's tag (read from its native formatter switch by
+``contracts/levelscript_union_tags.json`` records, for every family in
+``FAMILY_BASES`` (the LevelScript unions plus the ability, condition,
+selector, function-area and spawner-action unions that renumber the same
+way), every wrapper's tag (read from its native formatter switch by
 ``memorypack.union_dispatch``) and member count (from
 ``memorypack.wrapper_members``). It is regenerated, not reviewed row by row:
 ``--regenerate --write`` rewrites it for the installed build. When the
 installed build differs, every lookup returns a unique placeholder that no
 scanned record can equal, so consumers stay fail-closed rather than keyed to
 another build's numbers.
+
+A codec that reads a fixed field order names its layouts with the member
+count it reads and keys its dispatch by ``routes``: a layout is admitted only
+while the build validates and its current member count is the reviewed one.
 
 Run as: python -m scripts.game_data.levelscript_union_tags --regenerate [--write]
 """
@@ -45,6 +51,11 @@ FAMILY_BASES = {
     "SelectorValidator": "Beyond_Gameplay_Core_Selector_Validator_DataForMemoryPack",
     "SelectorPostProcessor": "Beyond_Gameplay_Core_Selector_PostProcessor_DataForMemoryPack",
     "LevelScriptModuleData": "Beyond_Gameplay_LevelScriptModuleDataForMemoryPack",
+    # Conditions nested in LevelData function areas and interactive progress
+    # locks, the function-area settings union, and SpawnerConfig wave actions.
+    "ConditionRuntimeBase": "Beyond_Gameplay_ConditionRuntimeBaseForMemoryPack",
+    "FunctionAreaSpecificData": "Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaSpecificDataForMemoryPack",
+    "SpawnerActionData": "Beyond_Gameplay_SpawnerActionDataForMemoryPack",
 }
 _WRAPPER_PREFIXES = ("Beyond.MemoryPack.Beyond_Gameplay_Actions_", "Beyond.MemoryPack.Beyond_Gameplay_")
 _WRAPPER_SUFFIX = "ForMemoryPack"
@@ -105,6 +116,34 @@ def pair(family: str, name: str) -> tuple[Any, ...]:
     """
     found = _load()[0].get(family, {}).get(name)
     return found if found is not None else ("unavailable", family, name)
+
+
+def routes(family: str, reviewed: dict[str, int]) -> dict[tuple[int, int], str]:
+    """Current ``(tag, member count)`` of each reviewed layout, mapped to its name.
+
+    ``reviewed`` pairs a type name with the member count its codec reads. A
+    name is left out when the build is not validated, the name is unknown, or
+    its current member count differs, so a reader keyed by the result fails
+    closed instead of reading a stale field order.
+    """
+    found: dict[tuple[int, int], str] = {}
+    for name, member_count in reviewed.items():
+        current = pair(family, name)
+        if isinstance(current[0], int) and current[1] == member_count:
+            found[current] = name
+    return found
+
+
+def unavailable_note() -> str:
+    """``""`` while the contract validates the selected build, else why not.
+
+    Readers append it to an unsupported-tag diagnostic so build drift is not
+    mistaken for a new record layout.
+    """
+    audit = _load()[1]
+    if audit["status"] == NATIVE_EVIDENCE_VALIDATED:
+        return ""
+    return f" (union tags {audit['status']}: {str(audit.get('detail') or '')[:200]})"
 
 
 def action(name: str) -> tuple[Any, ...]:

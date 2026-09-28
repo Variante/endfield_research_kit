@@ -18,9 +18,12 @@ Primary path (one sequential owner cursor):
    proves the ``waveMap`` offset as an exact generated-order cursor.
 2. ``decode_spawner_wave_map_sequential`` reads the 11-field wave and
    12-field group values and every current action map to physical EOF. The
-   admitted action wrappers are pause, play-audio, preview-route,
-   raise-event and spawn-monster (``SpawnMonsterFromTemplateV2``), each in
-   generated order.
+   admitted ``SpawnerActionData`` wrappers are pause, play-audio,
+   preview-route, raise-event and spawn-monster
+   (``SpawnMonsterFromTemplateV2``), each in generated order. Their union
+   tags are resolved by type name per build through
+   ``levelscript_union_tags``; an unvalidated build or a changed member
+   count admits no action, so the sequential reader fails closed.
 
 ``decode_spawner_wave_map`` is the older unique-tail fallback, kept for a
 changed future route profile: it accepts a frame only when exactly one
@@ -49,6 +52,8 @@ import math
 import struct
 from functools import lru_cache
 from typing import Any
+
+from scripts.game_data import levelscript_union_tags as union_tags
 
 
 NULL_COUNT = 0xFFFFFFFF
@@ -901,22 +906,43 @@ def _exact_vector3(data: bytes, offset: int, field: str) -> tuple[list[float], i
     return values, offset
 
 
+# ``SpawnerActionData`` layouts read here, with the member count each reads.
+# Tags are resolved by type name per build; never write one here.
+_SPAWNER_ACTION_LAYOUTS = {
+    "SpawnerActions_SpawnMonsterFromTemplateV2": 12,
+    "SpawnerActions_Pause": 3,
+    "SpawnerActions_PlayAudio": 3,
+    "SpawnerActions_PreviewRoute": 7,
+    "SpawnerActions_RaiseEvent": 3,
+}
+
+
+def _spawner_action_routes() -> dict[tuple[int, int], str]:
+    return union_tags.routes("SpawnerActionData", _SPAWNER_ACTION_LAYOUTS)
+
+
 def _decode_current_spawner_action(
     data: bytes,
     offset: int,
     field: str,
 ) -> tuple[dict[str, Any], int]:
-    """Decode current union tags observed in authenticated SpawnerConfig rows."""
+    """Decode the reviewed ``SpawnerActionData`` routes, resolved by type name."""
 
     start = offset
     if offset >= len(data):
         raise SpawnerWaveDecodeError(f"{field}: truncated union tag")
     tag = data[offset]
     offset += 1
-    if tag == 5:
-        if offset >= len(data) or data[offset] != 12:
-            raise SpawnerWaveDecodeError(f"{field}: tag 5 member count changed")
-        offset += 1
+    routes = {key[0]: (name, key[1]) for key, name in _spawner_action_routes().items()}
+    if tag not in routes:
+        raise SpawnerWaveDecodeError(
+            f"{field}: unsupported union tag {tag}{union_tags.unavailable_note()}"
+        )
+    action, member_count = routes[tag]
+    if offset >= len(data) or data[offset] != member_count:
+        raise SpawnerWaveDecodeError(f"{field}: tag {tag} member count changed")
+    offset += 1
+    if action == "SpawnerActions_SpawnMonsterFromTemplateV2":
         action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
         timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
         face_main, offset = _exact_bool(data, offset, f"{field}.faceMainCharacter")
@@ -948,10 +974,7 @@ def _decode_current_spawner_action(
             "spawnInterval": spawn_interval,
             "startPointInvalid": start_invalid,
         }, offset
-    if tag == 0:
-        if offset >= len(data) or data[offset] != 3:
-            raise SpawnerWaveDecodeError(f"{field}: tag 0 member count changed")
-        offset += 1
+    if action == "SpawnerActions_Pause":
         action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
         timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
         string_value, offset = _read_string(data, offset)
@@ -965,10 +988,7 @@ def _decode_current_spawner_action(
             "timestamp": timestamp,
             "pauseKey": string_value,
         }, offset
-    if tag == 1:
-        if offset >= len(data) or data[offset] != 3:
-            raise SpawnerWaveDecodeError(f"{field}: tag 1 member count changed")
-        offset += 1
+    if action == "SpawnerActions_PlayAudio":
         action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
         timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
         audio_id, offset = _read_string(data, offset)
@@ -982,10 +1002,7 @@ def _decode_current_spawner_action(
             "timestamp": timestamp,
             "audioId": audio_id or "",
         }, offset
-    if tag == 2:
-        if offset >= len(data) or data[offset] != 7:
-            raise SpawnerWaveDecodeError(f"{field}: tag 2 member count changed")
-        offset += 1
+    if action == "SpawnerActions_PreviewRoute":
         action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
         timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
         duration, offset = _exact_f32(data, offset, f"{field}.duration")
@@ -1007,10 +1024,7 @@ def _decode_current_spawner_action(
             "routeId": route_id,
             "startPointInvalid": start_invalid,
         }, offset
-    if tag == 3:
-        if offset >= len(data) or data[offset] != 3:
-            raise SpawnerWaveDecodeError(f"{field}: tag 3 member count changed")
-        offset += 1
+    if action == "SpawnerActions_RaiseEvent":
         action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
         timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
         key, offset = _read_string(data, offset)

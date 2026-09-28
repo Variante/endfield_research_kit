@@ -7,30 +7,32 @@ polymorphic nested collections and the shared condition union.
 - ``ConditionData`` reads ``conditionRuntimeBase`` before ``uniqueId``.
 - ``decode_condition_runtime`` is the shared ``ConditionRuntimeBase`` codec
   (also used by top-level ``buildableCondition``). It admits only the
-  current routes: tag 0 ``CombinedConditionRuntime`` (recursive, three
-  members), tag 8 ``SimpleConditionCheckGlobalVar`` (``compareOperator``,
-  ``compareTarget``, ``globalVarName``; reached by bamboo-raft dock
-  filters), tag 11 ``SimpleConditionCheckMissionNotPaused``, tag 12
-  mission-state and tag 17 quest-state checks.
-- ``FunctionAreaSpecificData`` follows the authenticated current native tag
-  dispatcher: ambience camera, blight miasma, block-AI bark, camera
-  control/look-at/volume, carry tags, dither factory bounds, entity-hiding
-  filters, radio triggers, repatriation, scene toast keys, teammate-follow
-  bounds, Story safe zones, and tag 16 ``VisitLocStatData`` (a one-member
-  wrapper holding the signed ``saveId``). Each concrete value uses its
-  generated setter order and member count, including nested LangKey,
+  reviewed routes: ``CombinedConditionRuntime`` (recursive, three members),
+  ``SimpleConditionCheckGlobalVar`` (``compareOperator``, ``compareTarget``,
+  ``globalVarName``; reached by bamboo-raft dock filters),
+  ``SimpleConditionCheckMissionNotPaused``, and the mission-state and
+  quest-state checks.
+- ``FunctionAreaSpecificData`` covers ambience camera, blight miasma,
+  block-AI bark, camera control/look-at/volume, carry tags, dither factory
+  bounds, entity-hiding filters, radio triggers, repatriation, scene toast
+  keys, teammate-follow bounds, Story safe zones, and ``VisitLocStatData`` (a
+  one-member wrapper holding the signed ``saveId``). Each concrete value uses
+  its generated setter order and member count, including nested LangKey,
   string/identity lists and finite Vector3 values.
 
-An unknown tag or changed member count stops at the nested union instead of
-shifting later LevelData fields. Evidence tier: exact stored layout; the
-stored conditions and area settings do not prove runtime evaluation or
-activation.
+Both unions are dispatched by type name: each reviewed layout names its type
+and the member count it reads, and the build's tag is resolved by type name
+per build through ``levelscript_union_tags``. An unknown tag, a changed member
+count or an unvalidated build stops at the nested union instead of shifting
+later LevelData fields. Evidence tier: exact stored layout; the stored
+conditions and area settings do not prove runtime evaluation or activation.
 """
 
 from __future__ import annotations
 
 from typing import Any, Callable
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.codecs.leveldata.memorypack import (
     read_bool,
     read_count,
@@ -44,6 +46,48 @@ from scripts.game_data.codecs.leveldata.memorypack import (
 
 class LevelFunctionAreaCodecError(ValueError):
     """Raised when a function-area wrapper cannot be advanced exactly."""
+
+
+# Reviewed layouts, by type name and the member count each reads. Tags are
+# resolved by type name per build; never write one here.
+_CONDITION_LAYOUTS = {
+    "CombinedConditionRuntime": 3,
+    "SimpleConditionCheckMissionNotPaused": 1,
+    "SimpleConditionCheckGlobalVar": 3,
+    "SimpleConditionCheckMissionState": 3,
+    "SimpleConditionCheckQuestState": 3,
+}
+_SPECIFIC_DATA_LAYOUTS = {
+    "AmbienceCameraData": 20,
+    "BlightMiasmaAreaData": 1,
+    "BlockAIBarkData": 1,
+    "CameraAddControlStateData": 11,
+    "CameraLookAtData": 13,
+    "CameraVolumeData": 12,
+    "CarryTagZoneData": 1,
+    "DitherFactoryZoneData": 2,
+    "HideEntityByTypeParams": 4,
+    "RadioTriggerZoneData": 7,
+    "RepatriateZoneData": 2,
+    "SceneToastUIData": 6,
+    "StopTeammateFollowZoneData": 6,
+    "StorySafeZone": 4,
+    "VisitLocStatData": 1,
+}
+# Nested ``LevelFunctionAreaData`` types carry their owner in the union name.
+_SPECIFIC_DATA_OWNER = "LevelFunctionAreaData_"
+
+
+def _condition_routes() -> dict[tuple[int, int], str]:
+    return union_tags.routes("ConditionRuntimeBase", _CONDITION_LAYOUTS)
+
+
+def _specific_data_routes() -> dict[tuple[int, int], str]:
+    found = union_tags.routes(
+        "FunctionAreaSpecificData",
+        {_SPECIFIC_DATA_OWNER + name: count for name, count in _SPECIFIC_DATA_LAYOUTS.items()},
+    )
+    return {key: name.removeprefix(_SPECIFIC_DATA_OWNER) for key, name in found.items()}
 
 
 def _decoded(value: Any, field: str, offset: int) -> tuple[Any, int]:
@@ -152,7 +196,8 @@ def decode_condition_runtime(
     tag = data[cursor]
     member_count = data[cursor + 1]
     cursor += 2
-    if tag == 0 and member_count == 3:
+    condition_type = _condition_routes().get((tag, member_count))
+    if condition_type == "CombinedConditionRuntime":
         operator, cursor = _i32(data, cursor, f"{field}.conditionOperator")
         reverse, cursor = _bool(data, cursor, f"{field}.reverse")
         sub_conditions, cursor = _list(
@@ -175,7 +220,7 @@ def decode_condition_runtime(
             "reverse": reverse,
             "subConditions": sub_conditions,
         }, cursor
-    if tag == 11 and member_count == 1:
+    if condition_type == "SimpleConditionCheckMissionNotPaused":
         mission_id, cursor = _string(data, cursor, f"{field}.missionId")
         return {
             "startOffset": start,
@@ -185,7 +230,7 @@ def decode_condition_runtime(
             "serializedMemberCount": member_count,
             "missionId": mission_id,
         }, cursor
-    if tag == 8 and member_count == 3:
+    if condition_type == "SimpleConditionCheckGlobalVar":
         compare_operator, cursor = _i32(data, cursor, f"{field}.compareOperator")
         compare_target, cursor = _i32(data, cursor, f"{field}.compareTarget")
         global_var_name, cursor = _string(data, cursor, f"{field}.globalVarName")
@@ -199,7 +244,7 @@ def decode_condition_runtime(
             "compareTarget": compare_target,
             "globalVarName": global_var_name,
         }, cursor
-    if tag in (12, 17) and member_count == 3:
+    if condition_type in ("SimpleConditionCheckMissionState", "SimpleConditionCheckQuestState"):
         compare_operator, cursor = _i32(data, cursor, f"{field}.compareOperator")
         compare_target, cursor = _i32(data, cursor, f"{field}.compareTarget")
         owner_id, cursor = _string(data, cursor, f"{field}.ownerId")
@@ -207,11 +252,7 @@ def decode_condition_runtime(
             "startOffset": start,
             "endOffset": cursor,
             "unionTag": tag,
-            "conditionType": (
-                "SimpleConditionCheckMissionState"
-                if tag == 12
-                else "SimpleConditionCheckQuestState"
-            ),
+            "conditionType": condition_type,
             "serializedMemberCount": member_count,
             "compareOperator": compare_operator,
             "compareTarget": compare_target,
@@ -219,6 +260,7 @@ def decode_condition_runtime(
         }, cursor
     raise LevelFunctionAreaCodecError(
         f"{field}: unsupported condition at offset={start}: tag={tag} memberCount={member_count}"
+        f"{union_tags.unavailable_note()}"
     )
 
 
@@ -279,9 +321,10 @@ def _specific_data(data: bytes, cursor: int, field: str) -> tuple[dict[str, Any]
         "unionTag": tag,
         "serializedMemberCount": member_count,
     }
+    specific_type = _specific_data_routes().get((tag, member_count))
 
-    if tag == 0 and member_count == 20:
-        result["specificDataType"] = "AmbienceCameraData"
+    if specific_type == "AmbienceCameraData":
+        result["specificDataType"] = specific_type
         for name, kind in (
             ("blendInStyle", "i32"), ("blendInTime", "f32"),
             ("blendOutStyle", "i32"), ("blendOutTime", "f32"),
@@ -297,14 +340,14 @@ def _specific_data(data: bytes, cursor: int, field: str) -> tuple[dict[str, Any]
             result[name], cursor = {"i32": _i32, "f32": _f32, "bool": _bool}[kind](
                 data, cursor, f"{field}.{name}"
             )
-    elif tag == 1 and member_count == 1:
-        result["specificDataType"] = "BlightMiasmaAreaData"
+    elif specific_type == "BlightMiasmaAreaData":
+        result["specificDataType"] = specific_type
         result["areaLevel"], cursor = _i32(data, cursor, f"{field}.areaLevel")
-    elif tag == 2 and member_count == 1:
-        result["specificDataType"] = "BlockAIBarkData"
+    elif specific_type == "BlockAIBarkData":
+        result["specificDataType"] = specific_type
         result["defaultOn"], cursor = _bool(data, cursor, f"{field}.defaultOn")
-    elif tag == 3 and member_count == 11:
-        result["specificDataType"] = "CameraAddControlStateData"
+    elif specific_type == "CameraAddControlStateData":
+        result["specificDataType"] = specific_type
         for name, kind in (
             ("blendInStyle", "i32"), ("blendInTime", "f32"),
             ("blendOutStyle", "i32"), ("blendOutTime", "f32"),
@@ -316,8 +359,8 @@ def _specific_data(data: bytes, cursor: int, field: str) -> tuple[dict[str, Any]
             result[name], cursor = {
                 "i32": _i32, "f32": _f32, "bool": _bool, "string": _string
             }[kind](data, cursor, f"{field}.{name}")
-    elif tag == 4 and member_count == 13:
-        result["specificDataType"] = "CameraLookAtData"
+    elif specific_type == "CameraLookAtData":
+        result["specificDataType"] = specific_type
         for name, kind in (
             ("blendInStyle", "i32"), ("blendInTime", "f32"),
             ("blendOutStyle", "i32"), ("blendOutTime", "f32"),
@@ -330,8 +373,8 @@ def _specific_data(data: bytes, cursor: int, field: str) -> tuple[dict[str, Any]
             result[name], cursor = {"i32": _i32, "f32": _f32, "bool": _bool}[kind](
                 data, cursor, f"{field}.{name}"
             )
-    elif tag == 5 and member_count == 12:
-        result["specificDataType"] = "CameraVolumeData"
+    elif specific_type == "CameraVolumeData":
+        result["specificDataType"] = specific_type
         result["blendStyle"], cursor = _i32(data, cursor, f"{field}.blendStyle")
         result["duration"], cursor = _f32(data, cursor, f"{field}.duration")
         result["fov"], cursor = _f32(data, cursor, f"{field}.fov")
@@ -345,32 +388,32 @@ def _specific_data(data: bytes, cursor: int, field: str) -> tuple[dict[str, Any]
         result["useBlackScreen"], cursor = _bool(data, cursor, f"{field}.useBlackScreen")
         result["useOnce"], cursor = _bool(data, cursor, f"{field}.useOnce")
         result["useYawCheck"], cursor = _bool(data, cursor, f"{field}.useYawCheck")
-    elif tag == 6 and member_count == 1:
-        result["specificDataType"] = "CarryTagZoneData"
+    elif specific_type == "CarryTagZoneData":
+        result["specificDataType"] = specific_type
         result["zoneTag"], cursor = _u32(data, cursor, f"{field}.zoneTag")
-    elif tag == 7 and member_count == 2:
-        result["specificDataType"] = "DitherFactoryZoneData"
+    elif specific_type == "DitherFactoryZoneData":
+        result["specificDataType"] = specific_type
         result["center"], cursor = _vector3(data, cursor, f"{field}.center")
         result["size"], cursor = _vector3(data, cursor, f"{field}.size")
-    elif tag == 9 and member_count == 4:
-        result["specificDataType"] = "HideEntityByTypeParams"
+    elif specific_type == "HideEntityByTypeParams":
+        result["specificDataType"] = specific_type
         result["entityTypes"], cursor = _i32(data, cursor, f"{field}.entityTypes")
         result["logicIdWhitelist"], cursor = _list(data, cursor, f"{field}.logicIdWhitelist", _u64_item)
         result["npcTypes"], cursor = _i32(data, cursor, f"{field}.npcTypes")
         result["proxyWhitelist"], cursor = _list(data, cursor, f"{field}.proxyWhitelist", _string_item)
-    elif tag == 10 and member_count == 7:
-        result["specificDataType"] = "RadioTriggerZoneData"
+    elif specific_type == "RadioTriggerZoneData":
+        result["specificDataType"] = specific_type
         for name in ("hideAfterMissionId", "hideBeforeMissionId", "hideCompleteMissionId", "prtsId", "radioId"):
             result[name], cursor = _string(data, cursor, f"{field}.{name}")
         value, cursor = _u64(data, cursor, f"{field}.triggerId")
         result["triggerId"] = str(value)
         result["useRadioTriggerOnce"], cursor = _bool(data, cursor, f"{field}.useRadioTriggerOnce")
-    elif tag == 11 and member_count == 2:
-        result["specificDataType"] = "RepatriateZoneData"
+    elif specific_type == "RepatriateZoneData":
+        result["specificDataType"] = specific_type
         result["lifeRatio"], cursor = _f32(data, cursor, f"{field}.lifeRatio")
         result["useRepatriateZoneType"], cursor = _bool(data, cursor, f"{field}.useRepatriateZoneType")
-    elif tag == 13 and member_count == 6:
-        result["specificDataType"] = "SceneToastUIData"
+    elif specific_type == "SceneToastUIData":
+        result["specificDataType"] = specific_type
         result["conditionalEntries"], cursor = _list(
             data, cursor, f"{field}.conditionalEntries", _scene_toast_runtime_entry
         )
@@ -379,27 +422,27 @@ def _specific_data(data: bytes, cursor: int, field: str) -> tuple[dict[str, Any]
         result["priority"], cursor = _i32(data, cursor, f"{field}.priority")
         result["saveId"], cursor = _i32(data, cursor, f"{field}.saveId")
         result["subTitle"], cursor = _lang_key(data, cursor, f"{field}.subTitle")
-    elif tag == 14 and member_count == 6:
-        result["specificDataType"] = "StopTeammateFollowZoneData"
+    elif specific_type == "StopTeammateFollowZoneData":
+        result["specificDataType"] = specific_type
         result["enterSummonRadius"], cursor = _f32(data, cursor, f"{field}.enterSummonRadius")
         result["inOutZoneTolerance"], cursor = _f32(data, cursor, f"{field}.inOutZoneTolerance")
         result["specifyTeammatePositions"], cursor = _bool(data, cursor, f"{field}.specifyTeammatePositions")
         result["specifyTeammateRotations"], cursor = _bool(data, cursor, f"{field}.specifyTeammateRotations")
         result["teammateLookAtPoints"], cursor = _list(data, cursor, f"{field}.teammateLookAtPoints", _vector3_item)
         result["teammatePositions"], cursor = _list(data, cursor, f"{field}.teammatePositions", _vector3_item)
-    elif tag == 15 and member_count == 4:
-        result["specificDataType"] = "StorySafeZone"
+    elif specific_type == "StorySafeZone":
+        result["specificDataType"] = specific_type
         result["defaultOn"], cursor = _bool(data, cursor, f"{field}.defaultOn")
         result["npcProxyIds"], cursor = _list(data, cursor, f"{field}.npcProxyIds", _string_item)
         result["showEnterToast"], cursor = _bool(data, cursor, f"{field}.showEnterToast")
         result["showLeaveToast"], cursor = _bool(data, cursor, f"{field}.showLeaveToast")
-    elif tag == 16 and member_count == 1:
-        result["specificDataType"] = "VisitLocStatData"
+    elif specific_type == "VisitLocStatData":
+        result["specificDataType"] = specific_type
         result["saveId"], cursor = _i32(data, cursor, f"{field}.saveId")
     else:
         raise LevelFunctionAreaCodecError(
             f"{field}: unsupported specific-data wrapper at offset={start}: "
-            f"tag={tag} memberCount={member_count}"
+            f"tag={tag} memberCount={member_count}{union_tags.unavailable_note()}"
         )
     result["endOffset"] = cursor
     return result, cursor
