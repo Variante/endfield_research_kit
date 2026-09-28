@@ -47,10 +47,10 @@ and the value of `document.body.dataset.activeView`.
 | Map | `map-recovery` | Authored world-space evidence with minimap, model, point, and water layers |
 | Characters | `characters` | Identity groups, source evidence, related assets, and live overrides |
 | Gameplay | `gameplay` | Characters, equipment, enemies, items, progression, skills, projectiles, and assets |
+| Text | `reference` | Searchable localized table/reference rows |
 | Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state |
 | Assets | `assets` | Exported images, models, video, and metadata |
 | Data | `data-inspector` | One Files list over the export stores (Unity documents, packed game files), the loose decoded export files no other page shows, and the decoded datasets, plus a SQL console |
-| Text | `reference` | Searchable localized table/reference rows |
 | Updates | `updates` | Exported game-data changes between two complete versions |
 
 `recovery` is one more, debug-only tab revealed by `Show debug info`. It shows

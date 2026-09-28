@@ -66,6 +66,7 @@ space and memory than the initial Story/Text setup.
   overrides.
 - **Gameplay** covers characters, equipment, enemies, progression, skills,
   projectiles, related assets, and recovered sound effects.
+- **Text** provides searchable localized tables and source records.
 - **Audio** exposes decoded voices, music, sound effects, event relationships,
   and playback evidence.
 - **Assets** browses exported images, videos, and models with their linked
@@ -79,7 +80,6 @@ space and memory than the initial Story/Text setup.
   name, object name, PathID, or CAB; read JSON as a tree with base64 decoded
   inline; or query with read-only SQL. It also keeps the decoded datasets of
   the maintained binary readers.
-- **Text** provides searchable localized tables and source records.
 - **Updates** compares exported game data across two saved versions.
 
 ### Pages prepared by each command

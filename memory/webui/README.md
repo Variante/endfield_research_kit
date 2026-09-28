@@ -7,9 +7,9 @@ its builder, generated contract, or frontend consumer.
 - [`map.md`](map.md): level ownership, spatial evidence, render layers, and Story links.
 - [`characters.md`](characters.md): identity merging, localization, models, and overrides.
 - [`gameplay.md`](gameplay.md): playable/enemy data, skills, buffs, projectiles, and sounds.
+- [`text.md`](text.md): localized table discovery and row rendering.
 - [`audio.md`](audio.md): Wwise identity, decoded media, semantics, and annotations.
 - [`assets.md`](assets.md): exported resource inventory and semantic references.
-- [`text.md`](text.md): localized table discovery and row rendering.
 - [`updates.md`](updates.md): previous/current export comparison.
 - [`recovery.md`](recovery.md): per-block volume and per-file-type L1–L4
   recovery state, and the measured-versus-declared boundary the page enforces.
