@@ -3,9 +3,10 @@
 `webui/` is a static research browser over generated Endfield data. It has no
 application build step: serve the repository and open the default local URL.
 
-This file is the frontend contract: pages, routing, controls, layout, and the
-shape of the `webui/data/**` JSON each page reads. Per-page recovery inputs,
-evidence boundaries, and refresh commands live in
+This file is the frontend contract: pages, routing, shared behavior, and the
+shape of the `webui/data/**` JSON each page reads. Each page module's header
+comment carries its detailed control and rendering contract. Per-page recovery
+inputs, evidence boundaries, and refresh commands live in
 [`memory/webui/README.md`](../memory/webui/README.md); the shared export and
 publication sequence in
 [`memory/webui_recovery.md`](../memory/webui_recovery.md); commands and builder
@@ -30,6 +31,7 @@ can link straight at extracted media:
 | `/export_full/...` | the current export root |
 | `/export_data/...` | raw `StreamingAssets/Data` and `Persistent/Data` files |
 | `/export_previous/...` | the saved previous export's assets |
+| `/api/stores*` | read-only Data-page store API ([`store_browser.py`](../scripts/webui/data_inspector/store_browser.py)) |
 
 When present, root-level `endfield_paths.bat` supplies the current and previous
 export mounts through `ENDFIELD_EXPORT_ROOT` and
@@ -41,21 +43,25 @@ precedence; `WEBUI_PREVIOUS_EXPORT_ROOT` remains the server-specific override.
 Eight tabs, in navigation order. `data-view` is the tab token in `index.html`
 and the value of `document.body.dataset.activeView`.
 
-| Page | `data-view` | Scope |
-| --- | --- | --- |
-| Story | `story` | Reconstructed dialog, SNS, radio, options, cutscenes, media, and evidence-typed order |
-| Map | `map-recovery` | Authored world-space evidence with minimap, model, point, and water layers |
-| Characters | `characters` | Identity groups, source evidence, related assets, and live overrides |
-| Gameplay | `gameplay` | Characters, equipment, enemies, items, progression, skills, projectiles, and assets |
-| Text | `reference` | Searchable localized table/reference rows |
-| Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state |
-| Assets | `assets` | Exported images, models, video, and metadata |
-| Data | `data-inspector` | One Files list over the export stores (Unity documents, packed game files), the loose decoded export files no other page shows, and the decoded datasets, plus a SQL console |
-| Updates | `updates` | Exported game-data changes between two complete versions |
+| Page | `data-view` | Scope | Behavior contract |
+| --- | --- | --- | --- |
+| Story | `story` | Reconstructed dialog, SNS, radio, options, cutscenes, media, and evidence-typed order | `app.js` |
+| Map | `map-recovery` | Authored world-space evidence with minimap, model, point, and water layers | `src/features/map_recovery/index.js` |
+| Characters | `characters` | Identity groups, source evidence, related assets, and live overrides | `src/features/characters/index.js` |
+| Gameplay | `gameplay` | Characters, equipment, enemies, items, progression, skills, projectiles, and assets | `src/features/gameplay/index.js` |
+| Text | `reference` | Searchable localized table/reference rows | `src/features/reference/index.js` |
+| Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state | `src/features/audio/index.js` |
+| Assets | `assets` | Exported images, models, video, and metadata | `assets.js` |
+| Data | `data-inspector` | Files list over the export stores, loose and undecoded export files, and decoded datasets, plus a SQL console | `src/features/data_inspector/{stores,index}.js` |
+| Updates | `updates` | Exported game-data changes between two complete versions | `src/features/updates/index.js` |
 
-`recovery` is one more, debug-only tab revealed by `Show debug info`. It shows
-block volume and each file type's L1-L4 recovery state, which keeps recovery
-internals out of normal semantic navigation.
+`recovery` is one more, debug-only tab revealed by `Show debug info`
+(`src/features/recovery/index.js`, data from
+`python -m scripts.webui.recovery.build_recovery`). It shows block volume and
+each file type's L1-L4 recovery state, keeping recovery internals out of normal
+navigation. The volume bar shows inventory composition, never the fraction
+recovered; states are scoped declarations, not numeric progress; a missing or
+older payload shows an explicit rebuild state.
 
 Deep links are query parameters kept current with `history.replaceState`.
 `#<view>` also selects a tab: the retired `#projectiles` falls back to
@@ -70,13 +76,13 @@ Gameplay, and any other unknown hash falls back to Story.
 | `?audio=` + `?audioKind=` | Audio record (`events` or a media shard) |
 | `?gameplay=` + `?gameplayId=` + `?entry=` | Gameplay list, item, and sub-entry |
 | `?inspectDataset=` + `?inspect=` | Data page, Files mode: the selected decoded record (dataset and record id) |
-| `?dataMode=` + `?dataRoot=` + `?dataStore=` + `?dataGroup=` + `?dataName=` (+ `?dataQ=`, `?dataField=`, `?dataStatus=`, `?dataFolder=`, `?dataTag=`, `?dataSort=`) | Data page mode (`files`, `sql`; the retired `decoded` opens `files`), export (`previous`, omitted for current), selected sources (repeated `dataStore`: `unity`, `game-files`, `loose`, `undecoded`, `decoded`), selected groups (repeated `dataGroup=<source>:<group>`; an unqualified group belongs to `dataStore`), the selected store row, search, and the repeated decoded filters and decoded order; build with `WebUI.dataPageUrl` / `dataPageUrlForRel` |
+| `?dataMode=` + `?dataRoot=` + `?dataStore=` + `?dataGroup=` + `?dataName=` (+ `?dataQ=`, `?dataField=`, `?dataStatus=`, `?dataFolder=`, `?dataTag=`, `?dataSort=`) | Data page mode (`files`, `sql`; the retired `decoded` opens `files`), export (`previous`, omitted for current), selected sources (repeated `dataStore`: `unity`, `game-files`, `loose`, `undecoded`, `decoded`), selected groups (repeated `dataGroup=<source>:<group>`; an unqualified group belongs to `dataStore`), the selected store row, search, and the repeated decoded filters and order; build with `WebUI.dataPageUrl` / `dataPageUrlForRel` |
 
 Factory, World, Presentation, Progression, the standalone Combat & Projectiles
-page, and the Mission Pipeline page are retired; their useful progression,
-and projectile information lives in Gameplay. Mission Pipeline recovery
-is a standalone Python workflow, and `webui/src/features/mission_pipeline/` is
-not loaded by `index.html`.
+page, and the Mission Pipeline page are retired; their useful progression and
+projectile information lives in Gameplay. Mission Pipeline recovery is a
+standalone Python workflow, and `webui/src/features/mission_pipeline/` is not
+loaded by `index.html`.
 
 ## Frontend map
 
@@ -85,89 +91,31 @@ Load order, as `index.html` declares it:
 | Files | Role |
 | --- | --- |
 | `index.html`, `style.css` | shell, page containers, shared layout and media presentation |
-| `src/core/sprites.js`, `sprite_worker.js` | registers the service worker that renders Sprite images (below); the first visit reloads once when it takes over |
+| `src/core/sprites.js`, `sprite_worker.js` | registers the service worker that renders Sprite images; the first visit reloads once when it takes over |
 | `src/core/{namespace,dom,loader,storage,text,locale,paths}.js` | globals, DOM helpers, fetch/caching, persistence, text, locale, paths |
-| `src/ui/{media_player,splitter,filters,facets,pagination}.js` | shared media player, resizable splitters, filter chips and panel toggle, declarative facet filters (`WebUI.facets`, below), list pager |
+| `src/ui/{media_player,splitter,filters,facets,pagination}.js` | shared media player, resizable splitters, filter chips and panel toggle, declarative facet filters, list pager |
 | `app_labels.js`, `app_tree.js`, `src/features/story_triggers.js`, `app.js` | Story/Text labels, tree rendering, trigger evidence, Story page |
 | `assets.js` | Assets page |
 | `src/features/characters/{index.js,style.css}` | Characters view and runtime overrides |
-| `src/features/gameplay/{labels.js,index.js}` | Gameplay datasets and detail rendering |
+| `src/features/gameplay/{labels.js,loadout.js,index.js}` | Gameplay datasets, loadout calculator, and detail rendering |
 | `src/features/audio/{index.js,style.css}` | Audio evidence browser |
 | `src/features/map_recovery/{index.js,style.css}` | Map view |
 | `src/features/next_views.js` | shared page-bootstrap wiring |
 | `src/features/reference/index.js` | localized Text Tables browser |
 | `src/features/updates/index.js` | Updates page |
-  | `src/features/recovery/{index.js,style.css}` | debug-only Recovery progress page |
-| `src/features/data_inspector/{index.js,stores.js,style.css}` | Data page: `stores.js` owns the mode switch, deep links, and the Files/SQL modes; `index.js` is the decoded-dataset source (catalog, matching, row markup, record viewer) that Files lists and shows |
+| `src/features/recovery/{index.js,style.css}` | debug-only Recovery progress page |
+| `src/features/data_inspector/{index.js,stores.js,style.css}` | Data page: `stores.js` owns the mode switch, deep links, and the Files/SQL modes; `index.js` is the decoded-dataset source (catalog, matching, row markup, record viewer) |
 
 Generated data belongs in `webui/data/`; user-managed inputs belong in
 `webui/overrides/`. Do not hand-edit generated JSON.
 
-### Facet filters (`WebUI.facets`)
-
-`src/ui/facets.js` is the shared model for a list page's chip groups, built on
-`WebUI.filters.buildChips`. A page declares its groups once and the model owns
-the active values, chip rendering, per-chip counts, the `.filter-section`
-`(n)` badges, matching, reset, and URL/storage persistence. Semantics are the
-same on every page: several chips in one group are OR, groups combine with
-AND, and a group with nothing active does not constrain.
-
-```js
-const facets = WebUI.facets.create({
-  groups: [
-    { id: "kind", container: "#x-kind-filter", section: "x-kind", param: "kind",
-      values: (item) => item.kind, label: kindLabel, order: "count" },
-    { id: "tag", container: "#x-tag-filter", section: "x-tag", values: (item) => item.tags },
-  ],
-  predicate: (item) => matchesSearch(item), // non-facet filters; also narrows counts
-  onChange: () => applyFilters(),            // after a toggle, set(), reset(), fromParams()
-});
-facets.render(items);                        // after load and on locale change
-const shown = facets.filter();               // or facets.filter(list) / facets.matches(item)
-```
-
-- `values(item)` returns a value, an array, or nothing. Counts are faceted by
-  default: a chip counts the items that pass the predicate and every other
-  group, so it shows what selecting it would add (`countMode: "total"` counts
-  against the predicate only). A zero-count chip is dimmed (`is-facet-empty`,
-  or hidden with `hideEmpty`); an active value absent from the data stays
-  visible so it can be cleared.
-- Group options: `single` (radio-style), `mode: "all"` (an item needs every
-  active value), `match(item, active)` (a custom test), `items` (a fixed chip
-  list, e.g. an enumeration that must show zero counts), `counts` (explicit
-  counts), `label`, `title`, `className`, `order` (`natural`, `count`, `none`,
-  an array, or a comparator), and `section` (several groups may share one
-  badge).
-- A server-side group omits `values` and gives `items` plus `counts`;
-  `matches()` ignores it and the page applies its active values itself, as
-  the Data page does for store groups.
-- State: `active(id)` (a copy), `has`, `set(id, values)`, `toggle(id, value,
-  on)`, `reset({ only })`, `isFiltered(id?)`, `activeCount(id?)`,
-  `counts(id)`. Every mutator takes `{ silent: true }` to skip `onChange`.
-- Persistence: `toParams(params)` / `fromParams(params)` write and read one
-  repeated URL parameter per active value (`?kind=a&kind=b`, so values may
-  contain commas) for groups that declare `param`; `snapshot()` /
-  `restore(snapshot)` round-trip a plain `{ groupId: [values] }` object for
-  storage.
-- Every list page uses it: Story (`app_tree.js`), Assets, Gameplay,
-  Characters, Audio, Text, Updates, and the Data page. Page conventions:
-  - chip counts are dataset totals (`countMode: "total"`) on every page, as
-    before the shared model; the Data page's store groups carry server
-    counts;
-  - search stays outside `predicate`, so typing never recounts chips (Audio
-    media alone is ~90 K records); each page applies its search after
-    `facets.filter()`, and ranking stays page-owned;
-  - `values()` must not return `""`: an empty value is dropped, so a page
-    that needs one maps it to a sentinel (Assets uses `"(root)"`);
-  - a union across groups (Gameplay's per-kind type groups) is written as a
-    `match` that reads the other groups' state;
-  - Map's layer checkboxes and Recovery are not filter groups and do not use
-    it.
-
-Migrating a page replaces its per-group `Set`s, `buildChips` calls, hand-rolled
-filter tests, count maps, badge updates and reset code with one `create()`
-call, one `render()` after data loads, and `facets.filter()` in the apply step.
-The Data page Files mode is the reference consumer.
+**Facet filters.** `src/ui/facets.js` (`WebUI.facets`) is the one model for a
+list page's chip groups: a page declares its groups once and the model owns
+active values, chips, counts, `(n)` badges, matching, reset, and URL/storage
+persistence. Several chips in one group are OR, groups combine with AND, and an
+empty group does not constrain. Every list page uses it; Map's layer checkboxes
+and Recovery are not filter groups. The header comment of `facets.js` is the
+API and page-convention contract.
 
 ## Generated data
 
@@ -206,122 +154,28 @@ Builders may add compact sidecars, but each page must tolerate an absent
 optional sidecar and display an explicit degraded state when the omission
 matters. Schema changes must be coordinated with their frontend consumer.
 
-The Data page contract is documented in
-[`memory/webui/data_inspector.md`](../memory/webui/data_inspector.md). It has
-two modes, Files and SQL. Files is one list shell over every data source: the
-export stores and the loose decoded files under `game/` that no other page
-shows (the `loose` source), and the undecoded files under `raw/` (the
-`undecoded` source, always shown as a hex dump) -- neither has SQL -- read
-through the local server's
-read-only `/api/stores`, `/api/stores/rows` and `/api/stores/sql` endpoints
-(`scripts/webui/data_inspector/store_browser.py`), and the generated decoded
-datasets. Sources and their groups (Unity types, packed folders, datasets) are
-multi-select `WebUI.facets` chips: a source is listed when its source chip or
-any of its group chips is on, or when nothing is selected; selected groups
-narrow their source. The listed sources are paged as one sequence in the order
-Unity objects, packed game files, loose export files, undecoded files,
-decoded records; `/api/stores/rows` takes
-repeated `group=` parameters (none means the whole store), orders rows by
-`type, name`, and returns each row's `group`. The search matches store rows by
-the chosen field (name, or the Unity-only object name, PathID and CAB) and
-decoded records by name, path, status and tag. Decode status, source folder,
-tag and decoded-order controls appear only while decoded datasets are
-selected. One viewer pane shows a store row's document, fetched from its usual
-`/export_data/...` or `/export_previous/...` URL, or a decoded record's
-annotated view. A static package or an older `serve.py` has no store API:
-Files then lists only the decoded datasets with an explanation, and SQL
-explains that it needs `python serve.py`. Assets no longer lists exported
-JSON: every such document is a store row, and Assets links a material to its
-Data-page document. The Files sidebar is the shared list-page shell used by
-Story, Assets, Audio and Gameplay: header toggle plus reset, collapsible
-`.filter-section` chip groups, a filter splitter, a virtualized list, a pager,
-and a pane splitter. Dataset catalogs are merged into one searchable list
-without loading detail shards; full exported Unity JSON is fetched from
-`/export_full/` only when requested.
-The debug-only `level-data` dataset uses the maintained LevelData reader to
-show each file's exact or bounded status, open-field boundary, and stored spline
-rows where decoded; it makes no movement or runtime-use claim.
-The debug-only `skill-data` dataset shows the selected native generated-wrapper
-values for exported SkillData files. It reports an exact file cursor only after
-the read reaches EOF and its stored skill ID matches the filename; unavailable
-native evidence leaves the dataset unavailable. Stored actions and member names
-do not establish runtime execution. The `structural_only` status retains the
-weaker evidence tier of nested union assignments even when the file cursor is
-exact. Its detail header shows the publisher's whole-file check and labels the
-structural-only boundary as a publisher claim, separate from decoder boundaries.
-Stored `AllowNextSkillAction.allowedSkillIdList` IDs, including nested action
-values, appear as authored references with their exact source paths. The
-Inspector links an ID to another SkillData record only when it
-uniquely matches an exported filename stem; missing or ambiguous matches stay
-visible without a link. These links do not assert a runtime skill transition.
-The sidebar also searches exact stored action type names from the direct
-timeline and passive-event action arrays. The detail's publisher facts count
-those type/tag pairs by array; unfamiliar array shapes withhold this optional
-inventory. Nested branch actions remain visible in the decoded structure but
-are not included in the direct-action counts. An action's presence is stored
-configuration, not evidence that it executes in play.
-When a record publishes catalog search terms, its detail shows a collapsed list
-of terms with same-dataset record counts. SkillData records with a complete
-direct-action inventory also show each stored union tag and separate timeline
-and passive-event occurrence counts for that record; nested branch actions are
-excluded. Selecting a term filters the sidebar by exact term, and editing search
-resumes the ordinary regex search. Record counts and stored occurrences do not
-establish runtime action use.
-The same validated inventory offers a collapsed list of direct action
-occurrences, with decoded array indices and field paths. Selecting an occurrence
-opens that exact node in the annotated structure. The list follows stored array
-positions only; it does not establish execution order or timing.
-The optional `buff-action-receipts` dataset shows selected CreateBuff and
-FinishBuffAdvanced wrapper fields at authenticated byte spans in exported
-BuffData files. It appears only when the receipt report, current Buff corpus
-report, installed native hashes, and exported source bytes agree. Its records
-are explicitly partial; the collapsed span list locates a wrapper in the
-structure without claiming a complete BuffData decode, nested semantics, or
-runtime action use. Missing or stale reports leave this debug dataset
-unavailable.
-
-The detail pane is one general decoded-record viewer rather than a
-per-decoder layout. Scalar `facts` are quick-scan cards; everything the record
-published (`facts` and `payload`) is then shown as a single annotated tree that
-keeps the publisher's own structure. Semantics are layered on that structure by
-shape alone: a declared read order (`fieldOrder` / `<key>FieldOrder`) orders and
-numbers the members it names, members it names but that were not published are
-marked declared-not-decoded, keys published beside a declared order are marked
-as framing metadata, and byte ranges, member counts, decode status, null frames,
-Unity PPtr references, and evidence boundaries are surfaced as chips on the node
-that carries them. A field search, expand/collapse all (alt-click folds one
-branch recursively), a raw-JSON view, and an on-demand raw source preview sit
-beside it. The frontend is taught no decoder-specific schema.
-
-Field names are shown verbatim in every locale rather than translated, so a row
-stays searchable against the exported source and the owning reader; only page
-furniture and evidence vocabulary are localized. Header chips are deduplicated
-against the data family and decode status already shown above them.
-
-The two structure roots are labelled by provenance, from the record's required
-`payloadKind`: a `reader` payload is a maintained `scripts/game_data` reader's
-own result, while a `projection` payload was assembled by the publisher from an
-already-decoded source whose mounted raw file stays authoritative. `facts` is
-always the publisher's own projection and can hold more than `payload` does;
-only the reader payload root carries framing chips.
-
 ### Ownership rules that are easy to get wrong
 
 - `data/gameplay/projectiles.json` owns immutable projectile behavior. The
   language-specific `projectile_audio.json` and `sound_effects.json` remain
-  generated recovery sidecars, but Gameplay does not currently load or render
-  them; audio presentation remains on the Audio page until the ownership model
-  is better understood.
+  generated recovery sidecars, but Gameplay does not load or render them;
+  audio presentation stays on the Audio page until the ownership model is
+  better understood.
 - `data/assets/gameplay_refs.json` is Gameplay-owned: the `asset-refs` stage
   joins the current Gameplay index to the Assets-owned broad index. The Assets
   builder never writes this consumer-specific sidecar.
-- `data/assets/videos.json` is an optional video catalog, absent unless
-  published; the Assets page works without it.
+- `data/lang/<LANG>/audio/conv/<key>.json` is Audio-owned and merged by Story
+  at load; Story's own `conv/*.json` never carries voice.
+- `data/assets/videos.json` and `data/assets/table_owners.json` are optional;
+  the Assets page works without them.
 - `data/story_order_ocr.json` holds OCR order proposals only. It is generated
   evidence and never the active order.
 - `data/mission_pipeline/index.json` is read by the Story page for
   `storyCoverage.storyTriggerManifest` even though Mission Pipeline is not a
   page. Its absence is a degraded Story trigger state, not an error.
+- `data/data_inspector/**` is local recovery output, excluded from the
+  published archives; its envelope is owned by
+  [`contract.py`](../scripts/webui/data_inspector/contract.py).
 
 ## User-managed inputs
 
@@ -353,543 +207,140 @@ outside `webui/overrides/`, and export tools never replace these files.
   filter panel (`#*-filter-panel`, `#*-filter-toggle`) of named filter
   sections, a reset button, shown/total counts, a resizable splitter, a
   paginated left list with a persisted custom 1-10000-items-per-page input
-  (1000 by default; 50/100/200/500/1000 are suggestions), a direct page-number input, and a detail
-  pane on the right. Entering a page outside the available range clamps to the
-  first or last page. Story and Map keep their specialized hierarchical
-  navigation instead of applying flat-list pagination.
+  (1000 by default; 50/100/200/500/1000 are suggestions), a direct page-number
+  input that clamps to the first or last page, and a detail pane on the right.
+  Filtering and sorting return to the first page. Story and Map keep their
+  specialized hierarchical navigation instead of flat-list pagination.
 - All search boxes accept case-insensitive regular expressions. Queries are
   split on whitespace with OR semantics, so `^npc_`, `boss|elite`, and `map0[12]`
   are useful examples; malformed expressions are treated as literal text.
 - Missing optional data is a visible unavailable/degraded state, not an empty
   success state. Authored definition, recovered relation, inferred ownership,
   runtime observation, and user annotation stay visibly distinct.
+- Native enum names, tag names, and other build-locked labels disappear when
+  the selected build gate does not validate; the authored rows remain.
 - Filters, keyboard focus, modal behavior, and large result sets must remain
   usable on narrow and wide screens.
 
-## Story
+## Page contracts
 
-Controls: search, sort (`sort-story`, `sort-natural`, `sort-lines-asc`,
-`sort-lines-desc`), filter sections `basic`, `kind`, `media`,
-`recovery-method`, and `type`, the issue filter (`#story-issue-filter`),
-`#reveal-current`, and the toggles `Show empty rows` (`#show-empty`),
-`Show raw JSON / text sources` (`#show-raw`), and `Show raw tags`
-(`#inline-tag-mode`). `Endministrator variant` (`#gender-variant`,
-Female/Male) switches dialogue text, voice, images, video, and gender-specific
-cutscenes, and stays synchronized with Gameplay.
+Each page's full control list and rendering rules are in the header comment of
+its module (table above). The rules below are the ones other documents and
+pages depend on.
+
+### Story
 
 - Reset returns to Story sort and default filters while preserving expanded
   mission groups.
 - Source/debug blocks, Timeline evidence, cutscene diagnostics, and order-edit
-  controls (`#story-order-editor-row`, `#story-order-save-status`) remain
-  debug-only.
+  controls are debug-only; issue and recovery-method filters are not.
 - `sns_emoji_*` renders as ordinary inline emoji without hover or modal
-  preview. Other SNS images and stickers keep their natural proportions with
-  bounded hover and modal previews.
-- Cutscene rows can show an automatic `未使用` badge only when the current
-  build's complete, non-degraded playback-carrier census finds no exact or
-  uniquely case-insensitive consumer. Case collisions and incomplete scans
-  remain unresolved and unmarked. This evidence badge is separate from the
-  user-managed `possiblyUnused` Story-order override.
-- `overrides/options.json` manual option coverage adds a separate filterable
-  override tag. Story keeps the generated option-evidence issue and its count
-  unchanged instead of replacing source-state classifications such as
-  unregistered table-only placement.
-- `overrides/narrative_videos.json` controls inline video attachment,
-  suppression, and optional audio inheritance.
-- Voice lines, conversation and cutscene event audio, and dialog lifecycle
-  hooks come from the Audio page's `audio/conv/<key>.json` sidecar, fetched
-  only for keys listed in `audio/conv/index.json` and merged into the loaded
-  conversation before option overrides. A line row applies to the line at its
-  `index` while the `id` matches, else to the first line with that `id`.
-  Without an Audio build the page shows no voice.
+  preview. Other SNS images (`sns_image_*`) and stickers (`sns_sticker_*`) keep
+  their natural proportions with bounded hover and modal previews.
+- The automatic cutscene `未使用` badge needs a complete, non-degraded
+  playback-carrier census; it is separate from the user-managed
+  `possiblyUnused` order tag. Manual option coverage adds a separate override
+  tag and never replaces the generated option-evidence issue.
+- Voice comes only from the Audio page's `audio/conv/` sidecars; without an
+  Audio build the page shows no voice.
+- `Endministrator variant` switches text, voice, images, video, and
+  gender-specific cutscenes, and stays synchronized with Gameplay.
 
-Story evidence typing, ordering, and reconstruction gaps belong to
+Evidence typing and ordering belong to
 [`memory/webui/story.md`](../memory/webui/story.md) and
 [`memory/webui/story_recovery.md`](../memory/webui/story_recovery.md).
 
-## Characters
+### Characters
 
-Characters merges table, Story, and asset identities while retaining source
-provenance. Merge and name overrides are live inputs written through `serve.py`
-and do not require a rebuild. Debug-only controls must not leak into normal
-page navigation.
+Merge and name overrides are live inputs written through `serve.py` and need no
+rebuild. The optional `data/updates/characters.json` adds version-change badges
+and filters only; it never changes grouping, naming, evidence, or overrides.
 
-When available, `data/updates/characters.json` supplies optional version-change
-badges and filters. Added or modified ids join the constituent ids and aliases
-of the already-recovered identity group; deleted ids are read-only
-previous-version snapshots. The sidecar never changes automatic or manual
-grouping, naming, evidence, or override behavior, and its absence leaves the
-Characters page fully usable without change badges.
+### Gameplay
 
-## Gameplay
+Gameplay owns character progression, equipment, enemies, skills, Buffs,
+projectiles, and assets; audio is not attached. Detail content renders flat.
+Skill damage rows are authored setup: each conditional formula badge (normal
+Hp route, AtkScale, BreakingAttack, Poise input) appears only while its own
+selected-native audit validates, never substitutes stored level values for
+runtime results, and leaves the raw setup plus one note when unavailable. The
+Loadout view computes final attributes only from a validated
+`attributeCalculation` (`loadout.js`). Evidence limits:
+[`memory/webui/gameplay.md`](../memory/webui/gameplay.md) and
+[`memory/game_data/gameplay_semantics.md`](../memory/game_data/gameplay_semantics.md).
 
-Filter sections: `basic`, `kind`, `rarity`, `job`, `character-property`,
-`weapon-type`, `equipment-type`, and `enemy-type`, plus search, reset, and
-`#gameplay-reveal-current`.
+### Audio
 
-Gameplay owns character progression, equipment, enemies, skills, projectiles,
-and assets. Audio sidecars are deliberately not attached to this page while
-their ownership model is under review.
+Audio keeps four layers separate and claims only the available one: authored
+Event or media identity; Wwise graph relation and possible media leaves;
+authored consumer/trigger context; observed runtime execution. Status fields
+render verbatim in details, search, and filters; the token vocabulary is listed
+in the header comment of `src/features/audio/index.js`. Notes are written only
+on an explicit `Save note`. Missing or mismatched native inputs remove only
+build-locked callsites, mappings, and addresses, with the unavailable state
+shown. What each state refuses to claim is in
+[`memory/webui/audio.md`](../memory/webui/audio.md); the Wwise chain is in
+[`memory/game_data/audio_overview.md`](../memory/game_data/audio_overview.md).
 
-- Detail content is flat: sections, Buff cards, evidence notes, and
-  debug-only technical blocks render open with no `<details>` folding. Only
-  the sidebar kind groups, the filter panel, and audio lists longer than the
-  inline limit stay collapsible.
-- Each character active skill is one card: a header with the level slider,
-  the description, then the selected level's action table and cost. The table
-  has one row per sub-skill with its DamageUnits (type, attribute, and stored
-  blackboard keys resolved to the selected level's values),
-  its remaining blackboard values, and its assigned projectiles (speed,
-  distance, time, hits). A projectile matched only by the group's family
-  identifier (no sub-skill in the group's skill list) gets its own row named
-  after the projectile's action token and marked inferred. Enum numbers,
-  calculations, effect setup, and source paths appear only in debug rows.
-  Evidence notes shared by all skills are stated once above the cards.
-- Playable characters have a Data / Loadout switch. Loadout picks the
-  character level (with break stage) and potential, a weapon of the
-  character's weapon type with its level, potential and skill levels, and one
-  body, one hand and two accessory pieces, each attribute line with its own
-  enhancement slider (lines sharing an `attrIndex` move together; a line with
-  one value at every step is shown fixed). It shows
-  cumulative upgrade cost and final attributes with per-source breakdowns,
-  computed from `attributeCalculation`; without a validated formula it shows
-  the gate status and computes nothing. Attributes whose native hooks are not
-  modelled are not displayed.
-- Descriptions with a `descriptionTemplate` (skill groups, weapon and
-  equipment skill levels, talents, potentials, item use) are rendered in the
-  browser from the selected level's values, so the text follows the level
-  slider. Substituted values are highlighted, and value chips the text already
-  shows are hidden outside debug mode. A placeholder the browser cannot
-  resolve falls back to the builder's rendered `description`.
-- Exact `chr_NNNN_token` namespaces are published even without a
-  `CharacterTable` row, labeled namespace-only, leaving availability,
-  progression, runtime use, and playable status unproven.
-- Enemy level selectors show only authored level points; missing levels are not
-  interpolated. Positive authored skill cooldowns are shown at the selected
-  skill level.
-- Character active skills resolve authored `DamageUnit` rows from directly
-  referenced, whole-record SkillData. `gameplay/index.json` carries optional
-  `skillDamageEvidence` and `skillDamageUnits[skillId]`; selected native enum
-  names appear beside raw numbers only after the current plan and field types
-  validate. The page shows a missing-data note when this join is unavailable.
-  The rows describe serialized setup, not final damage or executed actions.
-  `skillDamageRouteEvidence` is a compact selected-native audit status for the
-  normal-entity DamageAction selector. With it validated, the authored
-  `simpleCalculation` and `takeAtkSnapshot` flags choose which conditional
-  expression can be shown on Hp units. Simple Hp rows with snapshot disabled
-  show the unit's resolved `atkScale` times attacker attribute-array element 2,
-  even if an evaluator subtype is also stored. Poise units retain their
-  authored operands without that Hp formula badge. A separate selected-native
-  `skillDamagePoiseRouteEvidence` joins nonnull stored `poiseCalculation` to
-  the intermediate `PoisePackData.calcResult`; together with
-  `skillDamageDefiniteValueEvidence`, it can show a conditional Poise
-  calculation-input expression, never an applied or displayed Poise amount.
-  `skillDamageAtkScaleEvidence` additionally
-  gates the `AtkScaleCalculation` expression only when simple calculation and
-  snapshot are both disabled. Stored level values are never substituted for
-  runtime blackboard results. An unavailable audit leaves raw setup visible.
-  `skillDamageBreakingAttackEvidence` separately gates a conditional
-  `BreakingAttackCalculation` expression on that same non-simple route. Its
-  hover detail preserves the
-  selected evaluator's Double attribute product, Single scale product,
-  Double-to-Single conversion, final Single multiplication, and widening to
-  Double. Stored level values are never substituted for runtime `GetValue`;
-  an unavailable audit leaves one skill-level note and the raw setup visible.
-- Enemy born-Buff cards expose exact BuffData lifecycle, stacking, trigger,
-  keyed-value evidence, attribute modifiers, and applied tag ids. An unmapped
-  ID keeps its raw value and explains on hover why the current serialized
-  registry did not resolve it. When the selected native evidence validates and
-  the exact-tail projection includes a nonempty serialized stacking key, the
-  card shows its quoted string. This is a stored field, not a computed runtime
-  stacking group.
-- Decoded action chains show the gated event name and decoded fields, including
-  actions nested under If/Else branches and common `TargetSettings` fields even
-  when the enclosing action is partial. Unresolved unions, selectors, and
-  complex payloads stay visibly unresolved.
-- Exact Buff action `TargetSettings` summaries show selected native enum names
-  beside each stored numeric source, target, selector-owner, direction, and
-  center value when the current native field/plan join validates. Older data or
-  an unavailable join shows the raw numbers with an explicit missing-name note;
-  these labels do not identify the target chosen at runtime.
-- Projectile templates, spawned behavior, and playable-skill ownership remain
-  separate relations. Audio event and media relationships are investigated on
-  the Audio page and are not rendered in Gameplay.
-- Projectile cards list an authored effect setup by serialized list slot.
-  Stored effect type, movement, and position-reference integers gain selected
-  native enum names only when `webui/data/gameplay/projectiles.json` schema 5
-  carries validated `effectConfigEnums` and `effectConfigEnumEvidence`; an
-  unavailable join keeps numbers and shows a missing-name note. These labels
-  describe configuration, not runtime effect activation.
-- Native enum names, tag names, and gated event names disappear when the
-  selected build gate does not validate; the authored rows remain.
+### Map
 
-Page evidence limits are owned by
-[`memory/webui/gameplay.md`](../memory/webui/gameplay.md), what the datasets
-establish by
-[`memory/game_data/gameplay_semantics.md`](../memory/game_data/gameplay_semantics.md),
-and per-action layouts by their `scripts/game_data/contracts/buff_*_native.json`
-contracts.
-
-## Audio
-
-Audio keeps four layers separate and claims only the available one:
-
-1. authored Event or media identity;
-2. Wwise graph relation and possible media leaves;
-3. authored consumer/trigger context;
-4. observed runtime execution or selected branch.
-
-Audio Event details include exact SkillData/BuffData PlaySound contexts when
-the raw literal matches a selected HIRC Event object. They show an authored
-frame window only when the action has one; Buff and Ability event slots appear
-by their checked native enum names. The Gameplay sound sidecar also retains
-empty, outer-whitespace, and HIRC-unmatched action literals without Event
-links. These contexts do not assert branch execution, selected targets, or
-playback.
-
-Music Switch Event details show a searchable, paged list of authored type
-`0x0C` decision-tree leaves from `musicNodeEvidence`. Each row keeps the
-stored argument group/type and path key, leaf object ID, weight, probability,
-and same-bank ownership status. The view uses the existing lazy Event detail
-shards and shows at most 40 rows at once. A missing same-bank declaration is
-shown as a local join gap; the view does not select a runtime branch or claim
-audibility. The view requires one `pathKeys` entry per stored argument level;
-older detail shards with a root sentinel must be refreshed by the focused
-Audio HIRC build before this section appears.
-
-### Layout and playback
-
-- In a selected record the playable-media block is rendered first, immediately
-  below the detail heading and before Details, manual notes, and the longer
-  facts/evidence sections.
-- Expanded files load with their waveform visible. A group of more than 20
-  possible files keeps lazy collapsed players and loads each waveform only when
-  that file is expanded; candidate player cards otherwise stay expanded and
-  materialized.
-- The default purpose-priority sort and recovery filters put unknown-purpose
-  Events/media ahead of partial and known-purpose records. A direct Story-line
-  binding is a terminal known-purpose state and is not part of the
-  investigation queue.
-- Each Event and media record accepts a note in its detail pane. The user must
-  explicitly select `Save note`; typing alone never writes the override or
-  updates search/list state. Notes are keyed by language and record identity,
-  persist through `overrides/audio_notes.json`, join the existing text search,
-  and show their first line beside the record filename in the list. They are
-  user annotations, not generated game-data evidence.
-- Identity-only collapsed groups exist for character and enemy namespaces
-  (`chr_*`, `au_chr_*`, `au_actor_<token>_*`, `au_monster_<token>_*`, `au_`)
-  and are never merged with skill or animation SFX.
-- The Audio overview loads `data/lang/<LANG>/audio/scene_backgrounds.json` as a
-  compact scene catalog with validated and missing object-index sources,
-  partial coverage kept visible, and scene filters by scene id, mission id, or
-  Event. Event chips navigate to the existing Audio Event detail; the catalog
-  duplicates no Wwise branches or media.
-
-### Detail sections
-
-All of these are authored serialized joins: `Direct node effects` from
-`postProcessSummary.effectNodes`; `Serialized effect chain` (direct node slots
-before each serialized leaf-to-root Bus path, at most 64 stages per row with
-explicit truncation); `Serialized RTPC controls` and
-`Serialized State overrides` (at most eight curve points each, marking
-truncation); Bus-control, ducking, and User-Defined Aux send references
-resolved by Bus ID against the unique Bus catalog, so the media shard
-duplicates no large authored payload;
-serialized media-edge types and selection paths (`directSound`, `layerChild`,
-`randomAlternative`, `switchCandidate`, sequence/music edges) with root Action
-IDs; `trigger_contexts.json` `mediaRefs` joins; non-playback Action payloads
-(SetState/SetSwitch, GameParameter ranges and fade policy, Stop/Pause/Resume,
-Seek, value/filter actions, exception buses, FX slot bypass); and the lazy,
-debug-only AudioCue AST. An unsupported tail stays visibly fail-closed with its
-offset and reason.
-Effect parameter names and values appear only for classes passing the selected
-native gate; other definitions keep raw class IDs, parameter lengths and hashes,
-and any exact plug-in media dependencies. The HIRC overview shows that gate's
-status and reviewed-class count beside the exact, partial, and opaque authored
-definition counts; an absent gate is marked unverified. These are serialized
-bank settings, with no live effect activation or DSP output claim.
-
-### Status vocabulary
-
-Rendered verbatim in details, search, and filters:
-
-- identity and naming: `eventIdentityStatus=grammarHashPreimageNameRecovered`
-  with `eventNameSourceKind=grammarHashPreimage` and the head/tail sibling
-  counts that admitted the name, `ownerKind=npc`, and the physical
-  `wwise/unknown` path.
-- category and ownership: the physical `audioCategory` is preserved beside a
-  separately recovered semantic category (`SFX`, `voice`, `UI`, `ambience`,
-  `control`, `music`, `cue`) and a searchable coarse ownership (scene
-  environment, scene object, animation, gameplay component, interaction, UI,
-  voice system, mission narration). A mixed known-category join stays
-  unclassified, and a generic scene emitter keeps scene ownership without being
-  forced into a category.
-- authored fields and scenes: `monoBehaviourAudioIdField` roles
-  (`componentSoundSpawn`, `componentHitCallback`, finish/state, water/particle,
-  or the generic serialized-field boundary with an audio-key hint) plus
-  `componentLayout`; `sceneOwnershipStatus`, `sceneContainmentStatus`,
-  `sceneId`, `sourceName`, `sourcePath`, and
-  `conflictingPrefabInstanceIdentityJoins`.
-- routing and control: `noExplicitOutputBusSerialized`,
-  `controlCatalog.staticRtpcAlignment` with its six canonical `AU_RTPC_*` names
-  (`AU_RTPC_CINE_CTRL_VOL_AMB`, `...VOL_MU`, `...VOL_SFX`,
-  `...IS_MUTE_BY_SDK_WEBVIEW`, `...IS_SURROUND_CHANNELS`,
-  `...GLOBAL_VOL_MASTER_IOS_WORKAROUND`) and
-  `postProcessSummary.gameParameterNameEvidence`, and the custom/internal
-  numeric targets `0x1802`/`0x1804`.
-- AudioCue AST: `exprType`, `exprType=3`, `exprType=8`, `runtimeCueVariable`,
-  `compositeOpaque`, `childrenLimit`.
-- Wwise action rows: `operation` (the masked high byte, which decides the body
-  layout and stays the grouping key) beside `actionTypeName`, the Wwise SDK
-  identifier for the whole serialized 16-bit action type. `actionTypeName` is
-  rendered with its `AkActionType_` prefix stripped, so one `stop` group now
-  shows `Stop_E`, `Stop_E_O` and `Stop_ALL` apart. A word the SDK enum does not
-  name shows no name rather than one fitted from the suffix pattern.
-
-### Storage and degraded state
-
-- Shared SFX/music and language voice stay in separate storage roots. Repeated
-  media IDs preserve every physical occurrence and package provenance.
-- Direct Story-line binding, authored context, Event-only relation, and unknown
-  placement are mutually exclusive generated media states.
-- Role, Event, and category coverage counts come from generated summaries and
-  are never hard-coded in the frontend.
-- When native inputs are missing or mismatched, authored Audio rows remain
-  visible; only build-locked callsites, mappings, and addresses disappear, with
-  the unavailable state shown explicitly. The gated groups are the interactive
-  and Snapshot state Events, enemy and character voice callsites, Story
-  `dialogId` lifecycle hooks, and the `EnemyTriggerVoiceAction`
-  voice-type-to-trigger-key mapping.
-- An unverified, missing, or mismatched offline capture bundle stays a degraded
-  diagnostic and adds no runtime binding.
-
-What each of these states refuses to claim is the UI-facing evidence boundary
-in [`memory/webui/audio.md`](../memory/webui/audio.md). The Wwise chain itself
--- bank format, HIRC object graph, curves, plug-in parameter layouts, naming
-coverage, native hooks -- is owned by
-[`memory/game_data/audio_overview.md`](../memory/game_data/audio_overview.md)
-and the `audio_*` files beside it. Changing per-build row and occurrence counts
-belong in `reports/`.
-
-## Map
-
-Map is a normal page immediately after Story. It plots authored Unity X/Z
-coordinates and only draws a background when the image and its world bounds
-share an explicit transform.
-
-### Generated contract
+Map plots authored Unity X/Z and draws a background only when the image and its
+world bounds share an explicit transform. Generated contract:
 
 - `data/map_recovery/index.json` lists maps, their exact `regionKey`, the
-  current default map, and compact counts.
-- `data/map_recovery/maps/<levelId>.json` owns markers, quest points, facets,
-  mission/file evidence, minimap metadata, and one recovered render manifest.
-- An existing registry marker may carry `mapMark` with its authored template,
-  group key, default visibility, visibility type, and ID-plus-position evidence.
-  A unique `LevelShortIdTable` match adds authored scene evidence to a subset.
-  `mapMarkCoverage` separates registry-linked annotations from direct scene
-  joins and reports unmatched counts; marks are not plotted from group keys.
-- `data/map_recovery/render/` owns generated minimap composites, optional
-  Terrain byte previews, mesh elevation, surface, point, height-mask, and water
-  PNGs plus their manifests.
-- An `elevationUnderlay` with status `terrain_height_grid_diagnostic` is the
-  Terrain `_H` byte preview. The browser routes it to a separate control from
-  mesh-derived grayscale elevation and shows the byte-composite boundary.
-  Its `valueRange` describes the preview's diagnostic composite, not world Y.
+  default map, and compact counts; `maps/<levelId>.json` owns markers, quest
+  points, facets, mission/file evidence, minimap metadata, `mapMark`
+  annotations with `mapMarkCoverage`, and one render manifest; `render/` owns
+  generated minimap composites, Terrain byte previews, elevation, surface,
+  point, height-mask, and water PNGs plus manifests.
 - Shared-scene identity comes only from the directly addressed
-  `LevelConfig/<levelId>.json` streaming path. Similar names are not evidence.
-- Streaming-instance sidecars use schema 2 and one `meshes` array per entity
-  base. They feed static render layers only and are not duplicated as clickable
-  map nodes.
-- Every point layer owns its height mask as `pointCloudOverlay.heightMask`;
-  there is no top-level mask fallback.
-- The browser derives stitched bounds from the loaded background rectangles;
-  region bounds are not duplicated in index or payload metadata.
+  `LevelConfig/<levelId>.json` streaming path. Streaming-instance sidecars use
+  schema 2 with one `meshes` array per entity base.
+- Every point layer owns its height mask (`pointCloudOverlay.heightMask`), and
+  region bounds are derived in the browser from loaded background rectangles.
+- Proximity is never upgraded into ownership; weak spatial or mission context
+  stays separate from identity links, and non-Story evidence files stay behind
+  `Show debug info`.
 
-### Panel and layer controls
-
-- A map opens as clean geography. The resizable left panel is a three-column
-  map/task/object-filter tree whose outer body owns scrolling for all three
-  columns; map status sits with the task column instead of a separate header
-  panel, and the complete JSON/file inspector is also resizable.
-- The plain third column combines entity, quest, story, and mission filters
-  with minimap, optional Terrain byte preview, elevation, surface, water,
-  point, and point-height controls
-  without an inner layer container; there is no separate bottom filter dock.
-- `Authored marks` is a Map object-filter preset available when the loaded
-  map has exact ID-and-position `mapMark` annotations. It selects only those
-  registry nodes, clears mission and quest filters, and still respects authored
-  floor selection. Other presets or a mission selection leave this preset.
-- Each available raster layer occupies one row with a visibility checkbox and
-  its own opacity slider. Layer opacity persists while switching maps and does
-  not reset when that layer is temporarily hidden.
-- Authored floor overlays are discovered by hovering their covered area and
-  cycled locally by clicking; there is no global floor slider.
-- Entity size is independent from map zoom. Layer opacity and the two-thumb
-  point world-Y filter change presentation only.
-- The bottom-centre range switch defaults Map01/Map02 to the selected zone.
-  `All zones` explicitly loads and stitches every Wuling or Valley-IV member;
-  switching back releases the cached sibling payloads as well as removing them
-  from the rendered surface.
-
-### Navigation and markers
-
-- Physical level variants that share one authored place are one map entry and
-  remain selectable as map items in the task column; their per-level payloads
-  and inspector JSON are retained, and only the duplicate navigation entry is
-  collapsed. Unnamed single-mission maps use the localized mission code/name,
-  and authored cross-map Story continuations are explicit navigation links.
-- Map01, Map02, and config-proven shared blackbox scenes stitch by exact
-  `regionKey`; dungeon maps with a source-art dependency remain independent.
-  Minimap/model/water rectangles and markers all use X/Z with image top at +Z,
-  and `needInverseXZ` applies the evidenced quarter-turn consistently.
-- Quest routes are grouped by mission and ordered by authored `questOrder`.
-  Shared-file or shared-script relation webs are not rendered.
-- NPC proxies with explicit `npcProxyDialogAttachments` expose their owning
-  mission and quest ids as selectable phases. The selector does not derive an
-  order from proxy ids, registration order, or coordinates.
-- Selecting a mission keeps missionless level-world entities available through
-  the ordinary type/floor filters; compact maps enable all recovered object
-  types by default.
-- Enemy, device, scenery, and travel markers use distinct glyphs, and authored
-  grenade towers retain their Factory/Combat/Model evidence. Enemy labels
-  resolve through `EnemyTemplateDisplayInfo` plus localized text; exact reading
-  points use the generated Story title instead of their internal `text_*` key.
-- Unresolved evidence gets its own default-hidden layers: empty `int_empty`
-  shells in an unresolved-empty-slot layer, and unresolved script-target
-  references in a candidate layer, rather than being presented as understood
-  interactions.
-
-### Inspector
-
-- Strong identity links stay separate from weak spatial or mission context, and
-  proximity is never upgraded into ownership.
-- Opening `WorldEntityRegistry.json` from a registry-backed point resolves its
-  exact world id or script-id/slot pair, jumps to the matched row and paired
-  brief-info array index, and highlights the focused excerpt.
-- When a map node has a generated Story conversation, that conversation is the
-  normal reader-facing file and placement, registry, script, and other evidence
-  files stay behind `Show debug info`.
-- Map-wide files and weak file links are debug-only unless the file has an
-  exact generated Story deep link; disabling debug also closes any file viewer
-  whose link is no longer visible.
-
-Which spatial evidence may become a marker, what a slot action binding proves,
-and how each render layer earns its evidence grade are owned by
+Marker eligibility and render-layer grades:
 [`memory/webui/map.md`](../memory/webui/map.md) and
 [`memory/game_data/story_carriers.md`](../memory/game_data/story_carriers.md).
 
-## Assets and Text
+### Assets and Text
 
-- Assets: search plus filter sections `basic`, `category`, `type`, `source`,
-  and `sort`. The detail pane owns image/video/text preview with a selectable
-  preview background, an OBJ/FBX model canvas with mesh stats, material,
-  reference and related-asset lists, the original JSON/script source,
-  copy-path and download actions, and `?asset=` deep links. JSON categories are
-  derived from the exported object lane, including distinct Unity `Material`,
-  `PlayableDirector`, `TextAsset`, `AnimatorController`, and
-  `AnimatorOverrideController` filters; unknown future Unity lanes remain
-  visible as their directory name instead of falling into an untyped bucket.
-- Assets: the detail pane's `Table owner` fact comes from
-  `data/assets/table_owners.json` and names the exported table row whose
-  asset-bearing field holds this asset's exact normalized stem. An asset with
-  no such row shows no owner; a shared name prefix never produces one, and the
-  sidecar is optional, so its absence only removes the fact.
-- Sprite images: the export keeps each Sprite as a crop document over its
-  texture, so an index entry with `crop` (the texture's path) has no file and
-  no `s`; the page shows its pixel size and a `Cropped from` fact instead.
-  Every page still links to `.../game/Unity/Sprite/<name>.png`: `serve.py`
-  answers it with the crop document (`application/vnd.endfield.sprite-crop+json`),
-  or with AnimeStudio's PNG from `game/Sprite.sqlite` after a debug export,
-  and `sprite_worker.js` decodes the texture PNG itself and renders the crop,
-  so the pixels equal AnimeStudio's, transparent ones included. Without the
-  worker (no secure context), Sprite images do not display.
-- Text: search plus filter sections `basic`, `group`, and `source`. Known row
-  shapes render as rows; every row keeps its raw JSON beside the rendered view,
-  so an unsupported shape stays searchable instead of being silently dropped.
-- Text maintained renderers: a row may carry a `fields` array, rendered above
-  its localized text as `Structured fields`. Each entry shows the maintained
-  label, the verbatim exported value, and the owning `table / row` when the
-  builder resolved an exact row lookup. A resolved reference whose table is in
-  the index is a button that selects that table and scrolls to that row inside
-  Text; an unresolved reference is shown as `unresolved` and is never linked.
-  Field values join the row search haystack, and a table covered by a
-  maintained renderer carries `renderer: "structured"` in the Text index.
-  Tables with structured fields but no localized text now appear on the page.
+- Assets lists images, video, OBJ, and FBX, not exported JSON: every such
+  document is a Data-page store row, and a material links to its Data-page
+  document. The optional `Table owner` fact requires an exact whole-stem match
+  in an asset-bearing field.
+- Sprite images are crop documents over their textures, still linked as
+  `.../game/Unity/Sprite/<name>.png`; `serve.py` answers with the crop
+  document and `sprite_worker.js` renders it pixel-identical to AnimeStudio.
+  Without the worker (no secure context) Sprites do not display.
+- Text keeps every row's raw JSON beside the rendered view, so an unsupported
+  shape stays searchable. Maintained `fields` link only to a resolved row in a
+  table present in the Text index; unresolved references are never linked.
 
-## Updates
+### Updates
 
-Updates displays the comparison of two complete export roots: WebUI-facing
+Updates shows the comparison of two complete export roots: WebUI-facing
 exported text plus image, model, video, and decoded audio assets, never a
-change under `webui/`, `reports/`, `memory/`, or `scratch/`.
+change under `webui/`, `reports/`, `memory/`, or `scratch/`. A serialized
+payload diffs through its maintained reader and says so (`text_kind`); a
+changed file with no diff says why (`text_diff_note`). Path-only relocations
+with unchanged content are omitted. Build with `.\build_updates.bat OLD NEW`.
 
-Selecting a modified media asset shows the old and new previews. Images and
-videos add a visual-difference highlight; decoded audio adds a client-side
-three-lane waveform view for the old envelope, new envelope, and their
-amplitude difference. The waveform uses the longer file as the shared timeline
-and does not require extra data in the Updates feed.
+### Data
 
-Most exported `game/Json` files are serialized payloads, not text. An entry
-carries `text_kind` when its stored text is not the file's own: the detail view
-then titles the panel `Decoded diff`, names the reader that produced it, and
-marks a bounded reader's view as partial. `text_diff_note` explains a changed
-file with no diff -- an identical decoded view, a payload no reader routes, or
-one past the diff size limit -- instead of leaving the panel empty. A plain
-text file carries neither field and renders as before.
-
-When the builder proves that an exported-file relocation kept the same bytes
-or decoded FLAC PCM, it omits the path-only change from Updates. A stable Unity
-identity whose bytes also changed remains one `modified` item; its details show
-both paths and the PathID-independent match basis. For repeated decoded audio,
-exact size/duration/content plus an unchanged parent folder can disambiguate
-parallel category and `unknown` copies; multiple candidates within that folder
-remain separate additions and deletions.
-
-Obsolete numeric copies of authored AudioDialog voice are omitted when the
-builder proves the current authored path by its exact external-source hash,
-finds one surviving canonical voice file, and verifies identical bytes. This
-prevents duplicate-cleanup paths from appearing as deleted Story audio; any
-ambiguous basename or mismatched content remains visible.
-
-Controls: search plus filter sections `basic`, `category`, `extension`,
-`status`, and `sort` (path, status, file size/change, line delta), the
-added/modified/deleted summary counts, the run metadata line, and pagination
-over the complete generated entry set. A feed built with the optional
-`--sample-limit` diagnostic cap still shows an explicit truncation note.
-File-size sorting uses current size for additions, previous size for deletions,
-and absolute size delta for modifications.
-Added, modified, and deleted status pills and status-filter chips use the same
-shared green, gold, and red semantic palette as Character update badges.
-
-```bat
-.\build_updates.bat OLD NEW
-```
-
-## Recovery
-
-Recovery is a debug-only page at `#recovery` with two parts, read from the v5
-`data/recovery/index.json` payload.
-
-- A log-scaled VFS volume bar, by payload bytes or logical-file count. Hatched
-  segments are catalog-declared files whose chunks are absent locally. Widths
-  use `log10(1 + 100 × value / smallest nonzero value)` so small blocks remain
-  visible; hover and keyboard focus give the measured value and true share.
-  Selecting a segment opens and focuses its block in the tree. The bar shows
-  inventory composition, never the fraction recovered.
-- A tree of VFS blocks whose leaves are logical-file types (declared path
-  families, plus `Other / unclassified` for unmatched paths). Blocks start
-  open; each type row shows its file count, bytes and four L1–L4 state chips.
-  The Unity bundle type lists its Unity object types one level deeper, each
-  with its object count and its own four state chips.
-  Selecting a type shows its per-level statements, cited sources, evidence
-  limits, path pattern and sample paths beside the tree. One compact key above
-  the tree names the levels and states. States are scoped declarations, not
-  numeric progress.
-- The payload is optional: a 404 or older schema shows an explicit rebuild
-  state, not an empty success state.
-
-```bat
-python -m scripts.webui.recovery.build_recovery
-```
+Files is one list shell over the Unity store, packed game files, loose decoded
+files under `game/`, undecoded files under `raw/` (always a hex dump), and the
+decoded datasets; SQL is a read-only console over either SQLite store. Store
+sources and SQL need `serve.py`'s `/api/stores`; a static package or an older
+server lists only the decoded datasets with an explanation. The record viewer
+is taught no decoder-specific schema: it layers read order, framing, and
+evidence chips onto the published structure by shape alone, labels `payload`
+by its required `payloadKind`, and shows field names verbatim in every locale.
+Dataset contents and publisher rules:
+[`memory/webui/data_inspector.md`](../memory/webui/data_inspector.md).
 
 ## Verification
 
@@ -904,6 +355,7 @@ python -m scripts.game_data.extraction.verify_export_freshness
 python serve.py
 ```
 
+After editing a frontend module, `node --check <file>` catches syntax errors.
 The page smoke-test checklist is in
 [`memory/webui_recovery.md`](../memory/webui_recovery.md). Its Story media step
 uses the fixtures `test_sns_emojicomment`, `test_sns_sticker`, and
