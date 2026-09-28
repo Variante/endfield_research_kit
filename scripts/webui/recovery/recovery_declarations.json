@@ -577,16 +577,16 @@
               },
               {
                 "level": 3,
-                "state": "notAssessed",
-                "text": "No field conclusion is recorded for this dictionary separately from the main one.",
-                "textZh": "此字典没有独立于主字典的字段结论记录。",
+                "state": "partial",
+                "text": "Its stored hashes replay: Data/ pairs equal the VFS filename hashes and asset pairs match BundleManifest path hashes; one bucket word stays anonymous.",
+                "textZh": "其存储哈希可回放：Data/ 路径对等于 VFS 文件名哈希，资源路径对与 BundleManifest 路径哈希一致；一个桶字仍为匿名。",
                 "source": "memory/game_data/extend_data.md"
               },
               {
                 "level": 4,
-                "state": "notAssessed",
-                "text": "What the initial stage resolves with it is not recorded.",
-                "textZh": "初始阶段用它解析什么尚无记录。",
+                "state": "partial",
+                "text": "A stored path catalog whose asset pairs are a subset of the BundleManifest asset-path set; the runtime lookup that uses it is not proven.",
+                "textZh": "一个存储的路径目录，其资源路径对是 BundleManifest 资源路径集合的子集；使用它的运行时查找未经证明。",
                 "source": "memory/game_data/extend_data.md"
               }
             ]
@@ -612,23 +612,23 @@
               { "template": "l1VfsLocated" },
               {
                 "level": 2,
-                "state": "partial",
-                "text": "An exact framing sweep closes the fixed-width sections and the repeated-size terminal envelope, a UTF-16LE fragment span, and 48-byte rows indexing a second span. Terminal bytes stay opaque.",
-                "textZh": "精确帧扫描闭合定宽区段与重复尺寸的末端外壳、一段 UTF-16LE 片段区以及索引第二段的 48 字节行。末端字节仍不透明。",
+                "state": "closed",
+                "text": "An exact framing sweep closes the Brotli envelope, both headers, the two hash-slot/value dictionaries, the indexed Bundle array, the UTF-16LE record span and the Brotli AssetInfo path suffix through EOF.",
+                "textZh": "精确的帧结构扫描使 Brotli 外壳、两个头部、两个哈希槽/值字典、索引 Bundle 数组、UTF-16LE 记录段与 Brotli AssetInfo 路径后缀闭合至 EOF。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
-                "state": "open",
-                "text": "No serialized field ownership: row witnesses count and order records but name no field.",
-                "textZh": "没有序列化字段归属：行级证据只计数和排序记录，不命名字段。",
+                "state": "partial",
+                "text": "Selected native reads name every AssetInfo and Bundle field, and the stored name, path and version hashes replay on the current file.",
+                "textZh": "选定的原生读取为每个 AssetInfo 与 Bundle 字段命名，存储的名称、路径与版本哈希可在当前文件上回放。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 4,
-                "state": "open",
-                "text": "Manifest-row and mmap value semantics are unresolved; unresolved stream/ref-out carriers block a safe lookup capture.",
-                "textZh": "清单行与 mmap 值语义未解决；未解决的 stream/ref-out 载体阻碍了安全的查找捕获。",
+                "state": "partial",
+                "text": "The loaders' direct-dependency recursion is a proved static consumer path; live lookup, unseen-name handling and Unity object ownership stay open.",
+                "textZh": "加载器的直接依赖递归是已证明的静态消费路径；实时查找、未见名称的处理与 Unity 对象归属仍未解决。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               }
             ]
@@ -1233,8 +1233,8 @@
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Column names and types travel with each table. Units, enum meanings and cross-table keys are proven only where a consumer has been checked.",
-                "textZh": "列名与类型随表一同存储。单位、枚举含义与跨表键只在检查过消费者的地方被证明。",
+                "text": "Decoded tables give field names and stored values. Units, enum meanings and cross-table keys are proven only where a consumer has been checked.",
+                "textZh": "解码后的表给出字段名与存储值。单位、枚举含义与跨表键只在检查过消费者的地方得到证明。",
                 "source": "memory/game_data/gameplay_semantics.md"
               },
               {
@@ -1282,9 +1282,9 @@
               },
               {
                 "level": 4,
-                "state": "notAssessed",
-                "text": "No consumer conclusion is recorded.",
-                "textZh": "没有记录消费者结论。",
+                "state": "partial",
+                "text": "The native LipSyncTrack._ConvertToAnimationCurve consumer reads each six-float row as a Unity Keyframe; playback selection is not proven.",
+                "textZh": "原生 LipSyncTrack._ConvertToAnimationCurve 消费者把每个六浮点行读取为 Unity Keyframe；播放选择未经证明。",
                 "source": "memory/game_data/install_and_vfs.md"
               }
             ]
@@ -1308,8 +1308,8 @@
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Generated formatter setters name the root and every NPCMontageAnim member; nested DynamicEntity vector/value spans remain explicit unresolved ranges.",
-                "textZh": "生成的格式化器 setter 命名了根与全部 NPCMontageAnim 成员；嵌套 DynamicEntity 向量/值区段仍是明确标出的未解决区间。",
+                "text": "Generated formatter setter order names the root, every NPCMontageAnim member and each nested record through EOF; runtime selection is not proven.",
+                "textZh": "生成的格式化器 setter 顺序为根、每个 NPCMontageAnim 成员及各嵌套记录命名直至 EOF；运行时选择未经证明。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1333,8 +1333,8 @@
               {
                 "level": 2,
                 "state": "closed",
-                "text": "Real JSON: the registry records complete UTF-8 JSON syntax for these files.",
-                "textZh": "真正的 JSON：注册表记录这些文件为完整的 UTF-8 JSON 语法。",
+                "text": "Exact JSON schema readers validate every current PrefabInfo file and both NPC catalogs, refusing extra or reordered fields.",
+                "textZh": "精确的 JSON 模式读取器校验每个当前 PrefabInfo 文件与两个 NPC 目录，拒绝多余或重排的字段。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1365,16 +1365,16 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Empty-action-map files close a complete schema at EOF; most others expose a named five-member terminal suffix with weaker earlier framing. Non-empty action maps are blocked on the union table.",
-                "textZh": "空动作表文件在 EOF 处闭合完整模式；其他多数文件只暴露已命名的五成员末端后缀，前部帧结构较弱。非空动作表受 union 表阻碍。",
+                "text": "Most current files close a complete named schema at EOF, populated action maps included; the bounded-partial residue keeps a named prefix and stops at its first unsupported action-map union route.",
+                "textZh": "多数当前文件在 EOF 处闭合完整的命名模式（包括非空动作表）；其余有界部分文件保留已命名前缀，并停在第一个尚不支持的动作表 union 路由处。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "A generated-order owner cursor names the activation, collection, identity and reset fields.",
-                "textZh": "按生成顺序的所有者游标为激活、集合、身份与重置字段命名。",
-                "source": "memory/game_data/extraction_payload_boundaries.md"
+                "text": "Generated wrapper order names every owner member and each reviewed action, header, getter and condition route; unreviewed routes stay unnamed.",
+                "textZh": "生成的包装顺序为每个所有者成员以及每条已审查的动作、事件头、取值器与条件路由命名；未审查的路由仍未命名。",
+                "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 4,
@@ -1397,16 +1397,16 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Opaque-middle files reach EOF without locating what the framing skipped: unmeasured, not covered, until the reader declares its ranges.",
-                "textZh": "中段不透明的文件读到 EOF，却没有定位帧结构跳过的内容：在读取器声明区间之前属于未测量，而非已覆盖。",
+                "text": "Part of the family closes a named schema through EOF; the rest stays bounded partial at a recorded action-map refusal.",
+                "textZh": "该家族部分文件以命名模式闭合至 EOF；其余文件在记录的动作表拒绝点处保持有界部分。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
-                "state": "open",
-                "text": "The skipped middle is not named.",
-                "textZh": "被跳过的中段没有命名。",
-                "source": "memory/game_data/extraction_payload_boundaries.md"
+                "state": "partial",
+                "text": "Closed files are named by the shared action-map reader; bodies past the first unsupported union route are not named.",
+                "textZh": "已闭合文件由共享动作表读取器命名；第一个不支持的 union 路由之后的正文未命名。",
+                "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 4,
@@ -1428,16 +1428,16 @@
               { "template": "l1VfsLocated" },
               {
                 "level": 2,
-                "state": "partial",
-                "text": "The sequential reader closes the complete 43-field schema for supported shapes; other files stop at the first unsupported nested body and keep one independent EOF frame.",
-                "textZh": "顺序读取器对支持的形态闭合完整的 43 字段模式；其他文件停在第一个不支持的嵌套正文处，并保留一个独立的 EOF 帧。",
+                "state": "closed",
+                "text": "The sequential reader closes the complete 43-field named schema through EOF on every current file; an unsupported future nested body stops at its field.",
+                "textZh": "顺序读取器在每个当前文件上以完整的 43 字段命名模式闭合至 EOF；未来不支持的嵌套正文会停在其字段处。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Generated field order names the closed members, including patrol, attract-point and waypoint records.",
-                "textZh": "生成的字段顺序为已闭合成员命名，包括巡逻、吸引点与路径点记录。",
+                "text": "Generated field order names every member, including patrol, attract-point and waypoint records; values are not proven against a consumer.",
+                "textZh": "生成的字段顺序为每个成员命名，包括巡逻、吸引点与路径点记录；取值未经消费者证明。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1461,16 +1461,16 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Whole-object cursor proof holds only for the empty-ActionGroup profile; other files keep a bounded prefix and an authenticated terminal.",
-                "textZh": "整对象游标证明只对空 ActionGroup 形态成立；其他文件保留有界前缀与已认证的末端。",
+                "text": "Most current files close the whole stored schema through native-gated readers and replayed live cursor receipts; the residue keeps a named prefix and an authenticated terminal.",
+                "textZh": "多数当前文件通过原生校验的读取器与回放的实时游标回执闭合完整存储模式；其余文件保留已命名前缀与已认证的末端。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Wrapper order names the outer fields; one nested action tag is unsupported.",
-                "textZh": "包装顺序为外层字段命名；有一个嵌套动作标签尚不支持。",
-                "source": "memory/game_data/extraction_payload_boundaries.md"
+                "text": "Wrapper order names the outer fields and reviewed nested action routes; the residue stops at distinct unsupported nested action tags.",
+                "textZh": "包装顺序为外层字段与已审查的嵌套动作路由命名；其余文件停在各不相同的不支持嵌套动作标签处。",
+                "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 4,
@@ -1493,8 +1493,8 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Rows with a contiguous named 30-field outer cursor are framed; rows stopped by a positive unsupported modifier list or action stay bounded partial. Internal icon/action bodies stay opaque.",
-                "textZh": "具有连续已命名 30 字段外层游标的行已划分；被不支持的正数修饰符列表或动作挡住的行保持有界部分。内部图标/动作正文仍不透明。",
+                "text": "Every current file has a named 30-field outer frame through EOF; a native-gated subset closes the whole schema, while the rest keep internal action and icon bodies anonymous.",
+                "textZh": "每个当前文件都有贯穿 EOF 的已命名 30 字段外层帧；原生校验的子集闭合完整模式，其余文件的内部动作与图标正文仍为匿名。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1507,8 +1507,8 @@
               {
                 "level": 4,
                 "state": "partial",
-                "text": "Selected action tags carry native-contract meaning; provider selection, action semantics and whole-file EOF remain unresolved.",
-                "textZh": "部分动作标签带有原生契约含义；提供者选择、动作语义与整文件 EOF 仍未解决。",
+                "text": "Selected action tags carry native-contract meaning; provider selection and action semantics remain unresolved.",
+                "textZh": "部分动作标签带有原生契约含义；提供者选择与动作语义仍未解决。",
                 "source": "memory/game_data/gameplay_semantics.md"
               }
             ]
@@ -1525,8 +1525,8 @@
               {
                 "level": 2,
                 "state": "closed",
-                "text": "Real JSON with complete UTF-8 syntax.",
-                "textZh": "语法完整的 UTF-8 真 JSON。",
+                "text": "Named JSON schema readers validate every current main and meta body.",
+                "textZh": "命名 JSON 模式读取器校验每个当前的 main 与 meta 正文。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1556,16 +1556,16 @@
               { "template": "l1VfsLocated" },
               {
                 "level": 2,
-                "state": "partial",
-                "text": "Supported variants have exact readers; unsupported tails keep opaque or ambiguous ranges visible.",
-                "textZh": "受支持的变体有精确读取器；不受支持的尾部保留可见的不透明或歧义区间。",
+                "state": "closed",
+                "text": "Exact readers close every current Interactive file through EOF; an unknown future variant fails closed.",
+                "textZh": "精确读取器使每个当前 Interactive 文件闭合至 EOF；未知的未来变体会失败关闭。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Generated order names the supported variants' fields only.",
-                "textZh": "生成顺序只为受支持变体的字段命名。",
+                "text": "Generated order names the fields of every current variant; values are not proven against a consumer.",
+                "textZh": "生成的顺序为每个当前变体的字段命名；取值未经消费者证明。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1588,16 +1588,16 @@
               { "template": "l1VfsLocated" },
               {
                 "level": 2,
-                "state": "partial",
-                "text": "Every current file closes the named enemy-library prefix; files whose wave map does not close remain bounded partial.",
-                "textZh": "当前每个文件都闭合已命名的敌人库前缀；波次表未闭合的文件保持有界部分。",
+                "state": "closed",
+                "text": "The generated five-field cursor closes every current file through EOF, including enemy library, route maps, settings and wave, group and action maps.",
+                "textZh": "生成的五字段游标使每个当前文件闭合至 EOF，包括敌人库、路线表、设置以及波次、分组与动作表。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "The generated five-field order joins enemy library, route maps, settings and the wave cursor; positive polymorphic route actions keep only a prefix.",
-                "textZh": "生成的五字段顺序连接敌人库、路线表、设置与波次游标；正数多态路线动作只保留前缀。",
+                "text": "Generated order names every current field; a positive polymorphic route-action list is absent from the current corpus and fails closed.",
+                "textZh": "生成的顺序为每个当前字段命名；正数的多态路线动作列表不在当前语料中出现，遇到时失败关闭。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1620,16 +1620,16 @@
               { "template": "l1VfsLocated" },
               {
                 "level": 2,
-                "state": "partial",
-                "text": "The empty-montage shape closes exactly; montage-bearing files advance a named five-member prefix before opaque nested unions.",
-                "textZh": "空蒙太奇形态精确闭合；带蒙太奇的文件先推进已命名的五成员前缀，之后是不透明的嵌套 union。",
+                "state": "closed",
+                "text": "The reviewed reader closes every current file, montage-bearing ones included, as a named schema through EOF.",
+                "textZh": "已审查的读取器把每个当前文件（包括含蒙太奇的文件）作为命名模式闭合至 EOF。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
                 "level": 3,
                 "state": "partial",
-                "text": "Sync-group and time-reference curves close with fixed-width keyframes; populated polymorphic montage dictionaries remain partial.",
-                "textZh": "同步组与时间参考曲线以定宽关键帧闭合；已填充的多态蒙太奇字典仍为部分。",
+                "text": "Generated order names every current field, including curve keyframes and populated montage dictionaries; playback use is not proven.",
+                "textZh": "生成的顺序为每个当前字段命名，包括曲线关键帧与非空蒙太奇字典；播放用途未经证明。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1729,9 +1729,9 @@
               { "template": "l1VfsLocated" },
               {
                 "level": 2,
-                "state": "partial",
-                "text": "Each root is real JSON or has an exact reader, except GPU UI DamageText, which has named outer framing only.",
-                "textZh": "每个根要么是真 JSON，要么有精确读取器；GPU UI DamageText 例外，只有已命名的外层帧结构。",
+                "state": "closed",
+                "text": "Each root closes a named JSON schema or an exact MemoryPack reader through EOF, GPU UI DamageText included.",
+                "textZh": "每个根都以命名 JSON 模式或精确 MemoryPack 读取器闭合至 EOF，包括 GPU UI DamageText。",
                 "source": "memory/game_data/extraction_payload_boundaries.md"
               },
               {
@@ -1779,15 +1779,15 @@
               {
                 "level": 3,
                 "state": "partial",
-                "text": "The index region is 16-byte records of a pool offset and a 64-bit hash, and every offset lands on a string start. The hash function is not identified.",
-                "textZh": "索引区是由池偏移与 64 位哈希组成的 16 字节记录，每个偏移都落在字符串起点。哈希函数尚未识别。",
+                "text": "Index records pair a string-pool offset with a 64-bit hash, and every stored hash replays: Data/ paths against VFS filename hashes, asset paths against BundleManifest path hashes. One bucket word and a four-byte gap stay anonymous.",
+                "textZh": "索引记录把字符串池偏移与 64 位哈希配对，且每个存储哈希都可回放：Data/ 路径对照 VFS 文件名哈希，资源路径对照 BundleManifest 路径哈希。一个桶字与一个四字节间隙仍为匿名。",
                 "source": "memory/game_data/extend_data.md"
               },
               {
                 "level": 4,
                 "state": "partial",
-                "text": "It resolves a hash to an asset path by lookup, naming essentially every shipped asset. It cannot yet compute a hash for a new path.",
-                "textZh": "它通过查找把哈希解析为资源路径，几乎为所有随包资源命名。目前还无法为新路径计算哈希。",
+                "text": "It resolves a stored hash to a source path, and a selected native route computes the hash for a path. It names paths, not asset ownership or runtime use.",
+                "textZh": "它把存储的哈希解析为源路径，且选定的原生路由可为路径计算哈希。它命名路径，不证明资源归属或运行时使用。",
                 "source": "memory/game_data/extend_data.md"
               }
             ]
@@ -1835,23 +1835,23 @@
               { "template": "l1VfsLocated" },
               {
                 "level": 2,
-                "state": "open",
-                "text": "Entropy is indistinguishable from random: encrypted or fully compressed, and not parsable as it stands.",
-                "textZh": "熵与随机数据无法区分：已加密或完全压缩，按现状无法解析。",
+                "state": "closed",
+                "text": "A strict reader closes every length-prefixed Brotli record of strict UTF-16LE JSON through EOF.",
+                "textZh": "严格读取器使每条带长度前缀的 Brotli 记录（严格 UTF-16LE JSON）闭合至 EOF。",
                 "source": "memory/game_data/extend_data.md"
               },
               {
                 "level": 3,
-                "state": "open",
-                "text": "No field can be named without a decoding step.",
-                "textZh": "没有解码步骤就无法命名任何字段。",
+                "state": "partial",
+                "text": "Every root is a NodeCanvas behavior tree; node types, fields and connection edges close exactly, while task values such as the behavior tag integer keep open meanings.",
+                "textZh": "每个根都是 NodeCanvas 行为树；节点类型、字段与连接边精确闭合，而任务值（如 behavior 标签整数）的含义仍未确定。",
                 "source": "memory/game_data/extend_data.md"
               },
               {
                 "level": 4,
-                "state": "open",
-                "text": "Nothing is known about its consumer.",
-                "textZh": "对其消费者一无所知。",
+                "state": "partial",
+                "text": "Selected native code indexes the archive by each graph's serialized index, and exported BehaviourTree assets and AI configs name archive ordinals; no live graph instance or execution is witnessed.",
+                "textZh": "选定的原生代码按每个图的序列化索引检索归档，导出的 BehaviourTree 资源与 AI 配置指向归档序号；未见证任何实时图实例或执行。",
                 "source": "memory/game_data/extend_data.md"
               }
             ]
