@@ -98,10 +98,14 @@ These are corpus measurements; the lanes frame the same bytes by name.
 - **`DirectParentID` forms a forest** chaining `0x0A` -> `0x0D` -> `0x0C` -> `0x0C`
   (with `0x0A` -> `0x0C` directly): acyclic per bank, deep, many children per parent
   -- the same shape as the bus relation in an unrelated family
-  (`the_type0c_parent_relation_repeats_the_same_shape`). Body byte 2 selects offset
-  9 (zero) or 5 (nonzero) for the head word; five `0x0C` bodies with first byte 6
-  follow neither branch and are counted, not dropped; a fourth byte-2 value must fail
-  closed (`music_head_references_are_closed`).
+  (`the_type0c_parent_relation_repeats_the_same_shape`). The typed parse reads it
+  through the whole node base (`hirc_v150.hirc_object_parent_id`). The C# census's
+  head word is `DirectParentID` only when body byte 2, the FX count, is zero
+  (offset 9); in the nonzero branch its offset-5 word is the first FX slot's
+  `fxID`, and the parent sits at `10 + 6 x uNumFx`. Those bodies' head words are FX
+  references that happen to resolve in the same bank, not parents. Five `0x0C`
+  bodies with first byte 6 follow neither branch and are counted, not dropped; a
+  fourth byte-2 value must fail closed (`music_head_references_are_closed`).
 - **Every `0x0B` is a child of exactly one `0x0A`** -- as many distinct targets as the
   type declares, none twice, none missed (`the_music_partition_edge_is_one_to_one`).
   The word before the first child is a count that is right in every body that carries
@@ -243,6 +247,9 @@ Detail lives in the owning modules; this is the boundary.
 - Convolution Reverb and Mastering Suite parameter meanings need plug-in-specific
   definitions or exact native consumers. Do not fit names or runtime roles from
   corpus correlations.
+- The AnimeStudio music head census should read `DirectParentID` after the FX and
+  metadata groups instead of taking offset 5 when the FX count is nonzero; until
+  then its nonzero-branch rows are FX references.
 - Several lane residual strings still describe SDK-named fields as opaque (the
   `0x05` policy block, the `0x06` group head, the `0x0E` head); the names are in
   `hirc_v150`, the lanes do not publish them yet.

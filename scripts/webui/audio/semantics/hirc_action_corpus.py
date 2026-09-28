@@ -120,12 +120,12 @@ SHARED_NODE_FRAME_RESIDUALS = (
     "handful of times, and branch 2 rests on a single corpus object",
     "group H counts are seven-bit continuation values in the engine; the current "
     "corpus spends one byte on each, so the multi-byte path is pinned by fixture only",
-    "the group I ParamID varint is decoded little-endian here while the engine "
-    "accumulates the most-significant group first; extents agree, decoded values for "
-    "multi-byte keys do not, and no value is published. The five-byte cap is this "
-    "reader's own; the engine has none",
+    "the group I ParamID varint is read most-significant group first, as the engine "
+    "does; no value is published. The five-byte cap is this reader's own; the engine "
+    "has none",
     "AkPropID keys in groups C, D and H, and the RTPC parameter ids in group I, are "
-    "consumed by extent; their enum values are not yet read from the SDK's debug data",
+    "consumed by extent; the enum values are recorded in the wwise_sdk_enums contract "
+    "and not joined here",
     "the fxID, OverrideBusId, DirectParentID, aux bus and child ids are named but not "
     "joined by this lane; the reference graph owns that join",
 )
@@ -4958,6 +4958,10 @@ def music_head_references_are_closed(corpus: dict[str, Any]) -> bool:
     """Every type 0x0A and 0x0D body must name exactly one same-bank object.
 
     The claim is that the offset follows from a byte and the word always resolves.
+    It is a closure claim, not a parent claim: when body byte 2 (the node's FX
+    count) is zero the offset-9 word is ``DirectParentID``, but in the nonzero
+    branch the offset-5 word is the first FX slot's ``fxID``. The parent itself
+    comes from ``hirc_v150.hirc_object_parent_id``, which walks the node base.
     A single body that is zero, unresolved, short, or carries an unobserved
     discriminant falsifies that, so none of them may be tolerated.
     """

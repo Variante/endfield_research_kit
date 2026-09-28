@@ -93,7 +93,8 @@ Per type (after the frame unless stated):
   shared; BypassFX u8 bypass, u8 target mask; Release, PlayEvent,
   ResetPlaylist, Break, Trigger, Mute and UseState add nothing.
 - 0x04 ``CAkEvent``: varint action count x u32 actionID;
-  ``hirc_event_action_ids`` reads only the one-byte short form.
+  ``hirc_event_action_ids`` reads the full varint, so a count of 128 or more
+  is not truncated to its low group.
 - 0x08 and 0x12 ``CAkBus`` (audio and aux bus): u32 OverrideBusId (the parent
   bus), u32 idDeviceShareset only when that is 0; ``CAkBus::SetInitialParams``
   -- the property bundle (no ranged bundle), groups E and F, u8 flags, u16 max
@@ -518,12 +519,33 @@ def parse_hirc_objects(bank_payload: bytes) -> dict[int, dict[str, Any]]:
             pos = data_end
     return objects
 
+def _hirc_varuint(data: bytes, offset: int) -> tuple[int, int] | None:
+    """Read a Wwise variable-length count, most-significant 7-bit group first.
+
+    Returns ``(value, next offset)``, or ``None`` when the bytes end inside
+    the value or it runs past five groups.
+    """
+    value = 0
+    for _ in range(5):
+        if offset >= len(data):
+            return None
+        byte = data[offset]
+        offset += 1
+        value = (value << 7) | (byte & 0x7F)
+        if not byte & 0x80:
+            return value, offset
+    return None
+
+
 def hirc_event_action_ids(data: bytes) -> list[int]:
+    """The action IDs of one ``CAkEvent`` body: varint count x u32 actionID."""
     if not data:
         return []
-    count = data[0]
+    header = _hirc_varuint(data, 0)
+    if header is None:
+        return []
+    count, pos = header
     ids: list[int] = []
-    pos = 1
     for _ in range(count):
         if pos + 4 > len(data):
             break

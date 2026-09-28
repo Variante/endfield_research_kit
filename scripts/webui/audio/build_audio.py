@@ -223,8 +223,9 @@ HIRC_GAME_PARAMETER_NAME_EVIDENCE = {
     "evidenceBoundary": (
         "The six field names and 32-bit values are exact for the pinned metadata "
         "file and each value is present in the exported HIRC RTPC inventory. "
-        "This catalog does not name Wwise property IDs 6146/6148, and it does "
-        "not infer runtime setter order, live values, or audibility."
+        "This catalog names game-side RTPC parameters only; it names no Wwise "
+        "AkPropID key, and it does not infer runtime setter order, live values, "
+        "or audibility."
     ),
 }
 # v150 InitialParams uses AkPropID, whose numbering is distinct from the
