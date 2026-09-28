@@ -1,0 +1,41 @@
+{
+  "schema": "endfield.buff-damage-known-compound-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_damage_sequence_action_condition_native.json",
+    "buff_damage_check_decorate_mask_condition_native.json",
+    "buff_damage_check_buff_stack_condition_native.json",
+    "buff_damage_check_type_condition_native.json",
+    "buff_damage_check_tag_match_condition_native.json"
+  ],
+  "sequenceMemberCount": 3,
+  "sequenceTerminalByteCount": 2,
+  "selectedActionPatterns": [
+    [60, 93],
+    [91, 60, 124]
+  ],
+  "selectedActionNames": {
+    "60": "CheckBuffStackNumAdvanced",
+    "91": "CheckDamageDecorateMask",
+    "93": "CheckDamageType",
+    "124": "CheckTagMatch"
+  },
+  "stackFinderShape": {
+    "buffIdListCount": 1,
+    "tagCount": 0,
+    "queryStatus": "named-direct-members-exact-span"
+  },
+  "tagMatchQueryTagCount": 1,
+  "evidenceBoundary": {
+    "exact": "The selected native source readers and union routes separately prove the three-member sequence and the named action members of CheckBuffStackNumAdvanced, CheckDamageType, CheckDamageDecorateMask, and CheckTagMatch.",
+    "direct": "Two current positive-damage BuffData sources replay to exact compound condition endpoints: ordered StackNumAdvanced/DamageType and ordered DecorateMask/StackNumAdvanced/TagMatch. Nested stack finder, target, BlackboardDouble and TagMatch query children close on original logical bytes.",
+    "structuralOnly": "Stored enum, tag, target and scalar values do not prove live comparisons, action execution order or damage arithmetic.",
+    "conditional": "Whole BuffData promotion still requires the independent selected tag-five processor and thirty-member original-byte root ID/EOF proof.",
+    "unresolved": "Other multi-action combinations and nested finder or query variants remain partial."
+  }
+}

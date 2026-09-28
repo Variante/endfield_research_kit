@@ -1,0 +1,48 @@
+{
+  "schema": "endfield.buff-damage-check-buff-stack-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "levelscript_union_tags.json",
+    "buff_3c_native.json",
+    "buff_damage_sequence_action_condition_native.json",
+    "buff_find_settings_child_native.json",
+    "buff_damage_check_tag_match_condition_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "unionFamily": "AbilityActionData",
+  "unionTag": 60,
+  "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckBuffStackNumAdvanced_DataForMemoryPack",
+  "wrappedType": "Beyond.Gameplay.Core.CheckBuffStackNumAdvanced+Data",
+  "sequenceMemberCount": 3,
+  "sequenceTerminalByteCount": 2,
+  "actionMemberPlan": [
+    {"name": "isEnable", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+    {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum32", "width": 4},
+    {"name": "priorityOffset", "declaredType": "int", "kind": "int32", "width": 4},
+    {"name": "serverActionIndex", "declaredType": "int", "kind": "int32", "width": 4},
+    {"name": "buffSettings", "declaredType": "Beyond.Gameplay.Core.BuffFindSettings", "kind": "buff-find-settings"},
+    {"name": "buffStackNumType", "declaredType": "Beyond.Gameplay.Core.BuffStackNumType", "kind": "enum32", "width": 4},
+    {"name": "checkTarget", "declaredType": "Beyond.Gameplay.Core.TargetSettings", "kind": "target-settings"},
+    {"name": "compareType", "declaredType": "Beyond.CompareType", "kind": "enum32", "width": 4},
+    {"name": "limitSkillCastId", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+    {"name": "value", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+  ],
+  "sourceMethodIndices": [124049, 124050],
+  "sourceWindowStarts": [58576112, 58578048, 58578655],
+  "sourceContextRvas": [58578366, 58578458, 58578596],
+  "selectedFinderShapeRef": "buff_find_settings_child_native.json.children.finder-profile",
+  "selectedTargetShapeRef": "buff_damage_check_tag_match_condition_native.json.selectedTargetShape",
+  "selectedBlackboardShapeRef": "buff_adding_cooldown_ownership_native.json.selectedReadOrder",
+  "evidenceBoundary": {
+    "exact": "The selected AbilityActionData union route, generated ten-member plan, complete formatter and source-reader windows, three nested MethodSpec contexts and parent SequenceActionData reader are checked on the same installed build. The independently native-checked BuffFindSettings, simple TargetSettings and BlackboardDouble readers tile the original one-action source span.",
+    "direct": "The four common action members precede buffSettings, buffStackNumType, checkTarget, compareType, limitSkillCastId and value in source order.",
+    "structuralOnly": "Finder strings and query words, target settings, scalar bits and terminal bytes are stored values.",
+    "conditional": "The static reader does not prove live inflated provider selection.",
+    "unresolved": "Other finder or target shapes, compound action lists, runtime stack predicate and whole BuffData ownership remain open."
+  }
+}

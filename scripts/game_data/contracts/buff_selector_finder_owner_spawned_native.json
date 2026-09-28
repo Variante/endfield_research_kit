@@ -1,0 +1,78 @@
+{
+  "schema": "endfield.buff-selector-finder-owner-spawned-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "switchContract": "skill_selector_finder_typhoea_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "serializedMemberCount": 1,
+  "dispatcher": {
+    "unionTag": 13,
+    "switchTargetRva": 59819988,
+    "routeWindow": {
+      "startRva": 59819988,
+      "endRva": 59820044,
+      "sha256": "A3E6F350AF67B8018CFD85FAFA1AFB33B17B461D0F3BFA8949D88A3FA39CDEF4",
+      "boundary": "selected finder tag-13 branch and wrapper type load through shared rejoin"
+    },
+    "usageCellRva": 217990288,
+    "usageRawHex": "6144032000000000",
+    "registeredTypeIndex": 107056,
+    "wrapperTypeDefinition": 23051,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerSpawnedEntityFinder_DataForMemoryPack"
+  },
+  "methods": [
+    [167182, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerSpawnedEntityFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_OwnerSpawnedEntityFinder_DataForMemoryPackFormatter", "Deserialize", 67645056],
+    [167181, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerSpawnedEntityFinder_DataForMemoryPack", "Deserialize", 67645152],
+    [167178, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerSpawnedEntityFinder_DataForMemoryPack", "set___spawnedObjectType__", 67645408]
+  ],
+  "setterMethods": [[167178, "set___spawnedObjectType__", "Beyond.Gameplay.Core.ObjectType"]],
+  "codeWindows": [
+    {
+      "startRva": 67645056,
+      "endRva": 67645149,
+      "sha256": "5EA980E5A0CCD50B090294FD7EA7B128FEA0D1FF38EC67B815D9ED7DEF2EBB8C",
+      "boundary": "formatter forwarding and lazy initialization through tail jump"
+    },
+    {
+      "startRva": 67645152,
+      "endRva": 67645407,
+      "sha256": "566911CD5662AA95C9728951558AF88123C9E7D52C08FCAB4B9F3535757F266B",
+      "boundary": "one-member header, four-byte source read, generated setter call, normal return and lazy rejoin"
+    },
+    {
+      "startRva": 67645408,
+      "endRva": 67645437,
+      "sha256": "92CB65C1FBAB70249C46719721B0B660250E4993984AB72505EDE9E9EBAFE66C",
+      "boundary": "generated setter's four-byte destination store through return"
+    },
+    {
+      "startRva": 46827616,
+      "endRva": 46827703,
+      "sha256": "CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F",
+      "boundary": "shared one-byte header and FF helper through return"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "shared four-byte source helper through return"
+    }
+  ],
+  "readOrder": {
+    "headerCall": [67645206, "E84559C2FE", 46827616],
+    "memberCountCompare": [67645280, "4080FF01"],
+    "valueCall": [67645303, "E83457C2FE", 46827184],
+    "setterCall": [67645321, "E852000000", 67645408],
+    "setterStore": [67645428, "895810"]
+  },
+  "evidenceBoundary": {
+    "exact": "The selected tag-13 switch branch loads OwnerSpawnedEntityFinder.Data. Its Deserialize checks one serialized member, calls a selected four-byte source helper, and passes the result to the generated spawnedObjectType setter, which stores a DWORD in the wrapped value.",
+    "direct": "The member is named spawnedObjectType and declared Beyond.Gameplay.Core.ObjectType by the selected generated setter. Current source spans end after one tag byte, one wrapper header byte and four member bytes.",
+    "structuralOnly": "The four stored bytes can be read as the enum's raw signed 32-bit value; they do not establish runtime entity lookup or target selection.",
+    "unresolved": "Live formatter choice, refill and error parity, other finder subtypes and validators, and whole BuffData recursive schema remain open."
+  }
+}

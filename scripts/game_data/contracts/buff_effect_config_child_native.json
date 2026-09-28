@@ -1,0 +1,1413 @@
+{
+  "schema": "endfield.buff-effect-config-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceReaderContract": "buff_9a_native.json",
+  "parentActionContract": "buff_a2_native.json",
+  "sourceReaderMethodIndices": [
+    107875,
+    107874
+  ],
+  "sourceReaderWindowStarts": [
+    65193072,
+    53269120,
+    53273486
+  ],
+  "wrapperTypeDefinition": 14311,
+  "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_EffectActionCfgForMemoryPack",
+  "runtimeTypeDefinition": 3616,
+  "runtimeTypeName": "Beyond.Gameplay.EffectActionCfg",
+  "unserializedRuntimeFields": {
+    "forceGuardEffect": 33,
+    "centerOffset": 112
+  },
+  "readOrder": [
+    {
+      "index": 0,
+      "fieldName": "alertAnimateDuration",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107787,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 392,
+      "sourceOperationRva": 53269252,
+      "storeWindows": [
+        [
+          53269282,
+          "F30F118088010000"
+        ]
+      ]
+    },
+    {
+      "index": 1,
+      "fieldName": "alertType",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.AlertType",
+      "setterMethodIndex": 107788,
+      "setterParameterType": "Beyond.Gameplay.AlertType",
+      "runtimeFieldOffset": 384,
+      "sourceOperationRva": 53269319,
+      "storeWindows": [
+        [
+          53269357,
+          "4489B080010000"
+        ]
+      ]
+    },
+    {
+      "index": 2,
+      "fieldName": "angle",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107789,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 400,
+      "sourceOperationRva": 53269370,
+      "storeWindows": [
+        [
+          53269403,
+          "F30F118090010000"
+        ]
+      ]
+    },
+    {
+      "index": 3,
+      "fieldName": "animateAlert",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107790,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 388,
+      "sourceOperationRva": 53269411,
+      "storeWindows": [
+        [
+          53269438,
+          "888184010000"
+        ]
+      ]
+    },
+    {
+      "index": 4,
+      "fieldName": "assetOnlyAffectModelRoot",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107791,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 152,
+      "sourceOperationRva": 53269450,
+      "storeWindows": [
+        [
+          53269477,
+          "888198000000"
+        ]
+      ]
+    },
+    {
+      "index": 5,
+      "fieldName": "cameraAnchorDistance",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107792,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 180,
+      "sourceOperationRva": 53269489,
+      "storeWindows": [
+        [
+          53269522,
+          "F30F1180B4000000"
+        ]
+      ]
+    },
+    {
+      "index": 6,
+      "fieldName": "cameraReferenceAspect",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107793,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 192,
+      "sourceOperationRva": 53269530,
+      "storeWindows": [
+        [
+          53269563,
+          "F30F1180C0000000"
+        ]
+      ]
+    },
+    {
+      "index": 7,
+      "fieldName": "cameraReferenceFov",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107794,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 188,
+      "sourceOperationRva": 53269571,
+      "storeWindows": [
+        [
+          53269601,
+          "F30F1180BC000000"
+        ]
+      ]
+    },
+    {
+      "index": 8,
+      "fieldName": "cameraScreenSizeScaleMode",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.CameraScreenSizeScaleMode",
+      "setterMethodIndex": 107795,
+      "setterParameterType": "Beyond.Gameplay.CameraScreenSizeScaleMode",
+      "runtimeFieldOffset": 184,
+      "sourceOperationRva": 53269638,
+      "storeWindows": [
+        [
+          53269676,
+          "4489B0B8000000"
+        ]
+      ]
+    },
+    {
+      "index": 9,
+      "fieldName": "cameraViewportPosition",
+      "kind": 8,
+      "declaredType": "UnityEngine.Vector2",
+      "setterMethodIndex": 107796,
+      "setterParameterType": "UnityEngine.Vector2",
+      "runtimeFieldOffset": 172,
+      "sourceOperationRva": 53269721,
+      "storeWindows": [
+        [
+          53269759,
+          "F30F11B0AC000000"
+        ],
+        [
+          53269767,
+          "F30F11B8B0000000"
+        ]
+      ]
+    },
+    {
+      "index": 10,
+      "fieldName": "directionRef",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.EffectDirectionType",
+      "setterMethodIndex": 107797,
+      "setterParameterType": "Beyond.Gameplay.EffectDirectionType",
+      "runtimeFieldOffset": 304,
+      "sourceOperationRva": 53269807,
+      "storeWindows": [
+        [
+          53269845,
+          "4489B030010000"
+        ]
+      ]
+    },
+    {
+      "index": 11,
+      "fieldName": "durationScaleBB",
+      "kind": "scalar",
+      "declaredType": "Beyond.Blackboard+BlackboardDouble",
+      "setterMethodIndex": 107798,
+      "setterParameterType": "Beyond.Blackboard+BlackboardDouble",
+      "runtimeFieldOffset": 80,
+      "sourceOperationRva": 53269865,
+      "storeWindows": [
+        [
+          53269892,
+          "48894150"
+        ]
+      ]
+    },
+    {
+      "index": 12,
+      "fieldName": "effectName",
+      "kind": "payload",
+      "declaredType": "string",
+      "setterMethodIndex": 107799,
+      "setterParameterType": "System.String",
+      "runtimeFieldOffset": 24,
+      "sourceOperationRva": 53269911,
+      "storeWindows": [
+        [
+          53269938,
+          "48894118"
+        ]
+      ]
+    },
+    {
+      "index": 13,
+      "fieldName": "effectPosData",
+      "kind": "empty-array",
+      "declaredType": "Beyond.Gameplay.TerrainEffectData[]",
+      "setterMethodIndex": 107800,
+      "setterParameterType": "<type-index:98657>",
+      "runtimeFieldOffset": 104,
+      "sourceOperationRva": 53269964,
+      "storeWindows": [
+        [
+          53269991,
+          "48894168"
+        ]
+      ]
+    },
+    {
+      "index": 14,
+      "fieldName": "followGrounded",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107801,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 201,
+      "sourceOperationRva": 53270010,
+      "storeWindows": [
+        [
+          53270037,
+          "8881C9000000"
+        ]
+      ]
+    },
+    {
+      "index": 15,
+      "fieldName": "followGroundedMaxDistance",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107802,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 204,
+      "sourceOperationRva": 53270049,
+      "storeWindows": [
+        [
+          53270082,
+          "F30F1180CC000000"
+        ]
+      ]
+    },
+    {
+      "index": 16,
+      "fieldName": "followHideTarget",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107803,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 216,
+      "sourceOperationRva": 53270090,
+      "storeWindows": [
+        [
+          53270117,
+          "8881D8000000"
+        ]
+      ]
+    },
+    {
+      "index": 17,
+      "fieldName": "fxSize",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107804,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 284,
+      "sourceOperationRva": 53270129,
+      "storeWindows": [
+        [
+          53270159,
+          "F30F11801C010000"
+        ]
+      ]
+    },
+    {
+      "index": 18,
+      "fieldName": "fxType",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.BattleEffectType",
+      "setterMethodIndex": 107805,
+      "setterParameterType": "Beyond.Gameplay.BattleEffectType",
+      "runtimeFieldOffset": 16,
+      "sourceOperationRva": 53270196,
+      "storeWindows": [
+        [
+          53270234,
+          "44897010"
+        ]
+      ]
+    },
+    {
+      "index": 19,
+      "fieldName": "grounded",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107806,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 200,
+      "sourceOperationRva": 53270244,
+      "storeWindows": [
+        [
+          53270271,
+          "8881C8000000"
+        ]
+      ]
+    },
+    {
+      "index": 20,
+      "fieldName": "guardEffect",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107807,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 32,
+      "sourceOperationRva": 53270283,
+      "storeWindows": [
+        [
+          53270310,
+          "884120"
+        ]
+      ]
+    },
+    {
+      "index": 21,
+      "fieldName": "hollow",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107808,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 404,
+      "sourceOperationRva": 53270319,
+      "storeWindows": [
+        [
+          53270352,
+          "F30F118094010000"
+        ]
+      ]
+    },
+    {
+      "index": 22,
+      "fieldName": "ignoreEntityDither",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107809,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 160,
+      "sourceOperationRva": 53270360,
+      "storeWindows": [
+        [
+          53270387,
+          "8881A0000000"
+        ]
+      ]
+    },
+    {
+      "index": 23,
+      "fieldName": "ignoreOwnerTimeScale",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107810,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 89,
+      "sourceOperationRva": 53270399,
+      "storeWindows": [
+        [
+          53270426,
+          "884159"
+        ]
+      ]
+    },
+    {
+      "index": 24,
+      "fieldName": "interruptTime",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107811,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 92,
+      "sourceOperationRva": 53270435,
+      "storeWindows": [
+        [
+          53270468,
+          "F30F11405C"
+        ]
+      ]
+    },
+    {
+      "index": 25,
+      "fieldName": "isAlertAnimateReverse",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107812,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 396,
+      "sourceOperationRva": 53270473,
+      "storeWindows": [
+        [
+          53270500,
+          "88818C010000"
+        ]
+      ]
+    },
+    {
+      "index": 26,
+      "fieldName": "isCenterChangeLod",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107813,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 34,
+      "sourceOperationRva": 53270512,
+      "storeWindows": [
+        [
+          53270539,
+          "884122"
+        ]
+      ]
+    },
+    {
+      "index": 27,
+      "fieldName": "isClothMountPoint",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107814,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 233,
+      "sourceOperationRva": 53270548,
+      "storeWindows": [
+        [
+          53270575,
+          "8881E9000000"
+        ]
+      ]
+    },
+    {
+      "index": 28,
+      "fieldName": "isLimitEffectCount",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107815,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 125,
+      "sourceOperationRva": 53270587,
+      "storeWindows": [
+        [
+          53270614,
+          "88417D"
+        ]
+      ]
+    },
+    {
+      "index": 29,
+      "fieldName": "isShowInDialog",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107816,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 124,
+      "sourceOperationRva": 53270623,
+      "storeWindows": [
+        [
+          53270650,
+          "88417C"
+        ]
+      ]
+    },
+    {
+      "index": 30,
+      "fieldName": "isUltimateShow",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107817,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 153,
+      "sourceOperationRva": 53270659,
+      "storeWindows": [
+        [
+          53270686,
+          "888199000000"
+        ]
+      ]
+    },
+    {
+      "index": 31,
+      "fieldName": "lengthBB",
+      "kind": "scalar",
+      "declaredType": "Beyond.Blackboard+BlackboardDouble",
+      "setterMethodIndex": 107818,
+      "setterParameterType": "Beyond.Blackboard+BlackboardDouble",
+      "runtimeFieldOffset": 64,
+      "sourceOperationRva": 53270705,
+      "storeWindows": [
+        [
+          53270732,
+          "48894140"
+        ]
+      ]
+    },
+    {
+      "index": 32,
+      "fieldName": "lerpDuration",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107819,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 212,
+      "sourceOperationRva": 53270751,
+      "storeWindows": [
+        [
+          53270784,
+          "F30F1180D4000000"
+        ]
+      ]
+    },
+    {
+      "index": 33,
+      "fieldName": "lerpToTargetTrans",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107820,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 208,
+      "sourceOperationRva": 53270792,
+      "storeWindows": [
+        [
+          53270819,
+          "8881D0000000"
+        ]
+      ]
+    },
+    {
+      "index": 34,
+      "fieldName": "limitCount",
+      "kind": 4,
+      "declaredType": "int",
+      "setterMethodIndex": 107821,
+      "setterParameterType": "System.Int32",
+      "runtimeFieldOffset": 128,
+      "sourceOperationRva": 53270831,
+      "storeWindows": [
+        [
+          53270858,
+          "898180000000"
+        ]
+      ]
+    },
+    {
+      "index": 35,
+      "fieldName": "limitKey",
+      "kind": "payload",
+      "declaredType": "string",
+      "setterMethodIndex": 107822,
+      "setterParameterType": "System.String",
+      "runtimeFieldOffset": 144,
+      "sourceOperationRva": 53270870,
+      "storeWindows": [
+        [
+          53270897,
+          "48898190000000"
+        ]
+      ]
+    },
+    {
+      "index": 36,
+      "fieldName": "limitTime",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107823,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 136,
+      "sourceOperationRva": 53270922,
+      "storeWindows": [
+        [
+          53270955,
+          "F30F118088000000"
+        ]
+      ]
+    },
+    {
+      "index": 37,
+      "fieldName": "lockYRotation",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107824,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 352,
+      "sourceOperationRva": 53270963,
+      "storeWindows": [
+        [
+          53270990,
+          "888160010000"
+        ]
+      ]
+    },
+    {
+      "index": 38,
+      "fieldName": "modifyType",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.View.ParticleEffectHelper+ModifyType",
+      "setterMethodIndex": 107825,
+      "setterParameterType": "Beyond.Gameplay.View.ParticleEffectHelper+ModifyType",
+      "runtimeFieldOffset": 408,
+      "sourceOperationRva": 53271028,
+      "storeWindows": [
+        [
+          53271066,
+          "4489B098010000"
+        ]
+      ]
+    },
+    {
+      "index": 39,
+      "fieldName": "mountPoint",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.MountPoint",
+      "setterMethodIndex": 107826,
+      "setterParameterType": "Beyond.Gameplay.MountPoint",
+      "runtimeFieldOffset": 228,
+      "sourceOperationRva": 53271105,
+      "storeWindows": [
+        [
+          53271143,
+          "4489B0E4000000"
+        ]
+      ]
+    },
+    {
+      "index": 40,
+      "fieldName": "moveType",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.EffectMoveType",
+      "setterMethodIndex": 107827,
+      "setterParameterType": "Beyond.Gameplay.EffectMoveType",
+      "runtimeFieldOffset": 164,
+      "sourceOperationRva": 53271182,
+      "storeWindows": [
+        [
+          53271220,
+          "4489B0A4000000"
+        ]
+      ]
+    },
+    {
+      "index": 41,
+      "fieldName": "offsetDir",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.OffsetDir",
+      "setterMethodIndex": 107828,
+      "setterParameterType": "Beyond.Gameplay.OffsetDir",
+      "runtimeFieldOffset": 248,
+      "sourceOperationRva": 53271259,
+      "storeWindows": [
+        [
+          53271297,
+          "4489B0F8000000"
+        ]
+      ]
+    },
+    {
+      "index": 42,
+      "fieldName": "offsetDirRevert",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107829,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 252,
+      "sourceOperationRva": 53271310,
+      "storeWindows": [
+        [
+          53271337,
+          "8881FC000000"
+        ]
+      ]
+    },
+    {
+      "index": 43,
+      "fieldName": "positionOffset",
+      "kind": 12,
+      "declaredType": "UnityEngine.Vector3",
+      "setterMethodIndex": 107830,
+      "setterParameterType": "UnityEngine.Vector3",
+      "runtimeFieldOffset": 256,
+      "sourceOperationRva": 53271380,
+      "storeWindows": [
+        [
+          53271418,
+          "F20F11B000010000"
+        ],
+        [
+          53271429,
+          "4489B008010000"
+        ]
+      ]
+    },
+    {
+      "index": 44,
+      "fieldName": "positionOffsetBB",
+      "kind": "vector",
+      "declaredType": "Beyond.Blackboard+BlackboardVector3",
+      "setterMethodIndex": 107831,
+      "setterParameterType": "Beyond.Blackboard+BlackboardVector3",
+      "runtimeFieldOffset": 272,
+      "sourceOperationRva": 53271446,
+      "storeWindows": [
+        [
+          53271473,
+          "48898110010000"
+        ]
+      ]
+    },
+    {
+      "index": 45,
+      "fieldName": "positionRef",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.PositionType",
+      "setterMethodIndex": 107832,
+      "setterParameterType": "Beyond.Gameplay.PositionType",
+      "runtimeFieldOffset": 196,
+      "sourceOperationRva": 53271524,
+      "storeWindows": [
+        [
+          53271562,
+          "4489B0C4000000"
+        ]
+      ]
+    },
+    {
+      "index": 46,
+      "fieldName": "protectTime",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107833,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 132,
+      "sourceOperationRva": 53271575,
+      "storeWindows": [
+        [
+          53271608,
+          "F30F118084000000"
+        ]
+      ]
+    },
+    {
+      "index": 47,
+      "fieldName": "releaseByAction",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107834,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 88,
+      "sourceOperationRva": 53271616,
+      "storeWindows": [
+        [
+          53271643,
+          "884158"
+        ]
+      ]
+    },
+    {
+      "index": 48,
+      "fieldName": "revertDir",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107835,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 324,
+      "sourceOperationRva": 53271652,
+      "storeWindows": [
+        [
+          53271679,
+          "888144010000"
+        ]
+      ]
+    },
+    {
+      "index": 49,
+      "fieldName": "rotMountPoint",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.MountPoint",
+      "setterMethodIndex": 107836,
+      "setterParameterType": "Beyond.Gameplay.MountPoint",
+      "runtimeFieldOffset": 312,
+      "sourceOperationRva": 53271717,
+      "storeWindows": [
+        [
+          53271755,
+          "4489B038010000"
+        ]
+      ]
+    },
+    {
+      "index": 50,
+      "fieldName": "rotRef",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.PositionType",
+      "setterMethodIndex": 107837,
+      "setterParameterType": "Beyond.Gameplay.PositionType",
+      "runtimeFieldOffset": 300,
+      "sourceOperationRva": 53271794,
+      "storeWindows": [
+        [
+          53271832,
+          "4489B02C010000"
+        ]
+      ]
+    },
+    {
+      "index": 51,
+      "fieldName": "rotType",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.EffectRotType",
+      "setterMethodIndex": 107838,
+      "setterParameterType": "Beyond.Gameplay.EffectRotType",
+      "runtimeFieldOffset": 296,
+      "sourceOperationRva": 53271871,
+      "storeWindows": [
+        [
+          53271909,
+          "4489B028010000"
+        ]
+      ]
+    },
+    {
+      "index": 52,
+      "fieldName": "rotUseWeaponMountPoint",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107839,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 308,
+      "sourceOperationRva": 53271922,
+      "storeWindows": [
+        [
+          53271949,
+          "888134010000"
+        ]
+      ]
+    },
+    {
+      "index": 53,
+      "fieldName": "rotWeaponIndex",
+      "kind": 4,
+      "declaredType": "int",
+      "setterMethodIndex": 107840,
+      "setterParameterType": "System.Int32",
+      "runtimeFieldOffset": 316,
+      "sourceOperationRva": 53271961,
+      "storeWindows": [
+        [
+          53271988,
+          "89813C010000"
+        ]
+      ]
+    },
+    {
+      "index": 54,
+      "fieldName": "rotWeaponMountPoint",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.WeaponMountPoint",
+      "setterMethodIndex": 107841,
+      "setterParameterType": "Beyond.Gameplay.WeaponMountPoint",
+      "runtimeFieldOffset": 320,
+      "sourceOperationRva": 53272026,
+      "storeWindows": [
+        [
+          53272064,
+          "4489B040010000"
+        ]
+      ]
+    },
+    {
+      "index": 55,
+      "fieldName": "scale",
+      "kind": 12,
+      "declaredType": "UnityEngine.Vector3",
+      "setterMethodIndex": 107842,
+      "setterParameterType": "UnityEngine.Vector3",
+      "runtimeFieldOffset": 36,
+      "sourceOperationRva": 53272108,
+      "storeWindows": [
+        [
+          53272146,
+          "F20F117024"
+        ],
+        [
+          53272154,
+          "4489702C"
+        ]
+      ]
+    },
+    {
+      "index": 56,
+      "fieldName": "scaleBB",
+      "kind": "vector",
+      "declaredType": "Beyond.Blackboard+BlackboardVector3",
+      "setterMethodIndex": 107843,
+      "setterParameterType": "Beyond.Blackboard+BlackboardVector3",
+      "runtimeFieldOffset": 48,
+      "sourceOperationRva": 53272168,
+      "storeWindows": [
+        [
+          53272195,
+          "48894130"
+        ]
+      ]
+    },
+    {
+      "index": 57,
+      "fieldName": "scaleWithTargetSize",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107844,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 281,
+      "sourceOperationRva": 53272214,
+      "storeWindows": [
+        [
+          53272241,
+          "888119010000"
+        ]
+      ]
+    },
+    {
+      "index": 58,
+      "fieldName": "selfRotation",
+      "kind": 12,
+      "declaredType": "UnityEngine.Vector3",
+      "setterMethodIndex": 107845,
+      "setterParameterType": "UnityEngine.Vector3",
+      "runtimeFieldOffset": 328,
+      "sourceOperationRva": 53272284,
+      "storeWindows": [
+        [
+          53272322,
+          "F20F11B048010000"
+        ],
+        [
+          53272333,
+          "4489B050010000"
+        ]
+      ]
+    },
+    {
+      "index": 59,
+      "fieldName": "selfRotationBB",
+      "kind": "vector",
+      "declaredType": "Beyond.Blackboard+BlackboardVector3",
+      "setterMethodIndex": 107846,
+      "setterParameterType": "Beyond.Blackboard+BlackboardVector3",
+      "runtimeFieldOffset": 344,
+      "sourceOperationRva": 53272350,
+      "storeWindows": [
+        [
+          53272377,
+          "48898158010000"
+        ]
+      ]
+    },
+    {
+      "index": 60,
+      "fieldName": "showHideWithWeapon",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107847,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 244,
+      "sourceOperationRva": 53272402,
+      "storeWindows": [
+        [
+          53272429,
+          "8881F4000000"
+        ]
+      ]
+    },
+    {
+      "index": 61,
+      "fieldName": "slotIndex",
+      "kind": 4,
+      "declaredType": "int",
+      "setterMethodIndex": 107848,
+      "setterParameterType": "System.Int32",
+      "runtimeFieldOffset": 220,
+      "sourceOperationRva": 53272441,
+      "storeWindows": [
+        [
+          53272468,
+          "8981DC000000"
+        ]
+      ]
+    },
+    {
+      "index": 62,
+      "fieldName": "terrainPrefab",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107849,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 96,
+      "sourceOperationRva": 53272480,
+      "storeWindows": [
+        [
+          53272507,
+          "884160"
+        ]
+      ]
+    },
+    {
+      "index": 63,
+      "fieldName": "unpackFollowTargetOnRelease",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107850,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 292,
+      "sourceOperationRva": 53272516,
+      "storeWindows": [
+        [
+          53272543,
+          "888124010000"
+        ]
+      ]
+    },
+    {
+      "index": 64,
+      "fieldName": "unpackFollowTargetRotOnRelease",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107851,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 360,
+      "sourceOperationRva": 53272555,
+      "storeWindows": [
+        [
+          53272582,
+          "888168010000"
+        ]
+      ]
+    },
+    {
+      "index": 65,
+      "fieldName": "unpackPosDelayFrame",
+      "kind": 4,
+      "declaredType": "int",
+      "setterMethodIndex": 107852,
+      "setterParameterType": "System.Int32",
+      "runtimeFieldOffset": 288,
+      "sourceOperationRva": 53272594,
+      "storeWindows": [
+        [
+          53272621,
+          "898120010000"
+        ]
+      ]
+    },
+    {
+      "index": 66,
+      "fieldName": "unpackRotDelayFrame",
+      "kind": 4,
+      "declaredType": "int",
+      "setterMethodIndex": 107853,
+      "setterParameterType": "System.Int32",
+      "runtimeFieldOffset": 356,
+      "sourceOperationRva": 53272633,
+      "storeWindows": [
+        [
+          53272660,
+          "898164010000"
+        ]
+      ]
+    },
+    {
+      "index": 67,
+      "fieldName": "useAccurateMp",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107854,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 232,
+      "sourceOperationRva": 53272672,
+      "storeWindows": [
+        [
+          53272699,
+          "8881E8000000"
+        ]
+      ]
+    },
+    {
+      "index": 68,
+      "fieldName": "useCameraViewportAnchor",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107855,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 168,
+      "sourceOperationRva": 53272711,
+      "storeWindows": [
+        [
+          53272738,
+          "8881A8000000"
+        ]
+      ]
+    },
+    {
+      "index": 69,
+      "fieldName": "useDurationScaleBB",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107856,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 72,
+      "sourceOperationRva": 53272750,
+      "storeWindows": [
+        [
+          53272777,
+          "884148"
+        ]
+      ]
+    },
+    {
+      "index": 70,
+      "fieldName": "useLengthBB",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107857,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 56,
+      "sourceOperationRva": 53272786,
+      "storeWindows": [
+        [
+          53272813,
+          "884138"
+        ]
+      ]
+    },
+    {
+      "index": 71,
+      "fieldName": "usePositionOffsetBB",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107858,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 253,
+      "sourceOperationRva": 53272822,
+      "storeWindows": [
+        [
+          53272849,
+          "8881FD000000"
+        ]
+      ]
+    },
+    {
+      "index": 72,
+      "fieldName": "useScaleBB",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107859,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 35,
+      "sourceOperationRva": 53272861,
+      "storeWindows": [
+        [
+          53272888,
+          "884123"
+        ]
+      ]
+    },
+    {
+      "index": 73,
+      "fieldName": "useSelfRotationBB",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107860,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 325,
+      "sourceOperationRva": 53272897,
+      "storeWindows": [
+        [
+          53272924,
+          "888145010000"
+        ]
+      ]
+    },
+    {
+      "index": 74,
+      "fieldName": "useTargetRotation",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107861,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 280,
+      "sourceOperationRva": 53272936,
+      "storeWindows": [
+        [
+          53272963,
+          "888118010000"
+        ]
+      ]
+    },
+    {
+      "index": 75,
+      "fieldName": "useWeaponMountPoint",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107862,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 224,
+      "sourceOperationRva": 53272975,
+      "storeWindows": [
+        [
+          53273002,
+          "8881E0000000"
+        ]
+      ]
+    },
+    {
+      "index": 76,
+      "fieldName": "value",
+      "kind": 4,
+      "declaredType": "float",
+      "setterMethodIndex": 107863,
+      "setterParameterType": "System.Single",
+      "runtimeFieldOffset": 412,
+      "sourceOperationRva": 53273014,
+      "storeWindows": [
+        [
+          53273047,
+          "F30F11809C010000"
+        ]
+      ]
+    },
+    {
+      "index": 77,
+      "fieldName": "visibleWhenHideTarget",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107864,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 217,
+      "sourceOperationRva": 53273055,
+      "storeWindows": [
+        [
+          53273082,
+          "8881D9000000"
+        ]
+      ]
+    },
+    {
+      "index": 78,
+      "fieldName": "visibleWithEntity",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107865,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 154,
+      "sourceOperationRva": 53273094,
+      "storeWindows": [
+        [
+          53273121,
+          "88819A000000"
+        ]
+      ]
+    },
+    {
+      "index": 79,
+      "fieldName": "visibleWithEntityType",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.EffectEntityType",
+      "setterMethodIndex": 107866,
+      "setterParameterType": "Beyond.Gameplay.EffectEntityType",
+      "runtimeFieldOffset": 156,
+      "sourceOperationRva": 53273159,
+      "storeWindows": [
+        [
+          53273197,
+          "4489B09C000000"
+        ]
+      ]
+    },
+    {
+      "index": 80,
+      "fieldName": "weaponIndex",
+      "kind": 4,
+      "declaredType": "int",
+      "setterMethodIndex": 107867,
+      "setterParameterType": "System.Int32",
+      "runtimeFieldOffset": 236,
+      "sourceOperationRva": 53273210,
+      "storeWindows": [
+        [
+          53273237,
+          "8981EC000000"
+        ]
+      ]
+    },
+    {
+      "index": 81,
+      "fieldName": "weaponMountPoint",
+      "kind": 4,
+      "declaredType": "Beyond.Gameplay.WeaponMountPoint",
+      "setterMethodIndex": 107868,
+      "setterParameterType": "Beyond.Gameplay.WeaponMountPoint",
+      "runtimeFieldOffset": 240,
+      "sourceOperationRva": 53273275,
+      "storeWindows": [
+        [
+          53273313,
+          "4489B0F0000000"
+        ]
+      ]
+    },
+    {
+      "index": 82,
+      "fieldName": "weaponVfxIndex",
+      "kind": 4,
+      "declaredType": "int",
+      "setterMethodIndex": 107869,
+      "setterParameterType": "System.Int32",
+      "runtimeFieldOffset": 376,
+      "sourceOperationRva": 53273326,
+      "storeWindows": [
+        [
+          53273353,
+          "898178010000"
+        ]
+      ]
+    },
+    {
+      "index": 83,
+      "fieldName": "weaponVfxKey",
+      "kind": "payload",
+      "declaredType": "string",
+      "setterMethodIndex": 107870,
+      "setterParameterType": "System.String",
+      "runtimeFieldOffset": 368,
+      "sourceOperationRva": 53273365,
+      "storeWindows": [
+        [
+          53273392,
+          "48898170010000"
+        ]
+      ]
+    },
+    {
+      "index": 84,
+      "fieldName": "weaponVfxPersistent",
+      "kind": 1,
+      "declaredType": "bool",
+      "setterMethodIndex": 107871,
+      "setterParameterType": "System.Boolean",
+      "runtimeFieldOffset": 380,
+      "sourceOperationRva": 53273417,
+      "storeWindows": [
+        [
+          53273459,
+          "88817C010000"
+        ]
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native input hashes, registered source reader and formatter, full reviewed reader windows, 85 generated wrapper setter identities/types, source operation order, direct destination stores and runtime field offsets are rechecked.",
+    "direct": "The selected reader consumes and stores 85 EffectActionCfg members in generated setter order. Its source operations and destination stores align one-to-one with named runtime fields.",
+    "structuralOnly": "Current authenticated EffectAction children are reparsed to the exact parent field boundary. Numeric bits, nullable scalar/vector records, signed-length string bytes and the empty TerrainEffectData array remain stored representations.",
+    "conditional": "The name/field/store route is valid for the pinned current build. Live generic provider selection and effect execution have not been observed.",
+    "unresolved": "Positive TerrainEffectData arrays, numeric semantics, string decoding, recursive nested value meaning, effect playback, and whole BuffData schema remain open."
+  }
+}

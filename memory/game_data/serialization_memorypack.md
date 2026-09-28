@@ -356,9 +356,17 @@ selected reader consumes bounded TargetSettings, SequenceActionData and
 BlackboardDouble profiles in generated setter order, closing both current
 distance-travelled BuffData owners while retaining fail-closed recursion for
 unknown child actions. The root reader also
-consumes positive `globalModifier` lists through the generated four-field item order:
-`applyToReturnAtbGain`, `formulaItem`, `param`, and `type`. It consumes the root
-reader's raw-eight-byte `dispelConfig`, then advances `duration`, the three
+consumes positive `globalModifier` lists through a structural four-member item
+profile labelled `applyToReturnAtbGain`, `formulaItem`, `param`, and `type`.
+The selected native root owns the list read and field store. A separate
+selected formatter contract now authenticates its four-member header and all
+four setter calls in that order, including the leading boolean. The earlier
+three-setter inspection missed this generated wrapper; it is not evidence that
+the first member is anonymous. The authenticated BuffData corpus now rejoins
+every reached positive `globalModifier` list to this exact child cursor and
+its source identity. This child proof alone does not close the parent; the
+complete root reader must consume the same bytes through physical EOF. The root reader then
+consumes raw-eight-byte `dispelConfig` and advances `duration`, the three
 booleans, and the `hasIcon` flag. It retains `iconConfig` as one named opaque
 range only when the current native contract is unavailable. On the authenticated
 build, the generated 19-member `BuffIconConfigForMemoryPack` wrapper and selected
@@ -462,15 +470,213 @@ parity, a live provider choice, blackboard lookup, or an evaluated cooldown.
 The receipt removes only this field's anonymous member-ownership blocker.
 The separate Buff action-receipt gate rechecks every completed corpus identity
 against the matching exported logical bytes and selected native inputs before
-using either of two named action adapters. Physical tag `0x0092` selects the
-19-member `CreateBuffActionData` wrapper, and tag `0x00B4` selects the
-13-member `FinishBuffAdvanced` wrapper. Their generated setter order and
-selected readers name each reached wrapper field and close the exact reported
-action span, whether it occurs in `abilityEventAction` or the supported root
-continuation. The receipt inventory records these joins under `reports/`.
-Nested input, selector, scalar and target profiles remain structural where
+using eight named action adapters. Physical tag `0x0050` selects the seven-member
+`CompareFloat.Data` wrapper, `0x0092` the 19-member `CreateBuffActionData`,
+`0x00A2` the 18-member `EffectActionData`, `0x00B4` the 13-member
+`FinishBuffAdvanced`, `0x00C9` the eight-member `IfElseActionData`, and
+`0x00EC` the 10-member `ModifyDynamicBlackboard.Data`, `0x011F` the
+eight-member `RaiseTrainLevelEvent.Data`, and `0x0159` the seven-member
+`SetSuperArmorAction.Data` wrapper.
+Their generated member order and selected readers name each reached
+wrapper field and close the exact reported action span, whether it occurs in
+`abilityEventAction` or the supported root continuation. The `0x00A2` adapter
+also checks each current generated field kind against the selected source read
+kind, and checks its nested declared types against the source's five nested
+call contexts. The `0x0050` adapter checks both blackboard-value member types
+against the selected source's two direct call contexts. The `0x00EC` adapter
+likewise checks its generated member kinds
+against the source order and its target and blackboard-value types against
+the source's direct nested contexts. The receipt inventory records these joins
+under `reports/`.
+The `0x0159` adapter checks the selected dispatcher, generated wrapper types,
+complete action and nested-value readers, and the generic calls for the
+priority, impact, super-armor, and target members. It rejoins the exact action
+end in the current VFS-ledger-matched Buff corpus. A separate selected-native
+receipt names the four ordered members of both direct blackboard children:
+`blackboardKey`, `useBlackboardKey`, `value`, and `useCustomValue` within
+`impactResistance` and `superArmorValue`. It replays each child against the
+authenticated source bytes and exact parent action endpoint. String and flag
+bytes remain raw, `TargetSettings` remains structural, and these stored reads
+do not prove when super armor is applied. The field-five `buffEventAction`
+frontier contains
+many distinct action unions, so a single named wrapper does not close its
+recursive schema obligation.
+Nested input, selector, scalar, target, blackboard and effect-configuration
+profiles remain structural where
 their concrete providers or values are unproved; the gate does not remove a
 recursive action-interior blocker or promote the enclosing BuffData schema.
+The integrated `0x00C9` `IfElseAction` adapter has its own build gate in
+`memorypack.buff_if_else_action_receipt`. Its selected dispatcher, complete
+source reader and three identical `SequenceActionData` MethodSpec callsites
+fix an eight-member read order; the generated wrapper setters name the
+inherited action prefix, `alwaysNext`, `conditionAction`, `failActions`, and
+`succeedActions`. For each authenticated current Buff corpus union span, the
+adapter requires the selected candidate's certified child union ranges,
+rechecks the three SequenceActionData headers, counts and terminal booleans,
+and rejoins the exact outer action end. This names the parent fields while
+leaving nested union bodies at the corpus's existing structural or derived
+evidence tier. The standalone anonymous action reader stops at a reached
+`0x0082` child, so it cannot independently replay every current `0x00C9`
+record; the adapter fails closed when a certified child range is absent or
+mismatched. Full selected-source counts and field spans live in
+`reports/animestudio/buff_if_else_action_receipt_20260927.json`. Neither this
+receipt nor the child ranges prove evaluated condition or runtime branch
+selection, and whole BuffData schema remains open.
+The integrated `0x011F` `RaiseTrainLevelEvent` adapter rechecks the selected
+eight-member source reader, generated wrapper route, and three native
+Blackboard call contexts before naming `isEnable`, `priorityLevel`,
+`priorityOffset`, `serverActionIndex`, `eventKey`, `numericValue`,
+`outputStringValue`, and `stringValue` in source read order. Its current-corpus
+receipt authenticates the logical source and rejoins every reported physical
+action span exactly. `eventKey` and `stringValue` use structurally framed
+`BlackboardString` payloads; `numericValue` uses a structurally framed
+`BlackboardDouble` payload. Their contents, lookup or evaluation, and runtime
+event dispatch remain unproved. The adapter names this wrapper only; it does
+not establish recursive action interiors or the enclosing BuffData schema.
+The selected `BlackboardDouble` child reader now composes with four independently
+gated action wrappers: `CreateBuffAction.count`,
+`FinishBuffAdvanced.finishLayerCnt`, `ModifyDynamicBlackboard.value`, and
+`RaiseTrainLevelEvent.numericValue`. The parent adapters reparse each reported
+action and fix the exact field extent; the shared child receipt then names its
+stored `blackboardKey`, `useBlackboardKey`, and `value` spans in generated setter
+order. This closes the direct member-ownership gap for every currently reached
+instance of these fields. Null provider and malformed length branches remain
+explicit and fail closed. The key bytes, flag byte and four value bytes stay raw;
+string decoding, live blackboard lookup, provider selection, evaluated values
+and the rest of each action's nested interior remain open. The source-hash and
+current-corpus replay is recorded under `reports/`, without whole BuffData
+promotion.
+The shared `TargetSettings` child receipt composes the selected thirteen-member
+reader and generated setter plan with four independently gated parent actions:
+`CreateBuffAction`, `EffectAction`, `FinishBuffAdvanced`, and
+`ModifyDynamicBlackboard`. The direct stored order is `advancedDirection`,
+`centerContextKey`, `centerToGround`, `centerType`,
+`enableAdvancedDirection`, `ownerContextKey`, `selectorData`,
+`selectorDirection`, `selectorOwner`, `target`, `targetContextKey`,
+`targetGroupKey`, and `targetSource`. Each parent action is reparsed before its
+target fields are admitted, and the child reader must end at that exact field
+boundary. The current authenticated corpus closes every reached child span;
+the reusable gate covers these targets and the `BlackboardDouble` fields above
+in one source-hash and selected-native replay. `selectorData`'s inner bodies and
+`advancedDirection`'s inner references retain nested structural evidence;
+this direct-member receipt does not establish their recursive ownership, live
+target selection, or a whole BuffData schema. Null and malformed target
+branches fail closed.
+The `advancedDirection` field has a second child receipt. Its selected
+`DirectionSettings` source MethodSpec, reader window, generated setters and
+derived plan name `clampToXZ`, `customSourceAndTarget`, `directionType`,
+`invertDirection`, `source`, `sourceMountPoint`, `target`, and
+`targetMountPoint` in direct stored order. It reparses each parent target and
+requires the direction reader to end at the independently fixed field extent.
+Every current reached direction child closes, and its two nested
+`TargetSettings` references are null markers in the authenticated corpus.
+Those nulls do not establish a future nonnull reference body or runtime
+direction selection. The shared child gate records these direct spans while
+retaining recursive action and whole-BuffData refusal.
+The `selectorData` field also has a selected child receipt. Its source
+MethodSpec and reader window, generated setters, and derived plan establish
+three direct stored members in order: `finderData`, `postProcessorData`, and
+`validatorData`. The child reader reparses its parent target, records the
+finder union's selected tag/type and both list counts, and must end at the
+parent's independently fixed selector field boundary. The maintained gate
+replays every reached selector span against current logical source hashes and
+the selected native build. The most-reached positive finder route,
+`SelectorFinder` tag 2, has a separate selected-native child reader: its switch
+branch loads the `CharacterTeamFinder.Data` wrapper, whose generated setters
+are empty and whose `Deserialize` body consumes exactly one wrapper header
+byte. A zero header ends the nonnull child; `FF` is a distinct null-wrapper
+branch. Every reached tag-2 span in the authenticated current BuffData corpus
+is the two-byte tag-plus-zero-header form and ends at the parent finder field's
+fixed boundary. A second selected reader closes `OwnerSpawnedEntityFinder`
+tag 13: its generated setter names the sole `spawnedObjectType` member as
+`ObjectType`, and the native reader checks a one-member header, takes four
+source bytes, and passes that result to the setter. Every current reached
+tag-13 span ends after exactly that tag, header, and raw signed 32-bit member.
+The shared child gate records both exact receipts against current source hashes
+and parent extents. The selected validator switch and generated setter plans
+also close three reached `SelectorValidator` routes at their independently
+fixed one-entry list extents. Tags 5 (`ExcludeOwner`) and 9 (`MainCharacter`)
+have zero serialized members and consume only their union tag and wrapper
+header; their current reached wrappers are nonnull. Tag 11 (`TagValidator`)
+has one direct `query` member declared as `GameplayTagQuery`. Its selected
+reader consumes the wrapper header, invokes the typed query bridge, and stores
+the result at the generated setter's destination offset. The existing
+`GameplayTagQuery` reader frames the nested body as a scalar followed by a
+counted scalar array, and each reached tag-11 list ends exactly at its parent
+field extent. The current corpus reaches eight tag-5, two tag-9, and ten
+tag-11 lists, all with source-hash and native-build receipts. Other positive
+finder subtype bodies remain structural. These stored validators do not
+establish a runtime predicate, recursive action ownership, or a whole
+BuffData schema. Null, unknown-tag, malformed-count, and changed-build
+branches fail closed.
+The `CreateBuffAction.buffs` list has a separate selected-build child receipt.
+The registered `CreateBuffActionInput` reader consumes a five-member wrapper:
+inherited `assignBlackboard`, `assignItems`, and `buffId`, followed by
+`buffIdKey` and `readIdFromBlackboard`. Its `assignItems` generic source
+context resolves to `List<AssignPair>`, and the registered `AssignPair` reader
+consumes `directValueType`, `inputValueKey`, `numericValue`, `stringValue`,
+`targetKey`, and `useDirectValue` in generated setter order. The maintained
+gate checks source calls, destination stores, runtime field offsets, and
+complete reader windows against the selected native build, rechecks every
+current BuffData logical source hash, reparses each
+certified CreateBuffAction parent, and requires the nested list to end exactly
+at the parent's `buffs` field boundary. Current reached input and assignment
+wrappers, including positive assignment lists, all close with named direct
+fields; the per-build reach counts stay in its generated report. String
+members remain signed-length byte spans, and `numericValue` remains raw float
+bits. This names stored child ownership without claiming decoded strings,
+live assignment behavior, recursive ownership elsewhere, or whole BuffData.
+The selected two-member `BuffIconDurationSourceSetting` reader now has a
+direct-field receipt for `durationSourceType` and `timedMarkerId`. The validator
+checks the selected reader window, generated setters, source read call, and
+destination stores against runtime field offsets. A narrow BuffData root route
+composes this with the existing CreateBuff input, BlackboardDouble,
+TargetSettings, DirectionSettings, SelectorData, and selected null or zero-member
+finder receipts. It accepts only a sole `CreateBuffAction` in
+`abilityEventAction`, empty `buffEventAction`, and the already supported other
+root children. It reads the original logical bytes through all thirty root
+members, checks the stored `id` against the source stem, and reaches physical
+EOF. The Buff corpus records the exact receipt per accepted row, and JsonData
+checks the installed native build, source SHA, and entire receipt again before
+classifying that row as schema decoded. Assignment execution, decoded string
+parity, duration selection, and gameplay effects remain unobserved.
+The separate `EffectAction.effectActionCfg` child receipt names its 85 direct
+`EffectActionCfg` members. The generated wrapper's setter order agrees with the
+selected reader's 85 source operations, and every operation has a checked
+destination store at the corresponding runtime field offset; the vector members
+also have their companion stores checked. The runtime type has two additional
+fields, `forceGuardEffect` and `centerOffset`, which this serialized wrapper
+does not read. The authenticated current BuffData gate reparses each selected
+`EffectAction` and requires the child to end at the independently certified
+parent field boundary. Current reached children all close. Their strings remain
+signed-length byte spans, and the `TerrainEffectData` array is proved only on
+its null or empty branch. The gate refuses positive arrays and keeps effect
+execution and the whole BuffData schema unresolved; changing counts and source
+identities belong in the generated corpus report.
+The three `BlackboardVector3` members of this configuration have a separately
+selected child proof. The generated vector wrapper names `x`, `y` and `z` in
+the same order as three selected `BlackboardDouble` generic source reads, with
+direct stores to the corresponding runtime fields. The independent scalar
+reader names `blackboardKey`, `useBlackboardKey` and the raw four-byte `value`
+inside each component, as well as the configuration's two direct scalar
+blackboard children. The current VFS and source-hash gate reparses every
+reached action and requires each nested child to close at the enclosing field
+boundary. This closes the stored blackboard interiors on the reached branch;
+it does not decode key strings, select a live blackboard provider, assign
+coordinate meaning, prove effect execution, admit positive effect arrays, or
+complete the enclosing BuffData record.
+The selected `FinishBuffAdvanced.buffSettings` child is `BuffFindSettings`.
+Its reader consumes `buffIdList`, `checkType`, and `tagQuery` in generated setter
+order; the nested `GameplayTagQuery` reader stores `queryType` and `tags`.
+Selected normal/null reader windows, source contexts, runtime field offsets,
+and direct destination stores authenticate these five names. The current
+BuffData gate rechecks every source and parent action, then closes every reached
+`buffSettings` span at its independently fixed boundary, including positive
+string lists and positive packed tag arrays. The string list's selected generic
+type and signed-length byte grammar do not identify a live
+`ListFormatter<string>` provider, so decoded text and provider parity remain
+conditional. Tag values are raw stored IDs; the runtime buff finder and tag
+predicate, as well as whole BuffData, remain unresolved.
 Field seven, `dispelConfig`, has an independent selected-build child receipt.
 The root reader checks and copies eight source bytes directly into the installed
 `BuffData.dispelConfig` value. Current metadata places `canBeDispelled` at byte
@@ -509,10 +715,42 @@ conditional child receipt removes that blocker only when both the native gate
 and cursor joins validate. Positive timeline bodies still use a structural
 endpoint and retain their fallback-ownership blocker;
 positive `stackEffects` interiors and anonymous actions remain separate naming
-obligations. Consequently, a file
-with zero unconsumed composed bytes is still not a whole named schema unless
-those interiors have direct ownership evidence; no current BuffData file meets
-that stronger boundary.
+obligations. Consequently, a file with zero unconsumed composed bytes is still
+not a whole named schema unless those interiors have direct ownership evidence.
+
+The root `blackboard` list now has a selected native `List<Blackboard.DataPair>`
+argument and generated four-member child setter order: `isDynamic`, `key`,
+raw double `valueDouble`, and `valueStr`. The current BuffData gate decodes
+every reached list against its exact field endpoint, including positive
+children, with a source fingerprint for the reader and native contract.
+This closes the list's stored child layout at those cursors; it does not by
+itself authenticate every other recursive root field or promote a whole file.
+
+The selected-build `buff_root_no_positive_native.json` contract joins all 30
+root source reads, generic contexts, generated setters, and destination
+stores to the installed native body. Its forward reader admits a unique
+outer-frame cohort with independently validated child layouts: an empty-list
+branch, a narrow positive `blackboard` DataPair plus `globalModifier` branch,
+one positive `damageModifier` branch whose condition and processor children
+are separately selected and checked, and a narrow sole `CreateBuffAction`
+branch with selected nested child receipts. Other positive recursive branches remain
+refused. Each admitted file
+is reread from byte zero through 30 contiguous named fields, checks the stored
+`id` against its source stem, and ends at physical EOF. The BuffData corpus
+first authenticates its stream with the VFS ledger length and MD5; it records
+each logical SHA for the later JsonData registry, which revalidates native
+inputs and replays the exported bytes against the entire receipt before
+classifying that row as schema decoded. The current corpus report holds the
+selected-file count and byte total. The earlier positive branch exercises
+finite DataPair values and a one-element GlobalModifier list. The damage
+branch admits one modifier with an empty `SequenceActionData` condition, one
+selected tag-five `DamageScaleProcessor`, and a four-byte `enableSide` member.
+Its forward reader continues on the original logical bytes through every
+later root member and physical EOF. Nonzero condition actions, other
+processors, positive heal and other action lists, stack effects, and timeline
+interiors retain their own named-ownership blockers. This is exact
+stored layout for the selected rows; live formatter-provider choice and
+gameplay behavior remain open.
 
 LevelData now has one sequential 43-field reader. It closes null and empty
 collections, the current empty `LevelFactoryPredefineData` and
@@ -714,8 +952,8 @@ This proves the terminal `waveMap` cursor. From there the sequential wave/group
 reader closes the generated 11- and 12-field values and all current action maps
 through physical EOF. The current tag map covers pause, play-audio,
 preview-route, raise-event, and spawn-monster, with each concrete wrapper read
-in generated order. The authenticated corpus therefore closes all 608 current
-SpawnerConfig files as exact named schemas. The older unique-tail fallback
+in generated order. The current JsonData corpus classifies every selected
+SpawnerConfig file as an exact named schema. The older unique-tail fallback
 remains for a changed future route profile; failure of both readers preserves
 the exact enemy-library prefix as bounded partial evidence.
 CharInteractPerform now closes the complete 27-member owner through physical
@@ -4352,6 +4590,221 @@ branch conditions do not establish runtime action effects.
   bodies to recursive schemas. Even condition-free rows can contain positive
   processor lists; neither a bounded outer cursor nor a wrapper name proves
   their leaf ownership or modifier behavior.
+  The separately native-gated `DamageScaleProcessor` child receipt now binds
+  the selected processor tag to its generated three-member order: `addition`
+  is a selected BlackboardDouble, `side` is a stored enum-width integer, and
+  `zoneName` is a signed-length byte string. The `addition` callsite's generic
+  type joins the independently selected child reader and generated setters,
+  naming `blackboardKey`, `useBlackboardKey`, and `value` at exact field
+  boundaries. The `zoneName` call reaches the separately pinned signed-length
+  string helper; the receipt retains its signed length and raw bytes without
+  claiming native string-decoder parity. Current logical-source-hash replay
+  rejoins every reached tag-five processor span. These stored fields do not
+  establish damage arithmetic, zone selection, or a complete BuffData schema.
+  The reviewed contract and generated child report hold the build-specific
+  gates and coverage.
+  For the bounded condition-free, tag-five damage cohort, a further selected
+  native MethodSpec join proves that the child condition call reads
+  `SequenceActionData`. Its separately checked formatter and reader windows
+  establish the three-member header, zero action count and two terminal
+  bytes for an empty sequence. A report-backed source join now checks the
+  named parent `condition` span against the current logical file hash before
+  accepting that exact seven-byte child. The terminal values remain stored
+  booleans without live behavior evidence. All otherwise clean current
+  zero-action/tag-five modifier sources now have exact named stored child
+  boundaries for both condition and processor. The selected
+  `CheckDamageDecorateMask` condition action is also exact at its stored span:
+  the `AbilityActionData` dispatcher, complete source reader and generated
+  wrapper bind six fields, including the enum-width check type and 64-bit mask.
+  A one-action `SequenceActionData` with that tag and two terminal bytes
+  replays to its parent condition endpoint. Its check type, mask bits and
+  terminal bytes remain authored values, not an evaluated predicate.
+  The Buff forward reader composes an empty condition with exactly one
+  tag-five processor, one selected `CheckDamageDecorateMask` or
+  `CheckDamageType` action with exactly one tag-five or tag-ten processor,
+  or one selected `CheckDamageTypeMask`, simple `CheckTagMatch`, simple
+  `CheckMainCharacterCondition`, selected `CheckBuffStackNumAdvanced`, simple
+  `CheckHp`, or simple `CheckPoiseValue` action with exactly one tag-five
+  processor. The selected `CheckBuffStackNumAdvanced` action also admits one
+  tag-nine processor.
+  A `CheckDamageDecorateMask` action also admits exactly one selected scalar
+  processor tag zero, two or three; a simple `CheckTagMatch` action admits
+  scalar tag zero or three.
+  An empty condition additionally admits the ordered processor list [5, 6],
+  and the ordered `CheckDamageDecorateMask`/`CheckDamageTypeMask` two-action
+  condition admits one tag-five processor.
+  It then reads
+  the original bytes through all remaining root fields, checks source-ID
+  equality and physical EOF, and records a distinct exact root receipt. The
+  Buff corpus publishes this receipt only after current VFS identity and
+  logical hash checks; JsonData independently replays the same reader against
+  exported bytes before classifying it as an exact stored schema. Positive
+  `attributeModifier` children remain a separate root proof obligation. Other
+  condition action and processor variants retain their explicit gaps. Runtime
+  provider selection, damage arithmetic, and actual modifier effects are not
+  established by the stored layout.
+  The selected-native `CheckDamageType` condition reader binds its five
+  generated members, including the final `DamageType` enum-width field, to the
+  complete source reader and both generic enum contexts. Current VFS identities
+  and logical hashes rejoin its one-action sequence spans. The narrow
+  selected-processor cohort now also closes the enclosing root on original
+  bytes; JsonData's independent replay retains the same condition selection
+  and EOF gate. Authored damage types do not establish runtime predicate
+  results.
+  A separate tag-ten `ModifyCalcResult` processor child now has selected-native
+  ownership of `baseMultiplier`, enum-width `modifyType`, and `multiplierCnt`,
+  with both BlackboardDouble interiors decoded by the independently checked
+  child reader. Current VFS identities and source hashes replay the reached
+  tag-ten spans. The Buff forward reader admits the sole tag-ten processor
+  only with one selected `CheckDamageDecorateMask` or `CheckDamageType` action,
+  and checks both nested BlackboardDouble endpoints before continuing through
+  all 30 root fields to source-ID equality and physical EOF. Focused replay
+  closes the current selected tag-ten sources. The full corpus gate requires
+  current VFS identity and logical-hash authentication, while JsonData
+  independently replays that exact receipt against exported bytes. An empty
+  condition with tag ten and other condition or processor variants remain
+  partial. Stored values do not establish evaluated multiplier or damage
+  arithmetic.
+  Selected scalar processor tags zero and three use separate one-member native
+  wrappers. Their union entries, complete formatter and source reader windows,
+  generated setters, source calls, and nested BlackboardDouble contexts bind
+  the stored `addition` and `scale` members respectively. The independent
+  BlackboardDouble reader then proves each child's three stored fields and
+  exact endpoint. Current VFS identities and logical hashes rejoin these
+  processor spans. Their compatible single-action conditions reach all 30
+  original root fields, stored source ID and physical EOF, with independent
+  JsonData replay. Other conditions and processor tags stay partial; these
+  stored scalar bits do not establish critical-rate or penetration arithmetic.
+  The separate tag-six `DamageTextProcessor` reader binds its generated
+  `damageTextStyle` enum-width member and one-byte
+  `useHpChangeAsDisplayValue` member to the selected union route, complete
+  source reader and two source-to-setter calls. In reached two-processor lists,
+  an exact tag-five child tiles directly into this exact tag-six child. The
+  zero-action condition variant closes the original BuffData root through 30
+  fields, source ID and physical EOF; a nonempty condition in another reached
+  list remains partial. Stored style and bool bytes do not prove displayed text.
+  The selected SequenceActionData reader's signed action count and terminal
+  stores also support an ordered two-action list. Separately checked
+  `CheckDamageDecorateMask` and `CheckDamageTypeMask` native readers name all
+  direct members in their consecutive original-byte spans. With one tag-five
+  processor, the two-action condition closes the enclosing root through the
+  same source ID and EOF proof. Other action orders and lengths remain partial;
+  stored predicates do not establish runtime condition results.
+  The separately selected `CheckDamageTypeMask` condition child now binds the
+  AbilityActionData dispatcher, complete formatter and source reader, and both
+  enum contexts to five generated members ending in an enum-width
+  `damageTypeMask`. Current VFS identities and logical hashes rejoin the
+  reached one-action sequence spans, each with a sole tag-five processor.
+  The forward reader now admits only this combination and replays the original
+  bytes through 30 contiguous root fields, source-ID equality, and physical
+  EOF. JsonData independently repeats that replay against exported logical
+  bytes. Other processor combinations retain their partial boundary, and
+  stored mask bits do not establish the evaluated condition.
+  The selected `CheckTagMatch` action binds six generated members: the common
+  primitive prefix, `checkTarget`, and `query`. Its source reader and nested
+  MethodSpec contexts join separately validated TargetSettings,
+  DirectionSettings, SelectorData, and GameplayTagQuery readers. The narrow
+  reached target variant has empty context strings, null direction source and
+  target references, a null selector finder, and empty selector lists. Its
+  query stores an enum-width value and a bounded list of raw gameplay-tag
+  words. Current VFS identity and logical-hash replay establishes the exact
+  one-action condition child; the selected sole tag-five, tag-zero and
+  tag-three processor subsets also close all 30 original BuffData fields through source-ID equality and
+  physical EOF. Other target/query variants and processor tags remain
+  partial. These authored tags and target settings do not establish runtime
+  matching or targeting behavior.
+  The selected `CheckMainCharacterCondition` action binds the four common
+  primitive members and a `checkTarget` member through its generated
+  five-member reader and TargetSettings MethodSpec context. The reached sole
+  action uses the separately authenticated simple TargetSettings,
+  DirectionSettings and SelectorData shape. Its original-byte condition span
+  closes with the selected tag-five processor and then all 30 BuffData fields,
+  source ID and physical EOF. Other compound lists containing this action
+  remain partial. The stored target does not prove the live main-character predicate.
+  The selected tag-two `AttackerCriticalDamageProcessor` binds its sole
+  `scale` member to a three-member BlackboardDouble child. The union table,
+  source reader, generated setter, direct calls and generic child context
+  agree on the current native build. With a sole `CheckDamageDecorateMask`
+  condition, it closes the same original-byte root proof. Other tag-two
+  condition combinations remain partial; the stored scalar does not prove
+  critical-damage arithmetic.
+  The selected `CheckBuffStackNumAdvanced` action binds ten generated members:
+  four common primitives, BuffFindSettings, buffStackNumType, TargetSettings,
+  compareType, limitSkillCastId, and BlackboardDouble value. The reached
+  sole-action conditions have one finder ID, an empty tag query, a simple
+  target, and exact scalar child. The selected tag-nine
+  `InstantModifyAttribute` processor binds a four-member AttributeModifier
+  child and a final side enum. That modifier stores three enum-width values
+  and a BlackboardDouble param. Its union route, generated setters, native
+  source windows and nested contexts agree with original source bytes. The
+  sole 0x003C condition with tag five or tag nine can tile all 30 BuffData
+  fields through source ID and physical EOF. Other compound action lists and
+  processor combinations stay partial; neither stack comparison nor
+  attribute mutation is established as runtime behavior.
+  The selected `CheckHp` and `CheckPoiseValue` actions share a direct
+  eight-member source order while retaining separate native union routes and
+  generated names. Each stores the four common members, `compare`, its named
+  target, a bool, and a BlackboardDouble value. The current sole-action
+  sources use exact simple TargetSettings and BlackboardDouble children.
+  With one tag-five processor, each rejoins all 30 original BuffData fields,
+  source ID and physical EOF. Other compound action lists, other target shapes,
+  and live HP or poise predicates remain outside this proof.
+  A separate selected-native compound-condition receipt now closes two
+  remaining Mifu damage-condition spans on the original source bytes. Both
+  start with the six-member `CheckOriginSkillType` action and its one-element
+  SkillType list. One then stores the selected simple `CheckPoiseValue`
+  action. The other stores the five-member `OrConditionAction`, whose terminal
+  list contains one `CheckPoiseValue` sequence and one
+  `CheckBuffStackNumAdvanced` sequence. The nested buff finder has an empty
+  ID list and one query tag, a distinct exact variant from the sole-action
+  stack condition above. Each pairs with one selected tag-five damage
+  processor and rejoins all 30 original BuffData fields, source ID and
+  physical EOF. Stored OR membership does not prove runtime condition
+  evaluation or short-circuit behavior.
+  A second selected compound receipt joins the ordered
+  `CheckBuffStackNumAdvanced`/`CheckDamageType` condition and the ordered
+  `CheckDamageDecorateMask`/`CheckBuffStackNumAdvanced`/`CheckTagMatch`
+  condition. Both reached stack actions use the one-ID, empty-query finder
+  variant, simple target and exact BlackboardDouble child; the reached
+  TagMatch action has a simple target and one stored query tag. Both pair
+  with a selected tag-five damage processor and replay through the same
+  30-field root, source ID and physical EOF. The stored values do not prove
+  comparison results or execution order.
+  Two selected nested `IfElseAction` conditions now rejoin the original source
+  bytes. Its eight generated members place one exact simple
+  `CheckMainCharacterCondition` sequence in `conditionAction`, an empty
+  `failActions` sequence, and one fieldless `ReturnFalseAction` sequence in
+  `succeedActions`. One outer condition ends there; the other stores a following
+  `CheckDamageDecorateMask` action. Each has one tag-five processor and closes
+  all 30 BuffData fields through source ID and physical EOF. The exact stored
+  branch lists do not show which branch executes at runtime.
+  A separate two-action condition stores fieldless `NotNextCheckAction`
+  followed by the same simple `CheckMainCharacterCondition` target. The
+  accompanying tag-four `DamageIndependentHealthProcessor` binds its sole
+  `multiplier` setter to an exact three-member BlackboardDouble child. The
+  selected union route, complete native reader, source calls, target child and
+  original source bytes agree through the 30-field root, source ID and physical
+  EOF. Stored flags, target, and multiplier do not establish condition outcome
+  or damage arithmetic. Other tag-four combinations remain partial.
+  A further selected-native `ModifyDynamicBlackboard` receipt now closes four
+  reached tag-236 action children across two still-partial positive damage
+  conditions. Its ten generated members place a simple 13-member
+  `TargetSettings` in `calculationTarget` and a three-member BlackboardDouble
+  in `value`; both children reparse at their original named field endpoints
+  under the current logical source hash. This names the stored child spans,
+  including their nested target and value, but neither compound condition nor
+  enclosing BuffData root is promoted. The other actions in those conditions
+  and any runtime blackboard mutation remain separate questions.
+  A selected `CheckTwoDirectionAngle` damage condition closes two consecutive
+  twelve-member actions. The independently validated dispatcher and source
+  reader order agree with all eight simple TargetSettings children and both
+  BlackboardDouble values on the original logical source bytes. The
+  condition's two terminal bytes rejoin the existing exact ordered tag-five
+  and tag-six damage-processor pair. The narrow Broshan branch then tiles all
+  30 BuffData fields through source ID and physical EOF. Other angle target
+  shapes, action counts, terminal values and processor combinations stay
+  partial; the stored directions and values do not establish the runtime
+  comparison result.
   `memorypack.buff_1b_corpus` rebuilds the authenticated census and checks exact
   root-continuation tag `0x1B` ranges against re-streamed logical bytes, then
   joins the record to the current exact-build selected action reader. This

@@ -1,0 +1,33 @@
+{
+  "schema": "endfield.buff-damage-check-type-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "reviewedDependencies": [
+    "levelscript_union_tags.json",
+    "buff_5d_native.json",
+    "buff_damage_sequence_action_condition_native.json"
+  ],
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unionFamily": "AbilityActionData",
+  "unionTag": 93,
+  "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageType_DataForMemoryPack",
+  "wrappedType": "Beyond.Gameplay.Core.Conditions.CheckDamageType+Data",
+  "sequenceMemberCount": 3,
+  "sequenceTerminalByteCount": 2,
+  "actionMemberPlan": [
+    {"name": "isEnable", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+    {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum32", "width": 4},
+    {"name": "priorityOffset", "declaredType": "int", "kind": "int32", "width": 4},
+    {"name": "serverActionIndex", "declaredType": "int", "kind": "int32", "width": 4},
+    {"name": "damageType", "declaredType": "Beyond.GEnums.DamageType", "kind": "enum32", "width": 4}
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData dispatcher tag, generated five-member wrapper order, checked formatter and complete source reader bytes, both enum MethodSpec contexts, signed action-list count and two terminal stores, plus replay of original logical bytes to the child span endpoint.",
+    "direct": "A one-action SequenceActionData child stores CheckDamageType members in the selected source read order.",
+    "structuralOnly": "DamageType and priority enum widths and terminal bytes are stored values without a runtime predicate outcome.",
+    "unresolved": "Other condition actions or damage processors, live formatter choice, and enclosing BuffData root without an independent physical-EOF replay."
+  }
+}

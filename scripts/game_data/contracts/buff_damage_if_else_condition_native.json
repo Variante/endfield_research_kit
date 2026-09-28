@@ -1,0 +1,35 @@
+{
+  "schema": "endfield.buff-damage-if-else-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_if_else_action_receipt_native.json",
+    "buff_residual_actions_native.json",
+    "buff_damage_check_main_character_condition_native.json",
+    "buff_damage_check_decorate_mask_condition_native.json",
+    "buff_damage_sequence_action_condition_native.json",
+    "levelscript_union_tags.json"
+  ],
+  "sequenceMemberCount": 3,
+  "sequenceTerminalByteCount": 2,
+  "ifElseUnionTag": 201,
+  "returnFalseUnionTag": 304,
+  "nestedSequenceActionTags": [[104], [], [304]],
+  "selectedTopActionPatterns": [[201], [201, 91]],
+  "returnFalseActionMemberPlan": [
+    {"name": "isEnable", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+    {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum32", "width": 4},
+    {"name": "priorityOffset", "declaredType": "int", "kind": "int32", "width": 4},
+    {"name": "serverActionIndex", "declaredType": "int", "kind": "int32", "width": 4}
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected current-build action dispatcher, IfElseAction wrapper/provider, ReturnFalseAction formatter, main-character condition and decorate-mask action are independently authenticated. Original logical source bytes then close the selected nested action sequences and optional trailing action to the condition endpoint.",
+    "direct": "The eight named IfElseAction members place one main-character check in conditionAction, no failure actions in failActions, and one ReturnFalseAction in succeedActions. One selected parent sequence adds CheckDamageDecorateMask after IfElseAction.",
+    "structuralOnly": "The source proves stored members and sequence order; no branch outcome, gameplay effect, or root EOF is inferred from the condition alone.",
+    "unresolved": "Other IfElseAction children, other condition lists, and enclosing BuffData roots without an independent original-byte root replay remain outside this route."
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "schema": "endfield.buff-selector-validator-tag-query-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "switchContract": "skill_selector_validator_in_screen_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "queryReaderContract": "buff_14e_native.json",
+  "queryProfileContract": "buff_b4_native.json",
+  "headerHelperContract": "buff_selector_validator_zero_native.json",
+  "serializedMemberCount": 1,
+  "dispatcher": {
+    "unionTag": 11,
+    "switchTargetRva": 66918267,
+    "routeWindow": {
+      "startRva": 66918267,
+      "endRva": 66918335,
+      "sha256": "D5779AFAA1C6D58AB81DE771B9DBC5C20982B2A0F099A4E218EEB1591B8E8754",
+      "boundary": "selected validator tag-11 wrapper type load and normal branch through rejoin"
+    },
+    "usageCellRva": 217991480,
+    "usageRawHex": "7D44032000000000",
+    "registeredTypeIndex": 107070,
+    "wrapperTypeDefinition": 23019,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TagValidator_DataForMemoryPack"
+  },
+  "methods": [
+    [166984, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TagValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_TagValidator_DataForMemoryPackFormatter", "Deserialize", 67021200],
+    [166983, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TagValidator_DataForMemoryPack", "Deserialize", 67021296],
+    [166980, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TagValidator_DataForMemoryPack", "set___query__", 67021584]
+  ],
+  "setterMethods": [[166980, "set___query__", "Beyond.Gameplay.Core.GameplayTagQuery"]],
+  "codeWindows": [
+    {
+      "startRva": 67021200,
+      "endRva": 67021293,
+      "sha256": "B549297200A21A832742D11C017D14028AD613D5B7D610E9AD4ACF1F03E39D1C",
+      "boundary": "formatter forwarding and lazy initialization through tail jump"
+    },
+    {
+      "startRva": 67021296,
+      "endRva": 67021576,
+      "sha256": "8CC52D9D50DE923742E1D6EE8DF9B783AF40C4FDED07A099E2056D33453B57C0",
+      "boundary": "one-member header, typed query bridge call, direct sixteen-byte result store and normal return"
+    },
+    {
+      "startRva": 67021584,
+      "endRva": 67021631,
+      "sha256": "D222FE9D410BBD9822C0A3E0836CDD09B1810508FC2F4A6FF08C4F8CBBFF6335",
+      "boundary": "generated query setter's matching sixteen-byte value store through error call"
+    }
+  ],
+  "readOrder": {
+    "headerCall": [67021350, "E835DECBFE", 46827616],
+    "memberCountCompare": [67021424, "4080FF01"],
+    "queryContext": {
+      "instructionRva": 67021434,
+      "instructionHex": "4C8B05D7A30009",
+      "cellRva": 218058328,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [428464, -1, 12732],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery"
+    },
+    "queryBridgeCall": [67021452, "E88F1BD5FF", 64210464],
+    "directQueryStore": [67021486, "0F114010"],
+    "setterQueryStore": [67021612, "0F114010"]
+  },
+  "evidenceBoundary": {
+    "exact": "Selected SelectorValidator tag 11 resolves to TagValidator.Data. Its reader checks a one-member header, loads a GameplayTagQuery generic source context, calls the pinned query bridge, and directly stores the sixteen-byte output at the same wrapped-value offset as the generated query setter.",
+    "direct": "The generated setter names the sole member query. The separately reviewed GameplayTagQuery reader consumes a nullable header-two query, a DWORD and a bounded nullable DWORD list; current validatorData list extents independently bound each reached child.",
+    "conditional": "The bridge's live generic provider choice and all refill/error branches are not observed; stored query bytes and exact current cursors do not establish runtime predicate evaluation.",
+    "unresolved": "GameplayTagQuery value meaning, other validator types, recursive parent actions and whole BuffData remain open."
+  }
+}

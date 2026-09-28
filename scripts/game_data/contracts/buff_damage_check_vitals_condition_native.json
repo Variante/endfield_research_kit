@@ -1,0 +1,72 @@
+{
+  "schema": "endfield.buff-damage-check-vitals-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "levelscript_union_tags.json",
+    "buff_65_native.json",
+    "buff_6e_native.json",
+    "buff_damage_sequence_action_condition_native.json",
+    "buff_damage_check_tag_match_condition_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "sequenceMemberCount": 3,
+  "sequenceTerminalByteCount": 2,
+  "sourceReadOrder": [
+    "byte", "scalar32", "scalar32", "scalar32", "scalar32",
+    "target-profile", "byte", "scalar-payload"
+  ],
+  "routes": [
+    {
+      "unionTag": 101,
+      "sourceReaderContract": "buff_65_native.json",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckHp_DataForMemoryPack",
+      "wrappedType": "Beyond.Gameplay.Core.Conditions.CheckHp+Data",
+      "actionMemberPlan": [
+        {"name": "isEnable", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+        {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum32", "width": 4},
+        {"name": "priorityOffset", "declaredType": "int", "kind": "int32", "width": 4},
+        {"name": "serverActionIndex", "declaredType": "int", "kind": "int32", "width": 4},
+        {"name": "compare", "declaredType": "Beyond.CompareType", "kind": "enum32", "width": 4},
+        {"name": "hpOwner", "declaredType": "Beyond.Gameplay.Core.TargetSettings", "kind": "target-settings"},
+        {"name": "isRatio", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+        {"name": "value", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+      ],
+      "sourceMethodIndices": [124323, 124322],
+      "sourceWindowStarts": [58570672, 58571248, 58571694, 82029631],
+      "sourceContextRvas": [58571566, 58571641]
+    },
+    {
+      "unionTag": 110,
+      "sourceReaderContract": "buff_6e_native.json",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckPoiseValue_DataForMemoryPack",
+      "wrappedType": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data",
+      "actionMemberPlan": [
+        {"name": "isEnable", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+        {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum32", "width": 4},
+        {"name": "priorityOffset", "declaredType": "int", "kind": "int32", "width": 4},
+        {"name": "serverActionIndex", "declaredType": "int", "kind": "int32", "width": 4},
+        {"name": "compare", "declaredType": "Beyond.CompareType", "kind": "enum32", "width": 4},
+        {"name": "poiseOwner", "declaredType": "Beyond.Gameplay.Core.TargetSettings", "kind": "target-settings"},
+        {"name": "returnValueIfDontHavePoise", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+        {"name": "value", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+      ],
+      "sourceMethodIndices": [124485, 124484],
+      "sourceWindowStarts": [68217120, 68217216, 68217662, 83351119],
+      "sourceContextRvas": [68217534, 68217609]
+    }
+  ],
+  "selectedTargetShapeRef": "buff_damage_check_tag_match_condition_native.json.selectedTargetShape",
+  "selectedBlackboardShapeRef": "buff_adding_cooldown_ownership_native.json.selectedReadOrder",
+  "evidenceBoundary": {
+    "exact": "Both selected AbilityActionData routes, generated eight-member plans, formatter and source-reader windows, TargetSettings and BlackboardDouble MethodSpec contexts, SequenceActionData parent, and independently native-checked simple target and blackboard child readers agree on the installed build. Original logical source bytes tile each one-action span.",
+    "direct": "After the four common action members each route stores compare, its named target, one bool and a BlackboardDouble value in source order.",
+    "structuralOnly": "Comparison, target and scalar fields are authored stored values.",
+    "conditional": "The static reader does not prove live inflated provider selection.",
+    "unresolved": "Other target shapes, compound action lists, live HP or poise predicates and whole BuffData ownership remain open."
+  }
+}

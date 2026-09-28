@@ -1,0 +1,930 @@
+{
+  "schema": "endfield.buff-root-no-positive-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_root_prefix_native.json",
+    "buff_adding_cooldown_ownership_native.json",
+    "buff_dispel_config_native.json",
+    "buff_icon_config_native.json",
+    "buff_stacking_compact_native.json",
+    "buff_timeline_empty_native.json",
+    "buff_16b_native.json",
+    "buff_b4_native.json"
+  ],
+  "rootMethod": [
+    102606,
+    "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack",
+    "Deserialize",
+    53280816
+  ],
+  "rootWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack",
+  "ownerType": "Beyond.Gameplay.Core.BuffData",
+  "rootMemberCount": 30,
+  "conditionalProviderEvidence": {
+    "contract": "buff_b4_native.json",
+    "codeWindowIndices": [9, 10, 11],
+    "boundary": "The selected StringFormatter signed-length and shared List<Object> count/null/loop bodies are exact code windows. Root ReadPackable<List<T>> generic calls and their type contexts are direct. Actual provider selection and refill/error parity remain unresolved."
+  },
+  "headerInstruction": [
+    53280922,
+    "4080FD1E"
+  ],
+  "blackboardIntChild": {
+    "wrapperType": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardIntForMemoryPack",
+    "wrapperTypeDefinition": 13903,
+    "baseType": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardParamBase_int_int_ForMemoryPack",
+    "baseTypeDefinition": 13927,
+    "setterMethods": [
+      [104756, "set___blackboardKey__", "System.String"],
+      [104757, "set___useBlackboardKey__", "System.Boolean"],
+      [104758, "set___value__", "System.Int32"]
+    ]
+  },
+  "fields": [
+    {
+      "index": 0,
+      "name": "abilityEventAction",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.AbilityActionMap>",
+      "setterMethod": [
+        102574,
+        "set___abilityEventAction__"
+      ],
+      "ownerFieldOffset": 184,
+      "source": {
+        "kind": "list",
+        "rva": 53280945,
+        "hex": "E83AF85400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53280932,
+          "instructionHex": "488B153D45D209",
+          "usageRawHex": "CDA212C000000000",
+          "methodSpecIndex": 610662,
+          "methodSpec": [
+            428462,
+            -1,
+            62488
+          ],
+          "argumentRawHex": "68ED258D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.AbilityActionMap>"
+        }
+      },
+      "store": {
+        "rva": 53280972,
+        "hex": "488981B8000000",
+        "kind": "qword-rcx-disp32"
+      }
+    },
+    {
+      "index": 1,
+      "name": "addingCooldown",
+      "declaredType": "Beyond.Blackboard+BlackboardDouble",
+      "setterMethod": [
+        102575,
+        "set___addingCooldown__"
+      ],
+      "ownerFieldOffset": 40,
+      "source": {
+        "kind": "object",
+        "rva": 53281004,
+        "hex": "E89F5BADFF",
+        "targetRva": 47864976,
+        "context": {
+          "instructionRva": 53280991,
+          "instructionHex": "488B153A45D209",
+          "usageRawHex": "C9EB12C000000000",
+          "methodSpecIndex": 620004,
+          "methodSpec": [
+            428464,
+            -1,
+            17005
+          ],
+          "argumentRawHex": "AD000000000000000000120000000000",
+          "argumentType": "Beyond.Blackboard+BlackboardDouble"
+        }
+      },
+      "store": {
+        "rva": 53281031,
+        "hex": "48894128",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 2,
+      "name": "applyTags",
+      "declaredType": "Beyond.Gameplay.Core.GameplayTag[]",
+      "setterMethod": [
+        102576,
+        "set___applyTags__"
+      ],
+      "ownerFieldOffset": 104,
+      "source": {
+        "kind": "packed-gameplay-tag-array",
+        "rva": 53281057,
+        "hex": "E85A059E00",
+        "targetRva": 63637120,
+        "context": {
+          "instructionRva": 53281044,
+          "instructionHex": "488B156544D209",
+          "usageRawHex": "FFCA0FC000000000",
+          "methodSpecIndex": 517503,
+          "methodSpec": [
+            428475,
+            -1,
+            816
+          ],
+          "argumentRawHex": "A22D0000000000000000118000000000",
+          "argumentType": "Beyond.Gameplay.Core.GameplayTag"
+        }
+      },
+      "store": {
+        "rva": 53281084,
+        "hex": "48894168",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 3,
+      "name": "attributeModifier",
+      "declaredType": "Beyond.Gameplay.AttributeModifierData",
+      "setterMethod": [
+        102577,
+        "set___attributeModifier__"
+      ],
+      "ownerFieldOffset": 56,
+      "source": {
+        "kind": "object",
+        "rva": 53281110,
+        "hex": "E8355BADFF",
+        "targetRva": 47864976,
+        "context": {
+          "instructionRva": 53281097,
+          "instructionHex": "488B15384DD209",
+          "usageRawHex": "95EA12C000000000",
+          "methodSpecIndex": 619850,
+          "methodSpec": [
+            428464,
+            -1,
+            13906
+          ],
+          "argumentRawHex": "74020000000000000000120000000000",
+          "argumentType": "Beyond.Gameplay.AttributeModifierData"
+        }
+      },
+      "store": {
+        "rva": 53281137,
+        "hex": "48894138",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 4,
+      "name": "blackboard",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Blackboard+DataPair>",
+      "setterMethod": [
+        102578,
+        "set___blackboard__"
+      ],
+      "ownerFieldOffset": 208,
+      "source": {
+        "kind": "list",
+        "rva": 53281163,
+        "hex": "E860F75400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53281150,
+          "instructionHex": "488B15FB4DD209",
+          "usageRawHex": "7FA412C000000000",
+          "methodSpecIndex": 610879,
+          "methodSpec": [
+            428462,
+            -1,
+            59977
+          ],
+          "argumentRawHex": "1835258D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Blackboard+DataPair>"
+        }
+      },
+      "store": {
+        "rva": 53281190,
+        "hex": "488981D0000000",
+        "kind": "qword-rcx-disp32"
+      }
+    },
+    {
+      "index": 5,
+      "name": "buffEventAction",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffActionMap>",
+      "setterMethod": [
+        102579,
+        "set___buffEventAction__"
+      ],
+      "ownerFieldOffset": 176,
+      "source": {
+        "kind": "list",
+        "rva": 53281222,
+        "hex": "E825F75400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53281209,
+          "instructionHex": "488B15A843D209",
+          "usageRawHex": "EFA212C000000000",
+          "methodSpecIndex": 610679,
+          "methodSpec": [
+            428462,
+            -1,
+            62501
+          ],
+          "argumentRawHex": "7801268D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffActionMap>"
+        }
+      },
+      "store": {
+        "rva": 53281249,
+        "hex": "488981B0000000",
+        "kind": "qword-rcx-disp32"
+      }
+    },
+    {
+      "index": 6,
+      "name": "damageModifier",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageModifier+Data>",
+      "setterMethod": [
+        102580,
+        "set___damageModifier__"
+      ],
+      "ownerFieldOffset": 64,
+      "source": {
+        "kind": "list",
+        "rva": 53281281,
+        "hex": "E8EAF65400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53281268,
+          "instructionHex": "488B15B543D209",
+          "usageRawHex": "8BA412C000000000",
+          "methodSpecIndex": 610885,
+          "methodSpec": [
+            428462,
+            -1,
+            62669
+          ],
+          "argumentRawHex": "882C258D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageModifier+Data>"
+        }
+      },
+      "store": {
+        "rva": 53281308,
+        "hex": "48894140",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 7,
+      "name": "dispelConfig",
+      "declaredType": "Beyond.Gameplay.Core.DispelConfig",
+      "setterMethod": [
+        102581,
+        "set___dispelConfig__"
+      ],
+      "ownerFieldOffset": 168,
+      "source": {
+        "kind": "raw8",
+        "rva": 53281321,
+        "hex": "837F3008"
+      },
+      "store": {
+        "rva": 53281391,
+        "hex": "488998A8000000",
+        "kind": "qword-rax-disp32"
+      }
+    },
+    {
+      "index": 8,
+      "name": "duration",
+      "declaredType": "Beyond.Blackboard+BlackboardDouble",
+      "setterMethod": [
+        102582,
+        "set___duration__"
+      ],
+      "ownerFieldOffset": 128,
+      "source": {
+        "kind": "object",
+        "rva": 53281411,
+        "hex": "E8085AADFF",
+        "targetRva": 47864976,
+        "context": {
+          "instructionRva": 53281401,
+          "instructionHex": "488B15A043D209",
+          "usageRawHex": "C9EB12C000000000",
+          "methodSpecIndex": 620004,
+          "methodSpec": [
+            428464,
+            -1,
+            17005
+          ],
+          "argumentRawHex": "AD000000000000000000120000000000",
+          "argumentType": "Beyond.Blackboard+BlackboardDouble"
+        }
+      },
+      "store": {
+        "rva": 53281438,
+        "hex": "48898180000000",
+        "kind": "qword-rcx-disp32"
+      }
+    },
+    {
+      "index": 9,
+      "name": "finishOnRepatriate",
+      "declaredType": "bool",
+      "setterMethod": [
+        102583,
+        "set___finishOnRepatriate__"
+      ],
+      "ownerFieldOffset": 36,
+      "source": {
+        "kind": "bool",
+        "rva": 53281460,
+        "hex": "E807869DFF",
+        "targetRva": 46827712
+      },
+      "store": {
+        "rva": 53281487,
+        "hex": "884124",
+        "kind": "byte-rcx-disp8"
+      }
+    },
+    {
+      "index": 10,
+      "name": "globalModifier",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.GlobalModifier+Data>",
+      "setterMethod": [
+        102584,
+        "set___globalModifier__"
+      ],
+      "ownerFieldOffset": 88,
+      "source": {
+        "kind": "list",
+        "rva": 53281503,
+        "hex": "E80CF65400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53281493,
+          "instructionHex": "488B15FC42D209",
+          "usageRawHex": "93A412C000000000",
+          "methodSpecIndex": 610889,
+          "methodSpec": [
+            428462,
+            -1,
+            62673
+          ],
+          "argumentRawHex": "4841258D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.GlobalModifier+Data>"
+        }
+      },
+      "store": {
+        "rva": 53281530,
+        "hex": "48894158",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 11,
+      "name": "hasAddingCooldown",
+      "declaredType": "bool",
+      "setterMethod": [
+        102585,
+        "set___hasAddingCooldown__"
+      ],
+      "ownerFieldOffset": 37,
+      "source": {
+        "kind": "bool",
+        "rva": 53281549,
+        "hex": "E8AE859DFF",
+        "targetRva": 46827712
+      },
+      "store": {
+        "rva": 53281576,
+        "hex": "884125",
+        "kind": "byte-rcx-disp8"
+      }
+    },
+    {
+      "index": 12,
+      "name": "hasIcon",
+      "declaredType": "bool",
+      "setterMethod": [
+        102586,
+        "set___hasIcon__"
+      ],
+      "ownerFieldOffset": 32,
+      "source": {
+        "kind": "bool",
+        "rva": 53281585,
+        "hex": "E88A859DFF",
+        "targetRva": 46827712
+      },
+      "store": {
+        "rva": 53281612,
+        "hex": "884120",
+        "kind": "byte-rcx-disp8"
+      }
+    },
+    {
+      "index": 13,
+      "name": "healModifier",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.HealModifier+Data>",
+      "setterMethod": [
+        102587,
+        "set___healModifier__"
+      ],
+      "ownerFieldOffset": 72,
+      "source": {
+        "kind": "list",
+        "rva": 53281628,
+        "hex": "E88FF55400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53281618,
+          "instructionHex": "488B156F42D209",
+          "usageRawHex": "95A412C000000000",
+          "methodSpecIndex": 610890,
+          "methodSpec": [
+            428462,
+            -1,
+            62674
+          ],
+          "argumentRawHex": "B83B258D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.HealModifier+Data>"
+        }
+      },
+      "store": {
+        "rva": 53281655,
+        "hex": "48894148",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 14,
+      "name": "iconConfig",
+      "declaredType": "Beyond.Gameplay.Core.BuffIconConfig",
+      "setterMethod": [
+        102588,
+        "set___iconConfig__"
+      ],
+      "ownerFieldOffset": 24,
+      "source": {
+        "kind": "object",
+        "rva": 53281681,
+        "hex": "E8FA58ADFF",
+        "targetRva": 47864976,
+        "context": {
+          "instructionRva": 53281668,
+          "instructionHex": "488B15AD42D209",
+          "usageRawHex": "A7EA12C000000000",
+          "methodSpecIndex": 619859,
+          "methodSpec": [
+            428464,
+            -1,
+            13981
+          ],
+          "argumentRawHex": "43270000000000000000120000000000",
+          "argumentType": "Beyond.Gameplay.Core.BuffIconConfig"
+        }
+      },
+      "store": {
+        "rva": 53281708,
+        "hex": "48894118",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 15,
+      "name": "id",
+      "declaredType": "string",
+      "setterMethod": [
+        102589,
+        "set___id__"
+      ],
+      "ownerFieldOffset": 16,
+      "source": {
+        "kind": "string",
+        "rva": 53281727,
+        "hex": "E83C839DFF",
+        "targetRva": 46827264
+      },
+      "store": {
+        "rva": 53281754,
+        "hex": "48894110",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 16,
+      "name": "igniteEventAction",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.IgniteActionMap>",
+      "setterMethod": [
+        102590,
+        "set___igniteEventAction__"
+      ],
+      "ownerFieldOffset": 192,
+      "source": {
+        "kind": "list",
+        "rva": 53281780,
+        "hex": "E8F7F45400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53281767,
+          "instructionHex": "488B156A41D209",
+          "usageRawHex": "5FA312C000000000",
+          "methodSpecIndex": 610735,
+          "methodSpec": [
+            428462,
+            -1,
+            62547
+          ],
+          "argumentRawHex": "E8BB258D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.IgniteActionMap>"
+        }
+      },
+      "store": {
+        "rva": 53281807,
+        "hex": "488981C0000000",
+        "kind": "qword-rcx-disp32"
+      }
+    },
+    {
+      "index": 17,
+      "name": "ignoreCooldownWhenAdding",
+      "declaredType": "bool",
+      "setterMethod": [
+        102591,
+        "set___ignoreCooldownWhenAdding__"
+      ],
+      "ownerFieldOffset": 48,
+      "source": {
+        "kind": "bool",
+        "rva": 53281832,
+        "hex": "E893849DFF",
+        "targetRva": 46827712
+      },
+      "store": {
+        "rva": 53281859,
+        "hex": "884130",
+        "kind": "byte-rcx-disp8"
+      }
+    },
+    {
+      "index": 18,
+      "name": "ignoreTagImmune",
+      "declaredType": "bool",
+      "setterMethod": [
+        102592,
+        "set___ignoreTagImmune__"
+      ],
+      "ownerFieldOffset": 33,
+      "source": {
+        "kind": "bool",
+        "rva": 53281868,
+        "hex": "E86F849DFF",
+        "targetRva": 46827712
+      },
+      "store": {
+        "rva": 53281895,
+        "hex": "884121",
+        "kind": "byte-rcx-disp8"
+      }
+    },
+    {
+      "index": 19,
+      "name": "lifeType",
+      "declaredType": "Beyond.Gameplay.Core.Buff+LifeType",
+      "setterMethod": [
+        102593,
+        "set___lifeType__"
+      ],
+      "ownerFieldOffset": 120,
+      "source": {
+        "kind": "byte",
+        "rva": 53281898,
+        "hex": "837F3001"
+      },
+      "store": {
+        "rva": 53281966,
+        "hex": "44887078",
+        "kind": "byte-rax-disp8"
+      }
+    },
+    {
+      "index": 20,
+      "name": "maxTriggerCnt",
+      "declaredType": "Beyond.Blackboard+BlackboardInt",
+      "setterMethod": [
+        102594,
+        "set___maxTriggerCnt__"
+      ],
+      "ownerFieldOffset": 152,
+      "source": {
+        "kind": "object",
+        "rva": 53281983,
+        "hex": "E8CC57ADFF",
+        "targetRva": 47864976,
+        "context": {
+          "instructionRva": 53281973,
+          "instructionHex": "488B156C41D209",
+          "usageRawHex": "CBEB12C000000000",
+          "methodSpecIndex": 620005,
+          "methodSpec": [
+            428464,
+            -1,
+            17006
+          ],
+          "argumentRawHex": "AE000000000000000000120000000000",
+          "argumentType": "Beyond.Blackboard+BlackboardInt"
+        }
+      },
+      "store": {
+        "rva": 53282010,
+        "hex": "48898198000000",
+        "kind": "qword-rcx-disp32"
+      }
+    },
+    {
+      "index": 21,
+      "name": "onlyUseSelfTimeDilation",
+      "declaredType": "bool",
+      "setterMethod": [
+        102595,
+        "set___onlyUseSelfTimeDilation__"
+      ],
+      "ownerFieldOffset": 35,
+      "source": {
+        "kind": "bool",
+        "rva": 53282035,
+        "hex": "E8C8839DFF",
+        "targetRva": 46827712
+      },
+      "store": {
+        "rva": 53282062,
+        "hex": "884123",
+        "kind": "byte-rcx-disp8"
+      }
+    },
+    {
+      "index": 22,
+      "name": "poiseModifier",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.PoiseModifier+Data>",
+      "setterMethod": [
+        102596,
+        "set___poiseModifier__"
+      ],
+      "ownerFieldOffset": 80,
+      "source": {
+        "kind": "list",
+        "rva": 53282078,
+        "hex": "E8CDF35400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53282068,
+          "instructionHex": "488B159D41D209",
+          "usageRawHex": "B3A412C000000000",
+          "methodSpecIndex": 610905,
+          "methodSpec": [
+            428462,
+            -1,
+            62685
+          ],
+          "argumentRawHex": "1825258D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.PoiseModifier+Data>"
+        }
+      },
+      "store": {
+        "rva": 53282105,
+        "hex": "48894150",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 23,
+      "name": "shieldConfigs",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.ShieldConfig>",
+      "setterMethod": [
+        102597,
+        "set___shieldConfigs__"
+      ],
+      "ownerFieldOffset": 96,
+      "source": {
+        "kind": "list",
+        "rva": 53282131,
+        "hex": "E898F35400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53282118,
+          "instructionHex": "488B155B41D209",
+          "usageRawHex": "1DA412C000000000",
+          "methodSpecIndex": 610830,
+          "methodSpec": [
+            428462,
+            -1,
+            62629
+          ],
+          "argumentRawHex": "9883258D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.ShieldConfig>"
+        }
+      },
+      "store": {
+        "rva": 53282158,
+        "hex": "48894160",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 24,
+      "name": "stackingSettings",
+      "declaredType": "Beyond.Gameplay.Core.BuffStackingSettings",
+      "setterMethod": [
+        102598,
+        "set___stackingSettings__"
+      ],
+      "ownerFieldOffset": 160,
+      "source": {
+        "kind": "object",
+        "rva": 53282184,
+        "hex": "E80357ADFF",
+        "targetRva": 47864976,
+        "context": {
+          "instructionRva": 53282171,
+          "instructionHex": "488B157E40D209",
+          "usageRawHex": "AFEA12C000000000",
+          "methodSpecIndex": 619863,
+          "methodSpec": [
+            428464,
+            -1,
+            13986
+          ],
+          "argumentRawHex": "3F270000000000000000120000000000",
+          "argumentType": "Beyond.Gameplay.Core.BuffStackingSettings"
+        }
+      },
+      "store": {
+        "rva": 53282211,
+        "hex": "488981A0000000",
+        "kind": "qword-rcx-disp32"
+      }
+    },
+    {
+      "index": 25,
+      "name": "tagsAfterTriggerExtendBuffAction",
+      "declaredType": "Beyond.Gameplay.Core.GameplayTag[]",
+      "setterMethod": [
+        102599,
+        "set___tagsAfterTriggerExtendBuffAction__"
+      ],
+      "ownerFieldOffset": 112,
+      "source": {
+        "kind": "packed-gameplay-tag-array",
+        "rva": 53282243,
+        "hex": "E8B8009E00",
+        "targetRva": 63637120,
+        "context": {
+          "instructionRva": 53282230,
+          "instructionHex": "488B15C33FD209",
+          "usageRawHex": "FFCA0FC000000000",
+          "methodSpecIndex": 517503,
+          "methodSpec": [
+            428475,
+            -1,
+            816
+          ],
+          "argumentRawHex": "A22D0000000000000000118000000000",
+          "argumentType": "Beyond.Gameplay.Core.GameplayTag"
+        }
+      },
+      "store": {
+        "rva": 53282270,
+        "hex": "48894170",
+        "kind": "qword-rcx-disp8"
+      }
+    },
+    {
+      "index": 26,
+      "name": "timelineActions",
+      "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.TimelineAction+TimelineActionData>",
+      "setterMethod": [
+        102600,
+        "set___timelineActions__"
+      ],
+      "ownerFieldOffset": 200,
+      "source": {
+        "kind": "list",
+        "rva": 53282296,
+        "hex": "E8F3F25400",
+        "targetRva": 58849520,
+        "context": {
+          "instructionRva": 53282283,
+          "instructionHex": "488B15CE40D209",
+          "usageRawHex": "C7A412C000000000",
+          "methodSpecIndex": 610915,
+          "methodSpec": [
+            428462,
+            -1,
+            62695
+          ],
+          "argumentRawHex": "68F0248D010000000000150000000000",
+          "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.TimelineAction+TimelineActionData>"
+        }
+      },
+      "store": {
+        "rva": 53282323,
+        "hex": "488981C8000000",
+        "kind": "qword-rcx-disp32"
+      }
+    },
+    {
+      "index": 27,
+      "name": "triggerInterval",
+      "declaredType": "Beyond.Blackboard+BlackboardDouble",
+      "setterMethod": [
+        102601,
+        "set___triggerInterval__"
+      ],
+      "ownerFieldOffset": 136,
+      "source": {
+        "kind": "object",
+        "rva": 53282355,
+        "hex": "E85856ADFF",
+        "targetRva": 47864976,
+        "context": {
+          "instructionRva": 53282342,
+          "instructionHex": "488B15F33FD209",
+          "usageRawHex": "C9EB12C000000000",
+          "methodSpecIndex": 620004,
+          "methodSpec": [
+            428464,
+            -1,
+            17005
+          ],
+          "argumentRawHex": "AD000000000000000000120000000000",
+          "argumentType": "Beyond.Blackboard+BlackboardDouble"
+        }
+      },
+      "store": {
+        "rva": 53282382,
+        "hex": "48898188000000",
+        "kind": "qword-rcx-disp32"
+      }
+    },
+    {
+      "index": 28,
+      "name": "useTimeDilationDt",
+      "declaredType": "bool",
+      "setterMethod": [
+        102602,
+        "set___useTimeDilationDt__"
+      ],
+      "ownerFieldOffset": 34,
+      "source": {
+        "kind": "bool",
+        "rva": 53282407,
+        "hex": "E854829DFF",
+        "targetRva": 46827712
+      },
+      "store": {
+        "rva": 53282434,
+        "hex": "884122",
+        "kind": "byte-rcx-disp8"
+      }
+    },
+    {
+      "index": 29,
+      "name": "waitFirstTriggerInterval",
+      "declaredType": "bool",
+      "setterMethod": [
+        102603,
+        "set___waitFirstTriggerInterval__"
+      ],
+      "ownerFieldOffset": 144,
+      "source": {
+        "kind": "bool",
+        "rva": 53282443,
+        "hex": "E830829DFF",
+        "targetRva": 46827712
+      },
+      "store": {
+        "rva": 53282475,
+        "hex": "888190000000",
+        "kind": "byte-rcx-disp32"
+      }
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected root normal/null/init body, 30 generated setter declarations, 28 source call targets, two inline raw reads, all source generic arguments, and direct stores to current BuffData field offsets are checked against the installed native image. Child native contracts are separately validated before a file is accepted.",
+    "conditional": "Null/zero list and array branches are replayed on source-hash-authenticated logical bytes, then each next member and physical EOF must join. This establishes a selected static stored-byte schema for the admitted no-positive-recursive-list cohort; live generic formatter-provider selection remains unobserved.",
+    "unresolved": "Positive action, modifier, DataPair and timeline children, runtime gameplay effects, and other BuffData files are not promoted."
+  }
+}

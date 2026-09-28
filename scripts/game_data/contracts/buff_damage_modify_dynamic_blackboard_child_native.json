@@ -1,0 +1,34 @@
+{
+  "schema": "endfield.buff-damage-modify-dynamic-blackboard-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_ec_native.json",
+    "levelscript_union_tags.json",
+    "buff_damage_check_tag_match_condition_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "unionTag": 236,
+  "memberCount": 10,
+  "selectedFieldNames": [
+    "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
+    "calculateType", "calculationTarget", "directValue", "key", "operation", "value"
+  ],
+  "selectedReadKinds": [
+    "byte", "scalar32", "scalar32", "scalar32", "scalar32", "member13",
+    "byte", "byte-payload", "scalar32", "scalar-payload"
+  ],
+  "targetFieldIndex": 5,
+  "blackboardFieldIndex": 9,
+  "selectedTargetShapeRef": "buff_damage_check_tag_match_condition_native.json.selectedTargetShape",
+  "evidenceBoundary": {
+    "exact": "The selected action dispatcher, generated ten-member wrapper, complete source reader and nested MethodSpec contexts are independently checked. Original source bytes close the selected simple TargetSettings and BlackboardDouble children at their named member endpoints in four reached actions.",
+    "direct": "Member six stores calculationTarget and member ten stores value; the selected native reader invokes TargetSettings and BlackboardDouble providers in that order.",
+    "structuralOnly": "Other named scalar and byte-payload members retain stored values only; no blackboard mutation or action execution is inferred.",
+    "unresolved": "Other target shapes, other ModifyDynamicBlackboard action variants, enclosing compound conditions and BuffData roots require separate proof."
+  }
+}

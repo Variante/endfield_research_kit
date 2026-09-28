@@ -1,0 +1,55 @@
+{
+  "schema": "endfield.buff-damage-instant-modify-attribute-processor-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_damage_lists_native.json",
+    "buff_root_prefix_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "unionTag": 9,
+  "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_InstantModifyAttributeForMemoryPack",
+  "memberCount": 2,
+  "sourceReadOrder": ["union9", "FF wrapper or header2", "modifier-element-profile", "required raw scalar32"],
+  "fieldPlan": [
+    {"name": "modifier", "declaredType": "Beyond.Gameplay.AttributeModifierData+AttributeModifier", "kind": "attribute-modifier"},
+    {"name": "modifyTargetSide", "declaredType": "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide", "kind": "enum32", "width": 4}
+  ],
+  "wrapperSetterMethods": [
+    [125084, "set___modifier__", "Beyond.Gameplay.AttributeModifierData+AttributeModifier"],
+    [125085, "set___modifyTargetSide__", "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide"]
+  ],
+  "modifierWrapperType": "Beyond.MemoryPack.Beyond_Gameplay_AttributeModifierData_AttributeModifierForMemoryPack",
+  "modifierMemberCount": 4,
+  "modifierReadOrder": ["DWORD", "DWORD", "DWORD", "scalar-payload"],
+  "modifierFieldPlan": [
+    {"name": "attributeType", "declaredType": "Beyond.GEnums.AttributeType", "kind": "enum32", "width": 4},
+    {"name": "formulaItem", "declaredType": "Beyond.GEnums.ModifierType", "kind": "enum32", "width": 4},
+    {"name": "modifyAttributeType", "declaredType": "Beyond.GEnums.ModifyAttributeType", "kind": "enum32", "width": 4},
+    {"name": "param", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+  ],
+  "modifierSetterMethods": [
+    [107624, "set___attributeType__", "Beyond.GEnums.AttributeType"],
+    [107625, "set___formulaItem__", "Beyond.GEnums.ModifierType"],
+    [107626, "set___modifyAttributeType__", "Beyond.GEnums.ModifyAttributeType"],
+    [107627, "set___param__", "Beyond.Blackboard+BlackboardDouble"]
+  ],
+  "processorMethodIndices": [125089, 125088],
+  "processorWindowStarts": [65896784, 65896880],
+  "processorContextRvas": [65897018, 65897059],
+  "modifierMethodIndices": [107631, 107630],
+  "modifierWindowStarts": [64372960, 64373056],
+  "modifierContextRvas": [64373167, 64373213, 64373256, 64373299],
+  "blackboardChildReadOrder": ["blackboardKey", "useBlackboardKey", "value"],
+  "evidenceBoundary": {
+    "exact": "The selected tag-nine union table entry, formatter and source windows, two-member generated setter order, modifier child formatter and source windows, four-member generated setter order, all six generic MethodSpec contexts and exact BlackboardDouble child reader are checked on the installed build. The original logical source bytes tile the selected processor span.",
+    "direct": "The processor stores modifier then modifyTargetSide. The modifier stores attributeType, formulaItem, modifyAttributeType and param in source order.",
+    "structuralOnly": "Enum DWORDs and BlackboardDouble fields are authored stored values.",
+    "conditional": "The static reader does not prove live inflated formatter-provider selection.",
+    "unresolved": "Other processor tags, null modifier variants, runtime attribute effects and whole BuffData ownership remain open."
+  }
+}

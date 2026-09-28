@@ -51,10 +51,14 @@ def decode_icon_config(
     data: bytes,
     start: int,
     limit: int,
+    *,
+    require_limit_end: bool = True,
 ) -> dict[str, Any]:
-    """Decode exactly one BuffIconConfig wrapper ending at ``limit``.
+    """Decode one BuffIconConfig wrapper within ``limit``.
 
-    The caller supplies an independently selected following-field boundary.
+    The caller normally supplies an independently selected following-field
+    boundary. A forward root reader may use physical EOF as a hard bound and
+    take the decoded cursor as the next field start.
     """
     contract = _contract()
     if type(start) is not int or type(limit) is not int or not 0 <= start < limit <= len(data):
@@ -64,7 +68,7 @@ def decode_icon_config(
     member_count = data[offset]
     offset += 1
     if member_count == 0xFF:
-        if offset != limit:
+        if require_limit_end and offset != limit:
             raise ValueError("buffIconConfig.null:trailing-bytes")
         return {
             "status": "exact-null",
@@ -170,7 +174,7 @@ def decode_icon_config(
         "useWeakProgressInNormalSkillButton",
     ):
         read_bool(name)
-    if offset != limit:
+    if require_limit_end and offset != limit:
         raise ValueError(f"buffIconConfig.eof:expected={limit} actual={offset}")
     if [row["name"] for row in fields] != contract["selectedReadOrder"]:
         raise ValueError("buffIconConfig.contract:read-order-mismatch")

@@ -25,6 +25,39 @@ from scripts.game_data.memorypack.buff import (
 from scripts.game_data.memorypack.buff_actions import event_prefix
 from scripts.game_data.memorypack.buff_icon_config import validate_current_native_contract
 from scripts.game_data.memorypack import buff_named_schema
+from scripts.game_data.memorypack import buff_root_no_positive
+from scripts.game_data.memorypack import buff_root_no_positive_native
+from scripts.game_data.memorypack import buff_datapair_native
+from scripts.game_data.memorypack import buff_global_modifier_receipt
+from scripts.game_data.memorypack import buff_damage_modifier_receipt
+from scripts.game_data.memorypack import buff_damage_scale_processor_child_receipt
+from scripts.game_data.memorypack import buff_damage_modify_calc_result_processor_child_receipt
+from scripts.game_data.memorypack import buff_damage_instant_modify_attribute_processor_receipt
+from scripts.game_data.memorypack import buff_damage_scalar_processor_child_receipt
+from scripts.game_data.memorypack import buff_damage_text_processor_child_receipt
+from scripts.game_data.memorypack import buff_damage_two_action_condition_receipt
+from scripts.game_data.memorypack import buff_damage_sequence_action_condition_receipt
+from scripts.game_data.memorypack import buff_damage_check_decorate_mask_condition_receipt
+from scripts.game_data.memorypack import buff_damage_check_type_condition_receipt
+from scripts.game_data.memorypack import buff_damage_check_type_mask_condition_receipt
+from scripts.game_data.memorypack import buff_damage_check_tag_match_condition_receipt
+from scripts.game_data.memorypack import buff_damage_check_main_character_condition_receipt
+from scripts.game_data.memorypack import buff_damage_check_buff_stack_condition_receipt
+from scripts.game_data.memorypack import buff_damage_check_vitals_condition_receipt
+from scripts.game_data.memorypack import buff_damage_origin_or_condition_receipt
+from scripts.game_data.memorypack import buff_damage_known_compound_condition_receipt
+from scripts.game_data.memorypack import buff_damage_if_else_condition_receipt
+from scripts.game_data.memorypack import buff_damage_not_next_main_condition_receipt
+from scripts.game_data.memorypack import buff_damage_two_direction_angle_condition_receipt
+from scripts.game_data.memorypack import buff_if_else_action_receipt
+from scripts.game_data.memorypack import buff_target_settings_child_receipt
+from scripts.game_data.memorypack import buff_direction_settings_child_receipt
+from scripts.game_data.memorypack import buff_selector_data_child_receipt
+from scripts.game_data.memorypack import buff_find_settings_child_receipt
+from scripts.game_data.memorypack import buff_create_action_root_corpus
+from scripts.game_data.memorypack import buff_create_action_root_receipt
+from scripts.game_data.memorypack import buff_create_icon_duration_child_receipt
+from scripts.game_data.memorypack import buff_create_input_child_receipt
 from scripts.game_data.memorypack.buff_adding_cooldown import (
     CHILD_CONTRACT_PATH as ADDING_COOLDOWN_CHILD_CONTRACT_PATH,
     CONTRACT_PATH as ADDING_COOLDOWN_CONTRACT_PATH,
@@ -64,10 +97,15 @@ PATTERN=re.compile(r'^Data/Json/BuffData/[^/]+[.]json$')
 BOUNDARY=('Authenticated current VFS logical bytes and the current generated 30-field wrapper order. '
           'The first six fields and supported middle fields advance real cursors; the accepted id marker '
           'starts the named field-15-to-29 suffix that closes at EOF. The null/empty timeline list joins the '
-          'following exact tail under selected native ownership; positive timeline bodies retain their structural endpoint. Positive modifier lists and nested '
-          'damage/heal modifier and action bodies remain explicit opaque or unsupported boundaries. The nested '
-          '19-member iconConfig and raw-eight dispelConfig children are exact under their current-build native contracts. Runtime behavior and '
-          'whole-schema exactness are not promoted.')
+          'following exact tail under selected native ownership; positive timeline bodies retain their structural endpoint. Most positive modifier lists and nested '
+          'damage/heal modifier and action bodies remain explicit opaque or unsupported boundaries. Positive '
+          'globalModifier lists attach a selected-build child receipt at field 10 while the parent BuffData '
+          'row remains partial. The nested '
+          '19-member iconConfig and raw-eight dispelConfig children are exact under their current-build native contracts. '
+          'A strict selected-native subset of null/empty recursive-list rows, authenticated DataPair and GlobalModifier branches, and selected damage branches with an empty condition plus tag five or ordered [5,6] processors, one CheckDamageDecorateMask or CheckDamageType action plus tag five or ten, one CheckDamageTypeMask, simple CheckTagMatch, simple CheckMainCharacterCondition, selected CheckBuffStackNumAdvanced, simple CheckHp or simple CheckPoiseValue action plus tag five, one CheckBuffStackNumAdvanced action plus tag nine, one CheckDamageDecorateMask action plus scalar tag zero, two or three, one simple CheckTagMatch action plus scalar tag zero or three, the ordered CheckDamageDecorateMask/CheckDamageTypeMask condition pair, two selected OriginSkillType compound conditions, two selected known-action compound conditions, or the selected nested IfElseAction conditions plus tag five, one NotNextCheckAction/main-character pair plus scalar tag four, and the selected two CheckTwoDirectionAngle actions plus ordered [5,6] processors receives a 30-member byte-zero-to-EOF receipt; '
+          'A sole selected CreateBuff action with exact named children also admits a narrow 30-member root replay through EOF; '
+          'only those VFS-ledger-MD5-matched rows are whole-schema exact, with their SHA256 recorded for later export replay. '
+          'Runtime behavior and other BuffData files remain unresolved.')
 
 
 def _profile_boundary(profile, *, file_length):
@@ -95,12 +133,22 @@ def select_rows(rows, *, expected_input):
     return vfs.family_rows(rows,expected_input=expected_input,prefix=PREFIX,pattern=PATTERN,label='buff')
 
 
+def decode_blackboard_datapair_list(data: bytes, start: int, end: int, *,
+                                    native_validation: dict) -> dict:
+    """Compatibility wrapper for the shared DataPair list reader."""
+    return buff_datapair_native.decode_datapair_list(
+        data, start, end, native_validation=native_validation,
+    )
+
+
 def frame_candidates(
     data: bytes, *, source: str,
     adding_cooldown_native_validation: dict | None = None,
     dispel_config_native_validation: dict | None = None,
     stacking_compact_native_validation: dict | None = None,
     timeline_empty_native_validation: dict | None = None,
+    datapair_native_validation: dict | None = None,
+    global_modifier_native_validation: dict | None = None,
 ) -> dict:
     result={'wholeSchemaExact':False,'candidates':[],'candidateCount':0,
             'eventPrefixStatus':'unsupported','rootContinuationStatus':'unsupported'}
@@ -183,6 +231,21 @@ def frame_candidates(
                                       offset=named['start'], expected='exact named child cursor',
                                       actual=str(exc))
                 if continuation['status']=='supported-prefix':
+                    if (datapair_native_validation or {}).get('status') == 'validated':
+                        named = next((field for field in continuation['namedFields']
+                                      if field['index'] == 4 and field['name'] == 'blackboard'), None)
+                        if named is not None:
+                            try:
+                                start, end = named['start'], named['end']
+                                named['nestedProfile'] = decode_blackboard_datapair_list(
+                                    data, start, end,
+                                    native_validation=datapair_native_validation,
+                                )
+                            except (ValueError, IndexError, struct.error) as exc:
+                                vfs._fail('buff-datapair-child', source=source,
+                                          offset=named.get('start'),
+                                          expected='exact blackboard DataPair list cursor',
+                                          actual=str(exc))
                     named_middle=frame_buff_named_middle(
                         data,continuation['consumedEnd'],at,
                     )
@@ -198,6 +261,21 @@ def frame_candidates(
                             except ValueError as exc:
                                 vfs._fail('buff-dispel-config-child', source=source,
                                           offset=named['start'], expected='exact named raw-eight child',
+                                          actual=str(exc))
+                    if (global_modifier_native_validation or {}).get('status') == 'validated':
+                        named = next((field for field in named_middle.get('namedFields', [])
+                                      if field['index'] == 10 and field['name'] == 'globalModifier'), None)
+                        if named is not None and named.get('count', 0) > 0:
+                            try:
+                                named['nestedProfile'] = buff_global_modifier_receipt.decode_global_modifier_collection(
+                                    data, named['start'], named['end'], source=source,
+                                    native_validation=global_modifier_native_validation,
+                                    blackboard_native_validation=adding_cooldown_native_validation,
+                                )
+                            except (ValueError, IndexError, struct.error) as exc:
+                                vfs._fail('buff-global-modifier-child', source=source,
+                                          offset=named.get('start'),
+                                          expected='exact positive globalModifier child cursor',
                                           actual=str(exc))
             prefix=decode_buff_pre_id_modifier_prefix(data,at)
             prefix_end=prefix.get('endOffset')
@@ -294,7 +372,12 @@ def frame_candidates(
 def join_and_frame(ledger, stream, *, stderr, adding_cooldown_native_validation=None,
                    dispel_config_native_validation=None,
                    stacking_compact_native_validation=None,
-                   timeline_empty_native_validation=None):
+                   timeline_empty_native_validation=None,
+                   root_no_positive_native_validation=None,
+                   positive_damage_native_validation=None,
+                   single_create_native_validation=None,
+                   datapair_native_validation=None,
+                   global_modifier_native_validation=None):
     by_path={row['virtualPath']:row for row in ledger};seen=set();results=[]
     if len(by_path)!=len(ledger):vfs._fail('duplicate-buff-ledger',source='join')
     for index,row in enumerate(stream):
@@ -317,11 +400,77 @@ def join_and_frame(ledger, stream, *, stderr, adding_cooldown_native_validation=
             dispel_config_native_validation=dispel_config_native_validation,
             stacking_compact_native_validation=stacking_compact_native_validation,
             timeline_empty_native_validation=timeline_empty_native_validation,
+            datapair_native_validation=datapair_native_validation,
+            global_modifier_native_validation=global_modifier_native_validation,
         )
         except (ValueError,IndexError,KeyError,OverflowError,struct.error) as exc:
             framed={'coverageStatus':'failed','wholeSchemaExact':False,'candidateCount':0,
                 'diagnostic':getattr(exc,'diagnostic',{'source':path,'offset':None,'expected':'bounded suffix-candidate reader','actual':f'{type(exc).__name__}: {exc}'})}
         logical_sha=hashlib.sha256(data).hexdigest().upper()
+        no_positive_candidate = buff_root_no_positive.is_no_positive_candidate(
+            framed, length=len(data),
+        )
+        framed['rootNoPositiveCandidate'] = no_positive_candidate
+        if (no_positive_candidate
+                and (root_no_positive_native_validation or {}).get('status') == 'validated'):
+            try:
+                root_receipt = buff_root_no_positive.decode_no_positive_buff(
+                    data, source=path, expected_sha256=logical_sha,
+                    native_validation=root_no_positive_native_validation,
+                )
+            except (ValueError, IndexError, KeyError, OverflowError, struct.error) as exc:
+                vfs._fail('buff-root-no-positive-forward-reader', source=path,
+                          expected='30 contiguous selected-native fields, id equality, physical EOF',
+                          actual=f'{type(exc).__name__}: {exc}')
+            framed['rootNoPositiveReceipt'] = root_receipt
+            framed['wholeSchemaExact'] = True
+            framed['boundaryClass'] = 'exact-closed'
+            framed['namedOuterFrameStatus'] = 'named_exact_full'
+        positive_damage_frame = buff_root_no_positive.is_positive_damage_candidate(
+            framed, length=len(data),
+        )
+        framed['rootPositiveDamageFrameCandidate'] = positive_damage_frame
+        framed['rootPositiveDamageCandidate'] = False
+        if (positive_damage_frame
+                and (positive_damage_native_validation or {}).get('status') == 'validated'):
+            try:
+                positive_receipt = buff_root_no_positive.decode_positive_damage_buff(
+                    data, source=path, expected_sha256=logical_sha,
+                    native_validation=root_no_positive_native_validation,
+                    positive_damage_validation=positive_damage_native_validation,
+                )
+            except (ValueError, IndexError, KeyError, OverflowError, struct.error) as exc:
+                # The frame admits condition/action variants that the selected
+                # positive child has not proved. They stay partial, with the
+                # exact first refusal visible in the generated corpus report.
+                framed['rootPositiveDamageRefusal'] = f'{type(exc).__name__}: {exc}'
+            else:
+                framed['rootPositiveDamageCandidate'] = True
+                framed['rootPositiveDamageReceipt'] = positive_receipt
+                framed['wholeSchemaExact'] = True
+                framed['boundaryClass'] = 'exact-closed'
+                framed['namedOuterFrameStatus'] = 'named_exact_full'
+        _sole_create, single_create_frame = buff_create_action_root_corpus._selected_create_candidate(
+            framed, length=len(data),
+        )
+        framed['rootSingleCreateActionFrameCandidate'] = single_create_frame
+        framed['rootSingleCreateActionCandidate'] = False
+        if (single_create_frame
+                and (single_create_native_validation or {}).get('status') == 'validated'):
+            try:
+                create_receipt = buff_create_action_root_receipt.decode_single_create_action_root(
+                    data, source=path, expected_sha256=logical_sha,
+                    native_validation=single_create_native_validation,
+                )
+            except (ValueError, IndexError, KeyError, OverflowError, struct.error) as exc:
+                vfs._fail('buff-root-single-create-forward-reader', source=path,
+                          expected='30 contiguous selected-native fields, id equality, physical EOF',
+                          actual=f'{type(exc).__name__}: {exc}')
+            framed['rootSingleCreateActionCandidate'] = True
+            framed['rootSingleCreateActionReceipt'] = create_receipt
+            framed['wholeSchemaExact'] = True
+            framed['boundaryClass'] = 'exact-closed'
+            framed['namedOuterFrameStatus'] = 'named_exact_full'
         for candidate in framed.get('candidates',[]):
             context={'inputSetSha256':identity['inputSetSha256'],
                 'logicalFileIdentity':identity['virtualPath'],'logicalSha256':logical_sha,
@@ -399,9 +548,23 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
     dispel_config_validation=validate_dispel_config_native_contract()
     stacking_compact_validation=validate_stacking_compact_native_contract()
     timeline_empty_validation=validate_timeline_empty_native_contract()
+    root_no_positive_validation=buff_root_no_positive.validate_current_native_contract()
+    positive_damage_validation=buff_root_no_positive.validate_positive_damage_native_contract(
+        root_validation=root_no_positive_validation,
+    )
+    single_create_validation=buff_create_action_root_receipt.validate_current_native_contract()
+    datapair_validation=buff_datapair_native.validate_current_native_contract()
+    global_modifier_validation=buff_global_modifier_receipt.validate_current_native_contract()
     if stacking_compact_validation.get('status') != 'validated':
         vfs._fail('buff-stacking-compact-native-validation', source=str(STACKING_COMPACT_CONTRACT_PATH),
                   expected='validated', actual=stacking_compact_validation)
+    if datapair_validation.get('status') != 'validated':
+        vfs._fail('buff-datapair-native-validation', source=str(buff_datapair_native.CONTRACT_PATH),
+                  expected='validated', actual=datapair_validation)
+    if global_modifier_validation.get('status') != 'validated':
+        vfs._fail('buff-global-modifier-native-validation',
+                  source=str(buff_global_modifier_receipt.CONTRACT_PATH),
+                  expected='validated', actual=global_modifier_validation)
     expected_frontier_rows={
         'residual':[0x21,0x100,0x15F],
         'frontier6':[0x2A,0x9E,0xD7,0xE4,0x111,0x12F,0x18D],
@@ -444,6 +607,100 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             TIMELINE_EMPTY_ROOT_CONTRACT_PATH,
             Path(decode_empty_timeline_suffix.__code__.co_filename),
         )
+        root_no_positive_sources = (
+            Path(buff_root_no_positive.__file__),
+            Path(buff_root_no_positive_native.__file__),
+            buff_root_no_positive_native.CONTRACT_PATH,
+            buff_root_no_positive_native.ROOT_CONTRACT_PATH,
+            buff_root_no_positive_native.INT_CONTRACT_PATH,
+            buff_root_no_positive_native.PROVIDER_CONTRACT_PATH,
+            buff_datapair_native.CONTRACT_PATH,
+            buff_datapair_native.ROOT_CONTRACT_PATH,
+            buff_global_modifier_receipt.CONTRACT_PATH,
+        )
+        positive_damage_sources = (
+            Path(buff_damage_modifier_receipt.__file__),
+            buff_damage_modifier_receipt.CONTRACT_PATH,
+            Path(buff_damage_scale_processor_child_receipt.__file__),
+            buff_damage_scale_processor_child_receipt.CONTRACT_PATH,
+            Path(buff_damage_modify_calc_result_processor_child_receipt.__file__),
+            buff_damage_modify_calc_result_processor_child_receipt.CONTRACT_PATH,
+            Path(buff_damage_instant_modify_attribute_processor_receipt.__file__),
+            buff_damage_instant_modify_attribute_processor_receipt.CONTRACT_PATH,
+            buff_damage_instant_modify_attribute_processor_receipt.CONTRACT_PATH.parent / 'buff_root_prefix_native.json',
+            Path(buff_damage_scalar_processor_child_receipt.__file__),
+            buff_damage_scalar_processor_child_receipt.CONTRACT_PATH,
+            Path(buff_damage_text_processor_child_receipt.__file__),
+            buff_damage_text_processor_child_receipt.CONTRACT_PATH,
+            Path(buff_damage_two_action_condition_receipt.__file__),
+            buff_damage_two_action_condition_receipt.CONTRACT_PATH,
+            buff_damage_scale_processor_child_receipt.CONTRACT_PATH.parent / 'buff_damage_lists_native.json',
+            Path(buff_damage_sequence_action_condition_receipt.__file__),
+            buff_damage_sequence_action_condition_receipt.CONTRACT_PATH,
+            Path(buff_damage_check_decorate_mask_condition_receipt.__file__),
+            buff_damage_check_decorate_mask_condition_receipt.CONTRACT_PATH,
+            buff_damage_check_decorate_mask_condition_receipt.CONTRACT_PATH.parent / 'buff_5b_native.json',
+            buff_damage_check_decorate_mask_condition_receipt.CONTRACT_PATH.parent / 'levelscript_union_tags.json',
+            Path(buff_damage_check_type_condition_receipt.__file__),
+            buff_damage_check_type_condition_receipt.CONTRACT_PATH,
+            buff_damage_check_type_condition_receipt.CONTRACT_PATH.parent / 'buff_5d_native.json',
+            Path(buff_damage_check_type_mask_condition_receipt.__file__),
+            buff_damage_check_type_mask_condition_receipt.CONTRACT_PATH,
+            buff_damage_check_type_mask_condition_receipt.CONTRACT_PATH.parent / 'buff_5e_native.json',
+            Path(buff_damage_check_tag_match_condition_receipt.__file__),
+            buff_damage_check_tag_match_condition_receipt.CONTRACT_PATH,
+            buff_damage_check_tag_match_condition_receipt.CONTRACT_PATH.parent / 'buff_7c_native.json',
+            Path(buff_damage_check_main_character_condition_receipt.__file__),
+            buff_damage_check_main_character_condition_receipt.CONTRACT_PATH,
+            buff_damage_check_main_character_condition_receipt.CONTRACT_PATH.parent / 'buff_68_native.json',
+            Path(buff_damage_check_buff_stack_condition_receipt.__file__),
+            buff_damage_check_buff_stack_condition_receipt.CONTRACT_PATH,
+            buff_damage_check_buff_stack_condition_receipt.CONTRACT_PATH.parent / 'buff_3c_native.json',
+            Path(buff_damage_check_vitals_condition_receipt.__file__),
+            buff_damage_check_vitals_condition_receipt.CONTRACT_PATH,
+            buff_damage_check_vitals_condition_receipt.CONTRACT_PATH.parent / 'buff_65_native.json',
+            buff_damage_check_vitals_condition_receipt.CONTRACT_PATH.parent / 'buff_6e_native.json',
+            Path(buff_damage_origin_or_condition_receipt.__file__),
+            buff_damage_origin_or_condition_receipt.CONTRACT_PATH,
+            Path(buff_damage_known_compound_condition_receipt.__file__),
+            buff_damage_known_compound_condition_receipt.CONTRACT_PATH,
+            Path(buff_damage_if_else_condition_receipt.__file__),
+            buff_damage_if_else_condition_receipt.CONTRACT_PATH,
+            Path(buff_damage_not_next_main_condition_receipt.__file__),
+            buff_damage_not_next_main_condition_receipt.CONTRACT_PATH,
+            Path(buff_damage_two_direction_angle_condition_receipt.__file__),
+            buff_damage_two_direction_angle_condition_receipt.CONTRACT_PATH,
+            buff_damage_two_direction_angle_condition_receipt.CONTRACT_PATH.parent / 'buff_frontier9.json',
+            Path(buff_if_else_action_receipt.__file__),
+            buff_if_else_action_receipt.CONTRACT_PATH,
+            buff_damage_if_else_condition_receipt.CONTRACT_PATH.parent / 'buff_residual_actions_native.json',
+            buff_damage_not_next_main_condition_receipt.CONTRACT_PATH.parent / 'buff_fd_native.json',
+            buff_damage_check_tag_match_condition_receipt.CONTRACT_PATH.parent / 'buff_find_settings_child_native.json',
+            buff_damage_check_tag_match_condition_receipt.CONTRACT_PATH.parent / 'buff_b4_native.json',
+            buff_damage_check_tag_match_condition_receipt.CONTRACT_PATH.parent / 'buff_ec_native.json',
+            buff_damage_check_tag_match_condition_receipt.CONTRACT_PATH.parent / 'buff_b2_native.json',
+            Path(buff_target_settings_child_receipt.__file__),
+            Path(buff_direction_settings_child_receipt.__file__),
+            Path(buff_selector_data_child_receipt.__file__),
+            Path(buff_find_settings_child_receipt.__file__),
+        )
+        single_create_sources = (
+            Path(buff_create_action_root_corpus.__file__),
+            Path(buff_create_action_root_receipt.__file__),
+            Path(buff_create_icon_duration_child_receipt.__file__),
+            buff_create_icon_duration_child_receipt.CONTRACT_PATH,
+            Path(buff_create_input_child_receipt.__file__),
+            buff_create_input_child_receipt.CONTRACT_PATH,
+        )
+        datapair_sources = (
+            Path(buff_datapair_native.__file__),
+            buff_datapair_native.CONTRACT_PATH,
+            buff_datapair_native.ROOT_CONTRACT_PATH,
+        )
+        global_modifier_sources = (
+            Path(buff_global_modifier_receipt.__file__),
+            buff_global_modifier_receipt.CONTRACT_PATH,
+        )
         return {'selectedChunkFingerprints':vfs._chunk_fingerprints(selected),
             'selectedChunkResolution':vfs._chunk_selection_snapshot(selected,outer),
             'streamToolFingerprints':vfs._stream_tool_snapshot(cli_path),
@@ -456,6 +713,11 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             'buffDispelConfigSources':[vfs._fingerprint(path) for path in dispel_config_sources],
             'buffStackingCompactSources':[vfs._fingerprint(path) for path in stacking_compact_sources],
             'buffTimelineEmptySources':[vfs._fingerprint(path) for path in timeline_empty_sources],
+            'buffRootNoPositiveSources':[vfs._fingerprint(path) for path in root_no_positive_sources],
+            'buffPositiveDamageSources':[vfs._fingerprint(path) for path in positive_damage_sources],
+            'buffSingleCreateSources':[vfs._fingerprint(path) for path in single_create_sources],
+            'buffDataPairSources':[vfs._fingerprint(path) for path in datapair_sources],
+            'buffGlobalModifierSources':[vfs._fingerprint(path) for path in global_modifier_sources],
             'buffNamedSchema':vfs._fingerprint(Path(buff_named_schema.__file__)),
             'corpusGate':vfs._fingerprint(Path(__file__))}
     before=snapshot()
@@ -468,6 +730,11 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
     protected.extend(Path(row['path']) for row in before['buffDispelConfigSources'])
     protected.extend(Path(row['path']) for row in before['buffStackingCompactSources'])
     protected.extend(Path(row['path']) for row in before['buffTimelineEmptySources'])
+    protected.extend(Path(row['path']) for row in before['buffRootNoPositiveSources'])
+    protected.extend(Path(row['path']) for row in before['buffPositiveDamageSources'])
+    protected.extend(Path(row['path']) for row in before['buffSingleCreateSources'])
+    protected.extend(Path(row['path']) for row in before['buffDataPairSources'])
+    protected.extend(Path(row['path']) for row in before['buffGlobalModifierSources'])
     # Many logical files share a chunk; protect every distinct physical input once.
     protected += [Path(path) for path in sorted({r['physicalChunkPath'] for r in files if r.get('physicalChunkPath')})]
     for group in (provenance['sourceFingerprints'],provenance['buildFingerprints'],before['streamToolFingerprints'],before['parser']):
@@ -483,6 +750,11 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         dispel_config_native_validation=dispel_config_validation,
         stacking_compact_native_validation=stacking_compact_validation,
         timeline_empty_native_validation=timeline_empty_validation,
+        root_no_positive_native_validation=root_no_positive_validation,
+        positive_damage_native_validation=positive_damage_validation,
+        single_create_native_validation=single_create_validation,
+        datapair_native_validation=datapair_validation,
+        global_modifier_native_validation=global_modifier_validation,
     )
     _,_,end_files,end_provenance=vfs._read_outer_and_ledger(outer_path,ledger_path,expected_input_set_sha256=expected)
     after=snapshot()
@@ -542,6 +814,12 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         ),
     }
     failed=bool(counts['failed'] or event_counts['failed'] or root_counts['failed'])
+    root_no_positive_rows=[row for row in rows if row.get('rootNoPositiveCandidate')]
+    root_no_positive_exact=[row for row in rows if row.get('rootNoPositiveReceipt')]
+    positive_damage_frames=[row for row in rows if row.get('rootPositiveDamageFrameCandidate')]
+    positive_damage_exact=[row for row in rows if row.get('rootPositiveDamageReceipt')]
+    single_create_frames=[row for row in rows if row.get('rootSingleCreateActionFrameCandidate')]
+    single_create_exact=[row for row in rows if row.get('rootSingleCreateActionReceipt')]
     return {'format':'animestudio-buffdata-current-vfs-corpus','schemaVersion':1,
         'inputSetSha256':expected,'status':'failed' if failed else 'complete',
         'publicationEligible':not failed,'wholeSchemaExact':False,
@@ -552,13 +830,22 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             'buffDispelConfigNativeValidation':dispel_config_validation,
             'buffStackingCompactNativeValidation':stacking_compact_validation,
             'buffTimelineEmptyNativeValidation':timeline_empty_validation,
+            'buffRootNoPositiveNativeValidation':root_no_positive_validation,
+            'buffPositiveDamageNativeValidation':positive_damage_validation,
+            'buffSingleCreateActionNativeValidation':{
+                'status':single_create_validation['status'],
+                'nativeInputs':single_create_validation['nativeInputs'],
+            },
+            'buffDataPairNativeValidation':datapair_validation,
+            'buffGlobalModifierNativeValidation':global_modifier_validation,
             'buffFrontiersNativeValidation':frontier_validations},'evidenceBoundary':BOUNDARY,
         'summary':{'filesSelected':len(selected),'filesSucceeded':counts['unique']+counts['ambiguous'],
             'filesFailed':counts['failed'],'filesUnsupported':counts['unsupported'],
             'filesUnique':counts['unique'],'filesAmbiguous':counts['ambiguous'],
             'filesWithMultipleAnchors':sum(row.get('anchorCount',0)>1 for row in rows),
              'filesWithNamedOuterFrame':sum(
-                 row.get('namedOuterFrameStatus')=='named_exact_frame' for row in rows
+                 row.get('namedOuterFrameStatus') in ('named_exact_frame','named_exact_full')
+                 for row in rows
              ),
              'acceptedSuffixPrefixStatusCounts':dict(sorted(prefix_counts.items())),
              'currentEventPrefix':event_summary,
@@ -566,6 +853,76 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
              'currentNamedMiddle':named_middle_summary,
              'byteBoundaryEvidence':boundary_evidence_summary(rows),
              'namedSchemaReceipts':buff_named_schema.summarize_receipts(rows),
+             'rootNoPositive':{
+                 'candidates':len(root_no_positive_rows),
+                 'wholeSchemaExact':len(root_no_positive_exact),
+                 'logicalBytes':sum(row['identity']['length'] for row in root_no_positive_exact),
+             'boundary':'Only singleton rows with selected-native 30-member forward receipts are promoted: null/empty recursive lists plus authenticated DataPair and GlobalModifier positive branches; other recursive lists remain partial.',
+             },
+             'rootPositiveDamage':{
+                 'frameCandidates':len(positive_damage_frames),
+                 'wholeSchemaExact':len(positive_damage_exact),
+                 'logicalBytes':sum(row['identity']['length'] for row in positive_damage_exact),
+                 'boundary':'Only one positive DamageModifier child with an empty condition and tag five or ordered [5,6] processors, one selected CheckDamageDecorateMask or CheckDamageType action with tag five or ten, one CheckDamageTypeMask, simple CheckTagMatch, simple CheckMainCharacterCondition, selected CheckBuffStackNumAdvanced, simple CheckHp or simple CheckPoiseValue action with tag five, one CheckBuffStackNumAdvanced action with tag nine, one CheckDamageDecorateMask action with scalar tag zero, two or three, one simple CheckTagMatch action with scalar tag zero or three, selected OriginSkillType, OrConditionAction, known-action compound or nested IfElseAction condition routes with tag five, the selected NotNextCheckAction/main-character pair with scalar tag four, or two selected CheckTwoDirectionAngle actions with ordered [5,6] processors can rejoin the 30-member root reader through physical EOF. Unsupported variants remain partial.',
+             },
+             'rootSingleCreateAction':{
+                 'frameCandidates':len(single_create_frames),
+                 'wholeSchemaExact':len(single_create_exact),
+                 'logicalBytes':sum(row['identity']['length'] for row in single_create_exact),
+                 'boundary':'A sole selected CreateBuff ability action with named direct nested children rejoins the thirty-member root through source ID equality and physical EOF. Other action lists remain partial.',
+             },
+             'blackboardDataPairs':{
+                 'listsReached':sum(
+                     any(field.get('name') == 'blackboard' and field.get('nestedProfile') is not None
+                         for field in (candidate.get('currentRootContinuation') or {}).get('namedFields', []))
+                     for row in rows for candidate in row.get('candidates', [])
+                 ),
+                 'positiveLists':sum(
+                     (field.get('nestedProfile') or {}).get('count', 0) > 0
+                     for row in rows for candidate in row.get('candidates', [])
+                     for field in (candidate.get('currentRootContinuation') or {}).get('namedFields', [])
+                     if field.get('name') == 'blackboard'
+                 ),
+                 'zeroLists':sum(
+                     (field.get('nestedProfile') or {}).get('count') == 0
+                     for row in rows for candidate in row.get('candidates', [])
+                     for field in (candidate.get('currentRootContinuation') or {}).get('namedFields', [])
+                     if field.get('name') == 'blackboard'
+                 ),
+                 'nullLists':sum(
+                     (field.get('nestedProfile') or {}).get('count') == -1
+                     for row in rows for candidate in row.get('candidates', [])
+                     for field in (candidate.get('currentRootContinuation') or {}).get('namedFields', [])
+                     if field.get('name') == 'blackboard'
+                 ),
+                 'childCount':sum(
+                     len((field.get('nestedProfile') or {}).get('children', []))
+                     for row in rows for candidate in row.get('candidates', [])
+                     for field in (candidate.get('currentRootContinuation') or {}).get('namedFields', [])
+                     if field.get('name') == 'blackboard'
+                 ),
+                 'boundary':'Native-gated root field-4 DataPair lists cover null, empty, and positive lists; whole BuffData remains partial.',
+             },
+             'globalModifiers':{
+                 'listsReached':sum(
+                     any(field.get('name') == 'globalModifier' and field.get('nestedProfile') is not None
+                         for field in (candidate.get('currentNamedMiddle') or {}).get('namedFields', []))
+                     for row in rows for candidate in row.get('candidates', [])
+                 ),
+                 'positiveLists':sum(
+                     (field.get('nestedProfile') or {}).get('count', 0) > 0
+                     for row in rows for candidate in row.get('candidates', [])
+                     for field in (candidate.get('currentNamedMiddle') or {}).get('namedFields', [])
+                     if field.get('name') == 'globalModifier'
+                 ),
+                 'childCount':sum(
+                     len((field.get('nestedProfile') or {}).get('elements', []))
+                     for row in rows for candidate in row.get('candidates', [])
+                     for field in (candidate.get('currentNamedMiddle') or {}).get('namedFields', [])
+                     if field.get('name') == 'globalModifier'
+                 ),
+                 'boundary':'Native-gated positive field-10 GlobalModifier.Data children only; whole BuffData remains partial.',
+             },
              'logicalBytes':sum(row['length'] for row in selected)},
         'identitySetSha256':canonical_json_sha256([{'identity':r['identity'],'logicalSha256':r['logicalSha256']} for r in rows]),'files':rows}
 

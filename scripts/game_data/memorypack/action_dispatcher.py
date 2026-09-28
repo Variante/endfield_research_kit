@@ -90,6 +90,7 @@ class ActionRoute:
     wrapper_name: str | None = None
     member_order: tuple[str, ...] = ()
     member_kinds: tuple[str, ...] = ()
+    member_declared_types: tuple[str | None, ...] = ()
     member_widths: tuple[int | None, ...] = ()
     member_width_sum: int | None = None
     inherited_member_count: int | None = None
@@ -254,6 +255,7 @@ def _resolve_route(
         wrapper_type_definition=definition, wrapper_name=name,
         member_order=tuple(member.name for member in wrapper.members),
         member_kinds=tuple(member.kind for member in wrapper.members),
+        member_declared_types=tuple(member.declared_type for member in wrapper.members),
         member_widths=tuple(member.width for member in wrapper.members),
         member_width_sum=wrapper.fixed_width,
         inherited_member_count=len(wrapper.inherited_members),

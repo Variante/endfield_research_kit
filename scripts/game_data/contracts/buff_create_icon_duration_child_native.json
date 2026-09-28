@@ -1,0 +1,45 @@
+{
+  "schema": "endfield.buff-create-icon-duration-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentActionContract": "skill_timeline_create_buff_native.json",
+  "readerContract": "buff_92_native.json",
+  "parentUnionTag": 146,
+  "readerMethodIndex": 162698,
+  "readerNormalWindowStartRva": 64607376,
+  "wrapper": {
+    "typeDefinition": 22415,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIconDurationSourceSettingForMemoryPack",
+    "setterMethods": [
+      [162694, "set___durationSourceType__", "Beyond.Gameplay.Core.BuffIconDurationSourceType"],
+      [162695, "set___timedMarkerId__", "System.String"]
+    ],
+    "readOrder": ["durationSourceType", "timedMarkerId"]
+  },
+  "runtimeType": {
+    "typeDefinition": 10066,
+    "typeName": "Beyond.Gameplay.Core.BuffIconDurationSourceSetting",
+    "fieldOffsets": {
+      "m_abilityEntityTypeInfo": 16,
+      "m_timedMarkerInfo": 24,
+      "durationSourceType": 32,
+      "timedMarkerId": 40
+    }
+  },
+  "sourceInstructions": {
+    "memberCountCompare": [64607482, "4080FD020F85D14C1701"],
+    "durationSourceTypeStore": [64607562, "44897020"],
+    "timedMarkerIdReadCall": [64607572, "E8A7B1F0FE", 46827264],
+    "timedMarkerIdStore": [64607591, "48894128"]
+  },
+  "evidenceBoundary": {
+    "exact": "The selected build authenticates the registered two-member reader and its reviewed normal code window. The selected source compares the member count with two and stores both read values at checked runtime field offsets.",
+    "direct": "Generated wrapper setters and selected source order name durationSourceType followed by timedMarkerId. The latter is stored as signed-length source bytes.",
+    "conditional": "The named child receipt applies only when an authenticated CreateBuffAction parent supplies this exact field range on the selected build.",
+    "unresolved": "String decoder parity, runtime duration selection, live formatter provider choice, and whole BuffData ownership are separate claims."
+  }
+}

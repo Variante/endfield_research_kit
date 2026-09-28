@@ -11,6 +11,7 @@ from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 from scripts.game_data.memorypack.buff import frame_buff_named_middle as _base_named_middle
 from scripts.game_data.memorypack.buff_icon_config import decode_icon_config
+from scripts.game_data.memorypack.buff_enable_move_collider import decode_enable_move_collider_action
 from scripts.game_data.memorypack.buff_actions import (
     FrameError,
     Reader as _BaseReader,
@@ -54,7 +55,7 @@ def validate_current_native_contract() -> dict[str, Any]:
 
 
 class _ResidualReader(_BaseReader):
-    """Add only union routes proved by the adjacent exact-build contract."""
+    """Add reviewed exact-build and selected native BuffData union routes."""
 
     def gait_multiplier_map(self) -> None:
         """Read SerializeFieldDictionary<GroundedMoveGait, float>."""
@@ -177,6 +178,9 @@ class _ResidualReader(_BaseReader):
         self.scalar_payload()
 
     def _action(self, depth: int, tag: int, width: int) -> None:
+        if tag == 0x00A6:
+            decode_enable_move_collider_action(self, tag, width)
+            return
         frontier9_counts = {
             0x1D: 14, 0x82: 12, 0x97: 17, 0xB5: 12, 0xB8: 9,
             0xBE: 15, 0xC8: 10, 0xD1: 9, 0xDD: 13, 0xE5: 10,

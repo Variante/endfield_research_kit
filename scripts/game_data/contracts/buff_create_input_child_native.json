@@ -1,0 +1,131 @@
+{
+  "schema": "endfield.buff-create-input-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "readerContract": "buff_92_native.json",
+  "parentActionContract": "skill_timeline_create_buff_native.json",
+  "parentUnionTag": 146,
+  "readerMethodIndices": [107600, 107601, 107616, 107617],
+  "readerWindowStarts": [52466960, 52467056, 52467451, 64466848, 64466944, 64467248],
+  "readerWindows": {
+    "input": [52467056, 52467451],
+    "assignPair": [64466944, 64467248]
+  },
+  "assignmentListContext": {
+    "instructionRva": 52467248,
+    "methodSpecIndex": 610876,
+    "elementInstantiationIndex": 17003
+  },
+  "inputWrapper": {
+    "typeDefinition": 14285,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateBuffActionInputForMemoryPack",
+    "parentTypeDefinition": 13861,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffInputForMemoryPack",
+    "inheritedSetterMethods": [
+      [104295, "set___assignBlackboard__", "System.Boolean"],
+      [104296, "set___assignItems__", "<type-index:59424>"],
+      [104297, "set___buffId__", "System.String"]
+    ],
+    "directSetterMethods": [
+      [107596, "set___buffIdKey__", "System.String"],
+      [107597, "set___readIdFromBlackboard__", "System.Boolean"]
+    ],
+    "readOrder": [
+      "assignBlackboard",
+      "assignItems",
+      "buffId",
+      "buffIdKey",
+      "readIdFromBlackboard"
+    ]
+  },
+  "assignPairWrapper": {
+    "typeDefinition": 14287,
+    "typeName": "Beyond.MemoryPack.Beyond_Blackboard_AssignPairForMemoryPack",
+    "parentTypeDefinition": 36358,
+    "parentTypeName": "System.Object",
+    "setterMethods": [
+      [107608, "set___directValueType__", "Beyond.Blackboard+DataPair+ValueType"],
+      [107609, "set___inputValueKey__", "System.String"],
+      [107610, "set___numericValue__", "System.Single"],
+      [107611, "set___stringValue__", "System.String"],
+      [107612, "set___targetKey__", "System.String"],
+      [107613, "set___useDirectValue__", "System.Boolean"]
+    ],
+    "readOrder": [
+      "directValueType",
+      "inputValueKey",
+      "numericValue",
+      "stringValue",
+      "targetKey",
+      "useDirectValue"
+    ]
+  },
+  "sourceReadCalls": {
+    "input": [
+      [52467205, 46827712, "byte"],
+      [52467258, 58849520, "counted-assignment-profiles"],
+      [52467313, 46827264, "byte-payload"],
+      [52467368, 46827264, "byte-payload"],
+      [52467402, 46827712, "byte"]
+    ],
+    "assignPair": [
+      [64467068, 46827184, "scalar32"],
+      [64467091, 46827264, "byte-payload"],
+      [64467124, 46828464, "raw-float32"],
+      [64467149, 46827264, "byte-payload"],
+      [64467182, 46827264, "byte-payload"],
+      [64467214, 46827712, "byte"]
+    ]
+  },
+  "runtimeFields": [
+    {
+      "typeDefinition": 10059,
+      "typeName": "Beyond.Gameplay.Core.BuffInput",
+      "offsets": {"assignBlackboard": 24, "assignItems": 32, "buffId": 16}
+    },
+    {
+      "typeDefinition": 10060,
+      "typeName": "Beyond.Gameplay.Core.CreateBuffActionInput",
+      "offsets": {"buffIdKey": 48, "readIdFromBlackboard": 40}
+    },
+    {
+      "typeDefinition": 170,
+      "typeName": "Beyond.Blackboard+AssignPair",
+      "offsets": {
+        "directValueType": 36,
+        "inputValueKey": 24,
+        "numericValue": 40,
+        "stringValue": 48,
+        "targetKey": 16,
+        "useDirectValue": 32
+      }
+    }
+  ],
+  "directStores": [
+    ["assignBlackboard", 52467241, "40886818"],
+    ["assignItems", 52467298, "48896820"],
+    ["buffId", 52467353, "48896810"],
+    ["directValueType", 64467082, "894624"],
+    ["inputValueKey", 64467109, "48894618"],
+    ["numericValue", 64467138, "F30F114628"],
+    ["stringValue", 64467167, "48894630"],
+    ["targetKey", 64467196, "488D4E10"],
+    ["useDirectValue", 64467224, "884720"]
+  ],
+  "targetKeyIndirectStore": [64467200, "488901"],
+  "setterStores": [
+    ["buffIdKey", 107596, 52467391, 52468032, 52468097, "48897130"],
+    ["readIdFromBlackboard", 107597, 52467425, 52468144, 52468209, "40887028"]
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected build matches all three native input hashes, registered input and AssignPair reader methods, complete reviewed code windows, wrapper inheritance, setter names and parameter types, the List<AssignPair> generic source context, eleven ordered direct source calls, runtime field offsets, and direct or setter-mediated destination stores.",
+    "direct": "The selected input reader stores a five-member wrapper with inherited assignBlackboard, assignItems and buffId followed by buffIdKey and readIdFromBlackboard. Its nested AssignPair reader stores six members in the generated setter order.",
+    "structuralOnly": "Current logical BuffData bytes are reparsed through explicit nullable lists and wrappers to exact parent field ends. String fields retain signed-length byte spans and numericValue retains float bits; the report records stored bytes only.",
+    "conditional": "The source call and code-window proof applies to this selected native build; live generic provider selection is not observed.",
+    "unresolved": "String encoding, numeric/boolean meaning, runtime assignment behavior, recursive ownership outside these children, and whole BuffData schema remain open."
+  }
+}

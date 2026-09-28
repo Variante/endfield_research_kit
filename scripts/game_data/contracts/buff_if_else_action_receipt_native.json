@@ -1,0 +1,42 @@
+{
+  "schema": "endfield.buff-if-else-action-receipt-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceContract": "skill_timeline_shared_sequence_native.json",
+  "sourceProvider": "ifElseNestedSequenceProvider",
+  "catalogContract": "levelscript_union_tags.json",
+  "routeWindow": {
+    "startRva": 59824778,
+    "endRva": 59824828,
+    "sha256": "6D8D493694AEB751A46C7F61A6DED77F7F24D0B15FE852BE5725FA8B6F7C3FB7",
+    "boundary": "selected AbilityActionData short-tag C9 dispatcher route"
+  },
+  "wrapper": {
+    "typeDefinition": 16163,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_IfElseActionDataForMemoryPack",
+    "parentTypeDefinition": 14293,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+    "serializedMemberCount": 8,
+    "inheritedSetterMethods": [
+      [107646, "set___isEnable__", "System.Boolean"],
+      [107647, "set___priorityLevel__", "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"],
+      [107648, "set___priorityOffset__", "System.Int32"],
+      [107649, "set___serverActionIndex__", "System.Int32"]
+    ],
+    "setterMethods": [
+      [120607, "set___alwaysNext__", "System.Boolean"],
+      [120608, "set___conditionAction__", "Beyond.Gameplay.Core.SequenceActionData"],
+      [120609, "set___failActions__", "Beyond.Gameplay.Core.SequenceActionData"],
+      [120610, "set___succeedActions__", "Beyond.Gameplay.Core.SequenceActionData"]
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "The selected dispatcher resolves short tag C9 to the generated eight-member IfElseAction wrapper. The dependency pins the complete reader, eight source read kinds, three SequenceActionData MethodSpec callsites, and recursive reader.",
+    "direct": "Generated inherited and direct setter metadata names each source slot in order. The three nested source calls each resolve to the same SequenceActionData generic instantiation.",
+    "structuralOnly": "The three recursive SequenceActionData children retain the finite anonymous action grammar; naming their parent fields does not name every nested action, evaluate the condition, or prove runtime branch behavior."
+  }
+}

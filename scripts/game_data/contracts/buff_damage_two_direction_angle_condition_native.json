@@ -1,0 +1,42 @@
+{
+  "schema": "endfield.buff-damage-two-direction-angle-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_frontier9.json",
+    "buff_damage_sequence_action_condition_native.json",
+    "buff_damage_check_tag_match_condition_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "unionTag": 130,
+  "actionMemberCount": 12,
+  "sequenceMemberCount": 3,
+  "sequenceTerminalByteCount": 2,
+  "selectedActionTags": [130, 130],
+  "selectedTerminalRawHex": "0000",
+  "sourceReadOrderRef": "buff_frontier9.json.actions[unionTag=130].readOrder",
+  "selectedActionFieldNames": [
+    "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
+    "compareType", "dir1DirectionType", "dir1Source", "dir1Target",
+    "dir2DirectionType", "dir2Source", "dir2Target", "value"
+  ],
+  "selectedActionReadKinds": [
+    "byte", "scalar32", "scalar32", "scalar32", "enum32", "enum32",
+    "target-settings", "target-settings", "enum32", "target-settings",
+    "target-settings", "blackboard-double"
+  ],
+  "selectedTargetMemberNames": ["dir1Source", "dir1Target", "dir2Source", "dir2Target"],
+  "selectedBlackboardMemberName": "value",
+  "selectedTargetShapeRef": "buff_damage_check_tag_match_condition_native.json.selectedTargetShape",
+  "evidenceBoundary": {
+    "exact": "The selected native dispatcher and formatter, complete source read order, named wrapper, nested TargetSettings and BlackboardDouble providers, and damage-condition SequenceActionData reader are independently validated. On the authenticated current source, two contiguous twelve-member CheckTwoDirectionAngle actions each close four simple target children and one BlackboardDouble child; the two terminal bytes close the condition endpoint.",
+    "direct": "The generated setters store compare type, two direction types, four targets and a BlackboardDouble value in the selected reader order.",
+    "structuralOnly": "Stored enum values, target selections and BlackboardDouble values are preserved as bytes; no angle comparison or runtime condition result is inferred.",
+    "conditional": "The enclosing BuffData root is eligible only for this exact two-action condition with ordered damage processors [5,6], current source ID and physical EOF.",
+    "unresolved": "Other CheckTwoDirectionAngle target shapes, action counts, condition terminals, processor combinations and runtime comparison behavior need separate proof."
+  }
+}

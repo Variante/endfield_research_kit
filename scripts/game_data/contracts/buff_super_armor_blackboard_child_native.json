@@ -1,0 +1,98 @@
+{
+  "schema": "endfield.buff-super-armor-blackboard-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentActionContract": "buff_159_native.json",
+  "parentCatalogContract": "levelscript_union_tags.json",
+  "parentUnionTag": 345,
+  "commonInheritance": [
+    {
+      "typeDefinition": 13927,
+      "typeName": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardParamBase_int_int_ForMemoryPack",
+      "setterMethods": [
+        [104756, "set___blackboardKey__", "System.String"],
+        [104757, "set___useBlackboardKey__", "System.Boolean"],
+        [104758, "set___value__", "System.Int32"]
+      ]
+    },
+    {
+      "typeDefinition": 13903,
+      "typeName": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardIntForMemoryPack",
+      "setterMethods": []
+    },
+    {
+      "typeDefinition": 15025,
+      "typeName": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardCustomWithDropdownIntValueForMemoryPack",
+      "setterMethods": [
+        [112685, "set___useCustomValue__", "System.Boolean"]
+      ]
+    }
+  ],
+  "storedReadOrder": [
+    ["blackboardKey", "byte-payload"],
+    ["useBlackboardKey", "byte"],
+    ["value", "scalar32"],
+    ["useCustomValue", "byte"]
+  ],
+  "inheritedSetterDestinations": [
+    ["blackboardKey", 104756, 52469328, 52469341, "48895118"],
+    ["useBlackboardKey", 104757, 52483776, 52483789, "885010"],
+    ["value", 104758, 58153824, 58153837, "895014"],
+    ["useCustomValue", 112685, 62974688, 62974709, "885820"]
+  ],
+  "children": [
+    {
+      "parentFieldIndex": 4,
+      "parentFieldName": "impactResistance",
+      "providerType": "Beyond.Gameplay.Core.BlackboardImpactValue",
+      "wrapperTypeDefinition": 15029,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BlackboardImpactValueForMemoryPack",
+      "formatterMethodIndex": 112718,
+      "readerMethodIndex": 112717,
+      "readerWindowStarts": [62973696, 62973792, 82689566],
+      "sourceReadCalls": [
+        [62973924, 46827264, "blackboardKey"],
+        [62973958, 46827712, "useBlackboardKey"],
+        [62973994, 46827184, "value"],
+        [62974026, 46827712, "useCustomValue"]
+      ],
+      "destinations": [
+        [62973947, "call", 52469328, "blackboardKey"],
+        [62973985, "884110", 16, "useBlackboardKey"],
+        [62974017, "894114", 20, "value"],
+        [62974045, "call", 62974688, "useCustomValue"]
+      ]
+    },
+    {
+      "parentFieldIndex": 5,
+      "parentFieldName": "superArmorValue",
+      "providerType": "Beyond.Gameplay.Core.BlackboardSuperArmorValue",
+      "wrapperTypeDefinition": 13999,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BlackboardSuperArmorValueForMemoryPack",
+      "formatterMethodIndex": 105476,
+      "readerMethodIndex": 105475,
+      "readerWindowStarts": [62972848, 62972944, 82689234, 82689341],
+      "sourceReadCalls": [
+        [62973050, 46827264, "blackboardKey"],
+        [62973084, 46827712, "useBlackboardKey"],
+        [62973116, 46827184, "value"],
+        [62973144, 46827712, "useCustomValue"]
+      ],
+      "destinations": [
+        [62973073, "call", 52469328, "blackboardKey"],
+        [62973107, "884110", 16, "useBlackboardKey"],
+        [62973135, "894114", 20, "value"],
+        [62973163, "call", 62974688, "useCustomValue"]
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected current-build method/module identities, complete formatter and reader windows, four ordered source calls, destination stores or setter calls, generated wrapper ancestry and inherited setter types name both direct four-member children inside the exact parent SetSuperArmorAction spans. Logical source bytes and VFS identities rejoin those parent and child cursors.",
+    "structuralOnly": "The blackboardKey string is retained as length-prefixed bytes, and the two flag fields as source bytes; no string decoding or boolean-value restriction is asserted.",
+    "unresolved": "Live formatter selection, value evaluation, numerical units, TargetSettings interior, other action interiors, and whole BuffData EOF."
+  }
+}

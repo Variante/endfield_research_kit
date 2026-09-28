@@ -1,0 +1,37 @@
+{
+  "schema": "endfield.buff-datapair-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependency": "buff_root_fifth_native.json",
+  "wrapperTypeDefinition": 13857,
+  "wrapperType": "Beyond.MemoryPack.Beyond_Blackboard_DataPairForMemoryPack",
+  "formatterType": "Beyond.MemoryPack.Beyond_Blackboard_DataPairForMemoryPack+Beyond_Blackboard_DataPairForMemoryPackFormatter",
+  "methods": [
+    [104277, "Beyond.MemoryPack.Beyond_Blackboard_DataPairForMemoryPack+Beyond_Blackboard_DataPairForMemoryPackFormatter", "Deserialize", 62899376],
+    [104276, "Beyond.MemoryPack.Beyond_Blackboard_DataPairForMemoryPack", "Deserialize", 62899472]
+  ],
+  "setterMethods": [
+    [104270, "set___isDynamic__", "System.Boolean"],
+    [104271, "set___key__", "System.String"],
+    [104272, "set___valueDouble__", "System.Double"],
+    [104273, "set___valueStr__", "System.String"]
+  ],
+  "readOrder": [
+    ["isDynamic", "bool"],
+    ["key", "string"],
+    ["valueDouble", "float64"],
+    ["valueStr", "string"]
+  ],
+  "memberHeader": 4,
+  "evidenceBoundary": {
+    "exact": "The selected native build matches the DataPair formatter and wrapper methods, setter names and declared types, and the code windows inherited from the reviewed root consumer.",
+    "direct": "The DataPair source cursor consumes member header 4, bool, nullable UTF-8 string, raw eight-byte double, and nullable UTF-8 string in generated setter order.",
+    "structuralOnly": "The reader records byte spans and decoded primitive values; key/value runtime semantics are not inferred.",
+    "conditional": "The proof applies to the selected native inputs and the root's List<DataPair> route.",
+    "unresolved": "Live formatter selection, pair type-byte meaning, and whole BuffData EOF remain open."
+  }
+}

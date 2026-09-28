@@ -15,6 +15,10 @@ validated range/hash proves the bytes under study, not their fields or runtime
 meaning. Start at the VFS recovery evidence index in the AnimeStudio skill
 reference; it maps each active family to its maintained reader, fixtures,
 corpus report, and remaining boundary.
+The current JsonData registry report also pins the byte length and SHA256 of
+its generated per-file ledger. A downstream reader checks that pairing before
+using a file row as a current-source identity. This joins publications; it
+does not add a field name or runtime claim.
 
 A parser becomes exact only after positive fixtures, truncated/malformed/
 trailing-byte negatives, exact-consumption checks, and a current-corpus sweep.
@@ -597,20 +601,23 @@ LevelScript result. `ROOT_TYPES` seeds the roots; everything else -- the
 structs, the enums, and a family for every abstract union base -- is found by
 closing the reference set to a fixed point.
 
-Current position, measured by `jsondata_schema_coverage --declarations`:
+An earlier `jsondata_schema_coverage --declarations` pass reached EOF across
+the then-selected declaration-derived families. That is a derived framing
+measure for its own input set, not a current reviewed-schema or runtime claim.
+The current `jsondata_corpus` gate joins every selected JsonData logical file
+to the export byte for byte, then classifies only families with maintained
+readers. Its current input-set, counts, and per-family status are in
+`reports/animestudio/jsondata_current_latest.json`. LipSync, NPC, LevelData,
+MissionRuntimeAsset, and several config families have complete named schemas;
+LevelScriptData and LevelScriptTemplateData retain bounded partial rows,
+BuffData has a complete outer frame with recursive interiors open, and the
+full SkillData family remains bounded ambiguous until a new complete cursor
+receipt covers this input set. A named stored field still does not prove its
+runtime consumer or effective value.
 
-Every JsonData family is registered in the coverage sweep, including the
-plain-text ones, so that report is the whole answer for the lane rather than
-something a reader corrects by hand. **All twenty-four families are at 100%:
-826 MB across 95,243 files, every byte named.** LevelScriptData was the last
-one open and now frames 5,030 of 5,030.
-
-Read that as what it is. Every payload in this lane is consumed to EOF by a
-reader that refuses anything it cannot place, and every byte sits under a
-declared field name. It does not say the *meaning* of each field is
-established: a named `int32` whose consumer is unknown is still named and
-still unexplained, and the runtime-consumer question belongs to the lane files
-rather than here.
+The following LevelScriptData investigations record why earlier declaration
+readers stopped and how selected shapes were corrected. Their historical
+file counts are not the current coverage measure.
 
 **LevelScriptData's open set fell from 56 files to 24, and one form did it.**
 Every param-tail the sweep rejected was the *same* triple -- `idRef`,

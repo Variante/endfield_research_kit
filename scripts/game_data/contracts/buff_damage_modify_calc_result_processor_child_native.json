@@ -1,0 +1,38 @@
+{
+  "schema": "endfield.buff-damage-modify-calc-result-processor-child-native-contract.v1",
+  "status": "exact-current-build",
+  "reviewedDependencies": [
+    "buff_damage_lists_native.json",
+    "buff_damage_modifier_child_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unionTag": 10,
+  "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyCalcResultForMemoryPack",
+  "wrappedType": "Beyond.Gameplay.Core.ModifyCalcResult",
+  "serializedMemberCount": 3,
+  "sourceReadOrderRef": "anonymousReadOrder.processor10",
+  "sourceReadOrder": [
+    "union10",
+    "FF wrapper or header3",
+    "BlackboardDouble baseMultiplier",
+    "ModifyCalcResult.Type scalar32",
+    "BlackboardDouble multiplierCnt"
+  ],
+  "blackboardChildReadOrder": ["blackboardKey", "useBlackboardKey", "value"],
+  "fieldPlan": [
+    {"name": "baseMultiplier", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"},
+    {"name": "modifyType", "declaredType": "Beyond.Gameplay.Core.ModifyCalcResult+Type", "kind": "enum32"},
+    {"name": "multiplierCnt", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected tag-ten processor dispatcher, generated three-member wrapper setters, complete formatter and source-reader bytes, three ordered generic contexts, and separately validated BlackboardDouble children replayed through the original logical span.",
+    "direct": "The selected ModifyCalcResult reader stores baseMultiplier, modifyType, and multiplierCnt in that source order.",
+    "structuralOnly": "Blackboard values and enum bits are authored stored values, without evaluated multiplier or damage arithmetic.",
+    "unresolved": "Other processor tags, live provider selection, runtime effect, and enclosing BuffData root until a separate physical-EOF proof."
+  }
+}

@@ -22,19 +22,31 @@ from scripts.common import (
     resolve_installed_native_inputs, sha256_file_upper,
 )
 from scripts.game_data.memorypack import (
+    buff_compare_float_action_receipt as compare_float,
     buff_create_buff_action_receipt as create_buff,
+    buff_effect_action_receipt as effect_action,
     buff_finish_buff_advanced_action_receipt as finish_buff,
+    buff_if_else_action_receipt as if_else,
+    buff_modify_dynamic_blackboard_action_receipt as modify_blackboard,
+    buff_raise_train_level_event_receipt as raise_train,
+    buff_set_super_armor_action_receipt as set_super_armor,
 )
 
 
-SCHEMA = "endfield.buff-action-receipt-corpus.v1"
+SCHEMA = "endfield.buff-action-receipt-corpus.v7"
 REPORTS_ROOT = ROOT / "reports"
 DEFAULT_OUTPUT_JSON = REPORTS_ROOT / "animestudio/buff_action_receipts_current_latest.json"
 DEFAULT_OUTPUT_MD = REPORTS_ROOT / "animestudio/buff_action_receipts_current_latest.md"
 _SOURCE_PATTERN = re.compile(r"^Data/Json/BuffData/[^/\\]+[.]json$")
 _ROUTES = {
+    compare_float.TAG: compare_float.decode_compare_float_action_receipt,
     create_buff.TAG: create_buff.decode_create_buff_action_receipt,
+    effect_action.TAG: effect_action.decode_effect_action_receipt,
     finish_buff.TAG: finish_buff.decode_finish_buff_advanced_action_receipt,
+    if_else.TAG: if_else.decode_if_else_action_receipt,
+    modify_blackboard.TAG: modify_blackboard.decode_modify_dynamic_blackboard_action_receipt,
+    raise_train.TAG: raise_train.decode_raise_train_level_event_receipt,
+    set_super_armor.TAG: set_super_armor.decode_set_super_armor_action_receipt,
 }
 
 
@@ -105,7 +117,7 @@ def build_receipt_report(
     expected_input_set_sha256: str,
     native_validations: dict[int, dict[str, Any]],
 ) -> dict[str, Any]:
-    """Join every report identity to exported bytes, then replay both routes."""
+    """Join every report identity to exported bytes, then replay reviewed routes."""
     summary = buff_report.get("summary") or {}
     rows = buff_report.get("files")
     if (
@@ -183,10 +195,11 @@ def build_receipt_report(
             tag = union["tag"]
             if tag not in _ROUTES:
                 continue
+            kwargs = {"certified_action_spans": unions} if tag == if_else.TAG else {}
             receipt = _ROUTES[tag](
                 data, source=source, logical_sha256=digest,
                 start=union["start"], end=union["end"],
-                native_validation=native_validations[tag],
+                native_validation=native_validations[tag], **kwargs,
             )
             if (
                 receipt.get("wholeActionByteSpanExact") is not True
@@ -238,7 +251,9 @@ def build_receipt_report(
         "evidenceBoundary": (
             "Every source identity is rejoined to the completed authenticated Buff VFS "
             "census by path, length, MD5 and logical SHA256. Selected native contracts "
-            "name only reached 0x0092/0x00B4 action wrapper fields at exact spans. "
+            "name only reached "
+            + "/".join(f"0x{tag:04X}" for tag in sorted(_ROUTES))
+            + " action wrapper fields at exact spans. "
             "Nested profiles and the complete BuffData schema remain unproved."
         ),
     }
@@ -270,14 +285,20 @@ def _selected_game_root(game_root: Path):
 def _validate_selected_native(game_root: Path) -> dict[int, dict[str, Any]]:
     with _selected_game_root(game_root) as paths:
         validations = {
+            compare_float.TAG: compare_float.validate_current_native_contract(),
             create_buff.TAG: create_buff.validate_current_native_contract(),
+            effect_action.TAG: effect_action.validate_current_native_contract(),
             finish_buff.TAG: finish_buff.validate_current_native_contract(),
+            if_else.TAG: if_else.validate_current_native_contract(),
+            modify_blackboard.TAG: modify_blackboard.validate_current_native_contract(),
+            raise_train.TAG: raise_train.validate_current_native_contract(),
+            set_super_armor.TAG: set_super_armor.validate_current_native_contract(),
         }
         for tag, validation in validations.items():
             if validation.get("status") != "validated" or validation.get("unionTag") != tag:
                 _fail("native-gate", detail=f"tag=0x{tag:04X}")
-            for name, path in paths.items():
-                if sha256_file_upper(path) != validation["nativeInputs"][name]:
+            for name, expected in validation["nativeInputs"].items():
+                if name not in paths or sha256_file_upper(paths[name]) != expected:
                     _fail("selected-native-hash-drift", detail=f"tag=0x{tag:04X} {name}")
         return validations
 

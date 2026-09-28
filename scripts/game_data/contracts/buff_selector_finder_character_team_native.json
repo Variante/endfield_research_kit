@@ -1,0 +1,59 @@
+{
+  "schema": "endfield.buff-selector-finder-character-team-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "switchContract": "skill_selector_finder_typhoea_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "serializedMemberCount": 0,
+  "dispatcher": {
+    "unionTag": 2,
+    "switchTargetRva": 59819863,
+    "routeWindow": {
+      "startRva": 59819863,
+      "endRva": 59819910,
+      "sha256": "842B744444041F9FCF7F29250818C6F16296C941384117B00E1A9B752DAA0F4D",
+      "boundary": "selected finder tag-2 existing-object check and wrapper type load through shared branch rejoin"
+    },
+    "usageCellRva": 217990448,
+    "usageRawHex": "2944032000000000",
+    "registeredTypeIndex": 107028,
+    "wrapperTypeDefinition": 23029,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CharacterTeamFinder_DataForMemoryPack"
+  },
+  "methods": [
+    [167047, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CharacterTeamFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_CharacterTeamFinder_DataForMemoryPackFormatter", "Deserialize", 66390000],
+    [167046, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CharacterTeamFinder_DataForMemoryPack", "Deserialize", 66390096]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66390000,
+      "endRva": 66390093,
+      "sha256": "C3AC6D00D3DA3C9B3735F43EC1CCD370C9A9D622EF755EF2424AD9DA2ED18D94",
+      "boundary": "formatter forwarding and lazy initialization through the complete tail jump"
+    },
+    {
+      "startRva": 66390096,
+      "endRva": 66390342,
+      "sha256": "13EE6C3688F8B86D172AEFFD62CFD6933C26879EA889A2D6F1D9D3FE3A5451C1",
+      "boundary": "one-byte header read and advance, FF clear, zero-member check, normal return, and lazy initialization rejoin"
+    }
+  ],
+  "readerInstructions": {
+    "sourceByteRead": [66390161, "0FB630"],
+    "sourceAdvance": [66390176, "48FF4350"],
+    "nullMarkerCompare": [66390189, "4080FEFF"],
+    "zeroMemberTest": [66390242, "4084F6"],
+    "normalReturn": [66390271, "C3"]
+  },
+  "setterMethods": [],
+  "evidenceBoundary": {
+    "exact": "The selected native switch tag 2 resolves to CharacterTeamFinder.Data, and its pinned formatter and Deserialize body read one wrapper header byte, advance the source cursor, accept FF as null or zero as an empty wrapper, and expose no generated member setters.",
+    "direct": "The reached current BuffData finder spans store a tag byte followed by a zero-member wrapper byte, with no subtype body beyond that byte.",
+    "structuralOnly": "A stored finder subtype does not establish which characters the game selects at runtime.",
+    "unresolved": "Live formatter choice, refill and error parity, other selector finder subtypes, and whole BuffData recursive schema remain open."
+  }
+}

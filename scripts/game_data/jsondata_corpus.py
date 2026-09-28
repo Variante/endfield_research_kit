@@ -127,6 +127,8 @@ from scripts.game_data.memorypack.corpus_gate import (
     _guard_output_path,
     _read_outer_and_ledger,
 )
+from scripts.game_data.memorypack import buff_root_no_positive
+from scripts.game_data.memorypack import buff_create_action_root_receipt
 from scripts.game_data.memorypack.lipsync import (
     LipSyncDecodeError,
     decode_lipsync_memorypack,
@@ -210,6 +212,68 @@ FAMILY_REPORTS = {
     },
 }
 
+SKILL_STATUS_PREDICATES = {
+    "ambiguous-disjoint-independent-ranges": "ambiguous",
+    "verified-terminal-selection-disjoint-independent-ranges": "selected",
+    "verified-whole-schema-exact-empty-action-group-profile": "exact_empty",
+    "verified-whole-schema-exact-capture-target": "exact_capture_target",
+    "verified-whole-schema-exact-capture-target-set": "exact_capture_target_set",
+    "verified-whole-schema-exact-timeline-play-animation-profile": "exact_timeline",
+    "verified-empty-action-group-named-prefix-and-terminal": "partial_empty",
+    "verified-action-group-named-prefix-and-terminal": "named_action_group",
+    "verified-timeline-play-animation-named-prefix-and-terminal": "named_timeline_play_animation",
+    "verified-timeline-play-animation-step-named-prefix-and-terminal": "named_timeline_play_animation_step",
+    "verified-whole-schema-exact-timeline-play-animation-step-profile": "exact_timeline_play_animation_step",
+    "verified-timeline-create-buff-first-action-named-prefix-and-terminal": "named_timeline_create_buff_action",
+    "verified-timeline-create-buff-first-record-named-prefix-and-terminal": "named_timeline_create_buff_record",
+    "verified-whole-schema-exact-timeline-create-buff-profile": "exact_timeline_create_buff",
+    "verified-timeline-find-target-named-prefix-and-terminal": "named_timeline_find_target",
+    "verified-timeline-continuous-find-target-named-prefix-and-terminal": "named_timeline_continuous_find_target",
+    "verified-timeline-shared-sequence-named-prefix-and-terminal": "named_timeline_shared_sequence",
+    "verified-whole-schema-exact-timeline-shared-sequence-profile": "exact_timeline_shared_sequence",
+    "verified-whole-schema-exact-passive-shared-sequence-profile": "exact_passive_shared_sequence",
+}
+
+
+class SkillEvidenceContractError(ValueError):
+    """A bounded SkillData profile failed its named consumer predicate."""
+
+    def __init__(self, diagnostic: dict[str, Any]) -> None:
+        self.diagnostic = diagnostic
+        super().__init__(
+            "SkillData evidence row lacks its bounded structural contract: "
+            f"{diagnostic['virtualPath']!r}; "
+            f"failedPredicate={diagnostic['failedPredicate']!r}; "
+            f"actual={diagnostic['actual']!r}"
+        )
+
+
+def _exact_create_buff_later_records(profile: dict[str, Any], first_record: dict[str, Any]) -> bool:
+    """Check the additional exact records in the shared CreateBuff list route."""
+    if profile.get("status") != "verified-exact-timeline-create-buff-shared-sequence-records":
+        return False
+    count = profile.get("timelineActionsCount")
+    records = profile.get("laterTimelineActions")
+    cursor = first_record.get("end")
+    if (
+        type(count) is not int or count <= 1
+        or not isinstance(records, list) or len(records) != count - 1
+        or type(cursor) is not int
+    ):
+        return False
+    for index, record in enumerate(records, 1):
+        if (
+            not isinstance(record, dict)
+            or record.get("index") != index
+            or record.get("start") != cursor
+            or type(record.get("end")) is not int
+            or record["end"] <= cursor
+            or record.get("wholeRecordExact") is not True
+        ):
+            return False
+        cursor = record["end"]
+    return cursor == profile.get("parserCursor")
+
 
 def _atomic_write(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -229,6 +293,189 @@ def _sha256_path(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest().upper()
+
+
+def _skill_capture_target_reference(report: dict[str, Any], source_path: Path) -> dict[str, Any] | None:
+    """Check the exact-source verification pinned by a SkillData corpus report."""
+    provenance = report.get("provenance")
+    reference = provenance.get("captureTargetVerification") if isinstance(provenance, dict) else None
+    if reference is None:
+        return None
+    if not isinstance(reference, dict):
+        raise ValueError(f"SkillData capture target provenance is malformed: {source_path}")
+    recorded_path = reference.get("path")
+    if not isinstance(recorded_path, str) or not Path(recorded_path).is_absolute():
+        raise ValueError(f"SkillData capture target verification path is invalid: {source_path}")
+    verification_path = Path(recorded_path).resolve()
+    if not verification_path.is_file():
+        raise ValueError(f"SkillData capture target verification is missing: {verification_path}")
+    if (reference.get("length") != verification_path.stat().st_size
+            or reference.get("sha256") != _sha256_path(verification_path)):
+        raise ValueError(f"SkillData capture target verification bytes differ: {verification_path}")
+    try:
+        verification = json.loads(verification_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"SkillData capture target verification cannot be read: {verification_path}: {exc}") from exc
+    if not isinstance(verification, dict):
+        raise ValueError(f"SkillData capture target verification is not an object: {verification_path}")
+    summary = verification.get("summary")
+    captured = verification.get("captureTarget")
+    verified_provenance = verification.get("provenance")
+    target = reference.get("target")
+    if (
+        verification.get("schema") != "endfield.skillDataCursorTargetVerification.v1"
+        or verification.get("status") != "complete"
+        or verification.get("verificationMode") != "capture-target"
+        or verification.get("inputSetSha256") != report.get("inputSetSha256")
+        or not isinstance(summary, dict)
+        or summary.get("failureReasons") != []
+        or not isinstance(captured, dict)
+        or captured.get("exactObservationCount") != 1
+        or not isinstance(target, dict)
+        or target != {
+            "virtualPath": captured.get("logicalPath"),
+            "length": captured.get("sourceLength"),
+            "logicalSha256": captured.get("logicalSha256"),
+        }
+        or not isinstance(verified_provenance, dict)
+        or not isinstance(verified_provenance.get("corpusReport"), dict)
+        or verified_provenance["corpusReport"].get("identitySetSha256")
+        != report.get("identitySetSha256")
+    ):
+        raise ValueError(f"SkillData capture target verification contract differs: {verification_path}")
+    input_names = ("receipt", "corpusReport", "nativeContext", "verifier",
+                   "captureTargetContract", "captureTargetVerifier")
+    expected_inputs = []
+    for name in input_names:
+        source = verified_provenance.get(name)
+        if not isinstance(source, dict):
+            raise ValueError(f"SkillData capture target verification lacks {name}: {verification_path}")
+        expected_inputs.append({key: source.get(key) for key in ("path", "length", "sha256")})
+    if reference.get("inputs") != expected_inputs:
+        raise ValueError(f"SkillData capture target input provenance differs: {verification_path}")
+    return {
+        "path": verification_path.as_posix(),
+        "sha256": reference["sha256"],
+        "target": target,
+    }
+
+
+def _skill_capture_target_set_reference(
+    report: dict[str, Any], source_path: Path,
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]] | None:
+    """Check the strict v3 receipt reference and index its exact source targets."""
+    provenance = report.get("provenance")
+    reference = provenance.get("captureTargetSetVerification") if isinstance(provenance, dict) else None
+    if reference is None:
+        return None
+    if not isinstance(reference, dict):
+        raise ValueError(f"SkillData target-set provenance is malformed: {source_path}")
+    recorded_path = reference.get("path")
+    if not isinstance(recorded_path, str) or not Path(recorded_path).is_absolute():
+        raise ValueError(f"SkillData target-set verification path is invalid: {source_path}")
+    verification_path = Path(recorded_path).resolve()
+    if not verification_path.is_file():
+        raise ValueError(f"SkillData target-set verification is missing: {verification_path}")
+    if (reference.get("length") != verification_path.stat().st_size
+            or reference.get("sha256") != _sha256_path(verification_path)):
+        raise ValueError(f"SkillData target-set verification bytes differ: {verification_path}")
+    try:
+        verification = json.loads(verification_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"SkillData target-set verification cannot be read: {verification_path}: {exc}") from exc
+    if not isinstance(verification, dict):
+        raise ValueError(f"SkillData target-set verification is not an object: {verification_path}")
+    summary = verification.get("summary")
+    targets = verification.get("targets")
+    verified_provenance = verification.get("provenance")
+    if (
+        verification.get("schema") != "endfield.skillDataCursorTargetSetVerification.v1"
+        or verification.get("status") != "validated"
+        or verification.get("coverageStatus") != "complete"
+        or verification.get("inputSetSha256") != report.get("inputSetSha256")
+        or not isinstance(summary, dict)
+        or summary.get("globalFailureReasons") != []
+        or summary.get("unresolvedExactClosed") != summary.get("unresolvedTargets")
+        or summary.get("positiveControlsExactClosed") != summary.get("positiveControls")
+        or not isinstance(targets, list)
+        or summary.get("observationCount") != len(targets)
+        or not isinstance(verified_provenance, dict)
+        or not isinstance(verified_provenance.get("corpusReport"), dict)
+        or verified_provenance["corpusReport"].get("identitySetSha256")
+        != report.get("identitySetSha256")
+    ):
+        raise ValueError(f"SkillData target-set verification contract differs: {verification_path}")
+    input_names = ("receipt", "corpusReport", "nativeContext", "verifier",
+                   "captureTargetSetContract", "captureTargetSetVerifier")
+    expected_inputs = []
+    for name in input_names:
+        source = verified_provenance.get(name)
+        if not isinstance(source, dict):
+            raise ValueError(f"SkillData target-set verification lacks {name}: {verification_path}")
+        expected_inputs.append({key: source.get(key) for key in ("path", "length", "sha256")})
+    if (reference.get("inputs") != expected_inputs
+            or reference.get("targets") != len(targets)
+            or reference.get("promoted") != summary.get("unresolvedTargets")
+            or reference.get("retainedPositiveControls") != summary.get("positiveControls")):
+        raise ValueError(f"SkillData target-set input provenance differs: {verification_path}")
+    targets_by_path: dict[str, dict[str, Any]] = {}
+    for target in targets:
+        if (not isinstance(target, dict) or not isinstance(target.get("virtualPath"), str)
+                or target["virtualPath"] in targets_by_path
+                or target.get("status") != "observed-exact-closed"
+                or target.get("captureHealth") != "clean"):
+            raise ValueError(f"SkillData target-set target is malformed: {verification_path}")
+        targets_by_path[target["virtualPath"]] = target
+    return ({"path": verification_path.as_posix(), "sha256": reference["sha256"],
+             "targets": len(targets)}, targets_by_path)
+
+
+def _skill_capture_target_set_row_exact(row: dict[str, Any], target: dict[str, Any] | None) -> bool:
+    """Keep the consumer's exact tier tied to one captured source and static join."""
+    if not isinstance(target, dict) or target.get("role") != "unresolved":
+        return False
+    runtime = target.get("runtimeFieldRanges")
+    terminal = target.get("selectedTerminal")
+    if (target.get("virtualPath") != row.get("virtualPath")
+            or target.get("sourceLength") != row.get("length")
+            or target.get("logicalSha256") != row.get("logicalSha256")
+            or not isinstance(runtime, list) or len(runtime) != 48
+            or not isinstance(terminal, dict)):
+        return False
+    cursor = 1
+    for index, field in enumerate(runtime):
+        if (not isinstance(field, dict) or field.get("fieldIndex") != index
+                or type(field.get("start")) is not int or type(field.get("end")) is not int
+                or field["start"] != cursor or field["end"] <= cursor):
+            return False
+        cursor = field["end"]
+    if (cursor != row.get("length")
+            or terminal != {"start": runtime[43]["start"], "end": cursor,
+                            "encoding": "one-member-wrapper", "framerCandidateCount": 2}):
+        return False
+    profile = row.get("timelineSharedSequenceProfile")
+    if (not isinstance(profile, dict) or profile.get("wholeActionGroupDataExact") is not True
+            or profile.get("status") != "exact-first-timeline-shared-sequence-record"):
+        profile = row.get("passiveSharedSequenceProfile")
+        if (not isinstance(profile, dict) or profile.get("wholeActionGroupDataExact") is not True
+                or profile.get("status") != "exact-passive-shared-sequence-list"):
+            return False
+    continuation = profile.get("topLevelContinuation")
+    static = continuation.get("namedFields") if isinstance(continuation, dict) else None
+    if (profile.get("parserCursor") != runtime[0]["end"]
+            or not isinstance(continuation, dict)
+            or continuation.get("status") != "verified-exact-through-field-42"
+            or continuation.get("parserCursor") != runtime[43]["start"]
+            or not isinstance(static, list) or len(static) != 43):
+        return False
+    return all(
+        isinstance(field, dict)
+        and field.get("fieldIndex") == index
+        and field.get("fieldName") == runtime[index].get("fieldName")
+        and field.get("start") == runtime[index]["start"]
+        and field.get("end") == runtime[index]["end"]
+        for index, field in enumerate(static)
+    )
 
 
 def _safe_export_path(export_root: Path, virtual_path: str) -> tuple[Path, str, str]:
@@ -330,6 +577,12 @@ def _load_family_evidence(
             raise ValueError(f"SkillData evidence identity is incomplete: {exc}") from exc
     if canonical_json_sha256(identity_rows) != report.get("identitySetSha256"):
         raise ValueError(f"{family} evidence identity-set digest does not match its file rows")
+    capture_target_reference = (
+        _skill_capture_target_reference(report, path) if family == "SkillData" else None
+    )
+    capture_target_set_reference = (
+        _skill_capture_target_set_reference(report, path) if family == "SkillData" else None
+    )
 
     evidence: dict[str, dict[str, Any]] = {}
     for row in rows:
@@ -339,6 +592,7 @@ def _load_family_evidence(
         virtual_path = identity.get("virtualPath")
         if not isinstance(virtual_path, str) or virtual_path in evidence:
             raise ValueError(f"{family} evidence has an invalid or duplicate path: {virtual_path!r}")
+        buff_exact_claim = family == "BuffData" and row.get("wholeSchemaExact") is True
         if (
             identity.get("inputSetSha256") != expected_input_set_sha256
             or identity.get("blockName") != "JsonData"
@@ -346,16 +600,28 @@ def _load_family_evidence(
             or (
                 row.get("wholeSchemaExact") is not False
                 and not (
+                    buff_exact_claim
+                    and row.get("boundaryClass") == "exact-closed"
+                    and row.get("coverageStatus") == "unique"
+                    and row.get("namedOuterFrameStatus") == "named_exact_full"
+                    and (row.get("rootNoPositiveCandidate") is True
+                         or row.get("rootPositiveDamageCandidate") is True
+                         or row.get("rootSingleCreateActionCandidate") is True)
+                )
+                and not (
                     family == "SkillData"
                     and row.get("wholeSchemaExact") is True
                     and row.get("boundaryClass") == "exact-closed"
                     and row.get("coverageStatus")
                     in (
                         "verified-whole-schema-exact-empty-action-group-profile",
+                        "verified-whole-schema-exact-capture-target",
+                        "verified-whole-schema-exact-capture-target-set",
                         "verified-whole-schema-exact-timeline-play-animation-profile",
                         "verified-whole-schema-exact-timeline-play-animation-step-profile",
                         "verified-whole-schema-exact-timeline-create-buff-profile",
                         "verified-whole-schema-exact-timeline-shared-sequence-profile",
+                        "verified-whole-schema-exact-passive-shared-sequence-profile",
                     )
                 )
             )
@@ -370,12 +636,586 @@ def _load_family_evidence(
             ):
                 raise ValueError(f"BuffData evidence row lacks its proven event prefix: {virtual_path!r}")
             logical_md5 = identity.get("recomputedFileDataMd5")
+            root_receipt = row.get("rootNoPositiveReceipt")
+            positive_receipt = row.get("rootPositiveDamageReceipt")
+            create_receipt = row.get("rootSingleCreateActionReceipt")
+            positive_condition_status = None
+            if isinstance(positive_receipt, dict):
+                positive_fields = positive_receipt.get("fields") or []
+                if isinstance(positive_fields, list) and len(positive_fields) > 6:
+                    positive_condition_status = (
+                        ((positive_fields[6] or {}).get("child") or {})
+                        .get("conditionChild", {}).get("status")
+                    )
+            if buff_exact_claim:
+                positive = row.get("rootPositiveDamageCandidate") is True
+                create_action = row.get("rootSingleCreateActionCandidate") is True
+                no_positive = row.get("rootNoPositiveCandidate") is True
+                if sum((positive, create_action, no_positive)) != 1:
+                    raise ValueError(f"BuffData exact root branch is ambiguous: {virtual_path!r}")
+                native_key = (
+                    "buffSingleCreateActionNativeValidation" if create_action
+                    else "buffPositiveDamageNativeValidation" if positive
+                    else "buffRootNoPositiveNativeValidation"
+                )
+                native = (report.get("provenance") or {}).get(native_key) or {}
+                root_native = native.get("root") if positive else native
+                chosen_receipt = (create_receipt if create_action else
+                                  positive_receipt if positive else root_receipt)
+                fields = chosen_receipt.get("fields") if isinstance(chosen_receipt, dict) else None
+                if (
+                    native.get("status") != "validated"
+                    or (not create_action and (
+                        (root_native or {}).get("status") != "validated"
+                        or ((root_native or {}).get("root") or {}).get("status") != "validated"
+                        or any(((root_native or {}).get("children") or {}).get(name, {}).get("status") != "validated"
+                               for name in ("addingCooldown", "dispelConfig", "iconConfig",
+                                            "stackingSettings", "timelineActions",
+                                            "blackboardDataPairs", "globalModifier"))
+                    ))
+                    or not isinstance(chosen_receipt, dict)
+                    or chosen_receipt.get("schema") != (
+                        "endfield.buff-root-single-create-action-receipt.v1" if create_action
+                        else "endfield.buff-root-positive-damage-receipt.v12" if positive
+                        else "endfield.buff-root-no-positive-receipt.v1"
+                    )
+                    or chosen_receipt.get("status") != (
+                        "named-exact-full-proposal" if create_action else "named-exact-full"
+                    )
+                    or chosen_receipt.get("wholeSchemaExact") is not True
+                    or chosen_receipt.get("nativeStatus") != "validated"
+                    or chosen_receipt.get("source") != virtual_path
+                    or chosen_receipt.get("logicalSha256") != row.get("logicalSha256")
+                    or chosen_receipt.get("rootMemberCount") != 30
+                    or chosen_receipt.get("headerRange") != [0, 1]
+                    or chosen_receipt.get("physicalEof") != identity.get("length")
+                    or chosen_receipt.get("bytesConsumed") != identity.get("length")
+                    or not isinstance(fields, list)
+                    or len(fields) != 30
+                    or any(not isinstance(field, dict) for field in fields)
+                    or [field.get("index") for field in fields] != list(range(30))
+                    or fields[0].get("start") != 1
+                    or any(left.get("end") != right.get("start")
+                           for left, right in zip(fields, fields[1:]))
+                    or fields[-1].get("end") != identity.get("length")
+                    or fields[15].get("name") != "id"
+                    or fields[15].get("value") != Path(virtual_path).stem
+                    or (fields[4].get("child") or {}).get("status") != "exact-datapair-list"
+                    or (fields[4].get("child") or {}).get("consumedEnd") != fields[4].get("end")
+                    or (
+                        fields[10].get("count") not in (-1, 0)
+                        and (
+                            (fields[10].get("child") or {}).get("status") != "exact"
+                            or (fields[10].get("child") or {}).get("consumedEnd") != fields[10].get("end")
+                        )
+                    )
+                ):
+                    raise ValueError(f"BuffData exact root receipt is incomplete: {virtual_path!r}")
+                if positive:
+                    damage = (fields[6].get("child") or {})
+                    condition = (damage.get("conditionChild") or {})
+                    condition_count = condition.get("actionCount")
+                    condition_exact = (
+                        condition_count == 0
+                        and condition.get("status") == "exact-empty-sequence"
+                        and condition.get("wholeStoredSpanExact") is True
+                    ) or (
+                        condition_count == 1
+                        and condition.get("status") == "exact-one-action-sequence"
+                        and condition.get("wholeStoredSpanExact") is True
+                        and condition.get("recursiveNamedSchemaExact") is True
+                        and (condition.get("action") or {}).get("tag")
+                        in (
+                            (native.get("checkDecorateMaskCondition") or {}).get("unionTag"),
+                            (native.get("checkDamageTypeCondition") or {}).get("unionTag"),
+                            (native.get("checkDamageTypeMaskCondition") or {}).get("unionTag"),
+                            (native.get("checkTagMatchCondition") or {}).get("unionTag"),
+                            (native.get("checkMainCharacterCondition") or {}).get("unionTag"),
+                            (native.get("checkBuffStackCondition") or {}).get("unionTag"),
+                        ) + tuple(route.get("unionTag") for route in
+                                  (native.get("checkVitalsCondition") or {}).get("routes", []))
+                        and (condition.get("action") or {}).get("recursiveNamedSchemaExact") is True
+                    ) or (
+                        condition_count == 2
+                        and condition.get("status") == "exact-two-action-sequence"
+                        and condition.get("wholeStoredSpanExact") is True
+                        and condition.get("recursiveNamedSchemaExact") is True
+                        and [action.get("tag") for action in condition.get("actions") or []]
+                            == (native.get("twoActionCondition") or {}).get("selectedActionTags")
+                        and all(action.get("recursiveNamedSchemaExact") is True
+                                for action in condition.get("actions") or [])
+                    )
+                    if not condition_exact:
+                        actions = condition.get("actions") or []
+                        action_tags = [action.get("tag") for action in actions]
+                        origin_native = native.get("originOrCondition") or {}
+                        known_native = native.get("knownCompoundCondition") or {}
+                        origin_plan = origin_native.get("originActionMemberPlan") or []
+                        origin_fields = ((actions[0].get("namedFields") or [])
+                                         if actions else [])
+                        or_fields = ((actions[1].get("namedFields") or [])
+                                     if len(actions) == 2 else [])
+                        origin_list = origin_fields[-1] if len(origin_fields) == 6 else {}
+                        or_list = or_fields[-1] if len(or_fields) == 5 else {}
+                        or_children = or_list.get("namedChildren") or []
+                        nested_tags = [
+                            [action.get("tag") for action in child.get("actions") or []]
+                            for child in or_children
+                        ]
+                        stack_nested = (
+                            ((or_children[1].get("actions") or [])[0]
+                             if len(or_children) == 2
+                             and len(or_children[1].get("actions") or []) == 1 else {})
+                        )
+                        stack_nested_fields = stack_nested.get("namedFields") or []
+                        stack_nested_finder = (
+                            (stack_nested_fields[4].get("namedChild") or {})
+                            if len(stack_nested_fields) == 10 else {}
+                        )
+                        origin_shape = (
+                            condition_count == 2
+                            and condition.get("status") == "exact-two-action-sequence"
+                            and condition.get("wholeStoredSpanExact") is True
+                            and condition.get("recursiveNamedSchemaExact") is True
+                            and len(actions) == 2
+                            and all(action.get("recursiveNamedSchemaExact") is True
+                                    for action in actions)
+                            and [field.get("name") for field in origin_fields]
+                                == [field.get("name") for field in origin_plan]
+                            and origin_list.get("count") == 1
+                            and origin_native.get("status") == "validated"
+                        )
+                        if origin_shape and condition.get("branch") == "origin-poise":
+                            vitals = origin_native.get("vitalsNative") or {}
+                            poise = next((route for route in vitals.get("routes") or []
+                                          if route.get("unionTag") == action_tags[1]), {})
+                            condition_exact = (
+                                action_tags == origin_native.get("simpleActionTags")
+                                and [field.get("name") for field in or_fields]
+                                    == [field.get("name") for field in
+                                        poise.get("actionMemberPlan") or []]
+                                and (or_fields[5].get("namedChild") or {}).get("status")
+                                    == "exact-simple-target"
+                                and (or_fields[7].get("namedChild") or {}).get("wholeValueExact")
+                                    is True
+                            )
+                        elif origin_shape and condition.get("branch") == "origin-or":
+                            expected_flat = (
+                                [origin_native.get("originUnionTag")]
+                                + [tags[0] for tags in
+                                   origin_native.get("orNestedSequenceTags") or []]
+                                + [origin_native.get("orUnionTag")]
+                            )
+                            finder_shape = origin_native.get("orNestedFinderShape") or {}
+                            condition_exact = (
+                                action_tags == origin_native.get("nestedActionTags")
+                                and [field.get("name") for field in or_fields]
+                                    == [field.get("name") for field in
+                                        origin_native.get("orActionMemberPlan") or []]
+                                and or_list.get("count") == 2
+                                and len(or_children) == 2
+                                and nested_tags == origin_native.get("orNestedSequenceTags")
+                                and all(child.get("status") == "exact-selected-sequence"
+                                        and child.get("recursiveNamedSchemaExact") is True
+                                        for child in or_children)
+                                and stack_nested_finder.get("buffIdListCount")
+                                    == finder_shape.get("buffIdListCount")
+                                and stack_nested_finder.get("tagCount")
+                                    == finder_shape.get("tagCount")
+                                and (stack_nested_finder.get("namedFields") or [{}, {}, {}])[2]
+                                    .get("queryStatus") == finder_shape.get("queryStatus")
+                                and expected_flat == [
+                                    origin_native.get("originUnionTag"),
+                                    nested_tags[0][0], nested_tags[1][0],
+                                    origin_native.get("orUnionTag"),
+                                ]
+                            )
+                        if not condition_exact and known_native.get("status") == "validated":
+                            selected = known_native.get("selectedActionPatterns") or []
+                            known_actions = known_native.get("selectedActions") or {}
+                            stack_action = next((action for action in actions
+                                                 if action.get("tag") == 60), {})
+                            stack_fields = stack_action.get("namedFields") or []
+                            stack_finder = ((stack_fields[4].get("namedChild") or {})
+                                            if len(stack_fields) == 10 else {})
+                            tag_action = next((action for action in actions
+                                               if action.get("tag") == 124), {})
+                            tag_fields = tag_action.get("namedFields") or []
+                            tag_query = ((tag_fields[5].get("namedChild") or {})
+                                         if len(tag_fields) == 6 else {})
+                            finder_shape = known_native.get("stackFinderShape") or {}
+                            condition_exact = (
+                                condition_count in (2, 3)
+                                and condition.get("status")
+                                    == "exact-selected-compound-sequence"
+                                and condition.get("wholeStoredSpanExact") is True
+                                and condition.get("recursiveNamedSchemaExact") is True
+                                and action_tags in selected
+                                and len(actions) == condition_count
+                                and all(action.get("recursiveNamedSchemaExact") is True
+                                        and [field.get("name") for field in
+                                             action.get("namedFields") or []]
+                                            == [field.get("name") for field in
+                                                (known_actions.get(str(action.get("tag"))) or {})
+                                                .get("actionMemberPlan") or []]
+                                        for action in actions)
+                                and stack_finder.get("buffIdListCount")
+                                    == finder_shape.get("buffIdListCount")
+                                and stack_finder.get("tagCount")
+                                    == finder_shape.get("tagCount")
+                                and (stack_finder.get("namedFields") or [{}, {}, {}])[2]
+                                    .get("queryStatus") == finder_shape.get("queryStatus")
+                                and (not tag_action or
+                                     (tag_query.get("status") == "exact-positive-query"
+                                      and (tag_query.get("namedFields") or [{}, {}])[1]
+                                          .get("count")
+                                          == known_native.get("tagMatchQueryTagCount")))
+                            )
+                        if not condition_exact:
+                            if_else_native = native.get("ifElseCondition") or {}
+                            if_else_fields = ((actions[0].get("namedFields") or [])
+                                              if actions else [])
+                            nested_children = (
+                                [if_else_fields[index].get("namedChild") or {}
+                                 for index in (5, 6, 7)]
+                                if len(if_else_fields) == 8 else []
+                            )
+                            if_else_main = nested_children[0] if len(nested_children) == 3 else {}
+                            if_else_empty = nested_children[1] if len(nested_children) == 3 else {}
+                            if_else_return = nested_children[2] if len(nested_children) == 3 else {}
+                            pattern = next(
+                                (tags for tags in if_else_native.get("selectedTopActionPatterns") or []
+                                 if len(tags) == condition_count), None,
+                            )
+                            condition_exact = (
+                                if_else_native.get("status") == "validated"
+                                and condition.get("status") == "exact-selected-if-else-sequence"
+                                and condition.get("wholeStoredSpanExact") is True
+                                and condition.get("recursiveNamedSchemaExact") is True
+                                and pattern is not None and action_tags == pattern
+                                and len(actions) == condition_count
+                                and all(action.get("recursiveNamedSchemaExact") is True
+                                        for action in actions)
+                                and [field.get("fieldName") for field in if_else_fields[5:]]
+                                    == ["conditionAction", "failActions", "succeedActions"]
+                                and [child.get("actionCount") for child in nested_children]
+                                    == [1, 0, 1]
+                                and (if_else_main.get("action") or {}).get("tag") == 104
+                                and (if_else_main.get("action") or {}).get("recursiveNamedSchemaExact")
+                                    is True
+                                and if_else_empty.get("status") == "exact-empty-sequence"
+                                and (if_else_return.get("action") or {}).get("tag")
+                                    == if_else_native.get("returnFalseUnionTag")
+                                and [field.get("name") for field in
+                                     (if_else_return.get("action") or {}).get("namedFields") or []]
+                                    == [field.get("name") for field in
+                                        if_else_native.get("returnFalseActionMemberPlan") or []]
+                                and (condition_count != 2
+                                     or [field.get("name") for field in
+                                         actions[1].get("namedFields") or []]
+                                         == [field.get("name") for field in
+                                             (native.get("checkDecorateMaskCondition") or {})
+                                             .get("actionMemberPlan") or []])
+                            )
+                        if not condition_exact:
+                            not_next_native = native.get("notNextMainCondition") or {}
+                            not_next_first = ((actions[0].get("namedFields") or [])
+                                              if len(actions) == 2 else [])
+                            not_next_main = ((actions[1].get("namedFields") or [])
+                                             if len(actions) == 2 else [])
+                            condition_exact = (
+                                not_next_native.get("status") == "validated"
+                                and condition_count == 2
+                                and condition.get("status") == "exact-two-action-sequence"
+                                and condition.get("wholeStoredSpanExact") is True
+                                and condition.get("recursiveNamedSchemaExact") is True
+                                and action_tags == not_next_native.get("selectedActionTags")
+                                and len(actions) == 2
+                                and all(action.get("recursiveNamedSchemaExact") is True
+                                        for action in actions)
+                                and [field.get("name") for field in not_next_first]
+                                    == [field.get("name") for field in
+                                        not_next_native.get("notNextActionMemberPlan") or []]
+                                and [field.get("name") for field in not_next_main]
+                                    == [field.get("name") for field in
+                                        (not_next_native.get("mainCharacterNative") or {})
+                                        .get("actionMemberPlan") or []]
+                                and (not_next_main[4].get("namedChild") or {})
+                                    .get("recursiveNamedSchemaExact") is True
+                            )
+                        if not condition_exact:
+                            angle_native = native.get("twoDirectionAngleCondition") or {}
+                            target_names = angle_native.get("selectedTargetMemberNames") or []
+                            blackboard_name = angle_native.get("selectedBlackboardMemberName")
+                            angle_plan = angle_native.get("fieldPlan") or []
+                            condition_exact = (
+                                angle_native.get("status") == "validated"
+                                and condition_count == 2
+                                and condition.get("status") == "exact-two-action-sequence"
+                                and condition.get("wholeStoredSpanExact") is True
+                                and condition.get("recursiveNamedSchemaExact") is True
+                                and condition.get("terminalRawHex")
+                                    == angle_native.get("selectedTerminalRawHex")
+                                and action_tags == angle_native.get("selectedActionTags")
+                                and len(actions) == 2
+                                and len(target_names) == 4
+                                and all(
+                                    action.get("recursiveNamedSchemaExact") is True
+                                    and [field.get("name") for field in
+                                         action.get("namedFields") or []]
+                                        == [field.get("name") for field in angle_plan]
+                                    and all(
+                                        (field.get("namedChild") or {}).get("status")
+                                            == "exact-simple-target"
+                                        and (field.get("namedChild") or {}).get("end")
+                                            == field.get("end")
+                                        for field in action.get("namedFields") or []
+                                        if field.get("name") in target_names
+                                    )
+                                    and any(
+                                        field.get("name") == blackboard_name
+                                        and (field.get("namedChild") or {}).get("wholeValueExact")
+                                            is True
+                                        and (field.get("namedChild") or {}).get("consumedEnd")
+                                            == field.get("end")
+                                        for field in action.get("namedFields") or []
+                                    )
+                                    for action in actions
+                                )
+                            )
+                    processor_child = damage.get("processorChild") or {}
+                    processor_tag = processor_child.get("unionTag")
+                    scalar_route = next(
+                        (route for route in (native.get("processorScalar") or {}).get("routes", [])
+                         if route.get("unionTag") == processor_tag),
+                        None,
+                    )
+                    processor_native = next(
+                        (
+                            (native.get(name) or {}) for name in (
+                                "processor", "processorModifyCalc",
+                                "processorInstantModifyAttribute",
+                            )
+                            if (native.get(name) or {}).get("unionTag") == processor_tag
+                        ),
+                        ({"status": (native.get("processorScalar") or {}).get("status"),
+                          "fieldPlan": scalar_route["fieldPlan"]} if scalar_route else {}),
+                    )
+                    processor_fields = processor_child.get("namedFields") or []
+                    instant_native = native.get("processorInstantModifyAttribute") or {}
+                    instant_modifier = ((processor_fields[0].get("namedChild") or {})
+                                        if processor_fields else {})
+                    instant_fields = instant_modifier.get("namedFields") or []
+                    instant_param = instant_fields[3] if len(instant_fields) == 4 else {}
+                    processor_children = damage.get("processorChildren") or []
+                    processor_pair = len(processor_children) == 2
+                    pair_second = processor_children[1] if processor_pair else {}
+                    text_native = native.get("processorText") or {}
+                    parent_elements = (damage.get("parent") or {}).get("elements") or []
+                    parent_fields = ((parent_elements[0].get("fields") or [])
+                                     if len(parent_elements) == 1 else [])
+                    parent_processor_field = parent_fields[1] if len(parent_fields) == 3 else {}
+                    parent_processors = parent_processor_field.get("processors") or []
+                    processor_exact = (
+                        processor_native.get("status") == "validated"
+                        and processor_child.get("status") == "named-direct-members-exact-span"
+                        and processor_child.get("wholeStoredSpanExact") is True
+                        and processor_child.get("recursiveNamedSchemaExact") is True
+                        and [field.get("name") for field in processor_fields]
+                        == [field.get("name") for field in processor_native.get("fieldPlan", [])]
+                        and (
+                            processor_tag != (native.get("processor") or {}).get("unionTag")
+                            or (
+                                len(processor_fields) == 3
+                                and (processor_fields[0].get("namedChild") or {}).get("wholeValueExact") is True
+                                and processor_fields[0]["namedChild"].get("startOffset")
+                                    == processor_fields[0].get("start")
+                                and processor_fields[0]["namedChild"].get("consumedEnd")
+                                    == processor_fields[0].get("end")
+                            )
+                        )
+                        and (
+                            processor_tag != (native.get("processorModifyCalc") or {}).get("unionTag")
+                            or (
+                                condition_count == 1
+                                and (condition.get("action") or {}).get("tag") in (
+                                    (native.get("checkDecorateMaskCondition") or {}).get("unionTag"),
+                                    (native.get("checkDamageTypeCondition") or {}).get("unionTag"),
+                                )
+                                and len(processor_fields) == 3
+                                and all(
+                                    (processor_fields[index].get("namedChild") or {}).get("wholeValueExact") is True
+                                    and (processor_fields[index]["namedChild"]).get("startOffset")
+                                        == processor_fields[index].get("start")
+                                    and (processor_fields[index]["namedChild"]).get("consumedEnd")
+                                        == processor_fields[index].get("end")
+                                    for index in (0, 2)
+                                )
+                            )
+                        )
+                        and (
+                            scalar_route is None
+                            or (
+                                (
+                                    condition_count == 1
+                                    and (
+                                        (scalar_route or {}).get("unionTag") == 2
+                                        and (condition.get("action") or {}).get("tag")
+                                        == (native.get("checkDecorateMaskCondition") or {}).get("unionTag")
+                                        or (scalar_route or {}).get("unionTag") in (0, 3)
+                                        and (condition.get("action") or {}).get("tag") in (
+                                            (native.get("checkDecorateMaskCondition") or {}).get("unionTag"),
+                                            (native.get("checkTagMatchCondition") or {}).get("unionTag"),
+                                        )
+                                    )
+                                    or condition_count == 2
+                                    and (scalar_route or {}).get("unionTag") == 4
+                                    and condition.get("status") == "exact-two-action-sequence"
+                                    and [action.get("tag") for action in
+                                         condition.get("actions") or []]
+                                        == (native.get("notNextMainCondition") or {})
+                                        .get("selectedActionTags")
+                                )
+                                and len(processor_fields) == 1
+                                and (processor_fields[0].get("namedChild") or {}).get("wholeValueExact") is True
+                                and processor_fields[0]["namedChild"].get("startOffset")
+                                    == processor_fields[0].get("start")
+                                and processor_fields[0]["namedChild"].get("consumedEnd")
+                                    == processor_fields[0].get("end")
+                            )
+                        )
+                        and (
+                            processor_tag != instant_native.get("unionTag")
+                            or (
+                                condition_count == 1
+                                and (condition.get("action") or {}).get("tag")
+                                    == (native.get("checkBuffStackCondition") or {}).get("unionTag")
+                                and len(processor_fields) == 2
+                                and processor_fields[0].get("end") == processor_fields[1].get("start")
+                                and processor_fields[1].get("end") - processor_fields[1].get("start") == 4
+                                and instant_modifier.get("status") == "named-direct-members-exact-span"
+                                and instant_modifier.get("wholeStoredSpanExact") is True
+                                and instant_modifier.get("recursiveNamedSchemaExact") is True
+                                and instant_modifier.get("start") == processor_fields[0].get("start")
+                                and instant_modifier.get("end") == processor_fields[0].get("end")
+                                and [field.get("name") for field in instant_fields]
+                                    == [field.get("name") for field in
+                                        instant_native.get("modifierFieldPlan", [])]
+                                and len(instant_fields) == 4
+                                and instant_fields[0].get("start") == instant_modifier.get("start") + 1
+                                and all(left.get("end") == right.get("start")
+                                        for left, right in zip(instant_fields, instant_fields[1:]))
+                                and instant_fields[-1].get("end") == instant_modifier.get("end")
+                                and (instant_param.get("namedChild") or {}).get("wholeValueExact") is True
+                                and (instant_param.get("namedChild") or {}).get("startOffset")
+                                    == instant_param.get("start")
+                                and (instant_param.get("namedChild") or {}).get("consumedEnd")
+                                    == instant_param.get("end")
+                            )
+                        )
+                        and (
+                            (len(processor_children) == 1
+                             and processor_children[0] == processor_child)
+                            or (
+                                processor_pair
+                                and processor_children[0] == processor_child
+                                and (
+                                    condition_count == 0
+                                    or (condition_count == 2
+                                        and condition.get("status") == "exact-two-action-sequence"
+                                        and [action.get("tag") for action in
+                                             condition.get("actions") or []]
+                                            == (native.get("twoDirectionAngleCondition") or {})
+                                                .get("selectedActionTags"))
+                                )
+                                and processor_tag == (native.get("processor") or {}).get("unionTag")
+                                and text_native.get("status") == "validated"
+                                and pair_second.get("status") == "named-direct-members-exact-span"
+                                and pair_second.get("wholeStoredSpanExact") is True
+                                and pair_second.get("recursiveNamedSchemaExact") is True
+                                and pair_second.get("unionTag") == text_native.get("unionTag")
+                                and pair_second.get("start") == processor_child.get("end")
+                                and parent_processor_field.get("count") == 2
+                                and [row.get("tag") for row in parent_processors] == [5, 6]
+                                and len(parent_processors) == 2
+                                and processor_child.get("start") == parent_processors[0].get("start")
+                                and processor_child.get("end") == parent_processors[0].get("end")
+                                and pair_second.get("start") == parent_processors[1].get("start")
+                                and pair_second.get("end") == parent_processors[1].get("end")
+                                and pair_second.get("end") == parent_processor_field.get("end")
+                                and [field.get("name") for field in pair_second.get("namedFields") or []]
+                                    == [field.get("name") for field in text_native.get("fieldPlan", [])]
+                            )
+                        )
+                        and (condition_count != 2
+                             or (processor_pair
+                                 and action_tags == (native.get("twoDirectionAngleCondition") or {})
+                                     .get("selectedActionTags"))
+                             or (not processor_pair
+                                 and (processor_tag == (native.get("processor") or {}).get("unionTag")
+                                      or (processor_tag == 4
+                                          and action_tags == (native.get("notNextMainCondition") or {})
+                                          .get("selectedActionTags")))))
+                    )
+                    if (root_receipt is not None
+                            or any((native.get(name) or {}).get("status") != "validated"
+                                   for name in ("damageModifier", "processor",
+                                                "processorModifyCalc", "processorScalar",
+                                                "processorText", "twoActionCondition",
+                                                "condition",
+                                                "checkDecorateMaskCondition",
+                                                "checkDamageTypeCondition",
+                                                "checkDamageTypeMaskCondition",
+                                                "checkTagMatchCondition",
+                                                "checkMainCharacterCondition",
+                                                "checkBuffStackCondition",
+                                                "checkVitalsCondition",
+                                                "originOrCondition",
+                                                "knownCompoundCondition",
+                                                "ifElseCondition",
+                                                "notNextMainCondition",
+                                                "twoDirectionAngleCondition",
+                                                "processorInstantModifyAttribute"))
+                            or fields[6].get("name") != "damageModifier"
+                            or fields[6].get("count") != 1
+                            or damage.get("status") != "exact-composed-damage-list"
+                            or damage.get("wholeListExact") is not True
+                            or damage.get("startOffset") != fields[6].get("start")
+                            or damage.get("consumedEnd") != fields[6].get("end")
+                            or len(parent_fields) != 3
+                            or condition.get("start") != parent_fields[0].get("start")
+                            or condition.get("end") != parent_fields[0].get("end")
+                            or not condition_exact
+                            or not processor_exact):
+                        raise ValueError(f"BuffData positive damage root receipt is incomplete: {virtual_path!r}")
+                elif create_action:
+                    action = fields[0].get("action") or {}
+                    if (root_receipt is not None or positive_receipt is not None
+                            or fields[0].get("count") != 1
+                            or action.get("recursiveStoredSchemaExact") is not True
+                            or (action.get("parent") or {}).get("tag") != 0x0092
+                            or (action.get("iconDuration") or {}).get("wholeStoredSpanExact") is not True
+                            or (action.get("inputList") or {}).get("wholeStoredSpanExact") is not True
+                            or (action.get("blackboard") or {}).get("wholeProviderByteSpanExact") is not True):
+                        raise ValueError(f"BuffData single CreateBuff root receipt is incomplete: {virtual_path!r}")
+                elif positive_receipt is not None or create_receipt is not None:
+                    raise ValueError(f"BuffData exact root branch has duplicate receipt: {virtual_path!r}")
+            elif (root_receipt is not None or positive_receipt is not None or create_receipt is not None
+                  or row.get("rootNoPositiveCandidate") is True and row.get("namedOuterFrameStatus") == "named_exact_full"
+                  or row.get("rootPositiveDamageCandidate") is True
+                  or row.get("rootSingleCreateActionCandidate") is True):
+                raise ValueError(f"BuffData unpromoted row carries an exact root receipt: {virtual_path!r}")
             detail = {
                 "boundaryClass": row.get("boundaryClass"),
                 "coverageStatus": row.get("coverageStatus"),
                 "eventPrefixStatus": row.get("eventPrefixStatus"),
                 "rootContinuationStatus": row.get("rootContinuationStatus"),
                 "namedOuterFrameStatus": row.get("namedOuterFrameStatus"),
+                "wholeSchemaExact": row.get("wholeSchemaExact"),
+                "rootNoPositiveReceiptStatus": (root_receipt or {}).get("status"),
+                "rootPositiveDamageReceiptStatus": (positive_receipt or {}).get("status"),
+                "rootPositiveDamageConditionStatus": positive_condition_status,
+                "rootSingleCreateActionReceiptStatus": (create_receipt or {}).get("status"),
             }
         else:
             prefix_ok = bool(row.get("commonPrefixFraming", {}).get("provenPrefixByteLength"))
@@ -599,8 +1439,13 @@ def _load_family_evidence(
                 and row.get("terminalSelection", {}).get("fieldStartIndex") == 43
                 and row.get("terminalSelection", {}).get("fieldEndIndex") == 47
                 and row.get("terminalSelection", {}).get("wholeSchemaExact") is True
-                and timeline_create_buff.get("status")
-                == "verified-exact-first-timeline-create-buff-record"
+                and (
+                    timeline_create_buff.get("status")
+                    == "verified-exact-first-timeline-create-buff-record"
+                    or _exact_create_buff_later_records(
+                        timeline_create_buff, create_buff_record
+                    )
+                )
                 and create_buff_sequence.get("actionDataCount") == 1
                 and create_buff_sequence.get("wholeListExact") is True
                 and create_buff_record.get("wholeRecordExact") is True
@@ -746,10 +1591,94 @@ def _load_family_evidence(
                 and shared_profile_exact
                 and not row.get("opaqueByteRanges")
             )
+            exact_capture_target = (
+                capture_target_reference is not None
+                and row.get("boundaryClass") == "exact-closed"
+                and row.get("coverageStatus") == "verified-whole-schema-exact-capture-target"
+                and row.get("wholeSchemaExact") is True
+                and isinstance(row.get("framing"), dict)
+                and row["framing"].get("wholeSchemaExact") is True
+                and row.get("parserCursor") == row.get("length")
+                and isinstance(row.get("boundaryContext"), dict)
+                and row["boundaryContext"].get("parserCursor") == row.get("length")
+                and row.get("terminalSelection", {}).get("status")
+                == "verified-native-reader-alignment"
+                and row.get("terminalSelection", {}).get("encoding") == "one-member-wrapper"
+                and row.get("terminalSelection", {}).get("fieldStartIndex") == 43
+                and row.get("terminalSelection", {}).get("fieldEndIndex") == 47
+                and row.get("terminalSelection", {}).get("wholeSchemaExact") is True
+                and row.get("emptyActionGroupProfile", {}).get("status")
+                == "verified-exact-through-field-42"
+                and not row.get("opaqueByteRanges")
+                and capture_target_reference["target"] == {
+                    "virtualPath": virtual_path,
+                    "length": row.get("length"),
+                    "logicalSha256": row.get("logicalSha256"),
+                }
+            )
+            target_set_metadata, target_set_targets = (
+                capture_target_set_reference if capture_target_set_reference is not None else (None, {})
+            )
+            exact_capture_target_set = (
+                target_set_metadata is not None
+                and row.get("boundaryClass") == "exact-closed"
+                and row.get("coverageStatus") == "verified-whole-schema-exact-capture-target-set"
+                and row.get("wholeSchemaExact") is True
+                and isinstance(row.get("framing"), dict)
+                and row["framing"].get("wholeSchemaExact") is True
+                and row.get("parserCursor") == row.get("length")
+                and isinstance(row.get("boundaryContext"), dict)
+                and row["boundaryContext"].get("parserCursor") == row.get("length")
+                and row.get("terminalSelection", {}).get("status")
+                == "verified-native-reader-alignment"
+                and row.get("terminalSelection", {}).get("encoding") == "one-member-wrapper"
+                and row.get("terminalSelection", {}).get("fieldStartIndex") == 43
+                and row.get("terminalSelection", {}).get("fieldEndIndex") == 47
+                and row.get("terminalSelection", {}).get("wholeSchemaExact") is True
+                and not row.get("opaqueByteRanges")
+                and _skill_capture_target_set_row_exact(
+                    row, target_set_targets.get(virtual_path)
+                )
+            )
+            passive_shared_sequence = row.get("passiveSharedSequenceProfile") or {}
+            passive_actions = passive_shared_sequence.get("actionData")
+            exact_passive_shared_sequence = (
+                row.get("boundaryClass") == "exact-closed"
+                and row.get("coverageStatus")
+                == "verified-whole-schema-exact-passive-shared-sequence-profile"
+                and row.get("wholeSchemaExact") is True
+                and row.get("terminalSelection", {}).get("status")
+                == "verified-native-reader-alignment"
+                and row.get("terminalSelection", {}).get("wholeSchemaExact") is True
+                and passive_shared_sequence.get("status")
+                == "verified-exact-passive-shared-sequence-list"
+                and type(passive_shared_sequence.get("passiveEventActionsCount")) is int
+                and passive_shared_sequence["passiveEventActionsCount"] > 0
+                and passive_shared_sequence.get("timelineActionsCount") == 0
+                and passive_shared_sequence.get("wholeActionGroupDataExact") is True
+                and passive_shared_sequence.get("topLevelContinuation", {}).get(
+                    "status"
+                ) == "verified-exact-through-field-42"
+                and isinstance(passive_actions, list)
+                and all(
+                    isinstance(action, dict)
+                    and type(action.get("tag")) is int
+                    and isinstance(action.get("typeName"), str)
+                    and bool(action["typeName"])
+                    and type(action.get("start")) is int
+                    and type(action.get("end")) is int
+                    and action["end"] > action["start"]
+                    and action.get("structurallyExact") is True
+                    for action in passive_actions
+                )
+                and not row.get("opaqueByteRanges")
+            )
             if not prefix_ok or not (
                 ambiguous
                 or selected
                 or exact_empty
+                or exact_capture_target
+                or exact_capture_target_set
                 or exact_timeline
                 or partial_empty
                 or named_action_group
@@ -763,8 +1692,35 @@ def _load_family_evidence(
                 or named_timeline_continuous_find_target
                 or named_timeline_shared_sequence
                 or exact_timeline_shared_sequence
+                or exact_passive_shared_sequence
             ):
-                raise ValueError(f"SkillData evidence row lacks its bounded structural contract: {virtual_path!r}")
+                coverage = row.get("coverageStatus")
+                raise SkillEvidenceContractError({
+                    "validator": "jsondata_corpus._load_family_evidence",
+                    "gate": "skill-bounded-structural-contract",
+                    "virtualPath": virtual_path,
+                    "sourceSha256": row.get("logicalSha256"),
+                    "inputSetSha256": row.get("inputSetSha256"),
+                    "failedPredicate": (
+                        "common_prefix"
+                        if not prefix_ok else SKILL_STATUS_PREDICATES.get(
+                            coverage, "known_coverage_status"
+                        )
+                    ),
+                    "actual": {
+                        "boundaryClass": row.get("boundaryClass"),
+                        "coverageStatus": coverage,
+                        "terminalSelectionStatus": (
+                            row.get("terminalSelection") or {}
+                        ).get("status"),
+                        "wholeSchemaExact": row.get("wholeSchemaExact"),
+                        "timelineCreateBuffProfileStatus": timeline_create_buff.get("status"),
+                        "passiveSharedSequenceProfileStatus": passive_shared_sequence.get("status"),
+                        "commonPrefixByteLength": (
+                            row.get("commonPrefixFraming") or {}
+                        ).get("provenPrefixByteLength"),
+                    },
+                })
             logical_md5 = row.get("logicalMd5")
             detail = {
                 "boundaryClass": row.get("boundaryClass"),
@@ -807,12 +1763,22 @@ def _load_family_evidence(
                     or exact_timeline_shared_sequence
                     else None
                 ),
+                "passiveSharedSequenceProfile": (
+                    passive_shared_sequence if exact_passive_shared_sequence else None
+                ),
             }
+            if exact_capture_target:
+                detail["captureTargetVerification"] = capture_target_reference
+            if exact_capture_target_set:
+                detail["captureTargetSetVerification"] = target_set_metadata
         evidence[virtual_path] = {
             "length": identity.get("length"),
             "logicalMd5": logical_md5,
             "logicalSha256": row.get("logicalSha256"),
             "detail": detail,
+            "rootNoPositiveReceipt": root_receipt if family == "BuffData" else None,
+            "rootPositiveDamageReceipt": positive_receipt if family == "BuffData" else None,
+            "rootSingleCreateActionReceipt": create_receipt if family == "BuffData" else None,
         }
 
     if set(evidence) != expected_paths:
@@ -860,6 +1826,29 @@ def _run_reader(
         ):
             if key in result:
                 summary[key] = result[key]
+        task_diagnostics = result.get("taskDiagnostics")
+        if (
+            result.get("schemaStatus") == "partial"
+            and isinstance(task_diagnostics, list)
+            and task_diagnostics
+            and isinstance(task_diagnostics[0], dict)
+        ):
+            first = task_diagnostics[0]
+            summary["firstStopDiagnostic"] = {
+                key: first[key]
+                for key in (
+                    "gate", "taskKey", "conditionKey", "conditionIndex",
+                    "conditionOffset", "conditionUnionTag",
+                    "serializedMemberCount", "expectedConditionType",
+                    "expectedSerializedMemberCount", "nativeMappingId",
+                )
+                if key in first
+            }
+        action_map = result.get("actionMap")
+        if result.get("schemaStatus") == "partial" and isinstance(action_map, dict):
+            reason = action_map.get("unresolvedReason")
+            if isinstance(reason, str):
+                summary["firstStopReason"] = reason[:512]
     return True, summary, None
 
 
@@ -1375,6 +2364,27 @@ def build_report(
         family_evidence[family] = evidence
         family_report_provenance[family] = metadata
 
+    buff_native_validation = None
+    buff_positive_damage_validation = None
+    buff_single_create_validation = None
+    if any(item["detail"].get("wholeSchemaExact") is True
+           for item in family_evidence["BuffData"].values()):
+        buff_native_validation = buff_root_no_positive.validate_current_native_contract()
+        if buff_native_validation.get("status") != "validated":
+            raise ValueError("BuffData exact root native validation is not current")
+    if any(item.get("rootPositiveDamageReceipt") is not None
+           for item in family_evidence["BuffData"].values()):
+        buff_positive_damage_validation = buff_root_no_positive.validate_positive_damage_native_contract(
+            root_validation=buff_native_validation,
+        )
+        if buff_positive_damage_validation.get("status") != "validated":
+            raise ValueError("BuffData positive damage native validation is not current")
+    if any(item.get("rootSingleCreateActionReceipt") is not None
+           for item in family_evidence["BuffData"].values()):
+        buff_single_create_validation = buff_create_action_root_receipt.validate_current_native_contract()
+        if buff_single_create_validation.get("status") != "validated":
+            raise ValueError("BuffData single CreateBuff native validation is not current")
+
     seen_paths: set[str] = set()
     results: list[dict[str, Any]] = []
     for ledger in selected:
@@ -1557,15 +2567,40 @@ def build_report(
                 or evidence["logicalSha256"] != logical_sha256
             ):
                 raise ValueError(f"{family} evidence differs from current export bytes: {virtual_path!r}")
+            if family == "BuffData" and evidence["detail"].get("wholeSchemaExact") is True:
+                if evidence["rootSingleCreateActionReceipt"] is not None:
+                    replay = buff_create_action_root_receipt.decode_single_create_action_root(
+                        data, source=virtual_path, expected_sha256=logical_sha256,
+                        native_validation=buff_single_create_validation,
+                    )
+                    recorded = evidence["rootSingleCreateActionReceipt"]
+                elif evidence["rootPositiveDamageReceipt"] is not None:
+                    replay = buff_root_no_positive.decode_positive_damage_buff(
+                        data, source=virtual_path, expected_sha256=logical_sha256,
+                        native_validation=buff_native_validation,
+                        positive_damage_validation=buff_positive_damage_validation,
+                    )
+                    recorded = evidence["rootPositiveDamageReceipt"]
+                else:
+                    replay = buff_root_no_positive.decode_no_positive_buff(
+                        data, source=virtual_path, expected_sha256=logical_sha256,
+                        native_validation=buff_native_validation,
+                    )
+                    recorded = evidence["rootNoPositiveReceipt"]
+                # Compare canonical digests so IEEE NaN payloads, if a future
+                # DataPair uses one, do not make an otherwise identical receipt
+                # fail Python's ``nan != nan`` equality rule.
+                if canonical_json_sha256(replay) != canonical_json_sha256(recorded):
+                    raise ValueError(f"BuffData exact root receipt differs from current replay: {virtual_path!r}")
             contract = FAMILY_REPORTS[family]
             classification = {
                 "status": (
                     "schema_decoded"
-                    if family == "SkillData"
+                    if family in ("SkillData", "BuffData")
                     and evidence["detail"].get("wholeSchemaExact") is True
                     else "format_framed"
                     if family == "BuffData"
-                    and evidence["detail"].get("namedOuterFrameStatus") == "named_exact_frame"
+                    and evidence["detail"].get("namedOuterFrameStatus") in ("named_exact_frame", "named_exact_full")
                     else "bounded_partial_ambiguous"
                     if family == "SkillData"
                     and evidence["detail"].get("boundaryClass") == "ambiguous"
@@ -1709,18 +2744,29 @@ def main(argv: list[str] | None = None) -> int:
             buff_report_path=args.buff_report,
             skill_report_path=args.skill_report,
         )
-        json_bytes = (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
-        md_bytes = render_markdown(report).encode("utf-8")
         lines = b"".join(
             (json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
             for row in rows
         )
         files_bytes = gzip.compress(lines, mtime=0)
+        report["provenance"]["outputFiles"] = {
+            "length": len(files_bytes),
+            "sha256": hashlib.sha256(files_bytes).hexdigest().upper(),
+        }
+        json_bytes = (json.dumps(report, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        md_bytes = render_markdown(report).encode("utf-8")
         _atomic_write(args.output_json, json_bytes)
         _atomic_write(args.output_md, md_bytes)
         _atomic_write(args.output_files, files_bytes)
     except (CensusGateError, OSError, ValueError, KeyError, TypeError) as exc:
-        print(json.dumps({"status": "failed", "diagnostic": str(exc)}, ensure_ascii=False))
+        if isinstance(exc, SkillEvidenceContractError):
+            print(json.dumps({
+                "status": "failed",
+                "summary": str(exc),
+                "diagnostic": exc.diagnostic,
+            }, ensure_ascii=False))
+        else:
+            print(json.dumps({"status": "failed", "diagnostic": str(exc)}, ensure_ascii=False))
         return 1
     print(json.dumps({"status": report["status"], "summary": report["summary"]}, ensure_ascii=False))
     return 0

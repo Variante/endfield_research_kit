@@ -1,0 +1,25 @@
+{
+  "schema": "endfield.buff-damage-two-action-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_damage_sequence_action_condition_native.json",
+    "buff_damage_check_decorate_mask_condition_native.json",
+    "buff_damage_check_type_mask_condition_native.json"
+  ],
+  "sequenceMemberCount": 3,
+  "sequenceTerminalByteCount": 2,
+  "selectedActionTags": [91, 94],
+  "selectedActionNames": ["CheckDamageDecorateMask", "CheckDamageTypeMask"],
+  "evidenceBoundary": {
+    "exact": "The selected SequenceActionData source, signed action-count loop and terminal stores, both AbilityActionData union routes, complete action source readers and generated member plans are independently checked on the same installed native build. Original logical source bytes rejoin two consecutive selected actions and the terminal pair at one condition endpoint.",
+    "direct": "The authored action list stores CheckDamageDecorateMask then CheckDamageTypeMask in that order.",
+    "structuralOnly": "The two actions and terminal booleans are stored values; their runtime predicate conjunction or ordering effect is not established.",
+    "conditional": "Static native readers do not establish live inflated provider selection.",
+    "unresolved": "Other action-list lengths or tags and enclosing BuffData EOF require separate proof."
+  }
+}

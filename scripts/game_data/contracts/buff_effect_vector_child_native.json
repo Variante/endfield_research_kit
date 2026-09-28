@@ -1,0 +1,53 @@
+{
+  "schema": "endfield.buff-effect-vector-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentConfigContract": "buff_effect_config_child_native.json",
+  "sourceReaderContract": "buff_9a_native.json",
+  "vectorWrapperTypeDefinition": 15115,
+  "vectorWrapperName": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardVector3ForMemoryPack",
+  "vectorRuntimeTypeDefinition": 176,
+  "vectorRuntimeTypeName": "Beyond.Blackboard+BlackboardVector3",
+  "vectorReaderMethodIndices": [113410, 113409],
+  "vectorReaderWindowStarts": [53274912, 53275696],
+  "vectorParentFields": ["positionOffsetBB", "scaleBB", "selfRotationBB"],
+  "readOrder": [
+    {
+      "fieldName": "x",
+      "setterMethodIndex": 113404,
+      "runtimeFieldOffset": 16,
+      "sourceContextIndex": 27,
+      "sourceContextRva": 53275924,
+      "storeRva": 53275978,
+      "storeHex": "49894010"
+    },
+    {
+      "fieldName": "y",
+      "setterMethodIndex": 113405,
+      "runtimeFieldOffset": 24,
+      "sourceContextIndex": 28,
+      "sourceContextRva": 53276057,
+      "storeRva": 53276104,
+      "storeHex": "49894018"
+    },
+    {
+      "fieldName": "z",
+      "setterMethodIndex": 113406,
+      "runtimeFieldOffset": 32,
+      "sourceContextIndex": 29,
+      "sourceContextRva": 53276185,
+      "storeRva": 53276232,
+      "storeHex": "49894020"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected build fixes the EffectActionCfg parent fields, the complete BlackboardVector3 formatter and reader windows, three BlackboardDouble generic source contexts, generated x/y/z setter order, runtime field offsets, and direct destination stores.",
+    "direct": "The reader consumes three successive nullable BlackboardDouble children and stores them in x, y and z order. The independently selected BlackboardDouble reader names each stored child's blackboardKey, useBlackboardKey and raw four-byte value.",
+    "conditional": "Only an EffectActionCfg child independently bounded by a source-hash-checked EffectAction parent and parsed to the exact field end is admitted; a positive TerrainEffectData array remains refused.",
+    "unresolved": "Decoded blackboard key strings, live provider choice, vector coordinate semantics, effect creation, and whole BuffData ownership are not established."
+  }
+}

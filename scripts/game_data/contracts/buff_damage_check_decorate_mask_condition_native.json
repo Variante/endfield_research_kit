@@ -1,0 +1,34 @@
+{
+  "schema": "endfield.buff-damage-check-decorate-mask-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "reviewedDependencies": [
+    "levelscript_union_tags.json",
+    "buff_5b_native.json",
+    "buff_damage_sequence_action_condition_native.json"
+  ],
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unionFamily": "AbilityActionData",
+  "unionTag": 91,
+  "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageDecorateMask_DataForMemoryPack",
+  "wrappedType": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+  "sequenceMemberCount": 3,
+  "sequenceTerminalByteCount": 2,
+  "actionMemberPlan": [
+    {"name": "isEnable", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+    {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum32", "width": 4},
+    {"name": "priorityOffset", "declaredType": "int", "kind": "int32", "width": 4},
+    {"name": "serverActionIndex", "declaredType": "int", "kind": "int32", "width": 4},
+    {"name": "checkType", "declaredType": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+CheckType", "kind": "enum32", "width": 4},
+    {"name": "mask", "declaredType": "long", "kind": "int64", "width": 8}
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData dispatcher tag, generated wrapper member names and types, checked formatter and complete source reader bytes, signed action-list count and two terminal stores, plus replay of original logical bytes to the child span endpoint.",
+    "direct": "A one-action SequenceActionData child stores CheckDamageDecorateMask members in the selected source read order.",
+    "structuralOnly": "Enum values, mask bits, and terminal bytes are stored values; no runtime predicate outcome is inferred.",
+    "unresolved": "Other condition action tags, other damage processors, live formatter choice, and any enclosing BuffData root not independently replayed to EOF."
+  }
+}

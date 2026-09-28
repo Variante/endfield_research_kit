@@ -1450,7 +1450,9 @@ Reports named bytes per family and bucket, ranked by unnamed bytes, for the
 binary families whose framings declare their opaque ranges. It answers "how
 much of each file is understood", which is a different question from
 `jsondata_corpus`: that gate proves identity and routing and reports a per-file
-status, and a consumer must still gate on the status. Never read
+status, and a consumer must still gate on the status. Its compact per-file
+ledger retains the first bounded LevelScript task-condition refusal and
+LevelScriptTemplate action-map refusal on partial rows for route ranking. Never read
 `bytesConsumed` as coverage -- see
 [`memory/game_data/extraction_payload_boundaries.md`](../memory/game_data/extraction_payload_boundaries.md)
 for why, and for the recovery order the measurement sets.

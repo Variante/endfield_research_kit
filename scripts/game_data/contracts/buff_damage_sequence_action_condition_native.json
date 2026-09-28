@@ -1,0 +1,47 @@
+{
+  "schema": "endfield.buff-damage-sequence-action-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "reviewedDependencies": ["buff_damage_modifier_child_native.json"],
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "conditionProvider": {
+    "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+    "methodSpecIndex": 619962,
+    "methodSpec": [428464, -1, 16408],
+    "argumentRawHex": "F2230000000000000000120000000000",
+    "instructionRva": 66871733,
+    "instructionHex": "488B15ACEC0209"
+  },
+  "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+  "serializedReadOrder": ["actionData", "onlyExecuteWhenSourceIsGuard", "onlyExecuteWhenSourceIsMainChar"],
+  "wrapperSetters": [
+    [104341, "set___actionData__", "<type-index:98972>"],
+    [104342, "set___onlyExecuteWhenSourceIsGuard__", "System.Boolean"],
+    [104343, "set___onlyExecuteWhenSourceIsMainChar__", "System.Boolean"]
+  ],
+  "sequenceMethods": [
+    [104346, "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack", "Deserialize", 60582560],
+    [104347, "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter", "Deserialize", 60582464]
+  ],
+  "sequenceCodeWindows": [
+    {"startRva": 60582464, "endRva": 60582560, "sha256": "92A88C87AA20FEFCA4BF17F425ECCF6C0F4BFC1EF8EC28F2CE5B48FA36BBC9C9", "boundary": "SequenceActionData formatter forwarding"}
+  ],
+  "sequenceInstructionWindows": [
+    [60582505, "4533C0488BD3488BCF488B5C24304883C4205FE91F000000", "formatter forwarding edge"],
+    [60582786, "4080FE030F85DD030000", "member-count three"],
+    [60582904, "488B43508B28448B73304183EE047911BA04000000488BCBE82BB5100284C07511488343500483434004834344044489733048634344488B4B18482BC84863C5483BC80F8C78030000", "signed action count and terminal bounds"],
+    [60583653, "4084ED0F95C0884119", "first terminal bool store"],
+    [60583751, "4084ED4C8B6C2428488B6C24680F95C04C8B742420884118", "second terminal bool store"]
+  ],
+  "memberCount": 3,
+  "terminalByteCount": 2,
+  "evidenceBoundary": {
+    "exact": "The selected damage condition child source window, SequenceActionData formatter and reader methods, formatter bytes, member-count check, signed action-count bounds, and both terminal stores are pinned to the same native build.",
+    "direct": "The parent DamageModifier child source order places the selected SequenceActionData call between the condition context and condition setter; the bounded reader distinguishes null sequence, non-null member-count 3, signed nullable action count, and two terminal bytes.",
+    "structuralOnly": "Zero-action conditions retain null-versus-empty list framing; terminal bytes are stored values without runtime semantics.",
+    "unresolved": "Live formatter/provider choice, nonzero action bodies, runtime branch behavior, and enclosing BuffData EOF ownership remain open."
+  }
+}

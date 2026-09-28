@@ -1,0 +1,70 @@
+{
+  "schema": "endfield.buff-damage-scale-processor-child-native-contract.v2",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_damage_lists_native.json",
+    "buff_damage_modifier_child_native.json",
+    "buff_adding_cooldown_ownership_native.json",
+    "buff_stacking_compact_native.json"
+  ],
+  "unionTag": 5,
+  "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageScaleProcessorForMemoryPack",
+  "serializedMemberCount": 3,
+  "setterMethods": [
+    [125032, "set___addition__", "Beyond.Blackboard+BlackboardDouble", 65897648],
+    [125033, "set___side__", "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide", 65897696],
+    [125034, "set___zoneName__", "System.String", 65897744]
+  ],
+  "headerCompare": [65897424, "4080FF03"],
+  "sourceCalls": [
+    {"role": "header", "instructionRva": 65897350, "rawHex": "E8D504DDFE", "targetRva": 46827616},
+    {"role": "additionSource", "instructionRva": 65897447, "rawHex": "E8A4D8ECFE", "targetRva": 47864976},
+    {"role": "additionSetter", "instructionRva": 65897470, "rawHex": "E8AD000000", "targetRva": 65897648},
+    {"role": "sideSource", "instructionRva": 65897488, "rawHex": "E89B02DDFE", "targetRva": 46827184},
+    {"role": "sideSetter", "instructionRva": 65897510, "rawHex": "E8B5000000", "targetRva": 65897696},
+    {"role": "zoneNameSource", "instructionRva": 65897521, "rawHex": "E8CA02DDFE", "targetRva": 46827264},
+    {"role": "zoneNameSetter", "instructionRva": 65897540, "rawHex": "E8C7000000", "targetRva": 65897744}
+  ],
+  "nestedContexts": [
+    {
+      "role": "addition",
+      "instructionRva": 65897434,
+      "instructionHex": "488B153FC21109",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [428464, -1, 17005],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeName": "Beyond.Blackboard+BlackboardDouble"
+    },
+    {
+      "role": "side",
+      "instructionRva": 65897475,
+      "instructionHex": "488B15AE821609",
+      "cellVa": 6660818616,
+      "usageRawHex": "93E712C000000000",
+      "methodSpecIndex": 619465,
+      "methodSpec": [428448, -1, 42466],
+      "argumentRawHex": "6C270000000000000000118000000000",
+      "typeName": "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide"
+    }
+  ],
+  "fieldPlan": [
+    {"name": "addition", "kind": "blackboard-double", "declaredType": "Beyond.Blackboard+BlackboardDouble"},
+    {"name": "side", "kind": "enum32", "declaredType": "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide"},
+    {"name": "zoneName", "kind": "signed-length-bytes", "declaredType": "System.String"}
+  ],
+  "blackboardChildReadOrder": ["blackboardKey", "useBlackboardKey", "value"],
+  "evidenceBoundary": {
+    "exact": "The selected tag-five dispatcher, wrapper reader, generated setters, source calls and nested generic contexts are checked against the installed native build. The independently selected BlackboardDouble child and signed-length string helper are also checked. Reached logical source bytes rejoin each named child span inside the independently bounded processor.",
+    "direct": "The three stored child members are read and assigned in addition, side, zoneName order.",
+    "structuralOnly": "The BlackboardDouble member names and raw stored values are exact. The side is a stored raw enum integer; zoneName retains its signed length and uninterpreted bytes, without claiming native string decoder parity.",
+    "conditional": "The selected static reader and current VFS span do not prove which inflated provider ran in game.",
+    "unresolved": "Damage arithmetic, runtime zone selection, recursive naming of the enclosing modifier condition and all BuffData actions, and whole BuffData ownership remain open."
+  }
+}

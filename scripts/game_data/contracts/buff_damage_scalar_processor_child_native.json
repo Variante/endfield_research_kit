@@ -1,0 +1,92 @@
+{
+  "schema": "endfield.buff-damage-scalar-processor-child-native-contract.v3",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_damage_lists_native.json",
+    "buff_damage_modifier_child_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "blackboardChildReadOrder": ["blackboardKey", "useBlackboardKey", "value"],
+  "routes": [
+    {
+      "unionTag": 0,
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_AttackCriticalRateProcessorForMemoryPack",
+      "serializedMemberCount": 1,
+      "sourceReadOrderRef": "anonymousReadOrder.processor0",
+      "sourceReadOrder": ["union0", "FF wrapper or header1", "scalar-payload"],
+      "fieldPlan": [
+        {"name": "addition", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+      ],
+      "setterMethod": [124971, "set___addition__", "Beyond.Blackboard+BlackboardDouble", 71732928],
+      "headerCompare": [71732784, "4080FF01"],
+      "sourceCalls": [
+        {"role": "header", "instructionRva": 71732710, "rawHex": "E875FA83FE", "targetRva": 46827616},
+        {"role": "additionSource", "instructionRva": 71732807, "rawHex": "E844CE93FE", "targetRva": 47864976},
+        {"role": "additionSetter", "instructionRva": 71732826, "rawHex": "E861000000", "targetRva": 71732928}
+      ]
+    },
+    {
+      "unionTag": 2,
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_AttackerCriticalDamageProcessorForMemoryPack",
+      "serializedMemberCount": 1,
+      "sourceReadOrderRef": "anonymousReadOrder.processor2",
+      "sourceReadOrder": ["union2", "FF wrapper or header1", "BlackboardDouble scale"],
+      "fieldPlan": [
+        {"name": "scale", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+      ],
+      "setterMethod": [124996, "set___scale__", "Beyond.Blackboard+BlackboardDouble", 74569728],
+      "headerCompare": [74569647, "4080FF01"],
+      "sourceCalls": [
+        {"role": "header", "instructionRva": 74569577, "rawHex": "E8F2B058FE", "targetRva": 46827616},
+        {"role": "scaleSource", "instructionRva": 74569670, "rawHex": "E8C58468FE", "targetRva": 47864976},
+        {"role": "scaleSetter", "instructionRva": 74569689, "rawHex": "E822000000", "targetRva": 74569728}
+      ]
+    },
+    {
+      "unionTag": 3,
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_AttackerPenProcessorForMemoryPack",
+      "serializedMemberCount": 1,
+      "sourceReadOrderRef": "anonymousReadOrder.processor3",
+      "sourceReadOrder": ["union3", "FF wrapper or header1", "BlackboardDouble scale"],
+      "fieldPlan": [
+        {"name": "scale", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+      ],
+      "setterMethod": [125008, "set___scale__", "Beyond.Blackboard+BlackboardDouble", 72658464],
+      "headerCompare": [72658320, "4080FF01"],
+      "sourceCalls": [
+        {"role": "header", "instructionRva": 72658246, "rawHex": "E815DB75FE", "targetRva": 46827616},
+        {"role": "scaleSource", "instructionRva": 72658343, "rawHex": "E8E4AE85FE", "targetRva": 47864976},
+        {"role": "scaleSetter", "instructionRva": 72658362, "rawHex": "E861000000", "targetRva": 72658464}
+      ]
+    },
+    {
+      "unionTag": 4,
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageIndependentHealthProcessorForMemoryPack",
+      "serializedMemberCount": 1,
+      "sourceReadOrderRef": "anonymousReadOrder.processor4",
+      "sourceReadOrder": ["union4", "FF wrapper or header1", "BlackboardDouble multiplier"],
+      "fieldPlan": [
+        {"name": "multiplier", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+      ],
+      "setterMethod": [125020, "set___multiplier__", "Beyond.Blackboard+BlackboardDouble", 72657776],
+      "headerCompare": [72657632, "4080FF01"],
+      "sourceCalls": [
+        {"role": "header", "instructionRva": 72657558, "rawHex": "E8C5DD75FE", "targetRva": 46827616},
+        {"role": "multiplierSource", "instructionRva": 72657655, "rawHex": "E894B185FE", "targetRva": 47864976},
+        {"role": "multiplierSetter", "instructionRva": 72657674, "rawHex": "E861000000", "targetRva": 72657776}
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected union table entries, formatter and one-member source readers, generated wrapper setters, header checks, source calls, nested BlackboardDouble generic contexts, and independent BlackboardDouble child reader are checked against the selected native build and current source bytes.",
+    "direct": "Tag zero assigns addition, tags two and three assign scale, and tag four assigns multiplier, each from one stored BlackboardDouble child in source order.",
+    "structuralOnly": "Blackboard keys and scalar bits are stored values; no evaluated critical-rate or penetration arithmetic is inferred.",
+    "conditional": "The static selected reader does not prove live inflated provider selection.",
+    "unresolved": "Other processor tags, condition combinations, and whole BuffData ownership require separate proof."
+  }
+}

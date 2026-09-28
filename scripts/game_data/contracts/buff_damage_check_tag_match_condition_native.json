@@ -1,0 +1,49 @@
+{
+  "schema": "endfield.buff-damage-check-tag-match-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "reviewedDependencies": [
+    "levelscript_union_tags.json",
+    "buff_7c_native.json",
+    "buff_damage_sequence_action_condition_native.json",
+    "buff_find_settings_child_native.json"
+  ],
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unionFamily": "AbilityActionData",
+  "unionTag": 124,
+  "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTagMatch_DataForMemoryPack",
+  "wrappedType": "Beyond.Gameplay.Core.Conditions.CheckTagMatch+Data",
+  "sequenceMemberCount": 3,
+  "sequenceTerminalByteCount": 2,
+  "actionMemberPlan": [
+    {"name": "isEnable", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+    {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum32", "width": 4},
+    {"name": "priorityOffset", "declaredType": "int", "kind": "int32", "width": 4},
+    {"name": "serverActionIndex", "declaredType": "int", "kind": "int32", "width": 4},
+    {"name": "checkTarget", "declaredType": "Beyond.Gameplay.Core.TargetSettings", "kind": "target-settings"},
+    {"name": "query", "declaredType": "Beyond.Gameplay.Core.GameplayTagQuery", "kind": "gameplay-tag-query"}
+  ],
+  "sourceMethodIndices": [124691, 124690],
+  "sourceWindowStarts": [66157008, 66157104, 66157504, 83123281],
+  "sourceContextRvas": [66157382, 66157423],
+  "selectedTargetShape": {
+    "nonnullTargetMemberCount": 13,
+    "nonnullDirectionMemberCount": 8,
+    "nonnullSelectorMemberCount": 3,
+    "nullDirectionReferences": ["source", "target"],
+    "emptyTargetStrings": ["centerContextKey", "ownerContextKey", "targetContextKey", "targetGroupKey"],
+    "nullSelectorUnion": "finderData",
+    "emptySelectorLists": ["postProcessorData", "validatorData"],
+    "positiveQueryTagCounts": [1, 2]
+  },
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData tag and six-member wrapper, complete CheckTagMatch formatter/source windows, exact TargetSettings/DirectionSettings/SelectorData and GameplayTagQuery reader dependencies, two checked nested MethodSpec contexts, signed one-action count, two terminal bytes, and replay of original logical bytes to the condition endpoint.",
+    "direct": "The selected action reads isEnable, priorityLevel, priorityOffset, serverActionIndex, checkTarget, and query in source order; the reached target's nested direction/selector route has only null references and empty lists, and the query has a bounded raw DWORD array.",
+    "structuralOnly": "Enum and gameplay-tag bits are authored stored values without predicate or target-selection behavior.",
+    "conditional": "Recursive exactness applies only to the selected simple TargetSettings variant with empty strings, null direction references/finder, and empty selector lists.",
+    "unresolved": "Other CheckTagMatch target or query variants, processor combinations, live formatter selection, and enclosing BuffData root until an independent physical-EOF replay."
+  }
+}

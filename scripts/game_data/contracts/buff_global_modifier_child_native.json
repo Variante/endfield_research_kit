@@ -1,0 +1,37 @@
+{
+  "schema": "endfield.buff-global-modifier-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "formatterMethod": [104520, "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalModifier_DataForMemoryPack+Beyond_Gameplay_Core_GlobalModifier_DataForMemoryPackFormatter", "Deserialize", 64371120],
+  "formatterWindow": {
+    "startRva": 64371120,
+    "endRva": 64371468,
+    "sha256": "0DE31E21146FD7F6C733260400913FC00B2AA4F657B6B9C15EC6F6DD96F0166D",
+    "boundary": "formatter static-init stub and selected normal/return body through ret"
+  },
+  "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalModifier_DataForMemoryPack",
+  "setters": [
+    [104513, "set___applyToReturnAtbGain__", "System.Boolean", 84405664],
+    [104514, "set___formulaItem__", "Beyond.GEnums.ModifierType", 84406024],
+    [104515, "set___param__", "Beyond.Blackboard+BlackboardDouble", 52469328],
+    [104516, "set___type__", "Beyond.Gameplay.Core.GlobalAttributeType", 84403284]
+  ],
+  "instructionWindows": [
+    [64371330, "E819B33101", "applyToReturnAtbGain setter call"],
+    [64371370, "E859B43101", "formulaItem setter call"],
+    [64371411, "E878634AFF", "param setter call"],
+    [64371447, "E858A93101", "type setter call"]
+  ],
+  "memberHeader": [64371291, "4080FE04", "four-member wrapper header"],
+  "selectedReadOrder": ["applyToReturnAtbGain", "formulaItem", "param", "type"],
+  "evidenceBoundary": {
+    "exact": "The selected formatter body checks member count 4 and calls the four authenticated wrapper setters in the recorded order through return.",
+    "direct": "The bounded receipt owns each bool, enum, BlackboardDouble, and enum byte span to the supplied list boundary.",
+    "structuralOnly": "Enum names and GlobalModifier runtime meaning are not proved by this formatter contract.",
+    "unresolved": "The parent BuffData schema and any alternate formatter providers remain outside this child contract."
+  }
+}

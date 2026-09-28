@@ -21,6 +21,7 @@ from scripts.game_data.il2cpp.context import method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.il2cpp.protocol import runtime_type_field_offsets
 from scripts.game_data.memorypack.buff_residual_actions import _ResidualReader
+from scripts.game_data.memorypack import buff_damage_scale_processor_child_receipt as damage_scale
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "buff_damage_modifier_child_native.json"
@@ -150,10 +151,14 @@ def validate_current_native_contract() -> dict[str, Any]:
 def decode_damage_modifier_collection(
     data: bytes, start: int, end: int, *, source: str,
     native_validation: dict[str, Any],
+    processor_native_validation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Partition one already bounded positive list; preserve nested refusals."""
     if native_validation.get("status") != "validated":
         raise ValueError(f"{LABEL}.native:unvalidated")
+    if (processor_native_validation is not None
+            and processor_native_validation.get("status") != "validated"):
+        raise ValueError(f"{LABEL}.processor-native:unvalidated")
     if type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data):
         raise ValueError(f"{LABEL}.boundary:invalid")
     reader = _ResidualReader(data, source, end)
@@ -183,8 +188,17 @@ def decode_damage_modifier_collection(
             item_start = reader.pos
             reader.damage_processor_profile()
             record = reader.records[-1]
-            processors.append({"index": processor_index, "start": item_start,
-                               "end": reader.pos, "tag": record.get("variant")})
+            processor = {"index": processor_index, "start": item_start,
+                         "end": reader.pos, "tag": record.get("variant")}
+            if (processor_native_validation is not None
+                    and record.get("variant") == processor_native_validation.get("unionTag")):
+                processor["namedChild"] = damage_scale.decode_damage_scale_processor_span(
+                    data, source=source,
+                    logical_sha256=hashlib.sha256(data).hexdigest().upper(),
+                    start=item_start, end=reader.pos,
+                    native_validation=processor_native_validation,
+                )
+            processors.append(processor)
         processor_end = reader.pos
         side_start = reader.pos
         raw_side = reader.take(4, "damage-modifier-enable-side")
@@ -211,7 +225,7 @@ def decode_damage_modifier_collection(
             "conditionActionUnionCount": sum(field["fields"][0]["actionUnionCount"]
                                              for field in elements if field["fields"]),
             "wholeValueExact": False,
-            "evidenceBoundary": "Direct selected child field ownership and exact stored cursors; nested actions and processor members remain unresolved."}
+            "evidenceBoundary": "Direct selected child field ownership and exact stored cursors; selected processor children may have separately native-gated direct members. Nested condition actions and whole BuffData remain unresolved."}
 
 
 def audit_first_blockers(
@@ -233,6 +247,9 @@ def audit_first_blockers(
     native = validate_current_native_contract()
     if native["status"] != "validated":
         raise ValueError(f"{LABEL}.native:{native['status']}:{native.get('detail')}")
+    processor_native = damage_scale.validate_current_native_contract(modifier_native=native)
+    if processor_native["status"] != "validated":
+        raise ValueError(f"{LABEL}.processor-native:{processor_native['status']}:{processor_native.get('detail')}")
     rows = []
     for row in report["files"]:
         candidates = [
@@ -260,7 +277,7 @@ def audit_first_blockers(
             raise ValueError(f"{LABEL}.logical-sha256:{source}")
         receipt = decode_damage_modifier_collection(
             data, blocker["start"], blocker["end"], source=source,
-            native_validation=native,
+            native_validation=native, processor_native_validation=processor_native,
         )
         rows.append({"source": source, "logicalSha256": row["logicalSha256"],
                      "receipt": receipt})
@@ -269,16 +286,24 @@ def audit_first_blockers(
                          for element in row["receipt"]["elements"]
                          for field in element["fields"] if field["name"] == "damageProcessors"
                          for processor in field["processors"])
-    return {"schema": "endfield.buff-damage-modifier-child-receipt.v1",
+    named_damage_scale = sum(
+        "namedChild" in processor for row in rows
+        for element in row["receipt"]["elements"]
+        for field in element["fields"] if field["name"] == "damageProcessors"
+        for processor in field["processors"]
+    )
+    return {"schema": "endfield.buff-damage-modifier-child-receipt.v2",
             "status": "complete", "publicationEligible": False,
             "sourceReport": str(report_path),
             "sourceReportSha256": hashlib.sha256(report_raw).hexdigest().upper(),
             "inputSetSha256": report["inputSetSha256"],
             "nativeValidation": native,
+            "processorNativeValidation": processor_native,
             "summary": {"firstBlockerFiles": len(rows),
                         "childElements": sum(row["receipt"]["count"] for row in rows),
                         "conditionActionUnionCountByFile": dict(sorted(actions.items())),
                         "processorTags": {str(k): v for k, v in sorted(processors.items())},
+                        "damageScaleProcessorNamedSpans": named_damage_scale,
                         "wholeRecursiveSchemasPromoted": 0},
             "rows": rows}
 

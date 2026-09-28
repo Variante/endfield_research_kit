@@ -1173,7 +1173,7 @@ def frame_buff_named_middle(
             values=values,
             itemFieldOrder=["applyToReturnAtbGain", "formulaItem", "param", "type"],
             itemFieldOrderSource=(
-                "current generated GlobalModifier_DataForMemoryPack setter order"
+                "structural cursor; selected formatter ownership is validated separately by buff_global_modifier_receipt"
             ),
         )
         return count

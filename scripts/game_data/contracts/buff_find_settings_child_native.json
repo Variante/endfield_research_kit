@@ -1,0 +1,86 @@
+{
+  "schema": "endfield.buff-find-settings-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceReaderContract": "buff_b4_native.json",
+  "parentActionContract": "buff_finish_buff_advanced_action_receipt_native.json",
+  "sourceReaderMethodIndices": [104370, 104371, 104393, 104394],
+  "sourceReaderWindowStarts": [58149808, 58149904, 58150295, 53285168, 53284816, 53285059],
+  "children": [
+    {
+      "typeDefinition": 13871,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffFindSettingsForMemoryPack",
+      "runtimeTypeDefinition": 10070,
+      "runtimeTypeName": "Beyond.Gameplay.Core.BuffFindSettings",
+      "sourceKindsKey": "finder-profile",
+      "fields": [
+        {
+          "name": "buffIdList",
+          "kind": "counted-byte-payloads",
+          "setterMethodIndex": 104365,
+          "setterParameterType": "<type-index:58896>",
+          "declaredType": "System.Collections.Generic.List`1<string>",
+          "runtimeFieldOffset": 24,
+          "store": [58150060, "48894118"]
+        },
+        {
+          "name": "checkType",
+          "kind": "scalar32",
+          "setterMethodIndex": 104366,
+          "setterParameterType": "Beyond.Gameplay.Core.BuffFindSettings+CheckType",
+          "declaredType": "Beyond.Gameplay.Core.BuffFindSettings+CheckType",
+          "runtimeFieldOffset": 16,
+          "store": [58150143, "44897010"]
+        },
+        {
+          "name": "tagQuery",
+          "kind": "query-profile",
+          "setterMethodIndex": 104367,
+          "setterParameterType": "Beyond.Gameplay.Core.GameplayTagQuery",
+          "declaredType": "Beyond.Gameplay.Core.GameplayTagQuery",
+          "runtimeFieldOffset": 32,
+          "store": [58150256, "0F114120"]
+        }
+      ]
+    },
+    {
+      "typeDefinition": 13875,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagQueryForMemoryPack",
+      "runtimeTypeDefinition": 11690,
+      "runtimeTypeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "sourceKindsKey": "query-profile",
+      "fields": [
+        {
+          "name": "queryType",
+          "kind": "scalar32",
+          "setterMethodIndex": 104389,
+          "setterParameterType": "Beyond.Gameplay.Core.GameplayTagQuery+QueryType",
+          "declaredType": "Beyond.Gameplay.Core.GameplayTagQuery+QueryType",
+          "runtimeFieldOffset": 16,
+          "store": [53284989, "44897510"]
+        },
+        {
+          "name": "tags",
+          "kind": "counted-scalar32",
+          "setterMethodIndex": 104390,
+          "setterParameterType": "<type-index:97855>",
+          "declaredType": "Beyond.Gameplay.Core.GameplayTag[]",
+          "runtimeFieldOffset": 24,
+          "store": [53285024, "48894718"]
+        }
+      ]
+    }
+  ],
+  "contextRvas": {"buffIdList": 58150020, "tagQuery": 58150147, "tags": 53284996},
+  "evidenceBoundary": {
+    "exact": "The selected native input hashes, registered finder/query methods, complete normal/null reader windows, generated setter types, runtime field offsets, nested source contexts and five destination stores are rechecked.",
+    "direct": "BuffFindSettings reads buffIdList, checkType and tagQuery; the nested GameplayTagQuery reads queryType and tags in generated setter order.",
+    "structuralOnly": "The current BuffData children reparse to independently certified parent field ends. List<string> uses a conditional shared list grammar and signed-length byte payloads; GameplayTag array elements remain raw packed four-byte values.",
+    "conditional": "The selected source has no dedicated ListFormatter<string> MethodSpec; shared list provider selection and string decoder parity are unobserved.",
+    "unresolved": "Runtime buff finding and tag predicate semantics, positive list provider selection, string decoding and the whole BuffData schema remain open."
+  }
+}
