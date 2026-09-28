@@ -12,7 +12,10 @@ page aligned, fails closed.  A prior method index or RVA is never a
 cross-build identity.  Per-build helper targets and code addresses belong to
 the native contracts, which the validators compare against the installed
 call targets; duplicating them in Python would make the code a second stale
-native catalog.
+native catalog.  The AbilityActionData types handled specially here
+(PlayAnimation and IfElse) are named, and their tags resolved by type name per
+build through ``levelscript_union_tags``; an unvalidated build resolves no
+PlayAnimation reader and the report fails closed.
 
 ``--stream-jsonl`` is a complete current SkillData
 ``AnimeStudio.CLI stream --verify-md5`` JSONL, ``--native-context`` the
@@ -48,7 +51,9 @@ from scripts.game_data.il2cpp.context_audit import (
     skilldata_timeline_branch_sample_witness,
     skilldata_timeline_branch_static_alignment,
 )
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.memorypack.buff_actions import (
+    IF_ELSE_ACTION_NAME,
     FrameError as BuffActionFrameError,
     Reader as BuffActionReader,
 )
@@ -419,7 +424,8 @@ def _extend_selected_action(alignment: dict[str, Any], raw: bytes, *,
                             image_base: int, action_reader_sha256: str,
                             source: str) -> dict[str, Any] | None:
     tag = tag_peek.get('tag')
-    if (type(tag) is not int or tag in (0x115, 0xC9) or tag not in action_readers):
+    if (type(tag) is not int or tag in (_action_tag(PLAY_ANIMATION_TYPE), _action_tag(IF_ELSE_ACTION_NAME))
+            or tag not in action_readers):
         return None
     action_start = tag_peek.get('offset')
     if type(action_start) is not int:
@@ -529,14 +535,15 @@ def _extend_following_play_animation(alignment: dict[str, Any], raw: bytes, *,
     if not isinstance(prefix, Mapping):
         return
     peek = prefix.get('firstActionUnionTagPeekOnly')
-    if (not isinstance(peek, Mapping) or peek.get('tag') != 0x115 or
+    if (not isinstance(peek, Mapping) or peek.get('tag') != _action_tag(PLAY_ANIMATION_TYPE) or
             prefix.get('timelineSequenceCount') != 1 or
             alignment.get('candidateFollowingPlayAnimationRecordEnd') is not None):
         return
     remaining_timeline_actions = alignment.get('timelineActionsListCount')
     if type(remaining_timeline_actions) is not int or remaining_timeline_actions < 2:
         raise TimelineCursorError(
-            f'{source}: following 0x115 action has no remaining TimelineActionData element')
+            f'{source}: following {_tag_text(PLAY_ANIMATION_TYPE)} action has no remaining '
+            'TimelineActionData element')
     remaining_timeline_actions -= 1
     continuation = _skilldata_continue_following_play_animation_candidate(
         raw, dict(prefix), int(alignment['hardLimit']),
@@ -563,6 +570,22 @@ def _extend_following_play_animation(alignment: dict[str, Any], raw: bytes, *,
     alignment.setdefault('opaquePayloadByteRanges', []).extend(
         continuation.get('opaquePayloadByteRanges', []))
     _refresh_alignment_opaque_ranges(alignment)
+
+
+# AbilityActionData type with a dedicated reader path here; its tag is
+# resolved by type name per build, never written down.
+PLAY_ANIMATION_TYPE = 'Core_PlayAnimationAction_PlayAnimationActionData'
+
+
+def _action_tag(name: str) -> Any:
+    """The build's AbilityActionData tag of ``name``, or a placeholder no tag equals."""
+    return union_tags.pair('AbilityActionData', name)[0]
+
+
+def _tag_text(name: str, *, width: int = 0) -> str:
+    """``0x...`` text of one resolved AbilityActionData tag for report prose."""
+    tag = _action_tag(name)
+    return f'0x{tag:0{width}X}' if isinstance(tag, int) else f'unresolved:{name}'
 
 
 def _sha256_bytes(raw: bytes) -> str:
@@ -742,7 +765,7 @@ def _markdown(report: Mapping[str, Any]) -> str:
         f"- Candidate cursors: `{json.dumps(summary['candidateCursorCounts'], ensure_ascii=False, sort_keys=True)}`",
         f"- Candidate-only bytes after the maintained parser cursor: {summary['candidateBytesAfterParserCursor']}",
         f"- Opaque bytes after candidate cursors: {summary['opaqueBytesAfterCandidateCursors']}",
-        f"- 0x115 PlayAnimation / ForceSync reader end candidates: "
+        f"- {_tag_text(PLAY_ANIMATION_TYPE)} PlayAnimation / ForceSync reader end candidates: "
         f"{summary['playAnimationReaderEndCandidates']} / {summary['forceSyncReaderEndCandidates']}",
         f"- TimelineActionData / ActionGroupData field-sequence end candidates: "
         f"{summary['timelineActionDataRecordEndCandidates']} / "
@@ -750,14 +773,15 @@ def _markdown(report: Mapping[str, Any]) -> str:
         f"- Following TimelineActionData prefixes / first action tags: "
         f"{summary['followingTimelineActionDataPrefixFiles']} / "
         f"{json.dumps(summary['followingTimelineActionFirstTagCounts'], ensure_ascii=False, sort_keys=True)}",
-        f"- Following 0x115 reader / TimelineActionData end candidates: "
+        f"- Following {_tag_text(PLAY_ANIMATION_TYPE)} reader / TimelineActionData end candidates: "
         f"{summary['followingPlayAnimationReaderEndCandidates']} / "
         f"{summary['followingTimelineActionDataRecordEndCandidates']}",
         f"- Other selected action-reader field-sequence candidates: "
         f"{json.dumps(summary['actionReaderRecordEndCandidatesByTag'], ensure_ascii=False, sort_keys=True)}",
         f"- Unsupported nested action-reader prefixes: "
         f"{json.dumps(summary['actionReaderPrefixStopsByTag'], ensure_ascii=False, sort_keys=True)}",
-        f"- Bounded but undecoded 0x115 payload bytes: {summary['opaqueCandidatePayloadBytes']}",
+        f"- Bounded but undecoded {_tag_text(PLAY_ANIMATION_TYPE)} payload bytes: "
+        f"{summary['opaqueCandidatePayloadBytes']}",
         f"- Full corpus: {summary['wholeSkillDataExactClosedRecords']} exact closed records; "
         f"{summary['wholeSkillDataAmbiguousFiles']} whole SkillData files remain ambiguous; "
         f"{summary['wholeSkillDataStructuralPrefixFiles']} have parser structural prefixes",
@@ -767,7 +791,8 @@ def _markdown(report: Mapping[str, Any]) -> str:
         '',
         'The 10-byte SkillData parser cursor remains authoritative. A selected action candidate is admitted only '
         'after its exact current AbilityActionData route, registered reader, code window and contract are joined; '
-        'the hash-pinned structural action reader then stays inside the current file hard limit. Tag 0x115 also '
+        'the hash-pinned structural action reader then stays inside the current file hard limit. '
+        f'Tag {_tag_text(PLAY_ANIMATION_TYPE)} also '
         'uses its direct payload callsites and shared signed-length helper to record bounded opaque payloads, its '
         'fixed tail and nested sequence. Completed one-child actions can continue through the enclosing sequence '
         'tail, startFrame and ForceSyncAnimData selected reader. Unknown action or nested tags stop at their first '
@@ -874,8 +899,11 @@ def build_timeline_cursor_report(*, corpus_path: Path, native_path: Path,
     action_readers = _action_readers_from_context(
         native, routes, image_base=image_base, source=str(native_path),
         allowed_tags=None)
-    if 0x115 not in action_readers:
-        raise TimelineCursorError('native context lacks the current PlayAnimation action reader')
+    play_animation_tag = _action_tag(PLAY_ANIMATION_TYPE)
+    if play_animation_tag not in action_readers:
+        raise TimelineCursorError(
+            'native context lacks the current PlayAnimation action reader'
+            + union_tags.unavailable_note())
     action_reader_path = ROOT / 'scripts/game_data/memorypack/buff_actions.py'
     _context_source_hash(native, action_reader_path,
                          label='bounded native-selected action reader')
@@ -887,7 +915,7 @@ def build_timeline_cursor_report(*, corpus_path: Path, native_path: Path,
         raise TimelineCursorError(
             'native context lacks the current TimelineActionData/ActionGroupData readers')
     payload_helper = _skilldata_verified_byte_payload_reader(
-        action_readers[0x115], dict(byte_payload_helper), source=str(native_path))
+        action_readers[play_animation_tag], dict(byte_payload_helper), source=str(native_path))
     # ForceSync's nullable montage-name reader uses the same independently
     # verified signed-length helper; do not infer its width from sample bytes.
     _skilldata_sequence_tail_windows(sequence_reader, source=str(native_path))
@@ -1225,7 +1253,7 @@ def build_timeline_cursor_report(*, corpus_path: Path, native_path: Path,
             'verifiedSourceReadCallSites': _row_ranges(
                 reader.get('verifiedSourceReadCallSites')),
         }
-    reader_evidence_by_tag['0x00C9'] = {
+    reader_evidence_by_tag[_tag_text(IF_ELSE_ACTION_NAME, width=4)] = {
         'rootCodeWindow': c9_prefix['rootCodeWindow'],
         'prefixByteLengthIncludingTagAndMemberHeader':
             c9_prefix['prefixByteLengthIncludingTagAndMemberHeader'],
@@ -1318,9 +1346,11 @@ def build_timeline_cursor_report(*, corpus_path: Path, native_path: Path,
             'The current SkillData corpus and native reports are hash-pinned to one inputSet/build, and every '
             'stream row is joined by logical identity, length, MD5 and SHA256. parserCursor is the maintained '
             'SkillData cursor and remains at 10. candidateCursor and its byte ranges belong to a separate '
-            'conditional static-reader replay. A non-0x115 action advances only when the exact current union route, '
+            'conditional static-reader replay. '
+            f'A non-{_tag_text(PLAY_ANIMATION_TYPE)} action advances only when the exact current union route, '
             'registered native reader and hash-pinned structural action reader agree on its root tag/header. '
-            'Unsupported nested tags stop at their first byte. The 0x115 path additionally uses direct payload '
+            'Unsupported nested tags stop at their first byte. '
+            f'The {_tag_text(PLAY_ANIMATION_TYPE)} path additionally uses direct payload '
             'callsites and shared signed-length helper evidence for bounded opaque payloads and its nested sequence. '
             'For one-child paths, the candidate may continue through SequenceActionData tail bytes, startFrame and '
             'ForceSyncAnimData, and can reach a candidate ActionGroupData field-sequence end at the last list item; '

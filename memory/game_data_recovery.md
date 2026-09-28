@@ -253,4 +253,10 @@ residual that cannot be resolved offline.
    mmap, and IFix patch execution.
 8. Improve exact prefab, renderer, material, animation and world-instance
    ownership, and keep native gates and graph provenance deterministic across
-   client updates.
+   client updates. LevelScript, LevelData, Spawner, Story and the Buff action
+   dispatcher resolve union tags by name; literal AbilityActionData tags remain
+   in `skill_timeline_shared_sequence`, `buff_residual_actions`, the nested
+   selector/processor profiles of `buff_actions`, `buff_corpus` frontier lists,
+   receipt `TAG` constants and `buff.py` tables. Their per-route native
+   contracts still refuse another build, but convert them before the next
+   client update.

@@ -7123,7 +7123,8 @@ def build_levelscript_task_mission_state_story_dependencies(
                     condition.get("nativeMappingId")
                     != LEVELSCRIPT_TASK_MISSION_STATE_MAPPING_ID
                     or condition.get("type") != "CheckMissionState"
-                    or condition.get("conditionUnionTag") != "0x0067"
+                    or condition.get("conditionUnionTag")
+                    != _current_union_tag_text("GameCondition", "CheckMissionState", 7)
                     or condition.get("serializedMemberCount") != 7
                     or condition.get("comparerRaw") != 0
                     or condition.get("comparerName") != "Equal"
@@ -9557,6 +9558,24 @@ def parse_level_interactive_quest_progress_lock(
     }
 
 
+def _current_union_tag_text(family: str, name: str, member_count: int) -> str:
+    """The published ``0x%04x`` tag text of one reviewed layout on this build.
+
+    Owner and condition rows publish the raw serialized tag as text
+    (``headerUnionTag``, ``conditionUnionTag``); checks compare it with the
+    tag resolved by type name per build, never with a written-down number,
+    so a client update keeps the contexts. An unvalidated build or a changed
+    member count yields a marker no published tag equals, so the check fails
+    closed.
+    """
+    route = union_tags.routes(family, {name: member_count})
+    return next((f"0x{tag:04x}" for tag, _count in route), f"unresolved:{family}.{name}")
+
+
+def _current_header_union_tag(name: str, member_count: int) -> str:
+    return _current_union_tag_text("ActionHeader", name, member_count)
+
+
 def _exact_interactive_state_entity_logic_id(owner: dict) -> int | None:
     """Return the exact constant world-entity receiver of one native owner."""
     if not isinstance(owner, dict):
@@ -9572,7 +9591,8 @@ def _exact_interactive_state_entity_logic_id(owner: dict) -> int | None:
         and owner.get("nativeHeaderMappingId")
         == LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
         and owner.get("headerName") == "EntityEvent_OnInteractiveStateChanged"
-        and owner.get("headerUnionTag") == "0x001e"
+        and owner.get("headerUnionTag")
+        == _current_header_union_tag("EntityEvent_OnInteractiveStateChanged", 20)
         and owner.get("headerSerializedMemberCount") == 20
         and detail.get("type") == "EntityEvent_OnInteractiveStateChanged"
         and detail.get("payloadSchemaStatus")
@@ -10252,6 +10272,23 @@ def _looks_like_npc_patrol_data_start(data: bytes, offset: int) -> bool:
     )
 
 
+# ``PatrolSubActionData`` layouts read here, with the member count each reads.
+_PATROL_SUB_ACTION_LAYOUTS = {
+    "Core_PatrolSubActionEnvTalkData": 3,
+    "Core_PatrolSubPlayAudioData": 1,
+}
+
+
+def _patrol_sub_action_types() -> dict[int, str]:
+    """The build's ``PatrolSubActionData`` tag of each reviewed layout, by name."""
+    return {
+        tag: name
+        for (tag, _count), name in union_tags.routes(
+            "PatrolSubActionData", _PATROL_SUB_ACTION_LAYOUTS
+        ).items()
+    }
+
+
 def parse_leveldata_patrol_sub_action(
     data: bytes,
     offset: int,
@@ -10260,8 +10297,10 @@ def parse_leveldata_patrol_sub_action(
 
     The generated MemoryPack formatter establishes the complete member order,
     including the variable-size event-blackboard collection and polymorphic
-    ``PatrolSubActionData`` union. Unknown union tags, member counts, enum
-    values, truncation, and non-finite numeric values fail closed.
+    ``PatrolSubActionData`` union, whose tags are resolved by type name per
+    build (``levelscript_union_tags``). Unknown union tags, member counts, enum
+    values, truncation, non-finite numeric values and an unvalidated build fail
+    closed.
     """
     if offset < 0 or offset >= len(data) or data[offset] != 0x1A:
         return None
@@ -10386,11 +10425,14 @@ def parse_leveldata_patrol_sub_action(
     sub_action_offset = cursor
     union_tag = data[cursor]
     cursor += 1
+    sub_action_type = (
+        None if union_tag == 0xFF else _patrol_sub_action_types().get(union_tag)
+    )
     sub_action_data: dict | None
     if union_tag == 0xFF:
         sub_action_data = None
         sub_action_status = "null"
-    elif union_tag == 0x00:
+    elif sub_action_type == "Core_PatrolSubActionEnvTalkData":
         if cursor >= len(data) or data[cursor] != 0x03:
             return None
         cursor += 1
@@ -10407,7 +10449,7 @@ def parse_leveldata_patrol_sub_action(
             "overrideNpc": override_npc,
         }
         sub_action_status = "playEnvTalk"
-    elif union_tag == 0x01:
+    elif sub_action_type == "Core_PatrolSubPlayAudioData":
         if cursor >= len(data) or data[cursor] != 0x01:
             return None
         cursor += 1
@@ -10431,8 +10473,8 @@ def parse_leveldata_patrol_sub_action(
     if action_type is None or wait_time is None or action_type not in range(13):
         return None
     if (
-        (action_type == 5 and union_tag != 0x00)
-        or (action_type == 11 and union_tag != 0x01)
+        (action_type == 5 and sub_action_type != "Core_PatrolSubActionEnvTalkData")
+        or (action_type == 11 and sub_action_type != "Core_PatrolSubPlayAudioData")
         or (action_type not in {5, 11} and union_tag != 0xFF)
     ):
         return None
@@ -10774,7 +10816,8 @@ def _npc_patrol_checkpoint_owner_detail(owner: dict) -> dict:
         and isinstance(selector, dict)
         and owner.get("status") == "exact_serialized_control_path"
         and owner.get("headerName") == "LevelEvent_OnNpcPatrolCheckpointReach"
-        and owner.get("headerUnionTag") == "0x007c"
+        and owner.get("headerUnionTag")
+        == _current_header_union_tag("LevelEvent_OnNpcPatrolCheckpointReach", 21)
         and owner.get("headerSerializedMemberCount") == 21
         and owner.get("nativeHeaderMappingId") == LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
         and detail.get("type") == "LevelEvent_OnNpcPatrolCheckpointReach"
@@ -11190,7 +11233,8 @@ def _leader_trigger_world_entity_owner_detail(owner: dict) -> dict:
         and isinstance(validate_param, dict)
         and owner.get("status") == "exact_serialized_control_path"
         and owner.get("headerName") == "ScriptEvent_OnLeaderEnterTriggerVolume"
-        and owner.get("headerUnionTag") == "0x00be"
+        and owner.get("headerUnionTag")
+        == _current_header_union_tag("ScriptEvent_OnLeaderEnterTriggerVolume", 18)
         and owner.get("headerSerializedMemberCount") == 18
         and owner.get("nativeHeaderMappingId") == LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
         and detail.get("type") == "ScriptEvent_OnLeaderEnterTriggerVolume"
@@ -11228,7 +11272,8 @@ def _script_stage_world_entity_owner_detail(owner: dict) -> dict:
         and isinstance(stage_param, dict)
         and owner.get("status") == "exact_serialized_control_path"
         and owner.get("headerName") == "ScriptEvent_OnScriptStageChanged"
-        and owner.get("headerUnionTag") == "0x00c9"
+        and owner.get("headerUnionTag")
+        == _current_header_union_tag("ScriptEvent_OnScriptStageChanged", 18)
         and owner.get("headerSerializedMemberCount") == 18
         and owner.get("nativeHeaderMappingId") == LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
         and detail.get("type") == "ScriptEvent_OnScriptStageChanged"
@@ -11725,7 +11770,8 @@ def classify_world_entity_story_receiver_owner(owner: dict) -> str:
     if event_name == "ScriptEvent_OnLeaderEnterTriggerVolume":
         trigger_slot_id = detail.get("triggerSlotIdFilter")
         if (
-            owner.get("headerUnionTag") == "0x00be"
+            owner.get("headerUnionTag")
+            == _current_header_union_tag("ScriptEvent_OnLeaderEnterTriggerVolume", 18)
             and owner.get("headerSerializedMemberCount") == 18
             and detail.get("scriptEventScope") == "owning-level-script"
             and detail.get("triggerTarget") == "SELF"
@@ -11739,7 +11785,8 @@ def classify_world_entity_story_receiver_owner(owner: dict) -> str:
 
     if event_name == "ScriptEvent_OnScriptStageChanged":
         if (
-            owner.get("headerUnionTag") == "0x00c9"
+            owner.get("headerUnionTag")
+            == _current_header_union_tag("ScriptEvent_OnScriptStageChanged", 18)
             and owner.get("headerSerializedMemberCount") == 18
             and detail.get("scriptEventScope") == "owning-level-script"
             and detail.get("triggerTarget") == "SELF"
@@ -11755,7 +11802,8 @@ def classify_world_entity_story_receiver_owner(owner: dict) -> str:
     if event_name == "EntityEvent_OnInteractiveStateChanged":
         target_entity = detail.get("targetEntity")
         if (
-            owner.get("headerUnionTag") == "0x001e"
+            owner.get("headerUnionTag")
+            == _current_header_union_tag("EntityEvent_OnInteractiveStateChanged", 20)
             and owner.get("headerSerializedMemberCount") == 20
             and detail.get("entityEventScope") == "specified-entity"
             and detail.get("triggerTarget") == "SPECIFY_ENTITY"

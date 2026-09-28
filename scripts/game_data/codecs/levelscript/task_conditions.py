@@ -1013,9 +1013,14 @@ def _decode_levelscript_check_mission_state_condition(
     offset: int,
     limit: int,
 ) -> tuple[dict[str, Any], int] | None:
-    """Decode one exact GameCondition tag 0x67 / seven-member payload."""
+    """Decode one exact seven-member ``CheckMissionState`` GameCondition.
+
+    Its tag is resolved by type name per build; an unvalidated build, a
+    changed member count or a wide tag decodes nothing.
+    """
     start = offset
-    if offset + 2 > limit or data[offset : offset + 2] != b"\x67\x07":
+    route = union_tags.plain_route("GameCondition", "CheckMissionState", 7)
+    if route is None or offset + 2 > limit or data[offset : offset + 2] != bytes(route):
         return None
     cursor = offset + 2
     if cursor + 4 > limit:
@@ -1063,7 +1068,7 @@ def _decode_levelscript_check_mission_state_condition(
         return None
     return {
         "type": "CheckMissionState",
-        "conditionUnionTag": "0x0067",
+        "conditionUnionTag": f"0x{route[0]:04x}",
         "serializedMemberCount": 7,
         "conditionOffset": start,
         "conditionOffsetHex": _offset_hex(start),

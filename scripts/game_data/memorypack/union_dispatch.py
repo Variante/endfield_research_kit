@@ -30,8 +30,20 @@ instruction shape, and a candidate is accepted only when its entries resolve
 one-for-one onto the family's derived wrapper set with no shared targets;
 anything else raises. The branch rule was checked on every entry of six
 families (ActionBase, PureGetter, ActionHeader, AbilityActionData,
-GameCondition, BaseComponentData). A union compiled to a compare chain with
-no table is refused, not guessed.
+GameCondition, BaseComponentData).
+
+A small union may compile to a linear compare chain instead of a table::
+
+    test tag, tag ; je  branch0
+    cmp  tag, 1   ; jne default    (tag 1 falls through)
+
+Each ``test``/``cmp`` on the one tag register pairs an immediate with its
+``je`` target or, for ``jne``, its fall-through, and the chain continues on
+the not-equal path (``PatrolSubActionData``).  A chain is read only when no
+table resolves, is accepted under the same one-for-one rule, and must name
+tags ``0..N-1``; any other compare shape (a binary-search tree, a range test)
+is refused, not guessed.  A chain has no table, so its ``tableVa`` is
+``None``.
 
 Run as: python -m scripts.game_data.memorypack.union_dispatch --base NAME
 """
@@ -58,6 +70,10 @@ SCAN_BYTES = 0x20000
 BRANCH_SCAN_BYTES = 96
 #: How far into a hot-case split's cold target the table dispatch may start.
 COLD_HEAD_BYTES = 40
+#: How far past the formatter's entry point a compare chain may start.
+CHAIN_SCAN_BYTES = 0x100
+#: Bytes decoded at each chain link: one compare plus one conditional jump.
+CHAIN_LINK_BYTES = 16
 
 
 class UnionDispatchError(RuntimeError):
@@ -232,6 +248,12 @@ def _compare_bound(blob: bytes, branch: int) -> int | None:
 def _entry(image: NativeImage, table_va: int, tag: int) -> SwitchEntry | None:
     pe = image.pe
     target = pe.image_base + struct.unpack("<I", pe.bytes_at_va(table_va + tag * 4, 4))[0]
+    return _entry_at(image, target, tag)
+
+
+def _entry_at(image: NativeImage, target: int, tag: int) -> SwitchEntry | None:
+    """The wrapper whose type-usage cell the branch at ``target`` loads first."""
+    pe = image.pe
     body = target
     head = pe.bytes_at_va(target, 5)
     if head[0] == 0xE9:
@@ -257,6 +279,112 @@ def _entry(image: NativeImage, table_va: int, tag: int) -> SwitchEntry | None:
     )
 
 
+def _compare_at(blob: bytes, at: int) -> tuple[tuple[int, int], int, int] | None:
+    """``(register, immediate, end)`` of a ``test r,r`` or ``cmp r,imm`` at ``at``.
+
+    Register-direct forms only: ``[66][REX] 85 /r`` with equal operands (an
+    immediate of zero), ``[66][REX] 83 /7 ib`` with a non-negative byte,
+    ``[66][REX] 81 /7 iw|id`` and ``[66] 3D iw|id``.  The register is its
+    operand width and number.
+    """
+    cursor, width, rex = at, 32, 0
+    if cursor < len(blob) and blob[cursor] == 0x66:
+        cursor, width = cursor + 1, 16
+    if cursor < len(blob) and 0x40 <= blob[cursor] <= 0x4F:
+        rex, cursor = blob[cursor], cursor + 1
+        width = 64 if rex & 8 else width
+    if cursor + 1 >= len(blob):
+        return None
+    opcode, modrm = blob[cursor], blob[cursor + 1]
+    immediate_width = 2 if width == 16 else 4
+    if opcode == 0x3D and not rex:
+        end = cursor + 1 + immediate_width
+        if end > len(blob):
+            return None
+        return (width, 0), int.from_bytes(blob[cursor + 1:end], "little"), end
+    if modrm >> 6 != 3:
+        return None
+    register = (width, ((rex & 1) << 3) | (modrm & 7))
+    if opcode == 0x85:
+        if (modrm >> 3) & 7 != modrm & 7 or (rex >> 2) & 1 != rex & 1:
+            return None
+        return register, 0, cursor + 2
+    if (modrm >> 3) & 7 != 7:
+        return None
+    if opcode == 0x83 and cursor + 2 < len(blob) and blob[cursor + 2] < 0x80:
+        return register, blob[cursor + 2], cursor + 3
+    if opcode == 0x81:
+        end = cursor + 2 + immediate_width
+        if end > len(blob):
+            return None
+        return register, int.from_bytes(blob[cursor + 2:end], "little"), end
+    return None
+
+
+def _equality_jump_at(blob: bytes, at: int, blob_va: int) -> tuple[bool, int, int] | None:
+    """``(is_je, target, next)`` of a ``je``/``jne`` (rel8 or rel32) at ``at``."""
+    if at + 1 < len(blob) and blob[at] in (0x74, 0x75):
+        end = at + 2
+        return blob[at] == 0x74, blob_va + end + struct.unpack_from("<b", blob, at + 1)[0], blob_va + end
+    if at + 5 < len(blob) and blob[at] == 0x0F and blob[at + 1] in (0x84, 0x85):
+        end = at + 6
+        return blob[at + 1] == 0x84, blob_va + end + struct.unpack_from("<i", blob, at + 2)[0], blob_va + end
+    return None
+
+
+def _compare_chain(image: NativeImage, start: int, limit: int) -> dict[int, int] | None:
+    """``tag -> branch VA`` along the compare chain beginning at ``start``.
+
+    Stops at the first link that is not a compare on the same register
+    followed by ``je``/``jne``; ``None`` when a tag repeats.
+    """
+    pe = image.pe
+    branches: dict[int, int] = {}
+    register = None
+    link = start
+    for _ in range(limit):
+        try:
+            blob = pe.bytes_at_va(link, CHAIN_LINK_BYTES)
+        except ValueError:
+            break
+        compare = _compare_at(blob, 0)
+        if compare is None or (register is not None and compare[0] != register):
+            break
+        jump = _equality_jump_at(blob, compare[2], link)
+        if jump is None:
+            break
+        register, tag = compare[0], compare[1]
+        if tag in branches:
+            return None
+        is_je, target, following = jump
+        branches[tag] = target if is_je else following
+        link = following if is_je else target
+    return branches or None
+
+
+def _compare_chains(image: NativeImage, start: int, count: int) -> list[tuple[int, dict[int, int]]]:
+    """Every ``(chain start, tag -> branch)`` naming exactly tags ``0..count-1``."""
+    blob = image.pe.bytes_at_va(start, CHAIN_SCAN_BYTES)
+    found = []
+    for at in range(len(blob)):
+        compare = _compare_at(blob, at)
+        if compare is None or _equality_jump_at(blob, compare[2], start) is None:
+            continue
+        branches = _compare_chain(image, start + at, count + 1)
+        if branches is not None and sorted(branches) == list(range(count)):
+            found.append((start + at, branches))
+    return found
+
+
+def _resolves_onto(entries: list[SwitchEntry | None], family: set[int]) -> bool:
+    """Every entry resolved, one-for-one onto the family, with no shared branch."""
+    if any(entry is None for entry in entries):
+        return False
+    definitions = [entry.type_definition for entry in entries]
+    targets = [entry.target_va for entry in entries]
+    return set(definitions) == family and len(set(definitions)) == len(entries) == len(set(targets))
+
+
 def read_union_switch(
     image: NativeImage,
     base: str,
@@ -275,22 +403,26 @@ def read_union_switch(
         if count != len(family):
             continue
         entries = [_entry(image, table_va, tag) for tag in range(count)]
-        if any(entry is None for entry in entries):
-            continue
-        definitions = [entry.type_definition for entry in entries]
-        targets = [entry.target_va for entry in entries]
-        if set(definitions) == family and len(set(definitions)) == count and len(set(targets)) == count:
+        if _resolves_onto(entries, family):
             accepted.append((table_va, entries))
+    if not accepted:
+        seen: set[tuple[tuple[int, int], ...]] = set()
+        for _start, branches in _compare_chains(image, dispatcher, len(family)):
+            entries = [_entry_at(image, branches[tag], tag) for tag in range(len(family))]
+            signature = tuple(sorted(branches.items()))
+            if signature not in seen and _resolves_onto(entries, family):
+                seen.add(signature)
+                accepted.append((None, entries))
     if len(accepted) != 1:
         raise UnionDispatchError(
-            f"{base}: expected one jump table resolving onto its {len(family)} wrappers, "
-            f"found {len(accepted)}"
+            f"{base}: expected one jump table or compare chain resolving onto its "
+            f"{len(family)} wrappers, found {len(accepted)}"
         )
     table_va, entries = accepted[0]
     return {
         "base": base,
         "dispatcherVa": hex(dispatcher),
-        "tableVa": hex(table_va),
+        "tableVa": None if table_va is None else hex(table_va),
         "entryCount": len(entries),
         "entries": [entry.row() for entry in entries],
     }

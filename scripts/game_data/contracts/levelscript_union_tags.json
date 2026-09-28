@@ -1,7 +1,7 @@
 {
  "schema": "endfield.levelscript-union-tags.v1",
  "evidenceBoundary": {
-  "exact": "tags from each family's native formatter jump table; member counts from generated wrapper setters",
+  "exact": "tags from each family's native formatter switch (jump table, or compare chain where tableVa is null); member counts from generated wrapper setters",
   "unresolved": "what any record does; this is identity only"
  },
  "nativeInputs": {
@@ -86,6 +86,12 @@
    "dispatcherVa": "0x1844e4d50",
    "tableVa": "0x184fe12fe",
    "entryCount": 6
+  },
+  "PatrolSubActionData": {
+   "base": "Beyond.MemoryPack.Beyond_Gameplay_Core_PatrolSubActionDataForMemoryPack",
+   "dispatcherVa": "0x184392b90",
+   "tableVa": null,
+   "entryCount": 2
   }
  },
  "families": {
@@ -27126,6 +27132,22 @@
     "tag": 5,
     "memberCount": 12,
     "wrappedType": "Beyond.Gameplay.SpawnerActions+SpawnMonsterFromTemplateV2"
+   }
+  ],
+  "PatrolSubActionData": [
+   {
+    "name": "Core_PatrolSubActionEnvTalkData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PatrolSubActionEnvTalkDataForMemoryPack",
+    "tag": 0,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.PatrolSubActionEnvTalkData"
+   },
+   {
+    "name": "Core_PatrolSubPlayAudioData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PatrolSubPlayAudioDataForMemoryPack",
+    "tag": 1,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.PatrolSubPlayAudioData"
    }
   ]
  }

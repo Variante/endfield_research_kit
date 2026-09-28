@@ -56,6 +56,9 @@ FAMILY_BASES = {
     "ConditionRuntimeBase": "Beyond_Gameplay_ConditionRuntimeBaseForMemoryPack",
     "FunctionAreaSpecificData": "Beyond_Gameplay_LevelFunctionAreaData_FunctionAreaSpecificDataForMemoryPack",
     "SpawnerActionData": "Beyond_Gameplay_SpawnerActionDataForMemoryPack",
+    # The two-member sub-action union inside NPC patrol points; its formatter
+    # dispatches through a compare chain rather than a jump table.
+    "PatrolSubActionData": "Beyond_Gameplay_Core_PatrolSubActionDataForMemoryPack",
 }
 _WRAPPER_PREFIXES = ("Beyond.MemoryPack.Beyond_Gameplay_Actions_", "Beyond.MemoryPack.Beyond_Gameplay_")
 _WRAPPER_SUFFIX = "ForMemoryPack"
@@ -192,6 +195,26 @@ def name_of(family: str, key: tuple[Any, ...]) -> str:
     return ""
 
 
+_TAG_INDEX: list[Any] = [None, {}]
+
+
+def tag_name(family: str, tag: int) -> str:
+    """The type one current tag of a family names, or ``""``.
+
+    For readers that dispatch on the tag they just read: compare the result
+    with reviewed type names. ``""`` when the build is not validated or the
+    tag is outside the family. The index is rebuilt whenever the loaded
+    contract changes.
+    """
+    loaded = _load()
+    if _TAG_INDEX[0] is not loaded:
+        _TAG_INDEX[:] = [loaded, {
+            family_name: {value[0]: name for name, value in rows.items()}
+            for family_name, rows in loaded[0].items()
+        }]
+    return _TAG_INDEX[1].get(family, {}).get(tag, "")
+
+
 def wrapper_name(family: str, name: str) -> str:
     """The generated wrapper type behind one named union member, or ``""``."""
     return _wrappers().get(family, {}).get(name, "")
@@ -267,7 +290,8 @@ def regenerate() -> dict[str, Any]:
     return {
         "schema": SCHEMA,
         "evidenceBoundary": {
-            "exact": "tags from each family's native formatter jump table; member counts from generated wrapper setters",
+            "exact": ("tags from each family's native formatter switch (jump table, or compare chain "
+                      "where tableVa is null); member counts from generated wrapper setters"),
             "unresolved": "what any record does; this is identity only",
         },
         "nativeInputs": {"gameAssemblySha256": native.gameassembly_sha256.upper(),

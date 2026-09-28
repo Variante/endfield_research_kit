@@ -50,6 +50,15 @@ reviewed ``buff_root_prefix``/``fifth``/``sixth`` native contracts:
   reverses the first collection's scalar/array order, so equal member counts
   do not make the two maps interchangeable.
 
+``Reader._action`` dispatches AbilityActionData records by type name: the tag
+it reads is resolved per build (``levelscript_union_tags.tag_name``), and the
+supported set, each reviewed member count (``_ACTION_MEMBER_COUNTS``) and
+every per-type body are keyed by name, so a client update that renumbers the
+union moves the routes with it. An unvalidated build admits no action.
+``IF_ELSE_ACTION_TAG`` stays exported for the receipt that validates it
+against the tag contract; the nested selector and processor unions below
+still key on their tags.
+
 Extended unions consume ``FA`` followed by a little-endian unsigned 16-bit
 tag; records keep the decoded tag, not the escape byte. Supporting a decoded
 tag does not admit its reserved single-byte encoding. The recurring action
@@ -61,6 +70,8 @@ do not establish processor arithmetic, presentation behavior, live provider
 choice or whole-BuffData EOF.
 """
 import struct
+
+from scripts.game_data import levelscript_union_tags as union_tags
 
 
 IF_ELSE_ACTION_TAG = 0x00C9
@@ -76,6 +87,221 @@ IF_ELSE_ACTION_READ_KINDS = (
     'SequenceActionData',
 )
 SEQUENCE_RECURSION_LIMIT = 64
+
+IF_ELSE_ACTION_NAME = 'Core_IfElseAction_IfElseActionData'
+
+# Every AbilityActionData type ``Reader._action`` reads, with the member count
+# its layout reads. Keyed by type name: the tag is resolved per build
+# (``levelscript_union_tags.tag_name``) and never written down here.
+_ACTION_MEMBER_COUNTS = {
+    IF_ELSE_ACTION_NAME: IF_ELSE_ACTION_MEMBER_COUNT,
+    'Core_Conditions_CheckSkillId_Data': 5,
+    'Core_ModifyDynamicBlackboard_Data': 10,
+    'Core_CompareFloat_Data': 7,
+    'Core_RaiseTrainLevelEvent_Data': 8,
+    'Core_FinishBuffAdvanced_Data': 13,
+    'Core_Conditions_CheckBuffIdInContext_Data': 8,
+    'Core_CreateBuffAction_Data': 19,
+    'Core_Conditions_CheckBuffIdInContextAdvanced_Data': 8,
+    'Core_Conditions_CheckDamageDecorateMask_Data': 6,
+    'Core_CheckBuffStackNumAdvanced_Data': 10,
+    'Core_Conditions_CheckSkillType_Data': 9,
+    'Core_FindTargetAction_FindTargetActionData': 18,
+    'Core_Conditions_CheckMainCharacterCondition_Data': 5,
+    'Core_Conditions_CheckTimedMarkerCondition_Data': 9,
+    'Core_Conditions_CheckBuffStackNum_Data': 8,
+    'Core_AbilityActions_FinishBuffAction_Data': 12,
+    'Core_DamageAction_DamageActionData': 11,
+    'Core_EffectAction_EffectActionData': 18,
+    'Core_Conditions_CheckHp_Data': 8,
+    'Core_SpawnAbilityEntity_Data': 38,
+    'Core_SetSkillCdAtOnce_Data': 11,
+    'Core_Conditions_CheckPoiseValue_Data': 8,
+    'Core_ObtainCostAction_Data': 20,
+    'Core_CreateTimedMarker_Data': 9,
+    'Core_NotNextCheckAction_Data': 4,
+    'Core_Conditions_CheckTagMatch_Data': 6,
+    'Core_FinishOwnerAction_Data': 6,
+    'Core_Conditions_CheckTargetsEqual_Data': 6,
+    'Core_SpellInflictionOnChar_Data': 13,
+    'Core_Conditions_CheckSuperArmor_Data': 7,
+    'Core_Conditions_CheckPhysicalInflictionType_Data': 6,
+    'Core_SaveBuffStackNumAdvanced_Data': 9,
+    'Core_SimpleCalcBBAction_Data': 8,
+    'Core_Conditions_CheckObjectTypeMatch_Data': 6,
+    'Core_CheckGlobalCDTimerAction_Data': 6,
+    'Core_PauseBuffTime_Data': 5,
+    'Core_DebugPrintAction_Data': 9,
+    'Core_HealAction_Data': 16,
+    'Core_PlaySoundAction_PlaySoundActionData': 22,
+    'Core_AddGlobalCDTimer_Data': 7,
+    'Core_Conditions_CheckSpellInflictionType_Data': 6,
+    'Core_Conditions_Probablity_Data': 5,
+    'Core_CheckOriginSkillType_Data': 6,
+    'Core_Conditions_CheckCustomAbilityEvent_Data': 6,
+    'Core_GetTargetBuffBBAdvanced_Data': 8,
+    'Core_SendBattleSignalToLevel_Data': 6,
+    'Core_LaunchProjectile_Data': 37,
+    'Core_ForEachAction_Data': 6,
+    'Core_Conditions_CheckObtainAtbType_Data': 8,
+    'Core_CameraImpulseAction_CameraImpulseActionData': 12,
+    'Core_SpawnInteractiveGoldCoin_Data': 6,
+    'Core_Conditions_CheckTargetContains_Data': 6,
+    'Core_CharHurtAnimAction_Data': 15,
+    'Core_MergeTargetAction_Data': 7,
+    'Core_Conditions_CheckEntityNum_Data': 10,
+    'Core_CheckConsumeBuffLayer_Data': 7,
+    'Core_SetBuffDurationAction_Data': 9,
+    'Core_Conditions_CheckSkillCastId_Data': 4,
+    'Core_Conditions_CheckDamageType_Data': 5,
+    'Core_CheckDistanceCondition_Data': 10,
+    'Core_CastSkill_Data': 10,
+    'Core_CreateGlobalBuffAction_Data': 8,
+    'Core_Conditions_CheckSkillDamageType_Data': 5,
+    'Core_SpellInfliction_Data': 8,
+    'Core_ShowHideActorAction_ShowHideActorData': 10,
+    'Core_Conditions_SaveHealValue_Data': 6,
+    'Core_StoreAttributeValue_Data': 13,
+    'Core_SaveAtbObtainValue_Data': 6,
+    'Core_InterruptAction_Data': 8,
+    'Core_Conditions_CheckEnemyRank_Data': 6,
+    'Core_RecoverFromPoiseBreak_Data': 5,
+    'Core_BlowOffCharacterAction_Data': 15,
+    'Core_AchieveSpecialGameEventAction_Data': 5,
+    'Core_SaveValueFromAIBlackboard_Data': 11,
+    'Core_AbilityActions_FinishGlobalBuffAction_Data': 9,
+    'Core_CompareString_Data': 6,
+    'Core_Conditions_CheckDamageTypeMask_Data': 5,
+    'Core_SaveDamageContext_Data': 6,
+    'Core_Conditions_CheckWeaponTypeCondition_Data': 6,
+    'Core_StoreEntityProperty_Data': 11,
+    'Core_CheckDamageTransferredSource_Data': 6,
+    'Core_EnemyHurtAnimAction_Data': 28,
+    'Core_Conditions_CheckHasDamageSkillCastId_Data': 4,
+    'Core_SaveDamageSkillCastId_Data': 4,
+    'Core_CountShieldUIAction_Data': 8,
+    'Core_ForceTargetInFightAction_Data': 6,
+    'Core_AddTagAction_Data': 8,
+    'Core_AddTagToEntities_Data': 8,
+    'Core_ChangeSeasonTowerEnergyAction_Data': 5,
+    'Core_PlayAnimationAction_PlayAnimationActionData': 16,
+    'Core_SetHpFloor_Data': 8,
+    'Core_SaveShieldValueToBB_Data': 7,
+    'Core_SaveTargetDistanceAction_Data': 7,
+    'Core_CurveEvaluateFloat_Data': 9,
+    'Core_SwitchAction_Data': 7,
+    'Core_CreateBuffAttachingSkill_Data': 19,
+    'Core_StoreSkillDamageType_Data': 5,
+    'Core_NotifyCharPassiveUIAction_Data': 6,
+    'Core_Conditions_CheckUsp_Data': 8,
+    'Core_SaveCollectedBuffBbValue_Data': 6,
+    'Core_Conditions_ModifyCollectedBuffBbValue_Data': 9,
+    'Core_Conditions_CheckHealTag_Data': 5,
+    'Core_Conditions_CheckOverHeal_Data': 7,
+    'Core_Conditions_CheckSkillInterruptReason_Data': 5,
+    'Core_TriggerCustomAbilityEvent_Data': 8,
+    'Core_CheckDamageTag_Data': 6,
+    'Core_TriggerComboSkillAction_Data': 9,
+    'Core_SaveCharTypeId_Data': 6,
+    'Core_TriggerLiinoUIEvent_Data': 7,
+    'Core_SaveBuffStackNum_Data': 7,
+    'Core_ReadSkillSettingData_Data': 5,
+    'Core_Conditions_CheckDamageIgnoreImmuneLevel_Data': 6,
+    'Core_TimeDilationAction_Data': 16,
+    'Core_ChannelingAction_Data': 10,
+    'Core_ShakeCountShieldUIAction_Data': 5,
+    'Core_SpendAtbAction_Data': 7,
+    'Core_AbilityActions_InterruptCurSkillAction_Data': 5,
+    'Core_CheckBuffEnhanceChangedLayer_Data': 7,
+    'Core_ClearProjectileAction_Data': 12,
+    'Core_SetGeneralAbilityCd_Data': 6,
+    'Core_EnablePartsAction_Data': 11,
+    'View_AddCameraControlStateAction_AddCameraControlStateActionData': 23,
+    'Core_AddDynamicCcsAction_AddDynamicCcsActionData': 50,
+    'Core_RandomAction_Data': 8,
+    'Core_DispelAction_Data': 9,
+    'Core_BlowOffAction_Data': 17,
+    'Core_Conditions_OrConditionAction_Data': 5,
+    'Core_Condition_CheckSquadInFight_Data': 5,
+    'Core_CostAtbRefreshLongestSkillCd_Data': 5,
+    'Core_RecoverDashEnergy_Data': 6,
+    'Core_RecordBattleDetails_Data': 5,
+    'Core_SetFirstDashParam_Data': 5,
+    'Core_Conditions_CheckProjectileInPerfectDodgeCd_Data': 5,
+    'Core_Conditions_CheckProjectileIgnoreImmuneLevel_Data': 6,
+    'Core_SetSuperArmorAction_Data': 7,
+    'Core_AuraAction_Data': 30,
+    'Core_SwitchModeAction_Data': 8,
+    'Core_GetAITransDataAction_Data': 6,
+    'Core_OnSpellAbnormalStartFinish_Data': 6,
+    'Core_HitStopAction_Data': 12,
+    'Core_VulnerableAction_Data': 14,
+    'Core_RecoverPoiseAction_Data': 11,
+    'Core_SkillAffixAction_Data': 4,
+    'Core_IgniteBuffTextAction_Data': 11,
+    'Core_RefreshBuffAttrModifierValue_Data': 4,
+    'Core_ChangeSkillAction_Data': 14,
+    'Core_RecoverLockOnEndIfNoLockAction_Data': 5,
+    'Core_EnhancedAction_Data': 14,
+    'Core_MoveToAction_Data': 46,
+    'Core_TeleportAction_Data': 14,
+    'Core_TriggerCharSpellInflictionEvent_Data': 7,
+    'Core_ForceHideHeadBarAction_Data': 6,
+    'Core_MoveGaitAction_Data': 6,
+    'Core_SaveBuffLifeTime_Data': 7,
+    'Core_SetAnimatorParamAction_Data': 8,
+    'Core_ShelterAction_Data': 13,
+    'Core_CharWeaponVisibleAction_CharWeaponVisibleActionData': 10,
+    'Core_RefrainObtainUsp_Data': 7,
+    'Core_SelfRotateAction_Data': 18,
+    'Core_SetWeaknessAction_Data': 11,
+    'Core_AddAIMarkerAction_Data': 8,
+    'Core_TriggerSpellBurstEventAction_Data': 5,
+    'Core_WeakAction_Data': 13,
+    'Core_ContinuousFindTargetAction_Data': 19,
+    'Core_SetAnimTimeScaleAction_Data': 6,
+    'Core_SlowAction_Data': 13,
+    'Core_StoreBuffCount_Data': 8,
+    'Core_ChangeGeneralAbilityButton_Data': 7,
+    'Core_OnSpellInflictionStart_Data': 5,
+    'Core_TyphoeaArcheryChipDataAction_Data': 18,
+    'Core_TyphoeaIsInShootingRangeAction_Data': 6,
+    'Core_ForceTriggerWeakness_Data': 6,
+    'Core_SetDamageTagImmuneRule_Data': 6,
+    'Core_LockCameraAimAction_LockCameraAimActionData': 54,
+    'Core_IgniteAction_Data': 8,
+    'Core_BindBountyEnemyAction_Data': 5,
+    'Core_EventListenerAction_Data': 5,
+    'Core_VoiceTriggerAction_VoiceTriggerActionData': 11,
+    'Core_VoiceInterruptAction_VoiceInterruptActionData': 6,
+    'Core_CreateAdditionalBattleShape_Data': 10,
+    'Core_CreateDynamicBattleShape_Data': 7,
+    'Core_TogglableAction_Data': 6,
+    'Core_LaunchUpwardAction_Data': 15,
+    'Core_BombTouchLayerAction_Data': 15,
+    'Core_FlowTextAction_Data': 9,
+    'Core_ModifyResilienceDecreaseFactor_Data': 5,
+    'Core_Conditions_CheckBuffFromSource_Data': 9,
+    'Core_CharWeaponAnimationAction_CharWeaponAnimationActionData': 12,
+    'Core_BreakoutAction_Data': 6,
+    'Core_EnableSpecialAim_Data': 7,
+    'Core_BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionData': 11,
+    'Core_SpawnEnemyAction_Data': 18,
+    'Core_Conditions_CheckProfession_Data': 6,
+    'Core_ShowSquadTipsAction_Data': 5,
+    'Core_GainCostAction_Data': 7,
+    'Core_PullAction_Data': 19,
+    'Core_ConvertToTargetContext_Data': 12,
+    'Core_ComboCacheAction_Data': 5,
+    'Core_SpeedupAction_Data': 13,
+    'Core_Conditions_CompareDeckAttr_Data': 10,
+    'Core_SetStrafeModeAction_Data': 10,
+    'Core_SetWaterDroneItemModePersistLiquidIdAction_Data': 6,
+    'Core_TagQueryListenerAction_Data': 9,
+    'Core_AirborneAction_AirborneActionData': 16,
+    'Core_CastPlungingAttack_Data': 5,
+}
+
 
 
 class FrameError(ValueError):
@@ -151,7 +377,8 @@ class Reader:
         # FA carries an unsigned little-endian tag, not a child-object header.
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
-        if tag==268:
+        name=union_tags.tag_name('AbilityActionData',tag)
+        if name=='Core_PatrolTeleport_Data':
             # This selected header-six action reads a byte, three raw scalars,
             # a bounded signed-length byte payload, then four float32 bytes.
             self.take(width,'union-tag')
@@ -162,7 +389,7 @@ class Reader:
             self.byte_payload(reserve=4)
             self.take(4,'anonymous-float32-bits')
             return
-        if tag in (213,214):
+        if name in ('Core_IntResourceHpCheckAction_Data','Core_IntResourceOnHpZeroAction_Data'):
             # Current native routes D5/D6 share a four-member source reader:
             # one boolean byte followed by three fixed-width raw DWORDs.
             # Keep the child values anonymous; the VFS bytes do not establish
@@ -174,17 +401,17 @@ class Reader:
             for _ in range(3):self.take(4,'anonymous-scalar32')
             return
         # FC/FD/FE are authenticated only in their extended encodings.
-        if (width==1 and tag>=251) or tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98,316,144,187,11,12,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,64,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398,402,206,23,173,408,407,145,148,388,223,31,183,240,85,54,32,168,35,362,111,353,192,284,140,78,364,133,344,346,377,188,334,224,13,38):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if (width==1 and tag>=251) or name not in _ACTION_MEMBER_COUNTS:raise Unsupported(self.source,self.pos,'supported current union tag'+union_tags.unavailable_note(),tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({IF_ELSE_ACTION_TAG:IF_ELSE_ACTION_MEMBER_COUNT,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11,162:18,101:8,361:38,343:11,110:8,254:20,150:9,253:4,124:6,182:6,128:6,366:13,123:7,109:6,310:9,355:8,105:6,68:6,271:5,155:9,197:16,281:22,10:7,122:6,136:5,72:6,90:6,196:8,325:6,222:37,189:6,106:8,36:12,363:6,126:6,53:15,234:7,97:10,63:7,333:9,115:4,93:5,66:10,39:10,149:8,116:5,365:8,352:10,137:6,369:13,306:6,212:8,96:6,294:5,28:15,6:5,322:11,3:9,81:6,94:5,315:6,132:6,372:11,65:6,169:28,98:4,316:4,144:8,187:6,11:8,12:8,43:5,277:16,337:8,319:7,320:7,152:9,374:7,147:19,373:5,252:6,131:8,314:6,134:9,99:5,107:7,119:5,392:8,64:6,391:9,313:6,394:7,309:7,290:5,92:6,387:16,47:10,348:5,367:7,5:5,58:7,76:12,336:6,167:11,414:23,8:50,288:8,159:9,27:17,135:5,82:5,142:5,293:6,292:5,335:5,113:5,112:6,345:7,22:30,376:8,193:6,257:6,199:12,411:14,296:11,356:4,207:11,299:4,44:14,295:5,171:14,246:46,380:14,390:7,185:6,244:6,307:7,330:8,349:13,55:10,298:7,324:18,347:11,7:8,395:5,412:13,138:19,331:6,358:13,370:8,40:7,258:5,398:18,402:6,188:6,334:6,224:54,206:8,23:5,173:5,408:11,407:6,145:10,148:7,388:6,223:15,31:15,183:9,240:5,85:9,54:12,32:6,168:7,35:11,362:18,111:6,353:5,192:7,284:19,140:12,78:5,364:13,133:10,344:10,346:6,377:9,13:16,38:5}[tag])
+        self.header(_ACTION_MEMBER_COUNTS[name])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
-        if tag==38:
+        if name=='Core_CastPlungingAttack_Data':
             # The selected header-five reader consumes the existing bounded
             # TargetSettings profile after its anonymous byte/DWORD prefix.
             self.target_profile();return
-        if tag==13:
+        if name=='Core_AirborneAction_AirborneActionData':
             # The selected header-16 reader follows the static source order:
             # EffectActionCfg, DWORD, DirectionSettings, two BlackboardDouble
             # profiles, direct bytes/words, then two TargetSettings profiles.
@@ -200,11 +427,11 @@ class Reader:
             self.take(4,'anonymous-raw4')
             self.target_profile()
             return
-        if tag==78:
+        if name=='Core_ComboCacheAction_Data':
             start=self.pos
             for _ in range(max(0,self.count(1,nullable=True))):self.combo_cache_mapping_profile()
             self.records.append(dict(start=start,end=self.pos,kind='anonymous-combo-cache-mapping-list'));return
-        if tag==364:
+        if name=='Core_SpeedupAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.take(1,'anonymous-nonzero-byte')
             self.paired_payload();self.scalar_payload()
             list_start=self.pos
@@ -212,7 +439,7 @@ class Reader:
             self.records.append(dict(start=list_start,end=self.pos,kind='anonymous-keyword-edit-list'))
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
             self.target_profile();self.target_profile();return
-        if tag==133:
+        if name=='Core_Conditions_CompareDeckAttr_Data':
             # The common byte/three-DWORD prefix above covers members 1-4.
             # Members 5-6 and 8 are direct scalar32 reads; the nested scalar
             # and target profiles retain their own null and unsupported states.
@@ -221,14 +448,14 @@ class Reader:
             self.take(4,'anonymous-scalar32')
             self.scalar_payload()
             self.target_profile();return
-        if tag==377:
+        if name=='Core_TagQueryListenerAction_Data':
             # The selected header-nine reader consumes two existing bounded
             # profiles between its shared prefix and anonymous byte/DWORD tail.
             self.query_profile();self.sequence(depth)
             self.take(1,'anonymous-byte')
             self.take(4,'anonymous-scalar32');self.take(4,'anonymous-scalar32')
             return
-        if tag==344:
+        if name=='Core_SetStrafeModeAction_Data':
             # The selected header-ten reader ends with a bounded TargetSettings
             # and a required opaque four-byte slot.
             self.take(1,'anonymous-byte');self.take(1,'anonymous-byte')
@@ -236,25 +463,25 @@ class Reader:
             self.target_profile()
             self.take(4,'anonymous-raw4')
             return
-        if tag==346:
+        if name=='Core_SetWaterDroneItemModePersistLiquidIdAction_Data':
             # The selected header-six reader reuses the bounded paired-byte
             # payload and TargetSettings profiles after its shared prefix.
             self.paired_payload()
             self.target_profile()
             return
-        if tag==402:
+        if name=='Core_TyphoeaIsInShootingRangeAction_Data':
             # The selected header-six reader consumes two independent bounded
             # byte payloads after its shared byte/three-DWORD prefix.
             self.byte_payload()
             self.byte_payload()
             return
-        if tag==334:
+        if name=='Core_SetDamageTagImmuneRule_Data':
             # The selected header-six reader consumes GameplayTagQuery and
             # TargetSettings profiles after its shared byte/three-DWORD prefix.
             self.query_profile()
             self.target_profile()
             return
-        if tag==224:
+        if name=='Core_LockCameraAimAction_LockCameraAimActionData':
             # The header-54 reader has already consumed members 1-4 above.
             # Preserve the remaining direct source order; static type contexts
             # select bounded profiles, not field names or camera semantics.
@@ -293,17 +520,17 @@ class Reader:
             self.target_profile()
             for _ in range(2):self.take(1,'anonymous-byte')
             return
-        if tag==188:
+        if name=='Core_ForceTriggerWeakness_Data':
             # The selected header-six reader consumes two independent bounded
             # TargetSettings profiles after its shared byte/three-DWORD prefix.
             self.target_profile()
             self.target_profile()
             return
-        if tag==140:
+        if name=='Core_ConvertToTargetContext_Data':
             self.vector_payload();self.target_profile()
             self.take(4,'anonymous-scalar32');self.take(4,'anonymous-scalar32');self.byte_payload()
             self.take(4,'anonymous-scalar32');self.take(4,'anonymous-raw4');self.take(4,'anonymous-scalar32');return
-        if tag==284:
+        if name=='Core_PullAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.take(1,'anonymous-nonzero-byte')
             start=self.pos
             for _ in range(max(0,self.count(1,reserve=24,nullable=True))):self.pull_attenuation_profile()
@@ -313,89 +540,89 @@ class Reader:
             self.take(4,'anonymous-raw4');self.take(4,'anonymous-raw4');self.scalar_payload()
             self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32');self.take(4,'anonymous-raw4')
             self.target_profile();self.take(1,'anonymous-nonzero-byte');return
-        if tag==192:
+        if name=='Core_GainCostAction_Data':
             self.cost_profile()
             self.take(4,'anonymous-scalar32');self.take(4,'anonymous-scalar32');return
-        if tag==111:self.target_profile();self.take(4,'anonymous-scalar32');return
-        if tag==362:
+        if name=='Core_Conditions_CheckProfession_Data':self.target_profile();self.take(4,'anonymous-scalar32');return
+        if name=='Core_SpawnEnemyAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.target_profile()
             self.take(12,'anonymous-raw12');self.take(4,'anonymous-scalar32');self.take(16,'anonymous-raw16')
             for _ in range(max(0,self.count(1,reserve=17,nullable=True))):self.input_profile()
             self.target_profile();self.byte_payload();self.byte_payload()
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();self.take(4,'anonymous-raw4')
             self.take(1,'anonymous-nonzero-byte');self.target_profile();return
-        if tag==35:
+        if name=='Core_BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionData':
             self.skill_alert_profile()
             self.take(4,'anonymous-scalar32');self.take(4,'anonymous-scalar32');self.byte_payload()
             self.take(4,'anonymous-scalar32');self.take(4,'anonymous-raw4');self.target_profile();return
-        if tag==168:
+        if name=='Core_EnableSpecialAim_Data':
             self.special_aim_shape_list();self.target_profile();self.take(4,'anonymous-scalar32');return
-        if tag==32:self.byte_payload();self.take(4,'anonymous-scalar32');return
-        if tag==54:
+        if name=='Core_BreakoutAction_Data':self.byte_payload();self.take(4,'anonymous-scalar32');return
+        if name=='Core_CharWeaponAnimationAction_CharWeaponAnimationActionData':
             for _ in range(2):self.take(1,'anonymous-byte')
             self.animator_param_profile();self.animator_param_profile()
             self.take(4,'anonymous-raw4');self.take(1,'anonymous-byte')
             self.animator_param_profile();self.take(4,'anonymous-scalar32');return
-        if tag==85:
+        if name=='Core_Conditions_CheckBuffFromSource_Data':
             self.single_payload();self.target_profile();self.target_profile()
             self.take(1,'anonymous-byte');self.scalar_payload();return
-        if tag==183:
+        if name=='Core_FlowTextAction_Data':
             self.take(16,'anonymous-raw16');self.take(1,'anonymous-byte');self.take(4,'anonymous-scalar32')
             self.target_profile();self.byte_payload();return
-        if tag==31:
+        if name=='Core_BombTouchLayerAction_Data':
             self.sequence(depth);self.sequence(depth);self.effect_configuration_profile()
             self.take(1,'anonymous-byte');self.take(4,'anonymous-scalar32');self.take(4,'anonymous-float32-bits')
             self.target_profile();self.take(4,'anonymous-scalar32');self.sequence(depth)
             self.effect_configuration_profile();self.take(4,'anonymous-scalar32');return
-        if tag==223:
+        if name=='Core_LaunchUpwardAction_Data':
             self.effect_configuration_profile();self.take(4,'anonymous-scalar32');self.direction_profile()
             self.scalar_payload();self.scalar_payload();self.take(4,'anonymous-float32-bits')
             self.take(4,'anonymous-scalar32');self.target_profile();self.take(4,'anonymous-float32-bits')
             self.target_profile();self.take(1,'anonymous-byte');return
-        if tag==388:self.sequence(depth);self.sequence(depth);return
-        if tag==145:
+        if name=='Core_TogglableAction_Data':self.sequence(depth);self.sequence(depth);return
+        if name=='Core_CreateAdditionalBattleShape_Data':
             self.take(4,'anonymous-float32-bits')
             for _ in range(3):self.take(1,'anonymous-byte')
             self.collider_shape_profile();self.target_profile();return
-        if tag==148:
+        if name=='Core_CreateDynamicBattleShape_Data':
             self.take(4,'anonymous-float32-bits');self.take(4,'anonymous-float32-bits')
             self.take(4,'anonymous-scalar32');return
-        if tag==407:self.take(4,'anonymous-scalar32');self.take(1,'anonymous-byte');return
-        if tag==408:
+        if name=='Core_VoiceInterruptAction_VoiceInterruptActionData':self.take(4,'anonymous-scalar32');self.take(1,'anonymous-byte');return
+        if name=='Core_VoiceTriggerAction_VoiceTriggerActionData':
             self.take(4,'anonymous-scalar32');self.take(4,'anonymous-scalar32');self.byte_payload()
             self.take(4,'anonymous-scalar32');self.take(4,'anonymous-scalar32');self.byte_payload()
             self.target_profile();return
-        if tag==173:self.ability_action_map_collection_profile(depth);return
-        if tag==23:self.paired_payload();return
-        if tag==206:
+        if name=='Core_EventListenerAction_Data':self.ability_action_map_collection_profile(depth);return
+        if name=='Core_BindBountyEnemyAction_Data':self.paired_payload();return
+        if name=='Core_IgniteAction_Data':
             self.target_profile();self.take(4,'anonymous-scalar32');self.byte_payload();self.target_profile();return
-        if tag==398:
+        if name=='Core_TyphoeaArcheryChipDataAction_Data':
             for _ in range(4):self.byte_payload()
             for _ in range(5):self.take(1,'anonymous-byte')
             self.byte_payload();self.byte_payload();self.take(1,'anonymous-byte')
             self.byte_payload();self.byte_payload();return
-        if tag==40:
+        if name=='Core_ChangeGeneralAbilityButton_Data':
             self.single_payload();self.byte_payload();self.take(4,'anonymous-scalar32');return
-        if tag==370:
+        if name=='Core_StoreBuffCount_Data':
             self.byte_payload();self.byte_payload();self.target_profile();self.take(1,'anonymous-byte');return
-        if tag==331:
+        if name=='Core_SetAnimTimeScaleAction_Data':
             self.target_profile();self.scalar_payload();return
-        if tag==138:
+        if name=='Core_ContinuousFindTargetAction_Data':
             self.direction_profile();self.take(4,'anonymous-scalar32');self.byte_payload()
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-byte');self.byte_payload()
             self.selector_profile();self.take(4,'anonymous-scalar32');self.take(4,'anonymous-scalar32')
             self.byte_payload();self.take(4,'anonymous-scalar32');self.byte_payload()
             self.take(1,'anonymous-byte');self.take(1,'anonymous-byte')
             self.take(4,'anonymous-float32-bits');return
-        if tag in (395,258):self.take(4,'anonymous-scalar32');return
-        if tag==7:
+        if name in ('Core_TriggerSpellBurstEventAction_Data','Core_OnSpellInflictionStart_Data'):self.take(4,'anonymous-scalar32');return
+        if name=='Core_AddAIMarkerAction_Data':
             self.scalar_payload();self.take(4,'anonymous-scalar32');self.target_profile();self.take(1,'anonymous-byte')
             return
-        if tag==347:
+        if name=='Core_SetWeaknessAction_Data':
             self.scalar_payload();self.scalar_payload();self.take(1,'anonymous-byte')
             self.sequence(depth);self.scalar_payload();self.take(1,'anonymous-byte');self.scalar_payload()
             return
-        if tag==324:
+        if name=='Core_SelfRotateAction_Data':
             self.direction_profile()
             for _ in range(5):self.take(1,'anonymous-byte')
             self.byte_payload()
@@ -403,37 +630,37 @@ class Reader:
             self.take(4,'anonymous-raw-float32');self.take(4,'anonymous-scalar32')
             self.target_profile();self.take(1,'anonymous-byte')
             return
-        if tag==298:
+        if name=='Core_RefrainObtainUsp_Data':
             self.take(1,'anonymous-byte');self.tag_list_profile(reserve=1);self.target_profile()
             return
-        if tag==55:
+        if name=='Core_CharWeaponVisibleAction_CharWeaponVisibleActionData':
             for _ in range(3):self.take(1,'anonymous-byte')
             self.weapon_vfx_profile();self.take(1,'anonymous-byte');self.take(4,'anonymous-scalar32')
             return
-        if tag==330:
+        if name=='Core_SetAnimatorParamAction_Data':
             self.take(1,'anonymous-byte')
             self.animator_param_profile();self.animator_param_profile();self.byte_payload()
             return
-        if tag==307:
+        if name=='Core_SaveBuffLifeTime_Data':
             self.target_profile();self.finder_profile();self.byte_payload()
             return
-        if tag==244:
+        if name=='Core_MoveGaitAction_Data':
             for _ in range(2):self.take(4,'anonymous-scalar32')
             return
-        if tag==185:
+        if name=='Core_ForceHideHeadBarAction_Data':
             self.take(1,'anonymous-byte')
             self.target_profile()
             return
-        if tag==390:
+        if name=='Core_TriggerCharSpellInflictionEvent_Data':
             self.target_profile()
             for _ in range(2):self.take(4,'anonymous-scalar32')
             return
-        if tag==380:
+        if name=='Core_TeleportAction_Data':
             self.sequence(depth)
             for _ in range(4):self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-raw4');self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
             self.target_profile();self.take(1,'anonymous-nonzero-byte');return
-        if tag==246:
+        if name=='Core_MoveToAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
             self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
             for _ in range(6):self.take(1,'anonymous-nonzero-byte')
@@ -453,41 +680,41 @@ class Reader:
             self.target_profile();self.scalar_payload()
             for _ in range(3):self.take(1,'anonymous-nonzero-byte')
             self.scalar_payload_curve_profile();self.scalar_payload_curve_profile();return
-        if tag==295:
+        if name=='Core_RecoverLockOnEndIfNoLockAction_Data':
             self.target_profile();return
-        if tag==44:
+        if name=='Core_ChangeSkillAction_Data':
             self.scalar_payload();self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte');self.byte_payload()
             self.take(4,'anonymous-scalar32');self.target_profile();self.take(1,'anonymous-nonzero-byte');self.byte_payload();return
-        if tag==207:
+        if name=='Core_IgniteBuffTextAction_Data':
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
             self.take(8,'anonymous-inline8');self.take(1,'anonymous-nonzero-byte')
             self.target_profile();self.byte_payload();return
-        if tag in (356,299):return
-        if tag==296:
+        if name in ('Core_SkillAffixAction_Data','Core_RefreshBuffAttrModifierValue_Data'):return
+        if name=='Core_RecoverPoiseAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.effect_configuration_profile()
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
             self.calculation_profile();self.target_profile();return
-        if tag in (411,171,349,412,358):
+        if name in ('Core_VulnerableAction_Data','Core_EnhancedAction_Data','Core_ShelterAction_Data','Core_WeakAction_Data','Core_SlowAction_Data'):
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.paired_payload();self.scalar_payload()
             # Header13 actions end at the second target; header14 adds a DWORD.
-            for _ in range(max(0,self.count(1,reserve=4 if tag in (349,412,358) else 8,nullable=True))):self.keyword_edit_profile()
+            for _ in range(max(0,self.count(1,reserve=4 if name in ('Core_ShelterAction_Data','Core_WeakAction_Data','Core_SlowAction_Data') else 8,nullable=True))):self.keyword_edit_profile()
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();self.target_profile();self.target_profile()
-            if tag not in (349,412,358):self.take(4,'anonymous-scalar32')
+            if name not in ('Core_ShelterAction_Data','Core_WeakAction_Data','Core_SlowAction_Data'):self.take(4,'anonymous-scalar32')
             return
-        if tag==199:
+        if name=='Core_HitStopAction_Data':
             self.take(4,'anonymous-scalar32');self.target_profile();self.byte_payload();self.curve_profile()
             self.take(4,'anonymous-scalar32');self.target_profile()
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte');return
-        if tag==257:
+        if name=='Core_OnSpellAbnormalStartFinish_Data':
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte');return
-        if tag==193:
+        if name=='Core_GetAITransDataAction_Data':
             self.byte_payload();self.byte_payload();return
-        if tag==376:
+        if name=='Core_SwitchModeAction_Data':
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.byte_payload();self.take(1,'anonymous-nonzero-byte');return
-        if tag==22:
+        if name=='Core_AuraAction_Data':
             self.sequence(depth);self.sequence(depth);self.byte_payload();self.target_profile()
             self.take(4,'anonymous-scalar32');self.scalar_bytes_profile()
             for _ in range(max(0,self.count(1,reserve=31,nullable=True))):self.buff_input_profile()
@@ -498,37 +725,37 @@ class Reader:
             for _ in range(4):self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32');self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
             self.collider_shape_profile();self.target_filter_profile();self.take(4,'anonymous-scalar32');return
-        if tag==345:
+        if name=='Core_SetSuperArmorAction_Data':
             self.scalar_flag_payload();self.scalar_flag_payload();self.target_profile();return
-        if tag==112:
+        if name=='Core_Conditions_CheckProjectileIgnoreImmuneLevel_Data':
             for _ in range(2):self.take(4,'anonymous-scalar32')
             return
-        if tag in (335,113):
+        if name in ('Core_SetFirstDashParam_Data','Core_Conditions_CheckProjectileInPerfectDodgeCd_Data'):
             self.take(1,'anonymous-byte');return
-        if tag==292:
+        if name=='Core_RecordBattleDetails_Data':
             self.take(4,'anonymous-scalar32');return
-        if tag==293:
+        if name=='Core_RecoverDashEnergy_Data':
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();return
-        if tag in (142,240):
+        if name in ('Core_CostAtbRefreshLongestSkillCd_Data','Core_ModifyResilienceDecreaseFactor_Data'):
             self.scalar_payload();return
-        if tag==82:
+        if name=='Core_Condition_CheckSquadInFight_Data':
             self.take(1,'anonymous-nonzero-byte');return
-        if tag==135:
+        if name=='Core_Conditions_OrConditionAction_Data':
             for _ in range(max(0,self.count(1,nullable=True))):self.sequence(depth+1)
             return
-        if tag==27:
+        if name=='Core_BlowOffAction_Data':
             self.target_profile();self.scalar_payload();self.scalar_payload()
             self.take(4,'anonymous-scalar32');self.scalar_payload();self.direction_profile();self.scalar_payload()
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
             self.take(1,'anonymous-nonzero-byte');self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();return
-        if tag==159:
+        if name=='Core_DispelAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
             self.target_profile();self.target_profile();self.query_profile();return
-        if tag==288:
+        if name=='Core_RandomAction_Data':
             self.scalar_payload();self.scalar_payload()
             self.take(4,'anonymous-scalar32');self.byte_payload();return
-        if tag==8:
+        if name=='Core_AddDynamicCcsAction_AddDynamicCcsActionData':
             for _ in range(2):self.vector_payload()
             for _ in range(4):self.scalar_payload()
             for _ in range(2):
@@ -544,7 +771,7 @@ class Reader:
             self.curve_profile();self.vector_payload()
             for _ in range(13):self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==414:
+        if name=='View_AddCameraControlStateAction_AddCameraControlStateActionData':
             self.curve_profile();self.take(4,'anonymous-scalar32');self.take(4,'anonymous-raw4')
             self.curve_profile();self.take(4,'anonymous-scalar32')
             for _ in range(3):self.take(4,'anonymous-raw4')
@@ -554,26 +781,26 @@ class Reader:
             for _ in range(max(0,self.count(4,reserve=6,nullable=True))):self.byte_payload()
             for _ in range(6):self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==167:
+        if name=='Core_EnablePartsAction_Data':
             self.take(1,'anonymous-nonzero-byte')
             self.byte_profile();self.scalar_pair_flags_profile();self.query_profile()
             self.byte_profile();self.scalar_pair_flags_profile()
             self.take(1,'anonymous-nonzero-byte');return
-        if tag==336:
+        if name=='Core_SetGeneralAbilityCd_Data':
             self.scalar_payload();self.take(1,'anonymous-nonzero-byte');return
-        if tag==76:
+        if name=='Core_ClearProjectileAction_Data':
             self.scalar_payload();self.target_profile()
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte')
             for _ in range(max(0,self.count(4,reserve=1,nullable=True))):self.byte_payload()
             self.target_profile();return
-        if tag==367:
+        if name=='Core_SpendAtbAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.target_profile();self.scalar_payload()
             return
-        if tag==47:
+        if name=='Core_ChannelingAction_Data':
             self.sequence(depth);self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
             self.target_profile();self.take(4,'anonymous-scalar32');self.take(4,'anonymous-scalar32');return
-        if tag==387:
+        if name=='Core_TimeDilationAction_Data':
             self.byte_payload();self.scalar_payload()
             for _ in range(max(0,self.count(1,reserve=21,nullable=True))):self.target_profile()
             self.take(1,'anonymous-nonzero-byte')
@@ -581,75 +808,75 @@ class Reader:
             self.scalar_payload()
             for _ in range(3):self.take(4,'anonymous-scalar32')
             self.curve_profile();self.take(1,'anonymous-nonzero-byte');self.take(1,'anonymous-nonzero-byte');return
-        if tag==290:
+        if name=='Core_ReadSkillSettingData_Data':
             for _ in range(max(0,self.count(1,nullable=True))):self.scalar_target_payload_profile()
             return
-        if tag==309:
+        if name=='Core_SaveBuffStackNum_Data':
             self.single_payload();self.target_profile();self.byte_payload();return
-        if tag==394:
+        if name=='Core_TriggerLiinoUIEvent_Data':
             self.take(4,'anonymous-scalar32');self.scalar_payload();self.scalar_payload();return
-        if tag==313:
+        if name=='Core_SaveCharTypeId_Data':
             self.byte_payload();self.target_profile();return
-        if tag==391:
+        if name=='Core_TriggerComboSkillAction_Data':
             for _ in range(max(0,self.count(1,reserve=4,nullable=True))):self.assignment_profile()
             self.take(1,'anonymous-nonzero-byte')
             for _ in range(3):self.target_profile()
             return
-        if tag==64:
+        if name=='Core_CheckDamageTag_Data':
             self.take(4,'anonymous-scalar32');self.tag_elements();return
-        if tag==392:
+        if name=='Core_TriggerCustomAbilityEvent_Data':
             self.paired_payload();self.scalar_payload();self.target_profile();self.target_profile();return
-        if tag==119:
+        if name=='Core_Conditions_CheckSkillInterruptReason_Data':
             for _ in range(max(0,self.count(4,nullable=True))):self.take(4,'anonymous-scalar32')
             return
-        if tag==107:
+        if name=='Core_Conditions_CheckOverHeal_Data':
             for _ in range(3):self.byte_payload()
             return
-        if tag==99:self.query_profile();return
-        if tag==134:
+        if name=='Core_Conditions_CheckHealTag_Data':self.query_profile();return
+        if name=='Core_Conditions_ModifyCollectedBuffBbValue_Data':
             self.scalar_payload();self.byte_payload();self.scalar_payload();self.scalar_payload()
             self.take(1,'anonymous-nonzero-byte');return
-        if tag==131:
+        if name=='Core_Conditions_CheckUsp_Data':
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte')
             self.target_profile();self.scalar_payload();return
-        if tag==252:self.target_profile();self.scalar_payload();return
-        if tag in (373,353):self.byte_payload();return
-        if tag==374:
+        if name=='Core_NotifyCharPassiveUIAction_Data':self.target_profile();self.scalar_payload();return
+        if name in ('Core_StoreSkillDamageType_Data','Core_ShowSquadTipsAction_Data'):self.byte_payload();return
+        if name=='Core_SwitchAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();start=self.pos
             for _ in range(max(0,self.count(1,nullable=True))):self.sequence_scalar_profile(depth)
             self.records.append(dict(start=start,end=self.pos,kind='anonymous-sequence-scalar-list'));return
-        if tag==152:
+        if name=='Core_CurveEvaluateFloat_Data':
             self.byte_payload();self.curve_profile();self.scalar_payload()
             self.byte_payload();self.take(1,'anonymous-nonzero-byte');return
-        if tag==320:
+        if name=='Core_SaveTargetDistanceAction_Data':
             self.byte_payload();self.target_profile();self.target_profile();return
-        if tag==319:
+        if name=='Core_SaveShieldValueToBB_Data':
             self.byte_payload();self.target_profile();self.take(4,'anonymous-scalar32');return
-        if tag==337:
+        if name=='Core_SetHpFloor_Data':
             self.sequence(depth);self.scalar_payload();self.scalar_payload()
             self.take(1,'anonymous-nonzero-byte');return
-        if tag==277:
+        if name=='Core_PlayAnimationAction_PlayAnimationActionData':
             self.byte_payload()
             for _ in range(4):self.take(4,'anonymous-scalar32')
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.sequence(depth)
             for _ in range(2):self.take(4,'anonymous-scalar32')
             self.byte_payload();self.take(1,'anonymous-nonzero-byte');return
-        if tag==43:
+        if name=='Core_ChangeSeasonTowerEnergyAction_Data':
             self.scalar_payload();return
-        if tag==11:
+        if name=='Core_AddTagAction_Data':
             self.paired_payload();self.target_profile();self.tag_elements(reserve=1)
             self.take(1,'anonymous-nonzero-byte');return
-        if tag==12:
+        if name=='Core_AddTagToEntities_Data':
             # Tag 0x0C independently selects the header-eight AddTagToEntities
             # reader. Its selected direct list is List<GameplayTag>; reserve
             # the required terminal byte while keeping the list profile finite.
             self.paired_payload();self.target_profile();self.tag_elements(reserve=1)
             self.take(1,'anonymous-nonzero-byte');return
-        if tag==144:
+        if name=='Core_CountShieldUIAction_Data':
             self.scalar_payload();self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
             self.target_profile();return
-        if tag==169:
+        if name=='Core_EnemyHurtAnimAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32');self.target_profile();self.curve_profile()
@@ -661,94 +888,94 @@ class Reader:
             for _ in range(3):self.take(1,'anonymous-nonzero-byte')
             self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
             self.scalar_payload();self.scalar_payload();return
-        if tag==65:
+        if name=='Core_CheckDamageTransferredSource_Data':
             self.byte_payload();self.query_profile();return
-        if tag==372:
+        if name=='Core_StoreEntityProperty_Data':
             self.scalar_payload();self.scalar_payload();self.byte_payload();self.scalar_payload()
             self.take(4,'anonymous-scalar32');self.target_profile()
             self.take(1,'anonymous-nonzero-byte');return
-        if tag==132:
+        if name=='Core_Conditions_CheckWeaponTypeCondition_Data':
             self.target_profile();self.take(4,'anonymous-scalar32');return
-        if tag==315:
+        if name=='Core_SaveDamageContext_Data':
             self.byte_payload();self.take(4,'anonymous-scalar32');return
-        if tag==81:
+        if name=='Core_CompareString_Data':
             self.paired_payload();self.paired_payload();return
-        if tag==3:
+        if name=='Core_AbilityActions_FinishGlobalBuffAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
             self.take(1,'anonymous-nonzero-byte');start=self.pos
             for _ in range(max(0,self.count(1,reserve=1,nullable=True))):self.single_payload()
             self.records.append(dict(start=start,end=self.pos,kind='anonymous-single-payload-list'))
             self.take(1,'anonymous-nonzero-byte');return
-        if tag==322:
+        if name=='Core_SaveValueFromAIBlackboard_Data':
             self.byte_payload();self.target_profile()
             for _ in range(4):self.byte_payload()
             self.take(4,'anonymous-scalar32');return
-        if tag==28:
+        if name=='Core_BlowOffCharacterAction_Data':
             self.target_profile();self.scalar_flag_payload();self.scalar_payload()
             self.direction_profile();self.scalar_payload();self.take(4,'anonymous-scalar32')
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();return
-        if tag==294:
+        if name=='Core_RecoverFromPoiseBreak_Data':
             self.target_profile();return
-        if tag==96:
+        if name=='Core_Conditions_CheckEnemyRank_Data':
             self.take(4,'anonymous-scalar32');self.target_profile();return
-        if tag==212:
+        if name=='Core_InterruptAction_Data':
             self.target_profile();self.target_profile()
             for _ in range(2):self.take(4,'anonymous-scalar32')
             return
-        if tag==369:
+        if name=='Core_StoreAttributeValue_Data':
             self.take(4,'anonymous-scalar32');self.scalar_payload();self.scalar_payload()
             self.byte_payload();self.scalar_payload()
             for _ in range(2):self.take(4,'anonymous-scalar32')
             self.target_profile();self.take(1,'anonymous-nonzero-byte');return
-        if tag in (137,306,314):
+        if name in ('Core_Conditions_SaveHealValue_Data','Core_SaveAtbObtainValue_Data','Core_SaveCollectedBuffBbValue_Data'):
             self.byte_payload();self.byte_payload();return
-        if tag==352:
+        if name=='Core_ShowHideActorAction_ShowHideActorData':
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32');self.target_profile();return
-        if tag==365:
+        if name=='Core_SpellInfliction_Data':
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte')
             self.target_profile();self.target_profile();return
-        if tag==116:
+        if name=='Core_Conditions_CheckSkillDamageType_Data':
             start=self.pos
             for _ in range(max(0,self.count(4,nullable=True))):self.take(4,'anonymous-scalar32')
             self.records.append(dict(start=start,end=self.pos,kind='anonymous-scalar32-list'));return
-        if tag==149:
+        if name=='Core_CreateGlobalBuffAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
             start=self.pos
             for _ in range(max(0,self.count(1,reserve=1,nullable=True))):self.global_input_profile()
             self.records.append(dict(start=start,end=self.pos,kind='anonymous-global-input-list'))
             self.target_profile();return
-        if tag==39:
+        if name=='Core_CastSkill_Data':
             self.target_profile()
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.paired_payload();self.take(1,'anonymous-nonzero-byte');self.target_profile();return
-        if tag==66:
+        if name=='Core_CheckDistanceCondition_Data':
             self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.target_profile();self.target_profile();return
-        if tag in (93,6,94):self.take(4,'anonymous-scalar32');return
-        if tag in (115,98,316):return
-        if tag==333:
+        if name in ('Core_Conditions_CheckDamageType_Data','Core_AchieveSpecialGameEventAction_Data','Core_Conditions_CheckDamageTypeMask_Data'):self.take(4,'anonymous-scalar32');return
+        if name in ('Core_Conditions_CheckSkillCastId_Data','Core_Conditions_CheckHasDamageSkillCastId_Data','Core_SaveDamageSkillCastId_Data'):return
+        if name=='Core_SetBuffDurationAction_Data':
             self.finder_profile();self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32');self.target_profile();self.scalar_payload()
             return
-        if tag in (63,58):
+        if name in ('Core_CheckConsumeBuffLayer_Data','Core_CheckBuffEnhanceChangedLayer_Data'):
             self.take(4,'anonymous-scalar32');self.scalar_payload();self.byte_payload()
             return
-        if tag==97:
+        if name=='Core_Conditions_CheckEntityNum_Data':
             self.target_profile();self.take(4,'anonymous-scalar32')
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32');self.byte_payload()
             return
-        if tag==234:
+        if name=='Core_MergeTargetAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.byte_payload()
             start=self.pos
             for _ in range(max(0,self.count(1,nullable=True))):self.target_profile()
             self.records.append(dict(start=start,end=self.pos,kind='anonymous-target-list'))
             return
-        if tag==53:
+        if name=='Core_CharHurtAnimAction_Data':
             self.target_profile()
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.target_profile();self.curve_profile()
@@ -759,30 +986,30 @@ class Reader:
             # though its managed wrapper name contains BlackboardDouble.
             self.scalar_payload()
             return
-        if tag==126:
+        if name=='Core_Conditions_CheckTargetContains_Data':
             self.target_profile();self.target_profile()
             return
-        if tag==363:
+        if name=='Core_SpawnInteractiveGoldCoin_Data':
             self.scalar_payload();self.target_profile()
             return
-        if tag==36:
+        if name=='Core_CameraImpulseAction_CameraImpulseActionData':
             self.byte_payload();self.take(1,'anonymous-nonzero-byte')
             self.impulse_profile();self.take(4,'anonymous-scalar32')
             self.take(12,'anonymous-raw12')
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.target_profile()
             return
-        if tag==106:
+        if name=='Core_Conditions_CheckObtainAtbType_Data':
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             for _ in range(2):
                 start=self.pos
                 for _ in range(max(0,self.count(4,nullable=True))):self.take(4,'anonymous-scalar32')
                 self.records.append(dict(start=start,end=self.pos,kind='anonymous-scalar32-list'))
             return
-        if tag==189:
+        if name=='Core_ForEachAction_Data':
             self.sequence(depth);self.target_profile()
             return
-        if tag==222:
+        if name=='Core_LaunchProjectile_Data':
             for _ in range(3):self.take(1,'anonymous-nonzero-byte')
             for _ in range(max(0,self.count(1,nullable=True))):self.assignment_profile()
             for _ in range(4):self.take(1,'anonymous-nonzero-byte')
@@ -800,48 +1027,48 @@ class Reader:
             self.take(1,'anonymous-nonzero-byte')
             for _ in range(2):self.take(4,'anonymous-scalar32')
             return
-        if tag==325:
+        if name=='Core_SendBattleSignalToLevel_Data':
             self.scalar_payload();self.paired_payload()
             return
-        if tag==196:
+        if name=='Core_GetTargetBuffBBAdvanced_Data':
             self.byte_payload();self.finder_profile();self.byte_payload();self.target_profile()
             return
-        if tag==90:
+        if name=='Core_Conditions_CheckCustomAbilityEvent_Data':
             self.paired_payload();self.byte_payload()
             return
-        if tag==136:
+        if name=='Core_Conditions_Probablity_Data':
             self.scalar_payload()
             return
-        if tag==122:
+        if name=='Core_Conditions_CheckSpellInflictionType_Data':
             self.take(4,'anonymous-scalar32');self.byte_payload()
             return
-        if tag==10:
+        if name=='Core_AddGlobalCDTimer_Data':
             self.byte_payload();self.scalar_payload();self.target_profile()
             return
-        if tag==253:return
-        if tag==123:
+        if name=='Core_NotNextCheckAction_Data':return
+        if name=='Core_Conditions_CheckSuperArmor_Data':
             self.target_profile();self.take(4,'anonymous-scalar32');self.scalar_payload()
             return
-        if tag==366:
+        if name=='Core_SpellInflictionOnChar_Data':
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             for _ in range(2):self.take(4,'anonymous-scalar32')
             self.byte_payload();self.take(4,'anonymous-scalar32')
             self.target_profile();self.target_profile();self.take(1,'anonymous-nonzero-byte')
             return
-        if tag in (128,187):
+        if name in ('Core_Conditions_CheckTargetsEqual_Data','Core_ForceTargetInFightAction_Data'):
             self.target_profile();self.target_profile()
             return
-        if tag==182:
+        if name=='Core_FinishOwnerAction_Data':
             self.target_profile();self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==124:
+        if name=='Core_Conditions_CheckTagMatch_Data':
             self.target_profile();self.query_profile()
             return
-        if tag==150:
+        if name=='Core_CreateTimedMarker_Data':
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();self.paired_payload()
             self.target_profile();self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==254:
+        if name=='Core_ObtainCostAction_Data':
             for _ in range(2):self.take(4,'anonymous-scalar32')
             self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
             self.scalar_payload();self.take(4,'anonymous-scalar32');self.scalar_payload()
@@ -850,12 +1077,12 @@ class Reader:
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32')
             return
-        if tag==343:
+        if name=='Core_SetSkillCdAtOnce_Data':
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte');self.byte_payload()
             self.take(4,'anonymous-scalar32');self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
             return
-        if tag==361:
+        if name=='Core_SpawnAbilityEntity_Data':
             self.byte_payload();self.byte_payload();self.take(4,'anonymous-scalar32');self.byte_payload()
             self.target_profile();self.direction_profile()
             for _ in range(4):self.take(1,'anonymous-nonzero-byte')
@@ -870,40 +1097,40 @@ class Reader:
             for _ in range(max(0,self.count(4,reserve=9,nullable=True))):self.byte_payload()
             for _ in range(9):self.take(1,'anonymous-nonzero-byte')
             return
-        if tag in (101,110):
+        if name in ('Core_Conditions_CheckHp_Data','Core_Conditions_CheckPoiseValue_Data'):
             self.take(4,'anonymous-scalar32');self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
             return
-        if tag==162:
+        if name=='Core_EffectAction_EffectActionData':
             self.byte_payload();self.target_profile();self.effect_configuration_profile();self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.target_profile()
             for _ in range(5):self.take(1,'anonymous-nonzero-byte')
             self.byte_payload();self.target_profile();self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==154:
+        if name=='Core_DamageAction_DamageActionData':
             self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
             for _ in range(max(0,self.count(1,reserve=4,nullable=True))):self.damage_unit_profile()
             self.target_profile();self.hit_environment_profile()
             self.take(1,'anonymous-nonzero-byte');self.target_profile()
             return
-        if tag==2:
+        if name=='Core_AbilityActions_FinishBuffAction_Data':
             for _ in range(max(0,self.count(1,reserve=7,nullable=True))):self.single_payload()
             self.target_profile();self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload();self.target_profile()
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==88:
+        if name=='Core_Conditions_CheckBuffStackNum_Data':
             self.single_payload();self.target_profile()
             self.take(4,'anonymous-scalar32');self.scalar_payload()
             return
-        if tag==129:
+        if name=='Core_Conditions_CheckTimedMarkerCondition_Data':
             self.byte_payload();self.target_profile();self.byte_payload()
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             return
-        if tag in (104,348,5):
+        if name in ('Core_Conditions_CheckMainCharacterCondition_Data','Core_ShakeCountShieldUIAction_Data','Core_AbilityActions_InterruptCurSkillAction_Data'):
             self.target_profile()
             return
-        if tag==178:
+        if name=='Core_FindTargetAction_FindTargetActionData':
             self.direction_profile()
             self.take(4,'anonymous-scalar32');self.byte_payload()
             self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte');self.byte_payload()
@@ -912,9 +1139,9 @@ class Reader:
             self.byte_payload();self.take(4,'anonymous-scalar32');self.byte_payload()
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             return
-        if tag in (120,72):
+        if name in ('Core_Conditions_CheckSkillType_Data','Core_CheckOriginSkillType_Data'):
             self.take(4,'anonymous-scalar32')
-            if tag==120:
+            if name=='Core_Conditions_CheckSkillType_Data':
                 for _ in range(2):self.take(1,'anonymous-nonzero-byte')
                 self.target_profile()
             start=self.pos
@@ -923,7 +1150,7 @@ class Reader:
             for _ in range(max(0,self.count(4,nullable=True))):self.take(4,'anonymous-scalar32')
             self.records.append(dict(start=start,end=self.pos,kind='anonymous-scalar32-list'))
             return
-        if tag==60:
+        if name=='Core_CheckBuffStackNumAdvanced_Data':
             self.finder_profile()
             self.take(4,'anonymous-scalar32')
             self.target_profile()
@@ -931,7 +1158,7 @@ class Reader:
             self.take(1,'anonymous-nonzero-byte')
             self.scalar_payload()
             return
-        if tag==281:
+        if name=='Core_PlaySoundAction_PlaySoundActionData':
             for _ in range(3):self.take(4,'anonymous-scalar32')
             self.byte_payload();self.take(4,'anonymous-scalar32')
             for _ in range(3):self.take(1,'anonymous-nonzero-byte')
@@ -940,50 +1167,50 @@ class Reader:
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             for _ in range(2):self.take(4,'anonymous-scalar32')
             return
-        if tag==197:
+        if name=='Core_HealAction_Data':
             self.take(1,'anonymous-nonzero-byte');self.byte_payload()
             self.effect_configuration_profile();self.calculation_profile()
             self.take(4,'anonymous-scalar32');self.tag_list_profile();self.take(4,'anonymous-scalar32')
             for _ in range(3):self.take(1,'anonymous-nonzero-byte')
             self.target_profile();self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==155:
+        if name=='Core_DebugPrintAction_Data':
             self.byte_payload();self.take(16,'anonymous-raw16');self.byte_payload()
             self.take(4,'anonymous-scalar32');self.target_profile()
             return
-        if tag==271:
+        if name=='Core_PauseBuffTime_Data':
             self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==68:
+        if name=='Core_CheckGlobalCDTimerAction_Data':
             self.byte_payload()
             self.target_profile()
             return
-        if tag==105:
+        if name=='Core_Conditions_CheckObjectTypeMatch_Data':
             self.take(4,'anonymous-scalar32')
             self.target_profile()
             return
-        if tag==355:
+        if name=='Core_SimpleCalcBBAction_Data':
             self.byte_payload()
             self.take(4,'anonymous-scalar32')
             self.scalar_payload()
             self.scalar_payload()
             return
-        if tag==310:
+        if name=='Core_SaveBuffStackNumAdvanced_Data':
             self.finder_profile()
             self.take(4,'anonymous-scalar32')
             self.target_profile()
             self.byte_payload()
             self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==109:
+        if name=='Core_Conditions_CheckPhysicalInflictionType_Data':
             self.take(4,'anonymous-scalar32')
             self.byte_payload()
             return
-        if tag in (91,92):
+        if name in ('Core_Conditions_CheckDamageDecorateMask_Data','Core_Conditions_CheckDamageIgnoreImmuneLevel_Data'):
             self.take(4,'anonymous-scalar32')
             self.take(8,'anonymous-scalar64')
             return
-        if tag in (146,147):
+        if name in ('Core_CreateBuffAction_Data','Core_CreateBuffAttachingSkill_Data'):
             for _ in range(2):self.take(1,'anonymous-nonzero-byte')
             self.scalar_bytes_profile()
             for _ in range(max(0,self.count(1,reserve=20,nullable=True))):self.input_profile()
@@ -995,15 +1222,15 @@ class Reader:
             for _ in range(5):self.take(1,'anonymous-nonzero-byte')
             self.target_profile()
             return
-        if tag in (86,87):
+        if name in ('Core_Conditions_CheckBuffIdInContext_Data','Core_Conditions_CheckBuffIdInContextAdvanced_Data'):
             self.byte_payload()
             for _ in range(max(0,self.count(1,reserve=5,nullable=True))):
-                if tag==86:self.single_payload()
+                if name=='Core_Conditions_CheckBuffIdInContext_Data':self.single_payload()
                 else:self.paired_payload()
             self.take(4,'anonymous-scalar32')
             self.query_profile()
             return
-        if tag==180:
+        if name=='Core_FinishBuffAdvanced_Data':
             self.target_profile()
             self.finder_profile()
             self.target_profile()
@@ -1012,17 +1239,17 @@ class Reader:
             self.target_profile()
             for _ in range(3):self.take(1,'anonymous-nonzero-byte')
             return
-        if tag==287:
+        if name=='Core_RaiseTrainLevelEvent_Data':
             self.paired_payload()
             self.scalar_payload()
             self.take(1,'anonymous-nonzero-byte')
             self.paired_payload()
             return
-        if tag==80:
+        if name=='Core_CompareFloat_Data':
             self.take(4,'anonymous-scalar32')
             for _ in range(2):self.scalar_payload()
             return
-        if tag==236:
+        if name=='Core_ModifyDynamicBlackboard_Data':
             self.take(4,'anonymous-scalar32')
             self.target_profile()
             self.take(1,'anonymous-nonzero-byte')
@@ -1030,14 +1257,14 @@ class Reader:
             self.take(4,'anonymous-scalar32')
             self.scalar_payload()
             return
-        if tag==118:
+        if name=='Core_Conditions_CheckSkillId_Data':
             start=self.pos
             # Null element is one byte. Bound count before iterating, even
             # though a non-null member-three element needs at least ten bytes.
             for _ in range(max(0,self.count(1,nullable=True))):self.paired_payload()
             self.records.append(dict(start=start,end=self.pos,kind='anonymous-paired-payload-list'))
             return
-        if tag != IF_ELSE_ACTION_TAG:
+        if name != IF_ELSE_ACTION_NAME:
             raise Unsupported(self.source,self.pos,
                               'explicit selected action body',tag,'union-tag')
         self.take(1,IF_ELSE_ACTION_READ_KINDS[4])
