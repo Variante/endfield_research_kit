@@ -2040,7 +2040,9 @@ MD5-verified patch dumps as inputs; the command does not select live VFS files.
 python -m scripts.game_data.ifix_vm_instruction_native --gameassembly GA --metadata META ^
   --input PATCH [--input PATCH2] --output reports/animestudio/ifix_vm_opcodes_current.json
 python -m scripts.game_data.ifix_vm_operands_native --gameassembly GA --metadata META ^
-  --input PATCH [--input PATCH2] --output reports/animestudio/ifix_vm_operands_current.json
+  --input PATCH [--input PATCH2] ^
+  [--outer-summary OUTER --outer-ledger LEDGER --expected-input-set-sha256 SHA] ^
+  --output reports/animestudio/ifix_vm_operands_current.json
 python -m scripts.game_data.ifix_external_signatures_native --gameassembly GA --metadata META ^
   --input PATCH [--input PATCH2] --output reports/animestudio/ifix_external_signatures_current.json
 ```
@@ -2057,6 +2059,13 @@ external argument base. `Newobj` uses that same signed upper-half rewind
 when the resolved constructor's declaring-type base differs from
 `System.MulticastDelegate`; the delegate path is separate. The negative
 field-operand path and execution remain open.
+The selected `Initobj` and `Constrained` operands join the loader's ordered
+`externTypes` table to file-declared type rows; out-of-range indices remain
+visible. The selected `Constrained` path also reports the preceding operand's
+conditional evaluation-slot conversion and Object-index store. Supply all
+three optional outer-gate flags together to require the
+current VFS audit and every IFix patch file's verified length and MD5. Without
+them, the operand report covers caller-supplied patch bytes only.
 It also decodes `StackSpace` local and evaluation-stack counts, validates
 local-slot indices for `Ldloc`, `Ldloca`, and `Stloc`, names `Ldarg` slots
 without assuming a runtime argument count, records their coverage under

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.ifix-vm-operands-native-contract.v11",
+  "schema": "endfield.ifix-vm-operands-native-contract.v15",
   "status": "validated",
   "evidenceBoundary": "direct",
   "executionBoundary": "unresolved",
@@ -42,6 +42,14 @@
         "countReadRva": "0x28becac",
         "rowStoreRva": "0x28bee22",
         "vmFieldStoreRva": "0x28c0a32"
+      },
+      {
+        "runtimeField": "externTypes",
+        "fileTable": "externTypes",
+        "countReadRva": "0x28bebed",
+        "rowReadStringRva": "0x28bec2b",
+        "rowStoreRva": "0x28bec77",
+        "vmFieldStoreRva": "0x28c0a67"
       },
       {
         "runtimeField": "externMethods",
@@ -214,8 +222,179 @@
     "unmanagedCodes": 24,
     "externInvokers": 48,
     "externMethods": 64,
+    "externTypes": 72,
     "internStrings": 80,
     "fieldInfos": 88
+  },
+  "initobjTypeOperand": {
+    "opcode": "Initobj",
+    "opcodeId": 55,
+    "runtimeField": "externTypes",
+    "fileTable": "externTypes",
+    "evidenceBoundary": "direct",
+    "readStringMethod": {
+      "type": "System.IO.BinaryReader",
+      "method": "ReadString",
+      "parameterCount": 0,
+      "token": "0x060034bb",
+      "rva": "0x3b2fbc0"
+    },
+    "loaderRowArguments": {
+      "rva": "0x28bec6e",
+      "hex": "4863d34c8bc7498bcd"
+    },
+    "loaderFieldStore": {
+      "rva": "0x28c0a67",
+      "hex": "49894648"
+    },
+    "loaderRowStoreHelper": {
+      "rva": "0x4d170",
+      "byteCount": 31,
+      "sha256": "E794221320AC8CCF0F781CC5DEC8C224DE8918A21AC55F34968421209183CB3E"
+    },
+    "consumerDispatchBranchRva": "0x90bc164",
+    "consumerEntryRva": "0x90bc2e2",
+    "consumerFieldLoad": {
+      "rva": "0x90bc2f4",
+      "hex": "488b5f48"
+    },
+    "consumerOperandRead": {
+      "rva": "0x90bc300",
+      "hex": "49637e04"
+    },
+    "consumerRowFetchCallRva": "0x90bc312",
+    "consumerRowFetchHelper": {
+      "rva": "0x33e0",
+      "byteCount": 19,
+      "sha256": "05F926908C089AB4C83A0619AD0CE3631256EA42B6A4C4E4324BFAD34A4252EA"
+    }
+  },
+  "initobjStackEffect": {
+    "evidenceBoundary": "conditional",
+    "executionBoundary": "unobserved",
+    "addressProducer": "Ldloca",
+    "referenceValueType": {"enumType": "IFix.Core.ValueType", "name": "StackReference", "id": 4},
+    "pointerSubtractHelperRef": "constrainedTypeOperand.stackEffect.priorPointerHelper",
+    "topAdvanceHelper": {"rva": "0x31d780", "hex": "4863c24803c1c3"},
+    "createInstanceMethod": {
+      "type": "System.Activator", "method": "CreateInstance", "parameterCount": 1,
+      "parameterNames": ["type"], "parameterTypes": ["System.Type"],
+      "token": "0x06000edb", "rva": "0x507d4d0",
+      "entryBytes": "4533c941b00133d2e943b18ffe"
+    },
+    "updateReferenceMethod": {
+      "type": "IFix.Core.EvaluationStackOperation", "method": "UpdateReference", "parameterCount": 6,
+      "parameterNames": ["evaluationStackBase", "evaluationStackPointer", "managedStack", "obj", "virtualMachine", "type"],
+      "token": "0x06000051", "rva": "0x90c8030", "bodyBytes": 934,
+      "bodySha256": "5F112497DA2A119EDDBADEEB1025297145325B542CAE7E2431D26393EAE9EE13"
+    },
+    "pushObjectMethod": {
+      "type": "IFix.Core.EvaluationStackOperation", "method": "PushObject", "parameterCount": 5,
+      "parameterNames": ["evaluationStackBase", "evaluationStackPointer", "managedStack", "obj", "type"],
+      "token": "0x06000050", "rva": "0x90c6bec", "bodyBytes": 783,
+      "bodySha256": "09B3C809B4CD22322ED135A1AF9A3B22DE33309528EB29B9D09F85F1E968C2E8"
+    },
+    "calls": {
+      "ldlocaSlotMultiplyRva": "0x90bd4cf",
+      "ldlocaSlotAddRva": "0x90bd4df",
+      "ldlocaTopAdvanceRva": "0x90b9ed4",
+      "initobjTopSlotSubtractRva": "0x90bc2e7",
+      "createInstanceRva": "0x90bc31f",
+      "updateReferenceRva": "0x90bc34f",
+      "stackReferencePushObjectRva": "0x90c83c6",
+      "pushObjectManagedStoreRva": "0x90c6dbd"
+    },
+    "witnesses": [
+      {"body": "consumer", "name": "ldlocaOperand", "rva": "0x90bd4c9", "hex": "49634e04"},
+      {"body": "consumer", "name": "ldlocaAddressStore", "rva": "0x90bd4e4", "hex": "4989442404"},
+      {"body": "consumer", "name": "ldlocaReferenceTag", "rva": "0x90bd4f1", "hex": "41c7042404000000"},
+      {"body": "consumer", "name": "initobjSelectedSlot", "rva": "0x90bc2ec", "hex": "4c8be0"},
+      {"body": "consumer", "name": "initobjTypeToActivator", "rva": "0x90bc31a", "hex": "33d2488bc8"},
+      {"body": "consumer", "name": "initobjTypeToUpdateReference", "rva": "0x90bc329", "hex": "48895c2428"},
+      {"body": "consumer", "name": "initobjActivatorResultToUpdateReference", "rva": "0x90bc33b", "hex": "4c8bc8"},
+      {"body": "consumer", "name": "initobjSelectedSlotToUpdateReference", "rva": "0x90bc341", "hex": "498bd4"},
+      {"body": "updateReference", "name": "stackReferenceTagComparison", "rva": "0x90c80af", "hex": "8b0b83e904"},
+      {"body": "updateReference", "name": "stackReferenceTargetSlot", "rva": "0x90c83ba", "hex": "488b5304"},
+      {"body": "pushObject", "name": "destinationSlotIndexStore", "rva": "0x90c6d9c", "hex": "44897604"},
+      {"body": "pushObject", "name": "destinationValueTagStore", "rva": "0x90c6deb", "hex": "8906"}
+    ],
+    "stackReferenceBranchRva": "0x90c80b4",
+    "stackReferenceEntryRva": "0x90c83a9",
+    "ldlocaTailJumpRva": "0x90bd4f9",
+    "ldlocaTailEntryRva": "0x90b9f57",
+    "ldlocaAdvanceJumpRva": "0x90b9f5a",
+    "ldlocaAdvanceEntryRva": "0x90b9ed2"
+  },
+  "constrainedTypeOperand": {
+    "opcode": "Constrained",
+    "opcodeId": 154,
+    "runtimeField": "externTypes",
+    "fileTable": "externTypes",
+    "evidenceBoundary": "direct",
+    "dispatchWindows": [
+      {
+        "rva": "0x90c05ce",
+        "hex": "81f9a00000000f8f9c1800000f847f17000081f9950000000f8f8b0f0000",
+        "boundary": "opcode 154 passes the <=160 test and enters the >149 branch"
+      },
+      {
+        "rva": "0x90c1577",
+        "hex": "81f99b0000000f8f7f0400000f84d302000081e9960000000f849502000083e9010f842719000083e9010f841a09000083e9010f840d01000083f9010f850c190000",
+        "boundary": "opcode 154 falls through the 155 tests, subtracts 150 and three ones, then passes the final equality test"
+      }
+    ],
+    "consumerFieldLoad": {
+      "rva": "0x90c15c7",
+      "hex": "488b5f48"
+    },
+    "consumerOperandRead": {
+      "rva": "0x90c15d3",
+      "hex": "49637e04"
+    },
+    "consumerRowFetchCallRva": "0x90c15e5",
+    "rowFetchHelperRef": "initobjTypeOperand.consumerRowFetchHelper",
+    "stackEffect": {
+      "evidenceBoundary": "conditional",
+      "executionBoundary": "unobserved",
+      "boundary": "On the selected normal-return Execute path, the prior instruction Operand selects an evaluation slot relative to top-minus-one. ToObject receives that slot and the externTypes row; its return is stored in managedStack at the slot's evaluation-base index, and the slot becomes an Object index. This does not prove VM entry, slot contents, conversion outcome, or hook activation.",
+      "executeWindows": [
+        {"name": "priorInstructionPointer", "rva": "0x90c15b9", "byteCount": 14, "sha256": "7C180C2157CE769C5E6D19EB27BCB7518CB86B3C55D9F1E6A3ED59FCFCB600C1"},
+        {"name": "priorOperandAndSlot", "rva": "0x90c15f5", "byteCount": 40, "sha256": "476D4CC5D5B335E67ECE124DC59D73067747161586603EAB7EEC8A3952D08F25"},
+        {"name": "toObjectArguments", "rva": "0x90c1620", "byteCount": 48, "sha256": "6A0DE55A85B5231687AD24012B8228A39E52A9B464BD35E668E084A4D755CF7D"},
+        {"name": "managedStackIndex", "rva": "0x90c1653", "byteCount": 43, "sha256": "D73252B1A9B2388CF991019DCDC974143E7272A96104DBA81A821E6A08EF6D9F"},
+        {"name": "managedStackAndSlotStores", "rva": "0x90c167e", "byteCount": 58, "sha256": "1FB9E1720A53A15DF3E1B3BD923160F0A9BEFFF561148F86AD05CBD919E93CE1"}
+      ],
+      "calls": {
+        "priorInstructionPointerSubtractRva": "0x90c15bf",
+        "priorOperandMultiplyRva": "0x90c1600",
+        "topMinusOnePointerSubtractRva": "0x90c160d",
+        "selectedSlotPointerSubtractRva": "0x90c1618",
+        "toObjectRva": "0x90c164b",
+        "managedStackStoreRva": "0x90c169a"
+      },
+      "priorOperandRead": {"rva": "0x90c15f5", "hex": "48634e04"},
+      "priorPointerHelper": {"rva": "0x3f28fc", "byteCount": 10, "sha256": "E8E6F70E777D57CCF067ADA0BCCC7380DFFD9BDABD9EBBF3F4D1EC8994748AE5"},
+      "managedStackStoreHelper": {"rva": "0x3a880", "byteCount": 23, "sha256": "733E5EEC0C4885E386809DE533E3254B070A0CE7DD23AA996D18D0074085E7EB"},
+      "toObjectMethod": {
+        "type": "IFix.Core.EvaluationStackOperation",
+        "method": "ToObject",
+        "parameterCount": 6,
+        "parameterNames": ["evaluationStackBase", "evaluationStackPointer", "managedStack", "type", "virtualMachine", "valueTypeClone"],
+        "returnTypeName": "System.Object",
+        "token": "0x0600004f",
+        "rva": "0x90c6f5c",
+        "bodyBytes": 2972,
+        "bodySha256": "0AE7076CCBBAA8BED92F33B290B9240BEBA8B74529C4A701BC0ACFCC82ED5923"
+      },
+      "valueLayout": {
+        "type": "IFix.Core.Value",
+        "fieldOffsets": {"Type": 16, "Value1": 20, "Value2": 24},
+        "enumType": "IFix.Core.ValueType",
+        "objectMember": {"name": "Object", "id": 8},
+        "slotIndexStore": {"rva": "0x90c16a7", "hex": "897b04"},
+        "slotTypeStore": {"rva": "0x90c16b2", "hex": "c70308000000"}
+      }
+    }
   },
   "entryHeader": {
     "opcode": "StackSpace",

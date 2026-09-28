@@ -5,11 +5,14 @@ the VM's method tables. ``VirtualMachine.Execute`` indexes those tables with
 the low 16 call-operand bits, uses signed branch offsets relative to the
 current instruction, selects the VM's string/field tables, and uses a
 ``StackSpace`` header for frame slots. Actual execution remains open.
+The selected ``Constrained`` path also projects the preceding instruction's
+operand to a conditional evaluation-slot conversion and Object-index store.
 """
 
 from __future__ import annotations
 
 import argparse
+import gzip
 import hashlib
 import json
 import struct
@@ -18,9 +21,11 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
+from scripts.game_data.corpus_common import validate_provenance
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.ifix_patch import (
     EXCEPTION_RECORD_SIZE,
+    INSTRUCTION_WORD_SIZE,
     ordered_signature_parameters,
     parse_ifix_patch,
 )
@@ -33,13 +38,14 @@ from scripts.game_data.il2cpp.context import unresolved_usage_index
 from scripts.game_data.il2cpp.protocol import (
     enum_members,
     field_defaults,
+    native_enum_members,
     runtime_type_name,
     runtime_type_field_offsets,
 )
 
 
 DEFAULT_CONTRACT = CONTRACTS_DIR / "ifix_vm_operands_native.json"
-SCHEMA = "endfield.ifix-vm-operands-native-contract.v11"
+SCHEMA = "endfield.ifix-vm-operands-native-contract.v15"
 
 
 class VMOperandEvidenceError(ValueError):
@@ -52,6 +58,79 @@ def _sha256_file(path: Path) -> str:
         for block in iter(lambda: handle.read(1 << 20), b""):
             digest.update(block)
     return digest.hexdigest().upper()
+
+
+def _validate_current_vfs_inputs(
+    paths: list[Path], summary_path: Path, ledger_path: Path,
+    expected_input_set_sha256: str,
+) -> dict[str, Any]:
+    """Bind every selected IFix patch byte stream to the current outer VFS gate."""
+    if len(expected_input_set_sha256) != 64 or any(
+        char not in "0123456789abcdefABCDEF" for char in expected_input_set_sha256
+    ):
+        raise VMOperandEvidenceError("IFix outer gate: expected 64 hex input-set characters")
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    rows: dict[str, dict[str, Any]] = {}
+    with gzip.open(ledger_path, "rt", encoding="utf-8") as stream:
+        first = next(stream, None)
+        if first is None:
+            raise VMOperandEvidenceError("IFix outer gate: empty ledger")
+        header = json.loads(first)
+        if header.get("recordType") != "audit_header":
+            raise VMOperandEvidenceError("IFix outer gate: missing audit header")
+        for line in stream:
+            row = json.loads(line)
+            if row.get("recordType") != "file" or row.get("blockName") != "IFixPatchOut":
+                continue
+            virtual_path = str(row.get("virtualPath", ""))
+            if virtual_path in rows:
+                raise VMOperandEvidenceError(f"IFix outer gate: duplicate {virtual_path}")
+            rows[virtual_path] = row
+    failures, provenance = validate_provenance(
+        summary, header, ledger_path, expected_input_set_sha256,
+    )
+    if failures:
+        first = failures[0]
+        raise VMOperandEvidenceError(
+            f"IFix outer gate:{first['scope']}.{first['field']}: "
+            f"expected={first['expected']} actual={first['actual']}"
+        )
+    selected: dict[str, Path] = {}
+    for path in paths:
+        virtual_path = f"Data/IFixPatchOut/Windows/{path.name}"
+        if virtual_path in selected:
+            raise VMOperandEvidenceError(f"IFix outer gate: duplicate selected {virtual_path}")
+        selected[virtual_path] = path
+    if not rows or set(rows) != set(selected):
+        raise VMOperandEvidenceError(
+            "IFix outer gate: file set mismatch "
+            f"expected={sorted(rows)} selected={sorted(selected)}"
+        )
+    joined = []
+    for virtual_path, path in sorted(selected.items()):
+        row = rows[virtual_path]
+        if row.get("status") != "verified" or row.get("boundaryStatus") != "boundary_verified":
+            raise VMOperandEvidenceError(
+                f"IFix outer gate: {virtual_path} lacks verified outer bytes"
+            )
+        data = path.read_bytes()
+        actual_md5 = hashlib.md5(data).hexdigest().upper()
+        expected_md5 = str(row.get("recomputedFileDataMd5", "")).upper()
+        if len(data) != row.get("length") or actual_md5 != expected_md5:
+            raise VMOperandEvidenceError(
+                f"IFix outer gate: {virtual_path} byte identity mismatched "
+                f"expectedLength={row.get('length')} actualLength={len(data)} "
+                f"expectedMd5={expected_md5} actualMd5={actual_md5}"
+            )
+        joined.append({
+            "virtualPath": virtual_path, "source": str(path),
+            "length": len(data), "md5": actual_md5,
+        })
+    return {
+        "status": "validated_current_outer_file_set",
+        "provenance": provenance,
+        "files": joined,
+    }
 
 
 def _int_hex(value: Any, label: str) -> int:
@@ -83,6 +162,21 @@ def _require_direct_call(
         raise VMOperandEvidenceError(f"{label}: missing near call at 0x{call_rva:x}")
     relative = int.from_bytes(body[offset + 1:offset + 5], "little", signed=True)
     actual_target = call_rva + 5 + relative
+    if actual_target != target_rva:
+        raise VMOperandEvidenceError(
+            f"{label}: expected target 0x{target_rva:x}, actual 0x{actual_target:x}"
+        )
+
+
+def _require_direct_jump(
+    body: bytes, body_rva: int, jump_rva: int, target_rva: int, *, label: str
+) -> None:
+    """Verify one x64 near jump inside an authenticated method body."""
+    offset = jump_rva - body_rva
+    if offset < 0 or offset + 5 > len(body) or body[offset] != 0xE9:
+        raise VMOperandEvidenceError(f"{label}: missing near jump at 0x{jump_rva:x}")
+    relative = int.from_bytes(body[offset + 1:offset + 5], "little", signed=True)
+    actual_target = jump_rva + 5 + relative
     if actual_target != target_rva:
         raise VMOperandEvidenceError(
             f"{label}: expected target 0x{target_rva:x}, actual 0x{actual_target:x}"
@@ -465,6 +559,502 @@ def _validate_newobj_selector(
     }
 
 
+def _validate_initobj_type_operand(
+    image: Any,
+    spec: dict[str, Any],
+    loader_body: bytes,
+    loader_rva: int,
+    consumer_body: bytes,
+    consumer_rva: int,
+    opcode_ids: dict[str, int],
+    field_offsets: dict[str, int],
+    loaded_tables: list[dict[str, Any]],
+    read_int32_rva: int,
+) -> dict[str, Any]:
+    """Prove that Initobj indexes the loader's ordered externTypes rows."""
+    if (
+        spec.get("evidenceBoundary") != "direct"
+        or spec.get("opcode") != "Initobj"
+        or opcode_ids.get("Initobj") != spec.get("opcodeId")
+        or spec.get("runtimeField") != "externTypes"
+        or spec.get("fileTable") != "externTypes"
+    ):
+        raise VMOperandEvidenceError("Initobj type operand: unsupported table claim")
+    table_rows = [
+        row for row in loaded_tables
+        if row.get("runtimeField") == "externTypes"
+        and row.get("fileTable") == "externTypes"
+    ]
+    if len(table_rows) != 1:
+        raise VMOperandEvidenceError("Initobj type operand: missing unique loader table")
+    table = table_rows[0]
+    _require_direct_call(
+        loader_body, loader_rva,
+        _int_hex(table["countReadRva"], "Initobj externTypes count read"),
+        read_int32_rva, label="Initobj externTypes count",
+    )
+    reader = spec["readStringMethod"]
+    owners = [
+        row for row in image.metadata.types
+        if image.metadata.type_full_name(row) == reader["type"]
+    ]
+    if len(owners) != 1:
+        raise VMOperandEvidenceError(
+            f"Initobj type reader: expected one owner, found {len(owners)}"
+        )
+    _method, read_string_rva = _selected_method_identity(
+        image, owners[0], reader, label="Initobj type reader"
+    )
+    _require_direct_call(
+        loader_body, loader_rva,
+        _int_hex(table["rowReadStringRva"], "Initobj externTypes string read"),
+        read_string_rva, label="Initobj externTypes row read",
+    )
+    for label, body, body_rva, witness in (
+        ("Initobj loader row arguments", loader_body, loader_rva, spec["loaderRowArguments"]),
+        ("Initobj loader field store", loader_body, loader_rva, spec["loaderFieldStore"]),
+        ("Initobj consumer field load", consumer_body, consumer_rva, spec["consumerFieldLoad"]),
+        ("Initobj consumer operand read", consumer_body, consumer_rva, spec["consumerOperandRead"]),
+    ):
+        witness_rva = _int_hex(witness["rva"], f"{label} rva")
+        expected = bytes.fromhex(witness["hex"])
+        offset = witness_rva - body_rva
+        if not expected or not 0 <= offset <= len(body) - len(expected) or body[offset:offset + len(expected)] != expected:
+            raise VMOperandEvidenceError(
+                f"{label}:mismatched:0x{witness_rva:x} expectedBytes={expected.hex()}"
+            )
+    if (
+        spec["loaderFieldStore"]["rva"] != table["vmFieldStoreRva"]
+        or bytes.fromhex(spec["loaderFieldStore"]["hex"])[-1] != field_offsets["externTypes"]
+        or bytes.fromhex(spec["consumerFieldLoad"]["hex"])[-1] != field_offsets["externTypes"]
+    ):
+        raise VMOperandEvidenceError("Initobj externTypes field offset differs")
+    store_helper = spec["loaderRowStoreHelper"]
+    store_rva = _int_hex(store_helper["rva"], "Initobj row store helper")
+    _validate_code_window_bytes(
+        store_helper,
+        image.pe.bytes_at_va(image.pe.image_base + store_rva, store_helper["byteCount"]),
+        label="Initobj row store helper", rva=store_rva,
+    )
+    _require_direct_call(
+        loader_body, loader_rva,
+        _int_hex(table["rowStoreRva"], "Initobj externTypes row store"),
+        store_rva, label="Initobj externTypes row store",
+    )
+    _require_near_jcc(
+        consumer_body, consumer_rva,
+        _int_hex(spec["consumerDispatchBranchRva"], "Initobj dispatch branch"),
+        _int_hex(spec["consumerEntryRva"], "Initobj entry"),
+        label="Initobj dispatch",
+    )
+    fetch_helper = spec["consumerRowFetchHelper"]
+    fetch_rva = _int_hex(fetch_helper["rva"], "Initobj row fetch helper")
+    _validate_code_window_bytes(
+        fetch_helper,
+        image.pe.bytes_at_va(image.pe.image_base + fetch_rva, fetch_helper["byteCount"]),
+        label="Initobj row fetch helper", rva=fetch_rva,
+    )
+    _require_direct_call(
+        consumer_body, consumer_rva,
+        _int_hex(spec["consumerRowFetchCallRva"], "Initobj row fetch"),
+        fetch_rva, label="Initobj row fetch",
+    )
+    return {
+        "status": "validated_ordered_extern_type_index",
+        "runtimeField": "externTypes",
+        "fileTable": "externTypes",
+        "evidenceBoundary": "direct",
+        "executionBoundary": "unobserved",
+    }
+
+
+def _validate_initobj_stack_effect(
+    image: Any,
+    spec: dict[str, Any],
+    constrained_spec: dict[str, Any],
+    consumer_body: bytes,
+    consumer_rva: int,
+    opcode_ids: dict[str, int],
+    frame_claims: list[dict[str, Any]],
+    arithmetic: dict[str, dict[str, Any]],
+    extents: dict[int, int],
+) -> dict[str, Any]:
+    """Prove the selected Ldloca -> Initobj local-reference route."""
+    reference = spec["referenceValueType"]
+    if (
+        spec.get("evidenceBoundary") != "conditional"
+        or spec.get("executionBoundary") != "unobserved"
+        or spec.get("addressProducer") != "Ldloca"
+        or opcode_ids.get("Ldloca") != 85
+        or opcode_ids.get("Initobj") != 55
+        or spec.get("pointerSubtractHelperRef")
+        != "constrainedTypeOperand.stackEffect.priorPointerHelper"
+        or reference != {
+            "enumType": "IFix.Core.ValueType", "name": "StackReference", "id": 4,
+        }
+        or len([row for row in frame_claims if row.get("opcode") == "Ldloca"
+                and row.get("slotDomain") == "localAddress"]) != 1
+    ):
+        raise VMOperandEvidenceError("Initobj stack effect: unsupported local-reference route")
+    members = native_enum_members(
+        image.metadata, field_defaults(image.metadata), image.pe,
+        image.registration, reference["enumType"],
+    )
+    if [
+        {"id": row["id"], "name": row["name"]}
+        for row in members if row["name"] == reference["name"]
+    ] != [
+        {"id": reference["id"], "name": reference["name"]}
+    ]:
+        raise VMOperandEvidenceError("Initobj stack effect: StackReference enum differs")
+    selected: dict[str, tuple[bytes, int]] = {"consumer": (consumer_body, consumer_rva)}
+    for label, key in (
+        ("updateReference", "updateReferenceMethod"),
+        ("pushObject", "pushObjectMethod"),
+    ):
+        method_spec = spec[key]
+        owners = [
+            row for row in image.metadata.types
+            if image.metadata.type_full_name(row) == method_spec["type"]
+        ]
+        if len(owners) != 1:
+            raise VMOperandEvidenceError(f"Initobj {label}: expected one owner")
+        body, rva, _digest = _selected_method_body(
+            image, owners[0], method_spec,
+            label=f"Initobj {label}", extents=extents,
+        )
+        selected[label] = body, rva
+    create = spec["createInstanceMethod"]
+    owners = [
+        row for row in image.metadata.types
+        if image.metadata.type_full_name(row) == create["type"]
+    ]
+    if len(owners) != 1:
+        raise VMOperandEvidenceError("Initobj CreateInstance: expected one owner")
+    method, create_rva = _selected_method_identity(
+        image, owners[0], create, label="Initobj CreateInstance"
+    )
+    parameter_types = [
+        image.metadata.metadata_type_name(row.type_index)
+        for row in image.metadata.parameters_for(method)
+    ]
+    if parameter_types != create["parameterTypes"]:
+        raise VMOperandEvidenceError(
+            f"Initobj CreateInstance parameters: expected {create['parameterTypes']}, "
+            f"actual {parameter_types}"
+        )
+    entry = bytes.fromhex(create["entryBytes"])
+    if image.pe.bytes_at_va(image.pe.image_base + create_rva, len(entry)) != entry:
+        raise VMOperandEvidenceError("Initobj CreateInstance entry bytes differ")
+    if not entry or len(entry) > 32:
+        raise VMOperandEvidenceError("Initobj CreateInstance entry window unbounded")
+    witnesses = spec["witnesses"]
+    expected_names = {
+        "ldlocaOperand", "ldlocaAddressStore", "ldlocaReferenceTag",
+        "initobjSelectedSlot", "initobjTypeToActivator",
+        "initobjTypeToUpdateReference", "initobjActivatorResultToUpdateReference",
+        "initobjSelectedSlotToUpdateReference", "stackReferenceTagComparison",
+        "stackReferenceTargetSlot", "destinationSlotIndexStore",
+        "destinationValueTagStore",
+    }
+    if (
+        not isinstance(witnesses, list)
+        or {row["name"] for row in witnesses} != expected_names
+        or len(witnesses) != len(expected_names)
+    ):
+        raise VMOperandEvidenceError("Initobj stack effect: missing or repeated witnesses")
+    for row in witnesses:
+        label = f"Initobj {row['name']}"
+        if row["body"] not in selected:
+            raise VMOperandEvidenceError(f"{label}: unknown method body")
+        body, body_rva = selected[row["body"]]
+        witness_rva = _int_hex(row["rva"], f"{label}.rva")
+        expected = bytes.fromhex(row["hex"])
+        offset = witness_rva - body_rva
+        if (
+            not expected or len(expected) > 64 or offset < 0
+            or offset + len(expected) > len(body)
+            or body[offset:offset + len(expected)] != expected
+        ):
+            raise VMOperandEvidenceError(
+                f"{label}:mismatched:0x{witness_rva:x} expectedBytes={row['hex']}"
+            )
+    helper = constrained_spec["stackEffect"]["priorPointerHelper"]
+    helper_rva = _int_hex(helper["rva"], "Initobj pointer subtract helper")
+    _validate_code_window_bytes(
+        helper,
+        image.pe.bytes_at_va(image.pe.image_base + helper_rva, helper["byteCount"]),
+        label="Initobj pointer subtract helper", rva=helper_rva,
+    )
+    top_advance = spec["topAdvanceHelper"]
+    top_advance_rva = _int_hex(top_advance["rva"], "Initobj top advance helper")
+    expected_advance = bytes.fromhex(top_advance["hex"])
+    if (
+        not 1 <= len(expected_advance) <= 32
+        or image.pe.bytes_at_va(image.pe.image_base + top_advance_rva, len(expected_advance))
+        != expected_advance
+    ):
+        raise VMOperandEvidenceError("Initobj top advance helper bytes differ")
+    call_targets = {
+        "ldlocaSlotMultiplyRva": _int_hex(arithmetic["signedSlotMultiply"]["rva"], "Initobj slot multiply"),
+        "ldlocaSlotAddRva": _int_hex(arithmetic["pointerAdd"]["rva"], "Initobj slot add"),
+        "ldlocaTopAdvanceRva": top_advance_rva,
+        "initobjTopSlotSubtractRva": helper_rva,
+        "createInstanceRva": create_rva,
+        "updateReferenceRva": selected["updateReference"][1],
+        "stackReferencePushObjectRva": selected["pushObject"][1],
+        "pushObjectManagedStoreRva": _int_hex(
+            constrained_spec["stackEffect"]["managedStackStoreHelper"]["rva"],
+            "Initobj managed-stack store",
+        ),
+    }
+    if set(spec["calls"]) != set(call_targets):
+        raise VMOperandEvidenceError("Initobj stack effect: call-site set differs")
+    for key, target_rva in call_targets.items():
+        label = f"Initobj {key}"
+        site = _int_hex(spec["calls"][key], label)
+        body_name = (
+            "updateReference" if key == "stackReferencePushObjectRva"
+            else "pushObject" if key == "pushObjectManagedStoreRva"
+            else "consumer"
+        )
+        body, body_rva = selected[body_name]
+        _require_direct_call(body, body_rva, site, target_rva, label=label)
+    _require_direct_jump(
+        consumer_body, consumer_rva,
+        _int_hex(spec["ldlocaTailJumpRva"], "Initobj Ldloca tail jump"),
+        _int_hex(spec["ldlocaTailEntryRva"], "Initobj Ldloca tail entry"),
+        label="Initobj Ldloca tail jump",
+    )
+    _require_direct_jump(
+        consumer_body, consumer_rva,
+        _int_hex(spec["ldlocaAdvanceJumpRva"], "Initobj Ldloca advance jump"),
+        _int_hex(spec["ldlocaAdvanceEntryRva"], "Initobj Ldloca advance entry"),
+        label="Initobj Ldloca advance jump",
+    )
+    body, body_rva = selected["updateReference"]
+    _require_near_jcc(
+        body, body_rva,
+        _int_hex(spec["stackReferenceBranchRva"], "Initobj StackReference branch"),
+        _int_hex(spec["stackReferenceEntryRva"], "Initobj StackReference entry"),
+        label="Initobj StackReference branch",
+    )
+    return {
+        "status": "validated_conditional_ldloca_local_update",
+        "createdValue": "System.Activator.CreateInstance(System.Type) result",
+        "referenceRoute": "ValueType.StackReference -> UpdateReference -> PushObject",
+        "destination": "Ldloca-selected local slot when adjacent in authored VM code",
+        "evidenceBoundary": "conditional",
+        "executionBoundary": "unobserved",
+    }
+
+
+def _validate_constrained_type_operand(
+    image: Any,
+    spec: dict[str, Any],
+    initobj_spec: dict[str, Any],
+    consumer_body: bytes,
+    consumer_rva: int,
+    opcode_ids: dict[str, int],
+    field_offsets: dict[str, int],
+    loaded_tables: list[dict[str, Any]],
+    extents: dict[int, int],
+    arithmetic: dict[str, dict[str, Any]],
+    layout: dict[str, Any],
+    header: dict[str, Any],
+) -> dict[str, Any]:
+    """Authenticate Constrained's separate dispatch and externTypes row read."""
+    if (
+        spec.get("evidenceBoundary") != "direct"
+        or spec.get("opcode") != "Constrained"
+        or opcode_ids.get("Constrained") != spec.get("opcodeId")
+        or spec.get("runtimeField") != "externTypes"
+        or spec.get("fileTable") != "externTypes"
+        or spec.get("rowFetchHelperRef") != "initobjTypeOperand.consumerRowFetchHelper"
+        or initobj_spec.get("runtimeField") != "externTypes"
+        or len([
+            row for row in loaded_tables
+            if row.get("runtimeField") == "externTypes"
+            and row.get("fileTable") == "externTypes"
+        ]) != 1
+    ):
+        raise VMOperandEvidenceError("Constrained type operand: unsupported table claim")
+    windows = spec["dispatchWindows"]
+    if len(windows) != 2:
+        raise VMOperandEvidenceError("Constrained dispatch: expected two selected windows")
+    for index, witness in enumerate(windows):
+        witness_rva = _int_hex(witness["rva"], f"Constrained dispatch[{index}].rva")
+        expected = bytes.fromhex(witness["hex"])
+        offset = witness_rva - consumer_rva
+        if (
+            not expected or not 0 <= offset <= len(consumer_body) - len(expected)
+            or consumer_body[offset:offset + len(expected)] != expected
+        ):
+            raise VMOperandEvidenceError(
+                f"Constrained dispatch[{index}]:mismatched:0x{witness_rva:x} "
+                f"expectedBytes={expected.hex()}"
+            )
+    for label in ("consumerFieldLoad", "consumerOperandRead"):
+        witness = spec[label]
+        witness_rva = _int_hex(witness["rva"], f"Constrained {label}.rva")
+        expected = bytes.fromhex(witness["hex"])
+        offset = witness_rva - consumer_rva
+        if (
+            not expected or not 0 <= offset <= len(consumer_body) - len(expected)
+            or consumer_body[offset:offset + len(expected)] != expected
+        ):
+            raise VMOperandEvidenceError(
+                f"Constrained {label}:mismatched:0x{witness_rva:x} "
+                f"expectedBytes={expected.hex()}"
+            )
+    if bytes.fromhex(spec["consumerFieldLoad"]["hex"])[-1] != field_offsets["externTypes"]:
+        raise VMOperandEvidenceError("Constrained externTypes field offset differs")
+    fetch_helper = initobj_spec["consumerRowFetchHelper"]
+    fetch_rva = _int_hex(fetch_helper["rva"], "Constrained row fetch helper")
+    _validate_code_window_bytes(
+        fetch_helper,
+        image.pe.bytes_at_va(image.pe.image_base + fetch_rva, fetch_helper["byteCount"]),
+        label="Constrained row fetch helper", rva=fetch_rva,
+    )
+    _require_direct_call(
+        consumer_body, consumer_rva,
+        _int_hex(spec["consumerRowFetchCallRva"], "Constrained row fetch call"),
+        fetch_rva, label="Constrained row fetch",
+    )
+    stack_effect = _validate_constrained_stack_effect(
+        image, spec["stackEffect"], consumer_body, consumer_rva,
+        extents, arithmetic, layout, header,
+    )
+    return {
+        "status": "validated_ordered_extern_type_index",
+        "opcode": "Constrained",
+        "runtimeField": "externTypes",
+        "fileTable": "externTypes",
+        "evidenceBoundary": "direct",
+        "executionBoundary": "unobserved",
+        "stackEffect": stack_effect,
+    }
+
+
+def _validate_constrained_stack_effect(
+    image: Any, spec: dict[str, Any], consumer_body: bytes, consumer_rva: int,
+    extents: dict[int, int], arithmetic: dict[str, dict[str, Any]],
+    layout: dict[str, Any], header: dict[str, Any],
+) -> dict[str, Any]:
+    """Check the selected conditional slot conversion and object-slot stores."""
+    if spec.get("evidenceBoundary") != "conditional" or spec.get("executionBoundary") != "unobserved":
+        raise VMOperandEvidenceError("Constrained stack effect: unsupported boundary")
+    windows = spec["executeWindows"]
+    if not windows or len({row["name"] for row in windows}) != len(windows):
+        raise VMOperandEvidenceError("Constrained stack effect: missing or repeated windows")
+    previous_end = consumer_rva
+    for row in windows:
+        rva = _int_hex(row["rva"], f"Constrained {row['name']}.rva")
+        count = row["byteCount"]
+        if rva < previous_end or rva + count > consumer_rva + len(consumer_body):
+            raise VMOperandEvidenceError(f"Constrained {row['name']}: outside ordered Execute body")
+        _validate_code_window_bytes(
+            row, consumer_body[rva - consumer_rva:rva - consumer_rva + count],
+            label=f"Constrained {row['name']}", rva=rva,
+        )
+        previous_end = rva + count
+    helpers = {}
+    for key in ("priorPointerHelper", "managedStackStoreHelper"):
+        row = spec[key]
+        rva = _int_hex(row["rva"], f"Constrained {key}.rva")
+        _validate_code_window_bytes(
+            row, image.pe.bytes_at_va(image.pe.image_base + rva, row["byteCount"]),
+            label=f"Constrained {key}", rva=rva,
+        )
+        helpers[key] = rva
+    method_spec = spec["toObjectMethod"]
+    owners = [row for row in image.metadata.types
+              if image.metadata.type_full_name(row) == method_spec["type"]]
+    if len(owners) != 1:
+        raise VMOperandEvidenceError("Constrained ToObject: expected one owner")
+    to_object_body, to_object_rva, to_object_hash = _selected_method_body(
+        image, owners[0], method_spec, label="Constrained ToObject", extents=extents,
+    )
+    method, _ = _selected_method_identity(image, owners[0], method_spec, label="Constrained ToObject")
+    if image.metadata.metadata_type_name(method.return_type) != method_spec["returnTypeName"]:
+        raise VMOperandEvidenceError("Constrained ToObject: return type differs")
+    if not to_object_body:
+        raise VMOperandEvidenceError("Constrained ToObject: empty selected body")
+    call_targets = {
+        "priorInstructionPointerSubtractRva": helpers["priorPointerHelper"],
+        "priorOperandMultiplyRva": _int_hex(arithmetic["signedSlotMultiply"]["rva"], "Constrained slot multiply"),
+        "topMinusOnePointerSubtractRva": helpers["priorPointerHelper"],
+        "selectedSlotPointerSubtractRva": _int_hex(arithmetic["stackPointerSubtract"]["rva"], "Constrained slot subtract"),
+        "toObjectRva": to_object_rva,
+        "managedStackStoreRva": helpers["managedStackStoreHelper"],
+    }
+    if set(spec["calls"]) != set(call_targets):
+        raise VMOperandEvidenceError("Constrained stack effect: call route differs")
+    for key, target_rva in call_targets.items():
+        _require_direct_call(
+            consumer_body, consumer_rva,
+            _int_hex(spec["calls"][key], f"Constrained {key}"),
+            target_rva, label=f"Constrained {key}",
+        )
+    prior = spec["priorOperandRead"]
+    prior_rva = _int_hex(prior["rva"], "Constrained prior operand read")
+    prior_bytes = bytes.fromhex(prior["hex"])
+    offset = prior_rva - consumer_rva
+    instruction_operand_offset = layout["instruction"]["fieldOffsets"]["Operand"] - 16
+    if (len(prior_bytes) != 4 or prior_bytes[:3] != b"\x48\x63\x4e"
+            or prior_bytes[3] != instruction_operand_offset
+            or consumer_body[offset:offset + len(prior_bytes)] != prior_bytes):
+        raise VMOperandEvidenceError("Constrained prior instruction operand read differs")
+    pointer_window_rva = _int_hex(windows[0]["rva"], "Constrained prior pointer window")
+    pointer_lea = consumer_body[pointer_window_rva - consumer_rva:pointer_window_rva - consumer_rva + 3]
+    if (pointer_lea[:2] != b"\x8d\x51"
+            or pointer_lea[2] + 1 != INSTRUCTION_WORD_SIZE):
+        raise VMOperandEvidenceError("Constrained previous-instruction stride differs")
+    width_offset = offset + len(prior_bytes)
+    slot_width_read = consumer_body[width_offset:width_offset + 5]
+    if (len(slot_width_read) != 5 or slot_width_read[0] != 0xBE
+            or int.from_bytes(slot_width_read[1:], "little") != header["slotBytes"]):
+        raise VMOperandEvidenceError("Constrained evaluation-slot width differs")
+    value = spec["valueLayout"]
+    value_owners = [row for row in image.metadata.types
+                    if image.metadata.type_full_name(row) == value["type"]]
+    if len(value_owners) != 1:
+        raise VMOperandEvidenceError("Constrained Value: expected one type")
+    actual_offsets = runtime_type_field_offsets(
+        image.metadata, image.pe, image.registration, value_owners[0].index,
+    )
+    if actual_offsets != value["fieldOffsets"]:
+        raise VMOperandEvidenceError("Constrained Value field offsets differ")
+    members = enum_members(image.metadata, field_defaults(image.metadata), value["enumType"])
+    object_rows = [row for row in members if row["name"] == value["objectMember"]["name"]]
+    if len(object_rows) != 1 or object_rows[0]["id"] != value["objectMember"]["id"]:
+        raise VMOperandEvidenceError("Constrained ValueType.Object differs")
+    index_store = value["slotIndexStore"]
+    index_rva = _int_hex(index_store["rva"], "Constrained slot index store")
+    index_bytes = bytes.fromhex(index_store["hex"])
+    type_store = value["slotTypeStore"]
+    type_rva = _int_hex(type_store["rva"], "Constrained slot type store")
+    type_bytes = bytes.fromhex(type_store["hex"])
+    if (len(index_bytes) != 3 or index_bytes[:2] != b"\x89\x7b"
+            or index_bytes[2] != actual_offsets["Value1"] - actual_offsets["Type"]
+            or consumer_body[index_rva - consumer_rva:index_rva - consumer_rva + 3] != index_bytes
+            or len(type_bytes) != 6 or type_bytes[:2] != b"\xc7\x03"
+            or int.from_bytes(type_bytes[2:], "little") != object_rows[0]["id"]
+            or consumer_body[type_rva - consumer_rva:type_rva - consumer_rva + 6] != type_bytes):
+        raise VMOperandEvidenceError("Constrained object slot stores differ")
+    return {
+        "status": "validated_conditional_object_slot_conversion",
+        "previousOperandRole": "offset-from-evaluation-top-minus-one",
+        "slotBytes": header["slotBytes"],
+        "toObjectMethod": f"{method_spec['type']}.{method_spec['method']}",
+        "toObjectBodySha256": to_object_hash,
+        "managedStackStore": "ToObject-return-at-selected-evaluation-slot-index",
+        "valueTypeMember": value["objectMember"]["name"],
+        "evidenceBoundary": "conditional",
+        "executionBoundary": "unobserved",
+    }
+
+
 def _rip_relative_qword_cell_rva(body: bytes, body_rva: int, load_rva: int) -> int:
     offset = load_rva - body_rva
     if offset < 0 or offset + 7 > len(body) or body[offset:offset + 3] != b"\x4c\x8b\x05":
@@ -696,6 +1286,20 @@ def validate_vm_operand_contract(
                     raise VMOperandEvidenceError(
                         f"loader.{row['runtimeField']}.{key}: outside authenticated body"
                     )
+    initobj_audit = _validate_initobj_type_operand(
+        image, contract["initobjTypeOperand"], loader_body, loader_rva,
+        body, rva, opcode_ids, offsets, loader_tables,
+        _int_hex(contract["exceptionHandler"]["readMethod"]["rva"], "ReadInt32 rva"),
+    )
+    constrained_audit = _validate_constrained_type_operand(
+        image, contract["constrainedTypeOperand"], contract["initobjTypeOperand"],
+        body, rva, opcode_ids, offsets, loader_tables, extents,
+        arithmetic, layout, header,
+    )
+    initobj_stack_audit = _validate_initobj_stack_effect(
+        image, contract["initobjStackEffect"], contract["constrainedTypeOperand"],
+        body, rva, opcode_ids, frame_claims, arithmetic, extents,
+    )
     for kind, group in (
         ("call", call_claims), ("branch", branch_claims),
         ("table", table_claims), ("frame", frame_claims)
@@ -804,6 +1408,9 @@ def validate_vm_operand_contract(
         "exceptionHandler": exception_audit,
         "exceptionControl": exception_control_audit,
         "newobjSelector": newobj_audit,
+        "initobjTypeOperand": initobj_audit,
+        "initobjStackEffect": initobj_stack_audit,
+        "constrainedTypeOperand": constrained_audit,
         "reflectionDispatch": reflection_audit,
         "evidenceBoundary": "direct",
         "executionBoundary": "unresolved",
@@ -861,6 +1468,10 @@ def project_vm_operands(
     branch_claims = {row["opcode"]: row for row in contract["branchClaims"]}
     table_claims = {row["opcode"]: row for row in contract["tableOperandClaims"]}
     frame_claims = {row["opcode"]: row for row in contract["frameSlotClaims"]}
+    type_claims = {
+        contract[key]["opcode"]: contract[key]
+        for key in ("initobjTypeOperand", "constrainedTypeOperand")
+    }
     header_claim = contract["entryHeader"]
     return_claim = contract["returnClaim"]
     exception_control = contract["exceptionControl"]
@@ -876,6 +1487,7 @@ def project_vm_operands(
     returns = []
     leaves = []
     endfinallys = []
+    type_operands = []
     for method in decoded["methods"]:
         method_size = len(method["instructions"])
         method_code_offset = parsed["methods"]["records"][method["index"]]["codeOffset"]
@@ -963,6 +1575,93 @@ def project_vm_operands(
                         "pending-leave-target-when-nonzero"
                         if instruction["operandSigned"] == -1 else None
                     ),
+                    "executionBoundary": "unobserved",
+                })
+            if instruction["name"] in type_claims:
+                type_index = instruction["operandSigned"]
+                type_rows = parsed["externTypes"]["records"]
+                in_range = 0 <= type_index < len(type_rows)
+                type_row = type_rows[type_index] if in_range else None
+                stack_effect = None
+                if instruction["name"] == contract["constrainedTypeOperand"]["opcode"] and in_range:
+                    instruction_index = instruction["index"]
+                    if not 0 < instruction_index < method_size:
+                        raise VMOperandEvidenceError(
+                            f"{source}: Constrained previous instruction outside VM method "
+                            f"{method['index']} at {instruction_index}"
+                        )
+                    previous = method["instructions"][instruction_index - 1]
+                    if previous["index"] != instruction_index - 1:
+                        raise VMOperandEvidenceError(
+                            f"{source}: Constrained previous instruction index drift "
+                            f"in VM method {method['index']}"
+                        )
+                    from_top = previous["operandSigned"] + 1
+                    stack_effect = {
+                        "previousInstructionIndex": previous["index"],
+                        "previousInstructionFileOffset": previous["offset"],
+                        "previousOpcode": previous["name"],
+                        "previousOperandSigned": previous["operandSigned"],
+                        "selectedSlotOffsetFromTop": from_top,
+                        "slotRelativePosition": (
+                            "at-or-below-top" if from_top > 0 else "above-top"
+                        ),
+                        "runtimeStackDepth": "unobserved",
+                        "normalReturnEffect": (
+                            "ToObject-return-stored-in-managedStack; "
+                            "selected-Value-becomes-Object-index"
+                        ),
+                        "evidenceBoundary": "conditional",
+                        "executionBoundary": "unobserved",
+                    }
+                elif instruction["name"] == contract["initobjTypeOperand"]["opcode"] and in_range:
+                    instruction_index = instruction["index"]
+                    if instruction_index > 0:
+                        previous = method["instructions"][instruction_index - 1]
+                        if previous["index"] != instruction_index - 1:
+                            raise VMOperandEvidenceError(
+                                f"{source}: Initobj previous instruction index drift "
+                                f"in VM method {method['index']}"
+                            )
+                        local_slot = previous["operandSigned"]
+                        if (
+                            previous["name"] == contract["initobjStackEffect"]["addressProducer"]
+                            and header_status == "direct"
+                            and 0 <= local_slot < local_count
+                        ):
+                            stack_effect = {
+                                "addressProducerInstructionIndex": previous["index"],
+                                "addressProducerFileOffset": previous["offset"],
+                                "addressProducerOpcode": previous["name"],
+                                "destinationDomain": "local",
+                                "destinationSlotIndex": local_slot,
+                                "normalReturnEffect": (
+                                    "Activator.CreateInstance(Type) result passed through "
+                                    "UpdateReference StackReference branch to PushObject "
+                                    "at the selected local slot"
+                                ),
+                                "evidenceBoundary": "conditional",
+                                "executionBoundary": "unobserved",
+                            }
+                type_operands.append({
+                    "vmMethodIndex": method["index"],
+                    "instructionIndex": instruction["index"],
+                    "offset": instruction["offset"],
+                    "opcode": instruction["name"],
+                    "typeIndex": type_index,
+                    "runtimeTable": type_claims[instruction["name"]]["runtimeField"],
+                    "fileTable": type_claims[instruction["name"]]["fileTable"],
+                    "fileTableCount": len(type_rows),
+                    "fileTableJoin": "direct" if in_range else "out-of-range",
+                    "declaredFileRow": (
+                        {
+                            "index": type_index,
+                            "kind": "extern-type",
+                            "recordOffset": type_row["offset"],
+                            "typeName": type_row["value"],
+                        } if type_row is not None else None
+                    ),
+                    "stackEffect": stack_effect,
                     "executionBoundary": "unobserved",
                 })
             branch_claim = branch_claims.get(instruction["name"])
@@ -1170,6 +1869,7 @@ def project_vm_operands(
         "exceptionHandlerCount": len(exception_handlers),
         "leaveCount": len(leaves),
         "endfinallyCount": len(endfinallys),
+        "typeOperandCount": len(type_operands),
         "calls": calls,
         "branches": branches,
         "tableOperands": table_operands,
@@ -1179,6 +1879,7 @@ def project_vm_operands(
         "exceptionHandlers": exception_handlers,
         "leaves": leaves,
         "endfinallys": endfinallys,
+        "typeOperands": type_operands,
     }
 
 
@@ -1188,9 +1889,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--metadata", type=Path, required=True)
     parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
     parser.add_argument("--input", type=Path, action="append", required=True)
+    parser.add_argument("--outer-summary", type=Path)
+    parser.add_argument("--outer-ledger", type=Path)
+    parser.add_argument("--expected-input-set-sha256")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
+        outer_values = (
+            args.outer_summary, args.outer_ledger, args.expected_input_set_sha256,
+        )
+        if any(value is not None for value in outer_values) and not all(
+            value is not None for value in outer_values
+        ):
+            raise VMOperandEvidenceError(
+                "IFix outer gate requires --outer-summary, --outer-ledger, "
+                "and --expected-input-set-sha256 together"
+            )
+        current_vfs_join = (
+            _validate_current_vfs_inputs(
+                args.input, args.outer_summary, args.outer_ledger,
+                args.expected_input_set_sha256,
+            ) if args.outer_summary is not None else None
+        )
         contract, layout, audit = validate_vm_operand_contract(
             args.contract, gameassembly=args.gameassembly, metadata_path=args.metadata
         )
@@ -1202,9 +1922,10 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ifix-vm-operands: {error}", file=sys.stderr)
         return 1
     report = {
-        "schema": "endfield-ifix-vm-operand-audit-v12",
+        "schema": "endfield-ifix-vm-operand-audit-v16",
         "status": "validated_selected_native_loader_and_consumer",
         "audit": audit,
+        "currentVfsJoin": current_vfs_join,
         "files": files,
         "fileCount": len(files),
         "callCount": sum(row["callCount"] for row in files),
@@ -1220,6 +1941,7 @@ def main(argv: list[str] | None = None) -> int:
         "exceptionHandlerCount": sum(row["exceptionHandlerCount"] for row in files),
         "leaveCount": sum(row["leaveCount"] for row in files),
         "endfinallyCount": sum(row["endfinallyCount"] for row in files),
+        "typeOperandCount": sum(row["typeOperandCount"] for row in files),
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -1231,7 +1953,8 @@ def main(argv: list[str] | None = None) -> int:
         f"{report['tableOperandCount']} field/string operands, "
         f"{report['frameSlotCount']} frame-slot operands"
         f", {report['exceptionHandlerCount']} exception handlers, "
-        f"{report['leaveCount']} leaves and {report['endfinallyCount']} endfinallys"
+        f"{report['leaveCount']} leaves, {report['endfinallyCount']} endfinallys, "
+        f"{report['typeOperandCount']} type operands"
     )
     return 0
 

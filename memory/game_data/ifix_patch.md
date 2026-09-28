@@ -124,6 +124,52 @@ than interpreting as a file-field index. The named field rows describe
 **authored references**; they do not prove a load, store, or resulting value
 occurred at runtime.
 
+`Initobj` has a separate, now-authenticated type-table operand. The selected
+`LoadInternal` body reads external-type declarations in file order, passes
+their strings through a helper, and stores the resulting array in
+`VirtualMachine.externTypes`.
+The selected `Execute` body reads `Initobj`'s signed operand, loads that
+array, and uses a bounds-checked array getter at the operand index. The
+maintained operand audit joins an in-range index to the corresponding
+file-declared external type and leaves an invalid index visibly out of range.
+The same selected body takes the preceding evaluation slot as the destination
+reference, calls `System.Activator.CreateInstance(Type)` with the selected
+type, and passes its result to `EvaluationStackOperation.UpdateReference`.
+`Ldloca` places the selected local-slot address in a `StackReference` value;
+the checked `UpdateReference` branch for that tag calls `PushObject` on the
+referenced slot. `PushObject` stores the resulting object through the managed
+stack and updates the slot's value tag. The maintained native contract checks
+the named methods, complete helper bodies, dispatch branch, call targets,
+slot arithmetic, and value-tag writes. In the current source-authenticated
+patch, each `Initobj` immediately follows an in-range `Ldloca`, so the operand
+audit names its authored local-slot destination and the conditional normal-return
+reference update. The selected type, target slot, and call path are established;
+the actual constructed value, constructor effects, patch activation, and
+execution remain unobserved. The current per-instruction projections are in
+`reports/animestudio/ifix_vm_operands_current.json`.
+
+`Constrained` uses the same ordered `externTypes` table through a distinct
+selected `Execute` dispatch path. The reviewed native contract checks that
+path's opcode selection, the VM table-field load, the signed instruction
+operand read, and the bounds-checked row getter. The single authored
+`Constrained` instruction in the current Gameplay patch selects the
+file-declared `List<string>.Enumerator` type row. It occurs inside the
+`_InitLoader` replacement's declared finally handler before an external call.
+The type-row join is direct under the selected native build. A further selected
+`Execute` path reads the **preceding instruction's signed operand**, selects
+the evaluation slot at `top - 1 - precedingOperand` in twelve-byte slots,
+and passes that slot and the resolved external type to
+`EvaluationStackOperation.ToObject`. On normal return, it stores the helper's
+object result in `managedStack` at the selected slot's evaluation-base index,
+then writes that index and the native `ValueType.Object` tag into the slot.
+The current preceding instruction is `Nop 0`, so the authored route selects
+the top evaluation slot. The reviewed validator checks the selected method
+bodies, arithmetic and store calls, value-layout fields, and enum member;
+the current two-file VFS receipt joins the neighboring instruction bytes.
+This is a conditional VM stack effect. The slot's runtime contents, the
+helper's returned object, patch loading, handler entry, and execution remain
+unobserved.
+
 `Execute` treats the first `StackSpace` instruction as a frame header before
 dispatching ordinary opcodes. The header's signed upper 16 bits reserve
 local slots, its unsigned lower 16 bits reserve evaluation-stack slots, and
@@ -207,6 +253,13 @@ checks the contract against the selected `GameAssembly.dll` and
 patch-only hotfix still has the contract's `patchSha256`. For a current patch
 claim, compare that digest with a fresh, MD5-verified VFS dump before using
 the contract's target list. A native build match alone is insufficient.
+The maintained VM operand audit can now bind every caller-supplied patch input
+to the current outer VFS summary and complete ledger with an explicit
+`inputSetSha256` gate. It requires the entire IFix file set, verified outer
+boundaries, and byte-for-byte MD5 agreement before projecting operands. The
+current two-file input set passes this gate. Without those three outer-gate
+arguments, its result remains a projection over caller-supplied bytes rather
+than a current installed-file claim.
 
 The native helper `BodyIndex.ifix_patch_id` searches a bounded early window
 for `IsPatched`. In the selected build, one method named by a fix record has
@@ -245,6 +298,13 @@ selects the reflected result on the normal-return path above. The actual bool
 value is unobserved.
 These are **authored references and control-flow edges**, not proof that a patch ran or produced
 an effect. The delegate-construction path and other unreviewed opcode
-operands remain uninterpreted.
+operands remain uninterpreted. `Initobj` and `Constrained` have direct
+file-declared type joins. The current adjacent-`Ldloca` `Initobj` instructions
+have a conditional local-slot reference update; `Constrained`'s object-slot
+effect is likewise conditional on the selected native path returning normally.
 A runtime claim additionally needs
-an authenticated load and dispatch receipt.
+an authenticated load and dispatch receipt. The missing witness is a runtime
+trace tying the accepted patch-file hash to `LoadInternal`, the selected fix
+record to its registered wrapper identity, and `IsPatched`/`GetPatch` to an
+`Execute` entry at this VM instruction. Static method bodies and the two
+installed patch files cannot supply those observed transitions.
