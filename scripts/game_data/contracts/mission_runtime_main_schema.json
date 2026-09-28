@@ -1,7 +1,7 @@
 {
   "schema": "endfield.mission-runtime-main-json-schema.v1",
   "status": "named_exact",
-  "evidenceBoundary": "Every object key, ordered object shape, array member, scalar JSON type, and observed $type discriminator in the 523 current main mission bodies is validated. Only questDic and the two inverse property maps are dynamic dictionaries; their keys and value schemas are explicitly bounded.",
+  "evidenceBoundary": "Every object key, ordered object shape, array member, scalar JSON type, and observed $type discriminator in the reviewed main mission bodies is validated. Only questDic and the two inverse property maps are dynamic dictionaries; their keys and value schemas are explicitly bounded. currentCorpus retains the original 523-body baseline identity; subsequent installed-corpus validation is recorded separately.",
   "dynamicDictionaries": {
     "$.questDic": {
       "keyPattern": "^.+$",
@@ -960,6 +960,11 @@
     "@Beyond.Gameplay.Actions.ManuallyStartGuideGroup, Gameplay.Beyond._groupId.constValue": {
       "types": [
         "string"
+      ]
+    },
+    "@Beyond.Gameplay.Actions.ManuallyStartGuideGroup, Gameplay.Beyond._nextID": {
+      "types": [
+        "integer"
       ]
     },
     "@Beyond.Gameplay.Actions.ManuallyStartGuideGroup, Gameplay.Beyond._uid": {
@@ -5697,6 +5702,7 @@
         "Beyond.Gameplay.CheckMissionIntProperty, Gameplay.Beyond",
         "Beyond.Gameplay.CheckMissionState, Gameplay.Beyond",
         "Beyond.Gameplay.CheckMonsterKilled, Gameplay.Beyond",
+        "Beyond.Gameplay.CheckPRTSUnlocked, Gameplay.Beyond",
         "Beyond.Gameplay.CheckPassGameMechanicsId, Gameplay.Beyond",
         "Beyond.Gameplay.CheckPerfectlyPassDungeonId, Gameplay.Beyond",
         "Beyond.Gameplay.CheckPlayerInMap, Gameplay.Beyond",
@@ -5771,6 +5777,7 @@
         "Beyond.Gameplay.CombinedConditionRuntime, Gameplay.Beyond",
         "Beyond.Gameplay.SimpleConditionCheckDialogFinish, Gameplay.Beyond",
         "Beyond.Gameplay.SimpleConditionCheckGlobalVar, Gameplay.Beyond",
+        "Beyond.Gameplay.SimpleConditionCheckMissionState, Gameplay.Beyond",
         "Beyond.Gameplay.SimpleConditionCheckMissionVariableInt, Gameplay.Beyond",
         "Beyond.Gameplay.SimpleConditionCheckPlayerInLevel, Gameplay.Beyond",
         "Beyond.Gameplay.SimpleConditionCheckPlayerInMap, Gameplay.Beyond",
@@ -7467,6 +7474,13 @@
     },
     "Beyond.Gameplay.Actions.ManuallyStartGuideGroup, Gameplay.Beyond": {
       "shapes": [
+        [
+          "$type",
+          "_ID",
+          "_nextID",
+          "_uid",
+          "_groupId"
+        ],
         [
           "$type",
           "_ID",
