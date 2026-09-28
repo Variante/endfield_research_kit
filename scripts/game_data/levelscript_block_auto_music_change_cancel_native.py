@@ -3,13 +3,13 @@
 The native contract proves the selected reader and integer parameter type.
 Source receipts prove reached bytes, not runtime music-cancellation behavior.
 
-The reviewed contract pins ActionBase `BlockAutoMusicChangeCancel` (tag
-0x002A in the contract): the selected switch jump and wrapper, the complete
-generated reader and formatter, nine ordered reads and setters, and the one
-typed integer parameter context (`blockHandle`). Passing `--export-root`,
-`--ledger` and `--summary` together also replays the reviewed first-stop spans
-against the current JsonData ledger with exact cursor replay. The command
-prints its audit and exits nonzero unless it validates.
+The reviewed contract pins ActionBase `BlockAutoMusicChangeCancel` (at the
+contract's tag): the selected switch jump and wrapper, the complete generated
+reader and formatter, nine ordered reads and setters, and the one typed
+integer parameter context (`blockHandle`). Passing `--export-root`, `--ledger`
+and `--summary` together also replays the reviewed first-stop spans against
+the current JsonData ledger with exact cursor replay. The command prints its
+audit and exits nonzero unless it validates.
 
 This is an isolated validator: the route is not registered in the shared
 ActionMap layout (`codecs/levelscript/action_map_layouts.json`), so the

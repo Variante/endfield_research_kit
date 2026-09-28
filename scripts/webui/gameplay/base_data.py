@@ -1,8 +1,8 @@
 """Build compact gameplay data for the WebUI Gameplay tab.
 
-Run from the repo root:
-    python scripts/build_gameplay_data.py
-    python scripts/build_gameplay_data.py --languages CN EN JP --default-language CN
+This is the ``base`` stage of the Gameplay page command. Run from the repo root:
+    python -m scripts.webui.gameplay.build_gameplay --stage base
+    python -m scripts.webui.gameplay.build_gameplay --stage base --languages CN EN JP --default-language CN
 """
 from __future__ import annotations
 

@@ -27,12 +27,16 @@ modes, a count, and raw 28-byte keys; the per-key labels in that method are
 cursor labels only. The only positive keys in the current corpus read as
 (0,0) and (1,1) in the first two floats, which matches Unity's native
 Keyframe order (time, value, ...) rather than the alphabetical labels.
-``FAnimationCurve`` (``f_animation_curve``) reads keys and then the two wrap
-modes; every current ``_customCurve`` has zero keys, so its positive-key
-branch (per-key eight-member wrapper, alphabetical order) is unexercised and
-disagrees with the bulk native-order element layout proved for
-AnimationConfig in ``animation_curve_native.json``. Treat a positive
-FAnimationCurve key here as unverified.
+``FAnimationCurve`` (``f_animation_curve``) is not a second layout: the
+selected build's generated ``AlphaBlend`` wrapper declares ``_customCurve`` as
+``Beyond.FAnimationCurve`` (``direct``, from ``memorypack.wrapper_members``),
+the same ``AlphaBlend`` type AnimationConfig montages hold, and that type's one
+generated formatter is proved ``exact`` in ``animation_curve_native.json``: a
+counted bulk array of 32-byte keys in native struct order, then
+``postWrapMode`` and ``preWrapMode``. The method therefore calls
+``animation_config_binary.read_fanimation_curve``. Every current
+``_customCurve`` has zero keys, so a positive key is framed by that proof but
+not yet exercised by this family's corpus.
 """
 from __future__ import annotations
 
@@ -40,6 +44,11 @@ import json
 import struct
 from pathlib import Path
 from typing import Any
+
+from scripts.game_data.animation_config_binary import (
+    AnimationConfigFramingError,
+    read_fanimation_curve,
+)
 from scripts.game_data.contracts import CONTRACTS_DIR
 
 
@@ -227,21 +236,20 @@ class _Reader:
             self.f32(item + ".value")
             self.i32(item + ".weightedMode")
 
-    def f_animation_curve(self, field: str) -> None:
-        if not self.member(3, field, nullable=True):
-            return
-        count = self.count(field + ".keys")
-        for index in range(count or 0):
-            item = f"{field}.keys[{index}]"
-            self.member(8, item)
-            for name in ("inTangent", "inWeight", "outTangent", "outWeight"):
-                self.f32(f"{item}.{name}")
-            self.i32(item + ".tangentMode")
-            self.f32(item + ".time")
-            self.f32(item + ".value")
-            self.i32(item + ".weightedMode")
-        self.i32(field + ".postWrapMode")
-        self.i32(field + ".preWrapMode")
+    def f_animation_curve(self, field: str) -> dict[str, Any] | None:
+        """One ``Beyond.FAnimationCurve``, read by the AnimationConfig reader.
+
+        ``AlphaBlend._customCurve`` declares ``Beyond.FAnimationCurve``, whose
+        one generated formatter ``animation_curve_native.json`` proves: keys
+        are a counted bulk array of 32-byte elements in native struct order,
+        with no per-key member header. A framing failure is re-raised as this
+        module's error, keeping the reader's field and offset diagnostic.
+        """
+        try:
+            curve, self.offset = read_fanimation_curve(self.data, self.offset, field)
+        except AnimationConfigFramingError as exc:
+            raise CharInteractPerformDecodeError(f"{exc} (FAnimationCurve)") from exc
+        return curve
 
     def alpha_blend(self, field: str) -> None:
         self.member(3, field)

@@ -1,7 +1,7 @@
 """Authenticate the selected CheckGameInstStartDuration task condition.
 
-The reviewed contract pins GameCondition `CheckGameInstStartDuration` (tag
-0x003C in the contract): the selected switch branch, generated wrapper and
+The reviewed contract pins GameCondition `CheckGameInstStartDuration` (at
+the contract's tag): the selected switch branch, generated wrapper and
 LevelScriptPtr, the complete reader and forwarding formatter, nine ordered
 parameter reads and setters, and five generic `Param` contexts. Passing
 `--export-root`, `--ledger` and `--summary` together also replays the

@@ -1,7 +1,7 @@
 """Authenticate the selected OnSpawnerGroupBegin ActionHeader reader.
 
-The reviewed contract pins ActionHeader `LevelEvent.OnSpawnerGroupBegin` (tag
-0x0097 in the contract): the selected switch branch and wrapper, the complete
+The reviewed contract pins ActionHeader `LevelEvent.OnSpawnerGroupBegin` (at
+the contract's tag): the selected switch branch and wrapper, the complete
 reader plus forwarding formatter, ordered reads and setters, and the typed
 group and spawner filter and output contexts. Passing `--export-root`,
 `--ledger` and `--summary` together also replays the reviewed source cursors

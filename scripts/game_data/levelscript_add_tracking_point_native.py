@@ -1,15 +1,14 @@
 """Authenticate the selected AddTrackingPoint ActionBase reader.
 
-The reviewed contract pins ActionBase `AddTrackingPoint` (tag 0x0012 in the
-contract): the selected switch branch and wrapper, the complete hot and
-chained reader plus forwarding formatter, ordered reads and setters, eight
-generic parameter contexts, and the two tracking enums with their Int32
-width. The shared ActionMap reader admits the route only while this validator
-passes. Passing `--export-root`, `--ledger` and `--summary` together also
-replays the reviewed source cursors against the current JsonData ledger. The
-command prints its audit and exits nonzero unless it validates. It proves
-stored bytes; marker placement, visibility and action execution remain
-unobserved.
+The reviewed contract pins ActionBase `AddTrackingPoint` (at the contract's
+tag): the selected switch branch and wrapper, the complete hot and chained
+reader plus forwarding formatter, ordered reads and setters, eight generic
+parameter contexts, and the two tracking enums with their Int32 width. The
+shared ActionMap reader admits the route only while this validator passes.
+Passing `--export-root`, `--ledger` and `--summary` together also replays the
+reviewed source cursors against the current JsonData ledger. The command
+prints its audit and exits nonzero unless it validates. It proves stored
+bytes; marker placement, visibility and action execution remain unobserved.
 
 After the common action fields the route stores `buildingInstKey`
 (string), `entityLogicId` (unsigned `Param<ulong>`), `guidingArea` (float),

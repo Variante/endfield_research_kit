@@ -1,39 +1,17 @@
 """Extract one ``scope.ExtractionScope`` from the installed client into an export root.
 
-``export.bat`` always passes ``--structured BLOCK...`` plus
-``--unity-json``/``--unity-convert CLASS...``; direct use may take the presets
-``--structured-dump-mode focused|default|full`` and
-``--animestudio-scope story|assets|all`` with
-``--asset-mode focused|default|debug``. The exporter stamps every published
-structured block, Unity class and asset map with the installed build it came
-from (``meta/extraction/provenance.json``).
-
-Managed-reference schema work can opt into a fail-closed JSONL sidecar with
-``--animestudio-managed-reference-diagnostics`` without changing normal JSON
-or object-index output. Each MonoBehaviour worker writes a unique atomic part
-under ``<export root>/meta/<Layer>/managed_reference_diagnostics/``. Only
-partial managed references are included by default; repeat
-``--animestudio-managed-reference-diagnostic-type`` to constrain capture by
-``assembly::namespace.class`` regex, and
-``--animestudio-managed-reference-diagnostics-include-exact-matches``, which
-requires at least one type filter, adds exact matches for those identities.
-The options are rejected outside Story/all MonoBehaviour JSON scope. Rows
-carry exact object/RID/type identity, payload offset/length, SHA-256, bounded
-full base64 payload, focused-decoder failure cursors, and the serialized
-file's matching script/type hashes plus its bounded full TypeTree node list
-when it has one, tying field order to the asset's serialized schema rather
-than runtime metadata alone. Payloads up to the 1 MiB per-record cap carry
-base64 bytes; larger rows keep their exact range and hash with
-``truncated=true``. A final file is published only after a successful worker
-and ends with a complete terminal summary; absent, temporary, truncated,
-errored or incomplete parts are not evidence.
-
 This is the installed-game orchestrator for export layout v4. AnimeStudio
 (``tools/AnimeStudio``) owns the VFS catalogue, the overlay, block reads,
 Unity object decoding and conversion; this module owns scope, scheduling,
 worker isolation, staging, publication and provenance. Page semantics stay in
 the page builders, and a misdecoded source byte is fixed in AnimeStudio, not
 here.
+
+``export.bat`` always passes ``--structured BLOCK...`` plus
+``--unity-json``/``--unity-convert CLASS...``; direct use may take the presets
+``--structured-dump-mode focused|default|full`` and
+``--animestudio-scope story|assets|all`` with
+``--asset-mode focused|default|debug``.
 
 Scope and provenance
     One run exports one ``ExtractionScope`` (``scope.py``) and publishes only
@@ -100,6 +78,27 @@ Exact-only output
     exclusions are the audit). A JSON export from an older CLI therefore has no
     projectile objects; re-run the MonoBehaviour ``json_by_type`` stage with a
     rebuilt CLI rather than adapting a consumer.
+
+Managed-reference diagnostics
+    Managed-reference schema work can opt into a fail-closed JSONL sidecar with
+    ``--animestudio-managed-reference-diagnostics`` without changing normal JSON
+    or object-index output. Each MonoBehaviour worker writes a unique atomic
+    part under ``<export root>/meta/<Layer>/managed_reference_diagnostics/``.
+    Only partial managed references are included by default; repeat
+    ``--animestudio-managed-reference-diagnostic-type`` to constrain capture by
+    ``assembly::namespace.class`` regex, and
+    ``--animestudio-managed-reference-diagnostics-include-exact-matches``, which
+    requires at least one type filter, adds exact matches for those identities.
+    The options are rejected outside Story/all MonoBehaviour JSON scope. Rows
+    carry exact object/RID/type identity, payload offset/length, SHA-256,
+    bounded full base64 payload, focused-decoder failure cursors, and the
+    serialized file's matching script/type hashes plus its bounded full
+    TypeTree node list when it has one, tying field order to the asset's
+    serialized schema rather than runtime metadata alone. Payloads up to the
+    1 MiB per-record cap carry base64 bytes; larger rows keep their exact range
+    and hash with ``truncated=true``. A final file is published only after a
+    successful worker and ends with a complete terminal summary; absent,
+    temporary, truncated, errored or incomplete parts are not evidence.
 
 Scheduling (each default was measured; re-measure before changing one)
     ``--animestudio-type-job-mode auto`` merges map-filtered JSON types, runs

@@ -1,7 +1,7 @@
 """Authenticate the selected WaterVolumeInfiniteSetHeight stored action.
 
-The reviewed contract pins ActionBase `WaterVolumeInfiniteSetHeight` (tag
-0x0516 in the contract): the selected branch, the complete chained reader and
+The reviewed contract pins ActionBase `WaterVolumeInfiniteSetHeight` (at the
+contract's tag): the selected branch, the complete chained reader and
 forwarding formatter, twelve ordered native reads and setters, and four
 `Param<T>` contexts (`isFixedSpeed`, `isSmooth`, the water-volume pointer
 `target`, and `value`). The command takes no options: it always replays the

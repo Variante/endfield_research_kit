@@ -1,14 +1,14 @@
 """Authenticate the selected SetFacMode stored action.
 
-The reviewed contract pins ActionBase `SetFacMode` (tag 0x040E in the
-contract): the selected branch, the complete chained reader and forwarding
-formatter, nine ordered native reads and setters, and the one `Param<bool>`
-context for `toFacMode`. The command takes no options: it always replays the
-source cursors against `export_full/game/Json` and the current JsonData
-per-file ledger and summary under `reports/animestudio/`, prints the audit and
-exits nonzero unless it validates. `validate_set_fac_mode_native_contract`
-accepts explicit export-root, ledger and summary paths instead. It proves the
-stored mode flag; runtime facility state remains unobserved.
+The reviewed contract pins ActionBase `SetFacMode` (at the contract's tag):
+the selected branch, the complete chained reader and forwarding formatter,
+nine ordered native reads and setters, and the one `Param<bool>` context for
+`toFacMode`. The command takes no options: it always replays the source
+cursors against `export_full/game/Json` and the current JsonData per-file
+ledger and summary under `reports/animestudio/`, prints the audit and exits
+nonzero unless it validates. `validate_set_fac_mode_native_contract` accepts
+explicit export-root, ledger and summary paths instead. It proves the stored
+mode flag; runtime facility state remains unobserved.
 """
 
 from __future__ import annotations

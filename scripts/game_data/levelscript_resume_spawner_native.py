@@ -1,7 +1,7 @@
 """Authenticate the selected ResumeSpawner ActionBase reader.
 
-The reviewed contract pins ActionBase `ResumeSpawner` (tag 0x03AB in the
-contract): the selected switch branch and wrapper, the complete reader plus
+The reviewed contract pins ActionBase `ResumeSpawner` (at the contract's
+tag): the selected switch branch and wrapper, the complete reader plus
 forwarding formatter, ordered reads and setters, and the string and typed
 `SpawnerPtr` generic contexts. Candidate positions found by the derived
 action-map scan are promoted into the contract only when their file and span

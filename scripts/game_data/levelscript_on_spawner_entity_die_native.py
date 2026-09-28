@@ -1,7 +1,7 @@
 """Authenticate the selected OnSpawnerEntityDie ActionHeader reader.
 
-The reviewed contract pins ActionHeader `LevelEvent.OnSpawnerEntityDie` (tag
-0x0092 in the contract): the selected switch branch and wrapper, the complete
+The reviewed contract pins ActionHeader `LevelEvent.OnSpawnerEntityDie` (at
+the contract's tag): the selected switch branch and wrapper, the complete
 reader and forwarding formatter, ordered reads and setters, and its generic
 parameter contexts, including the typed death filter and spawner pointer.
 Passing `--export-root`, `--ledger` and `--summary` together also replays the

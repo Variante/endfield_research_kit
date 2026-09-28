@@ -1,7 +1,7 @@
 """Authenticate the selected OnSpawnerEntitySpawn ActionHeader reader.
 
 The reviewed contract pins ActionHeader `LevelEvent.OnSpawnerEntitySpawn`
-(tag 0x0095 in the contract): the selected switch branch and wrapper, the
+(at the contract's tag): the selected switch branch and wrapper, the
 complete reader and forwarding formatter, ordered reads and setters, and its
 generic parameter contexts, including the typed filter and spawner pointer.
 Passing `--export-root`, `--ledger` and `--summary` together also replays the

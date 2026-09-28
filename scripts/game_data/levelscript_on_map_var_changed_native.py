@@ -1,7 +1,7 @@
 """Authenticate the selected OnMapVarChanged ActionHeader reader.
 
-The reviewed contract pins ActionHeader `OnMapVarChanged` (tag 0x00DC in the
-contract): the selected switch branch and wrapper, the complete reader and
+The reviewed contract pins ActionHeader `OnMapVarChanged` (at the contract's
+tag): the selected switch branch and wrapper, the complete reader and
 forwarding formatter, ordered reads and setters, and five typed parameter
 contexts (validate, key, map ID, and the new and old values). The route is
 registered in the shared ActionMap layout, and `codecs.levelscript.action_map`

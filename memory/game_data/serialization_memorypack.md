@@ -337,6 +337,6 @@ items this topic owns.
   `structuralOnly` until their tables are walked, and each plan-only tag needs
   a whole-corpus adoption run. `Dictionary<string, object>` has no plan.
 - **Tooling.** Dependency-scoped Skill replay needs a route registry and
-  mutation tests before it leaves prototype. CharInteractPerform reads
-  `FAnimationCurve` keys as wrapped records, unlike AnimationConfig's bulk
-  order -- latent while its curves are empty.
+  mutation tests before it leaves prototype. CharInteractPerform's
+  `FAnimationCurve` now shares AnimationConfig's proven bulk-key reader; no
+  current custom curve has positive keys to exercise it in that family.

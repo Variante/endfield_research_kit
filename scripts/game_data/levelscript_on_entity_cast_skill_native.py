@@ -1,7 +1,7 @@
 """Authenticate the selected OnEntityCastSkill ActionHeader reader.
 
-The reviewed contract pins ActionHeader `LevelEvent.OnEntityCastSkill` (tag
-0x0069 in the contract): the selected switch branch and wrapper, the complete
+The reviewed contract pins ActionHeader `LevelEvent.OnEntityCastSkill` (at
+the contract's tag): the selected switch branch and wrapper, the complete
 reader and forwarding formatter, ordered reads and setters, and its generic
 parameter contexts, including the typed skill filter and UInt64 output.
 Passing `--export-root`, `--ledger` and `--summary` together also replays the

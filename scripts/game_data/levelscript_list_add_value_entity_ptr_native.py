@@ -1,7 +1,7 @@
 """Authenticate the selected ListAddValueEntityPtr ActionBase reader.
 
-The reviewed contract pins ActionBase `ListAddValueEntityPtr` (tag 0x0170 in
-the contract): the selected switch branch and wrapper, the complete reader
+The reviewed contract pins ActionBase `ListAddValueEntityPtr` (at the
+contract's tag): the selected switch branch and wrapper, the complete reader
 and forwarding formatter, ordered reads and setters, and two generic
 parameter contexts including the nested `List<EntityPtr>` element type.
 Passing `--export-root`, `--ledger` and `--summary` together also replays the

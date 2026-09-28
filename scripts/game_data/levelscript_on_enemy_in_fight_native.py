@@ -1,15 +1,15 @@
 """Authenticate the selected OnEnemyInFight ActionHeader reader.
 
-The reviewed contract pins ActionHeader `LevelEvent.OnEnemyInFight` (tag
-0x0065 in the contract): the selected switch branch and wrapper, the complete
-reader and forwarding formatter, ordered reads and setters, and three typed
-parameter contexts including the EntityPtr list element. The route is
-registered in the shared ActionMap layout, and `codecs.levelscript.action_map`
-admits it only while this validator passes on the installed build. Passing
-`--export-root`, `--ledger` and `--summary` together also replays the reviewed
-source cursors against the current JsonData ledger. The command prints its
-audit and exits nonzero unless it validates. It proves stored header bytes;
-enemy combat-state events and parameter output values remain unobserved.
+The reviewed contract pins ActionHeader `LevelEvent.OnEnemyInFight` (at the
+contract's tag): the selected switch branch and wrapper, the complete reader
+and forwarding formatter, ordered reads and setters, and three typed parameter
+contexts including the EntityPtr list element. The route is registered in the
+shared ActionMap layout, and `codecs.levelscript.action_map` admits it only
+while this validator passes on the installed build. Passing `--export-root`,
+`--ledger` and `--summary` together also replays the reviewed source cursors
+against the current JsonData ledger. The command prints its audit and exits
+nonzero unless it validates. It proves stored header bytes; enemy combat-state
+events and parameter output values remain unobserved.
 
 After the common event-header fields the header stores `entityFilter` as
 `Param<List<EntityPtr>>` and `entityOutput` as `ParamOutput<EntityPtr>` (16

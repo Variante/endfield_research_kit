@@ -22,28 +22,24 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
+from scripts.common import sha256_file_upper as _sha256_file
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.protocol import (
     enum_members,
     field_defaults,
     load_metadata_helper,
 )
+from scripts.repo_paths import REPO_ROOT
 
 
 SCHEMA = "endfield.terrain-tret-native-contract.v1"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "terrain_tret_native.json"
-from scripts.repo_paths import REPO_ROOT
-from scripts.common import sha256_file_upper as _sha256_file
-from scripts.game_data.contracts import CONTRACTS_DIR
-
 METADATA_HELPER = (
     REPO_ROOT
     / "tools"
     / "endfield-il2cpp"
     / "catalog_option_flow_metadata.py"
 )
-# Filled after the reviewed JSON contract is finalized. Keeping this pin in
-# code makes edits to the evidence catalog explicit rather than silent.
 
 
 def _sha256_bytes(data: bytes) -> str:

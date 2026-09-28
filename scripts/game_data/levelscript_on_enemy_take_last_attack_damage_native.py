@@ -1,7 +1,7 @@
 """Authenticate the selected OnEnemyTakeLastAttackDamage ActionHeader reader.
 
 The reviewed contract pins ActionHeader
-`LevelEvent.OnEnemyTakeLastAttackDamage` (tag 0x0068 in the contract): the
+`LevelEvent.OnEnemyTakeLastAttackDamage` (at the contract's tag): the
 selected switch branch and wrapper, the complete reader and forwarding
 formatter, ordered reads and setters, and its generic parameter contexts.
 Passing `--export-root`, `--ledger` and `--summary` together also replays the

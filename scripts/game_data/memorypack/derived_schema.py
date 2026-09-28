@@ -314,7 +314,7 @@ class Resolver:
     def _plan_counted_map(self, name: str, declared: str) -> MemberPlan | None:
         """A ``Dictionary`` or ``SerializeFieldDictionary`` member, or None.
 
-        Only an unmanaged key and value are modelled.  The pair is a
+        With an unmanaged key and value the pair is a
         ``KeyValuePair<K,V>`` written as raw memory, so it carries .NET's
         layout padding: the value is aligned to its own width and the struct is
         padded to the wider of the two.  That is the rule ``action_map`` proves,
@@ -675,9 +675,11 @@ def build(output: Path) -> dict[str, Any]:
             ),
             "modelledFormatter": (
                 "A counted map's framing comes from the reviewed action_map reader, not "
-                "from the type's member list, and only an unmanaged key and value are "
-                "modelled. AudioId's extent comes from its formatter body, whose shape "
-                "the settled StringPathHash formatter fixes the meaning of."
+                "from the type's member list: an unmanaged key and value are read as one "
+                "padded KeyValuePair, and a map with a managed side reads the key and then "
+                "the value with nothing between them. AudioId's extent comes from its "
+                "formatter body, whose shape the settled StringPathHash formatter "
+                "fixes the meaning of."
             ),
             "conditional": (
                 "No plan is a proven cursor. Resolution says a body's shape is fully "

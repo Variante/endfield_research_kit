@@ -1,10 +1,11 @@
 """Exact current-build SkillData first-timeline ContinuousFindTarget framing.
 
 The selected SkillData AbilityActionData union uses current physical tag
-``0x008A`` for ``ContinuousFindTargetAction.Data``.  Its nested selector unions do not use
-the older compact tag table retained by the Buff decoder, so this module
-supplies the current, reviewed subtype routes explicitly and fails closed
-for every route absent from the contract.
+``0x008A`` for ``ContinuousFindTargetAction.Data``.  Its nested selector unions are
+read through the Buff decoder's name-keyed subtype tables, restricted to the
+routes the FindTarget contract reviewed
+(``skill_timeline_find_target.CURRENT_SELECTOR_SUBTYPE_TABLES``), and fail
+closed for every route absent from the contract.
 
 The 19-member order is the shared four-member action prefix, fourteen
 target-selection members and a terminal ``findInterval`` float.  Current

@@ -5,10 +5,9 @@ The selected SkillData AbilityActionData union uses current physical tag
 through the Buff decoder's name-keyed subtype tables, restricted to the routes
 this contract reviewed, and fail closed for every other route.
 
-The wrapper has 18 members.  Skill's current nested selector tags differ from
-the older compact Buff selector table, so only reviewed current finder,
-validator and postprocessor routes are admitted; nested tags ``0x02`` and
-``0x03`` stay open because their finder payloads are not authenticated.  A
+The wrapper has 18 members.  Only the finder, validator and postprocessor
+routes this contract reviewed are admitted; every other nested route stays
+open because its payload is not authenticated.  A
 reached one-action first record closes exactly, but a file with later timeline
 records stays partial until the shared sequence reader closes them.  The
 common FindTarget root in :mod:`skill_timeline_shared_sequence` subsumes this

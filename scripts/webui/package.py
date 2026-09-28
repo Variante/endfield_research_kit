@@ -4,8 +4,11 @@
 The primary package contains static code and generated text. The media package
 contains referenced images and videos, while the audio package contains FLAC
 files referenced by normal content pages. The resources package contains every
-file listed by the Assets page, including JSON, OBJ, and FBX files, plus the
-remaining audio inventory and raw Audio/Assets browser indexes.
+file listed by the Assets page -- images (a Sprite as its texture plus its crop
+document), videos, and OBJ/FBX/glTF models; the Assets page lists no exported
+JSON -- plus the remaining audio inventory, the raw Audio/Assets browser
+indexes, and the WebUI data kept out of the main package
+(``RESOURCE_DATA_PREFIXES``).
 """
 from __future__ import annotations
 
@@ -215,8 +218,8 @@ are in the standalone audio zip.
 Extract those zips into the same directory after this one when you want
 inline/wiki media or playable audio too.
 
-The complete Assets browser, including JSON, OBJ, FBX, and model downloads, is
-provided by the optional resources package.
+The complete Assets browser, including image, video, and OBJ/FBX model
+downloads, is provided by the optional resources package.
 """
 
 CHINESE_QUICKSTART_README = """Endfield WebUI 使用说明
@@ -274,8 +277,8 @@ Run from this extracted directory with `python serve.py`, then open the printed
 localhost URL. Extract the matching media and audio zips into the same directory
 for Story, Text, Map, Characters, and Gameplay media. Extract the optional
 resources zip last when you need the complete Audio and Assets resource browsers.
-The resources zip includes every file listed by the Assets page, including
-JSON, OBJ, and FBX payloads.
+The resources zip includes every file listed by the Assets page: images,
+videos, and OBJ/FBX models.
 """
 
 MEDIA_PACKAGE_README = """Endfield WebUI page media package
@@ -298,7 +301,7 @@ RESOURCES_PACKAGE_README = """Endfield WebUI optional resources package
 
 Extract this zip last, into the same directory as the matching main and media
 packages. It contains every file listed by the Assets page, including all
-indexed images, videos, JSON, OBJ, and FBX files, plus the remaining FLAC files
+indexed images, videos, and OBJ and FBX models, plus the remaining FLAC files
 and complete raw Audio/Assets indexes. Assets also used by normal pages are
 intentionally duplicated so this package is self-contained for the Assets page.
 """
@@ -319,7 +322,7 @@ CHINESE_USAGE_README = """Endfield WebUI 中文使用说明
    需要播放常用页面语音时安装，并解压到同一个文件夹。
 
 4. *-endfield-story-exported-resources.zip
-   可选完整资源包，包含“资源”页面列出的全部文件（包括图片、视频、JSON、OBJ 和 FBX）、其余 FLAC 音频，以及“音频”和“资源”页面使用的完整索引。
+   可选完整资源包，包含“资源”页面列出的全部文件（包括图片、视频以及 OBJ 和 FBX 模型）、其余 FLAC 音频，以及“音频”和“资源”页面使用的完整索引。
    只浏览常用页面时不需要此包。需要检索完整资源时，请最后解压到同一个文件夹，并允许覆盖索引文件。
 
 推荐解压顺序：主程序包 → 常用图片和视频包 → 常用语音包 → 可选完整资源包。

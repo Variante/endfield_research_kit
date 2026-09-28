@@ -3,10 +3,10 @@
 This proves the selected native reader, typed parameter contexts and current
 source cursors. It does not prove a live NPC effect.
 
-The reviewed contract pins ActionBase `PlayEffectOnNpc` (tag 0x0366 in the
-contract): the selected jump and registered wrapper, the complete reader
-across its chained fragments and the formatter, twelve ordered reads, four
-own setters with typed `Param` MethodSpecs (`effectId`, `effectType`,
+The reviewed contract pins ActionBase `PlayEffectOnNpc` (at the contract's
+tag): the selected jump and registered wrapper, the complete reader across
+its chained fragments and the formatter, twelve ordered reads, four own
+setters with typed `Param` MethodSpecs (`effectId`, `effectType`,
 `mountPoint`, `npcId`), and the `NpcEffectType` and `MountPoint` enum
 backings. Passing `--export-root`, `--ledger` and `--summary` together also
 replays the reviewed source spans against the current JsonData ledger. The

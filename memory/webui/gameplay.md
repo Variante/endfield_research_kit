@@ -103,9 +103,13 @@ Story inputs changed.
   evidence boundaries are better understood.
 - Recover additional action/selector schemas with exact-consumption fixtures.
 - Keep runtime formula and tag semantics gated and reproducible.
-- Buff coverage has no current denominator: the page consumes exported
-  BuffData with Persistent precedence, but no provenance-matched BuffData
-  census exists (see the BuffData corpus gap in
+- Measure Buff coverage against the provenance-matched BuffData census, not
+  the export: the JsonData gate (`scripts.game_data.jsondata_corpus`) joins
+  the complete `memorypack.buff_corpus` report one-to-one to the authenticated
+  VFS ledger by path, length and digest, and every current file carries a
+  named outer frame to EOF (the BuffData row in
   [`../game_data/extraction_payload_boundaries.md`](../game_data/extraction_payload_boundaries.md)).
-  Until it closes, an absent lifecycle/stacking/trigger tail cannot be told
-  apart from an unextracted one.
+  The Gameplay audit still counts exported BuffData with Persistent
+  precedence instead of joining that report, and interior action and icon
+  bodies outside the native-gated exact subset stay opaque, so a trigger
+  missing there cannot yet be told apart from an unnamed one.

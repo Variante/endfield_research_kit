@@ -50,9 +50,10 @@ from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file, write_report_json
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.repo_paths import REPO_ROOT
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = REPO_ROOT
 SCHEMA = "endfield.levelscript-fmv-video-native-contract.v1"
 REPORT_SCHEMA = "endfield.levelscript-fmv-video-join.v1"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_fmv_video_native.json"

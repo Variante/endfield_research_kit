@@ -1,7 +1,7 @@
 """Authenticate the selected OnLeaderEnterTriggerVolumeList ActionHeader reader.
 
 The reviewed contract pins ActionHeader
-`ScriptEvent.OnLeaderEnterTriggerVolumeList` (tag 0x00C0 in the contract):
+`ScriptEvent.OnLeaderEnterTriggerVolumeList` (at the contract's tag):
 the selected switch branch and wrapper, the complete hot and chained reader
 plus forwarding formatter, ordered reads and setters, the generic contexts
 including the typed unsigned slot list (`List<uint>`), and the TriggerTarget

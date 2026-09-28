@@ -1,7 +1,7 @@
 """Authenticate the selected OnEncounterBattlePartEnd ActionHeader reader.
 
 The reviewed contract pins ActionHeader `LevelEvent.OnEncounterBattlePartEnd`
-(tag 0x005A in the contract): the selected switch branch and wrapper, the
+(at the contract's tag): the selected switch branch and wrapper, the
 complete reader plus forwarding formatter, ordered reads and setters, and its
 typed pointer and Boolean parameter contexts. Passing `--export-root`,
 `--ledger` and `--summary` together also replays the reviewed source cursors

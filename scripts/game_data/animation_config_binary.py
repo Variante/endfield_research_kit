@@ -425,7 +425,14 @@ def _read_count(data: bytes, offset: int, field: str, *, maximum: int) -> tuple[
     return raw, cursor
 
 
-def _read_fanimation_curve(data: bytes, offset: int, field: str) -> tuple[dict[str, Any] | None, int]:
+def read_fanimation_curve(data: bytes, offset: int, field: str) -> tuple[dict[str, Any] | None, int]:
+    """One ``Beyond.FAnimationCurve`` in the layout ``animation_curve_native.json`` proves.
+
+    This is the type's single generated formatter, so every owner that
+    declares an ``FAnimationCurve`` member (``char_interact_perform_binary``
+    through ``AlphaBlend._customCurve``) reads it here rather than keeping a
+    second key layout.
+    """
     end = _require(data, offset, 1, f"{field}.memberCount")
     member_count = data[offset]
     if member_count == 0xFF:
@@ -492,7 +499,7 @@ def _read_curve_dictionary(
                 raise AnimationConfigFramingError(f"{field}[{index}].key:null")
         else:
             key, cursor = _read_u32(data, cursor, f"{field}[{index}].key")
-        curve, cursor = _read_fanimation_curve(
+        curve, cursor = read_fanimation_curve(
             data, cursor, f"{field}[{index}].value"
         )
         rows.append({"key": key, "value": curve, "startOffset": start, "endOffset": cursor})
@@ -729,7 +736,7 @@ def _read_char_hurt_configs(
             raise AnimationConfigFramingError(
                 f"{field}[{index}].value.memberCount:expected=3 actual={data[cursor]}"
             )
-        curve, cursor = _read_fanimation_curve(
+        curve, cursor = read_fanimation_curve(
             data, marker_end, f"{field}[{index}].value.rootMotionCurve"
         )
         scaled_x, cursor = _read_f32(
@@ -945,8 +952,8 @@ def _read_enemy_blow_off_config(
             f"{field}.memberCount:expected=null-or-3 actual={marker}"
         )
     total, cursor = _read_f32(data, end, field + ".animTotalTime")
-    curve_y, cursor = _read_fanimation_curve(data, cursor, field + ".rootMotionCurvePosY")
-    curve_z, cursor = _read_fanimation_curve(data, cursor, field + ".rootMotionCurvePosZ")
+    curve_y, cursor = read_fanimation_curve(data, cursor, field + ".rootMotionCurvePosY")
+    curve_z, cursor = read_fanimation_curve(data, cursor, field + ".rootMotionCurvePosZ")
     return {
         "memberCount": marker,
         "animTotalTime": total,
@@ -967,7 +974,7 @@ def _read_enemy_hurt_entry(
     for name in ("customDeadAnimOffset", "customDeadDelay", "immobilizedTime"):
         values[name], end = _read_f32(data, end, f"{field}.{name}")
     values["overrideDeadDelay"], end = _read_strict_bool(data, end, field + ".overrideDeadDelay")
-    values["rootMotionCurve"], end = _read_fanimation_curve(data, end, field + ".rootMotionCurve")
+    values["rootMotionCurve"], end = read_fanimation_curve(data, end, field + ".rootMotionCurve")
     end2 = _require(data, end, 8, field + ".rootMotionScaledTime")
     values["rootMotionScaledTime"] = list(struct.unpack_from("<ff", data, end))
     values["unmovableTime"], end = _read_f32(data, end2, field + ".unmovableTime")
@@ -1067,7 +1074,7 @@ def _read_alpha_blend(data: bytes, offset: int, field: str) -> tuple[dict[str, A
         raise AnimationConfigFramingError(f"{field}.memberCount:expected=3 actual={data[offset]}")
     blend_option, cursor = _read_i32(data, end, f"{field}.blendOption")
     blend_time, cursor = _read_f32(data, cursor, f"{field}.blendTime")
-    custom_curve, cursor = _read_fanimation_curve(data, cursor, f"{field}.customCurve")
+    custom_curve, cursor = read_fanimation_curve(data, cursor, f"{field}.customCurve")
     return {
         "memberCount": 3,
         "blendOption": blend_option,
@@ -1150,7 +1157,7 @@ def _read_anim_montage(
             "rootMotionCurveRotW", "rootMotionCurveRotX", "rootMotionCurveRotY",
             "rootMotionCurveRotZ",
         ):
-            fields[name], cursor = _read_fanimation_curve(data, cursor, f"{field}.{name}")
+            fields[name], cursor = read_fanimation_curve(data, cursor, f"{field}.{name}")
         type_name = "ClipMontageData"
     else:
         for name in ("endClipInfo", "loopClipInfo", "startClipInfo"):
