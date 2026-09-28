@@ -233,9 +233,9 @@ residual that cannot be resolved offline.
    provider values and final damage remain unresolved.
 5. **World.** Streaming needs independent record-end evidence or a bounded
    runtime carrier witness before field names; keep selector9, Marker13 gap
-   profiles and Marker17 bodies anonymous. Gate slot-7 field 0 against each
-   group's own descriptor IDs before keeping its `StreamingComponentType`
-   naming. Framing lives in `scripts/game_data/streaming/framing.py`; see
+   profiles and Marker17 bodies anonymous; slot-7 field 0 is each group's
+   descriptor-ID mask, so its bits stay as anonymous as the IDs. Framing lives
+   in `scripts/game_data/streaming/framing.py`; see
    [`game_data/world_chunk_slots.md`](game_data/world_chunk_slots.md) and
    [`game_data/world_chunk_unread_region.md`](game_data/world_chunk_unread_region.md).
    Then Terrain channel meaning and live file selection, DynamicStreaming

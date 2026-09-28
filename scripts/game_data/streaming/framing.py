@@ -411,7 +411,9 @@ def _parse_paired_group_subgraph(
     bit positions of a 128-bit mask (``descriptor_mask_native``), not
     ``StreamingComponentType`` indices (``descriptor_component_index_gate``).
     Group fields 0 (16 or 20 inline bytes) and 2 (24 inline bytes, measured
-    as a centre and non-negative extents) are not read here.
+    as a centre and non-negative extents) are not read here; field 0's
+    128 bits are the group's own descriptor IDs, gated corpus-wide by
+    ``descriptor_mask_corpus``.
 
     Retracted readings: group field 3 as a byte offset into a runtime
     "slot-4 region", or as an alternating (code, 0) list of 4-byte words

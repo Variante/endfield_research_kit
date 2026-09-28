@@ -13,7 +13,7 @@ highest-yield habit this topic records. Read it before reopening
 
 | field | current reading | boundary |
 | --- | --- | --- |
-| 0 | a bit mask (bits 0-5 always set, one-hot in 8-14); **naming under review** -- its bit counts and per-object byte sums match each group's own field-3 descriptor IDs and strides, which would make it a descriptor-ID mask rather than `StreamingComponentType` (see [`world_chunk_slots.md`](world_chunk_slots.md)) | observed masks; the enum naming is not gated |
+| 0 | the group's 128-bit descriptor-ID mask: its set bits equal the group's own field-3 descriptor IDs in every current group; not a `StreamingComponentType` mask | exact corpus gate (`streaming.descriptor_mask_corpus`, `field0DescriptorIdMask`); the IDs stay anonymous |
 | 1 | count | multiplies the sum of field-3 descriptor strides to give the wrapped byte-vector length |
 | 2 | centre and extents | spatial interpretation from paired chunk evidence |
 | 3 | forward uoffset to a counted vector of 8-byte `(u16 anonymous id, u16 stride, u32 zero)` descriptors | exact framing and direct selected first-root consumer; descriptor 21 carries a NUL-terminated 63-byte name prefix duplicated with its ID in root rows across the current complete Init corpus; other descriptors remain open |
@@ -92,6 +92,9 @@ DLL alone gave:
   `ulong` enum.
 - Numeric descriptor-ID-to-enum-index mapping -- an authenticated Init
   descriptor exceeds the selected `StreamingComponentType` bit-index range.
+- Group field 0 as a `StreamingComponentType` component mask -- its bits equal
+  the group's own descriptor IDs in every current group, so it is the
+  descriptor-ID mask and inherits the same refusal.
 - Native entity-name getter as descriptor 21's reader -- its context pointer is
   not joined to the packed column and the getter is absent from the selected
   IL2CPP type; a candidate only.
