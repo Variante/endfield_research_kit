@@ -1,0 +1,51 @@
+{
+  "schema": "endfield.terrain-shader-sampling-contract.v1",
+  "status": "validated",
+  "assetInput": {
+    "relativeSource": "Persistent/VFS/0CE8FA57/F047E09F2560D0C7BD5C8862CE3F8D3C.chk",
+    "sourceSha256": "B1EFC3824F2AFB5EEB8908281949F2844635A3499543AC9BA22A4E1B881F2A16",
+    "sourceOffset": 54913240,
+    "cab": "CAB-2dc0a3263a302a212e1f9dc91b523efb",
+    "pathId": 7981456306391071452,
+    "shaderName": "HGRP/HGTerrainPS",
+    "output": "Shader/HGRP_HGTerrainPS_p6EC3D4391CBDBADC.shader"
+  },
+  "selectedProgram": {
+    "fileName": "0113_endfield_spirv_1.spv",
+    "sha256": "7D6A37541A33E09E03A507C78190593744A55E436F6DBE2CE7A4456F0FAA63E2",
+    "metadataSha256": "DBEB0CAB7C545225131F1449B4F4E93A194AA800A4DEC0020C899A11F3854591",
+    "platform": "vulkan",
+    "passName": "VTBakePage",
+    "subShaderIndex": 0,
+    "passIndex": 2,
+    "programBlobIndex": 26,
+    "entryPointModel": 4,
+    "textureParameters": [
+      {"name": "_HeightmapAtlas", "binding": 10, "dim": 2},
+      {"name": "_NormalmapAtlas", "binding": 9, "dim": 2},
+      {"name": "_AlbedoAtlas", "binding": 12, "dim": 2},
+      {"name": "_SplatCtrlAtlas", "binding": 7, "dim": 2},
+      {"name": "_TintColorAtlas", "binding": 4, "dim": 2},
+      {"name": "_SplatIndex", "binding": 6, "dim": 2},
+      {"name": "_Splats", "binding": 5, "dim": 5},
+      {"name": "_Normals", "binding": 8, "dim": 5},
+      {"name": "_ConeMaps", "binding": 11, "dim": 5}
+    ],
+    "sampledTexture": {
+      "name": "_ConeMaps",
+      "descriptorSet": 3,
+      "binding": 11,
+      "spvImageDimension": 1,
+      "spvArrayed": 1,
+      "sampleOpcode": 88,
+      "sampleCount": 4,
+      "componentIndex": 0
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "The selected installed CHK SHA256, shader CAB/PathID/source offset, targeted conversion manifest, sidecar manifest and selected SPIR-V and metadata SHA256 are checked. The named serialized texture parameter is joined to a SPIR-V descriptor-set/binding variable; four direct image samples and component-zero extracts are checked on that variable's SSA path.",
+    "direct": "The authored HGRP/HGTerrainPS VTBakePage Vulkan fragment program declares _ConeMaps as a 2D array texture at set 3/binding 11 and samples component zero from it four times.",
+    "conditional": "The separate selected UnityPlayer LAYER_C path-result consumer binds its owner-local resource under the _ConeMaps property ID when the source and destination checks pass. This shader witness shows a matching authored input and sample path, not that a particular installed LAYER_C file reached this shader in a live session.",
+    "unresolved": "The LAYER_C stored byte's visual meaning, a link into any managed VirtualTextureRenderer field, runtime shader and file selection, and output effect of the sampled value remain unproved."
+  }
+}

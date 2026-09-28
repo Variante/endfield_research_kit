@@ -1,0 +1,61 @@
+{
+ "schema": "endfield.terrain-manager-bridge-native-contract.v1",
+ "status": "validated",
+ "nativeInputs": {
+  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+  "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+ },
+ "method": {
+  "index": 435511,
+  "type": "UnityEngine.HyperGryph.HGTerrainManager",
+  "name": "SetupTerrainManager",
+  "rva": "0x3AB51F0",
+  "parameterCount": 21,
+  "resolverStringRva": "0xA8350D0",
+  "resolverString": "UnityEngine.HyperGryph.HGTerrainManager::SetupTerrainManager(System.String,UnityEngine.HyperGryph.TerrainInfo&,UnityEngine.ComputeShader,UnityEngine.ComputeShader,UnityEngine.Shader,UnityEngine.Texture2D,System.Int32,System.IntPtr,System.Int32,System.Int32,System.IntPtr,System.Int32,System.IntPtr,System.UInt32,System.Boolean,System.Boolean,UnityEngine.Experimental.Rendering.GraphicsFormat,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+  "cacheLoadRva": "0x3AB5207",
+  "resolverStringLoadRva": "0x3AB521F",
+  "resolverCallRva": "0x3AB5226",
+  "cacheStoreRva": "0x3AB5234",
+  "tailJumpRva": "0x3AB52B9"
+ },
+ "resolver": {
+  "rva": "0x1F1B0",
+  "lookupMissBranchRva": "0x1F291",
+  "lookupMissTargetRva": "0x1F2A9",
+  "openParenConstantRva": "0x1F2D6",
+  "openParenSearchCallRva": "0x1F2DE",
+  "openParenSearchTargetRva": "0x2DF840",
+  "prefixCopyCallRva": "0x1F309",
+  "prefixCopyTargetRva": "0x1F0A0",
+  "secondLookupCompareCallRva": "0x1F379",
+  "secondLookupCompareTargetRva": "0x2DF760"
+ },
+ "registration": {
+  "nameArrayRva": "0x1A51BA0",
+  "functionArrayRva": "0x1A53280",
+  "count": 731,
+  "index": 476,
+  "name": "UnityEngine.HyperGryph.HGTerrainManager::SetupTerrainManager",
+  "nameStringRva": "0x1A5C988",
+  "functionRva": "0x29B230"
+ },
+ "backend": {
+  "rva": "0x29B230",
+  "setupCallRva": "0x29B42C",
+  "setupTargetRva": "0x317AE0"
+ },
+ "windows": [
+  {"module": "GameAssembly.dll", "startRva": "0x1F1B0", "endRva": "0x1F463", "sha256": "1E349215CBE3DEA915C8B755F51D6FC71E2497296E8CA1F59E2248444003B8D0"},
+  {"module": "GameAssembly.dll", "startRva": "0x3AB51F0", "endRva": "0x3AB52BC", "sha256": "6D87B69CAF4F77E96C4DA4D3A7F1D0C490ABF9951465F0C69D7E75F5248E9036"},
+  {"module": "UnityPlayer.dll", "startRva": "0x29B230", "endRva": "0x29B44C", "sha256": "3CC01A3EE274B643A6CF05C341A4F974A75CE26BF3EB85728B546B882CAADC63"},
+  {"module": "UnityPlayer.dll", "startRva": "0x317AE0", "endRva": "0x317CF0", "sha256": "AC3B302F56010A6D37C26E2FC9C6F1B072E9FBCDC1CBE4D3ADA02A1E8D5B08EE"}
+ ],
+ "evidenceBoundary": {
+  "exact": "The selected three native input hashes, managed method identity and pointer, full internal-call signature literal and trampoline, resolver's fallback to a bare name after '(', the parallel UnityPlayer name/function table entry, wrapper and direct setup call are checked.",
+  "direct": "The selected GameAssembly method's uncached branch invokes its resolver with the exact signature. The resolver can retry the bare method name, which equals a unique UnityPlayer table name. The corresponding function slot names a wrapper whose direct call enters native terrain setup.",
+  "conditional": "The branch through the internal-call mapping depends on runtime registration and resolver state. The upstream converter and setup phase also have iFix patch guards; this contract does not observe their runtime branch.",
+  "unresolved": "The native setup entry has no checked edge to the separate LAYER_C/D/N path-result owner, TerrainResource.runtimeResources.textures, or a current authored resource identity. No encoded-channel or live shader-selection claim follows."
+ }
+}

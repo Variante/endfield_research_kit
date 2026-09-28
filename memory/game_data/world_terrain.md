@@ -20,6 +20,12 @@ and checked by `scripts/game_data/terrain/layer_slots_native.py`.
 The independent managed texture-resource copy chain is recorded in
 [`terrain_virtual_texture_managed_native.json`](../../scripts/game_data/contracts/terrain_virtual_texture_managed_native.json)
 and checked by `scripts/game_data/terrain/virtual_texture_managed_native.py`.
+The selected managed-to-native manager entry is recorded in
+[`terrain_manager_bridge_native.json`](../../scripts/game_data/contracts/terrain_manager_bridge_native.json)
+and checked by `scripts/game_data/terrain/manager_bridge_native.py`.
+The authored shader sample witness is in
+[`terrain_shader_sampling.json`](../../scripts/game_data/contracts/terrain_shader_sampling.json)
+and checked by `scripts/game_data/terrain/shader_sampling.py`.
 
 ## Established structure
 
@@ -240,6 +246,22 @@ inputs to the separate `LAYER_*` owner-local handles. The converter and phase
 also have iFix patch guards, so this static route is conditional on the
 unpatched branch.
 
+The second `HGTerrainManager.SetupTerrainManager` overload is a selected
+internal-call trampoline. It passes a full method signature to a resolver on
+its uncached branch. That resolver checks the full name first and, if absent,
+searches for `(` and retries the bare name. The selected UnityPlayer image has
+parallel internal-call name and function arrays; their unique matching name
+slot points to a native wrapper, which directly calls a native terrain setup
+entry. `terrain_manager_bridge_native.py` checks the metadata method and
+pointer, resolver string and fallback, table structure and unique slot, code
+windows, and wrapper call against the selected binaries. Its current receipt
+is `reports/terrain/manager_bridge_native.json`. This extends the converter
+route to a native setup entry under the stated patch and runtime registration
+conditions. It does not identify a connection from that entry to the separate
+`LAYER_C/D/N` path-result owner or to
+`TerrainResource.runtimeResources.textures`. A stored registration and direct
+call do not show that the runtime selected this route.
+
 Within that selected converter route, four named `PropertySerializeId` static
 fields are read from the checked `HGTerrainConvertFunc` class. Each ID and a
 distinct local output address go to the same helper body, accompanied by a
@@ -283,6 +305,31 @@ MonoBehaviour/PlayableDirector object-index schema sweep has no fields named
 rows do not bridge the native `LAYER_C/D/N` owner handles into
 `TextureResources` or identify a live asset value.
 
+## Authored shader sample witness
+
+A targeted current-client conversion of the exact serialized
+`HGRP/HGTerrainPS` Shader object recovered its per-subprogram texture metadata
+and compiled SPIR-V. The selected physical CHK hash, source offset, CAB,
+PathID, targeted conversion receipt, sidecar identity, metadata and SPIR-V
+hashes are checked by `terrain_shader_sampling.py`; the selected structure is
+recorded in `terrain_shader_sampling.json`. This probe wrote only to
+`scratch/animestudio/terrain_shader_target/`, not to the published export.
+Its generated receipt is `reports/terrain/shader_sampling_latest.json`.
+
+In the authored `VTBakePage` Vulkan fragment program, the serialized texture
+parameters name `_Splats`, `_Normals`, and `_ConeMaps` as separate array inputs.
+`_ConeMaps` is at descriptor set 3, binding 11. The compiled SPIR-V variable at
+that binding has a 2D array image type; four direct image-sample results each
+feed a component-zero extract. The gate traces the exact SPIR-V
+variable/load/sampled-image/sample/extract path rather than assigning a
+texture role from shader or file names. This closes an **authored shader
+sampling witness** for the same `_ConeMaps` property name that the selected
+UnityPlayer `LAYER_C` route binds. It does not prove that this shader variant
+was selected during live terrain rendering, that a particular installed
+`LAYER_C` file reached that input, or that the sampled value has a particular
+visual or physical interpretation. The managed `VirtualTextureRenderer` field
+join remains absent.
+
 ## What remains inferred
 
 In the audited file set, `D` and `N` have matching per-directory index sets;
@@ -305,14 +352,15 @@ evidence. The old per-layer mask suggestion has no direct field join either.
 
 The tile chain still needs a checked runtime selection and shader sampling
 witness to establish the visual effect of any installed payload. For
-`LAYER_*`, the native property route is identified, but a shader sampling
-witness is still needed to explain its visual effect. A separate runtime
-selection witness must tie an installed path to a live copy. The selected
-property names alone do not establish either result.
+`LAYER_*`, the native property route and one authored `_ConeMaps` shader sample
+path are identified. A runtime selection witness must still tie an installed
+path to a live copy and identify the shader variant used for that draw. The
+sampled component and property name do not establish the encoded byte's
+meaning or its visual effect.
 
-The next source to check is the common converter helper's returned-object
-identity and the manager setup overloads' use of these four arguments.
-Compare those identities with the native `LAYER_*` result handles; the four
-property names alone cannot establish that join. An indirect-caller or
-resource-producer trace for `HGTerrainRenderer.ctor` is the separate route to
-the `TerrainResource` fields.
+The next source to check is the native setup entry's resource construction and
+its possible ownership relationship to the separate `LAYER_*` result handles.
+The common converter helper's returned-object identity may also clarify what
+the four checked setup arguments carry. An indirect-caller or resource-producer
+trace for `HGTerrainRenderer.ctor` is the separate route to the
+`TerrainResource` fields.

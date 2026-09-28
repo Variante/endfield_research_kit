@@ -133,7 +133,16 @@ checks the selected `LAYER_D/N/C` queue, callback, handle forwarding, distinct
 owner-local destinations, guarded copy helper, and same-handle render-property
 binding. Its receipt is `reports/terrain/layer_slots_native.json` and proves
 D/`_Splats`, N/`_Normals`, and C/`_ConeMaps` (C is conditional). Managed field
-names, encoded channels, shader sampling, and live selection remain open.
+names, encoded channels, and live selection remain open; the separate authored
+shader sample is checked below.
+
+`python -m scripts.game_data.terrain.shader_sampling --game-root ".../Endfield_Data" --evidence-root scratch/animestudio/terrain_shader_target`
+checks a one-object targeted `Shader:Both` conversion made with
+`ANIMESTUDIO_EXPORT_SHADER_BYTECODE_SIDECARS=1`. It gates the selected installed
+source CHK, authored texture bindings and compiled SPIR-V sample path, writing
+`reports/terrain/shader_sampling_latest.json`. The selected variant samples
+`_ConeMaps` component zero; runtime shader/file selection and managed fields
+remain open.
 
 `python -m scripts.game_data.terrain.virtual_texture_managed_native --game-root ".../Endfield_Data"`
 checks the separate managed `HGTerrainRenderer` to `VirtualTextureRenderer`
@@ -145,6 +154,12 @@ converter-to-terrain-manager setup route and four named converter property IDs,
 typed Phase 1 arguments. Its receipt is
 `reports/terrain/virtual_texture_managed_native.json`. It does not join those
 fields to the installed `LAYER_*` or six-file tile paths.
+
+`python -m scripts.game_data.terrain.manager_bridge_native --game-root ".../Endfield_Data"`
+checks the selected `HGTerrainManager.SetupTerrainManager` internal-call
+resolver, UnityPlayer name/function registration slot, and wrapper's direct
+native setup call. It writes `reports/terrain/manager_bridge_native.json`.
+The `LAYER_*` owner and managed texture-field join remains open.
 
 `python -m scripts.game_data.irradiance_path_native` validates the selected
 IrradianceVolume V3 scene/Gacha `/v3/index.bytes` suffix construction,

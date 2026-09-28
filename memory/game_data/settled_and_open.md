@@ -55,14 +55,22 @@ engine, whose layouts are now framed.
   directly copies eight `TextureResources` fields into
   `VirtualTextureRenderer`, including the two layer arrays and the color
   variation texture. The join from any installed `LAYER_*` file or native
-  owner-local handle into those managed fields remains open, as does shader
-  sampling. The separate six-file `Terrain_H/N/T/A/S/C` tile family has
-  a checked render-property route: H/Heightmap, N/Normalmap, T/TintColor,
+  owner-local handle into those managed fields remains open. The selected
+  managed `SetupTerrainManager` overload resolves through an internal-call
+  name/function table to a native setup entry; the checked bridge stops before
+  those layer handles and managed fields. An exact authored
+  `HGRP/HGTerrainPS` Vulkan variant declares `_ConeMaps` as a 2D array input
+  and samples its component zero four times; this does not identify a live
+  selected shader or installed file. The separate six-file
+  `Terrain_H/N/T/A/S/C` tile family has a checked render-property route:
+  H/Heightmap, N/Normalmap, T/TintColor,
   A/Albedo, S/SplatCtrl, and C/CliffIndex. Neither `m_colorVariationTex` nor
   a mask-map reading for `LAYER_C` is established by the selected binding or field
   types; see [`world_terrain.md`](world_terrain.md) and the reviewed
   `terrain_layer_paths_native.json`/`terrain_layer_slots_native.json`/
-  `terrain_virtual_texture_managed_native.json` contracts.
+  `terrain_virtual_texture_managed_native.json`/`terrain_manager_bridge_native.json`/
+  `terrain_shader_sampling.json`
+  contracts.
 - ~~**`0x0B`'s `+12`/`+20` words.**~~ **CLOSED** by the SDK: they are the `sourceID`
   and `eventID` of the 44-byte playlist item `CAkMusicTrack::SetInitialValues` reads,
   and the whole type frames exactly.
