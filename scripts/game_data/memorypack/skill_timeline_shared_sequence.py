@@ -23,9 +23,41 @@ from scripts.game_data.memorypack.buff_actions import (
     SEQUENCE_RECURSION_LIMIT,
     Reader,
 )
+from scripts.game_data.memorypack.skill_damage_unit_gameplay_tag_list import (
+    read_positive_member_ten_list,
+    validate_current_native_contract as validate_damage_unit_tag_list_native_contract,
+)
 from scripts.game_data.memorypack.skill_allow_next_skill import (
     decode_allow_next_skill_action,
     validate_current_native_contract as validate_allow_next_skill_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_execute_interval import (
+    decode_execute_interval_action,
+    validate_current_native_contract as validate_execute_interval_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_get_target_buff_bb import (
+    decode_get_target_buff_bb_action,
+    validate_current_native_contract as validate_get_target_buff_bb_native_contract,
+)
+from scripts.game_data.memorypack.skill_selector_validator_target_contains import (
+    decode_target_contains_validator,
+    validate_current_native_contract as validate_target_contains_validator_native_contract,
+)
+from scripts.game_data.memorypack.skill_selector_finder_projectile import (
+    decode_projectile_finder,
+    validate_current_native_contract as validate_projectile_finder_native_contract,
+)
+from scripts.game_data.memorypack.skill_selector_finder_snap_point import (
+    decode_snap_point_finder,
+    validate_current_native_contract as validate_snap_point_finder_native_contract,
+)
+from scripts.game_data.memorypack.skill_selector_postprocessor_convert_to_slot import (
+    decode_convert_to_slot_postprocessor,
+    validate_current_native_contract as validate_convert_to_slot_postprocessor_native_contract,
+)
+from scripts.game_data.memorypack.skill_selector_zero_member import (
+    decode_zero_member_selector,
+    validate_current_native_contract as validate_zero_member_selector_native_contract,
 )
 from scripts.game_data.memorypack.skill_timeline_add_camera_control_state import (
     decode_add_camera_control_state_action,
@@ -34,6 +66,10 @@ from scripts.game_data.memorypack.skill_timeline_add_camera_control_state import
 from scripts.game_data.memorypack.skill_timeline_fixed_four import (
     decode_fixed_four_action,
     validate_current_native_contract as validate_fixed_four_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_two_five_member import (
+    decode_five_member_action,
+    validate_current_native_contract as validate_five_member_native_contract,
 )
 from scripts.game_data.memorypack.skill_timeline_save_two_direction_angle import (
     decode_save_two_direction_angle_action,
@@ -410,6 +446,10 @@ from scripts.game_data.memorypack.skill_timeline_teleport_pos_select import (
     decode_teleport_pos_select_action,
     validate_current_native_contract as validate_teleport_pos_select_native_contract,
 )
+from scripts.game_data.memorypack.skill_timeline_two_action_routes import (
+    decode_two_action_route,
+    validate_current_native_contract as validate_two_action_routes_native_contract,
+)
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_shared_sequence_native.json"
@@ -484,7 +524,54 @@ PASSIVE_CONDITION_ROUTES = (
          "byte", "target-profile", "counted-scalar32"),
     ),
 )
+PASSIVE_SOURCE_ROUTES = (
+    (
+        "0x0051", "Beyond.Gameplay.Core.CompareString+Data",
+        "buff_51_native.json", "member6",
+        ("byte", "scalar32", "scalar32", "scalar32", "paired-payload",
+         "paired-payload"),
+    ),
+    (
+        "0x005E", "Beyond.Gameplay.Core.Conditions.CheckDamageTypeMask+Data",
+        "buff_5e_native.json", "member5",
+        ("byte", "scalar32", "scalar32", "scalar32", "scalar32"),
+    ),
+    (
+        "0x006B", "Beyond.Gameplay.Core.Conditions.CheckOverHeal+Data",
+        "buff_6b_native.json", "member7",
+        ("byte", "scalar32", "scalar32", "scalar32", "byte-payload",
+         "byte-payload", "byte-payload"),
+    ),
+    (
+        "0x00D5", "Beyond.Gameplay.Core.IntResourceHpCheckAction+Data",
+        "buff_d5_native.json", "member4",
+        ("boolean", "scalar32", "scalar32", "scalar32"),
+    ),
+    (
+        "0x00D6", "Beyond.Gameplay.Core.IntResourceOnHpZeroAction+Data",
+        "buff_d6_native.json", "member4",
+        ("boolean", "scalar32", "scalar32", "scalar32"),
+    ),
+    (
+        "0x0132", "Beyond.Gameplay.Core.SaveAtbObtainValue+Data",
+        "buff_132_native.json", "member6",
+        ("byte", "scalar32", "scalar32", "scalar32", "byte-payload",
+         "byte-payload"),
+    ),
+    (
+        "0x0139", "Beyond.Gameplay.Core.SaveCharTypeId+Data",
+        "buff_139_native.json", "member6",
+        ("byte", "scalar32", "scalar32", "scalar32", "byte-payload",
+         "target-profile"),
+    ),
+)
 TIMELINE_SOURCE_ROUTES = (
+    (
+        "0x00CE", "Beyond.Gameplay.Core.IgniteAction+Data",
+        "buff_ce_native.json", "member8",
+        ("byte", "scalar32", "scalar32", "scalar32", "target-settings",
+         "scalar32", "nullable-byte-payload", "target-settings"),
+    ),
     (
         "0x0157", "Beyond.Gameplay.Core.SetSkillCdAtOnce+Data",
         "buff_157_native.json", "member11",
@@ -504,6 +591,12 @@ TIMELINE_SOURCE_ROUTES = (
         ("byte", "scalar32", "scalar32", "scalar32", "sequence", "byte",
          "byte", "byte", "byte", "raw4", "scalar-payload", "byte",
          "target", "byte"),
+    ),
+    (
+        "0x0187", "Beyond.Gameplay.Core.TriggerComboSkillAction+Data",
+        "buff_187_native.json", "member9",
+        ("byte", "scalar32", "scalar32", "scalar32", "assignment-list",
+         "byte", "target-profile", "target-profile", "target-profile"),
     ),
 )
 FAC_BUILDING_PLAY_ANIMATION_TAG = 0x00B0
@@ -536,12 +629,27 @@ class SharedSequenceReader(Reader):
     """Skill-only extensions to the shared finite action grammar."""
 
     def selector_finder_profile(self) -> None:
+        if self.peek() == 0x06:
+            decode_zero_member_selector(self, "SelectorFinder", 6)
+            return
+        if self.peek() == 0x0F:
+            decode_projectile_finder(self)
+            return
+        if self.peek() == 0x14:
+            decode_snap_point_finder(self)
+            return
         if self.peek() == 0x17:
             decode_typhoea_selected_finder(self)
             return
         super().selector_finder_profile()
 
     def selector_validator_profile(self) -> None:
+        if self.peek() == 0x06:
+            decode_zero_member_selector(self, "SelectorValidator", 6)
+            return
+        if self.peek() == 0x0C:
+            decode_target_contains_validator(self)
+            return
         if self.peek() == 0x07:
             decode_in_screen_validator(self)
             return
@@ -550,14 +658,22 @@ class SharedSequenceReader(Reader):
             return
         super().selector_validator_profile()
 
+    def selector_postprocessor_profile(self) -> None:
+        if self.peek() == 0x02:
+            decode_zero_member_selector(self, "SelectorPostProcessor", 2)
+            return
+        if self.peek() == 0x03:
+            decode_convert_to_slot_postprocessor(self)
+            return
+        super().selector_postprocessor_profile()
+
     def damage_unit_profile(self) -> None:
-        """Select the Skill-authenticated CostData list at member five.
+        """Select the Skill-authenticated DamageUnit list readers.
 
         The shared Buff reader deliberately leaves every positive first/third
-        DamageUnit list closed.  SkillData has an additional composite
-        contract for member five only, so keep the selection local to this
-        subclass and retain the shared fail-closed behavior for member ten and
-        the EffectActionCfg array.
+        DamageUnit list closed.  SkillData has separate selected native
+        contracts for the CostData and GameplayTag members.  The
+        EffectActionCfg array retains the shared fail-closed behavior.
         """
         stack = getattr(self, "_skill_damage_unit_list_indices", None)
         if stack is None:
@@ -587,9 +703,17 @@ class SharedSequenceReader(Reader):
                     "damageUnitMemberIndex": FIRST_DAMAGE_UNIT_COST_LIST_MEMBER_INDEX,
                 })
                 return count
+            if list_index == 1:
+                return read_positive_member_ten_list(self)
         return super().empty_damage_collection(kind)
 
     def _action(self, depth: int, tag: int, width: int) -> None:
+        if tag in (0x0054, 0x009D):
+            decode_two_action_route(self, depth, tag, width)
+            return
+        if tag in (0x0148, 0x00E6):
+            decode_five_member_action(self, depth, tag, width)
+            return
         if tag == 0x0116:
             decode_play_animation_step_action(self, depth, tag, width)
             return
@@ -853,6 +977,12 @@ class SharedSequenceReader(Reader):
             return
         if tag == 0x000E:
             decode_allow_next_skill_action(self, depth, tag, width)
+            return
+        if tag == 0x00AE:
+            decode_execute_interval_action(self, depth, tag, width)
+            return
+        if tag == 0x00C3:
+            decode_get_target_buff_bb_action(self, depth, tag, width)
             return
         if tag == 0x0168:
             decode_snap_to_target_with_range_action(self, depth, tag, width)
@@ -1168,7 +1298,7 @@ def _contract() -> dict[str, Any]:
     ):
         raise ValueError("skillTimelineSharedSequence.contract:ai-blackboard-source-drift")
     for tag, type_name, path, read_key, read_kinds in (
-        *PASSIVE_CONDITION_ROUTES, *TIMELINE_SOURCE_ROUTES
+        *PASSIVE_CONDITION_ROUTES, *PASSIVE_SOURCE_ROUTES, *TIMELINE_SOURCE_ROUTES
     ):
         route = next((row for row in routes if row.get("tag") == tag), None)
         source = dependency_values.get(path, {})
@@ -1188,6 +1318,35 @@ def _contract() -> dict[str, Any]:
             )
         ):
             raise ValueError(f"skillTimelineSharedSequence.contract:action-source-drift:{tag}")
+    for tag, type_name, path, schema in (
+        (
+            "0x0148", "Beyond.Gameplay.Core.SetAbilityEntityToMainChar+Data",
+            "skill_timeline_set_ability_entity_main_char_native.json",
+            "endfield.skill-timeline-set-ability-entity-main-char-native-contract.v1",
+        ),
+        (
+            "0x00E6", "Beyond.Gameplay.Core.LookAtAction+LookAtActionData",
+            "skill_timeline_look_at_native.json",
+            "endfield.skill-timeline-look-at-native-contract.v1",
+        ),
+    ):
+        route = next((row for row in routes if row.get("tag") == tag), None)
+        source = dependency_values.get(path, {})
+        if (
+            not isinstance(route, dict)
+            or route.get("typeName") != type_name
+            or route.get("memberCount") != 5
+            or route.get("sourceContract") != {
+                "path": path, "schema": schema, "orderedReadRef": "orderedSourceReads",
+            }
+            or source.get("schema") != schema
+            or source.get("status") != "exact-current-build"
+            or source.get("dispatcher", {}).get("unionTag") != int(tag, 16)
+            or source.get("serializedMemberCount") != 5
+            or [read.get("memberIndex") for read in source.get("orderedSourceReads", ())]
+            != list(range(5))
+        ):
+            raise ValueError(f"skillTimelineSharedSequence.contract:five-member-source-drift:{tag}")
     camera_route = next((row for row in routes if row.get("tag") == "0x00E0"), None)
     camera_contract = dependency_values.get("buff_e0_native.json", {})
     camera_reads = camera_contract.get("anonymousReadOrder", {}).get("memberSourceCalls")
@@ -1482,6 +1641,12 @@ def _contract() -> dict[str, Any]:
         ):
             raise ValueError(f"skillTimelineSharedSequence.contract:action-source-drift:{tag}")
     for tag, path, schema, family, count in (
+        (0x06, "skill_selector_finder_guard_ai_target_native.json",
+         "endfield.skill-selector-finder-guard-ai-target-native-contract.v1", "SelectorFinder", 0),
+        (0x06, "skill_selector_validator_hittable_object_native.json",
+         "endfield.skill-selector-validator-hittable-object-native-contract.v1", "SelectorValidator", 0),
+        (0x02, "skill_selector_postprocessor_convert_to_position_native.json",
+         "endfield.skill-selector-postprocessor-convert-to-position-native-contract.v1", "SelectorPostProcessor", 0),
         (0x17, "skill_selector_finder_typhoea_native.json",
          "endfield.skill-selector-finder-typhoea-native-contract.v1", "SelectorFinder", 0),
         (0x07, "skill_selector_validator_in_screen_native.json",
@@ -1572,6 +1737,39 @@ def _contract() -> dict[str, Any]:
         or allow_route.get("evidence") != "selectedDerivedPlanCorpusVerified"
     ):
         raise ValueError("skillTimelineSharedSequence.contract:allow-next-skill-route-drift")
+    execute_route = next((row for row in routes if row.get("tag") == "0x00AE"), None)
+    if (
+        not isinstance(execute_route, dict)
+        or execute_route.get("typeName") != "Beyond.Gameplay.Core.ExecuteIntervalAction+Data"
+        or execute_route.get("memberCount") != 7
+        or execute_route.get("evidence") != "selectedDerivedPlanCorpusVerified"
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:execute-interval-route-drift")
+    target_bb_route = next((row for row in routes if row.get("tag") == "0x00C3"), None)
+    if (
+        not isinstance(target_bb_route, dict)
+        or target_bb_route.get("typeName") != "Beyond.Gameplay.Core.GetTargetBuffBBAction+Data"
+        or target_bb_route.get("memberCount") != 8
+        or target_bb_route.get("evidence") != "selectedDerivedPlanCorpusVerified"
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:get-target-buff-bb-route-drift")
+    stack_route = next((row for row in routes if row.get("tag") == "0x0135"), None)
+    stack_source = dependency_values.get("buff_135_native.json", {})
+    if (
+        not isinstance(stack_route, dict)
+        or stack_route.get("typeName") != "Beyond.Gameplay.Core.SaveBuffStackNum+Data"
+        or stack_route.get("memberCount") != 7
+        or stack_route.get("sourceContract") != {
+            "path": "buff_135_native.json", "schemaVersion": 1,
+            "orderedReadRef": "anonymousReadOrder.member7",
+        }
+        or stack_source.get("schemaVersion") != 1
+        or stack_source.get("anonymousReadOrder", {}).get("member7") != [
+            "byte", "scalar32", "scalar32", "scalar32",
+            "single-payload", "target-profile", "byte-payload",
+        ]
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:save-buff-stack-num-route-drift")
     for tag, type_name in (
         ("0x009E", "Beyond.Gameplay.Core.DisableRootMotionAction+Data"),
         ("0x00E8", "Beyond.Gameplay.Core.MarkCanInterrupt+Data"),
@@ -2626,11 +2824,35 @@ def _contract() -> dict[str, Any]:
         or len(angry_contract["orderedSourceReads"]) != 4
     ):
         raise ValueError("skillTimelineSharedSequence.contract:finish-angry-source-drift")
+    two_action_source = dependency_values.get("skill_timeline_two_action_routes_native.json", {})
+    for tag in ("0x0054", "0x009D"):
+        selected = next((row for row in routes if row.get("tag") == tag), None)
+        source = next(
+            (row for row in two_action_source.get("routes", ()) if row.get("tag") == tag),
+            None,
+        )
+        if (
+            not isinstance(selected, dict)
+            or not isinstance(source, dict)
+            or selected.get("typeName") != source.get("typeName")
+            or selected.get("memberCount") != source.get("serializedMemberCount")
+            or selected.get("sourceContract") != {
+                "path": "skill_timeline_two_action_routes_native.json",
+                "schema": "endfield.skill-timeline-two-action-routes-native-contract.v1",
+                "orderedReadRef": f"routes[tag={tag}].orderedSourceReads",
+            }
+            or two_action_source.get("schema")
+            != "endfield.skill-timeline-two-action-routes-native-contract.v1"
+            or two_action_source.get("status") != "exact-current-build"
+            or len(source.get("orderedSourceReads", ())) != 6
+        ):
+            raise ValueError(f"skillTimelineSharedSequence.contract:two-action-source-drift:{tag}")
     return value
 
 
 def validate_current_native_contract() -> dict[str, Any]:
     contract = _contract()
+    damage_tag_list_validation = validate_damage_unit_tag_list_native_contract()
     frontier_rows, frontier_audit = buff_frontiers_native.load_rows("frontier9")
     if frontier_audit.get("status") != "validated" or 0x0082 not in frontier_rows:
         raise ValueError(
@@ -2639,6 +2861,21 @@ def validate_current_native_contract() -> dict[str, Any]:
     teleport_validation = validate_teleport_pos_select_native_contract()
     snap_validation = validate_snap_to_target_with_range_native_contract()
     allow_validation = validate_allow_next_skill_native_contract()
+    execute_interval_validation = validate_execute_interval_native_contract()
+    target_buff_bb_validation = validate_get_target_buff_bb_native_contract()
+    target_contains_validator_validation = validate_target_contains_validator_native_contract()
+    projectile_finder_validation = validate_projectile_finder_native_contract()
+    snap_point_finder_validation = validate_snap_point_finder_native_contract()
+    convert_to_slot_postprocessor_validation = (
+        validate_convert_to_slot_postprocessor_native_contract()
+    )
+    zero_member_selector_validations = {
+        "finderGuardAITarget": validate_zero_member_selector_native_contract("SelectorFinder", 6),
+        "validatorHittableObject": validate_zero_member_selector_native_contract("SelectorValidator", 6),
+        "postprocessorConvertToPosition": validate_zero_member_selector_native_contract(
+            "SelectorPostProcessor", 2
+        ),
+    }
     fixed_four_validation = validate_fixed_four_native_contract()
     camera_state_validation = validate_add_camera_control_state_native_contract()
     save_angle_validation = validate_save_two_direction_angle_native_contract()
@@ -2699,6 +2936,9 @@ def validate_current_native_contract() -> dict[str, Any]:
     check_obtain_atb_type_validation = validate_check_obtain_atb_type_native_contract()
     check_global_cd_timer_validation = validate_check_global_cd_timer_native_contract()
     add_global_cd_timer_validation = validate_add_global_cd_timer_native_contract()
+    five_member_validations = [
+        validate_five_member_native_contract(tag) for tag in (0x0148, 0x00E6)
+    ]
     play_animation_step_shared_validation = validate_play_animation_step_shared_native_contract()
     blow_off_enemy_validation = validate_blow_off_enemy_native_contract()
     check_physical_infliction_type_validation = validate_check_physical_infliction_type_native_contract()
@@ -2732,6 +2972,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     motion_validation = validate_custom_root_motion_native_contract()
     warning_validation = validate_enemy_warning_native_contract()
     angry_validation = validate_finish_angry_native_contract()
+    two_action_validation = validate_two_action_routes_native_contract()
     expected = contract["nativeInputs"]
     gate = check_installed_native_inputs(
         expected["gameassemblySha256"], expected["globalMetadataSha256"]
@@ -2768,6 +3009,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     ):
         raise ValueError("skillTimelineSharedSequence.native:fac-building-plan-drift")
     for tag, wrapper in (
+        (0x0135, "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveBuffStackNum_DataForMemoryPack"),
         (0x007B, "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSuperArmor_DataForMemoryPack"),
         (0x0080, "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTargetsEqual_DataForMemoryPack"),
         (0x00A7, "Beyond.MemoryPack.Beyond_Gameplay_Core_EnablePartsAction_DataForMemoryPack"),
@@ -2804,10 +3046,18 @@ def validate_current_native_contract() -> dict[str, Any]:
         "dependencyCount": len(contract["dependencies"]),
         "facBuildingPlanValidation": "validated",
         "sourceWindowValidation": source_window_dependencies,
+        "damageUnitGameplayTagListNativeValidation": damage_tag_list_validation,
         "twoDirectionFrontierValidation": frontier_audit["status"],
         "teleportPosSelectNativeValidation": teleport_validation,
         "snapToTargetWithRangeNativeValidation": snap_validation,
         "allowNextSkillNativeValidation": allow_validation,
+        "executeIntervalNativeValidation": execute_interval_validation,
+        "getTargetBuffBBNativeValidation": target_buff_bb_validation,
+        "targetContainsValidatorNativeValidation": target_contains_validator_validation,
+        "projectileFinderNativeValidation": projectile_finder_validation,
+        "snapPointFinderNativeValidation": snap_point_finder_validation,
+        "convertToSlotPostprocessorNativeValidation": convert_to_slot_postprocessor_validation,
+        "zeroMemberSelectorNativeValidations": zero_member_selector_validations,
         "fixedFourNativeValidation": fixed_four_validation,
         "addCameraControlStateNativeValidation": camera_state_validation,
         "saveTwoDirectionAngleNativeValidation": save_angle_validation,
@@ -2868,6 +3118,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         "checkObtainAtbTypeNativeValidation": check_obtain_atb_type_validation,
         "checkGlobalCdTimerNativeValidation": check_global_cd_timer_validation,
         "addGlobalCdTimerNativeValidation": add_global_cd_timer_validation,
+        "fiveMemberNativeValidations": five_member_validations,
         "playAnimationStepSharedNativeValidation": play_animation_step_shared_validation,
         "blowOffEnemyNativeValidation": blow_off_enemy_validation,
         "checkPhysicalInflictionTypeNativeValidation": check_physical_infliction_type_validation,
@@ -2901,6 +3152,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         "customRootMotionNativeValidation": motion_validation,
         "enemyWarningNativeValidation": warning_validation,
         "finishAngryNativeValidation": angry_validation,
+        "twoActionRoutesNativeValidation": two_action_validation,
     }
 
 

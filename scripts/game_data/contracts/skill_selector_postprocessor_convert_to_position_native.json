@@ -1,0 +1,73 @@
+{
+  "schema": "endfield.skill-selector-postprocessor-convert-to-position-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 0,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 2,
+    "switchTableRva": 69876004,
+    "switchEntryCount": 10,
+    "switchTableSha256": "40AFF06785DEF3B3A9B606BA760644D93DAB2A83277911053495251235F08009",
+    "switchTargetRva": 83502472,
+    "routeWindow": {
+      "startRva": 83502472,
+      "endRva": 83502546,
+      "sha256": "EB76A47E868CA68C87524E998766C6BB97B8FD10828245EF9FEA06C593FEB078",
+      "boundary": "selected zero-member route including existing, new and null-wrapper branches"
+    },
+    "usageCellRva": 217990896,
+    "usageRawHex": "3144032000000000",
+    "registeredTypeIndex": 107032,
+    "wrapperTypeDefinition": 22981,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToPosition_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      166733,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToPosition_DataForMemoryPack+Beyond_Gameplay_Core_Selector_ConvertToPosition_DataForMemoryPackFormatter",
+      "Deserialize",
+      158056260
+    ],
+    [
+      166732,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToPosition_DataForMemoryPack",
+      "Deserialize",
+      158056488
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 158056260,
+      "endRva": 158056349,
+      "sha256": "2E185158C9E4CC7BEBDB1C088C4FB346706272CD9EC2ED8363E9F2619B2C412D",
+      "boundary": "complete selected formatter forwarder"
+    },
+    {
+      "startRva": 158056488,
+      "endRva": 158056725,
+      "sha256": "78B5812B0474794A83EC3199D95D58A43955824CE410992756C40A72D43D6502",
+      "boundary": "complete selected zero-member reader body"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 158056651,
+    "hex": "4084FF"
+  },
+  "sourceHeaderRead": {
+    "sourceCallsiteRva": 158056584,
+    "sourceCallHex": "E8D3C75EF9",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "Selected SelectorPostProcessor tag 2, generated wrapper identity, member-zero check and complete reader bodies match the installed native pair.",
+    "direct": "A reached wire element is the union tag followed by either FF null wrapper or a zero-member header; the parent reader checks the next cursor.",
+    "structuralOnly": "The stored ConvertToPosition type does not establish runtime target transformation or ownership.",
+    "unresolved": "Live formatter/provider choice, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

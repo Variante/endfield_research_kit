@@ -2426,11 +2426,13 @@ The maintained EndfieldCapture `skilldata-cursor` profile now observes the
 complete direct-call surface of that selected reader: 47 field-indexed
 post-read cursors for the 48-member object (field 17 is inline), plus the two
 exact ActionGroup child-list post-call cursors reached inside field 0. Seven
-typed helper hooks preserve the original ABI; the runtime admits only the
-424-, 533-, and 568-byte hash-join samples, copies each source once into bounded
-storage, and publishes only after the existing quiescent teardown proves every
-detour and trampoline vacant. The accepted receipt exercised the first two
-lengths; the third is the supplemental nonempty-ActionGroup target below. The
+typed helper hooks preserve the original ABI; the runtime admits bounded
+424-, 533-, 561-, and 568-byte samples, with exact copied-byte SHA-256 admission
+for the current 561-byte target. It copies each source once into bounded storage
+and publishes only after quiescent teardown proves every detour and trampoline
+vacant. The accepted receipt exercised the first two lengths; the 561-byte
+target is still awaiting a live observation, and 568 bytes is the separate
+supplemental nonempty-ActionGroup probe. The
 loaded complete reader body, seven helper
 entries and ActionGroup window are separately hash-pinned in addition to the
 native file gate. The accepted v2 receipt has zero genuine loss and overflow,
@@ -2438,21 +2440,22 @@ observes both required source shapes, and records complete field/child cursor
 vectors after quiescent teardown. In both hash-joined samples the earlier
 `one-member-wrapper` candidate begins at field 43
 `switchToCenterBeforeCast`, and field 47 `useAIExclusiveFrame` closes at EOF.
-Every current corpus row has that same two-candidate encoding and the same five
-terminal member kinds; the native field-43 bool read therefore rejects the
-candidate that begins one byte later. The census replays the verifier from its
-exact receipt, source-corpus, native-context and verifier hashes before applying
-this selection to all rows.
+The old and new corpora share that two-candidate encoding and the same five
+terminal member kinds; the native field-43 bool read rejects the candidate
+that begins one byte later on the witnessed reader route. The census replays
+the verifier from its exact receipt, source-corpus, native-context and verifier
+hashes before applying this selection to admitted, byte-identical prior rows.
+New rows keep both candidates pending a current cursor witness.
 
 The same receipt records every field-0-through-field-42 cursor in two
 byte-distinct samples whose field 0 contains the identical empty two-list
 `ActionGroupData` representation. A sequential reader derived from the current
 generated wrapper types reproduces both vectors exactly, then applies only to
-that structurally identical profile. It closes every current profile member
+that structurally identical profile on admitted rows. It closes every reached profile member
 except one `switchToBuffConfig` body whose nested action begins with unsupported
 tag `0x0078`; that row remains exact only through field 41 plus the independent
-field-43-through-field-47 terminal. Other empty-ActionGroup rows are complete
-named stored schemas. Non-empty ActionGroup rows retain the selected terminal
+field-43-through-field-47 terminal. Other admitted empty-ActionGroup rows are complete
+named stored schemas. Admitted non-empty ActionGroup rows retain the selected terminal
 and now name the exact start of field 0: the `ActionGroupData` member-count,
 then the `passiveEventActions` and, when the first list is empty,
 `timelineActions` nullable-list counts in authenticated reader order. A
@@ -2496,8 +2499,10 @@ four-member action prefix, fourteen target-selection members, and terminal
 first-timeline decoder closes every reached current first record, but each
 ActionGroup contains later timeline records, so whole-file closure remains
 open. Physical tag `0x00A2` is the 18-member `EffectActionData`; its current
-85-member `EffectActionCfg` body remains opaque, so structurally reachable
-cursors are not promoted to named-exact evidence.
+85-member `EffectActionCfg` body remains opaque in SkillData, so structurally
+reachable SkillData cursors are not promoted to named-exact evidence. The
+separate BuffData action gate closes its bounded `0x00A2` wrapper spans while
+retaining that same nested effect-configuration boundary.
 
 Physical tag `0x0116` selects `PlayAnimationWithStepData`. Its 30-member wrapper
 inherits the exact 16-member `PlayAnimation` layout, then reads
@@ -3316,6 +3321,132 @@ blocked supported Damage route. Only exact enclosing sequences and the existing
 top-level continuation can promote a whole file. Other records gain named byte
 ranges without being misreported as file closure.
 
+The newer installed JsonData overlay adds SkillData and BuffData records while
+retaining the prior records' logical lengths and MD5s. This is a real corpus
+change, so the older complete family reports cannot be reclassified under the
+new input set by an exporter-only rebind. The focused addition audit first joins
+each added exported payload to its current verified VFS ledger row, then runs
+the selected-build derived plan to EOF and checks its embedded identifier
+against the file name. The maintained Buff reader still reaches its known
+post-ID tail on those added records; that tail is not a recursively named
+BuffData schema. A complete current BuffData census also found one new first
+refusal before that tail: `buff_chr_0038_purrche_aura_block` reached
+`EnableMoveColliderAction` (`0x00A6`) within `buffEventAction`. Its selected
+native dispatcher and generated five-member wrapper constrain the inherited
+bool and three DWORDs followed by a raw enum32 `mountPoint`. The bounded
+reader now rejoins the named middle fields and exact `iconConfig` child at the
+independently accepted id marker. The current full BuffData family census
+again has no unsupported root continuation, while recursive action interiors
+and suffix children remain open.
+
+The added SkillData records exposed `ExecuteIntervalAction` (`0x00AE`) and
+`GetTargetBuffBBAction` (`0x00C3`) as finite later actions, and
+`SaveBuffStackNum` (`0x0135`) as a reached route already framed by the reviewed
+Buff reader. The selected dispatcher and generated plans constrain their
+member counts and nested SequenceActionData, BlackboardDouble, and
+TargetSettings children; `0x0135` additionally rechecks the selected Buff
+reader's code windows and source order. The `0x00C3` TargetSettings union
+retains structural-only evidence. Two other first refusals were nested selector
+routes: `TargetContainsValidator` (`SelectorValidator` tag `0x000C`) and
+`ProjectileFinder` (`SelectorFinder` tag `0x000F`). Their selected native switch
+tables are hash-checked, each reached branch's type-usage load resolves to the
+generated wrapper, and its one-member plan hands the child to the existing
+bounded TargetSettings or ColliderShapeData reader. Unknown children still
+stop at their owning cursor. Focused replay now carries every added SkillData
+record through the complete ActionGroup list and fields 1 through 42 to the
+existing native field-43 terminal candidate. This establishes stored framing
+under the selected build and current source-byte joins. Before the targeted
+capture below, the added files had no direct runtime cursor receipt; this
+static replay does not observe action execution,
+selector results, blackboard values, or native refill/error parity.
+The selected `SelectorFinder` dispatcher also authenticates
+`SnapPointFinder` at its reached nested tag. Its generated wrapper reads
+`radius` as a structurally framed BlackboardDouble before
+`snapTargetSettings` as TargetSettings. The exact child cursor advances the
+Mifu power-attack, ultimate, and combo sequences; the first two rejoin their
+top-level continuation and previously verified terminal at physical EOF,
+while the combo stops at a later independent action union. The current
+SkillData corpus report holds source coverage and first refusals. These
+stored selector fields do not establish live snap-point selection.
+An independent static recheck gives the field-1-through-42 reader EOF as its
+hard limit rather than either terminal candidate start. For every added row,
+its resulting cursor lands on the earlier of two exact EOF terminal framings;
+the later framing starts one byte farther in. A malformed bool at the earlier
+start is refused while the later shape still parses, so mere terminal EOF
+validity cannot select the formatter's actual cursor. This closes the added
+ActionGroup parser frontier under the selected structural route, while leaving
+terminal ownership and runtime behavior conditional on a current direct cursor
+witness. The per-file joins, cursor offsets and malformed-byte checks are in
+the generated added-file frontier and independent-cursor reports.
+The selected native field-43 bool is followed by a field-44
+`GameplayTagList` wrapper whose rechecked generated reader accepts a one-byte
+non-null header of `1` or null header `FF`. Current source-hash joins show the
+earlier terminal candidate supplies header `1` for every added row; the
+one-byte-shifted EOF candidate would supply `0`. The selected native code and
+registered formatter windows still match the installed build. This excludes
+the shifted candidate **conditional on that wrapper/provider route**. This
+static step did not observe a live formatter cursor or provider choice, so it
+retained both terminal candidates. The per-file native-tail
+comparison and window gates are in the generated added-file native-tail report.
+The changing per-file counts and first-stop receipts are in the generated
+gameplay MemoryPack addition and route-replay reports. A new-input complete
+family gate is required after any further reader or source-byte change.
+The new-input SkillData census retains the earlier live cursor inference only
+for old logical files whose current VFS stream reproduces the prior path,
+length, MD5 and SHA-256 under the unchanged selected native build. Its
+maintained subset gate replays the pinned receipt, source corpus, native
+context and verifier exactly. It distinguishes rows with unchanged full
+physical identity from byte-identical rows whose VFS chunk or offset moved;
+the latter are sound content rebindings because the SkillData reader consumes
+decoded bytes and its terminal selection does not use physical VFS location.
+The subset rebind alone leaves new files and any logically changed row
+`ambiguous` in the complete family report. It transfers the prior parser
+inference without creating a new live observation. The accepted supplemental farming source closes its
+own cursor, while only the two required empty-ActionGroup samples anchor the
+family-wide field-43 through field-47 selection. Focused ActionGroup closures
+for added files therefore remain conditional on a source-bound direct cursor
+witness for their terminal candidate. The changing tier counts, row identities
+and current report hash are in the generated subset-rebind readiness,
+validation and SkillData corpus reports.
+
+### Static limit for new SkillData terminal cursors
+
+The refreshed all-unselected VFS basis and native-only observer context pass
+their exact provenance replay. Every row without a content-bound prior cursor
+receipt SHA-joins its exported bytes to the current VFS logical source; none
+duplicates the bytes of a previously selected row. The finite ActionGroup and
+fields through `switchToBuffConfig` reach the earlier terminal candidate without
+using either terminal candidate as their hard limit. Both anonymous terminal
+framings still parse exactly to EOF. The selected native field-43 bool and
+field-44 `GameplayTagList` wrapper favor the earlier candidate under the
+reviewed ordinary formatter path. This static evidence alone does not observe
+provider choice, the executed parent cursor, or refill/error parity. These
+rows remained ambiguous under static evidence alone; the later complete
+target-set receipt supplies their exact-source live cursors. The bounded
+per-source checks and current provenance are in the
+generated terminal static-limit and capture-readiness receipts.
+
+The targeted `skilldata-cursor` receipt now directly witnesses the reviewed
+new, exact SHA-joined Purrche second-talent source. Its quiescent cleanup,
+complete same-reader top-level vector, ActionGroup child checkpoints, and zero
+primary loss/overflow counters pass the separate capture-target verifier
+against the unselected basis and native-only context. Fields 0 through 42
+match the maintained static empty-ActionGroup profile; the runtime cursor
+selects the earlier one-member terminal and closes at EOF. The current corpus
+therefore promotes only that exact logical path and SHA-256 to whole-schema
+exact. Three other captured sources close their own cursor, but they are not
+admitted to this promotion, and the supplemental source with a populated
+ActionGroup still has unresolved interior ownership. Overflow in the separate
+off-target diagnostic sampler does not weaken the zero-overflow target capture.
+The earlier publication receipt and its 424/533-byte selection remain separate.
+The reviewed target, offsets, counter state, and current report paths live in
+the generated verification receipt, not in this durable interpretation.
+
+The JsonData family adapter consumes the exact passive shared-list and
+multi-record CreateBuff profiles through separate structural predicates;
+malformed profile claims identify the failed predicate, path and bounded
+current row state instead of collapsing to a generic validation failure.
+
 The accepted `183745Z` live receipt contains two different current SkillData
 sources and directly confirms the two ActionGroup child checkpoints at cursors
 six and ten together with the complete top-level field vectors. It does not
@@ -3331,13 +3462,103 @@ report rather than the final `current_latest` report. The cursor verification
 pins that basis and native context, and the final corpus pins the verification;
 this removes the former circular provenance path and keeps replay valid when
 `current_latest` is atomically replaced. The non-launching `skilldata-cursor`
-preflight passes.
-Start `skilldata-cursor` in targeted mode, wait for `runtime.ready`,
-complete one character farming interaction so the unique farming-end payload
-is deserialized, idle briefly, then stop with `Numpad 9`. Preserve the raw
-receipt; do not replace the accepted publication verification until the new
-source hash, both child checkpoints, teardown state, and top-level vector pass
-review.
+preflight passed for that prior basis. After a VFS content addition, a fresh
+capture first needs an immutable unselected SkillData basis and IL2CPP context
+report under the new input set; a prior context cannot serve as current
+preflight even when the native binaries match.
+An all-unselected basis has now been produced from the current VFS stream and
+preserved separately. The maintained full IL2CPP context audit currently
+requires a previously selected SkillData terminal sample: it stops on the
+unselected sample's `ambiguous` boundary before it can emit a current context.
+Its selected-sample prerequisite remains intact. A separate
+`il2cpp.skill_cursor_native_context` path now validates the complete-shaped,
+all-ambiguous current basis and its live source/tool provenance, pins the exact
+basis report digest, and checks the selected native method identities, body
+windows and every top-level and ActionGroup observer callsite. It does not
+re-stream the whole corpus or convert a static observer coordinate into an
+executed cursor. The former context cannot substitute for this current input
+set. The existing receipt verifier's source bytes and selected-sample meaning
+remain unchanged; its preflight can consume the separate native-only context
+without promoting a candidate.
+A later exporter rebuild changed the VFS input-set identity while the selected
+native inputs and relevant logical SkillData bytes stayed stable. Regenerating
+the complete unselected basis under that audit and applying the maintained
+subset rebind retained the prior receipt's terminal selection only for sources
+with authenticated matching logical identity and bytes; newly added sources
+remain ambiguous. This transfers an inference from the earlier live witness
+under unchanged selected reader bytes; it does not add a live cursor capture.
+The reviewed capture-target contract binds one added SkillData logical path,
+length and current source SHA-256 to the unselected basis. Another file shares
+the length, so the recorder first safely copies the bounded source and hashes
+those copied bytes; it rejects the other same-length source before opening a
+cursor transaction. A failed hash calculation fails closed. The copy cap,
+native manifest gate, quiescence checks and source-hash join remain in force.
+The new direct target receipt was written by stopping the capture while the
+game remained open; runtime readiness alone would not have supplied a cursor.
+One earlier session ended when the game exited and left no receipt. Future
+targeted captures must wait for `runtime.ready`, exercise a plausible source
+trigger, then stop with `Numpad 9` and retain the raw receipt before exiting.
+Authored links identify plausible triggers, not proof that the game loads the
+source. A standalone reviewed binding for Purrche's smaller combo-skill source
+preceded the target-set recorder. It admitted that source by an exact copied
+hash; its populated ActionGroup requires separate interior evidence. The
+second-talent witness cannot select its terminal by analogy.
+The target-set capture binds the complete set of current
+ambiguous SkillData logical sources plus the already closed second-talent
+source as a positive control. The target-set contract pins an immutable
+pre-capture selected-status report and the current native reader; a
+non-launching audit rechecks source identity, exact set membership, native
+inputs, and observer callsites before it emits the host's SHA-authenticated
+binding file. The new recorder admits each source by copied-byte hash,
+retains one full cursor vector per identity, and counts identical repeats,
+conflicting repeats, and locally incomplete pairs separately. Its atomic
+live progress is provisional. A quiescent, loss-free receipt is required for
+publication. Sources never loaded during play remain missing rather than
+acquiring another source's terminal selection. A direct top-level cursor
+cannot by itself name the interior of a populated ActionGroup child.
+The prelaunch target-set gate treats both its unselected corpus and its
+immutable selected-status snapshot as parser-provenance-bound evidence. A
+reader change requires rebuilding the unselected basis, freezing a newly
+selected report, updating the reviewed target-set reference, and regenerating
+the native-only context before preflight can pass. A stale-context rejection
+after that contract change is expected, not a reason to loosen the gate.
+A live target-set session retained complete direct cursor vectors for most
+reviewed sources, but its bounded recorder-lock wait lost callbacks and the
+positive control ended with an incomplete pair. The strict collector and
+verifier reject the globally incomplete receipt. The opt-in diagnostic
+authenticates current native inputs, exact copied source bytes, and each
+retained field and child cursor independently; its output is explicitly
+incomplete and not eligible for corpus publication. The retained rows select
+the one-member terminal at EOF, but do not settle their populated ActionGroup
+interiors or repair unassigned callback loss. V3 callbacks now wait on an SRW
+lock while worker drains remain nonblocking; a long-contention regression
+and non-launching preflight pass. A subsequent live run exercised the fixed
+collector and produced a complete, loss-free receipt for every reviewed source
+and the positive control. The strict target-set verifier replays the current
+native and corpus gates, exact copied source bytes, field cursors, child
+checkpoints and terminal EOF for each source independently. Its generated
+report holds the source-level selections; the earlier diagnostic remains
+nonpublishable.
+The corpus overlay composes each reviewed live field vector with its
+native-gated, whole ActionGroup static profile and exact fields through 42.
+The full authenticated SkillData sweep promoted every formerly ambiguous
+target-set source to a whole stored-schema exact row; the prior singleton
+positive control remains under its separate verifier. No terminal-ambiguous
+SkillData rows remain in that published input set. Unsupported action children
+in other files and nested gameplay meanings remain separate recovery gaps.
+Purrche's base combo ability-range variant was among the observed reads even
+on a Potential-3+ save. Its exact-source static replay closes the authored
+timeline and fields through 42; the live source-bound cursor selects the
+earlier one-member terminal directly after field 42. The shifted EOF-valid
+framing is now refused for this source. Authenticated `IfElseAction` bytes in
+the parent projectile-hit skill place the base source in the fail branch of
+`potential_3 >= 1` and the Potential-3 variant in the succeed branch, while
+Purrche's Potential-3 table sets that blackboard value. The maintained
+`buff_if_else_action_receipt` and `buff_compare_float_action_receipt`
+validators make the named authored condition repeatable. Deserializing the
+base resource does not establish that gameplay took its fail branch or used
+that resource at runtime; preloading remains possible. The outer provider and
+cache-selection path is still not source-bound by this cursor receipt.
 
 ## Generic-instantiation registration is a pointer array
 
@@ -4044,16 +4265,68 @@ unknown route can change old bounded rows. Broad package snapshots and complete
 family sweeps therefore remain authoritative until a declarative route registry
 and mutation tests cover every dependency class.
 
+## ConvertToSlot nested postprocessor closure
+
+The selected `SelectorPostProcessor` switch dispatches physical tag `0x03` to
+`ConvertToSlot.Data`. Its generated wrapper has no setters, and its selected
+`Deserialize` body reads a single wrapper header with zero members; `FF` is a
+separate null-wrapper state. The reviewed native contract checks the switch
+target, registered wrapper type, formatter and reader bodies, source header
+call, zero-member branch, and the current installed inputs. The finite Skill
+reader applies this shape only at reached postprocessor children and still
+requires the complete enclosing timeline, fields through 42, selected terminal,
+and EOF before calling a SkillData file exact.
+
+The current authenticated SkillData sweep closes the reached whole files whose
+other children are already admitted. Two reached files advance to later
+unsupported action tags, so admitting this postprocessor does not promote
+their earlier prefix to a full record. The accepted corpus report holds the
+per-build counts and file paths. This static stored type does not establish
+runtime target conversion. The reviewed target-set terminal cursors are now
+directly witnessed and published where their static interiors also close.
+
+## Additional SkillData nested routes
+
+The selected `DamageUnit` reader's tenth source member is a
+`List<GameplayTag>`. Its generic callsite, element formatter, and list-count
+source have independent native windows. The Skill reader accepts a signed
+nullable count and elements that are either `FF` or a one-member wrapper with
+one four-byte tag. It retains the following `DamageUnit` tail as a separate
+bounded region and requires the parent action, ActionGroup and top-level
+fields to rejoin before a whole file becomes exact. The active inflated list
+provider has not been observed live; this is a stored-layout proof, not a
+claim that a tag caused damage.
+
+Three reached selector variants have distinct zero-member wrappers:
+`GuardAITargetFinder`, `HittableObjectValidator`, and `ConvertToPosition`.
+Their reviewed contracts pin the selected dispatch, wrapper identity, empty
+setter set, source-header read and complete zero-member native body. The
+finite reader distinguishes a null `FF` wrapper from a present zero-member
+header and still requires exact enclosing cursors. These bytes do not prove
+which target was found, validated or converted during play.
+
+The Skill timeline reader also admits selected `SetAbilityEntityToMainChar`,
+`LookAtAction`, `CheckAttackRangeType`, and `DisableMoveCollider` children
+through separate native-gated read-order contracts. Their bounded readers
+preserve the inherited action fields, then the route's stored string,
+`TargetSettings`, enum or scalar members. Existing selected Buff action
+sources separately authenticate the reached `IgniteAction`,
+`TriggerComboSkillAction`, and passive action-route continuations. Direct
+current-source probes rejoin each new child to an exact ActionGroup and the
+top-level field-42 cursor. Whole-file status is decided by the authenticated
+corpus gate and the selected source-bound terminal. Stored arguments and
+branch conditions do not establish runtime action effects.
+
 ## Remaining gaps
 
-- Continue SkillData through fields 1 through 42 for the remaining partial
-  files, prioritizing unsupported nested ActionGroup/action-union routes. The
-  maintained reader now closes supported multi-timeline lists and rejoins the
-  selected terminal, but a disjoint terminal proof cannot fill an earlier
-  unsupported child or make that file exact. Fields 43 through 47 and EOF are
-  selected by the accepted direct-reader cursor receipt. Any further promotion
-  must keep the exact receipt/corpus/native/verifier replay and current
-  identity-set gates.
+- Continue SkillData through unsupported nested ActionGroup/action-union routes
+  in the remaining partial files. The maintained reader closes supported
+  multi-timeline lists and rejoins the selected terminal, but a terminal proof
+  cannot fill an earlier unsupported child or make that file exact. The
+  reviewed target set now has direct source-bound fields through 47 and EOF;
+  newly added or changed sources require their own current terminal evidence.
+  Further promotion must keep the exact receipt/corpus/native/verifier replay
+  and current identity-set gates.
 - `memorypack.buff_corpus` supplies the full current BuffData denominator from
   authenticated outer-ledger identities and decrypted stream bytes, using shared
   `memorypack.corpus_gate` provenance guards. It retains all filename-string

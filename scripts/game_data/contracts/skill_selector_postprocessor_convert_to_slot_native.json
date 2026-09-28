@@ -1,0 +1,63 @@
+{
+  "schema": "endfield.skill-selector-postprocessor-convert-to-slot-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 0,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 3,
+    "switchTableRva": 69876004,
+    "switchEntryCount": 10,
+    "switchTableSha256": "40AFF06785DEF3B3A9B606BA760644D93DAB2A83277911053495251235F08009",
+    "switchTargetRva": 83502546,
+    "routeWindow": {
+      "startRva": 83502546,
+      "endRva": 83502620,
+      "sha256": "B60727851CACAB3C847DB0FA687883416F20383EF0E1180B143005D5E11F572D",
+      "boundary": "selected tag-3 existing-wrapper, new-wrapper and shared rejoin branches"
+    },
+    "usageCellRva": 217990912,
+    "usageRawHex": "3344032000000000",
+    "registeredTypeIndex": 107033,
+    "wrapperTypeDefinition": 22983,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToSlot_DataForMemoryPack"
+  },
+  "methods": [
+    [166744, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToSlot_DataForMemoryPack+Beyond_Gameplay_Core_Selector_ConvertToSlot_DataForMemoryPackFormatter", "Deserialize", 158083748],
+    [166743, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToSlot_DataForMemoryPack", "Deserialize", 158057264]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 158083748,
+      "endRva": 158083837,
+      "sha256": "01CC5686D0C4C75E38485A0E6E0A4926FA1FAD6FE141F2A711F02663EEBF8023",
+      "boundary": "formatter forwarding through complete tail jump"
+    },
+    {
+      "startRva": 158057264,
+      "endRva": 158057501,
+      "sha256": "2F281B34EA1B818241DA316445B894F237A28F583CA1FCD75A1A736F1E66BC84",
+      "boundary": "selected byte header, zero-member test, FF and normal returns"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 158057427,
+    "hex": "4084FF"
+  },
+  "sourceHeaderRead": {
+    "sourceCallsiteRva": 158057360,
+    "sourceCallHex": "E8CBC45EF9",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "The selected SelectorPostProcessor tag-3 switch route resolves to ConvertToSlot.Data; its two pinned Deserialize bodies and no-setter wrapper require zero serialized members.",
+    "direct": "A reached wire element is the tag byte followed by FF for a null wrapper or zero for its nonnull member-count header, and the finite parent reader checks the following cursor.",
+    "structuralOnly": "The stored ConvertToSlot identity does not prove runtime target conversion or target ownership.",
+    "unresolved": "Runtime formatter selection and any other postprocessor route remain separate from selected static framing."
+  }
+}

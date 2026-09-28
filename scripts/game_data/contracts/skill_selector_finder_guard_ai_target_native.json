@@ -1,0 +1,73 @@
+{
+  "schema": "endfield.skill-selector-finder-guard-ai-target-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 0,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 6,
+    "switchTableRva": 59821652,
+    "switchEntryCount": 24,
+    "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+    "switchTargetRva": 59820524,
+    "routeWindow": {
+      "startRva": 59820524,
+      "endRva": 59820591,
+      "sha256": "FAD2D7AA8DC1B4DBDB6B2C9C95B301AE9B2126E44B62557F3F3D42C0F7682416",
+      "boundary": "selected zero-member route including existing, new and null-wrapper branches"
+    },
+    "usageCellRva": 217990304,
+    "usageRawHex": "4544032000000000",
+    "registeredTypeIndex": 107042,
+    "wrapperTypeDefinition": 23037,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      167097,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      73872208
+    ],
+    [
+      167096,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack",
+      "Deserialize",
+      73872304
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73872208,
+      "endRva": 73872297,
+      "sha256": "1C2F1649644C1DABD523596D52C5A600D2D35D6F19F3AD03B24BE33A9B75C895",
+      "boundary": "complete selected formatter forwarder"
+    },
+    {
+      "startRva": 73872304,
+      "endRva": 73872488,
+      "sha256": "0CBF60027A43811728FDF6791367EF224ECA844FE2175D324BD144FA59DDFF2A",
+      "boundary": "complete selected zero-member reader body"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 73872462,
+    "hex": "4084FF"
+  },
+  "sourceHeaderRead": {
+    "sourceCallsiteRva": 73872397,
+    "sourceCallHex": "E84E5463FE",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "Selected SelectorFinder tag 6, generated wrapper identity, member-zero check and complete reader bodies match the installed native pair.",
+    "direct": "A reached wire element is the union tag followed by either FF null wrapper or a zero-member header; the parent reader checks the next cursor.",
+    "structuralOnly": "The stored GuardAITargetFinder type does not establish runtime target selection or acceptance.",
+    "unresolved": "Live formatter/provider choice, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

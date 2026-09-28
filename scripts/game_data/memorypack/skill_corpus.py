@@ -94,6 +94,14 @@ from scripts.game_data.memorypack.skill_cursor_receipt import (
     TERMINAL_FIELD_CONTRACT,
     verify_skilldata_cursor_capture,
 )
+from scripts.game_data.memorypack.skill_cursor_target_overlay import (
+    VERIFIED_CAPTURE_TARGET_EXACT,
+    apply_verified_capture_target,
+)
+from scripts.game_data.memorypack.skill_cursor_target_set_overlay import (
+    VERIFIED_CAPTURE_TARGET_SET_EXACT,
+    apply_verified_capture_target_set,
+)
 from scripts.game_data.memorypack.schemas import MEMORYPACK_FIELD_SCHEMAS
 
 
@@ -300,6 +308,9 @@ def _boundary_evidence_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
         "selectedTerminalFiles": sum(
             row.get("terminalSelection", {}).get("status") == "verified-native-reader-alignment"
             for row in rows
+        ),
+        "directCaptureTargetFiles": sum(
+            row.get("coverageStatus") == VERIFIED_CAPTURE_TARGET_EXACT for row in rows
         ),
         "namedActionGroupPrefixFiles": sum(
             row.get("actionGroupPrefix", {}).get("status") == "verified-named-prefix"
@@ -557,6 +568,18 @@ def _load_exact_json_provenance(
 #: moves the hash with the game data untouched.
 EXPORTER_FINGERPRINT_NAME = "animestudio.cli.exe"
 
+# The current census computes logical SHA-256 from independently streamed,
+# ledger-MD5-checked bytes. A prior reader inference can therefore be reused
+# for an identical logical payload even when a VFS update relocated its chunk.
+# Physical identity still gets its own, stronger rebinding tier.
+LOGICAL_REBIND_KEYS = (
+    "virtualPath", "blockName", "blockTypeValue", "length", "logicalMd5", "logicalSha256",
+)
+PHYSICAL_REBIND_KEYS = (
+    "physicalChunkPath", "physicalChunkSource", "metadataProvenance",
+    "overlayState", "chunkOverlayState", "physicalOffset", "encrypted",
+)
+
 #: A timeline continuation the reader stopped short of field 42. It is a valid
 #: unverified state, not drift: the verified prefix stands and nothing more is
 #: promoted. Any other non-exact status still fails closed.
@@ -638,6 +661,103 @@ def _exporter_only_rebinding(
     }
 
 
+def _verified_subset_rebinding(
+    *,
+    verification: Mapping[str, Any],
+    source_corpus: Mapping[str, Any],
+    rows: list[Mapping[str, Any]],
+    expected_input_set_sha256: str,
+    build_fingerprints: list[Mapping[str, Any]],
+    blc_paths: list[str],
+    source: str,
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Rebind only source rows whose current decoded bytes are authenticated.
+
+    The accepted receipt is replayed before this call. The fresh census has
+    already streamed every current row, checked its ledger MD5, and computed
+    its SHA-256. No newly added or logically changed row receives a cursor
+    selection. A physical relocation is separately reported as content reuse.
+    """
+    source_provenance = source_corpus.get("provenance")
+    if not isinstance(source_provenance, Mapping):
+        _fail("cursor-subset-source-provenance-missing", source=source, expected="provenance object", actual=source_provenance)
+    if source_corpus.get("inputSetSha256") != verification.get("inputSetSha256"):
+        _fail("cursor-subset-source-input-set-mismatch", source=source, expected=verification.get("inputSetSha256"), actual=source_corpus.get("inputSetSha256"))
+    if source_corpus.get("status") != "complete" or source_corpus.get("publicationEligible") is not True:
+        _fail("cursor-subset-source-incomplete", source=source, expected="complete published source corpus", actual=source_corpus.get("status"))
+
+    def fingerprints_by_name(value: Any) -> dict[str, tuple[Any, str]]:
+        if not isinstance(value, list) or not all(isinstance(item, Mapping) for item in value):
+            _fail("cursor-subset-fingerprints-missing", source=source, expected="fingerprint list", actual=value)
+        result = {
+            Path(str(item.get("path"))).name.casefold(): (item.get("length"), str(item.get("sha256", "")).upper())
+            for item in value
+        }
+        if len(result) != len(value):
+            _fail("cursor-subset-fingerprint-duplicate", source=source, expected=len(value), actual=len(result))
+        return result
+
+    old_build = fingerprints_by_name(source_provenance.get("buildFingerprints"))
+    current_build = fingerprints_by_name(build_fingerprints)
+    if set(old_build) != set(current_build) or EXPORTER_FINGERPRINT_NAME not in old_build:
+        _fail("cursor-subset-fingerprint-set-drift", source=source, expected=sorted(old_build), actual=sorted(current_build))
+    moved_build = sorted(name for name in old_build if old_build[name] != current_build[name])
+    if any(name != EXPORTER_FINGERPRINT_NAME for name in moved_build):
+        _fail("cursor-subset-native-or-build-drift", source=source, expected="only AnimeStudio.CLI may differ", actual=moved_build)
+    if sorted(source_provenance.get("blcPaths") or []) != sorted(blc_paths):
+        _fail("cursor-subset-asset-root-drift", source=source, expected="identical BLC path set", actual="BLC path set differs")
+
+    old_rows = source_corpus.get("files")
+    if not isinstance(old_rows, list) or not all(isinstance(row, Mapping) for row in old_rows):
+        _fail("cursor-subset-source-files-missing", source=source, expected="source file rows", actual=type(old_rows).__name__)
+    old_by_path = {row.get("virtualPath"): row for row in old_rows}
+    if len(old_by_path) != len(old_rows):
+        _fail("cursor-subset-source-duplicate", source=source, expected=len(old_rows), actual=len(old_by_path))
+    tier_by_path: dict[str, str] = {}
+    logical_changed: list[str] = []
+    physical_changed: list[str] = []
+    added = 0
+    for row in rows:
+        path = row["virtualPath"]
+        old = old_by_path.get(path)
+        if old is None:
+            added += 1
+            continue
+        if any(row.get(key) != old.get(key) for key in LOGICAL_REBIND_KEYS):
+            logical_changed.append(path)
+            continue
+        if any(row.get(key) != old.get(key) for key in PHYSICAL_REBIND_KEYS):
+            tier_by_path[path] = "content-rebound"
+            physical_changed.append(path)
+        else:
+            tier_by_path[path] = "identity-rebound"
+    missing = sorted(set(old_by_path) - {row["virtualPath"] for row in rows})
+    if not tier_by_path:
+        _fail("cursor-subset-no-reusable-rows", source=source, expected="at least one identical logical payload", actual=0)
+    return {
+        "status": "verified-source-subset-rebinding",
+        "fromInputSetSha256": verification.get("inputSetSha256"),
+        "toInputSetSha256": expected_input_set_sha256.upper(),
+        "identityRebound": sum(tier == "identity-rebound" for tier in tier_by_path.values()),
+        "contentRebound": len(physical_changed),
+        "leftAmbiguousAdded": added,
+        "leftAmbiguousLogicalChange": len(logical_changed),
+        "missingOld": len(missing),
+        "firstPhysicalRelocations": physical_changed[:8],
+        "firstLogicalChanges": logical_changed[:8],
+        "firstMissingOld": missing[:8],
+        "movedBuildFingerprints": moved_build,
+        "sourceIdentitySetSha256": source_corpus.get("identitySetSha256"),
+        "evidenceBoundary": (
+            "The prior receipt closes only its captured samples. Current census rows "
+            "are selected only when path, length, MD5 and SHA-256 match a row in "
+            "its pinned source corpus and the selected native build is unchanged. "
+            "Content-rebound rows moved physically but have independently "
+            "authenticated identical decoded bytes. Added or changed rows stay "
+            "ambiguous; rebinding does not create a new runtime observation."
+        ),
+    }, tier_by_path
+
 def _apply_verified_terminal_selection(
     rows: list[dict[str, Any]],
     *,
@@ -647,6 +767,7 @@ def _apply_verified_terminal_selection(
     build_fingerprints: list[Mapping[str, Any]],
     blc_paths: list[str] | None = None,
     allow_exporter_rebind: bool = False,
+    allow_verified_subset_rebind: bool = False,
 ) -> dict[str, Any]:
     """Replay and apply a hash-pinned runtime terminal selection to this corpus."""
     try:
@@ -663,7 +784,9 @@ def _apply_verified_terminal_selection(
     ):
         _fail("cursor-verification-gate-failed", source=str(verification_path), expected="complete bounded verification", actual={"schema": verification.get("schema"), "status": verification.get("status")})
     rebinding_required = verification.get("inputSetSha256") != expected_input_set_sha256.upper()
-    if rebinding_required and not allow_exporter_rebind:
+    if allow_exporter_rebind and allow_verified_subset_rebind:
+        _fail("cursor-rebind-mode-conflict", source=str(verification_path), expected="one rebinding mode", actual="both modes")
+    if rebinding_required and not (allow_exporter_rebind or allow_verified_subset_rebind):
         _fail("cursor-verification-input-set-mismatch", source=str(verification_path), expected=expected_input_set_sha256.upper(), actual=verification.get("inputSetSha256"))
     provenance = verification.get("provenance")
     if not isinstance(provenance, Mapping):
@@ -693,13 +816,24 @@ def _apply_verified_terminal_selection(
     )
     if replayed != verification:
         _fail("cursor-verification-replay-mismatch", source=str(verification_path), expected="exact verifier replay", actual="report bytes decode to a different result")
-    if source_corpus.get("identitySetSha256") != identity_set_sha256:
-        _fail("cursor-corpus-identity-drift", source=str(source_corpus_path), expected=identity_set_sha256, actual=source_corpus.get("identitySetSha256"))
     recorded_identity = provenance.get("corpusReport", {}).get("identitySetSha256")
-    if recorded_identity != identity_set_sha256:
-        _fail("cursor-provenance-identity-drift", source=str(verification_path), expected=identity_set_sha256, actual=recorded_identity)
+    if recorded_identity != source_corpus.get("identitySetSha256"):
+        _fail("cursor-provenance-identity-drift", source=str(verification_path), expected=source_corpus.get("identitySetSha256"), actual=recorded_identity)
     rebinding = None
-    if rebinding_required:
+    rebinding_tiers = None
+    if allow_verified_subset_rebind:
+        rebinding, rebinding_tiers = _verified_subset_rebinding(
+            verification=verification,
+            source_corpus=source_corpus,
+            rows=rows,
+            expected_input_set_sha256=expected_input_set_sha256,
+            build_fingerprints=build_fingerprints,
+            blc_paths=list(blc_paths or []),
+            source=str(verification_path),
+        )
+    elif rebinding_required:
+        if source_corpus.get("identitySetSha256") != identity_set_sha256:
+            _fail("cursor-corpus-identity-drift", source=str(source_corpus_path), expected=identity_set_sha256, actual=source_corpus.get("identitySetSha256"))
         rebinding = _exporter_only_rebinding(
             verification=verification,
             source_corpus=source_corpus,
@@ -710,6 +844,8 @@ def _apply_verified_terminal_selection(
             blc_paths=list(blc_paths or []),
             source=str(verification_path),
         )
+    elif source_corpus.get("identitySetSha256") != identity_set_sha256:
+        _fail("cursor-corpus-identity-drift", source=str(source_corpus_path), expected=identity_set_sha256, actual=source_corpus.get("identitySetSha256"))
     native_hashes = verification.get("nativeInputs")
     installed_hashes = {
         Path(str(row.get("path"))).name.casefold(): str(row.get("sha256", "")).upper()
@@ -750,6 +886,11 @@ def _apply_verified_terminal_selection(
         sample_rows = all_rows
         if len(sample_rows) != 2:
             _fail("cursor-sample-set-invalid", source=str(verification_path), expected="two required samples", actual=len(sample_rows))
+    if rebinding_tiers is not None:
+        missing_samples = sorted(str(sample.get("logicalPath")) for sample in sample_rows
+                                 if sample.get("logicalPath") not in rebinding_tiers)
+        if missing_samples:
+            _fail("cursor-subset-sample-not-rebound", source=str(verification_path), expected="all required samples byte-identical", actual=missing_samples)
     for sample in sample_rows:
         alternatives = sample.get("candidateAlternatives", [])
         fields = sample.get("runtimeFieldRanges", [])
@@ -838,7 +979,10 @@ def _apply_verified_terminal_selection(
             )
 
     terminal_names = [row[1] for row in TERMINAL_FIELD_CONTRACT]
-    for row in rows:
+    rows_to_apply = rows if rebinding_tiers is None else [
+        row for row in rows if row["virtualPath"] in rebinding_tiers
+    ]
+    for row in rows_to_apply:
         candidates = row.get("framing", {}).get("candidates", [])
         if len(candidates) != 2:
             _fail("skill-terminal-candidate-count-drift", source=row["virtualPath"], expected=2, actual=len(candidates))
@@ -891,6 +1035,8 @@ def _apply_verified_terminal_selection(
             "namedFields": terminal_names,
             "wholeSchemaExact": False,
         }
+        if rebinding_tiers is not None:
+            row["terminalSelection"]["rebindingTier"] = rebinding_tiers[row["virtualPath"]]
         shared_complete = row.get("timelineSharedSequenceProfile")
         shared_continuation = (
             shared_complete.get("topLevelContinuation")
@@ -1679,7 +1825,10 @@ def build_current_census(
     output_path: Path | None = None,
     output_md_path: Path | None = None,
     cursor_verification_path: Path | None = None,
+    capture_target_verification_path: Path | None = None,
+    capture_target_set_verification_path: Path | None = None,
     allow_exporter_rebind: bool = False,
+    allow_verified_subset_rebind: bool = False,
 ) -> dict[str, Any]:
     if max_files is not None:
         _require_int(max_files, source="maxFiles", minimum=1)
@@ -1724,6 +1873,10 @@ def build_current_census(
                      Path(outer["primaryAssets"]), Path(outer["fallbackAssets"])]
         if cursor_verification_path is not None:
             protected.append(cursor_verification_path)
+        if capture_target_verification_path is not None:
+            protected.append(capture_target_verification_path)
+        if capture_target_set_verification_path is not None:
+            protected.append(capture_target_set_verification_path)
         # Outputs must not damage unselected format families either. Retain
         # all ledger chunk paths for collision checks without hashing them.
         chunk_paths = sorted({str(row.get("physicalChunkPath")) for row in file_rows
@@ -1806,6 +1959,7 @@ def build_current_census(
             build_fingerprints=provenance_start["buildFingerprints"],
             blc_paths=provenance_start["blcPaths"],
             allow_exporter_rebind=allow_exporter_rebind,
+            allow_verified_subset_rebind=allow_verified_subset_rebind,
         )
         parser_after_verification = _parser_source_snapshots(Path(__file__))
         gate_after_verification = _fingerprint(Path(__file__))
@@ -1822,6 +1976,51 @@ def build_current_census(
             or actual_verification["sha256"] != cursor_verification_provenance["sha256"]
         ):
             _fail("cursor-verification-drift", source=str(cursor_verification_path), expected=cursor_verification_provenance, actual=actual_verification)
+    capture_target_verification_provenance = None
+    if capture_target_verification_path is not None:
+        capture_target_verification_provenance = apply_verified_capture_target(
+            rows,
+            verification_path=capture_target_verification_path,
+            expected_input_set_sha256=expected_input_set_sha256,
+            identity_set_sha256=identity_set_sha256,
+            build_fingerprints=provenance_start["buildFingerprints"],
+        )
+        parser_after_target = _parser_source_snapshots(Path(__file__))
+        gate_after_target = _fingerprint(Path(__file__))
+        if parser_start != parser_after_target or gate_start != gate_after_target:
+            _fail("code-drift", source="SkillData capture-target integration",
+                  expected={"parser": parser_start, "corpusGate": gate_start},
+                  actual={"parser": parser_after_target, "corpusGate": gate_after_target})
+        for recorded in [capture_target_verification_provenance,
+                         *capture_target_verification_provenance["inputs"]]:
+            actual = _fingerprint(Path(recorded["path"]))
+            if (actual["length"], actual["sha256"]) != (recorded["length"], recorded["sha256"]):
+                _fail("capture-target-input-drift", source=recorded["path"],
+                      expected=recorded, actual=actual)
+    capture_target_set_verification_provenance = None
+    if capture_target_set_verification_path is not None:
+        capture_target_set_verification_provenance = apply_verified_capture_target_set(
+            rows,
+            verification_path=capture_target_set_verification_path,
+            expected_input_set_sha256=expected_input_set_sha256,
+            identity_set_sha256=identity_set_sha256,
+            build_fingerprints=provenance_start["buildFingerprints"],
+        )
+        parser_after_target_set = _parser_source_snapshots(Path(__file__))
+        gate_after_target_set = _fingerprint(Path(__file__))
+        if parser_start != parser_after_target_set or gate_start != gate_after_target_set:
+            _fail("code-drift", source="SkillData capture-target-set integration",
+                  expected={"parser": parser_start, "corpusGate": gate_start},
+                  actual={"parser": parser_after_target_set, "corpusGate": gate_after_target_set})
+        for recorded in [capture_target_set_verification_provenance,
+                         *capture_target_set_verification_provenance["inputs"]]:
+            actual = _fingerprint(Path(recorded["path"]))
+            if (actual["length"], actual["sha256"]) != (recorded["length"], recorded["sha256"]):
+                _fail("capture-target-set-input-drift", source=recorded["path"],
+                      expected=recorded, actual=actual)
+        for output in outputs:
+            _guard_output_path(output, [Path(item["path"]) for item in
+                                        capture_target_set_verification_provenance["inputs"]])
     coverage_counts = dict(sorted(Counter(row.get("coverageStatus", "failed-framing") for row in rows).items()))
     unique_count = (
         coverage_counts.get("unique-disjoint-independent-ranges", 0)
@@ -1844,6 +2043,8 @@ def build_current_census(
         + coverage_counts.get(VERIFIED_TIMELINE_SHARED_SEQUENCE_EXACT, 0)
         + coverage_counts.get(VERIFIED_PASSIVE_SHARED_SEQUENCE_PREFIX, 0)
         + coverage_counts.get(VERIFIED_PASSIVE_SHARED_SEQUENCE_EXACT, 0)
+        + coverage_counts.get(VERIFIED_CAPTURE_TARGET_EXACT, 0)
+        + coverage_counts.get(VERIFIED_CAPTURE_TARGET_SET_EXACT, 0)
     )
     ambiguous_count = coverage_counts.get("ambiguous-disjoint-independent-ranges", 0)
     failed_count = coverage_counts.get("failed-framing", 0)
@@ -1864,6 +2065,8 @@ def build_current_census(
             )[:20]
         ],
     }
+
+
     passive_stop_counts = Counter(
         row["passiveSharedSequenceStopReason"]
         for row in rows
@@ -1894,6 +2097,8 @@ def build_current_census(
             "parser": parser_start,
             "corpusGate": gate_start,
             "cursorVerification": cursor_verification_provenance,
+            "captureTargetVerification": capture_target_verification_provenance,
+            "captureTargetSetVerification": capture_target_set_verification_provenance,
             "timelinePlayAnimationContracts": timeline_contract_start,
             "timelinePlayAnimationNativeValidation": timeline_native_validation,
             "timelinePlayAnimationStepNativeValidation": (
@@ -1930,9 +2135,16 @@ def build_current_census(
             "current outer-ledger identities plus AnimeStudio stream --verify-md5 decrypted bytes; "
             "the maintained framer proves the 48-member envelope and EOF terminal shapes. When cursorVerification "
             "is present, its exact receipt/corpus/native/verifier replay selects the one-member-wrapper terminal "
-            "as fields 43 through 47 for every row with the same authenticated candidate pair. It also names "
+            "as fields 43 through 47 only for admitted rows with the same authenticated candidate pair. A subset "
+            "rebind admits only byte-identical prior logical files; added or changed rows remain ambiguous. It also names "
             "the field-0 ActionGroupData member and child-list count prefix through the first positive list. "
             "The remaining intervening action bodies stay opaque unless an executed cursor authenticates them"
+            "; captureTargetVerification, when present, composes one exact-source live cursor with its matching "
+            "static empty-ActionGroup profile and promotes only that logical file"
+            "; captureTargetSetVerification, when present, composes each strict v3 target cursor "
+            "with a native-gated complete static ActionGroup and top-level profile for that exact "
+            "source. Its positive control must retain the prior singleton claim; nested payload "
+            "meaning and gameplay branch execution remain separate evidence questions"
         ),
         "files": rows,
     }
@@ -1996,11 +2208,27 @@ def main(argv: list[str] | None = None) -> int:
         help="complete SkillData cursor verification report to replay and apply fail-closed",
     )
     parser.add_argument(
+        "--capture-target-verification", type=Path,
+        help="separate exact-source SkillData target verification to replay and apply to one file only",
+    )
+    parser.add_argument(
+        "--capture-target-set-verification", type=Path,
+        help="strict complete v3 target-set verification to replay against current static profiles",
+    )
+    parser.add_argument(
         "--allow-exporter-rebind", action="store_true",
         help=(
             "accept a verification recorded under another input set when only the "
             "AnimeStudio.CLI fingerprint moved and every selected logical file, "
             "game-build fingerprint and asset root is identical"
+        ),
+    )
+    parser.add_argument(
+        "--allow-verified-subset-rebind", action="store_true",
+        help=(
+            "reuse a pinned cursor verification only for current rows matching its "
+            "source corpus's logical path, bytes and native build; report physical "
+            "relocations separately and leave added or changed rows ambiguous"
         ),
     )
     parser.add_argument("--output", type=Path, required=True)
@@ -2016,7 +2244,10 @@ def main(argv: list[str] | None = None) -> int:
             output_path=args.output,
             output_md_path=args.output_md,
             cursor_verification_path=args.cursor_verification,
+            capture_target_verification_path=args.capture_target_verification,
+            capture_target_set_verification_path=args.capture_target_set_verification,
             allow_exporter_rebind=args.allow_exporter_rebind,
+            allow_verified_subset_rebind=args.allow_verified_subset_rebind,
         )
         if args.output_md is not None:
             if args.max_files is not None:

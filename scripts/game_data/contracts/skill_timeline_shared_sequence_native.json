@@ -182,6 +182,26 @@
       }
     },
     {
+      "tag": "0x0054",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckAttackRangeType+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_two_action_routes_native.json",
+        "schema": "endfield.skill-timeline-two-action-routes-native-contract.v1",
+        "orderedReadRef": "routes[tag=0x0054].orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x009D",
+      "typeName": "Beyond.Gameplay.Core.DisableMoveColliderAction+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_two_action_routes_native.json",
+        "schema": "endfield.skill-timeline-two-action-routes-native-contract.v1",
+        "orderedReadRef": "routes[tag=0x009D].orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x007B",
       "typeName": "Beyond.Gameplay.Core.Conditions.CheckSuperArmor+Data",
       "memberCount": 7,
@@ -943,6 +963,16 @@
       }
     },
     {
+      "tag": "0x00E6",
+      "typeName": "Beyond.Gameplay.Core.LookAtAction+LookAtActionData",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_look_at_native.json",
+        "schema": "endfield.skill-timeline-look-at-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x00E8",
       "typeName": "Beyond.Gameplay.Core.MarkCanInterrupt+Data",
       "memberCount": 4,
@@ -1005,6 +1035,16 @@
       "memberCount": 11
     },
     {
+      "tag": "0x0135",
+      "typeName": "Beyond.Gameplay.Core.SaveBuffStackNum+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "buff_135_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member7"
+      }
+    },
+    {
       "tag": "0x0136",
       "typeName": "SaveBuffStackNumAdvanced",
       "memberCount": 9
@@ -1056,6 +1096,16 @@
       "memberCount": 8
     },
     {
+      "tag": "0x00CE",
+      "typeName": "Beyond.Gameplay.Core.IgniteAction+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "buff_ce_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member8"
+      }
+    },
+    {
       "tag": "0x0157",
       "typeName": "Beyond.Gameplay.Core.SetSkillCdAtOnce+Data",
       "memberCount": 11,
@@ -1089,6 +1139,16 @@
       "tag": "0x0163",
       "typeName": "SimpleCalcBBAction",
       "memberCount": 8
+    },
+    {
+      "tag": "0x0187",
+      "typeName": "Beyond.Gameplay.Core.TriggerComboSkillAction+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "buff_187_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member9"
+      }
     },
     {
       "tag": "0x0166",
@@ -1200,6 +1260,12 @@
       "evidence": "derivedPlanCorpusVerified"
     },
     {
+      "tag": "0x00AE",
+      "typeName": "Beyond.Gameplay.Core.ExecuteIntervalAction+Data",
+      "memberCount": 7,
+      "evidence": "selectedDerivedPlanCorpusVerified"
+    },
+    {
       "tag": "0x00B0",
       "typeName": "Beyond.Gameplay.Core.FacBuildingPlayAnimationAction+Data",
       "memberCount": 6,
@@ -1234,6 +1300,12 @@
         "schema": "endfield.buff-frontier8-native-contract.v1",
         "orderedReadRef": "actions[unionTag=194].readOrder"
       }
+    },
+    {
+      "tag": "0x00C3",
+      "typeName": "Beyond.Gameplay.Core.GetTargetBuffBBAction+Data",
+      "memberCount": 8,
+      "evidence": "selectedDerivedPlanCorpusVerified"
     },
     {
       "tag": "0x00BA",
@@ -1330,7 +1402,11 @@
       "tag": "0x0148",
       "typeName": "Beyond.Gameplay.Core.SetAbilityEntityToMainChar+Data",
       "memberCount": 5,
-      "evidence": "derivedPlanCorpusVerified"
+      "sourceContract": {
+        "path": "skill_timeline_set_ability_entity_main_char_native.json",
+        "schema": "endfield.skill-timeline-set-ability-entity-main-char-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     },
     {
       "tag": "0x0160",
@@ -1697,9 +1773,94 @@
         "schema": "endfield.buff-frontier7-native-contract.v1",
         "orderedReadRef": "actions[unionTag=255].readOrder"
       }
+    },
+    {
+      "tag": "0x0051",
+      "typeName": "Beyond.Gameplay.Core.CompareString+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_51_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member6"
+      }
+    },
+    {
+      "tag": "0x005E",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckDamageTypeMask+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "buff_5e_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member5"
+      }
+    },
+    {
+      "tag": "0x006B",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckOverHeal+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "buff_6b_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member7"
+      }
+    },
+    {
+      "tag": "0x00D5",
+      "typeName": "Beyond.Gameplay.Core.IntResourceHpCheckAction+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "buff_d5_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member4"
+      }
+    },
+    {
+      "tag": "0x00D6",
+      "typeName": "Beyond.Gameplay.Core.IntResourceOnHpZeroAction+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "buff_d6_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member4"
+      }
+    },
+    {
+      "tag": "0x0132",
+      "typeName": "Beyond.Gameplay.Core.SaveAtbObtainValue+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_132_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member6"
+      }
+    },
+    {
+      "tag": "0x0139",
+      "typeName": "Beyond.Gameplay.Core.SaveCharTypeId+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_139_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member6"
+      }
     }
   ],
   "dependencies": [
+    {
+      "path": "skill_damage_unit_gameplay_tag_list_native.json"
+    },
+    {
+      "path": "skill_selector_finder_guard_ai_target_native.json"
+    },
+    {
+      "path": "skill_selector_validator_hittable_object_native.json"
+    },
+    {
+      "path": "skill_selector_postprocessor_convert_to_position_native.json"
+    },
+    {
+      "path": "buff_135_native.json"
+    },
     {
       "path": "buff_136_native.json"
     },
@@ -1917,6 +2078,30 @@
       "path": "buff_c7_native.json"
     },
     {
+      "path": "buff_ce_native.json"
+    },
+    {
+      "path": "buff_51_native.json"
+    },
+    {
+      "path": "buff_5e_native.json"
+    },
+    {
+      "path": "buff_6b_native.json"
+    },
+    {
+      "path": "buff_d5_native.json"
+    },
+    {
+      "path": "buff_d6_native.json"
+    },
+    {
+      "path": "buff_132_native.json"
+    },
+    {
+      "path": "buff_139_native.json"
+    },
+    {
       "path": "buff_d4_native.json"
     },
     {
@@ -1936,6 +2121,9 @@
     },
     {
       "path": "buff_17c_native.json"
+    },
+    {
+      "path": "buff_187_native.json"
     },
     {
       "path": "buff_e0_native.json"
@@ -2118,7 +2306,34 @@
       "path": "../memorypack/skill_allow_next_skill.py"
     },
     {
+      "path": "../memorypack/skill_timeline_execute_interval.py"
+    },
+    {
+      "path": "../memorypack/skill_timeline_get_target_buff_bb.py"
+    },
+    {
+      "path": "../memorypack/skill_selector_selected.py"
+    },
+    {
+      "path": "../memorypack/skill_selector_validator_target_contains.py"
+    },
+    {
+      "path": "../memorypack/skill_selector_finder_projectile.py"
+    },
+    {
+      "path": "../memorypack/skill_selector_finder_snap_point.py"
+    },
+    {
       "path": "../memorypack/skill_timeline_fixed_four.py"
+    },
+    {
+      "path": "../memorypack/skill_timeline_two_five_member.py"
+    },
+    {
+      "path": "skill_timeline_set_ability_entity_main_char_native.json"
+    },
+    {
+      "path": "skill_timeline_look_at_native.json"
     },
     {
       "path": "skill_timeline_check_origin_skill_type_native.json"
@@ -2217,6 +2432,9 @@
       "path": "skill_timeline_finish_buff_by_tag_native.json"
     },
     {
+      "path": "skill_timeline_two_action_routes_native.json"
+    },
+    {
       "path": "skill_selector_finder_typhoea_native.json"
     },
     {
@@ -2226,13 +2444,16 @@
       "path": "skill_nested_interactive_key_validator_native.json"
     },
     {
+      "path": "skill_selector_postprocessor_convert_to_slot_native.json"
+    },
+    {
       "path": "buff_frontier7.json"
     }
   ],
   "evidenceBoundary": {
-    "exact": "Each allowed route composes an existing byte-pinned current-build formatter contract with the maintained finite structural reader. The shared decoder admits only listed physical tags/member counts and exact cursors. Byte-pinned action dependencies admit a first root only when the complete finite grammar rejoins the authenticated top-level cursor. This includes the broad Damage, Effect and FindTarget roots and the lower-frequency exact roots listed in rootTags. Tag 0x0023 uses the pinned BroadcastAlertToCharactersAction formatter, its eleven ordered source reads, and the finite SkillAlertData reader. Tags 0x0056, 0x005B, 0x0078 and 0x0082 use the pinned Buff action source orders in their listed dependencies; reached passive-map records still require an exact enclosing cursor. Tag 0x00AA has an independently pinned EnemyWarningAction dispatcher, eighteen source calls and five nested generic contexts. Tag 0x0118 pins PlayPerfectDodgeAnim and its six stored fields; tag 0x0159 uses the pinned SetSuperArmorAction member-seven source order. C9 additionally pins its switch route and mechanically validated nested SequenceActionData MethodSpec/provider chain.",
+    "exact": "Byte-pinned current-build formatter routes compose their reviewed source orders with the maintained finite reader. Selected derived-plan routes instead gate on the current dispatcher, generated wrapper shape, reached payload header and exact following cursor, retaining their stated evidence tier. The shared decoder admits only listed physical tags/member counts and exact cursors. Byte-pinned action dependencies admit a first root only when the complete finite grammar rejoins the authenticated top-level cursor. This includes the broad Damage, Effect and FindTarget roots and the lower-frequency exact roots listed in rootTags. Tag 0x0023 uses the pinned BroadcastAlertToCharactersAction formatter, its eleven ordered source reads, and the finite SkillAlertData reader. Tags 0x0056, 0x005B, 0x0078 and 0x0082 use the pinned Buff action source orders in their listed dependencies; reached passive-map records still require an exact enclosing cursor. Tag 0x00AA has an independently pinned EnemyWarningAction dispatcher, eighteen source calls and five nested generic contexts. Tag 0x0118 pins PlayPerfectDodgeAnim and its six stored fields; tag 0x0159 uses the pinned SetSuperArmorAction member-seven source order. C9 additionally pins its switch route and mechanically validated nested SequenceActionData MethodSpec/provider chain.",
     "direct": "The first root is restricted to the listed authenticated routes; every listed root is admitted only where its complete nested body reaches the independent following cursor. Nested and later actions must also be in allowedReachedRoutes. The reached 0x0023 later records advance to independent following TimelineActionData boundaries under the selected native input and authenticated source-byte gates. IfElseAction requires the pinned SequenceActionData provider chain; JumpToAction reuses that provider; SetAbilityEntityTarget uses the pinned TargetSettings provider.",
-    "structuralOnly": "Anonymous nested member kinds retain the dependency contract boundary; union wrapper identity and record extent are named, while gameplay meaning is not inferred.",
+    "structuralOnly": "Anonymous nested member kinds retain the dependency contract boundary; union wrapper identity and record extent are named, while gameplay meaning is not inferred. GetTargetBuffBBAction keeps its nested TargetSettings union at this tier. Newly reached SelectorValidator, SelectorFinder and ConvertToSlot SelectorPostProcessor routes resolve their current native table slots to wrappers, while their TargetSettings and ColliderShapeData children retain the finite reader's structural boundary.",
     "unresolved": "Any listed root with an unsupported nested profile remains bounded at its first unresolved child. C9 branches containing subtype-one nested profiles, positive DamageUnit member-ten GameplayTag lists, or positive EffectActionCfg arrays remain bounded and unsupported."
   },
   "ifElseNestedSequenceProvider": {

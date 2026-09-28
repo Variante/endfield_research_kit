@@ -1,0 +1,10 @@
+{
+  "schema": "endfield.skill-cursor-capture-target.v1",
+  "status": "selected-current-logical-source",
+  "target": {
+    "virtualPath": "Data/Json/SkillData/chr_0038_purrche_talent_2.json",
+    "length": 561,
+    "logicalSha256": "AA2B7E7FD59A0BDA051F1F233609EB2E47C52B714B32BE399636239DB0586359"
+  },
+  "evidenceBoundary": "One current logical SkillData byte identity for a bounded direct-reader cursor capture. The same-length alternative is excluded by exact copied-byte SHA-256; this contract does not assert runtime execution or select either terminal candidate."
+}

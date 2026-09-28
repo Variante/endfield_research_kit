@@ -1,0 +1,134 @@
+{
+  "schema": "endfield.skill-timeline-look-at-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 5,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 230,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82214744,
+    "routeWindow": {
+      "startRva": 82214744,
+      "endRva": 82214790,
+      "sha256": "C6A785E8F678996D622365D872FC83274C2AB8779DBE04C8C844E67168D4344C",
+      "boundary": "selected registered wrapper route"
+    },
+    "usageCellRva": 218133184,
+    "usageRawHex": "6342032000000000",
+    "registeredTypeIndex": 106801,
+    "wrapperTypeDefinition": 16229,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_LookAtAction_LookAtActionDataForMemoryPack"
+  },
+  "methods": [
+    [
+      121108,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_LookAtAction_LookAtActionDataForMemoryPack",
+      "Deserialize",
+      153763672
+    ],
+    [
+      121109,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_LookAtAction_LookAtActionDataForMemoryPack+Beyond_Gameplay_Core_LookAtAction_LookAtActionDataForMemoryPackFormatter",
+      "Deserialize",
+      153763432
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153763672,
+      "endRva": 153764120,
+      "sha256": "B6FD81E329C81845CE3A5CF51700FFDF14CCFA262E233AE7C5B07B0F755C2EC4",
+      "boundary": "complete selected source reader hot body"
+    },
+    {
+      "startRva": 153763432,
+      "endRva": 153763521,
+      "sha256": "F92257EA67FDC09A68EB9076616F964F77602CE9C049941ADC4EB1D6EFCE2DC5",
+      "boundary": "complete generated formatter forwarding body"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 153763861,
+    "hex": "807C243805"
+  },
+  "setterMethods": [
+    [
+      121105,
+      "set___targetSettings__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153763878,
+      "sourceCallHex": "E89548A0F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153763918,
+      "sourceCallHex": "E85D46A0F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153763947,
+      "sourceCallHex": "E84046A0F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153763976,
+      "sourceCallHex": "E82346A0F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "targetSettings",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 153764012,
+      "sourceCallHex": "E8DF1BB0F9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData route, wrapper, five-member header, complete reader fragments and ordered source calls match the installed native build.",
+    "direct": "The wire contains the inherited byte and three DWORD members followed by a TargetSettings object, with its generic child type independently checked.",
+    "structuralOnly": "Stored fields are parsed as anonymous bytes; they do not prove runtime action behavior.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  },
+  "nestedContext": {
+    "memberIndex": 4,
+    "instructionRva": 153763999,
+    "instructionHex": "488B1562D6DB03",
+    "cellRva": 218502920,
+    "usageRawHex": "93EB12C000000000",
+    "methodSpecIndex": 619977,
+    "methodSpec": [
+      428464,
+      -1,
+      16792
+    ],
+    "argumentRawHex": "28280000000000000000120000000000",
+    "typeKind": 18,
+    "typeDefinition": 10280,
+    "typeName": "Beyond.Gameplay.Core.TargetSettings"
+  },
+  "targetProfileContract": "buff_ec_native.json"
+}

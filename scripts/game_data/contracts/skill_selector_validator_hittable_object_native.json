@@ -1,0 +1,73 @@
+{
+  "schema": "endfield.skill-selector-validator-hittable-object-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 0,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 6,
+    "switchTableRva": 66919388,
+    "switchEntryCount": 13,
+    "switchTableSha256": "C738323AAA09F0D3E1BA108B8FFD20300DB9249389D6CFAA684B8D2FC206C11F",
+    "switchTargetRva": 83215718,
+    "routeWindow": {
+      "startRva": 83215718,
+      "endRva": 83215792,
+      "sha256": "8437B7ACA110F77E373738EAF087492B9EA2ADD43A5910B75710DC9AA7C1D048",
+      "boundary": "selected zero-member route including existing, new and null-wrapper branches"
+    },
+    "usageCellRva": 217991584,
+    "usageRawHex": "4B44032000000000",
+    "registeredTypeIndex": 107045,
+    "wrapperTypeDefinition": 23009,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HittableObjectValidator_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      166926,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HittableObjectValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_HittableObjectValidator_DataForMemoryPackFormatter",
+      "Deserialize",
+      158088440
+    ],
+    [
+      166925,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HittableObjectValidator_DataForMemoryPack",
+      "Deserialize",
+      158088668
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 158088440,
+      "endRva": 158088529,
+      "sha256": "288BC80A5B91712C511D6B02D89BB19A2EC8E9EBCC67422B3F86C2D48EA8B241",
+      "boundary": "complete selected formatter forwarder"
+    },
+    {
+      "startRva": 158088668,
+      "endRva": 158088905,
+      "sha256": "0FA8F0D48D0C3F628800E46085D53DA9D64B132FB0682EA19C1D95771939D4C7",
+      "boundary": "complete selected zero-member reader body"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 158088831,
+    "hex": "4084FF"
+  },
+  "sourceHeaderRead": {
+    "sourceCallsiteRva": 158088764,
+    "sourceCallHex": "E81F4A5EF9",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "Selected SelectorValidator tag 6, generated wrapper identity, member-zero check and complete reader bodies match the installed native pair.",
+    "direct": "A reached wire element is the union tag followed by either FF null wrapper or a zero-member header; the parent reader checks the next cursor.",
+    "structuralOnly": "The stored HittableObjectValidator type does not establish runtime target selection or acceptance.",
+    "unresolved": "Live formatter/provider choice, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

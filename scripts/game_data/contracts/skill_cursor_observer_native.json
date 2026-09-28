@@ -1,0 +1,457 @@
+{
+  "schema": "endfield.skill-cursor-observer-native.v1",
+  "status": "selected-build-native-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "methods": [
+    [
+      102566,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillDataForMemoryPack",
+      "Deserialize",
+      58581088
+    ],
+    [
+      102567,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillDataForMemoryPack+Beyond_Gameplay_Core_SkillDataForMemoryPackFormatter",
+      "Deserialize",
+      58580848
+    ],
+    [
+      104262,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ActionGroupDataForMemoryPack",
+      "Deserialize",
+      65273824
+    ],
+    [
+      104263,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ActionGroupDataForMemoryPack+Beyond_Gameplay_Core_ActionGroupDataForMemoryPackFormatter",
+      "Deserialize",
+      65273728
+    ]
+  ],
+  "codeWindows": [
+    {
+      "rva": 58581088,
+      "byteLength": 91,
+      "sha256": "0926899BA44C601CEBAC2B4E70580B397CDDAB4FC60060C1E8DC0EF99A2555FB"
+    },
+    {
+      "rva": 58581179,
+      "byteLength": 2314,
+      "sha256": "FEA359985EBF5DF75CC58D871469481F0F692B1768D84724FF5941D47CAD8132"
+    },
+    {
+      "rva": 65273824,
+      "byteLength": 319,
+      "sha256": "D2C4A8B7F40CDB99154F7EE9EFA9FB85CD8F2F086932F03C1BC2FF8568E1AB4E"
+    }
+  ],
+  "fieldCallsites": [
+    {
+      "fieldIndex": 0,
+      "fieldName": "actionGroupData",
+      "callInstructionRva": 58581222,
+      "returnAddressRva": 58581227,
+      "targetRva": 47864976,
+      "rawHex": "E8A57B5CFF"
+    },
+    {
+      "fieldIndex": 1,
+      "fieldName": "aiExclusiveFrame",
+      "callInstructionRva": 58581274,
+      "returnAddressRva": 58581279,
+      "targetRva": 46827184,
+      "rawHex": "E891A54CFF"
+    },
+    {
+      "fieldIndex": 2,
+      "fieldName": "attackRangeType",
+      "callInstructionRva": 58581317,
+      "returnAddressRva": 58581322,
+      "targetRva": 46827184,
+      "rawHex": "E866A54CFF"
+    },
+    {
+      "fieldIndex": 3,
+      "fieldName": "blackboard",
+      "callInstructionRva": 58581360,
+      "returnAddressRva": 58581365,
+      "targetRva": 58849520,
+      "rawHex": "E87B170400"
+    },
+    {
+      "fieldIndex": 4,
+      "fieldName": "buffInputBase",
+      "callInstructionRva": 58581419,
+      "returnAddressRva": 58581424,
+      "targetRva": 47864976,
+      "rawHex": "E8E07A5CFF"
+    },
+    {
+      "fieldIndex": 5,
+      "fieldName": "buffs",
+      "callInstructionRva": 58581478,
+      "returnAddressRva": 58581483,
+      "targetRva": 58849520,
+      "rawHex": "E805170400"
+    },
+    {
+      "fieldIndex": 6,
+      "fieldName": "canCastInAir",
+      "callInstructionRva": 58581530,
+      "returnAddressRva": 58581535,
+      "targetRva": 46827712,
+      "rawHex": "E8A1A64CFF"
+    },
+    {
+      "fieldIndex": 7,
+      "fieldName": "canCastInWater",
+      "callInstructionRva": 58581569,
+      "returnAddressRva": 58581574,
+      "targetRva": 46827712,
+      "rawHex": "E87AA64CFF"
+    },
+    {
+      "fieldIndex": 8,
+      "fieldName": "canDummyCast",
+      "callInstructionRva": 58581608,
+      "returnAddressRva": 58581613,
+      "targetRva": 46827712,
+      "rawHex": "E853A64CFF"
+    },
+    {
+      "fieldIndex": 9,
+      "fieldName": "canMove",
+      "callInstructionRva": 58581647,
+      "returnAddressRva": 58581652,
+      "targetRva": 46827712,
+      "rawHex": "E82CA64CFF"
+    },
+    {
+      "fieldIndex": 10,
+      "fieldName": "cardAttributeModifier",
+      "callInstructionRva": 58581693,
+      "returnAddressRva": 58581698,
+      "targetRva": 47864976,
+      "rawHex": "E8CE795CFF"
+    },
+    {
+      "fieldIndex": 11,
+      "fieldName": "castData",
+      "callInstructionRva": 58581752,
+      "returnAddressRva": 58581757,
+      "targetRva": 47864976,
+      "rawHex": "E893795CFF"
+    },
+    {
+      "fieldIndex": 12,
+      "fieldName": "castType",
+      "callInstructionRva": 58581805,
+      "returnAddressRva": 58581810,
+      "targetRva": 46827184,
+      "rawHex": "E87EA34CFF"
+    },
+    {
+      "fieldIndex": 13,
+      "fieldName": "characterReturnToIdle",
+      "callInstructionRva": 58581841,
+      "returnAddressRva": 58581846,
+      "targetRva": 46827712,
+      "rawHex": "E86AA54CFF"
+    },
+    {
+      "fieldIndex": 14,
+      "fieldName": "comboSkillUIBigSpriteName",
+      "callInstructionRva": 58581880,
+      "returnAddressRva": 58581885,
+      "targetRva": 46827264,
+      "rawHex": "E883A34CFF"
+    },
+    {
+      "fieldIndex": 15,
+      "fieldName": "comboSkillUISpriteName",
+      "callInstructionRva": 58581932,
+      "returnAddressRva": 58581937,
+      "targetRva": 46827264,
+      "rawHex": "E84FA34CFF"
+    },
+    {
+      "fieldIndex": 16,
+      "fieldName": "dontInterruptCombo",
+      "callInstructionRva": 58581984,
+      "returnAddressRva": 58581989,
+      "targetRva": 46827712,
+      "rawHex": "E8DBA44CFF"
+    },
+    {
+      "fieldIndex": 18,
+      "fieldName": "durationFrame",
+      "callInstructionRva": 58582113,
+      "returnAddressRva": 58582118,
+      "targetRva": 46827184,
+      "rawHex": "E84AA24CFF"
+    },
+    {
+      "fieldIndex": 19,
+      "fieldName": "exclusiveFrame",
+      "callInstructionRva": 58582149,
+      "returnAddressRva": 58582154,
+      "targetRva": 46827184,
+      "rawHex": "E826A24CFF"
+    },
+    {
+      "fieldIndex": 20,
+      "fieldName": "hittableAttackRange",
+      "callInstructionRva": 58582185,
+      "returnAddressRva": 58582190,
+      "targetRva": 46828464,
+      "rawHex": "E802A74CFF"
+    },
+    {
+      "fieldIndex": 21,
+      "fieldName": "iconBgType",
+      "callInstructionRva": 58582233,
+      "returnAddressRva": 58582238,
+      "targetRva": 46827184,
+      "rawHex": "E8D2A14CFF"
+    },
+    {
+      "fieldIndex": 22,
+      "fieldName": "iconId",
+      "callInstructionRva": 58582269,
+      "returnAddressRva": 58582274,
+      "targetRva": 46827264,
+      "rawHex": "E8FEA14CFF"
+    },
+    {
+      "fieldIndex": 23,
+      "fieldName": "level",
+      "callInstructionRva": 58582315,
+      "returnAddressRva": 58582320,
+      "targetRva": 46827184,
+      "rawHex": "E880A14CFF"
+    },
+    {
+      "fieldIndex": 24,
+      "fieldName": "needEnemyOutOfScreenWarning",
+      "callInstructionRva": 58582351,
+      "returnAddressRva": 58582356,
+      "targetRva": 46827712,
+      "rawHex": "E86CA34CFF"
+    },
+    {
+      "fieldIndex": 25,
+      "fieldName": "needEnemyOutOfScreenWarningOverrideValue",
+      "callInstructionRva": 58582390,
+      "returnAddressRva": 58582395,
+      "targetRva": 46827712,
+      "rawHex": "E845A34CFF"
+    },
+    {
+      "fieldIndex": 26,
+      "fieldName": "offsetRecordFrame",
+      "callInstructionRva": 58582429,
+      "returnAddressRva": 58582434,
+      "targetRva": 46827184,
+      "rawHex": "E80EA14CFF"
+    },
+    {
+      "fieldIndex": 27,
+      "fieldName": "overrideHittableObjAttackRange",
+      "callInstructionRva": 58582465,
+      "returnAddressRva": 58582470,
+      "targetRva": 46827712,
+      "rawHex": "E8FAA24CFF"
+    },
+    {
+      "fieldIndex": 28,
+      "fieldName": "overrideNeedEnemyOutOfScreenWarning",
+      "callInstructionRva": 58582504,
+      "returnAddressRva": 58582509,
+      "targetRva": 46827712,
+      "rawHex": "E8D3A24CFF"
+    },
+    {
+      "fieldIndex": 29,
+      "fieldName": "passiveSkillType",
+      "callInstructionRva": 58582550,
+      "returnAddressRva": 58582555,
+      "targetRva": 46827184,
+      "rawHex": "E895A04CFF"
+    },
+    {
+      "fieldIndex": 30,
+      "fieldName": "rootMotionCliffCheck",
+      "callInstructionRva": 58582586,
+      "returnAddressRva": 58582591,
+      "targetRva": 46827712,
+      "rawHex": "E881A24CFF"
+    },
+    {
+      "fieldIndex": 31,
+      "fieldName": "selectStrategy",
+      "callInstructionRva": 58582632,
+      "returnAddressRva": 58582637,
+      "targetRva": 46827184,
+      "rawHex": "E843A04CFF"
+    },
+    {
+      "fieldIndex": 32,
+      "fieldName": "showNotRecommendState",
+      "callInstructionRva": 58582668,
+      "returnAddressRva": 58582673,
+      "targetRva": 46827712,
+      "rawHex": "E82FA24CFF"
+    },
+    {
+      "fieldIndex": 33,
+      "fieldName": "skillHighlightCondition",
+      "callInstructionRva": 58582714,
+      "returnAddressRva": 58582719,
+      "targetRva": 47864976,
+      "rawHex": "E8D1755CFF"
+    },
+    {
+      "fieldIndex": 34,
+      "fieldName": "skillId",
+      "callInstructionRva": 58582766,
+      "returnAddressRva": 58582771,
+      "targetRva": 46827264,
+      "rawHex": "E80DA04CFF"
+    },
+    {
+      "fieldIndex": 35,
+      "fieldName": "skillName",
+      "callInstructionRva": 58582812,
+      "returnAddressRva": 58582817,
+      "targetRva": 46827264,
+      "rawHex": "E8DF9F4CFF"
+    },
+    {
+      "fieldIndex": 36,
+      "fieldName": "skillSpecification",
+      "callInstructionRva": 58582865,
+      "returnAddressRva": 58582870,
+      "targetRva": 46827184,
+      "rawHex": "E85A9F4CFF"
+    },
+    {
+      "fieldIndex": 37,
+      "fieldName": "skillTags",
+      "callInstructionRva": 58582908,
+      "returnAddressRva": 58582913,
+      "targetRva": 47864976,
+      "rawHex": "E80F755CFF"
+    },
+    {
+      "fieldIndex": 38,
+      "fieldName": "smartTargetBuffFindSettings",
+      "callInstructionRva": 58582967,
+      "returnAddressRva": 58582972,
+      "targetRva": 47864976,
+      "rawHex": "E8D4745CFF"
+    },
+    {
+      "fieldIndex": 39,
+      "fieldName": "smartTargetBuffIds",
+      "callInstructionRva": 58583026,
+      "returnAddressRva": 58583031,
+      "targetRva": 58849520,
+      "rawHex": "E8F9100400"
+    },
+    {
+      "fieldIndex": 40,
+      "fieldName": "smartTargetSelectStrategy",
+      "callInstructionRva": 58583079,
+      "returnAddressRva": 58583084,
+      "targetRva": 46827184,
+      "rawHex": "E8849E4CFF"
+    },
+    {
+      "fieldIndex": 41,
+      "fieldName": "smartTargetTagQuery",
+      "callInstructionRva": 58583127,
+      "returnAddressRva": 58583132,
+      "targetRva": 64210464,
+      "rawHex": "E8C4DD5500"
+    },
+    {
+      "fieldIndex": 42,
+      "fieldName": "switchToBuffConfig",
+      "callInstructionRva": 58583185,
+      "returnAddressRva": 58583190,
+      "targetRva": 47864976,
+      "rawHex": "E8FA735CFF"
+    },
+    {
+      "fieldIndex": 43,
+      "fieldName": "switchToCenterBeforeCast",
+      "callInstructionRva": 58583237,
+      "returnAddressRva": 58583242,
+      "targetRva": 46827712,
+      "rawHex": "E8F69F4CFF"
+    },
+    {
+      "fieldIndex": 44,
+      "fieldName": "tagDuringAttach",
+      "callInstructionRva": 58583283,
+      "returnAddressRva": 58583288,
+      "targetRva": 47864976,
+      "rawHex": "E898735CFF"
+    },
+    {
+      "fieldIndex": 45,
+      "fieldName": "toggleBuffs",
+      "callInstructionRva": 58583342,
+      "returnAddressRva": 58583347,
+      "targetRva": 58849520,
+      "rawHex": "E8BD0F0400"
+    },
+    {
+      "fieldIndex": 46,
+      "fieldName": "uiRangeHints",
+      "callInstructionRva": 58583401,
+      "returnAddressRva": 58583406,
+      "targetRva": 58849520,
+      "rawHex": "E8820F0400"
+    },
+    {
+      "fieldIndex": 47,
+      "fieldName": "useAIExclusiveFrame",
+      "callInstructionRva": 58583453,
+      "returnAddressRva": 58583458,
+      "targetRva": 46827712,
+      "rawHex": "E81E9F4CFF"
+    }
+  ],
+  "inlineField": {
+    "fieldIndex": 17,
+    "fieldName": "dummyPositionOffset",
+    "status": "no-direct-helper-callsite"
+  },
+  "actionGroupChildCallsites": [
+    {
+      "childIndex": 0,
+      "fieldName": "passiveEventActions",
+      "callInstructionRva": 65273948,
+      "returnAddressRva": 65273953,
+      "targetRva": 58849520,
+      "rawHex": "E88FF89DFF"
+    },
+    {
+      "childIndex": 1,
+      "fieldName": "timelineActions",
+      "callInstructionRva": 65274001,
+      "returnAddressRva": 65274006,
+      "targetRva": 58849520,
+      "rawHex": "E85AF89DFF"
+    }
+  ],
+  "receiptVerifierSourceLengths": [
+    424,
+    533
+  ],
+  "evidenceBoundary": "Selected-build method identities, hash-checked reader bodies and exact post-CALL observer coordinates. Source lengths are prior accepted-receipt verifier compatibility values, not a native observation. This contract does not identify a current VFS file, active formatter/provider, executed cursor or selected terminal candidate."
+}

@@ -1,0 +1,152 @@
+{
+  "schema": "endfield.skill-timeline-set-ability-entity-main-char-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 5,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 328,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59837428,
+    "routeWindow": {
+      "startRva": 59837428,
+      "endRva": 59837478,
+      "sha256": "D0A727855D8E1BD40F71B67FBB739CB14F6E9387A64D1BF09C3E4EC6D2D39207",
+      "boundary": "selected registered wrapper route"
+    },
+    "usageCellRva": 218182632,
+    "usageRawHex": "9544032000000000",
+    "registeredTypeIndex": 107082,
+    "wrapperTypeDefinition": 16423,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAbilityEntityToMainChar_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      122673,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAbilityEntityToMainChar_DataForMemoryPack",
+      "Deserialize",
+      73026352
+    ],
+    [
+      122674,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAbilityEntityToMainChar_DataForMemoryPack+Beyond_Gameplay_Core_SetAbilityEntityToMainChar_DataForMemoryPackFormatter",
+      "Deserialize",
+      73026256
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73026352,
+      "endRva": 73026470,
+      "sha256": "A76C1DD0667DFBCA93B6E29DF49650948CEC590630AA9682511382E7A68DFC42",
+      "boundary": "complete selected source reader hot body"
+    },
+    {
+      "startRva": 73026470,
+      "endRva": 73026704,
+      "sha256": "DB779245C38F3370E0B75672535F12A5A8F5F3ABC432D2B5D7CC36FF3BE3F2FA",
+      "boundary": "chained selected source reader fragment"
+    },
+    {
+      "startRva": 73026704,
+      "endRva": 73026715,
+      "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F",
+      "boundary": "chained selected source reader fragment"
+    },
+    {
+      "startRva": 73026715,
+      "endRva": 73026721,
+      "sha256": "6A5C50DD4271139E74C1BF3C4321E5B77CA36E39FDADCA25182DF3740210289B",
+      "boundary": "chained selected source reader fragment"
+    },
+    {
+      "startRva": 83865028,
+      "endRva": 83865041,
+      "sha256": "DB8E8DCAE46EC5C3426D21558205329BF606908DBC5EE8675D639CF180A09D20",
+      "boundary": "chained selected source reader fragment"
+    },
+    {
+      "startRva": 83865041,
+      "endRva": 83865097,
+      "sha256": "B654E3B88CE0D2400845F328FB41C4E5B887BEF3C67ED340C364E2C6D5B5C055",
+      "boundary": "chained selected source reader fragment"
+    },
+    {
+      "startRva": 83865097,
+      "endRva": 83865118,
+      "sha256": "00C6C0C7A2A988311ABF166082107BD83987A8AE158D8337030E28D1D0F7D574",
+      "boundary": "chained selected source reader fragment"
+    },
+    {
+      "startRva": 73026256,
+      "endRva": 73026345,
+      "sha256": "0207B1E77F8DF4EF97CA74FC037EDD0B951E3402404A80FE61646E1AF0696E83",
+      "boundary": "complete generated formatter forwarding body"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 73026531,
+    "hex": "4080FE05"
+  },
+  "setterMethods": [
+    [
+      122670,
+      "set___contextKey__",
+      "System.String"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 73026547,
+      "sourceCallHex": "E8C83C70FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 73026588,
+      "sourceCallHex": "E88F3A70FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 73026617,
+      "sourceCallHex": "E8723A70FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 73026646,
+      "sourceCallHex": "E8553A70FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "contextKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 73026675,
+      "sourceCallHex": "E8883A70FE",
+      "sourceTargetRva": 46827264
+    }
+  ],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData route, wrapper, five-member header, complete reader fragments and ordered source calls match the installed native build.",
+    "direct": "The wire contains the inherited byte and three DWORD members followed by a string byte payload.",
+    "structuralOnly": "Stored fields are parsed as anonymous bytes; they do not prove runtime action behavior.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}
