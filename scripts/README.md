@@ -595,6 +595,33 @@ both stores, plus the loose decoded files under `game/` no other page shows,
 through `serve.py`'s read-only `/api/stores` endpoints
 (`scripts/webui/data_inspector/store_browser.py`).
 
+### Sprite crops
+
+A Sprite is exported as a crop of its exported Texture2D, not as a PNG:
+AnimeStudio writes one `endfield.sprite-crop.v1` document per Sprite
+(`Sprite/<name>_p<PathID>.json` in `game/Unity.sqlite`) naming the texture
+file, the rectangle, the transform and the cleared pixels.
+`scripts/game_data/sprite_crops.py` owns the format, the reader, the texture
+check and a stdlib renderer. Selecting Sprite selects Texture2D whole, and a
+Sprite publish fails the run unless every crop names a published texture of
+its recorded size. Consumers keep the image path `game/Unity/Sprite/<name>.png`:
+the Assets index lists each crop there (with `iw`/`ih` and the texture as
+`crop`), `serve.py` answers it with the crop document, and the WebUI service
+worker `webui/sprite_worker.js` renders it; packages ship the texture plus the
+document beside the image path.
+
+`--sprite-images` (passed by `export.bat debug`) re-exports every Sprite,
+keeps AnimeStudio's own image in `game/Sprite.sqlite`
+(`endfield.sprite-image-store.v1`, which `serve.py` prefers), and fails the
+Sprite item unless each crop reproduces its image pixel for pixel. Any other
+Sprite publish removes `game/Sprite.sqlite`.
+
+```bat
+python -m scripts.game_data.sprite_crops check
+python -m scripts.game_data.sprite_crops show "icon_plusmark_*"
+python -m scripts.game_data.sprite_crops render "icon_plusmark_*" --out tmp\study\sprites
+```
+
 ## Main builders
 
 | Area | Entry point | Main output |
@@ -1324,7 +1351,10 @@ partial and a changed file with no diff says why. Changing that routing changes
 the cached text: refresh the previous-export baseline afterwards.
 
 The default scan covers WebUI-facing exported text plus image, model, video,
-and decoded audio assets. `--text-only` omits all assets, `--no-audio` keeps
+and decoded audio assets. Sprite images are left out on both sides, including
+a saved baseline: they are crops of exported textures (see Sprite crops), so a
+Sprite changes when its Texture2D does, and older exports kept them as PNGs
+that no crop document can be compared with. `--text-only` omits all assets, `--no-audio` keeps
 other assets, `--exact` hashes contents, and `--full-export-scan` is for broad
 audits only. A broad scan expands `game/Unity.sqlite` into one entry per stored
 document at its `game/Unity/<Type>/<name>` path, fingerprinted by the row's

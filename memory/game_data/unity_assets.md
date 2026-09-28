@@ -256,9 +256,39 @@ unique binding.
 Every exported Unity type is already in a decoded or standard format -- 101 GB
 across 1.88M files, with AnimationClip as YAML, Animator / AnimatorController /
 AnimatorOverrideController / PlayableDirector / Material / MonoBehaviour /
-TextAsset as JSON, Mesh as FBX, and Texture2D / Sprite as images. There is no
-binary framing left to recover here, which is why MonoBehaviour *semantics*,
-not parsing, is what this file records as open.
+TextAsset as JSON, Mesh as FBX, Texture2D as images, and Sprite as crop
+documents over those images (below). There is no binary framing left to
+recover here, which is why MonoBehaviour *semantics*, not parsing, is what
+this file records as open.
+
+## A Sprite is a crop of its Texture2D
+
+AnimeStudio's Sprite image is a pure function of its texture: resolve the
+texture (the Sprite's render data, or its SpriteAtlas render-data entry),
+optionally downscale it, cut `textureRect` (floor/ceil, in Unity's bottom-up
+image), undo a packed flip/rotation, clear the pixels outside a Tight mesh,
+and flip to top-down. The export therefore stores the texture once and each
+Sprite as an `endfield.sprite-crop.v1` document (`scripts/game_data/sprite_crops.py`):
+texture file and identity, top-down rectangle, named transform, and two run
+lists -- `clear` (outside the Tight mesh, set to transparent black) and `zero`
+(the area the ImageSharp mask fill passes over, where it drops the color of
+fully transparent pixels; only invisible color changes). AnimeStudio derives
+the transform and both run lists by running its own shaping code over probe
+images, so the document reproduces the former Sprite PNG by construction.
+
+- Evidence: every Sprite of the current build rendered from its document
+  matched AnimeStudio's image pixel for pixel, hidden color included, and the
+  refactored image matched every previously published Sprite PNG. The WebUI
+  service worker and the stdlib renderer reproduce the same pixels.
+  `export.bat debug` repeats the check per build (`--sprite-images`).
+- The current build has no downscaled, rotated or atlas-packed Sprite; the
+  document and both renderers still carry those cases, and the exporter's
+  texture check reports a count of each.
+- The join is the texture PPtr AnimeStudio resolves, carried as the texture's
+  exported file name (`_p<PathID>`) plus CAB, PathID and size, and checked
+  against the published texture after every Sprite publish. Name matching is
+  not identity: many Sprite names have several same-named textures, and sliced
+  sheets (`cs_loading_icon_<n>`) name only the sheet.
 
 `m_Controller` is structural, not an opaque blob: layers, state machines,
 state constants, transition constants, blend-tree nodes, parameter ids and the

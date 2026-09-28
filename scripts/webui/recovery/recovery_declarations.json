@@ -428,8 +428,8 @@
           {
             "level": 3,
             "state": "closed",
-            "text": "Exported as an image.",
-            "textZh": "以图像导出。",
+            "text": "Exported as a crop of its exported texture (rectangle, flip or rotation, cleared pixels outside a Tight mesh), which reproduces AnimeStudio's image pixel for pixel.",
+            "textZh": "导出为其已导出贴图的裁切（矩形、翻转或旋转、Tight 网格外清除的像素），可逐像素还原 AnimeStudio 的图像。",
             "source": "memory/game_data/unity_assets.md"
           },
           {

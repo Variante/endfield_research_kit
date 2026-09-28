@@ -14,7 +14,11 @@ other pages, not proof that an asset was used at runtime.
    scope. Focused mode targets referenced textures; default adds WebUI-facing
    model/material/animation needs; debug is exhaustive diagnostics.
 2. `scripts.webui.assets.build_assets` indexes available outputs and publishes media lookup,
-   Story media, and video catalogs.
+   Story media, and video catalogs. Sprite images have no files: each Sprite
+   crop document is listed as an image at `Unity/Sprite/<name>.png`, with the
+   crop's size and its texture (`crop`), at the Sprite folder's place in the
+   sorted walk; `serve.py` answers that path with the document and
+   `webui/sprite_worker.js` renders it from the texture.
 3. Gameplay's `asset-refs` stage consumes the Assets index and owns its
    consumer-specific join; the Assets builder does not write that sidecar.
 4. `scripts.webui.assets.table_asset_owners` recovers exact table-row
@@ -39,6 +43,10 @@ Primary outputs: `webui/data/assets/{index,table_owners,videos}.json`
 - Material/shader/texture presence does not establish runtime variant,
   renderer ownership, or final appearance.
 - Missing optional previews remain visible and do not erase the indexed asset.
+- A Sprite image equals AnimeStudio's rendering pixel for pixel
+  (`memory/game_data/unity_assets.md`); a crop whose texture is not exported is
+  left out of the index. Sprites with the same pixels share `h`: a whole-texture
+  Sprite shares its texture's SHA-256.
 - Table ownership requires both gates: an asset-bearing field name and a
   whole-stem value match. A shared name prefix, a family stem, or an
   identifier field that coincides with an asset name is not ownership and is

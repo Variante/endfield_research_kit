@@ -55,6 +55,13 @@ from scripts.game_data.extraction.scope import (
 from scripts.game_data.extraction.unity_overlay import load_overlay_catalog, normalize_chunk_path
 from scripts.game_data.unity_store import UnityObjectStore, UnityObjectStoreWriter, UnityStoreError, is_store_file
 from scripts.game_data.game_file_store import GameFileStoreWriter
+from scripts.game_data.sprite_crops import (
+    IMAGE_CHECK_META_KEY as SPRITE_IMAGE_CHECK_META_KEY,
+    IMAGE_STORE_FILE as SPRITE_IMAGE_STORE_FILE,
+    IMAGE_STORE_SCHEMA as SPRITE_IMAGE_STORE_SCHEMA,
+    SPRITE_TYPE,
+    check_sprite_textures,
+)
 
 ROOT = REPO_ROOT
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
@@ -116,7 +123,9 @@ ANIMESTUDIO_MANIFEST_MAP_LABEL = "maps"
 ANIMESTUDIO_TEXTURE_EXTENSION = ".png"
 ANIMESTUDIO_CONVERT_OUTPUT_EXTENSIONS = {
     "Texture2D": ANIMESTUDIO_TEXTURE_EXTENSION,
-    "Sprite": ANIMESTUDIO_TEXTURE_EXTENSION,
+    # A Sprite is a crop of an exported Texture2D: AnimeStudio writes its crop
+    # document (scripts/game_data/sprite_crops.py) into the store, not a PNG.
+    "Sprite": ".json",
     "Mesh": ".obj",
     "Shader": ".shader",
     "AnimationClip": ".anim",
@@ -2398,6 +2407,16 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--sprite-images",
+        action="store_true",
+        help=(
+            "With Sprite in the Convert classes, also keep AnimeStudio's own image of every "
+            "Sprite in game/Sprite.sqlite and fail the Sprite export unless each crop document "
+            "reproduces it pixel for pixel. Every Sprite is re-exported. A Sprite export "
+            "without it removes game/Sprite.sqlite."
+        ),
+    )
+    parser.add_argument(
         "--asset-jobs",
         dest="animestudio_jobs",
         type=int,
@@ -2900,6 +2919,77 @@ def animestudio_convert_store_stamps(
         return {}
     with UnityObjectStore(path) as store:
         return {row.name.casefold(): (row.name, row.size, row.mtime_ns) for row in store.iter_rows(type_name)}
+
+
+def animestudio_sprite_image_store_path(output_root: Path, source: str, filter_data: Path | None = None) -> Path:
+    """A Sprite call's ``--sprite_images`` store, or with no ``filter_data`` the layer's merged one.
+
+    They live outside the stage folders, which publication reads as staged
+    document stores and type folders.
+    """
+    folder = animestudio_work_dir(output_root) / "sprite_images"
+    if filter_data is None:
+        return folder / f"{source}.sqlite"
+    return folder / source / f"{Path(filter_data).stem}.sqlite"
+
+
+def collect_sprite_image_checks(
+    output_root: Path, source: str, shards: list[dict[str, Any]], results: dict[int, CommandResult],
+) -> dict[str, Any]:
+    """Merge completed Sprite calls' image stores into the layer's, with their checks summed.
+
+    Each ``--sprite_images`` store carries AnimeStudio's check of every crop
+    document against its own image (meta ``spriteCheck``). A completed call
+    without a store, or any mismatch, makes ``ok`` false; the first mismatches
+    are kept for the report.
+    """
+    merged = animestudio_sprite_image_store_path(output_root, source)
+    check: dict[str, Any] = {"store": str(merged), "checked": 0, "matched": 0, "mismatched": 0, "missingStores": [], "mismatches": []}
+    with UnityObjectStoreWriter(merged, schema=SPRITE_IMAGE_STORE_SCHEMA) as writer:
+        for shard in shards:
+            result = results.get(int(shard["index"]))
+            if result is None or result.returncode != 0:
+                continue
+            call_store = animestudio_sprite_image_store_path(output_root, source, Path(shard["filter_data"]))
+            if not call_store.is_file():
+                check["missingStores"].append(str(call_store))
+                continue
+            with UnityObjectStore(call_store, schema=SPRITE_IMAGE_STORE_SCHEMA) as staged:
+                report = json.loads(staged.meta(SPRITE_IMAGE_CHECK_META_KEY) or "{}")
+            for key in ("checked", "matched", "mismatched"):
+                check[key] += int(report.get(key) or 0)
+            check["mismatches"].extend(list(report.get("mismatches") or [])[: max(0, 50 - len(check["mismatches"]))])
+            writer.merge_staged(SPRITE_TYPE, [call_store], remove_missing=False)
+            call_store.unlink()
+    check["ok"] = not check["missingStores"] and check["mismatched"] == 0 and check["checked"] == check["matched"]
+    return check
+
+
+def publish_sprite_images(output_root: Path, required_layers: tuple[str, ...], published_types: set[str], requested: bool) -> dict[str, Any] | None:
+    """Replace ``game/Sprite.sqlite`` after a Sprite publish: the checked images, or nothing.
+
+    A run that published Sprite crops with ``--sprite-images`` publishes every
+    layer's image store (later layer wins, as for the crops); any other Sprite
+    publish removes the file, so an image never outlives the crop it was
+    checked against.
+    """
+    if SPRITE_TYPE not in published_types:
+        return None
+    target = ExportLayout(output_root).game / SPRITE_IMAGE_STORE_FILE
+    layer_stores = [animestudio_sprite_image_store_path(output_root, layer) for layer in required_layers]
+    if target.exists():
+        target.unlink()
+    if not requested:
+        return {"published": False}
+    missing = [str(path) for path in layer_stores if not path.is_file()]
+    if missing:
+        raise UnityStoreError(f"--sprite-images: no checked Sprite image store for {missing}")
+    with UnityObjectStoreWriter(target, schema=SPRITE_IMAGE_STORE_SCHEMA) as writer:
+        synced = writer.merge_staged(SPRITE_TYPE, layer_stores)
+    for path in layer_stores:
+        path.unlink()
+    log(f"  published game/{SPRITE_IMAGE_STORE_FILE}: {synced['written']} AnimeStudio Sprite image(s)")
+    return {"published": True, **synced}
 
 
 def staged_document_stores(stage_dir: Path) -> dict[Path, dict[str, int]]:
@@ -4358,6 +4448,7 @@ def run_animestudio_stage(
     managed_reference_diagnostics_enabled: bool = False,
     managed_reference_diagnostic_types: tuple[str, ...] = (),
     managed_reference_diagnostics_include_exact_matches: bool = False,
+    sprite_images: Path | None = None,
 ) -> CommandResult:
     work_dir = ensure_dir(animestudio_work_dir(output_root))
     stage_out = ensure_dir(animestudio_stage_dir(output_root, source, stage))
@@ -4486,6 +4577,12 @@ def run_animestudio_stage(
             if stale_path.exists():
                 stale_path.unlink()
         cmd.extend(["--document_store", str(document_store)])
+    if sprite_images is not None:
+        ensure_dir(sprite_images.parent)
+        for stale_path in (sprite_images, sprite_images.with_name(sprite_images.name + ".partial")):
+            if stale_path.exists():
+                stale_path.unlink()
+        cmd.extend(["--sprite_images", str(sprite_images)])
     if secondary_export is not None:
         ensure_dir(secondary_export.output_path)
         cmd.extend([ANIMESTUDIO_SECONDARY_EXPORT_FLAGS["output"], str(secondary_export.output_path)])
@@ -4686,7 +4783,15 @@ def prepare_animestudio_asset_shards(
             entries=map_entries,
         )
     )
-    cache_enabled = bool(options.get("asset_cache_enabled", True))
+    # A --sprite-images run checks every Sprite against AnimeStudio's own image,
+    # so none may be reused from the cache.
+    sprite_images = type_name == SPRITE_TYPE and bool(options.get("sprite_images"))
+    cache_enabled = bool(options.get("asset_cache_enabled", True)) and not sprite_images
+    if sprite_images:
+        layer_images = animestudio_sprite_image_store_path(output_root, source)
+        for stale in (layer_images, *layer_images.parent.glob(f"{source}/*.sqlite*")):
+            if stale.exists():
+                stale.unlink()
     if cache_enabled:
         gap = asset_cache_plan_evidence_gap(plan)
         if gap is not None:
@@ -4773,6 +4878,7 @@ def prepare_animestudio_asset_shards(
         "type_spec": type_spec,
         "type_name": type_name,
         "cache_enabled": cache_enabled,
+        "sprite_images": sprite_images,
         "cache_path": cache_path,
         "asset_cache": asset_cache,
         "asset_info": asset_info,
@@ -4937,6 +5043,17 @@ def finalize_animestudio_asset_shard_work(
                     writer.merge_staged(type_name, [call_store], remove_missing=False)
             for call_store in completed_calls:
                 call_store.unlink()
+    sprite_image_check = None
+    if asset_work.get("sprite_images"):
+        sprite_image_check = collect_sprite_image_checks(output_root, source, shards, result_by_shard)
+        asset_info["sprite_image_check"] = {key: value for key, value in sprite_image_check.items() if key != "store"}
+        log(
+            f"  sprite images {source}: checked={sprite_image_check['checked']} "
+            f"matched={sprite_image_check['matched']} mismatched={sprite_image_check['mismatched']} "
+            f"missing_stores={len(sprite_image_check['missingStores'])}"
+        )
+        for mismatch in sprite_image_check["mismatches"][:10]:
+            log(f"    crop differs from AnimeStudio's image: {mismatch}")
     document_stamps = (
         animestudio_convert_store_stamps(output_root, source, type_name)
         if stage == "convert_by_type" else {}
@@ -5073,7 +5190,14 @@ def finalize_animestudio_asset_shard_work(
         and export_error_count == 0
         and texture2d_decode_failed_count == 0
         and mesh_suspicious_no_output_count == 0
+        and (sprite_image_check is None or sprite_image_check["ok"])
     )
+    if sprite_image_check is not None and not sprite_image_check["ok"]:
+        log(
+            f"  animestudio asset shards {stage}:{type_name} for {source}: marking failed because "
+            f"{sprite_image_check['mismatched']} crop document(s) do not reproduce AnimeStudio's image "
+            f"and {len(sprite_image_check['missingStores'])} completed call(s) wrote no image store"
+        )
     if missing_output_count and missing_outputs_allowed:
         log(
             f"  animestudio asset shards {stage}:{type_name} for {source}: "
@@ -5570,6 +5694,10 @@ def run_animestudio_stage_plan(
                         ),
                         "managed_reference_diagnostics_include_exact_matches": bool(
                             options.get("managed_reference_diagnostics_include_exact_matches")
+                        ),
+                        "sprite_images": (
+                            animestudio_sprite_image_store_path(output_root, source, Path(shard["filter_data"]))
+                            if asset_work.get("sprite_images") else None
                         ),
                     },
                 }
@@ -6220,8 +6348,10 @@ def main() -> int:
         raise SystemExit(
             "--animestudio-managed-reference-diagnostics requires a MonoBehaviour JSON export"
         )
+    if args.sprite_images and (args.skip_animestudio or SPRITE_TYPE not in extraction.convert_types):
+        raise SystemExit("--sprite-images requires Sprite among the Convert classes")
     structured_dump_plan = structured_dump_steps(extraction.structured_blocks)
-    animestudio_stage_options = animestudio_stage_options(extraction)
+    stage_options = animestudio_stage_options(extraction)
     # Overlay skip lists need both layers' indexes even for Story-only exports.
     # A first-time Story export has no cached indexes to reuse.
     vfs_index_enabled = should_build_vfs_indexes(
@@ -6647,7 +6777,7 @@ def main() -> int:
         if not args.skip_animestudio:
             log(f"  animestudio broad export root: {animestudio_source_root(output_root, source)}")
             for stage in selected_animestudio_stages:
-                options = dict(animestudio_stage_options[stage])
+                options = dict(stage_options[stage])
                 options["mono_behaviour_type_tree_priority"] = animestudio_mono_behaviour_type_tree_priority
                 options["object_index_enabled"] = animestudio_object_index_enabled
                 options["managed_reference_diagnostics_enabled"] = (
@@ -6658,6 +6788,7 @@ def main() -> int:
                     managed_reference_diagnostics_include_exact_matches
                 )
                 options["asset_cache_enabled"] = animestudio_asset_cache_enabled
+                options["sprite_images"] = bool(args.sprite_images)
                 options["overlay_skip_sha256"] = overlay_skip_signatures.get(source)
                 options["asset_shards"] = args.animestudio_shards
                 if stage == "maps":
@@ -7004,11 +7135,30 @@ def main() -> int:
             else:
                 log(f"  structured publish skipped: {structured_dump_layer} was not dumped in this run")
         if not args.skip_animestudio:
+            unity_layers = tuple(layer for layer in INSTALLED_LAYERS if (game_root / layer / "VFS").is_dir())
             publish_summary["unity"] = publish_unity_outputs(
                 output_root,
-                tuple(layer for layer in INSTALLED_LAYERS if (game_root / layer / "VFS").is_dir()),
+                unity_layers,
                 completed_types=unity_types_completed,
             )
+            published_types = set(publish_summary["unity"].get("types") or ())
+            sprite_images = publish_sprite_images(output_root, unity_layers, published_types, bool(args.sprite_images))
+            if sprite_images is not None:
+                publish_summary["spriteImages"] = sprite_images
+            if SPRITE_TYPE in published_types:
+                # Every published crop must name a published texture of its recorded size.
+                sprite_textures = check_sprite_textures(output_root)
+                publish_summary["spriteTextures"] = sprite_textures
+                log(
+                    f"  Sprite crops: checked={sprite_textures['checked']} problems={sprite_textures['problemCount']} "
+                    f"scaled={sprite_textures['scaled']} transformed={sprite_textures['transformed']}"
+                )
+                for problem in sprite_textures["problems"][:10]:
+                    log(f"    {problem['document']}: {problem['texture']}: {problem['problem']}")
+                if not sprite_textures["ok"]:
+                    unity_stage_failures.append(
+                        f"Sprite: {sprite_textures['problemCount']} crop document(s) name no matching exported texture"
+                    )
         refreshed_blocks: tuple[str, ...] = ()
         if "structured" in publish_summary:
             refreshed_blocks = extraction.structured_blocks

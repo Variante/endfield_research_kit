@@ -20,6 +20,7 @@ from scripts.common import require_export_layout
 
 from scripts.common import EXPORT_ROOT, LANG_DIR, OUT_DIR, rel_path, write_json
 from scripts.common import WEBUI_BUILD_DIR, read_json
+from scripts.game_data import sprite_crops
 from scripts.game_data.unity_store import open_store_if_present
 from scripts.source_paths import ExportLayout
 
@@ -213,7 +214,11 @@ def iter_asset_entries(asset_index_path: Path, export_root: Path) -> tuple[Itera
                 }
             if store is not None:
                 for name in store.names(type_name, "*.json"):
-                    yield {"k": "json", "r": f"{type_name}/{name}"}
+                    if type_name == sprite_crops.SPRITE_TYPE:
+                        # A Sprite crop document stands for the Sprite image.
+                        yield {"k": "image", "r": f"{type_name}/{sprite_crops.image_name(name)}"}
+                    else:
+                        yield {"k": "json", "r": f"{type_name}/{name}"}
 
     return scan(), rel_path(recovered_root)
 

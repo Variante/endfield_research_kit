@@ -19,7 +19,7 @@ import re
 import sys
 import tempfile
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
@@ -35,6 +35,8 @@ from scripts.common import (
     normalize_posix,
 )
 from scripts.source_paths import ExportLayout
+from scripts.game_data import sprite_crops
+from scripts.game_data.unity_store import open_store_if_present
 
 WEBUI_ROOT = PROJECT_ROOT / "webui"
 ZIP_NAME_PREFIX = "endfield-story-exported"
@@ -344,6 +346,8 @@ class ExportedImage:
     rel: str
     source_path: Path
     archive_path: str
+    #: Bytes to write instead of copying ``source_path`` (a Sprite crop document from the store).
+    data: bytes | None = None
 
 
 @dataclass
@@ -729,6 +733,14 @@ def zip_writestr(zipf: zipfile.ZipFile, written: set[str], arcname: str, data: s
     written.add(normalized)
 
 
+def zip_write_item(zipf: zipfile.ZipFile, written: set[str], item: ExportedImage) -> None:
+    """Copy one exported file into the archive, or write its bytes when it has no file."""
+    if item.data is not None:
+        zip_writestr(zipf, written, item.archive_path, item.data)
+    else:
+        zip_write_file(zipf, written, item.source_path, item.archive_path)
+
+
 def zip_write_file(zipf: zipfile.ZipFile, written: set[str], source: Path, arcname: str) -> bool:
     normalized = archive_name(arcname)
     if normalized in written:
@@ -784,11 +796,30 @@ def plan_package(
     curated_entries = [entries_by_rel[rel] for rel in sorted(page_asset_rels) if rel in entries_by_rel]
     curated_payload = filtered_media_index(media_payload, curated_entries)
 
+    unity_store = open_store_if_present(export_root)
+
+    def exported_items(payload: dict, entry: dict, rel: str) -> list[ExportedImage]:
+        """The files one index entry needs: the file itself, or for a Sprite its texture and crop document."""
+        texture_rel = entry.get("crop")
+        if not texture_rel:
+            return [resolve_exported_image(project_root, export_root, payload, rel)]
+        # A Sprite image has no file. Ship its texture and its crop document
+        # loose beside the image path, where serve.py answers the image from it.
+        document_rel = posixpath.join(posixpath.dirname(rel), sprite_crops.document_name(posixpath.basename(rel)))
+        document = resolve_exported_image(project_root, export_root, payload, document_rel)
+        if unity_store is not None and unity_store.exists(sprite_crops.SPRITE_TYPE, posixpath.basename(document_rel)):
+            document = replace(
+                document,
+                data=unity_store.read_bytes(sprite_crops.SPRITE_TYPE, posixpath.basename(document_rel)),
+            )
+        return [resolve_exported_image(project_root, export_root, payload, str(texture_rel)), document]
+
     def resolved_assets(kind: str, rels: Iterable[str]) -> list[ExportedImage]:
         return [
-            resolve_exported_image(project_root, export_root, media_payload, rel)
+            item
             for rel in sorted(rels)
             if entries_by_rel[rel].get("k") == kind
+            for item in exported_items(media_payload, entries_by_rel[rel], rel)
         ]
 
     curated_rels = set(page_asset_rels) & set(entries_by_rel)
@@ -798,8 +829,9 @@ def plan_package(
         if isinstance(entry, dict) and entry.get("r")
     }
     resource_assets = [
-        resolve_exported_image(project_root, export_root, full_asset_payload, rel)
+        item
         for rel in sorted(resource_entries_by_rel)
+        for item in exported_items(full_asset_payload, resource_entries_by_rel[rel], rel)
     ]
     curated_audio_files = [item for item in all_audio_files if item.rel in page_audio_rels]
     resource_audio_files = [item for item in all_audio_files if item.rel not in page_audio_rels]
@@ -854,6 +886,9 @@ def create_package(args: argparse.Namespace) -> int:
         present: list[ExportedImage] = []
         absent: list[ExportedImage] = []
         for item in items:
+            if item.data is not None:
+                present.append(item)
+                continue
             if item.source_path in source_sizes:
                 present.append(item)
                 continue
@@ -1051,7 +1086,7 @@ def _write_media_package(
         for path in page_local_media_files:
             zip_write_file(zipf, written, path, webui_arcname(webui_root, path))
         for item in curated_images + curated_videos:
-            zip_write_file(zipf, written, item.source_path, item.archive_path)
+            zip_write_item(zipf, written, item)
 
 
 def _write_page_audio_package(
@@ -1087,7 +1122,7 @@ def _write_resources_package(
         for path in resource_data_files:
             zip_write_file(zipf, written, path, webui_arcname(webui_root, path))
         for item in resource_assets + resource_audio:
-            zip_write_file(zipf, written, item.source_path, item.archive_path)
+            zip_write_item(zipf, written, item)
         for audio_index in plan.audio_indexes:
             zip_write_file(zipf, written, audio_index.source_path, audio_index.archive_path)
 

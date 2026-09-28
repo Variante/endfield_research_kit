@@ -63,6 +63,14 @@ UNITY_STORE_CONTENT_TYPES = {
 }
 GAME_FILE_STORE_FILE = "GameFiles.sqlite"
 BINARY_CONTENT_TYPE = "application/octet-stream"
+# A Sprite image is a crop of an exported texture (scripts/game_data/sprite_crops.py).
+# A request for one is answered with AnimeStudio's own image when the export
+# kept it, else with the crop document under this type, which the WebUI's
+# service worker (webui/sprite_worker.js) turns into the image.
+SPRITE_TYPE_DIR = "Sprite"
+SPRITE_IMAGE_STORE_FILE = "Sprite.sqlite"
+SPRITE_IMAGE_STORE_SCHEMA = "endfield.sprite-image-store.v1"
+SPRITE_CROP_CONTENT_TYPE = "application/vnd.endfield.sprite-crop+json; charset=utf-8"
 
 
 def read_paths_bat_value(name: str) -> str:
@@ -178,6 +186,54 @@ def read_unity_store_document(store: Path, type_name: str, name: str) -> bytes |
             return unity_store.read_bytes(type_name, name)
         except KeyError:
             return None
+
+
+def sprite_image_request(translated_path: str) -> tuple[Path, str] | None:
+    """``(game folder, image name)`` when a missing file is a Sprite image.
+
+    That is ``<game>/Unity/Sprite/<name>.png`` with the file itself absent: the
+    export keeps a Sprite as a crop document, not as a PNG.
+    """
+
+    path = Path(translated_path)
+    type_dir = path.parent
+    if (
+        path.suffix.lower() != ".png"
+        or type_dir.name != SPRITE_TYPE_DIR
+        or type_dir.parent.name.lower() != "unity"
+        or path.exists()
+    ):
+        return None
+    return type_dir.parent.parent, path.name
+
+
+def read_sprite_image(game_dir: Path, name: str) -> tuple[bytes, str, Path] | None:
+    """``(bytes, Content-Type, source file)`` for one Sprite image request, or None.
+
+    AnimeStudio's own image from ``game/Sprite.sqlite`` when an export kept it;
+    otherwise the crop document, loose beside the image (a packaged copy) or
+    the row of ``game/Unity.sqlite``. Stores are opened read-only per call.
+    """
+
+    from scripts.game_data.unity_store import UnityObjectStore
+
+    images = game_dir / SPRITE_IMAGE_STORE_FILE
+    if images.is_file():
+        with UnityObjectStore(images, schema=SPRITE_IMAGE_STORE_SCHEMA) as store:
+            try:
+                return store.read_bytes(SPRITE_TYPE_DIR, name), "image/png", images
+            except KeyError:
+                pass
+    document = Path(name).stem + ".json"
+    loose = game_dir / "Unity" / SPRITE_TYPE_DIR / document
+    if loose.is_file():
+        return loose.read_bytes(), SPRITE_CROP_CONTENT_TYPE, loose
+    store_path = game_dir / UNITY_STORE_FILE
+    if store_path.is_file():
+        data = read_unity_store_document(store_path, SPRITE_TYPE_DIR, document)
+        if data is not None:
+            return data, SPRITE_CROP_CONTENT_TYPE, store_path
+    return None
 
 
 def game_file_store_document(translated_path: str, served_root: str) -> tuple[Path, str] | None:
@@ -538,8 +594,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if not is_export_route(request_path):
             return False, None
         translated = self.translate_path(self.path)
-        document = unity_store_document(translated)
-        if document is not None:
+        sprite = sprite_image_request(translated)
+        document = None if sprite is not None else unity_store_document(translated)
+        if sprite is not None:
+            game_dir, image_name = sprite
+            label = "Sprite image"
+            answer: dict[str, object] = {}
+
+            def read() -> bytes | None:
+                result = read_sprite_image(game_dir, image_name)
+                if result is None:
+                    return None
+                data, answer["type"], answer["source"] = result
+                return data
+
+            content_type = lambda data: answer["type"]  # noqa: E731
+            store = None
+        elif document is not None:
             store, type_name, name = document
             label = "Unity object store"
             read = lambda: read_unity_store_document(store, type_name, name)  # noqa: E731
@@ -560,6 +631,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if data is None:
             self.send_error(404, "File not found")
             return True, None
+        if store is None:
+            store = answer["source"]
         modified = int(os.path.getmtime(store))
         since = self.headers.get("If-Modified-Since")
         if since:

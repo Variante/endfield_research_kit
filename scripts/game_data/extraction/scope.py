@@ -9,7 +9,8 @@ Two independent vocabularies decide an export:
 * **Unity classes** are objects AnimeStudio exports from asset bundles: JSON
   documents (``json_by_type``, published into ``game/Unity.sqlite``) and
   converted media (``convert_by_type``, ``game/Unity/<Type>/`` plus ``.anim``
-  documents in the store).
+  documents and Sprite crop documents in the store). A Sprite is exported as a
+  crop of its exported Texture2D, so selecting Sprite selects Texture2D whole.
 
 An :class:`ExtractionScope` is one selection from each vocabulary. Scopes
 combine with ``|``, so a run that serves several consumers exports exactly what
@@ -154,6 +155,8 @@ class ExtractionScope:
                 raise ValueError(f"unknown {name}(s): {', '.join(unknown)}; expected {', '.join(known)}")
         if self.webui_textures_only and self.convert_types != frozenset({"Texture2D"}):
             raise ValueError("the WebUI Texture2D name filter needs Texture2D as the only Convert class")
+        if "Sprite" in self.convert_types and "Texture2D" not in self.convert_types:
+            raise ValueError("Sprite exports as crops of the exported Texture2D, so it needs Texture2D whole")
 
     @classmethod
     def of(
@@ -164,10 +167,14 @@ class ExtractionScope:
         *,
         webui_textures_only: bool = False,
     ) -> "ExtractionScope":
+        convert = frozenset(convert_types)
+        if "Sprite" in convert:
+            # A Sprite is a crop document over an exported texture.
+            convert |= {"Texture2D"}
         return cls(
             frozenset(structured),
             frozenset(json_types),
-            frozenset(convert_types),
+            convert,
             webui_textures_only,
         )
 

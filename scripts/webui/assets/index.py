@@ -12,11 +12,14 @@ from pathlib import Path
 from typing import Any
 
 from scripts.source_paths import (
+    ASSET_SOURCE_UNITY,
+    ExportLayout,
     _asset_source_family,
     prune_nested_source_dirs,
     resolve_asset_source_roots,
     resolve_material_source_roots,
 )
+from scripts.game_data import sprite_crops
 from scripts.game_data.unity_store import open_store_if_present
 from scripts.common import (
     path_id_export_base_stem,
@@ -438,6 +441,53 @@ def _add_duplicate_candidate_hashes(entries: list[dict], paths_by_rel: dict[str,
             entry["h"] = _file_sha256(path)
 
 
+def _add_sprite_crop_hashes(
+    entries: list[dict],
+    crops_by_rel: dict[str, "sprite_crops.SpriteCrop"],
+    paths_by_rel: dict[str, Path],
+) -> None:
+    """Give Sprite images that show the same pixels the same ``h``.
+
+    A Sprite has no file: its pixels follow from its texture's content and its
+    crop. A Sprite that is its whole texture unchanged shares the texture's
+    SHA-256 (as its former PNG did, byte for byte); other Sprites share a
+    digest of texture content and crop. Textures are hashed only for a
+    candidate group, as in :func:`_add_duplicate_candidate_hashes`.
+    """
+    by_rel = {str(entry.get("r") or ""): entry for entry in entries}
+    texture_hashes: dict[str, str] = {}
+
+    def texture_hash(rel: str) -> str:
+        known = by_rel[rel].get("h")
+        if known:
+            return str(known)
+        if rel not in texture_hashes:
+            texture_hashes[rel] = _file_sha256(paths_by_rel[rel])
+        return texture_hashes[rel]
+
+    coarse: dict[tuple[int, str], list[tuple[str, str]]] = defaultdict(list)
+    for rel, crop in crops_by_rel.items():
+        texture_rel = str(by_rel[rel]["crop"])
+        if crop.is_whole_texture:
+            digest = texture_hash(texture_rel)
+            by_rel[rel]["h"] = digest
+            by_rel[texture_rel]["h"] = digest
+            continue
+        coarse[(int(by_rel[texture_rel].get("s") or 0), crop.geometry_key())].append((rel, texture_rel))
+    for (_size, geometry), members in coarse.items():
+        if len(members) < 2:
+            continue
+        fine: dict[str, list[str]] = defaultdict(list)
+        for rel, texture_rel in members:
+            fine[texture_hash(texture_rel)].append(rel)
+        for digest, rels in fine.items():
+            if len(rels) < 2:
+                continue
+            shared = hashlib.sha256(f"sprite-crop:{digest}:{geometry}".encode("utf-8")).hexdigest()
+            for rel in rels:
+                by_rel[rel]["h"] = shared
+
+
 @dataclass(frozen=True)
 class AssetScanResult:
     """One filesystem scan and every value derived from it."""
@@ -518,6 +568,56 @@ def scan_exported_media_assets(
         source: rel_path(path, root)
         for source, path in [*asset_roots, *material_roots]
     }
+    # Sprite images are crops of exported textures, listed from their crop
+    # documents at the place their folder takes in the sorted walk.
+    sprite_crops_by_rel: dict[str, sprite_crops.SpriteCrop] = {}
+    unresolved_sprite_count = 0
+    sprite_store = open_store_if_present(export_root)
+    texture_dir = ExportLayout(export_root).unity_type_dir(sprite_crops.TEXTURE_TYPE)
+    pending_sprites = (
+        list(sprite_crops.iter_sprite_crops(sprite_store)) if sprite_store is not None else []
+    )
+
+    def add_image_entry(entry: dict, asset_rel: str, stem: str, path_id: str, dimensions: tuple[int, int] | None) -> None:
+        nonlocal material_like_image_count
+        if path_id:
+            entry["pid"] = path_id
+        if dimensions:
+            # `h` is already reserved for duplicate-content SHA-256.
+            entry["iw"], entry["ih"] = dimensions
+        image_category = classify_image_name(stem)
+        image_category_counts[image_category] += 1
+        if image_category != "other":
+            entry["ic"] = image_category
+        if is_material_like_texture_name(stem):
+            entry["mt"] = 1
+            material_like_image_count += 1
+        asset_entries.append(entry)
+        image_rels_by_stem[stem.lower()].append(asset_rel)
+        if path_id:
+            image_rels_by_pid[path_id.upper()].append(asset_rel)
+        counts["total"] += 1
+        counts["image"] += 1
+
+    def add_sprite_crops() -> None:
+        nonlocal unresolved_sprite_count
+        for crop in pending_sprites:
+            if not (texture_dir / crop.texture_file).is_file():
+                unresolved_sprite_count += 1
+                continue
+            asset_rel = f"{ASSET_SOURCE_UNITY}/{sprite_crops.SPRITE_TYPE}/{crop.image_name}"
+            logical = _logical_export_stem(asset_rel, Path(crop.image_name).stem)
+            if logical is None:
+                continue
+            stem, path_id = logical
+            entry = {
+                "k": "image",
+                "r": asset_rel,
+                "crop": f"{ASSET_SOURCE_UNITY}/{sprite_crops.TEXTURE_TYPE}/{crop.texture_file}",
+            }
+            add_image_entry(entry, asset_rel, stem, path_id, (crop.width, crop.height))
+            sprite_crops_by_rel[asset_rel] = crop
+        pending_sprites.clear()
 
     def add_asset_file(
         *,
@@ -527,7 +627,6 @@ def scan_exported_media_assets(
         include_regular_assets: bool = True,
         include_media: bool = True,
     ) -> None:
-        nonlocal material_like_image_count
         suffix = path.suffix.lower()
         kind = _browser_asset_kind_for_suffix(
             suffix,
@@ -549,28 +648,15 @@ def scan_exported_media_assets(
             "r": asset_rel,
             "s": size,
         }
+        asset_paths_by_rel[asset_rel] = path
+        if kind == "image":
+            add_image_entry(entry, asset_rel, stem, path_id, _image_dimensions(path))
+            return
         if path_id:
             entry["pid"] = path_id
-        if kind == "image":
-            dimensions = _image_dimensions(path)
-            if dimensions:
-                # `h` is already reserved for duplicate-content SHA-256.
-                entry["iw"], entry["ih"] = dimensions
-            image_category = classify_image_name(stem)
-            image_category_counts[image_category] += 1
-            if image_category != "other":
-                entry["ic"] = image_category
-            if is_material_like_texture_name(stem):
-                entry["mt"] = 1
-                material_like_image_count += 1
         asset_entries.append(entry)
-        asset_paths_by_rel[asset_rel] = path
 
-        if kind == "image":
-            image_rels_by_stem[stem.lower()].append(asset_rel)
-            if path_id:
-                image_rels_by_pid[path_id.upper()].append(asset_rel)
-        elif kind == "model":
+        if kind == "model":
             model_base = _normalize_model_base(stem)
             source_family = _asset_source_family(source).lower()
             entry["_mb"] = model_base
@@ -594,17 +680,27 @@ def scan_exported_media_assets(
 
     print(f"\nScanning exported media assets from {_label_text(media_root_labels, export_root)}...")
     for source, source_root in asset_roots:
+        sprites_here = source == ASSET_SOURCE_UNITY and bool(pending_sprites)
         for dirpath, dirnames, filenames in os.walk(source_root):
             prune_nested_source_dirs(source, source_root, dirpath, dirnames)
             dirnames.sort()
             filenames.sort()
             base_dir = Path(dirpath)
+            if sprites_here and base_dir == source_root:
+                # The crop documents are the Sprite images; a loose folder is stale.
+                dirnames[:] = [name for name in dirnames if name != sprite_crops.SPRITE_TYPE]
+            elif pending_sprites and sprites_here and base_dir.relative_to(source_root).parts[0] > sprite_crops.SPRITE_TYPE:
+                add_sprite_crops()
             for filename in filenames:
                 add_asset_file(
                     source=source,
                     source_root=source_root,
                     path=base_dir / filename,
                 )
+        if sprites_here:
+            add_sprite_crops()
+    if unresolved_sprite_count:
+        print(f"  skipped {unresolved_sprite_count} Sprite crop(s) whose texture is not exported")
 
     relations: dict[str, dict] = {}
     material_count = 0
@@ -718,6 +814,7 @@ def scan_exported_media_assets(
                         })
 
     _add_duplicate_candidate_hashes(asset_entries, asset_paths_by_rel)
+    _add_sprite_crop_hashes(asset_entries, sprite_crops_by_rel, asset_paths_by_rel)
     _add_duplicate_candidate_hashes(video_entries, asset_paths_by_rel)
 
     count_keys = ("total", "image", "model", "video")

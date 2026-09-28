@@ -242,6 +242,10 @@ def exporter_command(plan: BuildPlan, args: argparse.Namespace, game_root: Path,
     # re-exports them republishes it; Story and Audio read it.
     if scope.exports_object_index_types:
         command.append("--animestudio-object-index")
+    # The debug export also keeps AnimeStudio's own Sprite images
+    # (game/Sprite.sqlite) and checks every Sprite crop document against them.
+    if args.debug and "Sprite" in scope.convert_types:
+        command.append("--sprite-images")
     return command + list(args.exporter_args)
 
 

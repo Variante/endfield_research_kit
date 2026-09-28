@@ -85,6 +85,7 @@ Load order, as `index.html` declares it:
 | Files | Role |
 | --- | --- |
 | `index.html`, `style.css` | shell, page containers, shared layout and media presentation |
+| `src/core/sprites.js`, `sprite_worker.js` | registers the service worker that renders Sprite images (below); the first visit reloads once when it takes over |
 | `src/core/{namespace,dom,loader,storage,text,locale,paths}.js` | globals, DOM helpers, fetch/caching, persistence, text, locale, paths |
 | `src/ui/{media_player,splitter,filters,facets,pagination}.js` | shared media player, resizable splitters, filter chips and panel toggle, declarative facet filters (`WebUI.facets`, below), list pager |
 | `app_labels.js`, `app_tree.js`, `src/features/story_triggers.js`, `app.js` | Story/Text labels, tree rendering, trigger evidence, Story page |
@@ -793,6 +794,15 @@ and how each render layer earns its evidence grade are owned by
   asset-bearing field holds this asset's exact normalized stem. An asset with
   no such row shows no owner; a shared name prefix never produces one, and the
   sidecar is optional, so its absence only removes the fact.
+- Sprite images: the export keeps each Sprite as a crop document over its
+  texture, so an index entry with `crop` (the texture's path) has no file and
+  no `s`; the page shows its pixel size and a `Cropped from` fact instead.
+  Every page still links to `.../game/Unity/Sprite/<name>.png`: `serve.py`
+  answers it with the crop document (`application/vnd.endfield.sprite-crop+json`),
+  or with AnimeStudio's PNG from `game/Sprite.sqlite` after a debug export,
+  and `sprite_worker.js` decodes the texture PNG itself and renders the crop,
+  so the pixels equal AnimeStudio's, transparent ones included. Without the
+  worker (no secure context), Sprite images do not display.
 - Text: search plus filter sections `basic`, `group`, and `source`. Known row
   shapes render as rows; every row keeps its raw JSON beside the rendered view,
   so an unsupported shape stays searchable instead of being silently dropped.

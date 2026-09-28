@@ -13,7 +13,8 @@ bundle manifest), always shown as a hex dump, and the decoded datasets below. Me
 Sprite, Mesh, Animator FBX, decoded audio -- are left out on both sides:
 `scripts/webui/pages.py` `PAGE_MEDIA` keeps them out of the page's
 extraction, and `store_browser.PAGE_MEDIA_FOLDERS` out of its list; a local
-test keeps the two equal. Sources and their groups (Unity types, packed
+test keeps the two equal. Sprite crop documents are Unity store rows, so the
+Data page lists them while Assets shows the images. Sources and their groups (Unity types, packed
 folders, loose folders, datasets) are multi-select `WebUI.facets` chips;
 nothing selected lists every source, and a selected group narrows its own
 source. Decoded-only filters (status, source folder, tags) appear only while

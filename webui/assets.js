@@ -125,6 +125,7 @@
       factSource: "\u6765\u6e90",
       factFolder: "\u5206\u7ec4",
       factSize: "\u5927\u5c0f",
+      factCropOf: "\u88c1\u5207\u81ea",
       factCopies: "\u526f\u672c",
       factHash: "\u54c8\u5e0c",
       factSameHashFiles: "\u76f8\u540c\u54c8\u5e0c\u6587\u4ef6",
@@ -229,6 +230,7 @@
       factSource: "Source",
       factFolder: "Group",
       factSize: "Size",
+      factCropOf: "Cropped from",
       factCopies: "Copies",
       factHash: "Hash",
       factSameHashFiles: "Same-hash files",
@@ -1039,6 +1041,9 @@
         kind,
         rel,
         size: Number(raw.s || 0),
+        // A Sprite image has no file: it is a crop of this texture.
+        cropOf: String(raw.crop || ""),
+        pixelSize: raw.iw && raw.ih ? `${raw.iw}\u00d7${raw.ih}` : "",
         name,
         dir,
         variantScope,
@@ -1682,7 +1687,7 @@
 
     const size = document.createElement("div");
     size.className = "asset-row-size";
-    size.textContent = formatBytes(entry.size);
+    size.textContent = formatAssetSize(entry);
     line1.appendChild(size);
 
     const line2 = document.createElement("div");
@@ -1920,8 +1925,9 @@
       [assetUiText("factKind"), formatAssetKindValue(entry, activeVariant)],
       [assetUiText("factSource"), entry.source || assetUiText("none")],
       [assetUiText("factFolder"), entry.groupLabel || entry.groupRaw || (entry.groupKey === "(root)" ? assetUiText("rootFolder") : entry.groupKey)],
-      [assetUiText("factSize"), formatBytes(entry.size)],
+      [assetUiText("factSize"), formatAssetSize(entry)],
     ];
+    if (entry.cropOf) facts.push([assetUiText("factCropOf"), entry.cropOf]);
     const activeFile = activeVariant || entry;
     if (entry.kind === "image") {
       facts.push([assetUiText("factImageCategory"), formatAssetCategoryMeta(activeFile || entry)]);
@@ -2045,7 +2051,7 @@
       meta.className = "asset-related-meta";
       meta.textContent = assetUiText("relatedMeta", {
         kind: assetTypeLabel(item.ext || item.kind),
-        size: formatBytes(item.size),
+        size: formatAssetSize(item),
       });
       block.appendChild(meta);
 
@@ -3086,6 +3092,11 @@
       out[key] = (out[key] || 0) + 1;
     }
     return out;
+  }
+
+  // A Sprite crop has pixels but no file of its own.
+  function formatAssetSize(entry) {
+    return entry && entry.cropOf ? entry.pixelSize : formatBytes(entry ? entry.size : 0);
   }
 
   function formatBytes(bytes) {

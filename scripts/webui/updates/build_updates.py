@@ -60,7 +60,13 @@ from scripts.webui.audio.semantics.identifiers import (
     AUDIO_DUMPER_LANGUAGE_BY_CODE,
     audio_dialog_external_media_id,
 )
-from scripts.source_paths import ExportLayout, ExportLayoutError, prune_nested_source_dirs, resolve_asset_source_roots
+from scripts.source_paths import (
+    ASSET_SOURCE_UNITY,
+    ExportLayout,
+    ExportLayoutError,
+    prune_nested_source_dirs,
+    resolve_asset_source_roots,
+)
 from scripts.webui.updates.scanner import ScanConfig, is_export_store_relative_path, scan_export_changes
 from scripts.webui.updates.characters import build_character_updates, comparison_character_catalog_dir
 
@@ -94,6 +100,11 @@ AUDIO_EXTENSIONS = {
 }
 AUDIO_EXPORT_RELATIVE_ROOT = "game/Audio"
 AUDIO_SOURCE_LABEL = "Audio"
+# Sprite images are crops of exported textures, kept as crop documents
+# (scripts/game_data/sprite_crops.py): a Sprite changes when its Texture2D
+# does, which the diff reports. Older exports kept them as PNG files, so the
+# folder is left out on both sides, including a saved baseline.
+SPRITE_ASSET_PREFIX = f"{ASSET_SOURCE_UNITY}/Sprite/"
 PRUNE_SAMPLE_LIMIT = 200
 IGNORED_GAME_PATH_PREFIXES = (
     # CrashSight writes local crash/telemetry state under the game install.
@@ -499,6 +510,8 @@ def build_asset_snapshot(
                     continue
                 rel_suffix = path.relative_to(source_root).as_posix()
                 rel_path = f"{source}/{rel_suffix}" if rel_suffix else source
+                if rel_path.startswith(SPRITE_ASSET_PREFIX):
+                    continue
                 if rel_requires_path_id_export_name(rel_path) and not path_id_export_base_stem(path.stem):
                     continue
                 stat = path.stat()
@@ -532,7 +545,7 @@ def build_asset_snapshot(
                 }
     if preserve_missing_prior_assets:
         for rel_path, old_asset in prior_assets.items():
-            if rel_path in assets or not isinstance(old_asset, dict):
+            if rel_path in assets or not isinstance(old_asset, dict) or rel_path.startswith(SPRITE_ASSET_PREFIX):
                 continue
             if not include_audio and asset_is_audio(old_asset):
                 continue

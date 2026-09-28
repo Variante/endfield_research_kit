@@ -61,6 +61,7 @@ Important options:
 --object_index_jsonl  Compact object/schema/MonoScript JSONL sidecar for binary-first joins.
 --filter_data       JSON list of source, offset, name, pathID, and type items.
 --document_store    SQLite file for JSON or Convert .json/.anim documents.
+--sprite_images     SQLite file for AnimeStudio's own Sprite PNGs, each checked against its crop document.
 --packed-game-store SQLite file for dump's Data/Json/LipSync files.
 ```
 
@@ -73,6 +74,16 @@ and Raw/Dump targets stay on disk, and the export manifest
 keeps the same logical paths. The store is built at `<file>.partial` and
 renamed only when the export completes. Without the option, output is
 byte-for-byte unchanged.
+
+Convert exports a Sprite as an `endfield.sprite-crop.v1` `.json` document, not
+a PNG (`ExportSprite`, `SpriteHelper.GetCropPlan`): the texture's exported file
+name and identity, the top-down rectangle, the transform, and the `clear`/`zero`
+pixel runs, read off `SpriteHelper.Shape` over probe images so the crop
+reproduces `GetImage` exactly. `--sprite_images <file>` also renders `GetImage`
+into a separate `endfield.sprite-image-store.v1` store, renders each crop from
+its texture as a consumer does, and records the counts and first mismatches in
+the store's `spriteCheck` meta row. `SpriteHelper.GetImage` itself is unchanged
+for the GUI.
 
 `dump --packed-game-store` writes `Data/Json/LipSync/*` directly as rows of a
 staged `endfield.game-file-store.v1` SQLite file. Other dump outputs remain

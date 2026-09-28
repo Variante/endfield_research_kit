@@ -171,7 +171,13 @@ per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_ma
   without loose LipSync files. Changed-only extraction stages selected LipSync
   rows into the same format and applies them through the game-file writer;
   rollback keeps previous bytes in its process journal. Convert media remains
-  loose and is mirrored as hardlinks. Publication happens per type
+  loose and is mirrored as hardlinks, except Sprite: it converts to a crop
+  document over its exported Texture2D (`unity_assets.md`), so it is a store
+  row, selecting it selects Texture2D whole, and every Sprite publish checks
+  that each crop names a published texture of its recorded size.
+  `--sprite-images` (on in `export.bat debug`) also keeps AnimeStudio's own
+  image of every Sprite in `game/Sprite.sqlite` and fails the Sprite item
+  unless each crop reproduces it; any other Sprite publish removes that file. Publication happens per type
   only when every installed layer finished that type's item
   in this run, never after a failed command or a failed stage item; the
   structured tree is published only by a run that dumped the effective layer.

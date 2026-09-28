@@ -562,7 +562,10 @@ Browser data inputs and outputs:
   never as loose files), the packed small-file folders (`PACKED_GAME_DIRS`,
   now `Json/LipSync`) in `game/GameFiles.sqlite` (read through
   `scripts/game_data/game_file_store.py`), and converted Unity media under
-  `game/Unity/<Type>/`,
+  `game/Unity/<Type>/` -- except Sprite, which is a crop document over its
+  exported Texture2D (`scripts/game_data/sprite_crops.py`) that keeps the
+  `game/Unity/Sprite/<name>.png` path and is rendered by
+  `webui/sprite_worker.js`,
   plus generated data under `webui/data/`. Builder
   evidence and comparison inputs go to `webui/data/_build/`, which is neither
   served nor packaged.
