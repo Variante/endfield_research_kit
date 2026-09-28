@@ -59,19 +59,148 @@ Current durable boundaries:
   format selector, while offset 12's numeric mip-count interpretation remains
   inferred. Block contents, D/N path meaning, texture-array ownership, and
   final rendering remain unresolved; unobserved header tuples fail closed.
-- The current Table corpus has a direct low-output sweep covering selected
+- The current Table corpus has a direct full-block dump covering selected
   overlay provenance, decoded MD5, exact read length, SparkBuffer parsing, and
-  EOF for every metadata declaration. BundleManifest and IFixPatchOut likewise
-  have current exact framing sweeps. BundleManifest uses corrected size/count
+  read-through-EOF for every selected declaration. Every resulting JSON file
+  parses and is byte-equal to the existing structured export; the changing
+  counts and current input-set receipt are in
+  `reports/animestudio/table_current_compare_20260927.json`.
+  BundleManifest and IFixPatchOut likewise have current exact framing sweeps.
+  BundleManifest uses corrected size/count
   fixed-width sections plus a repeated-size terminal variable envelope. Its
   variable payload begins with a gap-free sequential anonymous span of UTF-16LE
   fragments and three counted-u32 regions per record; its 48-byte rows index a
-  second span with the same record multiset under a different order. Terminal
-  bytes stay opaque. It has
-  exact inner-file-count, basename-multiplicity, and row-index witnesses, but
-  no serialized field ownership. Stale AssetMap source chunks cannot supply it.
-  Exact method pins exist, but unresolved stream/ref-out carriers still block a
-  safe lookup capture ABI. For IFix, the selected native `Instruction` layout
+  second span with the same raw-record multiset under a different order. A
+  current full-VFS corpus gate proves that the indexed names, in lexical order,
+  equal the complete verified `Bundle`/`InitBundle` path set. Each 48-byte row's
+  first 64-bit word pair (u32 words 6-7, low word first) equals that path's
+  independently recomputed VFS filename hash; word 10 separates the two block
+  families for every row. The selected native `ManifestDataBinary.InitBinary`
+  maps the three fixed sections to `assetInfoDictionary`,
+  `bundleInfoDictionary`, and `bundles`, respectively. Its array helper points
+  directly at the 48-byte rows, and `TryGetBundleByIndex` copies each whole row.
+  The nominal 32- and 56-byte section widths are a capacity accounting unit,
+  not interleaved records. Each section contains a capacity word, that many
+  eight-byte `(relativeOffset, count)` hash slots, then the same number of
+  24-byte `AssetInfo` or 48-byte `Bundle` values. The selected asset lookup
+  reads `AssetInfo.pathHashHead` from the 24-byte values and advances by 24;
+  the selected bundle validation lookup reads `Bundle.hashName` at value offset
+  24 and advances by 48. Both lookups select eight-byte slots by unsigned
+  comparer-hash modulo capacity. Every current slot range lands on its value
+  stride, the ranges cover each value once, and each stored key itself maps
+  back to its slot by unsigned modulo capacity.
+  In the current corpus, the dictionary `Bundle` values resolve the sequential
+  variable span and join every indexed-array `Bundle` name, list, flag, hash,
+  and category; their stored `bundleIndex` is zero, while the indexed array
+  stores the ordinal.
+  The `AssetInfo` values contain `pathHashHead`, `path`, `bundleIndex`, and
+  `assetSize`. Every asset `bundleIndex` is within the indexed Bundle array.
+  Asset `path` offsets tile the former terminal variable suffix exactly as
+  length-prefixed Brotli records with two zero terminator bytes; every stream
+  decodes to strict UTF-16LE, and the selected `RefCompressString` reader calls
+  Brotli. The asset writer hashes its source path after `ToLow`; replaying the
+  reviewed UTF-16 recurrence on every current decoded path reproduces its
+  `pathHashHead`. Current paths contain no ASCII uppercase witness, so unseen
+  case normalization remains conditional. In the current file, every repeated
+  decoded asset path has the same hash, bundle index, and size; the raw path
+  offsets differ, and repetition does not add another recorded bundle
+  association.
+  A keyed cross-store check resolves the manifest bundle index through its
+  indexed Bundle name, while independently resolving an AssetMap row's
+  `Source` plus `Offset` through the current VFS logical span and CABMap; the
+  row's `Container` is then compared to the manifest path. Many selected rows
+  agree exactly. Some rows with an exact matching path sit in another physical
+  Bundle, sometimes while other rows with that same `Container` sit in the
+  manifest Bundle. Thus the recorded manifest association does not establish
+  ownership of every exported Unity object carrying that container label, or
+  a GUID binding. The StreamingAssets AssetMap requires selection per source
+  *and offset*: per-file overlay replacement leaves gaps inside a chunk that
+  also contains verified selected files. The keyed results and changing counts
+  are in `reports/animestudio/bundle_manifest_assetmap_join_20260927.json` and
+  `reports/animestudio/bundle_manifest_streaming_assetmap_join_20260927.json`;
+  live asset lookup execution remains open.
+  A follow-up selected-build keyed audit checks the manifest's named Bundle
+  dependency lists against the physical Bundle of each disagreement. Every
+  Persistent disagreement and nearly every selected StreamingAssets
+  disagreement has that physical Bundle in the listed Bundle's
+  `directDependencies`, with reciprocal `directReverseDependencies` membership;
+  a bounded fallback residual has no such relation. This explains a stored
+  Bundle-list relationship, not Unity object ownership or the live loader's
+  choice. The residual and controls are in
+  `reports/animestudio/bundle_manifest_assetmap_dependency_audit_20260927.json`.
+  The maintained `bundle_cab_dependency_corpus.py` gate now compares the
+  manifest's named dependency lists with each selected Unity CABMap entry
+  after joining its source root, chunk and offset to an authenticated VFS
+  Bundle span. Every current manifest list is sorted and duplicate-free;
+  `directReverseDependencies` is the exact inverse of
+  `directDependencies`, and `dependencies` is the exact transitive closure
+  of the acyclic direct graph. These are full-corpus stored-graph relations;
+  selected load order remains unresolved. Projecting each CAB's external-CAB
+  names to selected Bundle paths yields a multiset contained in the manifest
+  direct list for every selected CAB. Equality fails only for a small,
+  explicitly reported manifest-only residual. One selected Bundle
+  contains both a main CAB and a `.sharedAssets` CAB, so the gate checks
+  both. Unselected external names remain unresolved; the current residual
+  has manifest-only references to one mesh Bundle from dialog-timeline
+  prefab Bundles. The manifest list is sorted by Bundle index while Unity
+  CAB externals retain their own order, so sequence equality is not part
+  of the join. The current input-set gate, relation counts, named residual
+  and source hashes are in
+  `reports/animestudio/bundle_cab_dependency_corpus_current_20260927.json`.
+  The selected native `BundleLoader+Manager` sync and async proxy-load bodies
+  each call `RuntimeManifestBinary.TryGetBundleDirectDeps`; later in each body
+  a loop element is read and the same loader recurses. The reviewed
+  `bundle_manifest_native.json` contract checks both call targets, loop reads
+  and recursive targets against the selected native image. This is a direct
+  static consumer path for the stored direct list, without live branch or
+  ref/out capture. A bounded exception sweep joins the manifest-only edges to
+  their source and target AssetInfo rows and locates every unresolved CABMap
+  external's selected referring Bundle. The extra edges originate in dialog
+  timeline prefab Bundles and point to a Bundle with no manifest AssetInfo
+  row; no CAB external names that target. Explaining why those edges were
+  authored needs the producer of raw `ManifestData.Bundle.directDeps` or a
+  selected object/loader trace linking those particular prefabs to the target.
+  The common `unity default resources` external has an exact-name installed
+  `Resources` serialized file with a self-consistent header, and UnityPlayer
+  contains the same ASCII literal. The strict no-type-tree Unity v22 reader
+  in `scripts/game_data/unity_serialized_identity.py` closes both installed
+  `Resources` files at their declared metadata boundary and enumerates their
+  object PathIDs and class IDs. The separate
+  `scripts/game_data/bundle_external_identity_corpus.py` gate authenticates
+  the complete source-fingerprint-matched object index, each indexed PPtr's
+  selected VFS/CABMap source and external slot, and the installed Resource
+  object identity. One exact-name PPtr target is a unique `Capsule` Mesh in
+  the installed file; this is a stored serialized identity, not a proved
+  runtime resolver binding. The other CAB-shaped external still has no
+  selected CABMap source. Its observed indexed pointer PathIDs do not occur
+  in either installed Resource object table, leaving its target unresolved.
+  The index covers only MonoBehaviour and PlayableDirector, and no absence
+  conclusion is made for other Unity classes. The current inputs, source
+  hashes, and bounded receipts are in
+  `reports/animestudio/bundle_external_identity_current_20260927.json`;
+  the earlier exception sweep is
+  `reports/animestudio/bundle_cab_exceptions_current_20260927.json`.
+  The reviewed `Bundle` value layout identifies row fields as `bundleIndex`,
+  `name`, `dependencies`, `directReverseDependencies`, `directDependencies`,
+  `bundleFlags`, `hashName`, `hashVersion`, and `category`, in that order;
+  `hashName` is the VFS-joined pair. The selected `Bundle.Convert` writer also
+  joins the three counted lists to source `deps`, `directReverseDeps`, and
+  `directDeps`. It initializes `hashVersion` from `hashName`, then XORs a
+  factor-39 multiple of each dependency's native name hash. The selected
+  string wrapper passes dependency names as direct UTF-16 code units; its
+  reviewed managed fallback performs no case conversion and gives a two-lane
+  recurrence. Replaying that recurrence and the writer fold on the indexed
+  names reproduces every current `hashVersion` value. This validates the
+  current serialized values. The folded `deps` list is the transitive closure
+  certified above, so the current version hash incorporates the names of all
+  reachable direct dependencies. Current referenced names contain no ASCII
+  uppercase witness, so unseen-name and case behavior in the Burst path,
+  the `hashName` writer's internal path handling, runtime comparisons, and
+  lookup execution remain unresolved.
+  Stale AssetMap source chunks cannot supply field ownership. The reviewed
+  native contract authenticates this selected-build static path; unresolved
+  stream/ref-out carriers still block a safe live lookup capture ABI. For IFix,
+  the selected native `Instruction` layout
   and `Code` enum name every opcode in the current exact method spans;
   pinned `PatchManager.LoadInternal` and `VirtualMachine.Execute` bodies
   directly join four call opcodes' low-half indices to file method rows and
@@ -279,16 +408,53 @@ descriptor, field name, or runtime meaning follows.
 ## Catalogs, and what stays incomplete
 
 - Both StringPathHash dictionaries and FacBoneTRS now self-bound their lookup
-  and value pools. FacBoneTRS proves its file-provided unit count, observed
+  and value pools. Both StringPathHash catalogs have current full
+  VFS/native-gated hash replays: their `Data/` path/hash pairs have independent
+  VFS filename-hash witnesses, and their other pairs match lowercased
+  BundleManifest `AssetInfo` path/`pathHashHead` pairs. The main catalog equals
+  those sources as multisets. The initial catalog repeats its own `Data/`
+  path/hash pair and its asset pairs form a multiset subset of the manifest.
+  The VFS implementation's branch at exactly 128 UTF-8 bytes explains the
+  standard XXH3 disagreement in the main catalog; 127/128/129-byte controls
+  are in that corpus gate. The catalog writer and runtime lookup remain open.
+  FacBoneTRS proves its file-provided unit count, observed
   boundary overlaps, contiguous bone records, and 64-byte ranges through EOF;
   every value is shape-consistent with a row-vector homogeneous rigid-affine
   4x4 float representation. The exact type/convention remains unnamed, and
   unit/bone hashes have no exact match in either StringPathHash dictionary.
+- The current selected `CompressData.bin` archive closes its count and absolute
+  offset table, per-record Brotli/UTF-16LE JSON bodies, and EOF under a
+  VFS/decoder-closure-gated corpus check. A reviewed decoded schema closes the
+  NodeCanvas root, observed node type/field sets, connection fields, and local
+  `$ref` endpoints. A separate reviewed schema closes every current shallow
+  typed task envelope and its typed child lists; a selected native body
+  independently reads one matching `behavior` field from an instance. A
+  selected native route reads the archive by exact VFS path and passes a
+  compressed `BehaviourTree` instance's stored index through the archive
+  offset table and Brotli to graph deserialization. A current gated export
+  joins authored BehaviourTree source-CAB/PathID objects to every archive
+  ordinal, retaining shared ordinals and excluding the inline graph. Stored
+  AssetBundle container paths, AI-config blackboard pointers and decoded
+  graph-mode PPtrs provide a further keyed authored join; exact table-key
+  equality connects a subset of `EnemyTable.aiTemplateId` rows to unique
+  AI-config objects. A selected native chain copies
+  `SCENE_MONSTER.commonInfo.templateid` into `EnemyServerData.enemyId`,
+  transfers server data through typed entity-spawn calls, then uses the enemy
+  ID for the `EnemyTable` lookup. Its synchronous path reads `aiTemplateId`
+  and loads the formatted `AIConfig` path on success.
+  This
+  export's freshness relies on summary source fingerprints, without
+  independent current-byte authentication of each Unity object. Nested task
+  values, blackboard data, selection of a live protocol message or installed
+  spawn record, alternate load paths, scene selection, and live execution
+  remain unproved. See
+  [`extend_data.md`](extend_data.md) for the current evidence boundary.
 - Terrain block/channel meaning, Streaming's concrete runtime-root/secondary-
   path joins and field-5 key namespace/ownership, nested parallel-vector
   element targets,
   remaining tails,
-  manifest-row, mmap value semantics, patch-instruction/runtime, and remaining
+  manifest-to-Unity object ownership and live lookup, mmap value semantics,
+  patch-instruction/runtime, and remaining
   JsonData semantics are incomplete.
 - Material and shader extraction preserves recoverable metadata; it does not
   prove renderer ownership, selected variants, final lighting, or appearance.
@@ -747,17 +913,16 @@ distinction the reviewed reader already draws, not an unread nested
 dictionary, and the family is now measured by that reader.
 
 **An unregistered family is the failure this report must not have.** LipSync
-is 702 MB of the lane's 826, and while it was absent from the family registry
-the sweep neither measured it nor reported it open -- it left it out and
-computed the lane share over the 124 MB that remained, which reads as a figure
-about the whole lane. It has a reviewed reader that closes all 74,336 files at
-EOF; registering it restores the lane total. A test now asserts that every
-directory under the Json root has a family, so an absent one fails instead of
-quietly shrinking the denominator.
+dominates the lane's byte volume. When it was absent from the family registry,
+the sweep silently reported coverage over only the smaller remainder. Its
+reviewed reader now closes the current selected LipSync set, and the registry
+test requires every directory under the Json root to have a family so a new
+one cannot shrink the denominator unnoticed.
 
-The rest -- MissionRuntimeAsset, UILevelMapLoadConfig, MapConfig, LevelConfig,
-LevelScriptTemplateData, CharInteractPerformCfgs, GPUISystemConfig and the
-small config families -- are at 100%.
+MissionRuntimeAsset, UILevelMapLoadConfig, MapConfig, LevelConfig,
+CharInteractPerformCfgs, GPUISystemConfig and several small config families
+are schema-decoded in the current gate. LevelScriptTemplateData remains mixed;
+use the current per-family report rather than this historical list for counts.
 
 ### EOF closure is necessary, not sufficient, and here is the proof
 

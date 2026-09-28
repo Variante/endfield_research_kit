@@ -27,6 +27,29 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   exactly. Unknown selectors, enums, tags, blackboard operations, and nested
   payloads stay unresolved.
 
+The installed Table overlay was checked at both logical and decoded layers.
+The current SparkBuffer dump verifies each Table payload and its decoded JSON
+equals the current export. The archived prior export's changed JSON set agrees
+exactly with the changed Table identities in the prior and current verified VFS
+ledgers; the archived JSON lacks a separate per-file raw-byte receipt. Treating
+keys in authored dictionaries as IDs, tables populated in both exports gain no
+new value field paths. Two previously empty character-gift tables acquire their
+first observed rows, and one Foresight wishlist table becomes empty. These are
+data-population changes, not evidence that the physical SparkBuffer reader
+schema changed.
+
+The new character and weapon rows make a direct authored ID chain:
+`CharacterTable` and `CharGrowthTable.skillGroupMap` identify skill IDs,
+`SkillPatchTable` entries repeat those IDs, and `WeaponBasicTable` names its
+potential skill. Potential and talent effects contain further explicit skill
+IDs. The selected derived plans decode the added `SkillData` and `BuffData`
+sources to EOF with identifiers matching their current VFS filenames. Exact
+stored strings in those decoded trees join skills to Buffs and Buffs to other
+Buffs. This establishes cross-file authored references; it does not establish
+runtime execution, skill ownership of every referenced Buff, or activation.
+The changing row counts, source hashes and reference paths are in the generated
+Table delta and Gameplay join reports.
+
 ## BuffData's root, and the union encoding
 
 The root is framed forward from byte zero; the per-action bodies hang off it.

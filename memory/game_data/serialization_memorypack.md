@@ -7,6 +7,10 @@ Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
 payloads. The first section is where each family's framing stands; the rest is the
 IL2CPP evidence chain that identifies *which* formatter a payload resolves to --
 static identity throughout, never observed execution.
+Historical per-build counts in the evidence chain below describe the corpus
+used when each proof was made; current denominators and states are in the
+generated JsonData, SkillData, and BuffData corpus reports. Derived-plan EOF
+closure remains separate from an independently named whole-file schema.
 
 ## Framing status, by serialized family
 

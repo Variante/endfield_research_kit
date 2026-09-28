@@ -50,6 +50,25 @@ page and every all-page run, and the Mission Pipeline consumes the index built
 from it. The exporter decodes the base64+XXTEA wrapper itself and writes
 `game/Lua/<name>.lua`.
 
+Lua source can contain a second authored class definition in a hotfix module.
+In the selected current client, `Data/LuaScripts/Common/Core/LuaHotFixCode.lua`
+requires the Inventory controller, assigns `InventoryCtrl = HL.Class(...)`,
+defines its phase-level/depot refresh methods, commits that class, and changes
+the phase-level message target. The base Inventory controller file also has
+those methods; the Wuling parkour settlement controller reads the current
+subgame pass time for its result label while retaining best time for the
+record check. These are source-level UI behavior facts, not a new Lua wrapper
+or decoder format. A source definition does not prove the hotfix module was
+loaded or that a UI event fired. The three changed selected VFS files have a
+current raw-MD5/strict-decoder/normalized-export chain in
+`reports/game_data/current_lua_change_probe_20260927.json`; the prior ledger
+records different raw MD5s, but its chunks are no longer installed and the
+older decoded export cannot be rewrapped uniquely after newline normalization.
+The existing Mission Pipeline Lua consumer report was built from an older
+scratch Lua root and must be regenerated from a complete current Lua export
+before its Story references can be treated as current evidence. None of these
+three current modules contains a direct Story playback API call.
+
 A run publishes only its scope, so the exporter stamps each published
 structured block, Unity class and the asset maps with the installed-layer
 fingerprints they came from (`meta/extraction/provenance.json`), and the
@@ -283,13 +302,15 @@ at 39 here and 42 there. That is the whole reason the provenance matters: a
 `m_FileID` is meaningless without knowing which container is doing the
 referring.
 
-Two cautions before this reaches a build. The shipped
-`bin/Release/net9.0-windows` CLI is deliberately **not** rebuilt here: the
-corpus gates' `inputSetSha256` covers the CLI binary, so rebuilding it
-invalidates that audit and every gate report below it until the audit is
-re-run, and that should be a deliberate act rather than a side effect. And the export must
-be re-run before any consumer sees the new field, so a builder reading it must
-tolerate its absence.
+Two cautions before this reaches a build. Rebuilding the CLI can change the
+VFS audit's `inputSetSha256`, so rerun the full audit and rebind dependent
+corpus gates deliberately. The VFS fingerprint records the CLI apphost EXE,
+not every implementation DLL; an assembly-only change also needs a separate
+decoder-closure check. A later rebuild changed the apphost and required a new
+audit. Its game-source fingerprints and all normalized logical ledger rows
+matched the prior audit, while the exporter identity differed. The export must
+still be refreshed before any consumer sees a new field, so a builder reading
+it must tolerate its absence.
 
 The optional object index publishes compressed object/schema streams plus a
 last-written terminal `summary.json`. Consumers fail closed on missing or

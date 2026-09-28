@@ -74,20 +74,27 @@ leaving only report/CLI orchestration in `story_recovery`.
 - Subtitle attachment requires an authored link or one unique complete ordered
   match across the selected language/gender tracks. Partial and ambiguous
   matches fail closed.
-- **Some authored subtitle ids have no text row anywhere in the export, and the
-  shortfall is concentrated in FMV.** Walking every
-  `SubtitlePlayableAsset._textId` in the corpus gives 510 distinct ids over
-  3,338 references; 454 are `TextTable` keys and **56 (119 references) are keys
-  of no table at all**, by prefix 46 `fmv_`, 9 `cutscene_`, 1 `black_`. The
-  negative is checked, not assumed: those ids appear in none of the 724 tables
-  including every `I18nTextTable_*`, in no `game/Json` payload and in no
-  `TextAsset`, while a control id from the same cutscene series resolves in
-  `TextTable`. The series simply stops -- `cutscene_e1m8_1_01` through `_07`
-  ship and `_09` through `_18` do not. `DialogCenterTextPlayableAsset` and
+- **Some authored subtitle ids have no localized text row, but their Timeline
+  clips may still carry literal display text.** A current installed Table VFS
+  index, using Persistent over StreamingAssets, has exactly the exported Table
+  name set; a targeted active `TextTable` dump is byte-identical to the export.
+  Every `SubtitlePlayableAsset._textId` absent from `TextTable` is also absent
+  from all exported Table and Json payloads, including packed `Json/LipSync`,
+  and every exported `TextAsset` after decoding its base64 `m_Script`.
+  The focused-versus-full structured scope cannot explain the gap: both export
+  every Table and JsonData block, and the broader scope adds Terrain. A
+  source-CAB-local `m_Asset` PPtr joins every absent-key asset to a serialized
+  Subtitle Track clip. Many such clips have literal, language-specific
+  `m_DisplayName` strings, while others store `<key not found>` or an i18n error
+  string. The complete per-build counts, key list, source hashes, and clip
+  inventory are in `reports/story/recovery/subtitle_key_coverage_current.json`.
+  `m_DisplayName`
+  is an authored clip display field; its literal text does not prove the
+  runtime subtitle getter uses it as a fallback. Whether the absent rows never
+  ship in any other original-data carrier, and why the asset ids remain, are
+  still open. `DialogCenterTextPlayableAsset` and
   `LeftSubtitlePlayableAsset` resolve completely, so this is specific to the
-  subtitle track rather than to text ids generally. What it does **not**
-  establish is why: text outside the focused export scope and text that does
-  not ship are different explanations, and nothing here chooses between them.
+  Subtitle Track family.
 - Video, image, SNS, audio definition, authored placement, activation, and
   observed playback are distinct claims.
 - Character Wiki voice rows do not replace responsive or exploration catalogs;
@@ -215,10 +222,11 @@ until explicitly revisited.
   successors without relaxing the unique-path gate.
 - Expand exact LevelScript/Timeline action schemas and callback ownership.
 - Improve cutscene activation, subtitles, option branches, and audio lanes.
-- Decide which explanation the 56 unresolved subtitle ids have. A broader
-  export scope that still leaves them absent would settle it as content that
-  does not ship; finding them in a block the focused dump skips would settle it
-  the other way. Do not describe them as missing text until one of those runs.
+- Determine why the Subtitle Track ids lack Table rows and whether the runtime
+  getter uses any alternate carrier. Distinguish literal serialized
+  `m_DisplayName` text from a localized Table row and from observed playback;
+  sentinel display fields still have no recovered line text. A future-build
+  audit must repeat the active-overlay Table and asset checks.
 - Recover stronger cross-file order while preserving partial-order semantics.
 - Reduce unlinked Story through typed routes, never filenames, proximity, or
   native address order.
