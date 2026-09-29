@@ -39,7 +39,9 @@ def _contract() -> dict[str, Any]:
     return value
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(
+    *, modifier_native: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     contract = _contract()
     expected = contract["nativeInputs"]
     gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
@@ -55,7 +57,8 @@ def validate_current_native_contract() -> dict[str, Any]:
     parent = json.loads((CONTRACTS_DIR / "buff_damage_modifier_child_native.json").read_text(encoding="utf-8"))
     if parent.get("nativeInputs") != expected:
         raise ValueError(f"{LABEL}.native:parent-input-drift")
-    parent_validation = validate_damage_modifier_native()
+    parent_validation = (modifier_native if modifier_native is not None
+                         else validate_damage_modifier_native())
     if parent_validation.get("status") != "validated":
         return {"status": parent_validation.get("status", "failed"), "parent": parent_validation}
     image.validate_method_row(contract["sequenceMethods"][0], label=LABEL)

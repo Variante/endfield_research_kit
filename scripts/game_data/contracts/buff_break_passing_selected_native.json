@@ -1,0 +1,46 @@
+{
+  "schema": "endfield.buff-break-passing-selected-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_root_no_positive_native.json",
+    "buff_root_sixth_native.json",
+    "buff_residual_frontier.json",
+    "buff_damage_sequence_action_condition_native.json"
+  ],
+  "selectedSource": {
+    "path": "Data/Json/BuffData/buff_common_break_passing_small_scene_object.json",
+    "sha256": "3CA12EE2D40B1F103B657DCAB11BCA957B52878DC2AF6C925AE343CA4506684E",
+    "length": 274,
+    "buffEventAction": [29, 64],
+    "map": [33, 64],
+    "sequence": [38, 60],
+    "action": [43, 58],
+    "mapEvent": [60, 64]
+  },
+  "selectedAction": {
+    "unionTag": 33,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BreakPassingSmallSceneObject_DataForMemoryPack",
+    "memberPlan": [
+      {"name": "isEnable", "kind": "bool", "width": 1},
+      {"name": "priorityLevel", "kind": "enum", "width": 4},
+      {"name": "priorityOffset", "kind": "scalar32", "width": 4},
+      {"name": "serverActionIndex", "kind": "scalar32", "width": 4}
+    ]
+  },
+  "mapSetters": [
+    [104475, "set___actions__", "<type-index:98518>", 52469328],
+    [104476, "set___buffEvent__", "Beyond.Gameplay.Core.Buff+Event", 84403284]
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected current-build native root, BuffActionMap and SequenceActionData readers, tag-33 dispatcher/wrapper, generated member plan, source SHA256, and original byte spans through the field-five endpoint.",
+    "direct": "The map reads actions before buffEvent; the sequence reads actionData and two terminal booleans; the action reads four inherited members and has no derived members.",
+    "structuralOnly": "The two sequence terminal bytes and map event are stored values; their runtime effects are not inferred.",
+    "conditional": "The selected source closes all thirty root fields only when independently checked child gates and physical EOF replay agree.",
+    "unresolved": "Live formatter provider, event execution, and combined corpus publication."
+  }
+}

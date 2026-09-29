@@ -1,0 +1,42 @@
+{
+  "schema": "endfield.skill-cursor-source-terminal-selection.v1",
+  "status": "observed-exact-source",
+  "source": {
+    "virtualPath": "Data/Json/SkillData/chr_0011_seraph_ultimate_skill.json",
+    "length": 9756,
+    "logicalSha256": "AEB22F042668624C2DE97FAB95B2D8900EB6CB4017EF0EEE1D0C786886F0C0DA"
+  },
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "receipt": {
+    "path": "scratch/reverse_engineering/endfield_capture/20260929T144720Z/skilldata-cursor/receipt.json",
+    "length": 25762,
+    "sha256": "3C7744B1D20D6A964D6FBF46FD2F8A5F143632B565E549C1FCA78C22D84F67CD"
+  },
+  "actionGroupChildCursors": [
+    {"childIndex": 0, "cursorAfter": 6},
+    {"childIndex": 1, "cursorAfter": 9109}
+  ],
+  "selectedAction": {
+    "timelineIndex": 17,
+    "tag": "0x009F",
+    "start": 8038,
+    "end": 8212
+  },
+  "terminalSelection": {
+    "candidateIndex": 0,
+    "encoding": "one-member-wrapper",
+    "start": 9741,
+    "end": 9756,
+    "fieldRanges": [
+      {"fieldIndex": 43, "fieldName": "switchToCenterBeforeCast", "start": 9741, "end": 9742},
+      {"fieldIndex": 44, "fieldName": "tagDuringAttach", "start": 9742, "end": 9747},
+      {"fieldIndex": 45, "fieldName": "toggleBuffs", "start": 9747, "end": 9751},
+      {"fieldIndex": 46, "fieldName": "uiRangeHints", "start": 9751, "end": 9755},
+      {"fieldIndex": 47, "fieldName": "useAIExclusiveFrame", "start": 9755, "end": 9756}
+    ]
+  },
+  "evidenceBoundary": "Exact stored-file framing for this copied Seraph source and selected native build: the verified executed field and ActionGroup cursors match source-bound static fields 0-42, select the earlier terminal candidate and end at physical EOF. This does not publish a family census or show a gameplay dispel or ultimate effect."
+}

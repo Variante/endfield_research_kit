@@ -1,0 +1,18 @@
+{
+  "schema": "endfield.skill-cursor-zhuangfy-ultimate-skill-selection.v1",
+  "status": "observed-exact-source",
+  "groupSelectionContract": "skill_cursor_zhuangfy_terminal_selection.json",
+  "targetVirtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_ultimate_skill.json",
+  "selectedActions": [
+    {"tag": "0x002E", "start": 749, "end": 859},
+    {"tag": "0x002E", "start": 1740, "end": 1843}
+  ],
+  "expectedActionGroupCursor": 22360,
+  "expectedTerminalStart": 22850,
+  "wholeStoredFileExpected": true,
+  "evidenceBoundary": {
+    "exact": "Two selected 0x002E action spans close under the current native seven-member reader, including two four-byte LayerMask values and one TargetSettings profile, in the authenticated ultimate copied source.",
+    "conditional": "Whole stored-file closure requires current VFS/native provenance, the frozen four-source receipt, complete ActionGroup replay and static field ranges matching the selected live terminal at EOF.",
+    "unresolved": "This source-scoped diagnostic does not promote the shared SkillData parser or complete family census, and it does not prove a runtime layer change."
+  }
+}

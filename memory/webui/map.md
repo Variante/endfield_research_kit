@@ -148,8 +148,9 @@ coverage live under `reports/assets/map_recovery/`.
   for grayscale contrast. No scalar height decode, relief ordering, world-Y
   scale, or no-data sentinel is proved; the native format evidence and open
   consumer join are in [`../game_data/world_terrain.md`](../game_data/world_terrain.md).
-- Water requires both authored minimap water pixels and exact WaterData scene
-  evidence. Packed flowmaps alone are not coverage.
+- The minimap-color water mask requires both authored minimap water pixels and
+  exact WaterData scene evidence. Packed flowmaps alone are not coverage;
+  directly joined authored water-volume footprints use a separate layer.
   A focused Unity-store check of the selected `Config_water_Map02_0`
   MonoBehaviour found flow, wave, color and scattering settings. Its serialized
   TypeTree has only `m_GameObject` and `m_Script` PPtrs; `m_GameObject` is null,
@@ -163,17 +164,68 @@ coverage live under `reports/assets/map_recovery/`.
   the same Mesh PathID. The converted object is a local four-vertex,
   two-triangle plane. `InteractiveData/Collections` assigns the matching
   numeric key to `map02_lv002`; this is a structural scene-key match, not a
-  placed renderer or transform. The selected bundle exposes a Mesh asset,
-  while the scene's instance transform and activation remain unjoined. Do not
-  render this local plane as Map02 water coverage without that placement edge.
+  placed renderer or transform. At this AssetMap-only boundary the selected
+  bundle exposes a Mesh asset while placement and activation are unjoined; the
+  LevelData/native join below supplies the authored placement for one volume.
   A targeted same-CAB AnimeStudio renderer-index pass selected that
   AssetBundle and completed with zero renderer rows. The current generic
   MonoBehaviour/PlayableDirector object index has no PPtr carrying this Mesh
   PathID, and neither CABMap lists a CAB depending on the Mesh CAB. These are
   bounded negatives for serialized owners in those indexes, not evidence that
   the game never loads the Mesh directly or constructs a water renderer at
-  runtime. The next missing link is the scene water consumer's resource
-  selection and placement transform.
+  runtime.
+  The direct route is now joined for one selected volume: the named-exact
+  `map02_lv002` LevelData subfile stores a water-volume row with the same
+  numeric identity as this Mesh name, a `meshPathHash`, four world-space points,
+  and a pivot. The exact `StringPathHash` catalog resolves that stored hash
+  uniquely to the selected Mesh resource path; its AssetMap row and converted
+  local vertices match the selected Mesh and the four points relative to the
+  pivot. The current-build `map_water_getmesh_native` contract validates that
+  `WaterVolume.Setup` reads the serialized ID, hash, pivot, and height inputs
+  and stores the volume pointer assembled from that source.
+  This row's nonzero ID makes the unpatched `get_isStaticWater` predicate false,
+  so `InitMeshMono` follows the branch that forwards its computed plane
+  position and stored hash to `GetMesh`/`ResourceManager.TryLoad`. The row is
+  infinite water with initial amount equal to maximum and is not a prototype;
+  the validated native arithmetic gives a conditional initial height 25 above
+  its pivot (requested plane Y about 293.3) if `Setup` runs. The source and
+  catalog/AssetMap/Mesh digests plus the native gate are checked by
+  `map_water_surface_join.py` on every focused publication.
+  Map now draws this one authored footprint through `authoredWaterSurfaces`,
+  separately from its minimap color mask. This proves stored placement and
+  the selected initial native argument path. The same native object has a
+  conditional `SetAmount` -> `SetInfiniteWaterHeight` ->
+  `_UpdateInfiniteWaterMeshPos` path to the surface Mono's height setters, so
+  later height can differ. The dedicated `EndfieldCapture` Map water profile
+  keys one live `map02_lv002` Setup call by `GameLevel.id` and the source
+  `LevelWaterVolumeData.id`, then observes the same-thread `GetMesh` and
+  `UpdataMesh` chain. Its saved receipt has one selected Setup, one `GetMesh`,
+  and one published observation with the expected hash and requested position
+  (Y 293.3); `GetMesh` returned a surface Mono and `UpdataMesh` received a
+  non-null Mesh asset on that return object. The profile's exact native-input,
+  event-order, and source join gates pass. Static disassembly of the pinned
+  `Setup` body shows `System.UInt64.ToString` receives the source ID address
+  and writes its returned managed string pointer to
+  `WaterVolume.waterVolumeId`. The v1 recorder mistakenly compared that
+  pointer as a numeric ID, producing a false bit and incorrectly including it
+  in `complete`. It does **not** establish that the stored ID string differed.
+  The collector accepts the internally consistent saved v1 false/false pair
+  while requiring all other bounded gates. The v2 recorder reads bounded
+  decimal string content and computes completeness independently of that
+  diagnostic. The raw v1 receipt remains unchanged; its post-Setup ID equality
+  is unknown. `map_water_live_capture.py` revalidates the saved session
+  and selected authored source before focused Map publication; the UI labels
+  this polygon with the live mesh-delivery observation. This does not observe
+  a later height setter, final transform, or renderer visibility. Other Map02
+  water-volume rows remain outside this focused join. The dedicated profile
+  cannot run alongside the SkillData cursor profile in the current host.
+  A separate preflight-validated Map water transform profile targets this
+  same returned surface Mono. It pins the current `Tick`, `get_position` and
+  `OnRecycle` bodies, binds a stable 16-byte WaterVolumePtr token, and requires
+  at least two finite post-Tick `Transform.position` samples with the last
+  within two seconds of stop. No live transform receipt has been captured;
+  the current surface height, later motion and renderer visibility remain
+  unknown.
 - Levels without in-game minimaps keep an exact registry/quest transform point
   layer when an inferred HLOD surface is suppressed. The frontend applies no
   image-registration scale or translation, and a level with no selected Mesh

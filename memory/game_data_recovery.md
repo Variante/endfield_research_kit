@@ -105,12 +105,25 @@ Current position of the families with active recovery:
   positive control verify, so no further capture is needed for that set.
   Purrche's below-Potential-3 branch was unavailable on the user's save; its
   stored source and native logic are recovered, its execution is unobserved.
-  The residual partial files stop at mostly distinct action tags.
+  Separate Wulfa and Seraph cursors, plus one grouped four-source Zhuangfy
+  capture, now have source-scoped whole stored-schema joins. Five Zhuangfy
+  action routes are admitted to the shared reader under current native gates.
+  The newly checked Lizhiyan combo source passes its ActionGroup and selects
+  one field-42 terminal boundary, but remains a partial, nonpublishable
+  one-source diagnostic. A separately selected Pograni ultimate source now
+  replays its formerly unknown `0x0152` action and reaches physical EOF under
+  the earlier anonymous terminal shape. A one-file current VFS gate confirms
+  the copied bytes, but no live cursor names its terminal fields; it remains
+  nonpublishable. Those selected results do not replace the current
+  family gate. The residual partial files stop at mostly distinct action tags.
 - **BuffData.** A 30-field root reader closes selected cohorts from byte zero
   through source ID and physical EOF when every reached child has a native
   receipt; the admitted cohort set is the branch logic in
   `scripts/game_data/memorypack/buff_root_no_positive.py` and its child
-  receipts. Other files keep recursive blockers in positive `damageModifier`,
+  receipts. Selected positive-heal claymore, BreakPassing event, and equipment
+  suit attribute/damage sources now reach exact EOF as local diagnostics;
+  the family gate has not been refreshed. Other files keep recursive blockers
+  in positive `damageModifier`,
   `attributeModifier`, event-action and finder bodies.
 - **ExtendData catalogs.** Both StringPathHash catalogs have current
   cross-format hash joins to VFS filename hashes and BundleManifest asset
@@ -364,17 +377,53 @@ residual that cannot be resolved offline.
    spans in seven historical first-stop files. Its selected replay reaches
    named-exact EOF in four, then exposes GetterBase `0x0046` in two and
    ActionBase `0x0316` in one. Gated `0x0046` FloatGetterPlus joins 26 exact
-   spans and closes its two selected files at named-exact EOF. The remaining
-   newly exposed `0x0316` file is the next unknown in this cohort. Stored
-   movement and getter inputs do not establish runtime results. Continue that
-   stop using only its unknown source receipt before a whole-owner gate.
+   spans and closes its two selected files at named-exact EOF. Gated `0x0316`
+   MoveBambooLast proves a stored entity parameter in the remaining selected
+   file and advances it to ActionBase `0x03E8`. Gated `0x03E8`
+   SetBambooPosIndex then proves a positive two-entity list and constant
+   index in that same file, advancing it to ActionHeader `0x00A2`. Gated
+   `0x00A2` OnSpecificEntityListDie proves a positive three-entity filter
+   and local output path, then closes that selected file at named-exact EOF.
+   Stored movement, getter, Bamboo position and event inputs do not establish
+   runtime results; whole-owner closure awaits the combined gate.
+   A separate gated StopRadio `0x04C7` cohort joins seven historical first
+   stops with authored radio IDs. Selected replay closes five files and
+   exposes ActionHeader `0x00B6` and GetterBase `0x009F` in one file each.
+   Gated `0x00B6` OnClientGlobalVarChanged closes its one selected file at
+   named-exact EOF after a stored mission-variable key and local long output
+   paths. Gated GetterBase `0x009F` GetInteractivePropertyInt closes the other
+   selected file at named-exact EOF after stored entity and string-key inputs.
+   The seven-file StopRadio cohort is now source-scoped closed. Radio IDs,
+   mission-variable inputs and the property key do not establish live effects
+   or a runtime getter result.
+   A separate seven-file historical GetterBase `0x013C` cohort now passes a
+   gated GetMissionSavePropertyInt reader and reaches named-exact EOF in every
+   selected file. The stored mission ID and path do not establish the runtime
+   property value. Whole-owner closure still awaits a combined gate.
+   A separate seven-file historical ActionBase `0x04B7` cohort now passes
+   gated StartNarrativeBlackScreenAndTeleport storage, including one positive
+   LangKey text list per selected file. Five reach named-exact EOF. Gated
+   SetSquadEnableRelaxIdle `0x0471` advances its newly exposed file to
+   ActionBase `0x0042`; gated OnScriptPreStart ActionHeader `0x00C9` closes
+   its one newly exposed file at named-exact EOF. Gated CharacterPlayMontage
+   `0x0042` then closes the last selected file at named-exact EOF. All seven
+   selected files close; whole-owner closure awaits a combined gate. Stored
+   inputs do not establish live playback, black-screen display, teleport,
+   idle change, or event execution.
 2. **BuffData.** The gradual positive-damage branch now has a reviewed native
    contract and reader, and its selected source closes all 30 root fields at
-   physical EOF. Its local audit is scoped to that source; the whole BuffData
-   catalog is unchanged pending a combined gate. The remaining sword root
-   needs several new nested grammars; other positive `damageModifier`
-   children, the two positive `attributeModifier` sources, anonymous
-   event-action interiors and positive finder bodies need their own child
+   physical EOF. A separate selected positive-heal root now also closes all
+   30 fields at physical EOF through its `CheckHealTag` condition and tag-zero
+   processor. A separate tag-`0x21` BreakPassingSmallSceneObject
+   `buffEventAction` source also closes one map, sequence, action and all 30
+   root fields at physical EOF. The selected `buff_equipsuit_defup_01` root
+   closes its positive attribute child and its empty-condition tag-ten damage
+   child before reaching all 30 fields at EOF. These local audits are scoped
+   to their sources; the whole BuffData catalog is unchanged pending a
+   combined gate. The remaining sword root needs several new nested grammars;
+   other positive `damageModifier` children and positive
+   `attributeModifier` sources,
+   anonymous event-action interiors and positive finder bodies need their own child
    proofs.
 3. **SkillData.** The 26 reviewed cursor targets and one positive control
    have exact current source/native closure under a bounded 27-file sparse
@@ -382,8 +431,19 @@ residual that cannot be resolved offline.
    unknown rows against the existing receipts. Three Mifu rows were streamed
    once: two close under the shared parser, and combo reaches whole stored
    schema only in an isolated native-validated `0x004B` CheckSkillHasHit
-   diagnostic. Rank the remaining distinct action stops before shared-parser
-   publication; the sparse results do not promote the full family.
+   diagnostic. Five Zhuangfy routes are now in the shared parser. The newly
+   checked Lizhiyan combo source has a selected static terminal after its
+   ActionGroup, but no whole-schema or family publication. The selected
+   Pograni ultimate source also reaches structural EOF after admitting its
+   `0x0152` route. Its newly checked VFS bytes match the selected copy, but
+   the shared parser still stops at that route and no live terminal cursor
+   names the final fields. One reviewed two-source capture contract and host
+   preflight now cover Lizhiyan and Pograni together without rechecking the
+   unchanged Lizhiyan chunk.
+   Rebind unchanged
+   corpus rows with current parser provenance or run the normal family gate
+   once; do not restream already closed Zhuangfy sources merely to refresh
+   diagnostics. Rank remaining distinct action stops after that boundary.
 4. **Gameplay formulas.** Selected damage/Poise evaluators and callers are
    proven statically ([`game_data/gameplay_semantics.md`](game_data/gameplay_semantics.md));
    receiver identity, live invocation, subtype selection, patch state,

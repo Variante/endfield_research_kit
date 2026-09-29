@@ -556,6 +556,26 @@ from scripts.game_data.memorypack.skill_timeline_dice_float import (
     decode_shared_action as decode_dice_float_action,
     validate_current_native_contract as validate_dice_float_native_contract,
 )
+from scripts.game_data.memorypack.skill_timeline_check_ability_entity_cur_duration import (
+    decode_check_ability_entity_cur_duration_action,
+    validate_current_native_contract as validate_check_ability_entity_cur_duration_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_set_ability_entity_duration import (
+    decode_set_ability_entity_duration_action,
+    validate_current_native_contract as validate_set_ability_entity_duration_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_voice_interrupt import (
+    decode_voice_interrupt_action,
+    validate_current_native_contract as validate_voice_interrupt_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_perfect_dodge_direction import (
+    decode_perfect_dodge_direction_action,
+    validate_current_native_contract as validate_perfect_dodge_direction_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_change_specific_layer import (
+    decode_change_specific_layer_action,
+    validate_current_native_contract as validate_change_specific_layer_native_contract,
+)
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_shared_sequence_native.json"
@@ -814,6 +834,21 @@ class SharedSequenceReader(Reader):
         return super().empty_damage_collection(kind)
 
     def _action(self, depth: int, tag: int, width: int) -> None:
+        if tag == 0x0038:
+            decode_check_ability_entity_cur_duration_action(self, depth, tag, width)
+            return
+        if tag == 0x0146:
+            decode_set_ability_entity_duration_action(self, depth, tag, width)
+            return
+        if tag == 0x0197:
+            decode_voice_interrupt_action(self, depth, tag, width)
+            return
+        if tag == 0x0049:
+            decode_perfect_dodge_direction_action(self, depth, tag, width)
+            return
+        if tag == 0x002E:
+            decode_change_specific_layer_action(self, depth, tag, width)
+            return
         if tag == 0x008B:
             decode_continuous_anim_time_scale_action(self, depth, tag, width)
             return
@@ -2923,6 +2958,36 @@ def _contract() -> dict[str, Any]:
             "endfield.skill-timeline-add-global-cd-timer-native-contract.v1", 7,
             "orderedSourceReads",
         ),
+        (
+            "0x0038", "Beyond.Gameplay.Core.CheckAbilityEntityCurDuration+Data",
+            "skill_timeline_check_ability_entity_cur_duration_native.json",
+            "endfield.skill-timeline-check-ability-entity-cur-duration-native-contract.v1", 9,
+            "orderedSourceReads",
+        ),
+        (
+            "0x0146", "Beyond.Gameplay.Core.SetAbilityEntityDuration+Data",
+            "skill_timeline_set_ability_entity_duration_native.json",
+            "endfield.skill-timeline-set-ability-entity-duration-native-contract.v1", 10,
+            "orderedSourceReads",
+        ),
+        (
+            "0x0197", "Beyond.Gameplay.Core.VoiceInterruptAction+VoiceInterruptActionData",
+            "skill_timeline_voice_interrupt_native.json",
+            "endfield.skill-timeline-voice-interrupt-native-contract.v1", 6,
+            "orderedSourceReads",
+        ),
+        (
+            "0x0049", "Beyond.Gameplay.Core.CheckPerfectDodgeDirection+Data",
+            "skill_timeline_perfect_dodge_direction_native.json",
+            "endfield.skill-timeline-perfect-dodge-direction-native-contract.v1", 5,
+            "orderedSourceReads",
+        ),
+        (
+            "0x002E", "Beyond.Gameplay.Core.ChangeSpecificLayerAction+Data",
+            "skill_timeline_change_specific_layer_native.json",
+            "endfield.skill-timeline-change-specific-layer-native-contract.v1", 7,
+            "orderedSourceReads",
+        ),
     ):
         route = next((row for row in routes if row.get("tag") == tag), None)
         source = dependency_values.get(path, {})
@@ -3326,6 +3391,23 @@ def validate_current_native_contract() -> dict[str, Any]:
     dice_float_validation = validate_dice_float_native_contract(
         gameassembly=gate.gameassembly, metadata=gate.metadata,
     )
+    zhuangfy_route_validations = {
+        "checkAbilityEntityCurDuration": validate_check_ability_entity_cur_duration_native_contract(
+            gameassembly=gate.gameassembly, metadata=gate.metadata,
+        ),
+        "setAbilityEntityDuration": validate_set_ability_entity_duration_native_contract(
+            gameassembly=gate.gameassembly, metadata=gate.metadata,
+        ),
+        "voiceInterrupt": validate_voice_interrupt_native_contract(
+            gameassembly=gate.gameassembly, metadata=gate.metadata,
+        ),
+        "perfectDodgeDirection": validate_perfect_dodge_direction_native_contract(
+            gameassembly=gate.gameassembly, metadata=gate.metadata,
+        ),
+        "changeSpecificLayer": validate_change_specific_layer_native_contract(
+            gameassembly=gate.gameassembly, metadata=gate.metadata,
+        ),
+    }
     move_to_slot_validation = validate_move_to_slot_native_contract(
         gameassembly=gate.gameassembly, metadata=gate.metadata,
     )
@@ -3521,6 +3603,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         "finishAngryNativeValidation": angry_validation,
         "twoActionRoutesNativeValidation": two_action_validation,
         "diceFloatNativeValidation": dice_float_validation,
+        "zhuangfyRouteNativeValidations": zhuangfy_route_validations,
         "moveToSlotNativeValidation": move_to_slot_validation,
         "logActionNativeValidation": log_action_validation,
         "hurtAnimNativeValidation": hurt_anim_validation,

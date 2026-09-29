@@ -1,0 +1,274 @@
+{
+  "schema": "endfield.skill-cursor-group-terminal-selection.v2",
+  "status": "observed-exact-sources",
+  "groupContract": "skill_cursor_capture_zhuangfy_group_target.json",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "receipt": {
+    "path": "scratch/reverse_engineering/endfield_capture/20260929T153905Z/skilldata-cursor/receipt.json",
+    "length": 167054,
+    "sha256": "3E630E25F495874C0379639B00BBC1788C0E64F5F5E12223615A656D940C6594"
+  },
+  "verification": {
+    "path": "reports/animestudio/skilldata_cursor_scoped_group_verification_latest.json",
+    "length": 84857,
+    "sha256": "DD9BE130A7784133EB1D8381C13A21754B3AB1D31112F3BCE2FC4FAD5E1B205B"
+  },
+  "targets": [
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_normal_skill.json",
+      "length": 23078,
+      "logicalSha256": "06A61A8B2630FBE792294C3A0DC0A9A24080D8C8BE45CB5895D2F16F0F05A9FD",
+      "terminal": {
+        "candidateIndex": 0,
+        "start": 22988,
+        "end": 23078,
+        "encoding": "one-member-wrapper",
+        "fieldRanges": [
+          {
+            "fieldIndex": 43,
+            "fieldName": "switchToCenterBeforeCast",
+            "start": 22988,
+            "end": 22989
+          },
+          {
+            "fieldIndex": 44,
+            "fieldName": "tagDuringAttach",
+            "start": 22989,
+            "end": 22994
+          },
+          {
+            "fieldIndex": 45,
+            "fieldName": "toggleBuffs",
+            "start": 22994,
+            "end": 22998
+          },
+          {
+            "fieldIndex": 46,
+            "fieldName": "uiRangeHints",
+            "start": 22998,
+            "end": 23077
+          },
+          {
+            "fieldIndex": 47,
+            "fieldName": "useAIExclusiveFrame",
+            "start": 23077,
+            "end": 23078
+          }
+        ]
+      },
+      "actionGroupChildCursors": [
+        {
+          "childIndex": 0,
+          "cursorAfter": 6
+        },
+        {
+          "childIndex": 1,
+          "cursorAfter": 21631
+        }
+      ]
+    },
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_normal_skill_ult.json",
+      "length": 23334,
+      "logicalSha256": "33483A4C247260EB69CDD90AB80A604C113FB8E57A79817D3A39F54DBF971CCF",
+      "terminal": {
+        "candidateIndex": 0,
+        "start": 23244,
+        "end": 23334,
+        "encoding": "one-member-wrapper",
+        "fieldRanges": [
+          {
+            "fieldIndex": 43,
+            "fieldName": "switchToCenterBeforeCast",
+            "start": 23244,
+            "end": 23245
+          },
+          {
+            "fieldIndex": 44,
+            "fieldName": "tagDuringAttach",
+            "start": 23245,
+            "end": 23250
+          },
+          {
+            "fieldIndex": 45,
+            "fieldName": "toggleBuffs",
+            "start": 23250,
+            "end": 23254
+          },
+          {
+            "fieldIndex": 46,
+            "fieldName": "uiRangeHints",
+            "start": 23254,
+            "end": 23333
+          },
+          {
+            "fieldIndex": 47,
+            "fieldName": "useAIExclusiveFrame",
+            "start": 23333,
+            "end": 23334
+          }
+        ]
+      },
+      "actionGroupChildCursors": [
+        {
+          "childIndex": 0,
+          "cursorAfter": 6
+        },
+        {
+          "childIndex": 1,
+          "cursorAfter": 21921
+        }
+      ]
+    },
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_perfect_dodge.json",
+      "length": 3268,
+      "logicalSha256": "5C5F72C0EE812B74D4C483FF98804E832897003347322658B08E96E7FAF7A747",
+      "terminal": {
+        "candidateIndex": 0,
+        "start": 3178,
+        "end": 3268,
+        "encoding": "one-member-wrapper",
+        "fieldRanges": [
+          {
+            "fieldIndex": 43,
+            "fieldName": "switchToCenterBeforeCast",
+            "start": 3178,
+            "end": 3179
+          },
+          {
+            "fieldIndex": 44,
+            "fieldName": "tagDuringAttach",
+            "start": 3179,
+            "end": 3184
+          },
+          {
+            "fieldIndex": 45,
+            "fieldName": "toggleBuffs",
+            "start": 3184,
+            "end": 3188
+          },
+          {
+            "fieldIndex": 46,
+            "fieldName": "uiRangeHints",
+            "start": 3188,
+            "end": 3267
+          },
+          {
+            "fieldIndex": 47,
+            "fieldName": "useAIExclusiveFrame",
+            "start": 3267,
+            "end": 3268
+          }
+        ]
+      },
+      "actionGroupChildCursors": [
+        {
+          "childIndex": 0,
+          "cursorAfter": 6
+        },
+        {
+          "childIndex": 1,
+          "cursorAfter": 2786
+        }
+      ]
+    },
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_ultimate_skill.json",
+      "length": 22940,
+      "logicalSha256": "5F1B6D1F1770F81AA78C2E51B4C982E8A8A17F4113E3FC7F1610F7859611E3CD",
+      "terminal": {
+        "candidateIndex": 0,
+        "start": 22850,
+        "end": 22940,
+        "encoding": "one-member-wrapper",
+        "fieldRanges": [
+          {
+            "fieldIndex": 43,
+            "fieldName": "switchToCenterBeforeCast",
+            "start": 22850,
+            "end": 22851
+          },
+          {
+            "fieldIndex": 44,
+            "fieldName": "tagDuringAttach",
+            "start": 22851,
+            "end": 22856
+          },
+          {
+            "fieldIndex": 45,
+            "fieldName": "toggleBuffs",
+            "start": 22856,
+            "end": 22860
+          },
+          {
+            "fieldIndex": 46,
+            "fieldName": "uiRangeHints",
+            "start": 22860,
+            "end": 22939
+          },
+          {
+            "fieldIndex": 47,
+            "fieldName": "useAIExclusiveFrame",
+            "start": 22939,
+            "end": 22940
+          }
+        ]
+      },
+      "actionGroupChildCursors": [
+        {
+          "childIndex": 0,
+          "cursorAfter": 6
+        },
+        {
+          "childIndex": 1,
+          "cursorAfter": 22360
+        }
+      ]
+    }
+  ],
+  "selectedActionSequences": [
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_normal_skill.json",
+      "actions": [
+        {
+          "tag": "0x0038",
+          "start": 4377,
+          "end": 4478
+        },
+        {
+          "tag": "0x0146",
+          "start": 4478,
+          "end": 4585
+        }
+      ],
+      "nextStopTag": "0x0197",
+      "wholeStoredFileExpected": false
+    },
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_normal_skill_ult.json",
+      "actions": [
+        {
+          "tag": "0x0038",
+          "start": 3085,
+          "end": 3186
+        },
+        {
+          "tag": "0x0146",
+          "start": 3186,
+          "end": 3293
+        }
+      ],
+      "nextStopTag": null,
+      "wholeStoredFileExpected": true
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Four copied-source direct cursors select the earlier one-member-wrapper terminal at EOF; selected-native actions 0x0038 and 0x0146 close their stored spans in both normal-skill variants.",
+    "conditional": "One normal-skill ultimate variant reaches an exact ActionGroup and can join static fields 0-42 to the live terminal; the ordinary variant stops later at 0x0197.",
+    "unresolved": "The ordinary normal skill, perfect dodge and ultimate ActionGroups remain partial; family publication needs the normal corpus gate."
+  }
+}

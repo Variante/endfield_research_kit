@@ -1937,6 +1937,56 @@
         "schemaVersion": 1,
         "orderedReadRef": "anonymousReadOrder.member6"
       }
+    },
+    {
+      "tag": "0x0038",
+      "typeName": "Beyond.Gameplay.Core.CheckAbilityEntityCurDuration+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "skill_timeline_check_ability_entity_cur_duration_native.json",
+        "schema": "endfield.skill-timeline-check-ability-entity-cur-duration-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0146",
+      "typeName": "Beyond.Gameplay.Core.SetAbilityEntityDuration+Data",
+      "memberCount": 10,
+      "sourceContract": {
+        "path": "skill_timeline_set_ability_entity_duration_native.json",
+        "schema": "endfield.skill-timeline-set-ability-entity-duration-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0197",
+      "typeName": "Beyond.Gameplay.Core.VoiceInterruptAction+VoiceInterruptActionData",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_voice_interrupt_native.json",
+        "schema": "endfield.skill-timeline-voice-interrupt-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0049",
+      "typeName": "Beyond.Gameplay.Core.CheckPerfectDodgeDirection+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_perfect_dodge_direction_native.json",
+        "schema": "endfield.skill-timeline-perfect-dodge-direction-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x002E",
+      "typeName": "Beyond.Gameplay.Core.ChangeSpecificLayerAction+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_change_specific_layer_native.json",
+        "schema": "endfield.skill-timeline-change-specific-layer-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     }
   ],
   "dependencies": [
@@ -2569,6 +2619,21 @@
     },
     {
       "path": "buff_frontier7.json"
+    },
+    {
+      "path": "skill_timeline_check_ability_entity_cur_duration_native.json"
+    },
+    {
+      "path": "skill_timeline_set_ability_entity_duration_native.json"
+    },
+    {
+      "path": "skill_timeline_voice_interrupt_native.json"
+    },
+    {
+      "path": "skill_timeline_perfect_dodge_direction_native.json"
+    },
+    {
+      "path": "skill_timeline_change_specific_layer_native.json"
     }
   ],
   "evidenceBoundary": {

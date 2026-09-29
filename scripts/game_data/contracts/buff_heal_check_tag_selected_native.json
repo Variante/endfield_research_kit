@@ -1,0 +1,47 @@
+{
+  "schema": "endfield.buff-heal-check-tag-selected-native-contract.v2",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_root_no_positive_native.json",
+    "buff_63_native.json",
+    "buff_find_settings_child_native.json",
+    "buff_damage_sequence_action_condition_native.json"
+  ],
+  "selectedAction": {
+    "unionTag": 99,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckHealTag_DataForMemoryPack",
+    "querySetter": "set___query__",
+    "queryDeclaredType": "Beyond.Gameplay.Core.GameplayTagQuery",
+    "readOrder": ["byte", "scalar32", "scalar32", "scalar32", "query-profile"],
+    "memberPlan": [
+      {"name": "isEnable", "declaredType": "bool", "kind": "bool", "width": 1},
+      {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum", "width": 4},
+      {"name": "priorityOffset", "declaredType": "int", "kind": "scalar32", "width": 4},
+      {"name": "serverActionIndex", "declaredType": "int", "kind": "scalar32", "width": 4},
+      {"name": "query", "declaredType": "Beyond.Gameplay.Core.GameplayTagQuery", "kind": "object", "width": null}
+    ],
+    "queryChildReadOrder": ["queryType", "tags"]
+  },
+  "selectedSource": {
+    "path": "Data/Json/BuffData/buff_wpn_claym_0012_up.json",
+    "sha256": "1E95C1231D6C3B966C6818561559349306D37287372134ED349105DABF054CE1",
+    "length": 345,
+    "healModifier": [95, 179],
+    "condition": [100, 135],
+    "action": [105, 133],
+    "query": [120, 133],
+    "processor": [143, 179]
+  },
+  "evidenceBoundary": {
+    "exact": "The selected original logical bytes, current native root field order, and current audited union tag 99/formatter route close the action and query spans.",
+    "direct": "The selected formatter's fifth member reads GameplayTagQuery after one byte and three DWORDs; the generated wrapper names that fifth member query.",
+    "structuralOnly": "The parent HealModifier and its tag-zero processor have exact stored byte boundaries; a separate receipt names that processor. Query bits remain raw.",
+    "conditional": "The native claim holds only for the selected installed build and the listed source SHA256.",
+    "unresolved": "Query runtime evaluation, live provider selection, and whole BuffData schema."
+  }
+}

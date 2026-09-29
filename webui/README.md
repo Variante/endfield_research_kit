@@ -304,6 +304,18 @@ world bounds share an explicit transform. Generated contract:
   maps without `surfaceEvidence` show a legacy ungraded badge until refreshed.
 - Every point layer owns its height mask (`pointCloudOverlay.heightMask`), and
   region bounds are derived in the browser from loaded background rectangles.
+- A reviewed `authoredWaterSurfaces` row in a render manifest is a world-space
+  LevelData footprint whose stored hash resolves to an exact Mesh asset and
+  whose conditional native setup/initial-height path passes the current-build
+  gate. The water toggle draws that polygon separately from `waterOverlay`, the
+  authored minimap color mask. The polygon records authored placement. A
+  selected `runtimeObservation` appears only after the saved live capture,
+  exact native inputs, and authored source all validate; it reports a returned
+  surface Mono and Mesh delivery to `UpdataMesh` at the requested initial
+  position. The tooltip marks the saved v1 post-Setup ID comparison as
+  uninterpretable because it compared a managed string pointer as a number.
+  Neither the polygon nor this observation establishes final water height or
+  renderer visibility. A failed source or native gate publishes no polygon.
 - Proximity is never upgraded into ownership; weak spatial or mission context
   stays separate from identity links, and non-Story evidence files stay behind
   `Show debug info`.

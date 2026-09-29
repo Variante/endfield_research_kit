@@ -6,6 +6,9 @@
    chrome is a floating panel on top of it, so the plotted area is as large as
    the window and panels get out of the way when collapsed or dragged. */
 #map-recovery-view {
+  position: absolute;
+  inset: 0;
+  height: auto;
   min-height: 0;
   overflow: hidden;
   background: var(--bg);

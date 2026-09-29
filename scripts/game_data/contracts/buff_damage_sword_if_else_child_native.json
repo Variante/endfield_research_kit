@@ -1,0 +1,30 @@
+{
+  "schema": "endfield.buff-damage-sword-if-else-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_if_else_action_receipt_native.json",
+    "buff_50_native.json",
+    "buff_ec_native.json",
+    "buff_damage_check_entity_num_child_native.json"
+  ],
+  "selectedSource": {
+    "path": "Data/Json/BuffData/buff_wpn_sword_0010_real.json",
+    "sha256": "58E52FBD1E90992D6E13E63184EC1DFC19A37418B938F9545BB67DC78963709B",
+    "parentAction": {"tag": 201, "start": 402, "end": 611},
+    "nestedActions": [
+      {"role": "conditionAction", "tag": 80, "start": 423, "end": 476},
+      {"role": "succeedActions", "tag": 236, "start": 490, "end": 609}
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Selected source SHA256, current-build IfElse dispatcher and eight-member source reader, three SequenceActionData generic callsites, and independently validated CompareFloat and ModifyDynamicBlackboard child readers, joined at their original nested spans and parent endpoint.",
+    "direct": "The selected IfElse action stores named conditionAction, failActions and succeedActions sequence members. Its condition child is CompareFloat and its succeed child is ModifyDynamicBlackboard; failActions is an empty stored sequence.",
+    "structuralOnly": "Nested scalar, target and blackboard values and the sequence booleans are stored data. This receipt does not witness comparison, branch selection or blackboard modification at runtime.",
+    "unresolved": "Two later top-level ModifyDynamicBlackboard actions, condition terminals and the enclosing BuffData root."
+  }
+}

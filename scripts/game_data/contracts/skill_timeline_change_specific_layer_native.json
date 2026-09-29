@@ -1,0 +1,264 @@
+{
+  "schema": "endfield.skill-timeline-change-specific-layer-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 7,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "primitiveReadContract": "buff_10c_native.json",
+  "advanceReadContract": "buff_e0_native.json",
+  "nestedProfileContract": "buff_ec_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "dispatcher": {
+    "unionTag": 46,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82208902,
+    "routeWindow": {
+      "startRva": 82208902,
+      "endRva": 82208952,
+      "sha256": "4DB1B513ECED2EF1C1A1A3C487CC42FDBB17897FC4CD16AC1843ECAB4248DAB4",
+      "boundary": "selected ChangeSpecificLayerAction type usage and wrapper route"
+    },
+    "usageCellRva": 218694600,
+    "usageRawHex": "033F032000000000",
+    "registeredTypeIndex": 106369,
+    "wrapperTypeDefinition": 15991,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSpecificLayerAction_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      119272,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSpecificLayerAction_DataForMemoryPack",
+      "Deserialize",
+      153691960
+    ],
+    [
+      119273,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSpecificLayerAction_DataForMemoryPack+Beyond_Gameplay_Core_ChangeSpecificLayerAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      153691728
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153691960,
+      "endRva": 153692500,
+      "sha256": "A6BD3247C78CBAE2097DB6444CFA7971303DF2E815F332A1569B89335ECF0E87",
+      "boundary": "seven source reads through normal return"
+    },
+    {
+      "startRva": 153691728,
+      "endRva": 153691817,
+      "sha256": "DCB12725A9ECF49E9BAC3CBDBB818AB77D03707B8C41DACB01B08BF39B9F5B32",
+      "boundary": "formatter tail-jump into selected reader"
+    },
+    {
+      "startRva": 67564224,
+      "endRva": 67564279,
+      "sha256": "609D1BD77A8D1CF669B9FB897604202B32226C2A3933E143C8A7E4335C7C7CD6",
+      "boundary": "selected generic LayerMask reader checks and advances four source bytes"
+    }
+  ],
+  "layerMaskReadInstructions": [
+    {
+      "rva": 67564234,
+      "hex": "83793004"
+    },
+    {
+      "rva": 67564251,
+      "hex": "BA04000000"
+    }
+  ],
+  "layerMaskAdvanceCall": {
+    "callsiteRva": 67564261,
+    "callHex": "E8D696C3FE",
+    "targetRva": 46827968
+  },
+  "memberCountInstruction": {
+    "rva": 153692161,
+    "hex": "807C243807"
+  },
+  "memberHeaderSourceCall": {
+    "sourceCallsiteRva": 153692097,
+    "sourceCallHex": "E89A60A1F9",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [
+    [
+      119267,
+      "set___originLayerMask__",
+      "UnityEngine.LayerMask"
+    ],
+    [
+      119268,
+      "set___targetLayerMask__",
+      "UnityEngine.LayerMask"
+    ],
+    [
+      119269,
+      "set___targetSettings__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ]
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 119267,
+      "callsiteRva": 153692338,
+      "callHex": "E831020000",
+      "targetRva": 153692904
+    },
+    {
+      "memberIndex": 5,
+      "methodIndex": 119268,
+      "callsiteRva": 153692374,
+      "callHex": "E831020000",
+      "targetRva": 153692940
+    },
+    {
+      "memberIndex": 6,
+      "methodIndex": 119269,
+      "callsiteRva": 153692411,
+      "callHex": "E830020000",
+      "targetRva": 153692976
+    }
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153692178,
+      "sourceCallHex": "E8A960A1F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 153692218,
+      "sourceCallHex": "E8715EA1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153692251,
+      "sourceCallHex": "E8505EA1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153692284,
+      "sourceCallHex": "E82F5EA1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "originLayerMask",
+      "readKind": "layer-mask-raw4",
+      "sourceCallsiteRva": 153692320,
+      "sourceCallHex": "E81BCADDFA",
+      "sourceTargetRva": 67564224
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "targetLayerMask",
+      "readKind": "layer-mask-raw4",
+      "sourceCallsiteRva": 153692356,
+      "sourceCallHex": "E8F7C9DDFA",
+      "sourceTargetRva": 67564224
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "targetSettings",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 153692392,
+      "sourceCallHex": "E8A333B1F9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 153692205,
+      "instructionHex": "488B15F475DF03",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 153692307,
+      "instructionHex": "488B158EC0E503",
+      "cellRva": 219081000,
+      "usageRawHex": "A7CA0FC000000000",
+      "methodSpecIndex": 517459,
+      "methodSpec": [
+        428448,
+        -1,
+        1206
+      ],
+      "argumentRawHex": "02AB0000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 43778,
+      "typeName": "UnityEngine.LayerMask"
+    },
+    {
+      "memberIndex": 5,
+      "instructionRva": 153692343,
+      "instructionHex": "488B156AC0E503",
+      "cellRva": 219081000,
+      "usageRawHex": "A7CA0FC000000000",
+      "methodSpecIndex": 517459,
+      "methodSpec": [
+        428448,
+        -1,
+        1206
+      ],
+      "argumentRawHex": "02AB0000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 43778,
+      "typeName": "UnityEngine.LayerMask"
+    },
+    {
+      "memberIndex": 6,
+      "instructionRva": 153692379,
+      "instructionHex": "488B1526EEDC03",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected 0x002E dispatcher route, seven-member reader, ordered calls, generic contexts, and four-byte LayerMask read helper are pinned to current native inputs.",
+    "direct": "The reader consumes the four inherited fields, two raw four-byte LayerMask values and a TargetSettings nested profile.",
+    "structuralOnly": "Stored layer masks and TargetSettings do not prove a runtime layer transition or chosen entity.",
+    "unresolved": "The enclosing ActionGroup and whole SkillData terminal require a separate selected-source join."
+  }
+}

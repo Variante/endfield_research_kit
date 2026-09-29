@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.levelscript-destroy-ability-entity-native-contract.v1",
+  "schema": "endfield.levelscript-move-bamboo-last-native-contract.v1",
   "status": "exact-current-build",
   "evidenceBoundary": "exact",
   "evidenceNote": "Selected ActionBase switch jump and registered wrapper; complete generated reader and forwarding formatter, nine ordered reads/setters, typed Param<EntityPtr> context, and ledger-joined newly exposed source cursors prove stored Bamboo movement entity references. Runtime movement and entity resolution are unobserved.",

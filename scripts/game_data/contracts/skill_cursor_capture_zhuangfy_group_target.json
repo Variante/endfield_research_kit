@@ -1,0 +1,40 @@
+{
+  "schema": "endfield.skill-cursor-scoped-group.v1",
+  "status": "selected-current-logical-sources",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "captureTransport": "v3-target-set",
+  "captureMaxSourceBytes": 131072,
+  "scopedEvidence": {
+    "basis": "tmp/audio-skilldata/zhuangfy_scoped_group_unknown_current.json"
+  },
+  "targets": [
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_normal_skill.json",
+      "length": 23078,
+      "logicalSha256": "06A61A8B2630FBE792294C3A0DC0A9A24080D8C8BE45CB5895D2F16F0F05A9FD",
+      "source": "export_full/game/Json/SkillData/chr_0030_zhuangfy_normal_skill.json"
+    },
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_normal_skill_ult.json",
+      "length": 23334,
+      "logicalSha256": "33483A4C247260EB69CDD90AB80A604C113FB8E57A79817D3A39F54DBF971CCF",
+      "source": "export_full/game/Json/SkillData/chr_0030_zhuangfy_normal_skill_ult.json"
+    },
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_perfect_dodge.json",
+      "length": 3268,
+      "logicalSha256": "5C5F72C0EE812B74D4C483FF98804E832897003347322658B08E96E7FAF7A747",
+      "source": "export_full/game/Json/SkillData/chr_0030_zhuangfy_perfect_dodge.json"
+    },
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_ultimate_skill.json",
+      "length": 22940,
+      "logicalSha256": "5F1B6D1F1770F81AA78C2E51B4C982E8A8A17F4113E3FC7F1610F7859611E3CD",
+      "source": "export_full/game/Json/SkillData/chr_0030_zhuangfy_ultimate_skill.json"
+    }
+  ],
+  "evidenceBoundary": "Four unresolved Zhuangfy SkillData logical sources selected from one current partial VFS stream. Native cursor evidence can select top-level terminal boundaries if every source executes, but populated ActionGroup interiors and whole-schema claims require separate static/native review."
+}

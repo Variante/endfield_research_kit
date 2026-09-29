@@ -134,8 +134,11 @@ physical EOF. Projections between (2) and (3) are provisional.
   StartCutsceneAndHideSceneObjectAction, `0x04AD`
   StartCutsceneAndControlSceneObjectAction, `0x04A1`
   SkipEntityDieDisplay, `0x03FD` SetDecorationViewState, `0x04B3`
-  StartFmvAndTeleportAction, `0x007E` DisableHudFade, and `0x00A0`
-  EntityMoveToWithSpeed;
+  StartFmvAndTeleportAction, `0x007E` DisableHudFade, `0x00A0`
+  EntityMoveToWithSpeed, `0x0316` MoveBambooLast, and `0x03E8`
+  SetBambooPosIndex, `0x04C7` StopRadio, `0x04B7`
+  StartNarrativeBlackScreenAndTeleport, `0x0471`
+  SetSquadEnableRelaxIdle, and `0x0042` CharacterPlayMontage;
   GetterBase `0x001C` CheckPerformanceReady, `0x03B4`
   ListMakeEntityPtr, `0x0182` GetterEntityPtr, `0x018A`
   GetterLevelScriptPtr, `0x0030` EntityToString, and `0x018E`
@@ -143,7 +146,8 @@ physical EOF. Projections between (2) and (3) are provisional.
   GetCharacterTemplateId, `0x03E3` NpcGetPackAnimHasClean, `0x0144`
   GetScriptTaskObjectiveIsCompleted, `0x01C5` IsEndminGender,
   `0x0043` FloatGetterIntToFloat, `0x000C` BoolGetterMultOr, and
-  `0x0046` FloatGetterPlus;
+  `0x0046` FloatGetterPlus, `0x009F` GetInteractivePropertyInt, and
+  `0x013C` GetMissionSavePropertyInt;
   ActionHeader `0x00DC` OnMapVarChanged, `0x0065` OnEnemyInFight,
   `0x006A` LevelEvent.OnEntityHpChanged, and `0x00DF`
   OnSettlementReadyPerformance, `0x009C` LevelEvent.OnSpawnerStart,
@@ -164,7 +168,10 @@ physical EOF. Projections between (2) and (3) are provisional.
   LevelEvent.OnServerDialogExit, `0x0077` LevelEvent.OnLevelReset, and
   `0x00A1` LevelEvent.OnSpecificEntityDie, `0x00E4` OnSubGameStart, and
   `0x007D` LevelEvent.OnNpcPatrolCheckpointReach, and `0x0098`
-  LevelEvent.OnSpawnerGroupComplete.
+  LevelEvent.OnSpawnerGroupComplete, and `0x00A2`
+  LevelEvent.OnSpecificEntityListDie, and `0x00B6`
+  MissionEvent.OnClientGlobalVarChanged, and `0x00C9`
+  ScriptEvent.OnScriptPreStart.
   Their individual validators,
   current source receipts, production layouts, and focused replay pass. The corrected
   OnMapVarChanged/OnEnemyInFight projection closes 8 reached owners at EOF
@@ -310,8 +317,26 @@ physical EOF. Projections between (2) and (3) are provisional.
   EntityMoveToWithSpeed's seven historical first-stop files contain 63
   native-gated action spans. Selected replay closes four files at
   named-exact EOF; two advance to GetterBase `0x0046` (nine members), and
-  one advances to ActionBase `0x0316` (nine members). This is scoped to those
-  files, not a whole-owner census.
+  one advances to ActionBase `0x0316` (nine members). The selected
+  MoveBambooLast reader then advances that file to ActionBase `0x03E8` (ten
+  members). SetBambooPosIndex joins the newly exposed action and advances
+  the same file to ActionHeader `0x00A2` (sixteen members). The gated
+  OnSpecificEntityListDie reader then reaches named-exact EOF in that one
+  file after a positive three-entity filter list and local output path.
+  This is scoped to those files, not a whole-owner census.
+  StopRadio's separate seven-source historical first-stop cohort has a
+  gated stored radio ID in each selected file. Five reach named-exact EOF;
+  one advances to ActionHeader `0x00B6` and one to GetterBase `0x009F`.
+  The gated OnClientGlobalVarChanged and GetInteractivePropertyInt readers
+  then each reach named-exact EOF in their one selected file. The seven-file
+  StopRadio cohort is source-scoped closed; no whole-owner census was rerun.
+  A separate seven-file historical `0x04B7` cohort passes the gated
+  StartNarrativeBlackScreenAndTeleport reader. Five files reach named-exact
+  EOF. The newly exposed ActionBase `0x0471` source passes its selected gate
+  and advances to ActionBase `0x0042`; the ActionHeader `0x00C9` source passes
+  its selected gate and reaches named-exact EOF. The gated CharacterPlayMontage
+  reader then reaches named-exact EOF in the remaining file. All seven
+  selected files close; this is not a new whole-owner classification.
   FloatGetterPlus then closes both newly exposed files at named-exact EOF
   through 26 gated spans. Its two stored float inputs do not establish a
   runtime sum.
@@ -617,6 +642,44 @@ physical EOF. Projections between (2) and (3) are provisional.
   two reach GetterBase `0x0046`, and one reaches ActionBase `0x0316`.
   Runtime movement and whole-owner closure remain unobserved. Its selected
   validator is `scripts.game_data.levelscript_entity_move_to_with_speed_native`.
+- MoveBambooLast stores one own `entity: Param<EntityPtr>` after eight
+  inherited action fields. The selected switch, complete nine-member reader
+  and formatter, ordered reads and setters, typed entity parameter context,
+  and one ledger-joined source span prove a stored slot-based entity
+  reference. Its one-file replay advances to a later ActionBase union; neither
+  movement nor entity resolution is observed. Its selected validator is
+  `scripts.game_data.levelscript_move_bamboo_last_native`.
+- SetBambooPosIndex stores `entityList: Param<List<EntityPtr>>` and
+  `index: Param<int>` after eight inherited action fields. Its selected
+  switch, complete ten-member reader and formatter, ordered reads and
+  setters, two typed generic contexts including the nested EntityPtr list
+  element, and one ledger-joined source span prove the stored layout. The
+  reached list has two slot-based entity references and a constant index
+  zero. Its gated production layout and one-file selected replay pass,
+  advancing that file to ActionHeader `0x00A2`; no Bamboo position change
+  or entity resolution is observed, and whole-owner closure awaits a
+  combined gate. Its validator is
+  `scripts.game_data.levelscript_set_bamboo_pos_index_native`.
+- StopRadio stores `radioId: Param<string>` after eight inherited action
+  fields. The selected switch, complete nine-member reader and formatter,
+  ordered reads and setters, typed string context, and seven ledger-joined
+  historical first-stop spans prove authored constant radio IDs. The native
+  gate and seven-file selected replay pass: five files reach named-exact
+  EOF, one reaches ActionHeader `0x00B6`, and one GetterBase `0x009F`.
+  Runtime radio playback and stopping remain unobserved, and whole-owner
+  closure awaits the combined gate. Its selected validator is
+  `scripts.game_data.levelscript_stop_radio_native`.
+- OnClientGlobalVarChanged stores `key: Param<string>` and
+  `newValue`/`oldValue: ParamOutput<long>` after fourteen inherited event
+  fields. The selected switch, complete seventeen-member reader and
+  formatter, ordered reads and setters, four typed contexts, and one
+  ledger-joined source span prove a stored mission-variable key and two
+  local long output paths. The reached validation bool is a getter
+  reference. Its gated production layout and single-source replay reach
+  named-exact EOF. The key and paths do not prove a live value change or
+  resulting values; whole-owner closure awaits the combined gate. Its
+  validator is
+  `scripts.game_data.levelscript_on_client_global_var_changed_native`.
 - StartFmvAndTeleportAction stores 15 inherited action fields, including two
   `Param<CommonMaskBlendData>` masks, level and teleport strings, position
   and rotation vectors, and an Int32-backed `Param<TeleportUIType>`, then its
@@ -628,6 +691,44 @@ physical EOF. Projections between (2) and (3) are provisional.
   one-file replay pass; whole-owner closure awaits the combined gate. Its
   selected validator is
   `scripts.game_data.levelscript_start_fmv_and_teleport_native`.
+- StartNarrativeBlackScreenAndTeleport stores 15 inherited action fields,
+  including mask, level, position, rotation, teleport ID and UI type inputs,
+  followed by twelve own narrative and audio parameters. The selected
+  ActionBase switch, complete 27-field reader and formatter, ordered reads
+  and setters, nineteen typed `Param` contexts and three native enum
+  definitions prove the stored layout. Two audio enum types have Byte
+  backings; one has repeated numeric IDs for named aliases. All seven
+  ledger-joined historical first-stop spans contain one positive LangKey
+  text entry and an authored teleport ID. The gated seven-file replay
+  reaches named-exact EOF in five and advances to ActionBase `0x0471` and
+  ActionHeader `0x00C9` in the other two. Narrative playback, black-screen
+  display and teleport are unobserved; whole-owner closure awaits a
+  combined gate. Its validator is
+  `scripts.game_data.levelscript_start_narrative_black_screen_teleport_native`.
+- SetSquadEnableRelaxIdle stores `enable: Param<bool>` after eight inherited
+  action fields. The selected switch, complete nine-field reader and
+  formatter, ordered setter and typed bool context join one exact
+  ledger-backed source span. That span stores false. Its gated production
+  layout advances the one selected file to ActionBase `0x0042`; a live idle
+  change is unobserved. The validator is
+  `scripts.game_data.levelscript_set_squad_enable_relax_idle_native`.
+- CharacterPlayMontage stores eighteen own parameters after eight inherited
+  action fields. The selected switch, complete 26-field reader and formatter,
+  ordered setters, eighteen typed `Param` and `ParamOutput` contexts, and one
+  exact ledger-backed span prove the stored layout. The selected span contains
+  a gameplay tag, output-handle path, finite position, character template ID,
+  and finite blend and play-rate values. Its gated one-file replay reaches
+  named-exact EOF. Montage playback, entity selection, and output-handle
+  delivery remain unobserved. The validator is
+  `scripts.game_data.levelscript_character_play_montage_native`.
+- OnScriptPreStart has sixteen inherited event fields, including
+  `validate: Param<bool>`, `targetScript: Param<LevelScriptPtr>`, and a
+  scalar32 trigger target enum. The selected switch, complete reader and
+  formatter, ordered setters, typed parameter contexts and one exact
+  ledger-backed source span prove the stored layout. That span stores true
+  validation, a null targetScript and trigger target zero. Its selected
+  replay reaches named-exact EOF; no live pre-start event is observed. The
+  validator is `scripts.game_data.levelscript_on_script_pre_start_native`.
 - DisableHudFade stores `showHud: Param<bool>` after eight inherited fields.
   The selected switch, complete nine-field reader and formatter, ordered
   setters, typed bool context, and one ledger-joined span prove the stored
@@ -662,6 +763,23 @@ physical EOF. Projections between (2) and (3) are provisional.
   passes and selected replay reaches named-exact EOF in both files. Runtime
   addition and whole-owner closure remain unobserved. Its validator is
   `scripts.game_data.levelscript_float_getter_plus_native`.
+- GetInteractivePropertyInt stores `entity: Param<EntityPtr>` and
+  `key: Param<string>` after seven common getter fields; both are inherited
+  through its property-getter base. The selected PureGetter dispatch, complete
+  chained reader and formatter, nine ordered reads and setters, two typed
+  `ReadValue` contexts, and one ledger-joined exact span prove those stored
+  inputs. The selected entity has a logic ID and the key is `state`; neither
+  establishes the runtime property value. Its gated one-file replay reaches
+  named-exact EOF. Whole-owner closure remains provisional. The validator is
+  `scripts.game_data.levelscript_get_interactive_property_int_native`.
+- GetMissionSavePropertyInt stores `missionId: Param<string>` and
+  `path: Param<string>` after seven inherited getter fields. The selected
+  PureGetter dispatcher, complete nine-member reader and formatter, ordered
+  setters, both typed string contexts, and seven ledger-joined historical
+  first-stop spans prove the stored inputs. Its native gate and selected
+  seven-file replay reach named-exact EOF in every file. Runtime mission-save
+  lookup, integer result and whole-owner closure remain unobserved. The
+  validator is `scripts.game_data.levelscript_get_mission_save_property_int_native`.
 - BoolGetterMultOr stores a `Param<bool>[]` list after seven inherited
   getter fields. Its selected PureGetter switch, complete eight-member
   reader and formatter, ordered setters, typed `ReadArray<Param<bool>>`
@@ -719,6 +837,17 @@ physical EOF. Projections between (2) and (3) are provisional.
   which entity died at runtime. The gated production layout and three-file
   selected replay pass; whole-owner closure awaits the combined gate. Its
   validator is `scripts.game_data.levelscript_on_specific_entity_die_native`.
+- OnSpecificEntityListDie stores `entity: ParamOutput<EntityPtr>` and
+  `filterEntityList: Param<List<EntityPtr>>` after fourteen inherited event
+  fields. The selected switch, complete sixteen-member reader and
+  formatter, ordered reads and setters, three typed contexts including the
+  nested EntityPtr list element, and one ledger-joined source span prove the
+  stored layout. The reached list holds three slot-based entity references;
+  the entity output names an authored local path. Its gated production
+  layout and one-file selected replay reach named-exact EOF. Neither the
+  event firing nor entity resolution is observed, and whole-owner closure
+  awaits a combined gate. Its validator is
+  `scripts.game_data.levelscript_on_specific_entity_list_die_native`.
 - TeleportGameplayNpc stores `npcId: Param<string>`, `pos:
   Param<Vector3>`, and `rot: Param<Vector3>` after eight inherited action
   fields. Its selected native reader includes a hot entry and chained
@@ -1021,6 +1150,79 @@ BuffData report's native receipts to freshly validated gradual native inputs
 on the same build and rereads only that source. This proves stored structure,
 not live buff or damage behavior. Child receipts name direct members only; strings, flags
 and value bits stay raw. Tag meanings are local to the Buff dispatcher.
+The current complete BuffData report also carries a selected positive-damage
+root with two `CheckTwoDirectionAngle` conditions and ordered damage processor
+tags `[5, 6]`. Its reviewed condition, nested target, processor, root,
+source-ID and EOF receipts compose to all 30 named fields in that one source.
+The remaining sword positive-damage root has a different eight-action
+condition and remains partial; neither closed root proves live damage behavior.
+For that one sword source, the selected condition now has source-bound receipts
+for its first CheckDamageTypeMask and FindTarget actions and the following
+CheckEntityNum action. The first two compose the existing mask reader with the
+already validated Buff FindTarget formatter/dispatcher audit, rather than
+borrowing native authority from the SkillData timeline parser. The
+CheckEntityNum receipt independently matches the audited formatter and its
+TargetSettings generic context to the current generated direct-member plan;
+the original source closes both the action and its `checkTarget` child at their
+selected endpoints. Its stored `targetGroupKey` and `storeKey` are file values,
+not observed target or damage behavior. The TargetSettings direction and
+selector interiors remain structural here. The next IfElse action also closes
+on this source: independently native-gated CompareFloat and
+ModifyDynamicBlackboard children rejoin the selected eight-member IfElse
+wrapper, whose fail sequence stores zero actions. The nested scalar, target
+and blackboard interiors retain their structural tier; no branch decision was
+observed. The two later top-level ModifyDynamicBlackboard actions also close
+under the existing native reader. A selected storage receipt now tiles all six
+top-level actions and both terminal bytes through the condition endpoint.
+Its status is deliberately nonrecursive: the structural nested interiors
+prevent whole-condition schema and whole-BuffData promotion even though the
+stored condition span is exact. The reviewed gates and source selection are in
+`buff_damage_sword_condition_prefix_native.json` and
+`buff_damage_check_entity_num_child_native.json` and
+`buff_damage_sword_if_else_child_native.json` and
+`buff_damage_sword_condition_storage_native.json`; their readers consume only
+the selected logical bytes and existing validated native contracts or audit rows.
+The claymore upgrade buff has a separate positive `healModifier` field. A
+source-hash-checked selected replay joins the current root field-13 frame to
+the native-audited `CheckHealTag` route, including four inherited action
+members, its `query` setter and the two named `GameplayTagQuery` children.
+The same selected native build proves the parent heal modifier's three direct
+members and the tag-zero processor's `modifier` and `modifyTargetSide` reads.
+The nested attribute modifier has four direct members; its `param` reuses the
+native-gated BlackboardDouble child reader. The selected composition now
+replays all 30 root fields in order, checks the stored `id` against the source
+stem and reaches physical EOF. This is a one-source diagnostic: the canonical
+BuffData exact set remains unchanged until a combined corpus gate. Stored
+bits do not establish live heal behavior or provider selection. The reviewed
+selection and source windows are in `buff_heal_check_tag_selected_native.json`
+and `buff_heal_processor_zero_native.json`; the readers are
+`memorypack/buff_heal_check_tag_selected.py`,
+`memorypack/buff_heal_processor_zero.py` and the selected root branch of
+`memorypack/buff_root_no_positive.py`.
+
+Another selected partial, `buff_common_break_passing_small_scene_object`, has
+one `buffEventAction` map containing one SequenceActionData and one tag-`0x21`
+BreakPassingSmallSceneObject action. The existing residual frontier proves the
+four inherited action members; the reviewed root-sixth and Sequence contracts
+fix the map's action-array-before-event order and its two terminal booleans.
+The source-bound receipt in `buff_break_passing_selected_native.json` and
+`memorypack/buff_break_passing_selected.py` replays field five to its exact
+endpoint, then the selected root branch consumes all 30 named fields at
+physical EOF. This remains a local diagnostic pending the combined corpus
+gate. Stored event and priority bits do not prove runtime execution.
+
+The selected `buff_equipsuit_defup_01` source adds a different positive
+`damageModifier` boundary: an empty SequenceActionData condition and one
+tag-ten ModifyCalcResult processor with two native-gated BlackboardDouble
+children. Its root also contains a positive `attributeModifier` before that
+field. The cached blocker list names only the damage child, so a root replay
+must still prove the earlier attribute child. The selected contract
+`buff_empty_condition_tag_ten_selected_native.json` reuses reviewed root
+prefix and attribute-item source windows, generated setters and stores to
+name its one AttributeModifier element and converted-attribute terminal.
+Both child spans compose with the 30-field root reader and original source ID
+at physical EOF. The selected receipt remains outside canonical corpus
+publication; raw enum/scalar values do not establish modifier arithmetic.
 
 ## SkillData
 
@@ -1346,6 +1548,219 @@ family census, establish formatter/provider execution, or show the ultimate
 or animation effect in play. `tools/EndfieldCapture/README.md` retains the
 source-bound capture procedure for this selected build.
 
+Seraph's ultimate is a separate historical SkillData first stop at
+`DispelAction` `0x009F`. One newly unknown source was streamed under the current
+VFS audit; its exact copied bytes match the local export. The reviewed
+SkillData action reader reuses the selected Buff reader's nine-member native
+order, code windows, nested contexts and generated wrapper plan. In a
+source-only diagnostic, that action and the populated timeline ActionGroup
+close, and static fields through 42 reach a terminal whose two field-43..47
+framings still both reach EOF. The shared SkillData parser has not admitted
+this route, so this is neither a current family census nor a whole-schema
+publication. Stored target and query profiles do not prove which target was
+dispelled, or that a dispel occurred in play.
+
+The Seraph cursor preflight bound only that source with the existing v3
+target-set transport and reused the already authenticated three-control
+report. Its exact source, VFS and selected-native gates passed, as did the
+non-launching capture-host preflight. A live session then yielded one
+loss-free copied-source cursor. The source-only receipt selected the earlier
+one-member-wrapper terminal and reached EOF, while its report alone still
+left the populated ActionGroup interior opaque. The reviewed
+`skill_cursor_seraph_terminal_selection.json` and
+`skill_cursor_seraph_terminal` replay that receipt and join its two child
+checkpoints and all direct field cursors to the independently exact current
+static DispelAction, timeline and fields 0-42. This **one-source diagnostic**
+closes Seraph's whole stored SkillData schema, without publishing a current
+family census or establishing that a dispel or ultimate effect occurred in
+play.
+
+For a later set of unresolved sources, `skill_cursor_scoped_group` prepares
+one reviewed v3 binding from only the newly selected paths in a current
+partial VFS report. It requires exact local copied bytes, unique source
+hashes, the recorder's target-count and byte caps, and the selected native
+cursor observer. No historical control is included or streamed for this
+transport check; previously authenticated controls remain available to
+source-specific static proofs. The strict receipt verifier requires every
+selected source to be observed with an exact EOF cursor and no global or
+per-target losses. Even a complete group establishes only executed top-level
+field and child cursors. Each populated ActionGroup interior and route still
+needs its own native-gated static join before any whole-schema claim, and the
+normal full corpus gate remains the publication boundary.
+
+The first reviewed scoped group now selects **four previously unresolved
+Zhuangfy sources**: normal skill, its ultimate-mode variant, perfect dodge,
+and ultimate skill. One VFS run streamed exactly these four paths under the
+current full audit; every row remained partial and its logical length/SHA
+matched the local copied source. Their first timeline stops are `0x0038` in
+both normal-skill variants, `0x0049` in perfect dodge, and `0x002E` in the
+ultimate. The selected native dispatcher identifies these as
+`CheckAbilityEntityCurDuration`, `CheckPerfectDodgeDirection`, and
+`ChangeSpecificLayerAction`, respectively, but supplies no payload cursors:
+the five-member perfect-dodge route is a short offline reader candidate,
+while the other two contain nested objects and need focused native/source
+decoding. None needs a live gameplay value to establish its stored action
+layout. All four still have two EOF-valid top-level terminal framings, so a
+live cursor is the remaining way to select those terminal fields without
+guessing. The reviewed
+`skill_cursor_capture_zhuangfy_group_target.json` pins their exact source
+identities and the native observer; the prepared four-source v3 binding and
+non-launching host preflight passed. A **single capture session can cover the
+set if all four source hashes execute**; the filenames suggest ordinary
+skill, ultimate-mode skill, perfect dodge, and ultimate triggers, but that
+gameplay mapping is a trigger plan rather than source proof. The strict group
+verifier fails if any target is missing. The subsequent one-session receipt
+passed that strict verifier: **four of four** exact copied-source and EOF
+cursors, with no missing target or loss. In every source the executed field
+cursor selects the earlier one-member-wrapper terminal. This is a
+**cursor-only four-source diagnostic**: its ActionGroup interior remains
+opaque until each earlier action route is joined to selected native and
+source bytes. It neither publishes a current family census nor proves that
+an ability comparison, dodge, layer change, or skill effect occurred in play.
+No prior control or closed source was streamed again.
+
+The two normal-skill sources share a reached `CheckAbilityEntityCurDuration`
+action at `0x0038`. The selected native dispatcher, nine ordered source
+reads, generated setters and generic contexts prove the wire order: four
+inherited action fields, TargetSettings, a bounded key string, CompareType,
+a bool and BlackboardDouble. Both immediately reach
+`SetAbilityEntityDuration` `0x0146`; its independent selected native reader
+proves ten ordered reads, including two enums, a bool, a bounded key,
+TargetSettings and BlackboardDouble. Both routes reuse native-gated child
+profiles and close their stored action spans in these two copied sources.
+Stored operands show neither a live duration/comparison result nor a target
+selection.
+
+The source-bound `skill_cursor_zhuangfy_group_join` authenticates the saved
+four-source terminal result and replays only the two reached action routes.
+The ordinary normal skill later stops at unreviewed `0x0197`; it remains a
+partial ActionGroup despite its selected EOF terminal. The ultimate-mode
+normal skill has no later action stop: its timeline ActionGroup cursor agrees
+with the executed child cursor, static fields 0-42 agree with the direct
+field vector, and the selected one-member-wrapper terminal reaches EOF. Thus
+**one whole stored SkillData file closes** in a nonpublishable selected-source
+diagnostic. The perfect-dodge and ultimate sources still have their earlier
+first stops in that earlier join. `skill_cursor_zhuangfy_terminal_selection.json` pins the
+receipt, verification and selected terminal vectors. At this diagnostic
+stage, the shared parser and complete-family census were untouched.
+
+The ordinary normal skill's later `VoiceInterruptAction` `0x0197` is now
+isolated by its own selected-native six-member reader: the four inherited
+fields, a 32-bit interrupt time and a one-byte immediate-interrupt flag.
+Its exact stored action span is pinned in the reviewed ordinary-source
+selection contract. The focused `skill_cursor_zhuangfy_normal_skill_join` reads
+**only that source**, reuses the frozen four-source receipt and current VFS
+provenance, and rechecks the three reached native routes. The complete
+ActionGroup ends at the executed child cursor; static fields 0-42 match the
+captured field vector and the selected terminal reaches EOF. Thus a
+**second whole stored SkillData file closes** under this one-source,
+nonpublishable diagnostic. The older group join still records the earlier
+two-route boundary; no unchanged source or control was streamed again.
+Neither a voice interruption nor its runtime timing is inferred from the
+stored operands.
+
+Perfect dodge's `CheckPerfectDodgeDirection` `0x0049` has five native-proven
+fixed-width members: four inherited fields and a direction enum32. The
+source-only join validates every reached `0x0049` span, then closes its
+ActionGroup and static fields 0-42 against the saved executed child cursor
+and selected EOF terminal. This is a **third whole stored SkillData source**
+under a nonpublishable diagnostic. The direction operand does not establish
+that a perfect dodge happened in play.
+
+Ultimate's `ChangeSpecificLayerAction` `0x002E` has seven native-proven
+members. Its two LayerMask fields use a shared helper that checks and
+advances four source bytes each; the last member uses the established
+TargetSettings profile. The focused ultimate-source join validates every
+reached action and also matches a complete ActionGroup, static fields 0-42,
+and the selected live EOF terminal. This closes the **fourth grouped stored
+SkillData source** only under the selected diagnostic. It does not prove an
+executed layer transition or chosen entity. The frozen group receipt is now
+joined to exact stored structure for all selected sources without another
+capture or VFS stream. These source-bound joins were nonpublishable pending
+shared parser admission and a current corpus gate.
+
+The shared SkillData timeline parser now admits `0x0038`, `0x0146`,
+`0x0197`, `0x0049` and `0x002E` through separate source-contract shape
+checks and the selected-build native validators. A bounded replay of the
+four formerly partial Zhuangfy sources closes each ActionGroup under the
+shared reader, matching the already authenticated selected-source joins.
+The route additions also advance Lizhiyan's previously partial combo skill
+past its `0x0146` stop: its entire timeline ActionGroup now closes, and the
+exact continuation through field 42 ends at the earlier of its two EOF-valid
+terminal candidates. The later counted candidate starts after the exact
+field boundary and cannot be this record's terminal. This is a selected
+stored-source conclusion; the old full corpus report has prior parser
+provenance, so it is not a current family publication. No historical
+control or unrelated exact source was replayed.
+
+A current VFS gate then streamed **only the still partial Lizhiyan combo
+source**. Its installed logical bytes match the copied source and the saved
+historical identity; the new shared parser has no timeline or passive stop,
+closes field 0, and ends field 42 exactly at the earlier terminal candidate.
+The second EOF-valid candidate begins a byte after that proven boundary.
+The resulting one-file report remains `partial`, `publicationEligible=false`
+and `wholeSchemaExact=false`: it is a source-scoped static terminal
+discrimination, not an executed Lizhiyan terminal cursor or a family-wide
+selection. The frozen Zhuangfy group basis still authenticates its original
+four-source capture, but its prior parser fingerprint makes the old join
+commands fail the current provenance gate after shared admission. Their
+saved reports remain historical diagnostics. A later publication pass must
+either prove an exact current-parser rebind of unchanged corpus rows or run
+the normal current family gate; neither has been inferred from these five
+bounded replays.
+
+The existing complete family report stores parsed rows and logical hashes,
+not the decrypted source bytes, and its parser and reviewed contract
+fingerprints predate these route additions. A frozen-row rebind would need an
+immutable authenticated basis, a proof that the parser delta only adds the
+named routes, a reachability check for every reused row, and focused replays
+where a newly admitted route was reached. That proves conclusions over the
+frozen input set. It does not by itself prove the unchanged installed VFS
+chunks still contain those bytes: the current-family publication contract
+also checks live source fingerprints, chunk selection, and selected chunk
+hashes. Without equivalent immutable-source evidence, skipping all unchanged
+source checks leaves the family publication gate unsatisfied; the bounded
+source reports remain nonpublishable.
+
+The historical Pograni ultimate first refusal at `0x0152` now has a
+source-scoped selected-native reader. The current dispatcher identifies
+`SetIgnoreGlobalTimeScaleAction`; its generated seven-member wrapper, ordered
+source calls, setter sequence and generic contexts prove two stored flags
+followed by `TargetSettings` after the inherited action fields. The selected
+export copy matches the historical logical hashes, and that first action's
+finite target child closes at the next stored action. This remains a
+nonpublishable selected-source span: the reader alone does not check the
+current VFS chunk or establish runtime time-scale behavior. The later
+timeline and terminal are evaluated separately below.
+
+A focused composition of that native-gated route with the current shared
+SkillData reader advances the same Pograni copy through its remaining timeline
+records without another source stream. Its ActionGroup and fields 0-42 close
+at the earlier EOF-valid terminal candidate; the later candidate begins one
+byte beyond the proven field boundary. No later unknown action tag is reached
+in this source. The earlier anonymous terminal shape reaches physical EOF, so
+the stored bytes close structurally. This is a static selected-source terminal
+discrimination, not an executed cursor naming fields 43-47 or a current family
+publication; the report remains nonpublishable and whole-schema exact status
+is not promoted.
+
+A bounded current VFS gate streamed only that still unknown Pograni ultimate
+source. Its installed logical length and SHA-256 match the selected copied
+bytes. The family reader continues to report its first `0x0152` stop, since
+the selected native route is intentionally separate from the shared parser.
+The selected structural EOF result can therefore be rebound to the current
+logical source, but no live terminal cursor or current family publication is
+inferred. No already checked SkillData source was restreamed.
+
+The Lizhiyan combo and Pograni ultimate sources are now bound in one reviewed
+cursor target-set contract. Its v2 preparation accepts their separate
+single-source VFS reports, verifies matching input-set and copied-source
+identities, and pins both reports in the native-gated context. This avoids
+re-streaming or rehashing the already checked Lizhiyan chunk merely to make a
+combined capture basis. The non-launching host preflight passes. Only a later
+loss-free runtime receipt can select the terminal cursors for both sources;
+the contract and preflight alone do not make either whole-schema exact.
+
 ## Resolving the native formatter
 
 Each step is `direct` static evidence, never the live formatter, cache, cursor
@@ -1466,7 +1881,8 @@ items this topic owns.
   non-constant patrol `EntityPtr`, positive dynamic AI blackboards, camera
   poses and curve keys; `SendLuaEvent2` is unobserved; partial templates stop
   at unreviewed unions.
-- **BuffData.** The remaining sword root, positive `attributeModifier`;
+- **BuffData.** The remaining sword root, other positive
+  `attributeModifier` and `healModifier` processor interiors;
   timeline, `stackEffects` and
   `buffEventAction` interiors; string parity.
 - **SkillData.** The bounded-partial residue stops at mostly distinct action

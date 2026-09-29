@@ -1,0 +1,38 @@
+{
+  "schema": "endfield.buff-damage-check-entity-num-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_61_native.json",
+    "levelscript_union_tags.json",
+    "buff_damage_sword_condition_prefix_native.json"
+  ],
+  "wrappedType": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+  "selectedSource": {
+    "path": "Data/Json/BuffData/buff_wpn_sword_0010_real.json",
+    "sha256": "58E52FBD1E90992D6E13E63184EC1DFC19A37418B938F9545BB67DC78963709B",
+    "action": {"tag": 97, "start": 294, "end": 402, "memberCount": 10},
+    "targetField": {"name": "checkTarget", "start": 309, "end": 383}
+  },
+  "directMemberNames": [
+    "isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
+    "checkTarget", "compareType", "containsHittableTarget",
+    "excludeDeadEntity", "minNum", "storeKey"
+  ],
+  "targetDirectMemberNames": [
+    "advancedDirection", "centerContextKey", "centerToGround", "centerType",
+    "enableAdvancedDirection", "ownerContextKey", "selectorData",
+    "selectorDirection", "selectorOwner", "target", "targetContextKey",
+    "targetGroupKey", "targetSource"
+  ],
+  "evidenceBoundary": {
+    "exact": "Current-build CheckEntityNum dispatcher, formatter source windows and generic TargetSettings context from the validated IL2CPP audit; generated direct member and target plans; selected source SHA256 and physical action/target cursors.",
+    "direct": "The selected CheckEntityNum action stores ten named direct members. Its checkTarget child stores thirteen named direct TargetSettings members and closes at the selected target endpoint.",
+    "structuralOnly": "The TargetSettings direction and selector subtrees are framed by the derived reader but have no independent recursive named receipt here. Stored compare, target, number and key values are not runtime decisions.",
+    "unresolved": "The following IfElse action and its nested condition branches, later top-level actions, condition terminals, and enclosing BuffData root."
+  }
+}

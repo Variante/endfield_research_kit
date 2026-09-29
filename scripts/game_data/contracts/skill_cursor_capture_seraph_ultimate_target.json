@@ -1,0 +1,21 @@
+{
+  "schema": "endfield.skill-cursor-single-target-set.v1",
+  "status": "selected-current-logical-source",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "target": {
+    "virtualPath": "Data/Json/SkillData/chr_0011_seraph_ultimate_skill.json",
+    "length": 9756,
+    "logicalSha256": "AEB22F042668624C2DE97FAB95B2D8900EB6CB4017EF0EEE1D0C786886F0C0DA"
+  },
+  "scopedEvidence": {
+    "basis": "tmp/audio-skilldata/seraph_ultimate_009f_unknown_current.json",
+    "source": "export_full/game/Json/SkillData/chr_0011_seraph_ultimate_skill.json",
+    "controlReport": "tmp/audio-skilldata/family_samples.json"
+  },
+  "captureTransport": "single-source-v3-target-set",
+  "captureMaxSourceBytes": 131072,
+  "evidenceBoundary": "One current VFS-authenticated Seraph logical source, exact selected native observer and 0x009F DispelAction action framing. The v3 target-set transport binds only this copied source hash and leaves previous source-length and Wulfa receipt contracts unchanged. Existing captured controls do not select this source's terminal; an executed field-43 start and field-47 EOF cursor are required. No gameplay dispel effect is inferred."
+}

@@ -303,7 +303,7 @@
       ["terrain", "terrainBytePreview", hasTerrainPreview],
       ["elevation", "modelElevation", underlays.some((row) => !isTerrainBytePreview(row))],
       ["surface", "modelSurface", state.modelBackgrounds.some((row) => row.status !== "inferred_registry_point_cloud_preview")],
-      ["water", "modelWater", state.modelBackgrounds.some((row) => row.waterOverlay?.src)],
+      ["water", "modelWater", state.modelBackgrounds.some((row) => row.waterOverlay?.src || row.authoredWaterSurfaces?.length)],
       ["points", "modelPoints", state.modelBackgrounds.some((row) => row.pointCloudOverlay?.src)],
     ];
     const available = [
@@ -586,7 +586,12 @@
       modelElevation: "Grayscale elevation",
       terrainBytePreview: "Terrain _H byte preview",
       terrainBytePreviewBoundary: "This grayscale preview combines each two-byte _H texel as a little-endian integer. The game's scalar height decode, value ordering, and world-Y scale are unresolved.",
-      modelWater: "Recovered water",
+      modelWater: "Water evidence",
+      authoredWaterFootprint: "Authored water footprint: exact LevelData to Mesh identity",
+      observedWaterMesh: "Live capture: GetMesh returned a surface and delivered a Mesh to UpdataMesh. Final height and renderer visibility unobserved.",
+      waterRequestedPosition: "Requested position",
+      waterLegacyIdCheck: "The saved v1 post-Setup ID check compared a string pointer as a number; ID equality is unknown.",
+      waterPostSetupIdMismatch: "The post-Setup waterVolumeId field did not match the selected source ID.",
       modelPoints: "Colored point cloud",
       fit: "Fit",
       fitLong: "Fit all plotted nodes",
@@ -766,7 +771,12 @@
       modelElevation: "灰度高程",
       terrainBytePreview: "Terrain _H 字节预览",
       terrainBytePreviewBoundary: "此灰度预览将每个 _H 纹素的两个字节按小端整数合并。游戏的标量高度解码、数值顺序及世界 Y 比例尚未证实。",
-      modelWater: "恢复水体",
+      modelWater: "水体证据",
+      authoredWaterFootprint: "关卡配置水体范围：LevelData 与 Mesh 精确对应",
+      observedWaterMesh: "实时采集：GetMesh 返回水面对象，Mesh 已传入 UpdataMesh；最终水位和渲染可见性尚未观测。",
+      waterRequestedPosition: "请求位置",
+      waterLegacyIdCheck: "已保存的 v1 采集将字符串指针当作数字比较；Setup 后的 ID 是否相等尚不确定。",
+      waterPostSetupIdMismatch: "Setup 后的 waterVolumeId 字段与选定的源 ID 不一致。",
       modelPoints: "彩色点云",
       fit: "适配",
       fitLong: "适配全部节点",
@@ -2125,7 +2135,7 @@
           ? `<image class="mr-bg-image mr-bg-model-surface${overMinimap ? " is-overlay" : ""}" href="data/map_recovery/${esc(bg.src)}?v=${MAP_ASSET_VERSION}" ${geometry} style="opacity:${layerOpacity("surface")}"><title>${esc(bg.levelId)}</title></image>`
           : "";
         const water = state.modelLayers.has("water") && bg.waterOverlay?.src
-          ? `<image class="mr-bg-image mr-bg-water" href="data/map_recovery/${esc(bg.waterOverlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} water`)}</title></image>`
+          ? `<image class="mr-bg-image mr-bg-water" href="data/map_recovery/${esc(bg.waterOverlay.src)}?v=${MAP_ASSET_VERSION}" ${geometry}><title>${esc(`${bg.levelId} authored minimap water-color mask`)}</title></image>`
           : "";
         const visiblePointSrc = pointSrc;
         const pointUrl = visiblePointSrc ? `data/map_recovery/${visiblePointSrc}?v=${MAP_ASSET_VERSION}` : "";
@@ -2190,8 +2200,34 @@
     const waterUnion = waterImages
       ? `<defs><filter id="mr-water-union-alpha" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feComponentTransfer><feFuncA type="discrete" tableValues="0 0.6588235"/></feComponentTransfer></filter></defs><g class="mr-bg-water-union" filter="url(#mr-water-union-alpha)" style="opacity:${layerOpacity("water")}">${waterImages}</g>`
       : "";
+    const waterFootprints = state.modelLayers.has("water")
+      ? [...new Map(modelOverlayRects.flatMap(({ bg }) => (bg.authoredWaterSurfaces || []).map((surface) => ({ bg, surface })))
+        .map((row) => [`${row.surface.sceneId}:${row.surface.waterVolumeId}`, row])).values()]
+        .filter(({ bg, surface }) => surface.evidence === "exact_authored_leveldata_mesh_join"
+          && surface.sceneId === bg.levelId && Array.isArray(surface.worldPoints)
+          && surface.worldPoints.length >= 3
+          && surface.worldPoints.every((point) => Array.isArray(point) && point.length === 3
+            && point.every((value) => Number.isFinite(Number(value)))))
+        .map(({ bg, surface }) => {
+          const points = surface.worldPoints.map((point) => {
+            const p = plot(oriented({ x: Number(point[0]), z: Number(point[2]) }, bg));
+            return `${p.x.toFixed(3)},${p.y.toFixed(3)}`;
+          }).join(" ");
+          const live = surface.runtimeObservation?.status === "observed_mesh_delivered_to_updata_mesh"
+            && surface.runtimeObservation.meshAssetDeliveredToUpdataMesh === true;
+          const requested = surface.runtimeObservation?.requestedPosition;
+          const runtimeTitle = live
+            ? ` ${t("observedWaterMesh")}${Array.isArray(requested) && requested.length === 3
+              ? ` ${t("waterRequestedPosition")}: ${requested.map((value) => Number(value).toFixed(3)).join(", ")}.` : ""}${surface.runtimeObservation.postSetupIdComparison === "legacy_pointer_compared_as_integer"
+              ? ` ${t("waterLegacyIdCheck")}`
+              : surface.runtimeObservation.postSetupWaterVolumeIdMatched === false
+                ? ` ${t("waterPostSetupIdMismatch")}` : ""}`
+            : "";
+          return `<polygon class="mr-authored-water-footprint${live ? " has-live-mesh" : ""}" points="${points}" fill="#1c9dbb" fill-opacity="0.38" stroke="${live ? "#b6ffbd" : "#8ceaf3"}" stroke-width="1.5" vector-effect="non-scaling-stroke" style="opacity:${layerOpacity("water")}"><title>${esc(`${surface.sceneId} ${surface.waterVolumeId}: ${t("authoredWaterFootprint")}${runtimeTitle}`)}</title></polygon>`;
+        }).join("")
+      : "";
     const pointImages = modelOverlayRects.map((rect) => modelImages(rect, rect.overMinimap, "points")).join("");
-    const backgroundImages = `${minimapLayer}${underlayFilter}${terrainLayer}${elevationLayer}${modelBaseImages}${waterUnion}${pointImages}`;
+    const backgroundImages = `${minimapLayer}${underlayFilter}${terrainLayer}${elevationLayer}${modelBaseImages}${waterUnion}${waterFootprints}${pointImages}`;
     // Level display names describe gameplay scenes, not geographic ownership
     // of the whole (overlapping) map-screen rectangle. Location labels come
     // from the map UI's own staticElements text anchors instead. Keep them as
@@ -2978,6 +3014,7 @@
         elevationUnderlay: background.elevationUnderlay || null,
         pointCloudOverlay: background.pointCloudOverlay || null,
         waterOverlay: background.waterOverlay || null,
+        authoredWaterSurfaces: background.authoredWaterSurfaces || [],
         sourceKind: background.sourceKind,
         status: background.status || "",
         mapInverted,
@@ -2990,6 +3027,7 @@
         elevationUnderlay: model.elevationUnderlay || null,
         pointCloudOverlay: model.pointCloudOverlay || null,
         waterOverlay: model.waterOverlay || null,
+        authoredWaterSurfaces: model.authoredWaterSurfaces || [],
         status: model.status || "",
         mapInverted,
       });

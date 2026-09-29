@@ -1,0 +1,31 @@
+{
+  "schema": "endfield.skill-cursor-scoped-group.v2",
+  "status": "selected-saved-logical-sources",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "captureTransport": "v3-target-set",
+  "captureMaxSourceBytes": 131072,
+  "scopedEvidence": {
+    "bases": [
+      "tmp/audio-skilldata/pograni_0152_unknown_current.json",
+      "tmp/audio-skilldata/lizhiyan_shared_current.json"
+    ]
+  },
+  "targets": [
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0029_pograni_ultimate_skill.json",
+      "length": 28748,
+      "logicalSha256": "42160A6806D28134178DBFF0D77DADC2E814BBA7D4177F8397C3953A042CF6F6",
+      "source": "export_full/game/Json/SkillData/chr_0029_pograni_ultimate_skill.json"
+    },
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0032_lizhiyan_combo_skill.json",
+      "length": 24501,
+      "logicalSha256": "6EB5D5225BA4E3B770F575B250D1033E23B6AA4DCEDEB51217578CFEFB489F20",
+      "source": "export_full/game/Json/SkillData/chr_0032_lizhiyan_combo_skill.json"
+    }
+  ],
+  "evidenceBoundary": "Two distinct previously checked single-source VFS reports and exact local copied bytes select one grouped v3 runtime cursor capture without re-streaming the unchanged Lizhiyan source. The reports share one input set and the observer is native-gated. Preparation does not recheck physical chunks; each runtime observation must copy the entire selected source and provide a loss-free EOF cursor. This remains nonpublishable until source-specific static joins and the normal family gate."
+}

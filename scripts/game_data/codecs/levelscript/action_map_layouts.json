@@ -34589,6 +34589,665 @@
         "spanSha256": "851D39509E3A5335B8CAE3B08A0770BA02DF2E7B67515AA31720447F8C5248F0",
         "boundary": "Selected PureGetter dispatch, complete nine-member reader and formatter, two typed float contexts, and ledger-joined exact spans in two newly exposed files prove stored inputs. Runtime addition remains unobserved."
       }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 790,
+      "memberCount": 9,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_MoveBambooLastForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "entity",
+          "Param<EntityPtr>"
+        ]
+      ],
+      "nativeGate": "levelscript_move_bamboo_last_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/map02_lv001/10100020022.json",
+        "sourceSha256": "96F6507DF47EEC7ED6D37B85135B9BCFDC68E6C701243EAA8D378B6511F557E3",
+        "unionOffset": 2690,
+        "endOffset": 2749,
+        "spanSha256": "FC481210B215103A08323B30594E3B732AAE29F4388F9482B2FAE7E30626F3D6",
+        "boundary": "Selected ActionBase switch, complete nine-member native reader and one ledger-joined source span prove the stored entity parameter; runtime movement is unobserved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 1000,
+      "memberCount": 10,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetBambooPosIndexForMemoryPack",
+      "fields": [
+        ["dontLogWarning", "bool"],
+        ["ID", "int32"],
+        ["releaseWhenExecutionFinished", "bool"],
+        ["uid", "string"],
+        ["scopeMask", "int32"],
+        ["useCurrentScope", "bool"],
+        ["useGraphScope", "bool"],
+        ["nextID", "int32"],
+        ["entityList", "Param<List<EntityPtr>>"],
+        ["index", "Param<int>"]
+      ],
+      "nativeGate": "levelscript_set_bamboo_pos_index_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/map02_lv001/10100020022.json",
+        "sourceSha256": "96F6507DF47EEC7ED6D37B85135B9BCFDC68E6C701243EAA8D378B6511F557E3",
+        "unionOffset": 3890,
+        "endOffset": 3984,
+        "spanSha256": "318575AB8C44F3DBE4C0A42115E2699EB06CEAF3C94DEB79E8A855EE9CD4A9D4",
+        "boundary": "Selected ActionBase switch, complete ten-member native reader and two nested parameter contexts join one exact source span. The positive list stores two slot IDs and a constant index; runtime Bamboo positioning is unobserved."
+      }
+    },
+    {
+      "family": "ActionHeader",
+      "tag": 162,
+      "memberCount": 16,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnSpecificEntityListDieForMemoryPack",
+      "fields": [
+        ["dontLogWarning", "bool"],
+        ["ID", "int32"],
+        ["releaseWhenExecutionFinished", "bool"],
+        ["uid", "string"],
+        ["scopeMask", "int32"],
+        ["useCurrentScope", "bool"],
+        ["useGraphScope", "bool"],
+        ["filterLevel", "int32"],
+        ["filterMask", "int32"],
+        ["filterMode", "bool"],
+        ["nextID", "int32"],
+        ["priority", "int32"],
+        ["triggerActiveDuring", "int32"],
+        ["validate", "Param<bool>"],
+        ["entity", "ParamOutput<EntityPtr>"],
+        ["filterEntityList", "Param<List<EntityPtr>>"]
+      ],
+      "nativeGate": "levelscript_on_specific_entity_list_die_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/map02_lv001/10100020022.json",
+        "sourceSha256": "96F6507DF47EEC7ED6D37B85135B9BCFDC68E6C701243EAA8D378B6511F557E3",
+        "unionOffset": 19815,
+        "endOffset": 19956,
+        "spanSha256": "0EA77DAA5C0F8104C5489D1A1C860DED512F77715D6613386E225A534591B1FE",
+        "boundary": "Selected ActionHeader switch, complete sixteen-member native reader and three typed contexts join one exact source span. The positive list stores three slot IDs and a local entity output path; event execution is unobserved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 1223,
+      "memberCount": 9,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StopRadioForMemoryPack",
+      "fields": [
+        ["dontLogWarning", "bool"],
+        ["ID", "int32"],
+        ["releaseWhenExecutionFinished", "bool"],
+        ["uid", "string"],
+        ["scopeMask", "int32"],
+        ["useCurrentScope", "bool"],
+        ["useGraphScope", "bool"],
+        ["nextID", "int32"],
+        ["radioId", "Param<string>"]
+      ],
+      "nativeGate": "levelscript_stop_radio_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/map02_lv001/10100090000.json",
+        "sourceSha256": "B37E1D35EC4AC381AC1DB5C758503B06BE86848A89ED6BE2C860B685E14103ED",
+        "unionOffset": 7,
+        "endOffset": 68,
+        "spanSha256": "FCB2AB03784D73CF64BABD120CB8B03A6AFC96D5A1D620A1D1D1D6B4C4109589",
+        "boundary": "Selected ActionBase switch, complete nine-member native reader and typed string context join seven exact historical first-stop spans. Authored radio IDs do not prove runtime stopping."
+      }
+    },
+    {
+      "family": "ActionHeader",
+      "tag": 182,
+      "memberCount": 17,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_MissionEvent_OnClientGlobalVarChangedForMemoryPack",
+      "fields": [
+        ["dontLogWarning", "bool"],
+        ["ID", "int32"],
+        ["releaseWhenExecutionFinished", "bool"],
+        ["uid", "string"],
+        ["scopeMask", "int32"],
+        ["useCurrentScope", "bool"],
+        ["useGraphScope", "bool"],
+        ["filterLevel", "int32"],
+        ["filterMask", "int32"],
+        ["filterMode", "bool"],
+        ["nextID", "int32"],
+        ["priority", "int32"],
+        ["triggerActiveDuring", "int32"],
+        ["validate", "Param<bool>"],
+        ["key", "Param<string>"],
+        ["newValue", "ParamOutput<long>"],
+        ["oldValue", "ParamOutput<long>"]
+      ],
+      "nativeGate": "levelscript_on_client_global_var_changed_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/map02_lv001/10100360002.json",
+        "sourceSha256": "994651A3967D6FA2684FF4279F00B9F57113D1C8C773D0A5E28C011A774E55FA",
+        "unionOffset": 3402,
+        "endOffset": 3557,
+        "spanSha256": "020A3AB53DDC341CE43593BCDC2AE43C3D66D95761EE5C9E0ED444B7D384B4F3",
+        "boundary": "Selected ActionHeader switch, complete seventeen-member native reader and four typed contexts join one exact source span. The authored key and two local long output paths do not prove a live variable change."
+      }
+    },
+    {
+      "family": "GetterBase",
+      "tag": 159,
+      "memberCount": 9,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetInteractivePropertyIntForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "entity",
+          "Param<EntityPtr>"
+        ],
+        [
+          "key",
+          "Param<string>"
+        ]
+      ],
+      "nativeGate": "levelscript_get_interactive_property_int_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/map02_lv003/23300020007.json",
+        "sourceSha256": "21770B507F0C152A9A55FD1CC8577B393B80834F47EE9F4BEC7AC3D7C78903D4",
+        "unionOffset": 952,
+        "endOffset": 1027,
+        "spanSha256": "84B7A1F4401E4FF07E482B2D0E059D4BFB83D7FFE7066925418E08A3D8D6A8F7",
+        "boundary": "Selected native PureGetter dispatch, complete chained reader and formatter, nine ordered fields, typed EntityPtr and string contexts, and ledger-joined exact source span prove stored inputs. Runtime property lookup and result remain unobserved."
+      }
+    },
+    {
+      "family": "GetterBase",
+      "tag": 316,
+      "memberCount": 9,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetMissionSavePropertyIntForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "missionId",
+          "Param<string>"
+        ],
+        [
+          "path",
+          "Param<string>"
+        ]
+      ],
+      "nativeGate": "levelscript_get_mission_save_property_int_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/map02_lv002/22800430015.json",
+        "sourceSha256": "B82FEA89B43740141B08C9C096F85B1E50D217CF6FC61B534AB795AD6AE9DA2A",
+        "unionOffset": 4430,
+        "endOffset": 4505,
+        "spanSha256": "AD6A941DA890C82CCE2E0533B0DA35C03A66F20EECE3D9404591B74D7107BA78",
+        "boundary": "Selected native PureGetter dispatch, complete reader and formatter, nine ordered fields, two typed string contexts, and seven ledger-joined exact source spans prove stored inputs. Runtime mission save lookup and result remain unobserved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 1207,
+      "memberCount": 27,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartNarrativeBlackScreenAndTeleportForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "afterMask",
+          "Param<CommonMaskBlendData>"
+        ],
+        [
+          "beforeMask",
+          "Param<CommonMaskBlendData>"
+        ],
+        [
+          "levelIdStr",
+          "Param<string>"
+        ],
+        [
+          "position",
+          "Param<Vector3>"
+        ],
+        [
+          "rotationEuler",
+          "Param<Vector3>"
+        ],
+        [
+          "teleportId",
+          "Param<string>"
+        ],
+        [
+          "teleportUIType",
+          "Param<TeleportUIType>"
+        ],
+        [
+          "customAudioFlags",
+          "Param<AudioBlackScreenBehaviour.ERetainFlag>"
+        ],
+        [
+          "fadeInTime",
+          "Param<float>"
+        ],
+        [
+          "fadeOutTime",
+          "Param<float>"
+        ],
+        [
+          "isBlack",
+          "Param<bool>"
+        ],
+        [
+          "presetAudioBehaviour",
+          "Param<AudioBlackScreenBehaviour.EPresetBehaviour>"
+        ],
+        [
+          "textAfterTime",
+          "Param<float>"
+        ],
+        [
+          "textBeforeTime",
+          "Param<float>"
+        ],
+        [
+          "texts",
+          "Param<List<LangKey>>"
+        ],
+        [
+          "isOverrideFadeInTime",
+          "Param<bool>"
+        ],
+        [
+          "isOverrideFadeOutTime",
+          "Param<bool>"
+        ],
+        [
+          "overrideFadeInTimeSeconds",
+          "Param<float>"
+        ],
+        [
+          "overrideFadeOutTimeSeconds",
+          "Param<float>"
+        ]
+      ],
+      "nativeGate": "levelscript_start_narrative_black_screen_teleport_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/dung01_rdg008/36500010004.json",
+        "sourceSha256": "5FA6A0B65006E2F3E9FDCF7AA754F7BBB1404D3FEFE2DE761B45B146B23B11C6",
+        "unionOffset": 7223,
+        "endOffset": 7651,
+        "spanSha256": "53566A4D3F65ACE7BAC9AE26EF6E957A97F92595623B396F67BBC0C75E333493",
+        "boundary": "Selected ActionBase dispatch, complete 27-member reader and formatter, nineteen typed parameter contexts, three enum backings, and seven ledger-joined exact source spans prove stored narrative black-screen and teleport inputs. Runtime execution remains unobserved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 1137,
+      "memberCount": 9,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetSquadEnableRelaxIdleForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "enable",
+          "Param<bool>"
+        ]
+      ],
+      "nativeGate": "levelscript_set_squad_enable_relax_idle_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/dung01_rdg008/36500010004.json",
+        "sourceSha256": "5FA6A0B65006E2F3E9FDCF7AA754F7BBB1404D3FEFE2DE761B45B146B23B11C6",
+        "unionOffset": 8792,
+        "endOffset": 8838,
+        "spanSha256": "41636B69EC277EE4E22E785F2258915A86ADF1E0C6473B83CF8B07F149AA2337",
+        "boundary": "Selected ActionBase dispatch, complete nine-member reader and formatter, one typed bool context, and one ledger-joined exact source span prove the stored relax-idle enable input. Runtime squad state remains unobserved."
+      }
+    },
+    {
+      "family": "ActionHeader",
+      "tag": 201,
+      "memberCount": 16,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ScriptEvent_OnScriptPreStartForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "filterLevel",
+          "int32"
+        ],
+        [
+          "filterMask",
+          "int32"
+        ],
+        [
+          "filterMode",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "priority",
+          "int32"
+        ],
+        [
+          "triggerActiveDuring",
+          "int32"
+        ],
+        [
+          "validate",
+          "Param<bool>"
+        ],
+        [
+          "targetScript",
+          "Param<LevelScriptPtr>"
+        ],
+        [
+          "triggerTarget",
+          "int32"
+        ]
+      ],
+      "nativeGate": "levelscript_on_script_pre_start_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/dung02_dg002/24900330004.json",
+        "sourceSha256": "8596D7AEBB30A8F9377053F24172DBF0E7FAA03C6E871B680EAB2729BA5AF6DE",
+        "unionOffset": 3282,
+        "endOffset": 3348,
+        "spanSha256": "B3F8574672CD49DA41010F6F5D570DF38E285808A04351BDE567F15BD4BAD966",
+        "boundary": "Selected ActionHeader dispatch, complete sixteen-member reader and formatter, typed bool and LevelScriptPtr contexts, and one ledger-joined exact source span prove stored pre-start event inputs. Runtime event execution remains unobserved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 66,
+      "memberCount": 26,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_CharacterPlayMontageForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "autoBlendOut",
+          "Param<bool>"
+        ],
+        [
+          "blendInTime",
+          "Param<float>"
+        ],
+        [
+          "blendOutTime",
+          "Param<float>"
+        ],
+        [
+          "fixedTime",
+          "Param<float>"
+        ],
+        [
+          "fixedTimeOffset",
+          "Param<float>"
+        ],
+        [
+          "isMainChar",
+          "Param<bool>"
+        ],
+        [
+          "montageName",
+          "Param<string>"
+        ],
+        [
+          "montageTag",
+          "Param<GameplayTag>"
+        ],
+        [
+          "outHandle",
+          "ParamOutput<CharPerformHandleBase>"
+        ],
+        [
+          "overrideFixedTime",
+          "Param<bool>"
+        ],
+        [
+          "playRate",
+          "Param<float>"
+        ],
+        [
+          "rotateTowardPos",
+          "Param<bool>"
+        ],
+        [
+          "switchBackToDefaultModel",
+          "Param<bool>"
+        ],
+        [
+          "target",
+          "Param<EntityPtr>"
+        ],
+        [
+          "targetPos",
+          "Param<Vector3>"
+        ],
+        [
+          "templateId",
+          "Param<string>"
+        ],
+        [
+          "useDynamicEntity",
+          "Param<bool>"
+        ],
+        [
+          "useNpcTag",
+          "Param<bool>"
+        ]
+      ],
+      "nativeGate": "levelscript_character_play_montage_native",
+      "cursorEvidence": {
+        "source": "LevelScriptData/dung01_rdg008/36500010004.json",
+        "sourceSha256": "5FA6A0B65006E2F3E9FDCF7AA754F7BBB1404D3FEFE2DE761B45B146B23B11C6",
+        "unionOffset": 9988,
+        "endOffset": 10342,
+        "spanSha256": "BA4F8BC0E98536432CDC0775424772B5EDACAB4E543C822CCDE13CE8D4266E20",
+        "boundary": "Selected ActionBase dispatch, complete 26-member reader and formatter, eighteen typed parameter contexts, and one ledger-joined exact source span prove stored montage inputs. Runtime playback remains unobserved."
+      }
     }
   ],
   "primitiveEvidence": {

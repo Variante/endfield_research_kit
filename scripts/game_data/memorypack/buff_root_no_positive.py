@@ -3,8 +3,10 @@
 Every accepted record starts at the root header and ends at physical EOF. The
 native contract authenticates root source order; child validators authenticate
 the nested records decoded here. The positive damage branch requires separately
-checked condition and processor children. Other positive recursive collections
-remain refused.
+checked condition and processor children. Selected positive heal,
+`buffEventAction`, and attribute-plus-damage sources also compose their
+native-gated child receipts. Other positive recursive collections remain
+refused.
 
 This is the only route that makes a whole BuffData root a named schema. It
 admits a unique outer-frame cohort (``is_no_positive_candidate``,
@@ -28,8 +30,9 @@ replays the exported bytes against the entire receipt before classifying a
 row as schema decoded.
 
 Refused: nonzero condition actions or processors without a selected receipt,
-positive heal and other action lists, ``stackEffects`` and timeline
-interiors -- each keeps its own named-ownership blocker. Evidence tier:
+positive heal, event action and attribute lists outside their selected sources,
+``stackEffects`` and timeline interiors -- each keeps its own named-ownership
+blocker. Evidence tier:
 ``exact`` stored layout for the selected rows; live formatter-provider
 choice and gameplay behavior stay open.
 """
@@ -42,6 +45,7 @@ from typing import Any
 
 from scripts.game_data.memorypack import (
     buff_adding_cooldown,
+    buff_break_passing_selected,
     buff_damage_check_decorate_mask_condition_receipt,
     buff_damage_check_type_condition_receipt,
     buff_damage_check_type_mask_condition_receipt,
@@ -49,6 +53,7 @@ from scripts.game_data.memorypack import (
     buff_damage_check_main_character_condition_receipt,
     buff_damage_check_buff_stack_condition_receipt,
     buff_damage_check_vitals_condition_receipt,
+    buff_empty_condition_tag_ten_selected,
     buff_damage_origin_or_condition_receipt,
     buff_damage_known_compound_condition_receipt,
     buff_damage_gradual_condition_receipt,
@@ -66,6 +71,7 @@ from scripts.game_data.memorypack import (
     buff_datapair_native,
     buff_dispel_config,
     buff_global_modifier_receipt,
+    buff_heal_processor_zero,
     buff_icon_config,
     buff_stacking_compact_native,
     buff_timeline_empty_native,
@@ -77,7 +83,10 @@ from scripts.game_data.memorypack.buff import (
     read_buff_memorypack_utf8_string_strict_bounded,
 )
 from scripts.game_data.memorypack.buff_actions import event_prefix, root_continuation
-from scripts.game_data.memorypack.buff_residual_actions import _ResidualReader
+from scripts.game_data.memorypack.buff_residual_actions import (
+    _ResidualReader,
+    root_continuation as residual_root_continuation,
+)
 from scripts.game_data.memorypack.buff_root_no_positive_native import (
     _contract as _native_contract,
     validate_current_native_contract as validate_root_native,
@@ -492,15 +501,100 @@ def decode_positive_damage_buff(
     )
 
 
+def decode_selected_positive_heal_buff(
+    data: bytes, *, source: str, expected_sha256: str,
+    native_validation: dict[str, Any],
+    positive_heal_validation: dict[str, Any],
+    outer_row: dict[str, Any],
+) -> dict[str, Any]:
+    """Reread one native-gated positive-heal source through physical EOF.
+
+    This diagnostic is source-bound; it does not change the canonical corpus
+    exact set until that gate is deliberately rebuilt.
+    """
+    result = _decode_buff(
+        data, source=source, expected_sha256=expected_sha256,
+        native_validation=native_validation, positive_damage_validation=None,
+        positive_heal_validation=positive_heal_validation, outer_row=outer_row,
+    )
+    result["schema"] = "endfield.buff-root-selected-positive-heal-receipt.v1"
+    result["selectedOnly"] = True
+    result["publicationEligible"] = False
+    return result
+
+
+def decode_selected_break_passing_buff(
+    data: bytes, *, source: str, expected_sha256: str,
+    native_validation: dict[str, Any],
+    break_passing_validation: dict[str, Any],
+    outer_row: dict[str, Any],
+) -> dict[str, Any]:
+    """Reread one named positive buffEventAction source through physical EOF."""
+    result = _decode_buff(
+        data, source=source, expected_sha256=expected_sha256,
+        native_validation=native_validation, positive_damage_validation=None,
+        break_passing_validation=break_passing_validation, outer_row=outer_row,
+    )
+    result["schema"] = "endfield.buff-root-selected-break-passing-receipt.v1"
+    result["selectedOnly"] = True
+    result["publicationEligible"] = False
+    return result
+
+
+def decode_selected_empty_condition_tag_ten_buff(
+    data: bytes, *, source: str, expected_sha256: str,
+    native_validation: dict[str, Any],
+    empty_tag_ten_validation: dict[str, Any],
+    outer_row: dict[str, Any],
+) -> dict[str, Any]:
+    """Reread one zero-action, tag-ten damage modifier source to EOF."""
+    result = _decode_buff(
+        data, source=source, expected_sha256=expected_sha256,
+        native_validation=native_validation, positive_damage_validation=None,
+        empty_tag_ten_validation=empty_tag_ten_validation, outer_row=outer_row,
+    )
+    result["schema"] = "endfield.buff-root-selected-empty-condition-tag-ten-receipt.v2"
+    result["selectedOnly"] = True
+    result["publicationEligible"] = False
+    return result
+
+
 def _decode_buff(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
     positive_damage_validation: dict[str, Any] | None,
+    positive_heal_validation: dict[str, Any] | None = None,
+    break_passing_validation: dict[str, Any] | None = None,
+    empty_tag_ten_validation: dict[str, Any] | None = None,
+    outer_row: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Walk the original logical bytes through all thirty named root fields."""
     positive_damage = positive_damage_validation is not None
+    positive_heal = positive_heal_validation is not None
+    break_passing = break_passing_validation is not None
+    empty_tag_ten = empty_tag_ten_validation is not None
+    if sum((positive_damage, positive_heal, break_passing, empty_tag_ten)) > 1:
+        raise ValueError("buffRootSelected:conflicting-positive-branches")
     if native_validation.get("status") != "validated":
         raise ValueError("buffRootNoPositive.native:unvalidated")
+    if positive_heal and (
+        positive_heal_validation.get("status") != "validated"
+        or positive_heal_validation.get("nativeInputs") != native_validation.get("nativeInputs")
+        or not isinstance(outer_row, dict)
+    ):
+        raise ValueError("buffRootPositiveHeal.native-or-outer:unvalidated")
+    if break_passing and (
+        break_passing_validation.get("status") != "validated"
+        or break_passing_validation.get("nativeInputs") != native_validation.get("nativeInputs")
+        or not isinstance(outer_row, dict)
+    ):
+        raise ValueError("buffRootBreakPassing.native-or-outer:unvalidated")
+    if empty_tag_ten and (
+        empty_tag_ten_validation.get("status") != "validated"
+        or empty_tag_ten_validation.get("nativeInputs") != native_validation.get("nativeInputs")
+        or not isinstance(outer_row, dict)
+    ):
+        raise ValueError("buffRootEmptyTagTen.native-or-outer:unvalidated")
     if positive_damage and (
         positive_damage_validation.get("status") != "validated"
         or positive_damage_validation.get("root") != native_validation
@@ -569,12 +663,14 @@ def _decode_buff(
     if first["consumedEnd"] != 5 or struct.unpack_from("<i", data, 1)[0] != 0:
         raise ValueError("buffRootNoPositive.abilityEventAction:not-empty")
     add(0, 1, first["consumedEnd"], count=0, representation="empty")
-    continuation = root_continuation(
+    continuation_reader = residual_root_continuation if break_passing else root_continuation
+    continuation = continuation_reader(
         data, source=source, start=first["consumedEnd"], limit=len(data),
     )
     if (continuation["status"] != "supported-prefix"
             or len(continuation["namedFields"]) != 5):
         raise ValueError(f"buffRootNoPositive.rootContinuation:{continuation['diagnostic']}")
+    selected_empty_tag_ten_child: dict[str, Any] | None = None
     for row in continuation["namedFields"]:
         index = row["index"]
         if row["name"] != contract_fields[index]["name"]:
@@ -595,6 +691,24 @@ def _decode_buff(
             add(index, start, end, count=count,
                 representation="null" if count == -1 else "raw-u32-array")
         elif index == 3:
+            if empty_tag_ten:
+                selected = empty_tag_ten_validation["selectedSource"]
+                if (source != selected["path"] or actual_sha256 != selected["sha256"]
+                        or [start, end] != selected["attributeModifier"]):
+                    raise ValueError("buffRootEmptyTagTen.field[3]:source-or-span")
+                selected_empty_tag_ten_child = (
+                    buff_empty_condition_tag_ten_selected.decode_selected_source(
+                        data, source=source, native_validation=empty_tag_ten_validation,
+                        outer_row=outer_row,
+                    )
+                )
+                attribute = selected_empty_tag_ten_child.get("attributeModifier") or {}
+                if (selected_empty_tag_ten_child.get("status")
+                        != "exact-selected-empty-condition-tag-ten"
+                        or attribute.get("wholeNamedSchemaExact") is not True):
+                    raise ValueError("buffRootEmptyTagTen.field[3]:child-incomplete")
+                add(index, start, end, count=1, child=attribute)
+                continue
             if end - start != 6 or data[start] != 2:
                 raise ValueError("buffRootNoPositive.attributeModifier:not-empty")
             count = struct.unpack_from("<i", data, start + 1)[0]
@@ -603,6 +717,20 @@ def _decode_buff(
             add(index, start, end, memberCount=2, arrayCount=count,
                 terminalRaw=data[end - 1])
         else:
+            if index == 5 and break_passing:
+                selected = break_passing_validation["selectedSource"]
+                if (source != selected["path"] or actual_sha256 != selected["sha256"]
+                        or [start, end] != selected["buffEventAction"]):
+                    raise ValueError("buffRootBreakPassing.field[5]:source-or-span")
+                child = buff_break_passing_selected.decode_selected_source(
+                    data, source=source, native_validation=break_passing_validation,
+                    outer_row=outer_row,
+                )
+                if (child.get("status") != "exact-selected-buff-event-action"
+                        or child.get("buffEventAction", {}).get("wholeNamedSchemaExact") is not True):
+                    raise ValueError("buffRootBreakPassing.field[5]:child-incomplete")
+                add(index, start, end, count=1, child=child)
+                continue
             if index == 4:
                 if (native_validation["children"]["blackboardDataPairs"].get("status")
                         != "validated"):
@@ -1144,6 +1272,18 @@ def _decode_buff(
             ),
         }
         add(6, start, cursor, count=1, child=composed)
+    elif empty_tag_ten:
+        start = cursor
+        selected = empty_tag_ten_validation["selectedSource"]
+        if (source != selected["path"] or actual_sha256 != selected["sha256"]
+                or start != selected["damageModifier"][0]):
+            raise ValueError("buffRootEmptyTagTen.field[6]:source-or-start")
+        child = selected_empty_tag_ten_child or {}
+        if (child.get("status") != "exact-selected-empty-condition-tag-ten"
+                or child.get("damageModifier", {}).get("wholeNamedSchemaExact") is not True):
+            raise ValueError("buffRootEmptyTagTen.field[6]:child-incomplete")
+        cursor = selected["damageModifier"][1]
+        add(6, start, cursor, count=1, child=child)
     else:
         cursor = count_null_or_empty(cursor, 6)
     start = cursor
@@ -1192,7 +1332,24 @@ def _decode_buff(
         start = cursor
         value, cursor = read_buff_bool_field(data, start, contract_fields[index]["name"])
         add(index, start, cursor, value=value)
-    cursor = count_null_or_empty(cursor, 13)
+    if positive_heal:
+        start = cursor
+        selected = positive_heal_validation["selectedSource"]
+        if (source != selected["path"] or actual_sha256 != selected["sha256"]
+                or start != selected["healModifier"][0]):
+            raise ValueError("buffRootPositiveHeal.field[13]:source-or-start")
+        child = buff_heal_processor_zero.decode_selected_source(
+            data, source=source, native_validation=positive_heal_validation,
+            outer_row=outer_row,
+        )
+        if (child.get("status") != "selected-heal-processor-named-exact"
+                or child.get("healModifier", {}).get("wholeNamedSchemaExact") is not True
+                or child.get("processor", {}).get("wholeStoredSchemaExact") is not True):
+            raise ValueError("buffRootPositiveHeal.field[13]:child-incomplete")
+        cursor = selected["healModifier"][1]
+        add(13, start, cursor, count=1, child=child)
+    else:
+        cursor = count_null_or_empty(cursor, 13)
     start = cursor
     child = buff_icon_config.decode_icon_config(data, start, len(data), require_limit_end=False)
     cursor = child["consumedEnd"]
@@ -1271,6 +1428,7 @@ def _decode_buff(
     return {
         "schema": (
             "endfield.buff-root-positive-damage-receipt.v12" if positive_damage
+            else "endfield.buff-root-selected-positive-heal-receipt.v1" if positive_heal
             else "endfield.buff-root-no-positive-receipt.v1"
         ),
         "source": source,
@@ -1288,7 +1446,9 @@ def _decode_buff(
             "Selected native source/read/store order and child layouts, supplied "
             "SHA256 checked against logical bytes, "
             + ("single positive damage child and otherwise exact recursive-list branches, "
-               if positive_damage else "null/empty recursive-list branches, ")
+               if positive_damage else
+               "one selected positive heal child and otherwise exact recursive-list branches, "
+               if positive_heal else "null/empty recursive-list branches, ")
             +
             "30 contiguous field spans, id equality, and physical EOF. "
             "The caller owns independent source authentication; live formatter-provider "

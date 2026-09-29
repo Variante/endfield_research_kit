@@ -955,6 +955,60 @@ def _float_getter_plus_native_audit() -> dict[str, Any]:
 
 
 @lru_cache(maxsize=1)
+def _get_interactive_property_int_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_get_interactive_property_int_native import (
+        validate_get_interactive_property_int_native_contract,
+    )
+
+    return validate_get_interactive_property_int_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _get_mission_save_property_int_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_get_mission_save_property_int_native import (
+        validate_get_mission_save_property_int_native_contract,
+    )
+
+    return validate_get_mission_save_property_int_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _start_narrative_black_screen_teleport_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_start_narrative_black_screen_teleport_native import (
+        validate_start_narrative_black_screen_teleport_native_contract,
+    )
+
+    return validate_start_narrative_black_screen_teleport_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _set_squad_enable_relax_idle_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_set_squad_enable_relax_idle_native import (
+        validate_set_squad_enable_relax_idle_native_contract,
+    )
+
+    return validate_set_squad_enable_relax_idle_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _character_play_montage_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_character_play_montage_native import (
+        validate_character_play_montage_native_contract,
+    )
+
+    return validate_character_play_montage_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_script_pre_start_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_script_pre_start_native import (
+        validate_on_script_pre_start_native_contract,
+    )
+
+    return validate_on_script_pre_start_native_contract()
+
+
+@lru_cache(maxsize=1)
 def _bool_getter_mult_or_native_audit() -> dict[str, Any]:
     from scripts.game_data.levelscript_bool_getter_mult_or_native import (
         validate_bool_getter_mult_or_native_contract,
@@ -1006,6 +1060,24 @@ def _on_any_entity_die_native_audit() -> dict[str, Any]:
     )
 
     return validate_on_any_entity_die_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_client_global_var_changed_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_client_global_var_changed_native import (
+        validate_on_client_global_var_changed_native_contract,
+    )
+
+    return validate_on_client_global_var_changed_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _on_specific_entity_list_die_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_on_specific_entity_list_die_native import (
+        validate_on_specific_entity_list_die_native_contract,
+    )
+
+    return validate_on_specific_entity_list_die_native_contract()
 
 
 @lru_cache(maxsize=1)
@@ -1222,6 +1294,24 @@ def _move_bamboo_last_native_audit() -> dict[str, Any]:
     )
 
     return validate_move_bamboo_last_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _stop_radio_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_stop_radio_native import (
+        validate_stop_radio_native_contract,
+    )
+
+    return validate_stop_radio_native_contract()
+
+
+@lru_cache(maxsize=1)
+def _set_bamboo_pos_index_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_set_bamboo_pos_index_native import (
+        validate_set_bamboo_pos_index_native_contract,
+    )
+
+    return validate_set_bamboo_pos_index_native_contract()
 
 
 @lru_cache(maxsize=1)
@@ -1523,12 +1613,20 @@ def _required_native_gates() -> dict[tuple[str, int], str]:
         ("levelscript_get_character_template_id_native.json", "endfield.levelscript-get-character-template-id-native-contract.v1", "levelscript_get_character_template_id_native"),
         ("levelscript_float_getter_int_to_float_native.json", "endfield.levelscript-float-getter-int-to-float-native-contract.v1", "levelscript_float_getter_int_to_float_native"),
         ("levelscript_float_getter_plus_native.json", "endfield.levelscript-float-getter-plus-native-contract.v1", "levelscript_float_getter_plus_native"),
+        ("levelscript_get_interactive_property_int_native.json", "endfield.levelscript-get-interactive-property-int-native-contract.v1", "levelscript_get_interactive_property_int_native"),
+        ("levelscript_get_mission_save_property_int_native.json", "endfield.levelscript-get-mission-save-property-int-native-contract.v1", "levelscript_get_mission_save_property_int_native"),
+        ("levelscript_start_narrative_black_screen_teleport_native.json", "endfield.levelscript-start-narrative-black-screen-teleport-native-contract.v1", "levelscript_start_narrative_black_screen_teleport_native"),
+        ("levelscript_set_squad_enable_relax_idle_native.json", "endfield.levelscript-set-squad-enable-relax-idle-native-contract.v1", "levelscript_set_squad_enable_relax_idle_native"),
+        ("levelscript_character_play_montage_native.json", "endfield.levelscript-character-play-montage-native-contract.v1", "levelscript_character_play_montage_native"),
+        ("levelscript_on_script_pre_start_native.json", "endfield.levelscript-on-script-pre-start-native-contract.v1", "levelscript_on_script_pre_start_native"),
         ("levelscript_bool_getter_mult_or_native.json", "endfield.levelscript-bool-getter-mult-or-native.v1", "levelscript_bool_getter_mult_or_native"),
         ("levelscript_play_voice_narrative_native.json", "endfield.levelscript-play-voice-narrative-native-contract.v1", "levelscript_play_voice_narrative_native"),
         ("levelscript_scripted_char_teleport_to_native.json", "endfield.levelscript-scripted-char-teleport-to-native-contract.v1", "levelscript_scripted_char_teleport_to_native"),
         ("levelscript_scripted_char_patrol_start_native.json", "endfield.levelscript-scripted-char-patrol-start-native-contract.v1", "levelscript_scripted_char_patrol_start_native"),
         ("levelscript_stop_char_scripted_mode_native.json", "endfield.levelscript-stop-char-scripted-mode-native-contract.v1", "levelscript_stop_char_scripted_mode_native"),
         ("levelscript_on_any_entity_die_native.json", "endfield.levelscript-on-any-entity-die-native-contract.v1", "levelscript_on_any_entity_die_native"),
+        ("levelscript_on_client_global_var_changed_native.json", "endfield.levelscript-on-client-global-var-changed-native-contract.v1", "levelscript_on_client_global_var_changed_native"),
+        ("levelscript_on_specific_entity_list_die_native.json", "endfield.levelscript-on-specific-entity-list-die-native-contract.v1", "levelscript_on_specific_entity_list_die_native"),
         ("levelscript_on_start_script_controlled_char_mode_native.json", "endfield.levelscript-on-start-script-controlled-char-mode-native-contract.v1", "levelscript_on_start_script_controlled_char_mode_native"),
         ("levelscript_on_spawner_pause_native.json", "endfield.levelscript-on-spawner-pause-native-contract.v1", "levelscript_on_spawner_pause_native"),
         ("levelscript_building_pos_hint_show_native.json", "endfield.levelscript-building-pos-hint-show-native-contract.v1", "levelscript_building_pos_hint_show_native"),
@@ -1553,6 +1651,8 @@ def _required_native_gates() -> dict[tuple[str, int], str]:
         ("levelscript_set_main_char_hp_bar_active_native.json", "endfield.levelscript-set-main-char-hp-bar-active-native.v1", "levelscript_set_main_char_hp_bar_active_native"),
         ("levelscript_destroy_ability_entity_native.json", "endfield.levelscript-destroy-ability-entity-native-contract.v1", "levelscript_destroy_ability_entity_native"),
         ("levelscript_move_bamboo_last_native.json", "endfield.levelscript-move-bamboo-last-native-contract.v1", "levelscript_move_bamboo_last_native"),
+        ("levelscript_stop_radio_native.json", "endfield.levelscript-stop-radio-native-contract.v1", "levelscript_stop_radio_native"),
+        ("levelscript_set_bamboo_pos_index_native.json", "endfield.levelscript-set-bamboo-pos-index-native-contract.v1", "levelscript_set_bamboo_pos_index_native"),
         ("levelscript_is_endmin_gender_native.json", "endfield.levelscript-is-endmin-gender-native.v1", "levelscript_is_endmin_gender_native"),
         ("levelscript_teleport_gameplay_npc_native.json", "endfield.levelscript-teleport-gameplay-npc-native.v1", "levelscript_teleport_gameplay_npc_native"),
         ("levelscript_apply_movement_setting_modifier_native.json", "endfield.levelscript-apply-movement-setting-modifier-native.v1", "levelscript_apply_movement_setting_modifier_native"),
@@ -2032,12 +2132,20 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any]) -> N
         "levelscript_get_character_template_id_native",
         "levelscript_float_getter_int_to_float_native",
         "levelscript_float_getter_plus_native",
+        "levelscript_get_interactive_property_int_native",
+        "levelscript_get_mission_save_property_int_native",
+        "levelscript_start_narrative_black_screen_teleport_native",
+        "levelscript_set_squad_enable_relax_idle_native",
+        "levelscript_character_play_montage_native",
+        "levelscript_on_script_pre_start_native",
         "levelscript_bool_getter_mult_or_native",
         "levelscript_play_voice_narrative_native",
         "levelscript_scripted_char_teleport_to_native",
         "levelscript_scripted_char_patrol_start_native",
         "levelscript_stop_char_scripted_mode_native",
         "levelscript_on_any_entity_die_native",
+        "levelscript_on_client_global_var_changed_native",
+        "levelscript_on_specific_entity_list_die_native",
         "levelscript_on_start_script_controlled_char_mode_native",
         "levelscript_on_spawner_pause_native",
         "levelscript_building_pos_hint_show_native",
@@ -2054,6 +2162,8 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any]) -> N
         "levelscript_set_main_char_hp_bar_active_native",
         "levelscript_destroy_ability_entity_native",
         "levelscript_move_bamboo_last_native",
+        "levelscript_stop_radio_native",
+        "levelscript_set_bamboo_pos_index_native",
         "levelscript_is_endmin_gender_native",
         "levelscript_apply_movement_setting_modifier_native",
         "levelscript_toggle_ui_dev_only_native",
@@ -2089,12 +2199,20 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any]) -> N
             "levelscript_get_character_template_id_native": _get_character_template_id_native_audit,
             "levelscript_float_getter_int_to_float_native": _float_getter_int_to_float_native_audit,
             "levelscript_float_getter_plus_native": _float_getter_plus_native_audit,
+            "levelscript_get_interactive_property_int_native": _get_interactive_property_int_native_audit,
+            "levelscript_get_mission_save_property_int_native": _get_mission_save_property_int_native_audit,
+            "levelscript_start_narrative_black_screen_teleport_native": _start_narrative_black_screen_teleport_native_audit,
+            "levelscript_set_squad_enable_relax_idle_native": _set_squad_enable_relax_idle_native_audit,
+            "levelscript_character_play_montage_native": _character_play_montage_native_audit,
+            "levelscript_on_script_pre_start_native": _on_script_pre_start_native_audit,
             "levelscript_bool_getter_mult_or_native": _bool_getter_mult_or_native_audit,
             "levelscript_play_voice_narrative_native": _play_voice_narrative_native_audit,
             "levelscript_scripted_char_teleport_to_native": _scripted_char_teleport_to_native_audit,
             "levelscript_scripted_char_patrol_start_native": _scripted_char_patrol_start_native_audit,
             "levelscript_stop_char_scripted_mode_native": _stop_char_scripted_mode_native_audit,
             "levelscript_on_any_entity_die_native": _on_any_entity_die_native_audit,
+            "levelscript_on_client_global_var_changed_native": _on_client_global_var_changed_native_audit,
+            "levelscript_on_specific_entity_list_die_native": _on_specific_entity_list_die_native_audit,
             "levelscript_on_start_script_controlled_char_mode_native": _on_start_script_controlled_char_mode_native_audit,
             "levelscript_on_spawner_pause_native": _on_spawner_pause_native_audit,
             "levelscript_building_pos_hint_show_native": _building_pos_hint_show_native_audit,
@@ -2111,6 +2229,8 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any]) -> N
             "levelscript_set_main_char_hp_bar_active_native": _set_main_char_hp_bar_active_native_audit,
             "levelscript_destroy_ability_entity_native": _destroy_ability_entity_native_audit,
             "levelscript_move_bamboo_last_native": _move_bamboo_last_native_audit,
+            "levelscript_stop_radio_native": _stop_radio_native_audit,
+            "levelscript_set_bamboo_pos_index_native": _set_bamboo_pos_index_native_audit,
             "levelscript_is_endmin_gender_native": _is_endmin_gender_native_audit,
             "levelscript_apply_movement_setting_modifier_native": _apply_movement_setting_modifier_native_audit,
             "levelscript_toggle_ui_dev_only_native": _toggle_ui_dev_only_native_audit,

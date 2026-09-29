@@ -1,0 +1,38 @@
+{
+  "schema": "endfield.map-water-surface-join.v2",
+  "status": "validated",
+  "selectedSource": {
+    "levelId": "map02_lv002",
+    "levelIdNum": 228,
+    "relativePath": "game/Json/LevelData/map02_lv002/map02_lv002_lv_data_sub_04.json",
+    "sha256": "AB8914728048C3A2C4F576D563608F11232BD3BD692DBE75415D3D86B58C751B",
+    "waterVolumeId": "22800040000",
+    "initialHeightInputs": {
+      "isPrototype": false,
+      "isInfinite": true,
+      "heightMax": 25.0,
+      "amountCurrent": 200,
+      "amountMax": 200
+    }
+  },
+  "catalog": {
+    "relativePath": "raw/ExtendData/Main/StringPathHash.bin",
+    "sha256": "A999BC9F324F2B9A6DDFAE2DEBF2D491EDFA1851FC01C670278839B3F6B2B7E4"
+  },
+  "mesh": {
+    "meshPathHash": 951739358744751118,
+    "resourcePath": "Assets/Beyond/DynamicAssets/Gameplay/Water/item_liquid_water#22800040000_WaterSurface.asset",
+    "name": "item_liquid_water#22800040000_WaterSurface",
+    "pathId": 5290134593721156579,
+    "objRelativePath": "game/Unity/Mesh/item_liquid_water#22800040000_WaterSurface_p496A556278C143E3.obj",
+    "objSha256": "CC06E8F84974D4C6AC7F08ED2066B1570E8D81F669F2A744CFF24A0594267D7D"
+  },
+  "assetMap": {
+    "relativePath": "meta/StreamingAssets/asset_map/endfield_streamingassets_assets.json",
+    "sha256": "5CE9D7BF011A926541D4142738519F8F64380BA0A48842102706D42FF731ABEB"
+  },
+  "evidenceBoundary": {
+    "exact": "The selected LevelData row is a named-exact 26-member water volume under sceneId map02_lv002 and has an exact source digest. Its meshPathHash uniquely resolves in the exact StringPathHash catalog to the selected AssetMap Mesh path and PathID; the converted local plane has the same four X/Z vertices as the LevelData points relative to pivot.",
+    "conditional": "On the validated unpatched native path, this row's nonzero id follows Setup through InitMeshMono to GetMesh with its stored mesh hash and computed initial plane position. The four LevelData points are an authored footprint. This contract does not observe level load, successful TryLoad, final renderer transform, or later water-height/material/visibility changes."
+  }
+}

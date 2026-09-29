@@ -1,0 +1,19 @@
+{
+  "schema": "endfield.skill-cursor-zhuangfy-normal-skill-selection.v1",
+  "status": "observed-exact-source",
+  "groupSelectionContract": "skill_cursor_zhuangfy_terminal_selection.json",
+  "targetVirtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_normal_skill.json",
+  "newAction": {
+    "tag": "0x0197",
+    "start": 18010,
+    "end": 18032
+  },
+  "expectedActionGroupCursor": 21631,
+  "expectedTerminalStart": 22988,
+  "wholeStoredFileExpected": true,
+  "evidenceBoundary": {
+    "exact": "The selected native six-member 0x0197 reader closes one previously unresolved ordinary Zhuangfy action span, and the preexisting live cursor selects the one-member-wrapper EOF terminal for this exact source.",
+    "conditional": "Whole stored-file closure requires a current source/native gate, the saved receipt provenance, complete ActionGroup replay, and all static fields 0-42 matching the live field ranges.",
+    "unresolved": "This is one copied SkillData source in a partial four-target VFS scope; shared-parser publication and the other two partial Zhuangfy sources remain separate."
+  }
+}

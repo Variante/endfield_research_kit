@@ -1,0 +1,450 @@
+{
+  "schema": "endfield.buff-heal-processor-zero-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_heal_check_tag_selected_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "methods": [
+    [
+      107741,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_HealProcessorBaseForMemoryPack+Beyond_Gameplay_Core_HealProcessorBaseForMemoryPackFormatter",
+      "Deserialize",
+      75360064
+    ],
+    [
+      104532,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_HealModifier_DataForMemoryPack",
+      "Deserialize",
+      73832352
+    ],
+    [
+      125115,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_InstantModifyAttributeForHealForMemoryPack",
+      "Deserialize",
+      65896064
+    ],
+    [
+      107630,
+      "Beyond.MemoryPack.Beyond_Gameplay_AttributeModifierData_AttributeModifierForMemoryPack",
+      "Deserialize",
+      64373056
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 75360197,
+      "endRva": 75360332,
+      "sha256": "02B7949595A65E21193BA692101E568007F418361632156B47A3B1D24B273B5C",
+      "role": "heal-processor-tag-zero-route"
+    },
+    {
+      "startRva": 73832456,
+      "endRva": 73832638,
+      "sha256": "5F24AFE750F28B6705401AEEBAA627EDC7620C65B1B40812267C0CBECF7E4BA1",
+      "role": "heal-modifier-three-source-members"
+    },
+    {
+      "startRva": 65896156,
+      "endRva": 65896350,
+      "sha256": "2BBA3AB5318EFC5EE8EECA12F5F4E349D6761441510E202588C72E7990A11458",
+      "role": "instant-heal-processor-two-source-members"
+    },
+    {
+      "startRva": 64373095,
+      "endRva": 64373369,
+      "sha256": "6DB4F8A95D5B897C6DB46D3CF9F097456808A05B4B0F9A9BD6D5814B23707D8E",
+      "role": "attribute-modifier-four-source-members"
+    }
+  ],
+  "dispatcher": {
+    "tagRead": {
+      "instructionRva": 75360212,
+      "rawHex": "E8A7F012FF",
+      "targetRva": 59824256,
+      "role": "read-union-tag-u16"
+    },
+    "zeroTest": [
+      75360230,
+      "6685F6"
+    ],
+    "nonzeroBranch": [
+      75360233,
+      "7565"
+    ],
+    "tagZeroType": {
+      "instructionRva": 75360284,
+      "instructionHex": "488B15751A8608",
+      "cellRva": 218366616,
+      "usageRawHex": "7341032000000000",
+      "registeredTypeIndex": 106681,
+      "typeDefinition": 16759,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InstantModifyAttributeForHealForMemoryPack"
+    }
+  },
+  "wrapperSetters": {
+    "healModifier": [
+      [
+        104527,
+        "set___condition__",
+        "Beyond.Gameplay.Core.SequenceActionData",
+        52469328
+      ],
+      [
+        104528,
+        "set___enableSide__",
+        "Beyond.Gameplay.Core.HealModifier+Data+EnableSide",
+        84403284
+      ],
+      [
+        104529,
+        "set___healProcessors__",
+        "<type-index:57926>",
+        52460176
+      ]
+    ],
+    "processorZero": [
+      [
+        125111,
+        "set___modifier__",
+        "Beyond.Gameplay.AttributeModifierData+AttributeModifier",
+        65898992
+      ],
+      [
+        125112,
+        "set___modifyTargetSide__",
+        "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide",
+        65899040
+      ]
+    ],
+    "attributeModifier": [
+      [
+        107624,
+        "set___attributeType__",
+        "Beyond.GEnums.AttributeType",
+        84406024
+      ],
+      [
+        107625,
+        "set___formulaItem__",
+        "Beyond.GEnums.ModifierType",
+        84401920
+      ],
+      [
+        107626,
+        "set___modifyAttributeType__",
+        "Beyond.GEnums.ModifyAttributeType",
+        84403284
+      ],
+      [
+        107627,
+        "set___param__",
+        "Beyond.Blackboard+BlackboardDouble",
+        52460176
+      ]
+    ]
+  },
+  "sourceCalls": {
+    "healModifier": [
+      {
+        "instructionRva": 73832525,
+        "rawHex": "E83EC473FE",
+        "targetRva": 47864976,
+        "role": "condition-read"
+      },
+      {
+        "instructionRva": 73832544,
+        "rawHex": "E8EB05BAFE",
+        "targetRva": 52469328,
+        "role": "condition-set"
+      },
+      {
+        "instructionRva": 73832562,
+        "rawHex": "E839EE63FE",
+        "targetRva": 46827184,
+        "role": "enableSide-read"
+      },
+      {
+        "instructionRva": 73832580,
+        "rawHex": "E8CB4BA100",
+        "targetRva": 84403284,
+        "role": "enableSide-set"
+      },
+      {
+        "instructionRva": 73832598,
+        "rawHex": "E855601BFF",
+        "targetRva": 58849520,
+        "role": "healProcessors-read"
+      },
+      {
+        "instructionRva": 73832617,
+        "rawHex": "E8E2E1B9FE",
+        "targetRva": 52460176,
+        "role": "healProcessors-set"
+      }
+    ],
+    "processorZero": [
+      {
+        "instructionRva": 65896274,
+        "rawHex": "E839DDECFE",
+        "targetRva": 47864976,
+        "role": "modifier-read"
+      },
+      {
+        "instructionRva": 65896293,
+        "rawHex": "E8860A0000",
+        "targetRva": 65898992,
+        "role": "modifier-set"
+      },
+      {
+        "instructionRva": 65896311,
+        "rawHex": "E83407DDFE",
+        "targetRva": 46827184,
+        "role": "modifyTargetSide-read"
+      },
+      {
+        "instructionRva": 65896329,
+        "rawHex": "E8920A0000",
+        "targetRva": 65899040,
+        "role": "modifyTargetSide-set"
+      }
+    ],
+    "attributeModifier": [
+      {
+        "instructionRva": 64373180,
+        "rawHex": "E8EF44F4FE",
+        "targetRva": 46827184,
+        "role": "attributeType-read"
+      },
+      {
+        "instructionRva": 64373223,
+        "rawHex": "E8C444F4FE",
+        "targetRva": 46827184,
+        "role": "formulaItem-read"
+      },
+      {
+        "instructionRva": 64373266,
+        "rawHex": "E89944F4FE",
+        "targetRva": 46827184,
+        "role": "modifyAttributeType-read"
+      },
+      {
+        "instructionRva": 64373309,
+        "rawHex": "E84E1A04FF",
+        "targetRva": 47864976,
+        "role": "param-read"
+      }
+    ]
+  },
+  "genericContexts": [
+    {
+      "role": "condition",
+      "instructionRva": 73832512,
+      "instructionHex": "488B1521B69808",
+      "cellRva": 218058344,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData"
+    },
+    {
+      "role": "enableSide",
+      "instructionRva": 73832549,
+      "instructionHex": "488B151C789F08",
+      "cellRva": 218501256,
+      "usageRawHex": "A3E812C000000000",
+      "methodSpecIndex": 619601,
+      "methodSpec": [
+        428448,
+        -1,
+        42564
+      ],
+      "argumentRawHex": "7C270000000000000000118000000000",
+      "typeName": "Beyond.Gameplay.Core.HealModifier+Data+EnableSide"
+    },
+    {
+      "role": "modifier",
+      "instructionRva": 65896261,
+      "instructionHex": "488B15F4851609",
+      "cellRva": 218367296,
+      "usageRawHex": "C5EB12C000000000",
+      "methodSpecIndex": 620002,
+      "methodSpec": [
+        428464,
+        -1,
+        17000
+      ],
+      "argumentRawHex": "73020000000000000000120000000000",
+      "typeName": "Beyond.Gameplay.AttributeModifierData+AttributeModifier"
+    },
+    {
+      "role": "modifyTargetSide",
+      "instructionRva": 65896298,
+      "instructionHex": "488B1547871609",
+      "cellRva": 218367672,
+      "usageRawHex": "93E712C000000000",
+      "methodSpecIndex": 619465,
+      "methodSpec": [
+        428448,
+        -1,
+        42466
+      ],
+      "argumentRawHex": "6C270000000000000000118000000000",
+      "typeName": "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide"
+    },
+    {
+      "role": "attributeType",
+      "instructionRva": 64373167,
+      "instructionHex": "488B156A372C09",
+      "cellRva": 218265888,
+      "usageRawHex": "E9E412C000000000",
+      "methodSpecIndex": 619124,
+      "methodSpec": [
+        428448,
+        -1,
+        26177
+      ],
+      "argumentRawHex": "9A840000000000000000118000000000",
+      "typeName": "Beyond.GEnums.AttributeType"
+    },
+    {
+      "role": "formulaItem",
+      "instructionRva": 64373213,
+      "instructionHex": "488B15C4CD2F09",
+      "cellRva": 218501032,
+      "usageRawHex": "3DE612C000000000",
+      "methodSpecIndex": 619294,
+      "methodSpec": [
+        428448,
+        -1,
+        42336
+      ],
+      "argumentRawHex": "9C840000000000000000118000000000",
+      "typeName": "Beyond.GEnums.ModifierType"
+    },
+    {
+      "role": "modifyAttributeType",
+      "instructionRva": 64373256,
+      "instructionHex": "488B1501372C09",
+      "cellRva": 218265872,
+      "usageRawHex": "41E612C000000000",
+      "methodSpecIndex": 619296,
+      "methodSpec": [
+        428448,
+        -1,
+        42338
+      ],
+      "argumentRawHex": "9B840000000000000000118000000000",
+      "typeName": "Beyond.GEnums.ModifyAttributeType"
+    },
+    {
+      "role": "param",
+      "instructionRva": 64373299,
+      "instructionHex": "488B15E6032909",
+      "cellRva": 218056224,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeName": "Beyond.Blackboard+BlackboardDouble"
+    }
+  ],
+  "attributeValueFieldOffsets": {
+    "modifyAttributeType": 16,
+    "attributeType": 20,
+    "formulaItem": 24,
+    "param": 32
+  },
+  "attributeValueStores": [
+    [
+      64373207,
+      "894114",
+      "attributeType"
+    ],
+    [
+      64373250,
+      "894118",
+      "formulaItem"
+    ],
+    [
+      64373293,
+      "894110",
+      "modifyAttributeType"
+    ],
+    [
+      64373336,
+      "48894120",
+      "param"
+    ]
+  ],
+  "selectedSource": {
+    "path": "Data/Json/BuffData/buff_wpn_claym_0012_up.json",
+    "sha256": "1E95C1231D6C3B966C6818561559349306D37287372134ED349105DABF054CE1",
+    "length": 345,
+    "healModifier": [
+      95,
+      179
+    ],
+    "condition": [
+      100,
+      135
+    ],
+    "enableSide": [
+      135,
+      139
+    ],
+    "healProcessors": [
+      139,
+      179
+    ],
+    "processorZero": [
+      143,
+      179
+    ],
+    "modifier": [
+      145,
+      175
+    ],
+    "attributeType": [
+      146,
+      150
+    ],
+    "formulaItem": [
+      150,
+      154
+    ],
+    "modifyAttributeType": [
+      154,
+      158
+    ],
+    "param": [
+      158,
+      175
+    ],
+    "modifyTargetSide": [
+      175,
+      179
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Current pinned source/native inputs, tag-zero dispatcher branch, wrapper source calls/setters, direct attribute stores, and selected byte cursors.",
+    "direct": "HealModifier reads condition, enableSide and healProcessors; tag-zero processor reads modifier then modifyTargetSide; modifier reads attributeType, formulaItem, modifyAttributeType and param in that order.",
+    "structuralOnly": "Raw enum bits and BlackboardDouble payload are stored values; their live evaluation is unobserved.",
+    "conditional": "The existing-object tag-zero type route and selected source are proved for this native build; live provider selection and new-object path are not observed.",
+    "unresolved": "Live healing/evaluation, provider choice and the combined corpus publication gate."
+  }
+}

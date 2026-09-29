@@ -1,0 +1,38 @@
+{
+  "schema": "endfield.buff-damage-sword-condition-storage-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_damage_sword_condition_prefix_native.json",
+    "buff_damage_check_entity_num_child_native.json",
+    "buff_damage_sword_if_else_child_native.json",
+    "buff_damage_sequence_action_condition_native.json"
+  ],
+  "selectedSource": {
+    "path": "Data/Json/BuffData/buff_wpn_sword_0010_real.json",
+    "sha256": "58E52FBD1E90992D6E13E63184EC1DFC19A37418B938F9545BB67DC78963709B",
+    "conditionStart": 165,
+    "conditionEnd": 856,
+    "sequenceMemberCount": 3,
+    "actionCount": 6,
+    "actionSpans": [
+      {"tag": 94, "start": 170, "end": 189},
+      {"tag": 178, "start": 189, "end": 294},
+      {"tag": 97, "start": 294, "end": 402},
+      {"tag": 201, "start": 402, "end": 611},
+      {"tag": 236, "start": 611, "end": 733},
+      {"tag": 236, "start": 733, "end": 854}
+    ],
+    "terminalByteCount": 2
+  },
+  "evidenceBoundary": {
+    "exact": "Selected logical source SHA256, the current-build SequenceActionData reader and independently native-gated direct or structural action receipts tile the six ordered action spans and two terminal booleans through the condition endpoint.",
+    "direct": "The selected condition stores ordered CheckDamageTypeMask, FindTarget, CheckEntityNum, IfElse and two ModifyDynamicBlackboard top-level actions. The IfElse child itself stores one CompareFloat condition and one ModifyDynamicBlackboard success action.",
+    "structuralOnly": "Several nested target, selector, scalar and blackboard interiors remain structural; the stored booleans and numbers do not witness an evaluated condition or live damage change.",
+    "unresolved": "Recursive named completeness of this condition, the enclosing DamageModifier and full BuffData root, and runtime behavior. The storage-tiling receipt must not be used as a whole-root promotion gate."
+  }
+}

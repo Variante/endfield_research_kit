@@ -1,0 +1,19 @@
+{
+  "schema": "endfield.skill-cursor-zhuangfy-perfect-dodge-selection.v1",
+  "status": "observed-exact-source",
+  "groupSelectionContract": "skill_cursor_zhuangfy_terminal_selection.json",
+  "targetVirtualPath": "Data/Json/SkillData/chr_0030_zhuangfy_perfect_dodge.json",
+  "selectedActions": [
+    {"tag": "0x0049", "start": 466, "end": 485},
+    {"tag": "0x0049", "start": 838, "end": 857},
+    {"tag": "0x0049", "start": 1796, "end": 1815}
+  ],
+  "expectedActionGroupCursor": 2786,
+  "expectedTerminalStart": 3178,
+  "wholeStoredFileExpected": true,
+  "evidenceBoundary": {
+    "exact": "Three selected 0x0049 action spans close under the current native five-member reader and the previously authenticated perfect-dodge copied source.",
+    "conditional": "Whole stored-file closure requires current VFS/native provenance, the frozen four-source receipt, complete ActionGroup replay and static field ranges matching the selected live terminal at EOF.",
+    "unresolved": "This source-scoped diagnostic does not promote the shared SkillData parser or complete family census, and it does not prove a perfect dodge happened in play."
+  }
+}

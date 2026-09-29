@@ -1,7 +1,7 @@
 """Authenticate the stored MoveBambooLast ActionBase route.
 
 This proves the selected native reader, typed parameter contexts and current
-source cursors. It does not prove runtime entity destruction.
+source cursors. It does not prove runtime entity movement.
 
 The own entity is a typed Param<EntityPtr>; the reached form uses a slot ID.
 
@@ -31,7 +31,7 @@ from scripts.game_data.memorypack.union_dispatch import read_union_switch
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
 
 
-SCHEMA = "endfield.levelscript-destroy-ability-entity-native-contract.v1"
+SCHEMA = "endfield.levelscript-move-bamboo-last-native-contract.v1"
 LABEL = "levelscriptMoveBambooLastNative"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_move_bamboo_last_native.json"
 _PARAM_ELEMENTS = {

@@ -1365,9 +1365,9 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Most current files close a complete named schema at EOF, populated action maps included; the bounded-partial residue keeps a named prefix and stops at its first unsupported action-map union route.",
-                "textZh": "多数当前文件在 EOF 处闭合完整的命名模式（包括非空动作表）；其余有界部分文件保留已命名前缀，并停在第一个尚不支持的动作表 union 路由处。",
-                "source": "memory/game_data/extraction_payload_boundaries.md"
+                "text": "Most current files close a complete named schema at EOF, populated action maps included. Native-gated StopRadio and mission-property sources reach named-exact EOF, and all seven selected narrative-chain sources now do too. The family still needs a combined gate.",
+                "textZh": "多数当前文件在 EOF 处闭合完整的命名模式（包括非空动作表）。经原生校验的 StopRadio 与任务属性源文件到达命名精确 EOF；所选叙事链的七个源文件现也全部闭合。整个家族仍需一次合并校验。",
+                "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 3,
@@ -1461,9 +1461,9 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Most current files close the whole stored schema through native-gated readers and replayed live cursor receipts; the residue keeps a named prefix and an authenticated terminal.",
-                "textZh": "多数当前文件通过原生校验的读取器与回放的实时游标回执闭合完整存储模式；其余文件保留已命名前缀与已认证的末端。",
-                "source": "memory/game_data/extraction_payload_boundaries.md"
+                "text": "Most current files close the whole stored schema through native-gated readers and replayed live cursor receipts. Wulfa and Seraph are source-bound complete. Five Zhuangfy action routes are in the shared parser; all four files in one grouped capture have source-scoped whole stored schemas joined to live EOF cursors. Selected Lizhiyan combo and Pograni ultimate sources now have static terminal boundaries after their ActionGroups; Pograni reaches structural EOF and its copied bytes match a one-file current VFS gate. Neither source has a live terminal cursor or a publishable family result. The remaining family residue is still partial.",
+                "textZh": "多数当前文件通过原生校验的读取器与回放的实时游标回执闭合完整存储模式。Wulfa 与 Seraph 已按源文件闭合。五条 Zhuangfy 动作路径已进入共享解析器；一次分组捕获中的四个文件均有与实时 EOF 游标接合的按源文件完整存储模式。选定的 Lizhiyan 连击和 Pograni 终结技源文件现已有动作组后的静态终止边界；Pograni 在结构上到达文件末尾，且其复制字节与一次单文件当前 VFS 校验一致。两项结果均无实时终止游标，也不是可发布的家族结果。家族其余部分仍为部分恢复。",
+                "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 3,
@@ -1493,9 +1493,9 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Every current file has a named 30-field outer frame through EOF; a native-gated subset closes the whole schema, while the rest keep internal action and icon bodies anonymous.",
-                "textZh": "每个当前文件都有贯穿 EOF 的已命名 30 字段外层帧；原生校验的子集闭合完整模式，其余文件的内部动作与图标正文仍为匿名。",
-                "source": "memory/game_data/extraction_payload_boundaries.md"
+                "text": "Every current file has a named 30-field outer frame through EOF; a native-gated subset closes the whole schema. Recent source-scoped checks close the positive-heal claymore, BreakPassing event, and equipment suit attribute/damage cases to physical EOF. They remain diagnostic until the combined family gate; unresolved files still have anonymous interior actions.",
+                "textZh": "每个当前文件都有贯穿 EOF 的已命名 30 字段外层帧；原生校验的子集闭合完整模式。近期按源文件的检查让双手剑治疗增益、BreakPassing 事件和装备套装属性及伤害三例到达物理文件末尾。它们在家族综合门禁通过前仍是诊断结果；未解决文件的内部动作仍有匿名部分。",
+                "source": "memory/game_data/serialization_memorypack.md"
               },
               {
                 "level": 3,

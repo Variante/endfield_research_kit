@@ -1,0 +1,362 @@
+{
+  "schema": "endfield.map-water-getmesh-native-contract.v4",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "method": {
+    "typeName": "Beyond.Gameplay.Core.WaterVolumeManager",
+    "name": "GetMesh",
+    "token": 100741295,
+    "rva": 61518144,
+    "bodySize": 3777,
+    "bodySha256": "788A1FBF0DF31D31F2D6E136ADD98ADF1EEBAE9A7C29FC0759C5C50D090105A8",
+    "returnType": "Beyond.Gameplay.View.WaterSurfaceMeshMono",
+    "parameters": [
+      ["waterVolume", "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume"],
+      ["position", "UnityEngine.Vector3"],
+      ["pointsLocal", null],
+      ["pivot", "UnityEngine.Vector3"],
+      ["meshPathHash", "System.Int64"]
+    ],
+    "meshPathHashEntryStackOffset": 48,
+    "instructionAnchors": [
+      {"offset": 1322, "bytesHex": "488BB588000000", "role": "meshPathHashStackToRsi"},
+      {"offset": 1383, "bytesHex": "488BCE", "role": "meshPathHashRsiToTryLoadArg"},
+      {"offset": 912, "bytesHex": "0F118398000000", "role": "selectedMonoWaterVolumePtrStore"},
+      {"offset": 2355, "bytesHex": "0F118398000000", "role": "reusedMonoWaterVolumePtrStore"}
+    ],
+    "directCalls": [
+      {"offset": 1386, "bytesHex": "E84135FCFF", "targetRva": 61271024, "method": "Beyond.Resource.ResourceManager.TryLoad"},
+      {"offset": 1448, "bytesHex": "E8F3C11600", "targetRva": 63011040, "method": "Beyond.Resource.FAssetProxyHandle.Get"},
+      {"offset": 1538, "bytesHex": "E819F2FFFF", "targetRva": 61516128, "method": "Beyond.Gameplay.View.WaterSurfaceMeshMono.UpdataMesh"},
+      {"offset": 1602, "bytesHex": "E839397DFF", "targetRva": 52949184, "method": "UnityEngine.MeshFilter.set_sharedMesh"},
+      {"offset": 1671, "bytesHex": "E8340F0000", "targetRva": 61523712, "method": "UnityEngine.MeshCollider.set_sharedMesh"}
+    ]
+  },
+  "callerChain": {
+    "fieldOffsets": {
+      "Beyond.Gameplay.LevelWaterVolumeData::id": 16,
+      "Beyond.Gameplay.LevelWaterVolumeData::isPrototype": 36,
+      "Beyond.Gameplay.LevelWaterVolumeData::pivot": 24,
+      "Beyond.Gameplay.LevelWaterVolumeData::points": 72,
+      "Beyond.Gameplay.LevelWaterVolumeData::heightMax": 80,
+      "Beyond.Gameplay.LevelWaterVolumeData::amountCurrent": 84,
+      "Beyond.Gameplay.LevelWaterVolumeData::amountMax": 88,
+      "Beyond.Gameplay.LevelWaterVolumeData::isInfinite": 92,
+      "Beyond.Gameplay.LevelWaterVolumeData::meshPathHash": 128,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::ptr": 24,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::pivot": 32,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::waterVolumeId": 48,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::meshPathHash": 72,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::pointsLocal": 88,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::heightMax": 144,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::amountCurrent": 148,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::amountMax": 156,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::isInfinite": 160,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::heightPercentageForInfinite": 168,
+      "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume::surfaceMeshMono": 192
+    },
+    "methods": [
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume",
+        "name": "Setup",
+        "token": 100741412,
+        "rva": 61532032,
+        "bodySize": 1649,
+        "bodySha256": "7251C64731568CF63746FA0DF4BD255291EC87130CE38A8F25FC6DC86E268047",
+        "parameters": [["data", "Beyond.Gameplay.LevelWaterVolumeData"], ["newLevel", "Beyond.Gameplay.Core.GameLevel"]],
+        "instructionAnchors": [
+          {"offset": 111, "bytesHex": "488B4E10", "role": "dataWaterVolumeId"},
+          {"offset": 122, "bytesHex": "488D4E10", "role": "dataWaterVolumeIdAddressForString"},
+          {"offset": 126, "bytesHex": "48894718", "role": "waterVolumePtrFromId"},
+          {"offset": 141, "bytesHex": "48894730", "role": "waterVolumeIdStringFromData"},
+          {"offset": 158, "bytesHex": "F20F104618", "role": "dataPivotXY"},
+          {"offset": 163, "bytesHex": "8B4620", "role": "dataPivotZ"},
+          {"offset": 166, "bytesHex": "F20F114720", "role": "waterVolumePivotXY"},
+          {"offset": 171, "bytesHex": "894728", "role": "waterVolumePivotZ"},
+          {"offset": 478, "bytesHex": "8B4650", "role": "dataHeightMax"},
+          {"offset": 481, "bytesHex": "898790000000", "role": "waterVolumeHeightMax"},
+          {"offset": 487, "bytesHex": "8B4654", "role": "dataAmountCurrent"},
+          {"offset": 490, "bytesHex": "898794000000", "role": "waterVolumeAmountCurrent"},
+          {"offset": 505, "bytesHex": "8B4658", "role": "dataAmountMax"},
+          {"offset": 508, "bytesHex": "89879C000000", "role": "waterVolumeAmountMax"},
+          {"offset": 514, "bytesHex": "0FB6465C", "role": "dataIsInfinite"},
+          {"offset": 518, "bytesHex": "8887A0000000", "role": "waterVolumeIsInfinite"},
+          {"offset": 597, "bytesHex": "660F6E4E54", "role": "ratioNumeratorCurrent"},
+          {"offset": 602, "bytesHex": "660F6E4658", "role": "ratioDenominatorMax"},
+          {"offset": 613, "bytesHex": "F30F5EC8", "role": "heightRatioDivide"},
+          {"offset": 617, "bytesHex": "F30F118FA8000000", "role": "heightPercentageForInfinite"},
+          {"offset": 625, "bytesHex": "488B8680000000", "role": "dataMeshPathHash"},
+          {"offset": 632, "bytesHex": "48894748", "role": "waterVolumeMeshPathHash"},
+          {"offset": 1030, "bytesHex": "807F2C00", "role": "prototypeGuard"}
+        ],
+        "conditionalBranches": [
+          {"offset": 1034, "bytesHex": "0F843C010000", "targetOffset": 1356, "role": "nonPrototypeSkipsAmountOverride"}
+        ],
+        "directCalls": [
+          {"offset": 117, "bytesHex": "E806FCFFFF", "targetRva": 61531136, "method": "Beyond.Gameplay.Core.WaterVolumePtr.op_Implicit"},
+          {"offset": 132, "bytesHex": "E8878C99FF", "targetRva": 54817936, "method": "System.UInt64.ToString"},
+          {"offset": 1361, "bytesHex": "E8DABDFFFF", "targetRva": 61516464, "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume.InitMeshMono"}
+        ]
+      },
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume",
+        "name": "InitMeshMono",
+        "token": 100741395,
+        "rva": 61516464,
+        "bodySize": 972,
+        "bodySha256": "870B8B124856DB52FA710E62842942A34ECA994E183FD001D218D40030987C72",
+        "parameters": [],
+        "instructionAnchors": [
+          {"offset": 81, "bytesHex": "84C0", "role": "staticWaterPredicateTest"},
+          {"offset": 175, "bytesHex": "488B4B48", "role": "waterVolumeMeshPathHash"},
+          {"offset": 193, "bytesHex": "4C8D442450", "role": "getMeshPositionArgument"},
+          {"offset": 201, "bytesHex": "4C8B4B58", "role": "waterVolumePointsLocal"},
+          {"offset": 232, "bytesHex": "48894C2428", "role": "outgoingMeshPathHash"}
+        ],
+        "conditionalBranches": [
+          {"offset": 83, "bytesHex": "0F855E020000", "targetOffset": 695, "role": "staticWaterSkipsGetMesh"}
+        ],
+        "directCalls": [
+          {"offset": 76, "bytesHex": "E87F030000", "targetRva": 61517440, "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume.get_isStaticWater"},
+          {"offset": 170, "bytesHex": "E8F1150000", "targetRva": 61522256, "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume.get_planePosition"},
+          {"offset": 258, "bytesHex": "E889050000", "targetRva": 61518144, "method": "Beyond.Gameplay.Core.WaterVolumeManager.GetMesh"}
+        ]
+      }
+    ]
+  },
+  "heightChain": {
+    "methods": [
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumePtr",
+        "name": "op_Implicit",
+        "token": 100746164,
+        "rva": 61531136,
+        "bodySize": 38,
+        "bodySha256": "976719ED17385AF619ED18819DD5424D4A4C6E99FAA24C19AEA325F4E3A0C15D",
+        "returnType": "Beyond.Gameplay.Core.WaterVolumePtr",
+        "parameters": [["id", "System.UInt64"]],
+        "instructionAnchors": [{"offset": 29, "bytesHex": "488BC3", "role": "identityPtrFromId"}],
+        "directCalls": []
+      },
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume",
+        "name": "get_isStaticWater",
+        "token": 100741368,
+        "rva": 61517440,
+        "bodySize": 43,
+        "bodySha256": "EEF3A8B9D4E48E858D1897FE57DF44A4FF14E72704F4F39104208BCDC0D5B909",
+        "returnType": "System.Boolean",
+        "parameters": [],
+        "instructionAnchors": [
+          {"offset": 29, "bytesHex": "48837B1800", "role": "ptrZeroTest"},
+          {"offset": 34, "bytesHex": "0F94C0", "role": "staticWhenPtrZero"}
+        ],
+        "directCalls": []
+      },
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume",
+        "name": "get_heightCurrent",
+        "token": 100741371,
+        "rva": 61522400,
+        "bodySize": 57,
+        "bodySha256": "EF1DEEAD2B8D973F3920514E1C0924EE1F2EA3CA748A8AD57B7C33FC94EAF133",
+        "returnType": "System.Single",
+        "parameters": [],
+        "instructionAnchors": [{"offset": 29, "bytesHex": "8B9394000000", "role": "amountCurrentToGetHeight"}],
+        "directCalls": [],
+        "directBranches": [{"offset": 46, "bytesHex": "E90D000000", "targetRva": 61522464, "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume.GetHeight"}]
+      },
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume",
+        "name": "GetHeight",
+        "token": 100741372,
+        "rva": 61522464,
+        "bodySize": 111,
+        "bodySha256": "A6BEDB75D96DC931842CE0CAE6E20A6AD51811ECCD11CF76BC801B54A854AE95",
+        "returnType": "System.Single",
+        "parameters": [["amount", "System.Int32"]],
+        "instructionAnchors": [
+          {"offset": 35, "bytesHex": "3883A0000000", "role": "isInfiniteFlag"},
+          {"offset": 84, "bytesHex": "F30F1083A8000000", "role": "infiniteHeightRatio"},
+          {"offset": 92, "bytesHex": "F30F598390000000", "role": "infiniteHeightMaxMultiply"}
+        ],
+        "conditionalBranches": [{"offset": 41, "bytesHex": "7529", "targetOffset": 84, "role": "infiniteHeightBranch"}],
+        "directCalls": []
+      },
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume",
+        "name": "get_planePosition",
+        "token": 100741373,
+        "rva": 61522256,
+        "bodySize": 143,
+        "bodySha256": "5B57FA63ED6197F41427C9F078B0DEBAB62D2644948111395D9B1B76666994AC",
+        "returnType": "UnityEngine.Vector3",
+        "parameters": [],
+        "instructionAnchors": [
+          {"offset": 54, "bytesHex": "F20F104F20", "role": "pivotXY"},
+          {"offset": 64, "bytesHex": "8B4728", "role": "pivotZ"}
+        ],
+        "directCalls": [
+          {"offset": 49, "bytesHex": "E85A000000", "targetRva": 61522400, "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume.get_heightCurrent"},
+          {"offset": 105, "bytesHex": "E8027D57FF", "targetRva": 50478784, "method": "UnityEngine.Vector3.op_Addition"}
+        ]
+      }
+    ]
+  },
+  "runtimeHeightPath": {
+    "methods": [
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume",
+        "name": "SetAmount",
+        "token": 100741383,
+        "rva": 103791052,
+        "bodySize": 1315,
+        "bodySha256": "EE97684BA66F7BD91EE1D9FD1698A761E9EA422351BAD453E72678CFF4B0D345",
+        "returnType": "System.Void",
+        "parameters": [["waterItemType", "System.String"], ["value", "System.Int32"], ["isFactory", "System.Boolean"], ["isFake", "System.Boolean"], ["onStart", null], ["onFinish", null]],
+        "instructionAnchors": [{"offset": 484, "bytesHex": "80BEA000000000", "role": "isInfiniteBranchInput"}],
+        "conditionalBranches": [{"offset": 491, "bytesHex": "0F855A020000", "targetOffset": 1099, "role": "infiniteRoutesToHeightSetter"}],
+        "directCalls": [{"offset": 1162, "bytesHex": "E8FD050000", "targetRva": 103793752, "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume.SetInfiniteWaterHeight"}]
+      },
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume",
+        "name": "SetInfiniteWaterHeight",
+        "token": 100741386,
+        "rva": 103793752,
+        "bodySize": 394,
+        "bodySha256": "D29F628C5084740720A79C05F977FA966ABDE0500AA81AE169AFD3E73B096B85",
+        "returnType": "System.Void",
+        "parameters": [["height01", "System.Single"], ["isSmooth", "System.Boolean"], ["isFixedSpeed", null], ["start", null], ["end", null]],
+        "instructionAnchors": [
+          {"offset": 108, "bytesHex": "84C0", "role": "staticWaterPredicateTest"},
+          {"offset": 143, "bytesHex": "F30F1187A8000000", "role": "updatedInfiniteHeightRatio"}
+        ],
+        "conditionalBranches": [{"offset": 110, "bytesHex": "0F85B2000000", "targetOffset": 294, "role": "staticWaterSkipsUpdate"}],
+        "directCalls": [
+          {"offset": 103, "bytesHex": "E8BCE97AFD", "targetRva": 61517440, "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume.get_isStaticWater"},
+          {"offset": 253, "bytesHex": "E84A090000", "targetRva": 103796388, "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume._UpdateInfiniteWaterMeshPos"}
+        ]
+      },
+      {
+        "typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume",
+        "name": "_UpdateInfiniteWaterMeshPos",
+        "token": 100741381,
+        "rva": 103796388,
+        "bodySize": 1061,
+        "bodySha256": "B0339FE233DA073B562DD4FEEC7C258AFC5DAE4C3D60CE8A35E9FC469338E398",
+        "returnType": "System.Void",
+        "parameters": [["isSmooth", "System.Boolean"], ["isFixedSpeed", "System.Boolean"], ["start", null], ["end", null]],
+        "instructionAnchors": [{"offset": 687, "bytesHex": "488BBEC0000000", "role": "surfaceMeshMono"}],
+        "directCalls": [
+          {"offset": 469, "bytesHex": "E85A5CC5FF", "targetRva": 99953880, "method": "Beyond.Gameplay.View.WaterSurfaceMeshMono.SetHeightImmediately"},
+          {"offset": 669, "bytesHex": "E89AF07AFD", "targetRva": 61522400, "method": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume.get_heightCurrent"},
+          {"offset": 865, "bytesHex": "E8F25BC5FF", "targetRva": 99954172, "method": "Beyond.Gameplay.View.WaterSurfaceMeshMono.SetHeight"}
+        ]
+      }
+    ]
+  },
+  "captureWitness": {
+    "gameLevelIdField": {
+      "qualifiedName": "Beyond.Gameplay.Core.GameLevel::<id>k__BackingField",
+      "offset": 24
+    },
+    "gameLevelIdGetter": {
+      "typeName": "Beyond.Gameplay.Core.GameLevel",
+      "name": "get_id",
+      "token": 100739060,
+      "rva": 12478592,
+      "bodySize": 16,
+      "bodySha256": "E6CD78A25376FD740A95EBF469A74B979668811E6DB4C7C1F40EDEC072025E6E",
+      "returnType": "System.String",
+      "parameters": [],
+      "instructionAnchors": [{"offset": 0, "bytesHex": "488B4118C3", "role": "gameLevelIdBackingField"}],
+      "directCalls": []
+    },
+    "updataMesh": {
+      "typeName": "Beyond.Gameplay.View.WaterSurfaceMeshMono",
+      "name": "UpdataMesh",
+      "token": 100715778,
+      "rva": 61516128,
+      "bodySize": 127,
+      "bodySha256": "9F82547591DCC53798E91B4FA154FF3E9F404AC82C764204670BD9CFDA8D0572",
+      "returnType": "System.Void",
+      "parameters": [["updateMesh", "UnityEngine.Mesh"], ["points", null], ["pivot", "UnityEngine.Vector3"]],
+      "instructionAnchors": [],
+      "directCalls": []
+    },
+    "parameterLocations": [
+      {"typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume", "name": "Setup", "parameter": "data", "location": ["register", "rdx"]},
+      {"typeName": "Beyond.Gameplay.Core.WaterVolumeManager+WaterVolume", "name": "Setup", "parameter": "newLevel", "location": ["register", "r8"]},
+      {"typeName": "Beyond.Gameplay.Core.WaterVolumeManager", "name": "GetMesh", "parameter": "waterVolume", "location": ["register", "rdx"]},
+      {"typeName": "Beyond.Gameplay.Core.WaterVolumeManager", "name": "GetMesh", "parameter": "position", "location": ["register", "r8"]},
+      {"typeName": "Beyond.Gameplay.Core.WaterVolumeManager", "name": "GetMesh", "parameter": "meshPathHash", "location": ["stack", 48]}
+    ]
+  },
+  "finalTransformWitness": {
+    "waterVolumePtrField": {
+      "qualifiedName": "Beyond.Gameplay.View.WaterSurfaceMeshMono::<waterVolumePtr>k__BackingField",
+      "offset": 152,
+      "bytes": 16
+    },
+    "methods": [
+      {
+        "typeName": "Beyond.Gameplay.View.WaterSurfaceMeshMono",
+        "name": "Tick",
+        "token": 100715792,
+        "rva": 99954632,
+        "bodySize": 1044,
+        "bodySha256": "D0BD56E66586E517F5B1AFC29B1341D54AE2ABC6359D856DF0C94FD684DEE139",
+        "returnType": "System.Void",
+        "parameters": [["deltaTime", "System.Single"]],
+        "instructionAnchors": [{"offset": 55, "bytesHex": "440F28C9", "role": "deltaTimeXmm1"}],
+        "directCalls": [
+          {"offset": 641, "bytesHex": "E882040000", "targetRva": 99956432, "method": "Beyond.Gameplay.View.WaterSurfaceMeshMono._UpdatePosition"},
+          {"offset": 685, "bytesHex": "E8861203FD", "targetRva": 49825024, "method": "UnityEngine.Transform.get_position"},
+          {"offset": 760, "bytesHex": "E85B070000", "targetRva": 99957280, "method": "Beyond.Gameplay.View.WaterSurfaceMeshMono.set_position"},
+          {"offset": 920, "bytesHex": "E833060000", "targetRva": 99957144, "method": "Beyond.Gameplay.View.WaterSurfaceMeshMono.get_position"}
+        ]
+      },
+      {
+        "typeName": "Beyond.Gameplay.View.WaterSurfaceMeshMono",
+        "name": "get_position",
+        "token": 100715766,
+        "rva": 99957144,
+        "bodySize": 133,
+        "bodySha256": "5CB24AC1E7ED4183A326AADB24E32B3C7B7C7211B91A8C4C6C93336713FFBC9B",
+        "returnType": "UnityEngine.Vector3",
+        "parameters": [],
+        "instructionAnchors": [
+          {"offset": 10, "bytesHex": "488BFA", "role": "receiverInRdx"},
+          {"offset": 13, "bytesHex": "488BD9", "role": "returnVectorAddressInRcx"}
+        ],
+        "directCalls": [
+          {"offset": 37, "bytesHex": "E81E25E9FC", "targetRva": 48127712, "method": "UnityEngine.Component.get_transform"},
+          {"offset": 58, "bytesHex": "E8290B03FD", "targetRva": 49825024, "method": "UnityEngine.Transform.get_position"}
+        ]
+      },
+      {
+        "typeName": "Beyond.Gameplay.View.WaterSurfaceMeshMono",
+        "name": "OnRecycle",
+        "token": 100715779,
+        "rva": 72125568,
+        "bodySize": 2208,
+        "bodySha256": "1A31721262B91DC9531893C537BFAD5A2C67F8603318376B2C96AEB2E9A23A58",
+        "returnType": "System.Void",
+        "parameters": [],
+        "instructionAnchors": [
+          {"offset": 1076, "bytesHex": "0F118798000000", "role": "waterVolumePtrCleared"}
+        ],
+        "directCalls": []
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "direct": "On the unpatched selected-build path, Setup converts LevelWaterVolumeData.id through System.UInt64.ToString and stores the returned managed string pointer in WaterVolume.waterVolumeId; it also transfers the pointer, pivot, height inputs, and mesh hash. Nonzero id becomes a nonstatic WaterVolumePtr, for which InitMeshMono computes get_planePosition and passes it with the stored hash to GetMesh. GetMesh passes the hash to ResourceManager.TryLoad; an acquired asset reaches WaterSurfaceMeshMono.UpdataMesh and MeshFilter/MeshCollider sharedMesh.",
+    "conditional": "For an infinite water row, Setup initializes the ratio amountCurrent/amountMax; GetHeight multiplies that ratio by heightMax and get_planePosition adds the result to pivot. This is an initial requested position if Setup and the unpatched branch execute, not a live transform receipt. Later SetAmount on an infinite volume can call SetInfiniteWaterHeight and _UpdateInfiniteWaterMeshPos, which can call WaterSurfaceMeshMono height setters; execution and final state depend on runtime inputs and guards.",
+    "unresolved": "This native contract alone names no concrete scene or hash value. A separately gated LevelData/StringPathHash join names one authored asset and footprint. The initial capture directly observed one selected-volume mesh delivery. The pinned Tick/get_position/OnRecycle path permits a same-object near-stop Transform.position witness, but no installed file proves that the selected Mono will tick during a capture or that a renderer is visible."
+  }
+}

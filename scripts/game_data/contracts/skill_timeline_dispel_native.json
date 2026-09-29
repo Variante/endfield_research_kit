@@ -1,0 +1,47 @@
+{
+  "schema": "endfield.skill-timeline-dispel-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unionTag": 159,
+  "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DispelAction_DataForMemoryPack",
+  "actualTypeName": "Beyond.Gameplay.Core.DispelAction+Data",
+  "serializedMemberCount": 9,
+  "sourceReadContract": "buff_9f_native.json",
+  "sourceReadOrderKey": "member9",
+  "fieldNames": [
+    "isEnable",
+    "priorityLevel",
+    "priorityOffset",
+    "serverActionIndex",
+    "checkTag",
+    "dispelLevel",
+    "dispelSource",
+    "dispelTargets",
+    "tagQuery"
+  ],
+  "readKinds": [
+    "byte",
+    "scalar32",
+    "scalar32",
+    "scalar32",
+    "byte",
+    "scalar32",
+    "target-profile",
+    "target-profile",
+    "query-profile"
+  ],
+  "selectedSource": {
+    "virtualPath": "Data/Json/SkillData/chr_0011_seraph_ultimate_skill.json",
+    "length": 9756,
+    "logicalSha256": "AEB22F042668624C2DE97FAB95B2D8900EB6CB4017EF0EEE1D0C786886F0C0DA"
+  },
+  "evidenceBoundary": {
+    "exact": "The selected native Buff DispelAction formatter and reader methods, five complete code windows, five nested generic contexts, and generated wrapper plan establish the nine stored SkillData action reads. The selected Seraph source demonstrates one exact nested 0x009F wrapper cursor, after which all 25 timeline records and ActionGroupData close under the existing finite SkillData reader.",
+    "structuralOnly": "The two TargetSettings and GameplayTagQuery child profiles retain the finite Buff reader's structural boundary; stored values do not establish runtime dispel behavior or selected targets.",
+    "unresolved": "The source-only Seraph diagnostic does not observe the formatter cursor for terminal fields 43–47 or establish whole-SkillData EOF. It is not a family publication gate."
+  }
+}

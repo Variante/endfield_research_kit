@@ -84,6 +84,8 @@ if __package__ in {None, ""}:
 
 from scripts.repo_paths import REPO_ROOT
 from scripts.common import EXPORT_LAYOUT, unity_asset_rel
+from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.map_water_surface_join import validate_map_water_surface_join
 
 ROOT = REPO_ROOT
 
@@ -2434,6 +2436,13 @@ def water_scene_id(level_id: str, source_scene: str | None = None) -> str:
     return matched.group(1) if matched else candidate
 
 
+WATER_COLOR_MASK_BOUNDARY = (
+    "Independent authored-minimap water-color layer. WaterData sector flowmaps corroborate that the "
+    "scene uses HGWater, but are not treated as coverage: their packed flow/height channels contain "
+    "long vector bands. Exact authored water-volume footprints are published separately."
+)
+
+
 def render_water_overlay(
     level_id: str,
     scene_id: str,
@@ -2446,9 +2455,8 @@ def render_water_overlay(
 
     WaterData's ``T_water_*flowmap*`` textures are vector/height fields, not
     binary coverage masks. Treating their blue channel as occupancy produced
-    long rays and bands that do not describe shore geometry. Until the actual
-    water-surface mesh consumer is recovered, maps without authored minimap art
-    deliberately publish no water layer.
+    long rays and bands that do not describe shore geometry. This heuristic
+    minimap-color layer is independent of exact authored water-volume polygons.
     """
     sectors = sectors_by_scene.get(scene_id) or []
     if not sectors:
@@ -2496,12 +2504,91 @@ def render_water_overlay(
         "sourceSectorCount": len(sectors),
         "renderedSectorCount": 0,
         "waterPixelRatio": round(water_pixels / (width * height), 4),
-        "boundary": (
-            "Independent authored-minimap water-color layer. WaterData sector flowmaps corroborate that the "
-            "scene uses HGWater, but are not treated as coverage: their packed flow/height channels contain "
-            "long vector bands. Maps without authored minimap art remain empty until water meshes are recovered."
-        ),
+        "boundary": WATER_COLOR_MASK_BOUNDARY,
     }
+
+
+@functools.lru_cache(maxsize=1)
+def _reviewed_water_source_level() -> str:
+    contract = json.loads((CONTRACTS_DIR / "map_water_surface_join.json").read_text(encoding="utf-8"))
+    if contract.get("schema") != "endfield.map-water-surface-join.v2":
+        raise ValueError("map water surface join: unsupported contract schema")
+    return str(contract["selectedSource"]["levelId"])
+
+
+@functools.lru_cache(maxsize=1)
+def _reviewed_water_surface_receipt() -> dict:
+    return validate_map_water_surface_join(EXPORT_LAYOUT.root)
+
+
+def attach_authored_water_surface(
+    manifest: dict, level_id: str, live_capture_session: Path | None = None,
+) -> dict | None:
+    """Publish only a source-gated authored footprint in a matching scene."""
+    if level_id != _reviewed_water_source_level():
+        return None
+    receipt = _reviewed_water_surface_receipt()
+    manifest["waterSurfaceGate"] = {
+        "status": receipt["status"],
+        "nativeStatus": receipt.get("nativeStatus"),
+        "diagnostic": receipt.get("diagnostic"),
+    }
+    manifest["authoredWaterSurfaces"] = (
+        [dict(receipt["waterSurface"])] if receipt["status"] == "validated" else []
+    )
+    manifest.pop("waterSurfaceRuntimeGate", None)
+    if live_capture_session is not None:
+        from scripts.game_data.map_water_live_capture import validate_map_water_live_capture
+
+        live = validate_map_water_live_capture(live_capture_session, authored=receipt)
+        if live["status"] != "validated":
+            raise RuntimeError(f"Map water live capture: {live.get('diagnostic') or live['status']}")
+        if receipt["status"] != "validated" or len(manifest["authoredWaterSurfaces"]) != 1:
+            raise RuntimeError("Map water live capture requires the current authored source gate")
+        surface = manifest["authoredWaterSurfaces"][0]
+        if (live["sceneId"] != surface["sceneId"] or
+                live["waterVolumeId"] != str(surface["waterVolumeId"]) or
+                live["meshPathHash"] != str(surface["meshPathHash"])):
+            raise RuntimeError("Map water live capture selected a different authored surface")
+        manifest["waterSurfaceRuntimeGate"] = {
+            "status": "validated", "evidenceBoundary": live["evidenceBoundary"],
+            "receiptSha256": live["receiptSha256"],
+        }
+        surface["runtimeObservation"] = {
+            "status": "observed_mesh_delivered_to_updata_mesh",
+            "requestedPosition": live["requestedPosition"],
+            "postSetupWaterVolumeIdMatched": live["postSetupWaterVolumeIdMatched"],
+            "postSetupIdComparison": live["postSetupIdComparison"],
+            "meshAssetDeliveredToUpdataMesh": live["meshAssetDeliveredToUpdataMesh"],
+            "finalHeightObserved": False,
+            "rendererVisibilityObserved": False,
+        }
+        return live
+    return None
+
+
+def refresh_authored_water_surface_manifest(
+    level_id: str, output_root: Path, live_capture_session: Path | None = None,
+    live_report_output: Path | None = None,
+) -> dict:
+    """Update only the selected existing Map manifest, without asset scans."""
+    manifest_path = output_root / f"{level_id}_hlod_grid_inferred.json"
+    if not manifest_path.is_file():
+        raise RuntimeError(f"authored-water-only requires existing manifest: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(manifest.get("worldBounds"), dict):
+        raise RuntimeError(f"authored-water-only requires worldBounds: {manifest_path}")
+    live = attach_authored_water_surface(manifest, level_id, live_capture_session)
+    if live_report_output is not None:
+        if live is None:
+            raise RuntimeError("Map water live report requires a validated capture")
+        live_report_output.parent.mkdir(parents=True, exist_ok=True)
+        live_report_output.write_text(json.dumps(live, indent=2) + "\n", encoding="utf-8")
+    overlay = manifest.get("waterOverlay")
+    if isinstance(overlay, dict) and overlay.get("status") == "recovered_authored_minimap_water_color_mask":
+        overlay["boundary"] = WATER_COLOR_MASK_BOUNDARY
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return manifest.get("waterSurfaceGate") or {"status": "not-selected"}
 
 
 def _scene_meshes(
@@ -3690,6 +3777,7 @@ def refresh_water_overlay_manifests(
             if stale_image.is_file():
                 stale_image.unlink()
         manifest["waterOverlay"] = overlay
+        attach_authored_water_surface(manifest, level_id)
         manifest_path.write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
         )
@@ -4656,6 +4744,18 @@ def main(argv: list[str] | None = None) -> int:
         help="refresh derived water overlays in existing manifests without rerendering model geometry",
     )
     parser.add_argument(
+        "--authored-water-only", action="store_true",
+        help="validate and refresh the reviewed authored water footprint in one existing manifest",
+    )
+    parser.add_argument(
+        "--map-water-capture-session", type=Path,
+        help="validate one saved Map water capture and attach its selected runtime observation",
+    )
+    parser.add_argument(
+        "--map-water-live-report-output", type=Path,
+        help="write the selected live validation report without repeating its source gate",
+    )
+    parser.add_argument(
         "--exact-point-fallback-only", action="store_true",
         help="skip inferred HLOD rendering and publish only exact registry/quest transform point layers",
     )
@@ -4675,6 +4775,17 @@ def main(argv: list[str] | None = None) -> int:
     _RENDER_CACHE_STATS.update(hits=0, writes=0)
     if not math.isfinite(args.surface_point_density) or args.surface_point_density <= 0:
         raise SystemExit("--surface-point-density must be a finite number greater than zero")
+    if args.authored_water_only:
+        if len(args.level) != 1 or args.level[0] != _reviewed_water_source_level():
+            raise SystemExit("--authored-water-only requires only the reviewed --level")
+        gate = refresh_authored_water_surface_manifest(
+            args.level[0], args.output_root, args.map_water_capture_session,
+            args.map_water_live_report_output,
+        )
+        print(f"map previews: authored water {args.level[0]}: {gate['status']}")
+        return 0 if gate["status"] == "validated" else 1
+    if args.map_water_capture_session is not None or args.map_water_live_report_output is not None:
+        parser.error("Map water live options require --authored-water-only")
     if (
         args.jobs > 1
         and not args.water_only
@@ -4816,6 +4927,7 @@ def main(argv: list[str] | None = None) -> int:
             f"{level_id}_hlod_diagnostic.json" if exact_projection else
             f"{level_id}_hlod_grid_inferred.json"
         )
+        attach_authored_water_surface(manifest, level_id)
         (args.output_root / manifest_name).write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
@@ -4889,6 +5001,7 @@ def main(argv: list[str] | None = None) -> int:
             level_id, level_positions(map_path), args.output_root, payload,
             surface_point_density=args.surface_point_density,
         )
+        attach_authored_water_surface(manifest, level_id)
         (args.output_root / f"{level_id}_hlod_grid_inferred.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )
@@ -5017,6 +5130,7 @@ def main(argv: list[str] | None = None) -> int:
                 level_id, water_scene_id(level_id), manifest["worldBounds"],
                 index.get("waterSectors") or {}, texture_files, args.output_root,
             )
+        attach_authored_water_surface(manifest, level_id)
         (args.output_root / f"{level_id}_hlod_grid_inferred.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
         )

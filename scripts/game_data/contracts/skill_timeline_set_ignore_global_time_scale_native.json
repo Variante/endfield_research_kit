@@ -1,0 +1,216 @@
+{
+  "schema": "endfield.skill-timeline-set-ignore-global-time-scale-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 7,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "primitiveReadContract": "buff_10c_native.json",
+  "nestedProfileContract": "buff_ec_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "dispatcher": {
+    "unionTag": 338,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82218300,
+    "routeWindow": {
+      "startRva": 82218300,
+      "endRva": 82218350,
+      "sha256": "DB132A51BA6344FBB825D80F43F52E09B521DF6EB684CC39686E655C16BBA7B1",
+      "boundary": "selected SetIgnoreGlobalTimeScaleAction usage and wrapper route"
+    },
+    "usageCellRva": 218179280,
+    "usageRawHex": "A944032000000000",
+    "registeredTypeIndex": 107092,
+    "wrapperTypeDefinition": 16443,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SetIgnoreGlobalTimeScaleAction_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      122811,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetIgnoreGlobalTimeScaleAction_DataForMemoryPack",
+      "Deserialize",
+      153827736
+    ],
+    [
+      122812,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetIgnoreGlobalTimeScaleAction_DataForMemoryPack+Beyond_Gameplay_Core_SetIgnoreGlobalTimeScaleAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      153827500
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153827736,
+      "endRva": 153828250,
+      "sha256": "94C025F0560FE9188CB94A7A2B44BE27952DF41381133EBA68A4FC6A9A8CCCF3",
+      "boundary": "seven ordered source reads through normal return"
+    },
+    {
+      "startRva": 153827500,
+      "endRva": 153827736,
+      "sha256": "14A4605363CC5CD77337FDCF84B80B38924C1A030C437505B88AA03AC56EA210",
+      "boundary": "formatter initialization and forwarding"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 153827925,
+    "hex": "807C243807"
+  },
+  "memberHeaderSourceCall": {
+    "sourceCallsiteRva": 153827861,
+    "sourceCallHex": "E8464E9FF9",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [
+    [
+      122806,
+      "set___ignoreGlobalTimeScale__",
+      "System.Boolean"
+    ],
+    [
+      122807,
+      "set___revertOnEnd__",
+      "System.Boolean"
+    ],
+    [
+      122808,
+      "set___targetSettings__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ]
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 122806,
+      "callsiteRva": 153828095,
+      "callHex": "E830020000",
+      "targetRva": 153828660
+    },
+    {
+      "memberIndex": 5,
+      "methodIndex": 122807,
+      "callsiteRva": 153828124,
+      "callHex": "E837020000",
+      "targetRva": 153828696
+    },
+    {
+      "memberIndex": 6,
+      "methodIndex": 122808,
+      "callsiteRva": 153828161,
+      "callHex": "E836020000",
+      "targetRva": 153828732
+    }
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153827942,
+      "sourceCallHex": "E8554E9FF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 153827982,
+      "sourceCallHex": "E81D4C9FF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153828015,
+      "sourceCallHex": "E8FC4B9FF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153828048,
+      "sourceCallHex": "E8DB4B9FF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "ignoreGlobalTimeScale",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153828077,
+      "sourceCallHex": "E8CE4D9FF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "revertOnEnd",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153828106,
+      "sourceCallHex": "E8B14D9FF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "targetSettings",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 153828142,
+      "sourceCallHex": "E85D21AFF9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 153827969,
+      "instructionHex": "488B15A063DD03",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+    },
+    {
+      "memberIndex": 6,
+      "instructionRva": 153828129,
+      "instructionHex": "488B15E0DBDA03",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings"
+    }
+  ],
+  "selectedSource": {
+    "virtualPath": "Data/Json/SkillData/chr_0029_pograni_ultimate_skill.json",
+    "length": 28748,
+    "logicalSha256": "42160A6806D28134178DBFF0D77DADC2E814BBA7D4177F8397C3953A042CF6F6",
+    "logicalMd5": "1DFF3D6544993A48F95F96E4AA57E32E",
+    "firstActionOffset": 3915,
+    "historicalFirstRefusal": "current-0x0152"
+  },
+  "evidenceBoundary": {
+    "exact": "The selected native dispatcher route, full reader window, ordered source calls, generated setters and two generic contexts prove the seven stored reads of SetIgnoreGlobalTimeScaleAction on the pinned build.",
+    "direct": "The selected Pograni SkillData bytes match their independently recorded historical logical SHA256 and MD5, and a source-scoped decoder starts at the historical first refusal.",
+    "structuralOnly": "The selected decoder proves only reached stored action spans and the TargetSettings child framing; it does not promote the enclosing ActionGroup or SkillData record.",
+    "unresolved": "A current VFS chunk check, later action decoding, enclosing EOF and runtime action execution remain separate evidence questions."
+  }
+}
