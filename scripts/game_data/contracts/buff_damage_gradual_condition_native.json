@@ -1,0 +1,58 @@
+{
+  "schema": "endfield.buff-damage-gradual-condition-native-contract.v2",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "selectedActionTags": [91, 310, 236, 355],
+  "selectedProcessorTag": 5,
+  "inheritedActionMemberCount": 4,
+  "sequenceMemberCount": 3,
+  "selectedTerminalRawHex": "0000",
+  "sourceContracts": {
+    "310": "buff_136_native.json",
+    "355": "buff_163_native.json"
+  },
+  "sourceContextMemberIndices": {
+    "310": [4, 5, 6],
+    "355": [5, 6, 7]
+  },
+  "sourceReadOrders": {
+    "310": ["byte", "scalar32", "scalar32", "scalar32", "finder-profile", "scalar32", "target-profile", "byte-payload", "byte"],
+    "355": ["byte", "scalar32", "scalar32", "scalar32", "byte-payload", "scalar32", "scalar-payload", "scalar-payload"]
+  },
+  "actionMemberPlans": {
+    "310": [
+      {"name": "isEnable", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+      {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum32", "width": 4},
+      {"name": "priorityOffset", "declaredType": "int", "kind": "int32", "width": 4},
+      {"name": "serverActionIndex", "declaredType": "int", "kind": "int32", "width": 4},
+      {"name": "buffSettings", "declaredType": "Beyond.Gameplay.Core.BuffFindSettings", "kind": "buff-find-settings"},
+      {"name": "buffStackNumType", "declaredType": "Beyond.Gameplay.Core.BuffStackNumType", "kind": "enum32", "width": 4},
+      {"name": "checkTarget", "declaredType": "Beyond.Gameplay.Core.TargetSettings", "kind": "target-settings"},
+      {"name": "key", "declaredType": "string", "kind": "string"},
+      {"name": "limitSkillCastId", "declaredType": "bool", "kind": "bool-byte", "width": 1}
+    ],
+    "355": [
+      {"name": "isEnable", "declaredType": "bool", "kind": "bool-byte", "width": 1},
+      {"name": "priorityLevel", "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority", "kind": "enum32", "width": 4},
+      {"name": "priorityOffset", "declaredType": "int", "kind": "int32", "width": 4},
+      {"name": "serverActionIndex", "declaredType": "int", "kind": "int32", "width": 4},
+      {"name": "key", "declaredType": "string", "kind": "string"},
+      {"name": "operation", "declaredType": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+OperationType", "kind": "enum32", "width": 4},
+      {"name": "value1", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"},
+      {"name": "value2", "declaredType": "Beyond.Blackboard+BlackboardDouble", "kind": "blackboard-double"}
+    ]
+  },
+  "selectedFinderShape": {"buffIdListCount": 1, "tagCount": 0, "queryStatus": "named-direct-members-exact-span"},
+  "selectedFinderReadOrder": ["buffIdList", "checkType", "tagQuery"],
+  "selectedBlackboardReadOrder": ["blackboardKey", "useBlackboardKey", "value"],
+  "evidenceBoundary": {
+    "exact": "The selected four-action SequenceActionData reader, action routes 91/310/236/355, two new complete source readers and their nested MethodSpec cells are checked on the same installed build. Original source bytes tile the selected finder, simple targets, BlackboardDouble children, terminal and enclosing condition span.",
+    "direct": "The generated wrappers name each stored field. The native source readers establish the ordered finder, target and BlackboardDouble calls in tags 310 and 355.",
+    "structuralOnly": "Stored values and action order do not establish runtime effects.",
+    "unresolved": "Other finder or target shapes, different condition action patterns, runtime formatter selection, and other BuffData roots require separate proof."
+  }
+}

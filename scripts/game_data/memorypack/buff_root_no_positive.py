@@ -51,6 +51,7 @@ from scripts.game_data.memorypack import (
     buff_damage_check_vitals_condition_receipt,
     buff_damage_origin_or_condition_receipt,
     buff_damage_known_compound_condition_receipt,
+    buff_damage_gradual_condition_receipt,
     buff_damage_if_else_condition_receipt,
     buff_damage_not_next_main_condition_receipt,
     buff_damage_two_direction_angle_condition_receipt,
@@ -439,6 +440,12 @@ def validate_positive_damage_native_contract(
     if two_direction_angle.get("status") != "validated":
         return {"status": two_direction_angle.get("status", "failed"), "root": root,
                 "twoDirectionAngleCondition": two_direction_angle}
+    gradual = buff_damage_gradual_condition_receipt.validate_current_native_contract()
+    if (gradual.get("status") != "validated"
+            or gradual.get("nativeInputs") != root["nativeInputs"]
+            or gradual.get("selectedProcessorTag") != processor.get("unionTag")):
+        return {"status": gradual.get("status", "mismatched"), "root": root,
+                "failedChild": "gradualCondition", "gradualCondition": gradual}
     return {"status": "validated", "root": root, "damageModifier": modifier,
             "processor": processor, "processorModifyCalc": modify_calc,
             "processorInstantModifyAttribute": instant_modify,
@@ -457,6 +464,7 @@ def validate_positive_damage_native_contract(
             "ifElseCondition": if_else,
             "notNextMainCondition": not_next,
             "twoDirectionAngleCondition": two_direction_angle,
+            "gradualCondition": gradual,
             "nativeInputs": root["nativeInputs"]}
 
 
@@ -951,6 +959,28 @@ def _decode_buff(
                     for action in actions
                 )
             )
+        elif (isinstance(condition_tags, list)
+              and condition_tags == positive_damage_validation.get(
+                  "gradualCondition", {}).get("selectedActionTags")
+              and nested[0].get("actionUnionCount") == len(condition_tags)):
+            gradual_native = positive_damage_validation["gradualCondition"]
+            condition = buff_damage_gradual_condition_receipt.decode_gradual_condition(
+                data, source=source, logical_sha256=actual_sha256,
+                start=nested[0]["start"], end=nested[0]["end"],
+                native_validation=gradual_native,
+            )
+            actions = condition.get("actions") or []
+            condition_exact = (
+                condition.get("status") == "exact-four-action-sequence"
+                and condition.get("wholeStoredSpanExact") is True
+                and condition.get("recursiveNamedSchemaExact") is True
+                and condition.get("actionCount") == len(condition_tags)
+                and condition.get("terminalRawHex")
+                    == gradual_native["selectedTerminalRawHex"]
+                and [action.get("tag") for action in actions] == condition_tags
+                and all(action.get("recursiveNamedSchemaExact") is True
+                        for action in actions)
+            )
         else:
             raise ValueError("buffRootPositiveDamage.damageModifier:unsupported-condition-actions")
         processors = nested[1].get("processors") or []
@@ -974,6 +1004,11 @@ def _decode_buff(
                          or processors[1].get("end") != nested[1]["end"]))):
             raise ValueError("buffRootPositiveDamage.damageModifier:condition-or-processor")
         processor_tag = processors[0].get("tag")
+        if condition.get("status") == "exact-four-action-sequence" and (
+            processor_count != 1
+            or processor_tag != positive_damage_validation["gradualCondition"]["selectedProcessorTag"]
+        ):
+            raise ValueError("buffRootPositiveDamage.damageModifier:gradual-processor")
         if selected_two_direction_angle and processor_count != 2:
             raise ValueError("buffRootPositiveDamage.damageModifier:two-angle-processor-pair")
         if condition.get("actionCount") == 2 and not selected_two_direction_angle and (
