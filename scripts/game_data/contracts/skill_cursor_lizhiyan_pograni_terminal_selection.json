@@ -1,0 +1,33 @@
+{
+  "schema": "endfield.skill-cursor-lizhiyan-pograni-terminal-selection.v1",
+  "status": "observed-exact-sources",
+  "groupContract": "skill_cursor_capture_lizhiyan_pograni_group_target.json",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "receipt": {
+    "path": "scratch/reverse_engineering/endfield_capture/20260929T181554Z/skilldata-cursor/receipt.json",
+    "length": 118033,
+    "sha256": "73F7D6288319828B83C83733B31FC425708B173853CFE2B3C41F067A028BCA53"
+  },
+  "targets": [
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0029_pograni_ultimate_skill.json",
+      "length": 28748,
+      "logicalSha256": "42160A6806D28134178DBFF0D77DADC2E814BBA7D4177F8397C3953A042CF6F6",
+      "actionGroupChildCursors": [6, 27901],
+      "terminal": {"candidateIndex": 0, "encoding": "one-member-wrapper", "start": 28647, "end": 28748},
+      "selectedRoute": {"tag": "0x0152", "start": 3915, "end": 4004}
+    },
+    {
+      "virtualPath": "Data/Json/SkillData/chr_0032_lizhiyan_combo_skill.json",
+      "length": 24501,
+      "logicalSha256": "6EB5D5225BA4E3B770F575B250D1033E23B6AA4DCEDEB51217578CFEFB489F20",
+      "actionGroupChildCursors": [6, 22984],
+      "terminal": {"candidateIndex": 0, "encoding": "one-member-wrapper", "start": 24411, "end": 24501},
+      "selectedRoute": null
+    }
+  ],
+  "evidenceBoundary": "One saved loss-free v3 grouped receipt selects exact EOF cursors for two separately authenticated current logical SkillData sources. The selected Pograni 0x0152 action still requires its independently native-gated source reader; complete ActionGroups and static fields through 42 must rejoin every executed field cursor. The result is source-specific and cannot publish a current whole-family classification."
+}

@@ -1752,14 +1752,29 @@ The selected structural EOF result can therefore be rebound to the current
 logical source, but no live terminal cursor or current family publication is
 inferred. No already checked SkillData source was restreamed.
 
-The Lizhiyan combo and Pograni ultimate sources are now bound in one reviewed
-cursor target-set contract. Its v2 preparation accepts their separate
+The Lizhiyan combo and Pograni ultimate sources are bound in one reviewed
+cursor target-set contract. Its v2 preparation uses their separate
 single-source VFS reports, verifies matching input-set and copied-source
-identities, and pins both reports in the native-gated context. This avoids
-re-streaming or rehashing the already checked Lizhiyan chunk merely to make a
-combined capture basis. The non-launching host preflight passes. Only a later
-loss-free runtime receipt can select the terminal cursors for both sources;
-the contract and preflight alone do not make either whole-schema exact.
+identities, and pins both reports in the native-gated context. Their recorded
+parser and source fingerprints still match, so the selected-source replay
+needs no repeated VFS stream. The grouped runtime receipt is complete and
+loss-free for both copied sources: each executed ActionGroup child vector and
+every field cursor reaches the earlier EOF-valid terminal, assigning names to
+fields 43-47 for these observations.
+
+The reviewed `skill_cursor_lizhiyan_pograni_terminal_selection.json` pins the
+receipt and selected source boundaries. The reusable
+`skill_cursor_lizhiyan_pograni_join` replays the receipt and current report
+gates, validates the selected native readers, and checks the entire static
+ActionGroup and fields 0-42 against each executed cursor. Lizhiyan closes
+under the unchanged shared reader. Pograni's `0x0152` route is confined to
+the source-specific replay; every reached instance is checked by its own
+native-gated reader, while the shared family parser retains its prior refusal.
+Both selected files therefore close as **whole stored SkillData records** at
+physical EOF. This does not establish that any action executed in gameplay,
+select a runtime provider/cache, or promote the current SkillData family
+report. No further capture is needed for these two files; family publication
+still requires a current complete gate or an independently reviewed equivalent.
 
 ## Resolving the native formatter
 

@@ -18,7 +18,7 @@ from scripts.game_data.il2cpp.native_image import NativeImage, read_reviewed_con
 
 
 CONTRACT = CONTRACTS_DIR / "map_water_getmesh_native.json"
-SCHEMA = "endfield.map-water-getmesh-native-contract.v4"
+SCHEMA = "endfield.map-water-getmesh-native-contract.v5"
 LABEL = "map_water_getmesh"
 
 
@@ -110,7 +110,7 @@ def _validate_body(index: BodyIndex, method_row: dict[str, Any], *, check_hash_l
 
 def validate_map_water_getmesh_native_contract(contract_path: Path = CONTRACT) -> dict[str, Any]:
     """Return a fail-closed receipt for the installed build."""
-    report: dict[str, Any] = {"schema": "endfield.map-water-getmesh-native-validation.v4", "status": "unresolved"}
+    report: dict[str, Any] = {"schema": "endfield.map-water-getmesh-native-validation.v5", "status": "unresolved"}
     try:
         contract, digest = read_reviewed_contract(
             contract_path, schema=SCHEMA, label=LABEL, status="validated"

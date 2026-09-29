@@ -45,7 +45,7 @@ def _load(path: Path) -> dict[str, Any]:
 
 def _join_ranges(
     source: bytes, observation: Mapping[str, Any], selection: Mapping[str, Any],
-    framing: Mapping[str, Any],
+    framing: Mapping[str, Any], *, timeline_profile: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     names = MEMORYPACK_FIELD_SCHEMAS["SkillData"]
     runtime = observation.get("runtimeFieldRanges")
@@ -71,7 +71,8 @@ def _join_ranges(
              and alternatives[0].get("selected") is True
              and alternatives[1].get("selected") is False,
              "alternative-selection-drift")
-    timeline = decode_timeline_shared_sequence(source)
+    timeline = (decode_timeline_shared_sequence(source) if timeline_profile is None
+                else timeline_profile)
     _require(timeline.get("wholeTimelineListExact") is True
              and timeline.get("wholeActionGroupDataExact") is True
              and timeline.get("laterStopReason") is None,

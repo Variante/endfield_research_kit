@@ -590,6 +590,12 @@
       authoredWaterFootprint: "Authored water footprint: exact LevelData to Mesh identity",
       observedWaterMesh: "Live capture: GetMesh returned a surface and delivered a Mesh to UpdataMesh. Final height and renderer visibility unobserved.",
       waterRequestedPosition: "Requested position",
+      waterNoTickSamples: "No selected Tick calls or Transform position samples were captured.",
+      waterNearStopPosition: "Observed near-stop Transform position (not final height)",
+      waterSetupReturnPosition: "Observed Transform position at Setup return (not final height)",
+      waterSetterReturnPosition: "Last observed selected set_position return",
+      waterSetterSamples: "Selected set_position return samples",
+      waterPostSetupIdMatched: "The post-Setup waterVolumeId matches the selected source ID.",
       waterLegacyIdCheck: "The saved v1 post-Setup ID check compared a string pointer as a number; ID equality is unknown.",
       waterPostSetupIdMismatch: "The post-Setup waterVolumeId field did not match the selected source ID.",
       modelPoints: "Colored point cloud",
@@ -775,6 +781,12 @@
       authoredWaterFootprint: "关卡配置水体范围：LevelData 与 Mesh 精确对应",
       observedWaterMesh: "实时采集：GetMesh 返回水面对象，Mesh 已传入 UpdataMesh；最终水位和渲染可见性尚未观测。",
       waterRequestedPosition: "请求位置",
+      waterNoTickSamples: "本次没有采集到所选水面的 Tick 调用或 Transform 位置样本。",
+      waterNearStopPosition: "停止前观测到的 Transform 位置（非最终水位）",
+      waterSetupReturnPosition: "Setup 返回时观测到的 Transform 位置（非最终水位）",
+      waterSetterReturnPosition: "最后一次观测到的选定 set_position 返回位置",
+      waterSetterSamples: "选定 set_position 返回样本数",
+      waterPostSetupIdMatched: "Setup 后的 waterVolumeId 与选定的源 ID 相同。",
       waterLegacyIdCheck: "已保存的 v1 采集将字符串指针当作数字比较；Setup 后的 ID 是否相等尚不确定。",
       waterPostSetupIdMismatch: "Setup 后的 waterVolumeId 字段与选定的源 ID 不一致。",
       modelPoints: "彩色点云",
@@ -2216,10 +2228,21 @@
           const live = surface.runtimeObservation?.status === "observed_mesh_delivered_to_updata_mesh"
             && surface.runtimeObservation.meshAssetDeliveredToUpdataMesh === true;
           const requested = surface.runtimeObservation?.requestedPosition;
+          const nearStopPosition = surface.runtimeObservation?.nearStopObservedPosition;
+          const setupReturnPosition = surface.runtimeObservation?.setupReturnObservedPosition;
+          const setterReturnPosition = surface.runtimeObservation?.lastSetterReturnPosition;
+          const setterSamples = surface.runtimeObservation?.selectedSetPositionCalls;
           const runtimeTitle = live
             ? ` ${t("observedWaterMesh")}${Array.isArray(requested) && requested.length === 3
-              ? ` ${t("waterRequestedPosition")}: ${requested.map((value) => Number(value).toFixed(3)).join(", ")}.` : ""}${surface.runtimeObservation.postSetupIdComparison === "legacy_pointer_compared_as_integer"
+              ? ` ${t("waterRequestedPosition")}: ${requested.map((value) => Number(value).toFixed(3)).join(", ")}.` : ""}${surface.runtimeObservation.transformObservationStatus === "no_tick_samples"
+              ? ` ${t("waterNoTickSamples")}` : ""}${Array.isArray(nearStopPosition) && nearStopPosition.length === 3
+              ? ` ${t("waterNearStopPosition")}: ${nearStopPosition.map((value) => Number(value).toFixed(3)).join(", ")}.` : ""}${Array.isArray(setupReturnPosition) && setupReturnPosition.length === 3
+              ? ` ${t("waterSetupReturnPosition")}: ${setupReturnPosition.map((value) => Number(value).toFixed(3)).join(", ")}.` : ""}${Number.isInteger(setterSamples)
+              ? ` ${t("waterSetterSamples")}: ${setterSamples}.` : ""}${Array.isArray(setterReturnPosition) && setterReturnPosition.length === 3
+              ? ` ${t("waterSetterReturnPosition")}: ${setterReturnPosition.map((value) => Number(value).toFixed(3)).join(", ")}.` : ""}${surface.runtimeObservation.postSetupIdComparison === "legacy_pointer_compared_as_integer"
               ? ` ${t("waterLegacyIdCheck")}`
+              : surface.runtimeObservation.postSetupWaterVolumeIdMatched === true
+                ? ` ${t("waterPostSetupIdMatched")}`
               : surface.runtimeObservation.postSetupWaterVolumeIdMatched === false
                 ? ` ${t("waterPostSetupIdMismatch")}` : ""}`
             : "";

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.map-water-getmesh-native-contract.v4",
+  "schema": "endfield.map-water-getmesh-native-contract.v5",
   "status": "validated",
   "nativeInputs": {
     "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -340,6 +340,24 @@
       },
       {
         "typeName": "Beyond.Gameplay.View.WaterSurfaceMeshMono",
+        "name": "set_position",
+        "token": 100715767,
+        "rva": 99957280,
+        "bodySize": 156,
+        "bodySha256": "6E7F84674F7A57B435044A75C6F7180979FE8D5E400547396AC624EC0F5084E7",
+        "returnType": "System.Void",
+        "parameters": [["value", "UnityEngine.Vector3"]],
+        "instructionAnchors": [
+          {"offset": 10, "bytesHex": "488BDA", "role": "valueAddressInRdx"},
+          {"offset": 13, "bytesHex": "488BF9", "role": "receiverInRcx"}
+        ],
+        "directCalls": [
+          {"offset": 37, "bytesHex": "E89624E9FC", "targetRva": 48127712, "method": "UnityEngine.Component.get_transform"},
+          {"offset": 81, "bytesHex": "E8A69312FF", "targetRva": 84397596, "method": "UnityEngine.Transform.set_position"}
+        ]
+      },
+      {
+        "typeName": "Beyond.Gameplay.View.WaterSurfaceMeshMono",
         "name": "OnRecycle",
         "token": 100715779,
         "rva": 72125568,
@@ -357,6 +375,6 @@
   "evidenceBoundary": {
     "direct": "On the unpatched selected-build path, Setup converts LevelWaterVolumeData.id through System.UInt64.ToString and stores the returned managed string pointer in WaterVolume.waterVolumeId; it also transfers the pointer, pivot, height inputs, and mesh hash. Nonzero id becomes a nonstatic WaterVolumePtr, for which InitMeshMono computes get_planePosition and passes it with the stored hash to GetMesh. GetMesh passes the hash to ResourceManager.TryLoad; an acquired asset reaches WaterSurfaceMeshMono.UpdataMesh and MeshFilter/MeshCollider sharedMesh.",
     "conditional": "For an infinite water row, Setup initializes the ratio amountCurrent/amountMax; GetHeight multiplies that ratio by heightMax and get_planePosition adds the result to pivot. This is an initial requested position if Setup and the unpatched branch execute, not a live transform receipt. Later SetAmount on an infinite volume can call SetInfiniteWaterHeight and _UpdateInfiniteWaterMeshPos, which can call WaterSurfaceMeshMono height setters; execution and final state depend on runtime inputs and guards.",
-    "unresolved": "This native contract alone names no concrete scene or hash value. A separately gated LevelData/StringPathHash join names one authored asset and footprint. The initial capture directly observed one selected-volume mesh delivery. The pinned Tick/get_position/OnRecycle path permits a same-object near-stop Transform.position witness, but no installed file proves that the selected Mono will tick during a capture or that a renderer is visible."
+    "unresolved": "This native contract alone names no concrete scene or hash value. A separately gated LevelData/StringPathHash join names one authored asset and footprint. The initial capture directly observed one selected-volume mesh delivery. A selected Setup-return get_position call can observe actual Transform.position on the same game thread; later selected set_position returns can observe that Mono's own setter path. No installed file proves the selected Mono will Tick, that no other Transform writer exists, that a setup-time position persists until stop, or that a renderer is visible."
   }
 }

@@ -312,10 +312,12 @@ world bounds share an explicit transform. Generated contract:
   selected `runtimeObservation` appears only after the saved live capture,
   exact native inputs, and authored source all validate; it reports a returned
   surface Mono and Mesh delivery to `UpdataMesh` at the requested initial
-  position. The tooltip marks the saved v1 post-Setup ID comparison as
-  uninterpretable because it compared a managed string pointer as a number.
-  Neither the polygon nor this observation establishes final water height or
-  renderer visibility. A failed source or native gate publishes no polygon.
+  position. The tooltip distinguishes the saved v1 pointer-based ID check,
+  a later managed-string ID match, a mesh-only capture with no position
+  samples, and any separately validated Setup-return or setter-return
+  Transform positions. A requested position is not an observed Transform
+  position. None of these fields establishes final water height or renderer
+  visibility. A failed source or native gate publishes no polygon.
 - Proximity is never upgraded into ownership; weak spatial or mission context
   stays separate from identity links, and non-Story evidence files stay behind
   `Show debug info`.

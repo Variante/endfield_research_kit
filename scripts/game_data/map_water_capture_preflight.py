@@ -22,6 +22,7 @@ from scripts.game_data.map_water_surface_join import (
 NATIVE_CONTRACT = CONTRACTS_DIR / "map_water_getmesh_native.json"
 DEFAULT_PROFILE = Path("tools/EndfieldCapture/config/map_water_volume_2026-08-25.json")
 TRANSFORM_PROFILE = Path("tools/EndfieldCapture/config/map_water_volume_transform_2026-08-25.json")
+SETUP_POSITION_PROFILE = Path("tools/EndfieldCapture/config/map_water_volume_setup_position_2026-08-25.json")
 
 
 def _method_pin(profile: dict[str, Any], native: dict[str, Any], label: str) -> None:
@@ -35,7 +36,8 @@ def _bind_profile(profile: dict[str, Any], native: dict[str, Any],
                   surface: dict[str, Any]) -> None:
     if (profile["schema"] not in (
             "endfieldCapture.mapWaterVolumeBuild.v1",
-            "endfieldCapture.mapWaterVolumeBuild.v2") or
+            "endfieldCapture.mapWaterVolumeBuild.v2",
+            "endfieldCapture.mapWaterVolumeBuild.v3") or
             profile["profile"] != "map-water-volume"):
         raise ValueError("map_water_capture:profile-schema")
     capture = profile["capture"]
@@ -68,7 +70,7 @@ def _bind_profile(profile: dict[str, Any], native: dict[str, Any],
     _method_pin(capture["setup"], native["callerChain"]["methods"][0], "Setup")
     _method_pin(capture["getMesh"], native["method"], "GetMesh")
     _method_pin(capture["updataMesh"], witness["updataMesh"], "UpdataMesh")
-    if profile["schema"].endswith(".v2"):
+    if profile["schema"].endswith((".v2", ".v3")):
         final = native["finalTransformWitness"]
         if capture["surfaceMonoWaterVolumePtrFieldOffset"] != (
                 final["waterVolumePtrField"]["offset"]):
@@ -77,6 +79,8 @@ def _bind_profile(profile: dict[str, Any], native: dict[str, Any],
         for key, name in (("tick", "Tick"), ("getPosition", "get_position"),
                           ("onRecycle", "OnRecycle")):
             _method_pin(capture[key], methods[name], name)
+        if profile["schema"].endswith(".v3"):
+            _method_pin(capture["setPosition"], methods["set_position"], "set_position")
 
 
 def validate_map_water_capture_preflight(

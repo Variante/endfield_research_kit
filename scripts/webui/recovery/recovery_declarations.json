@@ -1461,8 +1461,8 @@
               {
                 "level": 2,
                 "state": "partial",
-                "text": "Most current files close the whole stored schema through native-gated readers and replayed live cursor receipts. Wulfa and Seraph are source-bound complete. Five Zhuangfy action routes are in the shared parser; all four files in one grouped capture have source-scoped whole stored schemas joined to live EOF cursors. Selected Lizhiyan combo and Pograni ultimate sources now have static terminal boundaries after their ActionGroups; Pograni reaches structural EOF and its copied bytes match a one-file current VFS gate. Neither source has a live terminal cursor or a publishable family result. The remaining family residue is still partial.",
-                "textZh": "多数当前文件通过原生校验的读取器与回放的实时游标回执闭合完整存储模式。Wulfa 与 Seraph 已按源文件闭合。五条 Zhuangfy 动作路径已进入共享解析器；一次分组捕获中的四个文件均有与实时 EOF 游标接合的按源文件完整存储模式。选定的 Lizhiyan 连击和 Pograni 终结技源文件现已有动作组后的静态终止边界；Pograni 在结构上到达文件末尾，且其复制字节与一次单文件当前 VFS 校验一致。两项结果均无实时终止游标，也不是可发布的家族结果。家族其余部分仍为部分恢复。",
+                "text": "Most current files close the whole stored schema through native-gated readers and replayed live cursor receipts. Wulfa and Seraph are source-bound complete. Five Zhuangfy action routes are in the shared parser; all four files in one grouped capture have source-scoped whole stored schemas joined to live EOF cursors. Selected Lizhiyan combo and Pograni ultimate sources now also have native-gated ActionGroup and fields 0–42 joined to executed terminal cursors through EOF. These are whole stored schemas for the two selected files, not a publishable family result. The remaining family residue is still partial.",
+                "textZh": "多数当前文件通过原生校验的读取器与回放的实时游标回执闭合完整存储模式。Wulfa 与 Seraph 已按源文件闭合。五条 Zhuangfy 动作路径已进入共享解析器；一次分组捕获中的四个文件均有与实时 EOF 游标接合的按源文件完整存储模式。选定的 Lizhiyan 连击和 Pograni 终结技源文件也已将原生校验的动作组及字段 0–42 与运行到文件末尾的实时终止游标接合。这是两个选定文件的完整存储模式，尚非可发布的家族结论；家族其余部分仍为部分恢复。",
                 "source": "memory/game_data/serialization_memorypack.md"
               },
               {

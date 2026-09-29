@@ -223,9 +223,22 @@ coverage live under `reports/assets/map_recovery/`.
   same returned surface Mono. It pins the current `Tick`, `get_position` and
   `OnRecycle` bodies, binds a stable 16-byte WaterVolumePtr token, and requires
   at least two finite post-Tick `Transform.position` samples with the last
-  within two seconds of stop. No live transform receipt has been captured;
-  the current surface height, later motion and renderer visibility remain
-  unknown.
+  within two seconds of stop. Its first bounded live attempt reobserved the
+  selected Setup/GetMesh/UpdataMesh chain and armed that Mono, but recorded
+  zero selected Tick calls and zero position samples. Its bounded managed
+  string comparison confirms the post-Setup ID equals the selected source ID.
+  The Map02 WebUI publishes these mesh and ID observations as
+  `validated_mesh_only`, with an explicit no-samples note and no observed
+  Transform position. The incomplete receipt cannot select a transform; an
+  alternate live carrier is needed. A new source-gated profile pins the same
+  Mono's `get_position` and `set_position` methods: at selected Setup return
+  it reads the actual Transform position on that game thread and separately
+  samples later selected `set_position` returns. Its completion does not
+  require Tick. This carrier is preflight-validated but has no live receipt
+  yet. A Setup-return position will establish neither stop-time height nor
+  renderer visibility, and a zero setter count will not prove that other
+  Transform writers were absent. The current surface height, later motion
+  and renderer visibility remain unknown.
 - Levels without in-game minimaps keep an exact registry/quest transform point
   layer when an inferred HLOD surface is suppressed. The frontend applies no
   image-registration scale or translation, and a level with no selected Mesh

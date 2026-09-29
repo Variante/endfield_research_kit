@@ -125,6 +125,11 @@ gates (conclusions in the `world_chunk_*.md` files):
 | GPUISystemConfig | `gpu_ui_binary` | ExtendedPrefabGroup roots and DamageText close complete named schemas | prefab selection, GPU addressing, texture-hash identity |
 | LevelConfig, NavMesh, TeleportValidation, DialogId, AetherEnergyLock, MatrixShockWave, BambooRaft, MissionArea, SubGame, WorldEntityRegistry | `levelconfig_binary`, `navmesh_binary`, `teleport_validation_binary`, `memorypack.tables`, `aether_energy_lock_binary`, `matrix_shockwave_binary`, `gameplay_compact_binary` | exact | consumers |
 
+The selected Lizhiyan combo and Pograni ultimate SkillData copies now close as
+whole stored records through source-specific static and executed-cursor joins.
+Those joins are nonpublishable diagnostics; this table still describes the
+current complete family gate and its remaining residue.
+
 ## Measuring a boundary, and the JsonData recovery order
 
 A status says whether a reader closed a file, not how much of it is named.

@@ -2541,7 +2541,7 @@ def attach_authored_water_surface(
         from scripts.game_data.map_water_live_capture import validate_map_water_live_capture
 
         live = validate_map_water_live_capture(live_capture_session, authored=receipt)
-        if live["status"] != "validated":
+        if live["status"] not in ("validated", "validated_mesh_only"):
             raise RuntimeError(f"Map water live capture: {live.get('diagnostic') or live['status']}")
         if receipt["status"] != "validated" or len(manifest["authoredWaterSurfaces"]) != 1:
             raise RuntimeError("Map water live capture requires the current authored source gate")
@@ -2551,7 +2551,7 @@ def attach_authored_water_surface(
                 live["meshPathHash"] != str(surface["meshPathHash"])):
             raise RuntimeError("Map water live capture selected a different authored surface")
         manifest["waterSurfaceRuntimeGate"] = {
-            "status": "validated", "evidenceBoundary": live["evidenceBoundary"],
+            "status": live["status"], "evidenceBoundary": live["evidenceBoundary"],
             "receiptSha256": live["receiptSha256"],
         }
         surface["runtimeObservation"] = {
@@ -2560,6 +2560,11 @@ def attach_authored_water_surface(
             "postSetupWaterVolumeIdMatched": live["postSetupWaterVolumeIdMatched"],
             "postSetupIdComparison": live["postSetupIdComparison"],
             "meshAssetDeliveredToUpdataMesh": live["meshAssetDeliveredToUpdataMesh"],
+            "transformObservationStatus": live.get("transformObservationStatus", "not_requested"),
+            "nearStopObservedPosition": live.get("nearStopObservedPosition"),
+            "setupReturnObservedPosition": live.get("setupReturnObservedPosition"),
+            "selectedSetPositionCalls": live.get("selectedSetPositionCalls"),
+            "lastSetterReturnPosition": live.get("lastSetterReturnPosition"),
             "finalHeightObserved": False,
             "rendererVisibilityObserved": False,
         }
