@@ -511,14 +511,15 @@ def _normalize_dialog_timeline_option_anchors(value) -> dict[str, dict]:
 
 
 def _normalize_dialog_timeline_file(entry: dict) -> str:
-    for key in ("source", "file"):
-        value = str(entry.get(key) or "").strip()
-        if value:
-            return value.replace("\\", "/")
+    # ``source`` is the corpus label timeline_recovery parsed (the MonoBehaviour
+    # directory), shared by every entry; the root track document is the file.
+    value = str(entry.get("file") or "").strip()
+    if value:
+        return value.replace("\\", "/")
     roots = entry.get("sourceRoots")
     if isinstance(roots, list) and roots:
         return str(roots[0] or "").replace("\\", "/")
-    return ""
+    return str(entry.get("source") or "").strip().replace("\\", "/")
 
 
 def _iter_dialog_timeline_payload_entries(raw_key: str, payload):

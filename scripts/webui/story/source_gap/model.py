@@ -91,7 +91,9 @@ def _current_tracked_proxy_dialog_sources() -> dict[str, Any]:
         "npcProxyEx": read_json(
             gameplay_root / "NpcProxyExDataTable.json", {}
         ),
-        "dialogIdIndexPath": dialog_index_path,
+        # The registration check reads the derived index; the row cites the
+        # original table that index is built from.
+        "dialogIdTablePath": gameplay_root / "DialogIdTable.json",
         "dialogIdIndex": read_json(dialog_index_path, {}),
     }
 
@@ -149,7 +151,7 @@ def _validate_general_tracked_proxy_flow_context(
         *(context.get("sourceFiles") or [] if context else []),
         _repo_source_path(sources["npcProxyTablePath"]),
         _repo_source_path(sources["npcProxyExPath"]),
-        _repo_source_path(sources["dialogIdIndexPath"]),
+        _repo_source_path(sources["dialogIdTablePath"]),
     })
     source_files = sorted(_string_list(row.get("sourceFiles"))) if isinstance(row, dict) else []
     valid = (

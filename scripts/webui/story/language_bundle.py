@@ -403,7 +403,6 @@ from scripts.game_data.story_native_consumers_native import (
     consumer_rows,
     validated_group,
 )
-from scripts.common import WEBUI_BUILD_DIR
 
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
     REPO_ROOT
@@ -14617,9 +14616,7 @@ def build_language_bundle(
                     ],
                     repo_rel(NPC_PROXY_TABLE_PATH),
                     repo_rel(NPC_PROXY_EX_PATH),
-                    repo_rel(
-                        WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
-                    ),
+                    repo_rel(GAMEPLAY_CONFIG_DIR / "DialogIdTable.json"),
                 } - {""}),
                 "npcProxyTableRow": context.get("npcProxyTableRow"),
                 "npcProxyExRows": context.get("npcProxyExRows"),

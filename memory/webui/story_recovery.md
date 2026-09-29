@@ -158,6 +158,16 @@ revisited. Operational commands and capture restrictions are owned by
 generic gameplay-semantics profile is not a Mission/LevelScript/Story tracer,
 so recheck provider capabilities when resuming.
 
+The maintained mission trace has dialog acceptance and playback-key hooks,
+but its manifest targets an earlier client and its read-only current-install
+preflight refuses the executable identity. The supported `EndfieldCapture`
+profiles still have no Story-key, chosen-option, initiating-action and accepted
+playback identity in one observation or validated correlation chain. Audio
+posts and optional recording can show a voice request in a bounded session,
+but cannot promote that request to a selected dialog option or Story trigger.
+Revalidate a narrowly selected current-build Story method and its source
+carrier before authoring a dedicated capture profile or requesting a session.
+
 - Start from one concrete static-evidence gap and one short, repeatable NPC
   interaction leading to one Story and its completion callback. Record the
   initial mission/objective, interaction target, and chosen option. Existing

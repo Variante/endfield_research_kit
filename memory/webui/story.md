@@ -52,6 +52,17 @@ in the header comment of `webui/app.js`.
 - Timeline scheduling proves authored placement, not runtime activation.
 - Manual order and option placement are visibly manual and never promoted to
   source evidence.
+- A `DialogOptionTable` group number filling a missing `DialogTextTable` line
+  number remains a placement fallback when no DialogTree or Timeline route
+  witnesses it. In `dlg_f1m15_1`, group `5` currently appears after line
+  `dlg_f1m15_1_004` by this sparse-gap rule; the source graph has only row-key
+  membership and the generated fallback anchor, with no branch edge. The
+  conversation is absent from `DialogIdTable`, so its two options remain
+  inferred rather than receiving a manual override from dialogue wording.
+  Current native claims validate a Timeline option-index path in general, but
+  this scene has no Timeline carrier. The available capture profiles do not
+  record this scene, group, and chosen option together; a live capture is not
+  ready for this gap.
 - `sns_emoji_*` stays inline without a preview. Other SNS images and stickers
   keep natural proportions with bounded hover/modal previews.
 - Debug mode owns raw sources, Timeline diagnostics, and order-edit tools;
