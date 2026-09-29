@@ -95,7 +95,14 @@ Each was violated at least once and caught.
 
 - **Live provider selection.** A static reader is structural evidence, not proof
   the formatter executes; IfElse paths overwrite the callsite companion in
-  native thunks, and reuse reaches state-dependent dispatch.
+  native thunks, and reuse reaches state-dependent dispatch. The current
+  `EndfieldCapture` gameplay-semantics profile observes seven selected
+  `ExecuteInternal` outcomes with bounded raw data words and opaque target
+  carriers. It does not record the MemoryPack formatter provider, source-file
+  identity, or action union tag at that boundary, so its receipt cannot close
+  a serialized action's live provider selection. A dedicated hook needs a
+  validated same-call or stable-key bridge between source identity, union tag,
+  and selected provider before a capture is requested for that join.
 - **Legacy suffix ownership for partial rows.** An unsupported action or
   damage-processor route leaves a physical gap in the bounded reader; the
   derived whole-record route does not convert that row into a complete one.

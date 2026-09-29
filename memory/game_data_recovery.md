@@ -208,27 +208,182 @@ Revisitable probes belong in `scratch/<topic>/`; disposable intermediates in
 In priority order. Offline work first; request a live capture only for a
 residual that cannot be resolved offline.
 
-1. **LevelScript batch.** Integrate the tracked `0x0366` PlayEffectOnNpc route
-   into the shared ActionMap/layout with focused tests and production replay,
-   then `0x002B` BlockBattleMusic and `0x002A` BlockAutoMusicChangeCancel.
-   Continue the highest first stops in
-   `scripts.game_data.levelscript_first_stop_census` (ActionBase `0x00C9`
-   FacGetBuildingPosition, `0x0007` AddBuffsToTargetSelves, ActionHeaders
-   `0x0040` LevelEvent_OnAetherEnergyLockEndPointScanned and `0x006A`
-   LevelEvent_OnEntityHpChanged) as independent routes; turn the
-   `0x0032` BuildingPosHintShow probe into a contract once its enum alias is
-   resolved. At the batch boundary run the full authenticated JsonData gate
-   once, rerank first stops, and replace provisional whole-owner projections.
-2. **BuffData.** Promote the isolated gradual positive-damage branch only after
-   its reviewed draft contract and reader move into `contracts/` and
-   `memorypack/` with focused tests and whole-root replay. The remaining sword
-   root needs several new nested grammars; other positive `damageModifier`
+1. **LevelScript batch.** The newly gated `0x00C9` FacGetBuildingPosition,
+   `0x0479` SettlementUpgradeShow, GetterBase `0x001C`
+   CheckPerformanceReady, `0x00AE` EnvironmentEnable, and ActionHeader
+   `0x00DF` OnSettlementReadyPerformance form one recovered chain. A
+   hash-checked replay of only the 18 files named by the final contract
+   reaches `complete:named_exact` in all 18; whole-owner closure still awaits
+   one combined JsonData gate at the publication boundary. ActionHeader
+   `0x006A` LevelEvent_OnEntityHpChanged yields four named exact frames and
+   eight later ActionHeader stops in its selected cohort. The newly gated
+   `0x0007` AddBuffsToTargetSelves advances its 11 selected files to
+   ActionBase `0x0475` SetSquadSpecialIdleEnable (nine), `0x0405`
+   SetEnemyUIShowRange (one), and `0x0446` SetListBuff (one). The gated
+   `0x0405` replay moves its single selected file to ActionBase `0x0111`.
+   The gated
+   `0x0475` route then advances its nine selected files to PureGetter
+   `0x03B4` ListMakeEntityPtr (five), `0x018A` GetterLevelScriptPtr (two),
+   and `0x0182` GetterEntityPtr (two). The gated `0x03B4` route advances
+   its five files to `0x0182`, making seven selected files there. The gated
+   `0x0182` route advances all seven to `0x018A`, making nine selected
+   GetterLevelScriptPtr files. The gated `0x018A` replay advances four
+   of these to ActionHeader `0x009C`, three to ActionHeader `0x00A4`,
+   one to GetterBase `0x0030`, and one to ActionHeader `0x0045`.
+   The gated `0x0030` EntityToString replay moves its one file to
+   `0x00A4`. The gated `0x009C` OnSpawnerStart replay moves three files
+   to ActionHeader `0x0031` and one to `0x00A4`, bringing the latter
+   selected cohort to five. The gated `0x0446` SetListBuff replay moves
+   its one file to GetterBase `0x018E`. IsLookAtPointInScreen `0x0111`
+   advances its one selected file to ActionBase `0x0374`. GetterListBuff
+   `0x018E` advances its one selected file to named-exact EOF; whole-owner
+   closure still awaits the combined gate. The gated `0x00A4`
+   OnSpellAbnormalStart replay advances all five selected files to
+   ActionHeader `0x009E`, while `0x0374` PlayVoiceNarrative advances its
+   one file to ActionBase `0x03BA`. The gated `0x0031`
+   OnPhysicalNoGuard replay moves all three selected files to ActionHeader
+   `0x0030` (21 members), distinct from GetterBase `0x0030`. The gated
+   `0x0045` OnAnyEntityDie replay advances its one file to ActionHeader
+   `0x0043`, and the gated `0x009E` OnSpawnerWaveBegin replay advances
+   all five selected files to ActionHeader `0x00BA`. The gated `0x03BA`
+   ScriptedCharTeleportTo replay advances its one selected file to
+   ActionBase `0x03B5`.
+   The gated `0x0030` OnPhysicalInfliction replay advances all three
+   selected files to ActionHeader `0x00BA`; the gated `0x0043`
+   OnAnyEnemyPoiseZero replay advances its one file to ActionHeader
+   `0x0042`.
+   The gated `0x03B5` ScriptedCharPatrolStart replay advances its one
+   selected file to ActionBase `0x04BF`.
+   The gated `0x00BA` OnBBVariableChanged replay reaches named-exact EOF
+   in all eight selected files; whole-owner closure awaits the combined
+   JsonData gate.
+   The gated `0x0042` OnAnyEnemyPoiseKnotBreak replay reaches named-exact
+   EOF in its one selected file; whole-owner closure awaits the combined
+   gate.
+   The gated `0x0040` OnAetherEnergyLockEndPointScanned replay reaches
+   named-exact EOF in its two selected files, pending the combined gate.
+   The gated `0x04BF` StopCharScriptedMode replay advances its one
+   selected file to GetterBase `0x004E` (eight members).
+   The gated `0x0053` OnCutsceneExit replay reaches named-exact EOF in one
+   selected file and advances the other to ActionHeader `0x004E` (15
+   members), distinct from GetterBase `0x004E`.
+   The gated PureGetter `0x0053` GetCurSquadAllDead replay reaches
+   named-exact EOF in all six selected files; runtime squad state and
+   whole-owner closure remain unobserved.
+   The gated GetterBase `0x004E` GetCharacterTemplateId replay advances
+   its one selected file to ActionHeader `0x00CD` (18 members).
+   The gated `0x000F` OnEntityDie replay reaches named-exact EOF in all three
+   selected files after the native-gated enemy enum and nullable-float fix;
+   the source's undeclared enum value remains numeric.
+   The gated ActionHeader `0x004E` OnBlightMiasmaWeakGuide replay reaches
+   named-exact EOF in its one selected file.
+   The gated `0x00CD` OnStartScriptControlledCharMode replay reaches
+   named-exact EOF in its one selected file.
+   The gated `0x009B` OnSpawnerPause replay reaches named-exact EOF in
+   its three selected files.
+   The gated `0x0032` BuildingPosHintShow replay advances nine selected
+   files to ActionBase `0x0031` (eight) or `0x00CA` (one), both still unknown.
+   The gated GetterBase `0x03E3` NpcGetPackAnimHasClean replay advances
+   seven selected files to ActionHeader `0x007C`.
+   The gated `0x005C` OnEncounterIntroPartEnd replay reaches named-exact EOF
+   in its one selected file.
+   The gated ActionBase `0x0031` BuildingPosHintHide replay closes six of
+   eight selected files and advances the other two to ActionBase `0x00CA`
+   and GetterBase `0x0144`.
+   The gated ActionHeader `0x007C` OnNpcDirtyBlockCleaned replay reaches
+   named-exact EOF in all seven selected files.
+   The gated ActionBase `0x00CA` FacGuideHintEnable replay reaches
+   named-exact EOF in both newly exposed selected files.
+   The gated ActionHeader `0x008B` OnServerDialogExit replay reaches
+   named-exact EOF in seven of eight selected files and advances the eighth
+   to ActionHeader `0x0077`, which then reaches named-exact EOF in that one
+   file. The gated GetterBase `0x0144`
+   GetScriptTaskObjectiveIsCompleted replay advances its one source to the
+   `taskMap.entries` CheckIsInFacLinkingMode condition. Its separately gated
+   native reader and one-source replay now close every task entry and
+   triggerVolumes at named-exact physical EOF; live objective completion and
+   facility linking remain unobserved.
+   The gated ActionBase `0x03FC` SetDecorationAnimatorInt replay closes three
+   of eight selected files and advances five to ActionBase `0x0077`, `0x04AE`,
+   or `0x04A1`. The gated ActionBase `0x04C2` StopEffectOnNpcProxy replay
+   closes seven of eight and advances one to GetterBase `0x01C5`.
+   The gated ActionBase `0x0343` NpcStopCurMontage replay advances all eight
+   selected files to ActionBase `0x04D6`.
+   The gated ActionBase `0x045E` SetMainCharHpBarActive replay advances its
+   seven selected files to ActionHeader `0x00E4` (three) and ActionBase
+   `0x0521` (one), `0x0472` (two), or `0x04EC` (one). The gated ActionBase
+   `0x0077` DestroyAbilityEntity replay advances its three selected files to
+   ActionHeader `0x00A1`; this is separate from ActionHeader `0x0077`.
+   The gated ActionHeader `0x00A1` OnSpecificEntityDie replay then reaches
+   named-exact EOF in all three selected files.
+   The gated GetterBase `0x01C5` IsEndminGender replay reaches named-exact EOF
+   in its one selected file after correcting the Gender enum labels to native
+   values 1 and 2.
+   The gated ActionBase `0x04D6` TeleportGameplayNpc replay advances all eight
+   selected files to ActionHeader `0x007D` (21 members).
+   The gated ActionBase `0x0521` ApplyMovementSettingModifier replay advances
+   its one selected file to ActionHeader `0x00E4` (16 members). The gated
+   ActionBase `0x0472` SetSquadIconActive replay advances its two selected
+   files to ActionHeader `0x0098` (18 members) and ActionBase `0x03FD`
+   (13 members).
+   The gated ActionHeader `0x00E4` OnSubGameStart replay reaches named-exact EOF
+   in all four selected files. The gated ActionHeader `0x007D`
+   OnNpcPatrolCheckpointReach replay reaches named-exact EOF in all eight
+   selected files.
+   The gated ActionBase `0x04A1` SkipEntityDieDisplay replay advances its one
+   selected file to ActionBase `0x04B3` (16 members).
+   The gated ActionHeader `0x0098` OnSpawnerGroupComplete replay reaches
+   named-exact EOF in its one newly exposed selected file. The gated
+   ActionBase `0x03FD` SetDecorationViewState replay advances the other
+   SetSquadIconActive file to ActionBase `0x007E` (9 members).
+   The gated ActionBase `0x04EC` ToggleUI_DevOnly replay reaches named-exact
+   EOF in its one newly exposed file; the stored HUD flag and key are authored
+   inputs, not an observed UI change.
+   The gated ActionBase `0x04AE` StartCutsceneAndHideSceneObjectAction replay
+   advances its one selected file, including two authenticated stored spans,
+   to ActionBase `0x04AD` (19 members). The cutscene keys and entity pointers
+   remain authored inputs rather than observed playback or scene visibility.
+   The gated ActionBase `0x04AD` StartCutsceneAndControlSceneObjectAction
+   replay reaches named-exact EOF in that same selected file after three
+   authenticated spans. Its cutscene and target keys remain authored inputs.
+   The gated ActionBase `0x04B3` StartFmvAndTeleportAction replay advances its
+   one selected file to GetterBase `0x0043` (8 members); its FMV key and
+   teleport coordinates remain authored inputs. The gated GetterBase `0x0043`
+   FloatGetterIntToFloat replay advances that file to a positive two-element
+   `introPart.operaSegments` list. The gated nested reader now consumes both
+   records and reaches named-exact EOF in this selected file. Its integer
+   input is a stored local getter reference; conversion and encounter
+   execution remain unobserved.
+   The gated ActionBase `0x007E`
+   DisableHudFade replay advances its one selected file to GetterBase `0x000C`
+   (8 members), with only a stored true HUD flag established.
+   The gated GetterBase `0x000C` BoolGetterMultOr replay reaches named-exact
+   EOF in that selected file after six stored local boolean references; no
+   runtime boolean result is observed.
+   The gated ActionBase `0x00A0` EntityMoveToWithSpeed route joins 63 exact
+   spans in seven historical first-stop files. Its selected replay reaches
+   named-exact EOF in four, then exposes GetterBase `0x0046` in two and
+   ActionBase `0x0316` in one. Gated `0x0046` FloatGetterPlus joins 26 exact
+   spans and closes its two selected files at named-exact EOF. The remaining
+   newly exposed `0x0316` file is the next unknown in this cohort. Stored
+   movement and getter inputs do not establish runtime results. Continue that
+   stop using only its unknown source receipt before a whole-owner gate.
+2. **BuffData.** The gradual positive-damage branch now has a reviewed native
+   contract and reader, and its selected source closes all 30 root fields at
+   physical EOF. Its local audit is scoped to that source; the whole BuffData
+   catalog is unchanged pending a combined gate. The remaining sword root
+   needs several new nested grammars; other positive `damageModifier`
    children, the two positive `attributeModifier` sources, anonymous
    event-action interiors and positive finder bodies need their own child
    proofs.
-3. **SkillData.** Its residual partial files each stop at a distinct action tag
-   with one or two files; rank them before choosing, since LevelScript routes
-   currently have better corpus yield.
+3. **SkillData.** The 26 reviewed cursor targets and one positive control
+   have exact current source/native closure under a bounded 27-file sparse
+   report; this does not classify unstreamed SkillData. Probe only historical
+   unknown rows against the existing receipts. Three Mifu rows were streamed
+   once: two close under the shared parser, and combo reaches whole stored
+   schema only in an isolated native-validated `0x004B` CheckSkillHasHit
+   diagnostic. Rank the remaining distinct action stops before shared-parser
+   publication; the sparse results do not promote the full family.
 4. **Gameplay formulas.** Selected damage/Poise evaluators and callers are
    proven statically ([`game_data/gameplay_semantics.md`](game_data/gameplay_semantics.md));
    receiver identity, live invocation, subtype selection, patch state,
