@@ -278,7 +278,8 @@ render verbatim in details, search, and filters; the token vocabulary is listed
 in the header comment of `src/features/audio/index.js`. Notes are written only
 on an explicit `Save note`. Missing or mismatched native inputs remove only
 build-locked callsites, mappings, and addresses, with the unavailable state
-shown. What each state refuses to claim is in
+shown. The effect gate distinguishes named authored settings from verified
+native read spans whose setting meanings remain unresolved. What each state refuses to claim is in
 [`memory/webui/audio.md`](../memory/webui/audio.md); the Wwise chain is in
 [`memory/game_data/audio_overview.md`](../memory/game_data/audio_overview.md).
 

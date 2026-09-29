@@ -208,7 +208,7 @@ from scripts.webui.audio.semantics.event_projection import HIRC_OBJECT_TYPE_LABE
 from struct import unpack_from
 from scripts.webui.audio.semantics.context_utils import SELECTION_HIRC_TYPES
 from scripts.webui.audio.semantics.wwise_enums import display_labels, enum_name
-from scripts.webui.audio.semantics.wwise_effect_native import effect_parameter_schema
+from scripts.webui.audio.semantics.wwise_effect_native import effect_parameter_schema, effect_parameter_structural_schema
 
 HIRC_ACTION_OPERATION_LABELS = {
     0x0100: "stop",
@@ -2052,7 +2052,8 @@ def hirc_v150_effect_definition(
 
     HIRC types 16 and 17 use the same bounded plug-in class ID plus parameter
     blob prefix.  Parameter bytes stay fingerprinted until a plug-in-specific
-    writer contract is available.  A valid trailing media prefix is kept as
+    writer contract is available; a structurally verified native method adds
+    only its class identity and read span. A valid trailing media prefix is kept as
     plug-in data and never promoted to a playable Sound-source leaf.
     """
 
@@ -2073,11 +2074,21 @@ def hirc_v150_effect_definition(
     company_id = (plugin_class_id >> 4) & 0x0FFF
     plugin_id = plugin_class_id >> 16
     native_status = str((parameter_native_gate or {}).get("status") or "missing")
+    class_id_hex = f"0x{plugin_class_id:08x}"
     class_validated = (
         native_status == "validated"
-        and f"0x{plugin_class_id:08x}" in (parameter_native_gate or {}).get("validatedClassIds", ())
+        and class_id_hex in (parameter_native_gate or {}).get("validatedClassIds", ())
     )
-    if class_validated and plugin_class_id in HIRC_BUILTIN_EFFECT_PLUGIN_LABELS:
+    structural_validated = (
+        native_status == "validated"
+        and class_id_hex in (parameter_native_gate or {}).get("validatedStructuralClassIds", ())
+    )
+    structural_schema = (
+        effect_parameter_structural_schema(plugin_class_id)
+        if structural_validated else None
+    )
+    structural_validated = structural_validated and structural_schema is not None
+    if (class_validated or structural_validated) and plugin_class_id in HIRC_BUILTIN_EFFECT_PLUGIN_LABELS:
         plugin_name = HIRC_BUILTIN_EFFECT_PLUGIN_LABELS[plugin_class_id]
         name_evidence = "shippedAkSoundEngineRegistrationClassId"
     else:
@@ -2090,7 +2101,7 @@ def hirc_v150_effect_definition(
             object_type, f"type{object_type}"
         ),
         "pluginClassId": plugin_class_id,
-        "pluginClassIdHex": f"0x{plugin_class_id:08x}",
+        "pluginClassIdHex": class_id_hex,
         "pluginType": plugin_type,
         "pluginTypeLabel": HIRC_PLUGIN_TYPE_LABELS.get(
             plugin_type, f"pluginType{plugin_type}"
@@ -2103,7 +2114,9 @@ def hirc_v150_effect_definition(
         "parameterSha256": hashlib.sha256(parameter_data).hexdigest(),
         "trailingByteLength": len(trailing_data),
         "parameterBoundary": "opaquePluginSpecificPayload",
-        "parameterNativeEvidenceStatus": "validated" if class_validated else (
+        "parameterNativeEvidenceStatus": (
+            "validated" if class_validated else
+            "structuralOnly" if structural_validated else
             "pendingReview" if native_status == "validated" else native_status
         ),
     }
@@ -2123,6 +2136,19 @@ def hirc_v150_effect_definition(
         )
     elif plugin_class_id in HIRC_BUILTIN_EFFECT_PLUGIN_LABELS and not class_validated:
         definition["parameterBoundary"] = "opaqueNativeEvidenceUnavailable"
+    if structural_validated:
+        read_bytes = int(structural_schema["contiguousInputReadBytes"])
+        definition.update({
+            "parameterBoundary": "structuralOnlyNativeInputReadSpan",
+            "parameterNativeReadBytes": read_bytes,
+            "parameterNativeReadSpanStatus": (
+                "coveredBySerializedBlock" if parameter_size >= read_bytes
+                else "serializedBlockShorterThanNativeReadSpan"
+            ),
+            "parameterSummary": (
+                f"native method reads {read_bytes} bytes; field meanings unresolved"
+            ),
+        })
     return definition
 
 def hirc_v150_music_track(data: bytes) -> dict[str, Any] | None:
@@ -4032,6 +4058,7 @@ def finalize_hirc_post_process_catalog(
                 "parameterByteLength", "parameterSha256", "parameterParserStatus",
                 "parameterSchema", "parameterSummary", "parameterBoundary",
                 "parameterNativeEvidenceStatus",
+                "parameterNativeReadBytes", "parameterNativeReadSpanStatus",
                 "parameterSemanticBoundary", "parameterRuntimeBoundary",
                 "pluginMediaDependencies", "pluginMediaDependencyCount",
                 "parameterValues", "parameterSetParamsBlockRva",
@@ -4159,6 +4186,7 @@ def resolve_hirc_post_process_summary(
                 "postPluginMediaTrailingByteLength", "pluginMediaBoundary",
                 "parameterBoundary", "parameterParserStatus", "parameterSchema",
                 "parameterNativeEvidenceStatus",
+                "parameterNativeReadBytes", "parameterNativeReadSpanStatus",
                 "parameterValues", "parameterSummary", "parameterSetParamsBlockRva",
                 "parameterSemanticBoundary", "parameterRuntimeBoundary",
                 "definitionOccurrenceCount",

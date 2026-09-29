@@ -3339,10 +3339,9 @@ def run_audio_dumper(
         temporary_root = Path(temporary)
         category_map = temporary_root / "categories.json"
         category_map.write_text(json.dumps(categories, sort_keys=True), encoding="utf-8")
-        block_names = {
-            "audio": "audio", "initialaudio": "initial-audio",
-            "auditaudio": "audit-audio", "hotfixaudio": "hotfix-audio",
-        }
+        # The CLI names each record's block by its VFS label (``InitAudio``,
+        # not the ``InitialAudio`` enum name), the same labels used to select it.
+        block_names = {label.lower(): block for block, label in SHARED_AUDIO_BLOCK_LABELS.items()}
         for index, (pass_block, source_label, streaming_assets, fallback_assets) in enumerate(decode_passes):
             output_root = (
                 args.audio_root / language
@@ -3372,7 +3371,7 @@ def run_audio_dumper(
                 if storage_root not in {language, SHARED_AUDIO_STORAGE} or not parts or not path.is_file():
                     raise RuntimeError(f"audio source manifest has invalid output: {path}")
                 rel = normalize_posix(Path(*parts))
-                raw_block = str(record.get("block") or "").lower().replace("-", "")
+                raw_block = str(record.get("block") or "").lower()
                 metadata_block = "voice" if storage_root == language else block_names.get(raw_block)
                 if metadata_block is None:
                     raise RuntimeError(f"audio source manifest has unknown block: {record.get('block')}")

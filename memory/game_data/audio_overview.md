@@ -198,9 +198,10 @@ runtime bus and leaf selection.
    the plug-ins the game compiles in, and use the Query API and output capture
    under chosen switch/state/RTPC values. Treat its output as a strong prior and
    cross-check the native path in [`audio_native_hooks.md`](audio_native_hooks.md).
-3. **Music containers in the main graph** collide with the music-reach edge
-   tables and change every published count: one gated step, then rerun the
-   named-reach gate.
+3. **Music reach remains two bounded walks.** The WebUI builder already follows
+   music containers from its broad authored Event set; the metadata-literal
+   named-reach gate starts from a narrower set and still finds no music media.
+   Preserve both start-set definitions when widening either walk.
 
 ## Do not repeat
 

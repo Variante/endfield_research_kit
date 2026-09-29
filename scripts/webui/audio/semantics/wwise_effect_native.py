@@ -25,8 +25,9 @@ are ``slotControl`` witnesses (their slots are independently SDK-named);
 Convolution Reverb and Mastering Suite are ``structuralOnly``: the contract
 proves the registration, factory and constructor bodies, vtable target, slot
 and method body, and the method's contiguous input read span, but no field
-name, value label, forwarding role or DSP behavior. Neither method checks the
-supplied length, so a span is a direct read, not a ``uSize`` acceptance rule,
+name, value label, forwarding role or DSP behavior. The page may show the
+validated class identity and read span while keeping authored settings opaque.
+Neither method checks the supplied length, so a span is a direct read, not a ``uSize`` acceptance rule,
 and the shipped ``uSize`` distribution is not proved by this contract.
 Convolution's impulse-response media ids stay exact bank data and never become
 playable WEM leaves.
@@ -68,6 +69,15 @@ def effect_parameter_schema(plugin_class_id: int) -> dict[str, Any] | None:
         return None
     row = contract["parameterSchemas"].get(f"0x{plugin_class_id:08x}")
     return row if row and row.get("status") == "reviewed" else None
+
+
+def effect_parameter_structural_schema(plugin_class_id: int) -> dict[str, Any] | None:
+    """Return a reviewed read span without promoting anonymous bytes to settings."""
+    contract = load_effect_parameter_contract()
+    if contract.get("status") != "reviewedCurrentBuild":
+        return None
+    row = contract.get("structuralSchemas", {}).get(f"0x{plugin_class_id:08x}")
+    return row if row and row.get("status") == "structuralOnly" else None
 
 
 def _pe_body(image: bytes, rva: int, length: int) -> bytes:

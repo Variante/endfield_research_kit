@@ -60,6 +60,10 @@ only its own. Without published Story, Audio builds and links no voice lines.
   with raw literals, action paths, frame/event slots, native enum labels and
   typed target settings; only HIRC-matched actions join Event contexts, and an
   unlinked Buff action can show its trigger slot without gaining an owner.
+- The selected `PlayVoiceNarrative` LevelScript reader now proves a stored
+  `voId` voice key and `voiceHandle` output path in a ledger-joined source.
+  The Audio page's authored voice-path relation remains separate from event
+  execution, a produced handle, and audible playback.
 
 ### What each rendered state refuses to claim
 
@@ -80,7 +84,7 @@ The frontend renders these tokens verbatim (listed in the header comment of
 | AudioCue AST | condition truth, variable value, handler dispatch, cue execution, branch selection |
 | `controlCatalog.staticRtpcAlignment` | current names when the gate is missing, mismatched, malformed or stale; `0x1802`/`0x1804` are never renamed |
 | effect chain, RTPC, State, Aux-send, ducking rows | runtime DSP order, effective inheritance, live values, branch selection |
-| built-in effect parameter names (`effectParameterNativeGate`) | shown only after the selected native triplet validates; Convolution Reverb and Mastering Suite stay opaque (class ID, byte length/SHA, plug-in media prefix); RoomVerb's private floats have no use-role label; a missing gate shows unverified; no live activation |
+| built-in effect parameter names (`effectParameterNativeGate`) | shown only after the selected native triplet validates; Convolution Reverb and Mastering Suite show their verified class identity and native read span while settings stay opaque (byte length/SHA, plug-in media prefix); RoomVerb's private floats have no use-role label; a missing gate shows unverified; no live activation |
 | semantic category or coarse ownership | playback placement or runtime status |
 | `actionTypeName` | execution, target scope, Event selection; `operation` stays the masked grouping key and the two SDK-unnamed words stay unnamed |
 

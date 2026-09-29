@@ -168,7 +168,8 @@ Detail lives in the owning modules; this is the boundary.
   [`wwise_effect_native.py`](../../scripts/webui/audio/semantics/wwise_effect_native.py)
   over [`wwise_effect_parameters_native.json`](../../scripts/game_data/contracts/wwise_effect_parameters_native.json).
   Convolution Reverb and Mastering Suite are joined to their methods structurally,
-  with contiguous read spans and no field meanings; RoomVerb keeps eleven unnamed
+  so the page shows their selected-build class identity and contiguous read span,
+  with no named or decoded settings; RoomVerb keeps eleven unnamed
   floats. Slot flags are authored, not runtime DSP.
 - **Buses and NodeBase tail.** The bus forest is typed and complete. The NodeBase
   tail yields AuxParams (user-defined aux slots reach aux buses; no populated

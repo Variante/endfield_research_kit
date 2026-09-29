@@ -200,6 +200,7 @@
       hircInventory: "Wwise HIRC inventory",
       effectParameterGate: "Effect parameter evidence",
       effectParameterGateValidated: "Selected native gate validated {count} reviewed plug-in classes. Named settings are authored bank values; live effect activation and DSP output remain unobserved.",
+      effectParameterGateStructural: "It also verified the native read spans of {count} plug-in classes whose setting meanings remain unresolved.",
       effectParameterGateUnavailable: "Selected native gate: {status}. Native-backed setting names are unavailable or unverified; raw parameter evidence remains.",
       effectParameterGateAbsent: "This Audio index has no selected native effect-parameter gate. Refresh its generated data before relying on named settings.",
       controlCatalog: "Audio controls / cue catalog",
@@ -538,6 +539,7 @@
       hircInventory: "Wwise HIRC \u5e93\u5b58",
       effectParameterGate: "\u6548\u679c\u53c2\u6570\u8bc1\u636e",
       effectParameterGateValidated: "\u5f53\u524d\u7248\u672c\u539f\u751f\u6821\u9a8c\u901a\u8fc7\uff0c\u8986\u76d6 {count} \u4e2a\u5df2\u5ba1\u67e5\u7684\u63d2\u4ef6\u7c7b\u522b\u3002\u5177\u540d\u8bbe\u7f6e\u662f\u97f3\u9891\u5e93\u4e2d\u7684\u521b\u4f5c\u503c\uff1b\u6548\u679c\u7684\u8fd0\u884c\u65f6\u6fc0\u6d3b\u4e0e DSP \u8f93\u51fa\u672a\u89c2\u6d4b\u3002",
+      effectParameterGateStructural: "\u53e6\u6709 {count} \u4e2a\u63d2\u4ef6\u7c7b\u522b\u7684\u539f\u751f\u8bfb\u53d6\u8303\u56f4\u5df2\u9a8c\u8bc1\uff0c\u4f46\u8bbe\u7f6e\u542b\u4e49\u4ecd\u672a\u89e3\u660e\u3002",
       effectParameterGateUnavailable: "\u5f53\u524d\u7248\u672c\u539f\u751f\u6821\u9a8c\uff1a{status}\u3002\u539f\u751f\u652f\u6301\u7684\u8bbe\u7f6e\u540d\u79f0\u4e0d\u53ef\u7528\u6216\u672a\u9a8c\u8bc1\uff1b\u4ecd\u4fdd\u7559\u539f\u59cb\u53c2\u6570\u8bc1\u636e\u3002",
       effectParameterGateAbsent: "\u6b64\u97f3\u9891\u7d22\u5f15\u6ca1\u6709\u5f53\u524d\u7248\u672c\u7684\u6548\u679c\u53c2\u6570\u6821\u9a8c\u4fe1\u606f\u3002\u8bf7\u5237\u65b0\u751f\u6210\u6570\u636e\u540e\u518d\u4f9d\u636e\u5177\u540d\u8bbe\u7f6e\u3002",
       controlCatalog: "\u97f3\u9891\u63a7\u5236 / Cue \u76ee\u5f55",
@@ -2710,9 +2712,11 @@
       const effectGate = processing.effectParameterNativeGate;
       if (effectGate && typeof effectGate === "object") {
         const validatedClasses = Array.isArray(effectGate.validatedClassIds) ? effectGate.validatedClassIds : null;
+        const structuralClasses = Array.isArray(effectGate.validatedStructuralClassIds) ? effectGate.validatedStructuralClassIds : [];
         const status = normalize(effectGate.status) || "unavailable";
         const gateNote = status === "validated" && validatedClasses
           ? t("effectParameterGateValidated").replace("{count}", formatNumber(validatedClasses.length))
+            + (structuralClasses.length ? ` ${t("effectParameterGateStructural").replace("{count}", formatNumber(structuralClasses.length))}` : "")
           : t("effectParameterGateUnavailable").replace("{status}", status);
         section.appendChild(noteSection(t("effectParameterGate"), gateNote));
       } else {
