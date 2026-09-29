@@ -177,13 +177,18 @@ def iter_entities(data: bytes):
             }
 
 
-def _mesh_file_index(root: Path) -> dict[int, Path]:
-    out = {}
+def _mesh_file_index(root: Path) -> dict[int, Path | None]:
+    """Keep an exported PathID only when it names one OBJ file."""
+    out: dict[int, Path | None] = {}
     for path in root.glob("*.obj") if root.is_dir() else ():
         match = re.search(r"_p([0-9A-F]{16})\.obj$", path.name, flags=re.IGNORECASE)
         if match:
             raw = int(match.group(1), 16)
-            out[raw if raw < 2 ** 63 else raw - 2 ** 64] = path
+            path_id = raw if raw < 2 ** 63 else raw - 2 ** 64
+            if path_id in out:
+                out[path_id] = None
+            else:
+                out[path_id] = path
     return out
 
 
@@ -199,7 +204,11 @@ ENTITY_MESH_FAMILY_OVERRIDES = {
 }
 
 
-def _mesh_candidates(bases: set[str], asset_map: Path, mesh_root: Path) -> dict[str, list[dict]]:
+def _mesh_candidates(
+    bases: set[str], asset_map: Path, mesh_root: Path,
+    diagnostics: dict[str, dict] | None = None,
+) -> dict[str, list[dict]]:
+    """Offer name-family geometry candidates without asserting prefab ownership."""
     wanted = {base.casefold(): base for base in bases if base}
     wanted_bodies: dict[str, list[str]] = {}
     for folded, original in wanted.items():
@@ -227,10 +236,13 @@ def _mesh_candidates(bases: set[str], asset_map: Path, mesh_root: Path) -> dict[
                 candidates[override_base].append({
                     "name": name,
                     "pathId": path_id,
+                    "source": entry.get("Source"),
+                    "sourceOffset": entry.get("Offset"),
                     "container": entry.get("Container"),
                     "obj": str(obj.relative_to(ROOT)).replace("\\", "/"),
                     "rank": ENTITY_MESH_FAMILY_OVERRIDES[override_base].index(name),
                     "match": "explicit_static_asset_family_closure",
+                    "identityEvidence": "name_family_candidate",
                 })
             continue
         possible_bodies = [body]
@@ -254,16 +266,69 @@ def _mesh_candidates(bases: set[str], asset_map: Path, mesh_root: Path) -> dict[
             candidates[original].append({
                 "name": name,
                 "pathId": path_id,
+                "source": entry.get("Source"),
+                "sourceOffset": entry.get("Offset"),
                 "container": entry.get("Container"),
                 "obj": str(obj.relative_to(ROOT)).replace("\\", "/"),
                 "rank": rank,
+                "identityEvidence": "name_family_candidate",
             })
-    return {
-        base: (sorted(rows, key=lambda row: (row["rank"], row["name"].casefold()))
-               if base in ENTITY_MESH_FAMILY_OVERRIDES
-               else [min(rows, key=lambda row: (row["rank"], row["name"].casefold()))])
-        for base, rows in candidates.items() if rows
-    }
+    def unique_object(rows: list[dict]) -> list[dict]:
+        # A name and LOD rank cannot choose between different serialized
+        # objects. Multiple AssetMap aliases for the same object are harmless.
+        by_identity: dict[tuple, dict] = {}
+        for row in rows:
+            key = (row["source"], row["sourceOffset"], row["pathId"])
+            previous = by_identity.get(key)
+            if previous is None or row["name"].casefold() < previous["name"].casefold():
+                by_identity[key] = row
+        return list(by_identity.values()) if len(by_identity) == 1 else []
+
+    selected: dict[str, list[dict]] = {}
+    for base, rows in candidates.items():
+        if not rows:
+            continue
+        if base in ENTITY_MESH_FAMILY_OVERRIDES:
+            chosen = []
+            for name in ENTITY_MESH_FAMILY_OVERRIDES[base]:
+                named_rows = [row for row in rows if row["name"] == name]
+                selected_name = unique_object(named_rows)
+                if not selected_name:
+                    if diagnostics is not None:
+                        diagnostics[base] = {
+                            "status": "ambiguousOrMissingOverrideMesh",
+                            "name": name,
+                            "objectCount": len({
+                                (row["source"], row["sourceOffset"], row["pathId"])
+                                for row in named_rows
+                            }),
+                        }
+                    chosen = []
+                    break
+                chosen.extend(selected_name)
+        else:
+            rank = min(row["rank"] for row in rows)
+            top_rows = [row for row in rows if row["rank"] == rank]
+            chosen = unique_object(top_rows)
+            if not chosen and diagnostics is not None:
+                by_identity = {
+                    (str(row["source"]), row["sourceOffset"], row["pathId"]): row["name"]
+                    for row in top_rows
+                }
+                identities = sorted(by_identity, key=str)
+                diagnostics[base] = {
+                    "status": "ambiguousTopRank",
+                    "rank": rank,
+                    "candidateObjectCount": len(identities),
+                    "examples": [
+                        {"source": source, "sourceOffset": offset, "pathId": path_id,
+                         "name": by_identity[(source, offset, path_id)]}
+                        for source, offset, path_id in identities[:2]
+                    ],
+                }
+        if chosen:
+            selected[base] = chosen
+    return selected
 
 
 def _hlod_mesh_candidates(level_ids: set[str], asset_map: Path, mesh_root: Path) -> dict[str, dict[str, list[dict]]]:
@@ -288,10 +353,13 @@ def _hlod_mesh_candidates(level_ids: set[str], asset_map: Path, mesh_root: Path)
         result[level_id].setdefault(key, []).append({
             "name": entry.get("Name"),
             "pathId": path_id,
+            "source": entry.get("Source"),
+            "sourceOffset": entry.get("Offset"),
             "container": entry.get("Container"),
             "obj": str(obj.relative_to(ROOT)).replace("\\", "/"),
             "rank": 0,
             "match": "exact_hlod_level_grid_cluster_hash_identity",
+            "identityEvidence": "exact_level_hlod_key",
         })
     return result
 
@@ -448,12 +516,19 @@ def _recover_transform_core(level_id: str, cli: Path, game_root: Path) -> dict:
     }
 
 
-def _finalize_payload(core: dict, mesh_candidates: dict[str, list[dict]], cli: Path) -> dict:
+def _finalize_payload(
+    core: dict, mesh_candidates: dict[str, list[dict]], cli: Path,
+    mesh_candidate_diagnostics: dict[str, dict] | None = None,
+) -> dict:
     level_id = core["levelId"]
     sources = core["sources"]
     instances = core["instances"]
     duplicates = core["duplicates"]
     bases = core["bases"]
+    mesh_candidate_diagnostics = {
+        base: detail for base, detail in (mesh_candidate_diagnostics or {}).items()
+        if base in bases
+    }
     component_shapes = core.get("componentShapes") or {}
     def prefab_identity(row: Any) -> dict:
         if not isinstance(row, dict):
@@ -509,21 +584,31 @@ def _finalize_payload(core: dict, mesh_candidates: dict[str, list[dict]], cli: P
         },
         "initChunkComponentShapes": component_shapes,
         "summary": {"sourceFileCount": len(sources), "instanceCount": len(instances), "duplicateCount": duplicates,
-                    "uniqueEntityBaseCount": len(bases), "meshResolvedBaseCount": len(mesh_candidates),
+                    "uniqueEntityBaseCount": len(bases),
+                    "meshResolvedBaseCount": sum(base in mesh_candidates for base in bases),
+                    "omittedMeshCandidateBaseCount": len(mesh_candidate_diagnostics),
+                    "exactHlodMeshBaseCount": sum(
+                        base in mesh_candidates and all(
+                            mesh.get("identityEvidence") == "exact_level_hlod_key"
+                            for mesh in mesh_candidates[base]
+                        ) for base in bases
+                    ),
                     "meshResolvedInstanceCount": sum(count for base, count in bases.items() if base in mesh_candidates)},
         "entityBases": [{
             "entityBase": base,
             "instanceCount": count,
             "meshes": mesh_candidates.get(base) or [],
         } for base, count in sorted(bases.items())],
+        "meshCandidateDiagnostics": mesh_candidate_diagnostics,
         "instances": sorted(instances, key=lambda row: row["entityId"]),
     }
 
 
 def recover(level_id: str, cli: Path, game_root: Path, asset_map: Path, mesh_root: Path) -> dict:
     core = _recover_transform_core(level_id, cli, game_root)
-    mesh_candidates = _mesh_candidates(set(core["bases"]), asset_map, mesh_root)
-    return _finalize_payload(core, mesh_candidates, cli)
+    diagnostics: dict[str, dict] = {}
+    mesh_candidates = _mesh_candidates(set(core["bases"]), asset_map, mesh_root, diagnostics)
+    return _finalize_payload(core, mesh_candidates, cli, diagnostics)
 
 
 def recover_many(
@@ -562,7 +647,8 @@ def recover_many(
         detail = "\n".join(f"  {level_id}: {failures[level_id]}" for level_id in sorted(failures))
         raise RuntimeError(f"Streaming recovery failed for {len(failures)} level(s):\n{detail}")
     all_bases = {base for core in cores.values() for base in core["bases"]}
-    generic_candidates = _mesh_candidates(all_bases, asset_map, mesh_root)
+    generic_diagnostics: dict[str, dict] = {}
+    generic_candidates = _mesh_candidates(all_bases, asset_map, mesh_root, generic_diagnostics)
     hlod_candidates = _hlod_mesh_candidates({level_id.lower() for level_id in ordinary}, asset_map, mesh_root)
     payloads = []
     for level_id in ordinary:
@@ -597,7 +683,7 @@ def recover_many(
             "instances": instances,
             "bases": Counter(row["entityBase"] for row in instances),
         }
-        payload = _finalize_payload(exact_core, composite_candidates, cli)
+        payload = _finalize_payload(exact_core, composite_candidates, cli, generic_diagnostics)
         payload["hlodIdentityContract"] = {
             "status": "exact" if resolved_hlod else "unavailable",
             "joinKey": "levelId + HLOD level + grid i/j + signed cluster hash",
@@ -672,7 +758,7 @@ def main() -> int:
         output = args.output_root / f"{level_id}.json"
         output.write_text(json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
         print(f"{level_id}: {payload['summary']['instanceCount']} instances, "
-              f"{payload['summary']['meshResolvedInstanceCount']} mesh-resolved, "
+              f"{payload['summary']['meshResolvedInstanceCount']} with Mesh candidates, "
               f"{payload['summary']['uniqueEntityBaseCount']} bases")
         print(output)
     return 0

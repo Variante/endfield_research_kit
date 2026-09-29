@@ -191,6 +191,45 @@ def _field_address(layout: dict[str, Any], index: int) -> int | None:
     return int(layout["tableOffset"]) + int(fields[index])
 
 
+def _checked_parallel_row_name(
+    family: str, name_bytes: bytes, object_id: int, row_index: int, offset: int
+) -> int | None:
+    """Check one row name against its family's stored form and parallel ID."""
+
+    if family == "streaming":
+        if name_bytes:
+            raise ValueError(
+                f"Streaming {family} field 5 row {row_index} field 0 expected "
+                f"empty bytes, actual length {len(name_bytes)}"
+            )
+        return None
+    if family != "init":
+        raise ValueError(f"unknown Streaming row-name family {family!r}")
+    if not name_bytes:
+        raise ValueError(
+            f"Streaming {family} field 5 row {row_index} field 0 expected "
+            "a name, actual empty bytes"
+        )
+    marker = name_bytes.rfind(b"#")
+    ordinal_bytes, separator, hex_bytes = name_bytes[marker + 1 :].partition(b"_")
+    if (marker < 0 or separator != b"_" or not ordinal_bytes.isdigit()
+            or not hex_bytes or any(ch not in b"0123456789abcdefABCDEF" for ch in hex_bytes)):
+        raise ValueError(
+            f"Streaming {family} field 5 row {row_index} field 0 "
+            f"name has no #decimal_hex suffix at {offset}"
+        )
+    ordinal = int(ordinal_bytes)
+    suffix = int(hex_bytes, 16)
+    expected_suffix = object_id & 0x07FFFFFF
+    if suffix != expected_suffix:
+        raise ValueError(
+            f"Streaming {family} field 5 row {row_index} name suffix "
+            f"expected {expected_suffix:X} from parallel ID {object_id:08X}, "
+            f"actual {suffix:X} at {offset}"
+        )
+    return ordinal
+
+
 def _bounded_vector(
     data: bytes,
     layout: dict[str, Any],
@@ -781,11 +820,13 @@ def _parse_parallel_root_subgraph(
     vector followed by alignment, so this parser deliberately keeps the
     serialized type ambiguous.
 
-    Measured readings that this parser records but does not check (memory:
-    ``world_chunk_union_vectors.md``): root field 3 holds 32-bit object IDs,
-    never offsets, and a row's field-0 text has the form
-    ``<base>#<N>_<HEX>`` with ``HEX == ID & 0x07FFFFFF`` at the same index
-    (the 28-bit mask misses on bit 27). The root field-4 byte (1, 2 or 3)
+    Current-corpus relations checked here (memory:
+    ``world_chunk_union_vectors.md``): Init row field 0 holds
+    ``<base>#<N>_<HEX>`` and ``HEX == root field-3 ID & 0x07FFFFFF`` at the
+    same index; Streaming row field 0 is empty at every index. ``#N`` is not
+    row field 1: the complete per-tag census records both independently.
+    Root field 3 holds 32-bit object IDs, never offsets; the root field-4
+    byte (1, 2 or 3)
     fixes the row's vtable slot count (5, 6 and 4 slots), which is the shape
     a FlatBuffers union type vector produces; ``field4ByteToRowShapes``
     publishes that join by exact index only. Censuses of row fields must be
@@ -820,6 +861,12 @@ def _parse_parallel_root_subgraph(
     marker13_rows = []
     selector5_ranges = []
     row_field0_digest = hashlib.sha256()
+    row_field0_empty = 0
+    name_ordinal_field1_equal = Counter()
+    name_ordinal_field1_different = Counter()
+    name_ordinals = Counter()
+    scalar_words = Counter()
+    scalar_absent = Counter()
 
     def own(start: int, end: int, kind: str, label: str) -> None:
         if start < 0 or end < start or end > len(data):
@@ -898,7 +945,32 @@ def _parse_parallel_root_subgraph(
         shapes[shape] += 1
 
         # Join by the exact vector index, never by equal marginal counts.
-        marker_shapes[(data[field4_start + 4 + index], *shape)] += 1
+        tag = data[field4_start + 4 + index]
+        marker_shapes[(tag, *shape)] += 1
+        row_scalar_values = {}
+        for field_index in (1, 2):
+            address = _field_address(row, field_index)
+            if address is None:
+                scalar_absent[(tag, field_index)] += 1
+                row_scalar_values[field_index] = None
+                continue
+            next_address = min(
+                [
+                    int(other)
+                    for present_index in row["presentFields"]
+                    if (other := _field_address(row, int(present_index))) is not None
+                    and other > address
+                ]
+                + [int(row["tableOffset"]) + int(row["objectSize"])]
+            )
+            if next_address - address < 4:
+                raise ValueError(
+                    f"Streaming {family} field 5 row {index} field {field_index} "
+                    f"has {next_address - address} slot bytes, expected at least 4"
+                )
+            value = _u32(data, address)
+            scalar_words[(tag, field_index, value)] += 1
+            row_scalar_values[field_index] = value
         field0 = _field_address(row, 0)
         if field0 is None:
             raise ValueError(
@@ -932,8 +1004,9 @@ def _parse_parallel_root_subgraph(
                 f"Streaming {family} field 5 row {index} field 0 expected "
                 f"following zero at offset {value_end}, actual {data[value_end]}"
             )
+        name_bytes = data[value_target + 4 : value_end]
         try:
-            data[value_target + 4 : value_end].decode("utf-8", errors="strict")
+            name_bytes.decode("utf-8", errors="strict")
         except UnicodeDecodeError as exc:
             raise ValueError(
                 f"Streaming {family} field 5 row {index} field 0 is not "
@@ -946,6 +1019,17 @@ def _parse_parallel_root_subgraph(
             f"{family} field 5 row {index} field 0",
         )
         referenced_bytes += value_length
+        object_id = _u32(data, field3_start + 4 + index * 4)
+        ordinal = _checked_parallel_row_name(family, name_bytes, object_id, index, value_target)
+        if family == "streaming":
+            row_field0_empty += 1
+        else:
+            assert ordinal is not None
+            name_ordinals[(tag, ordinal)] += 1
+            if ordinal == (row_scalar_values[1] or 0):
+                name_ordinal_field1_equal[tag] += 1
+            else:
+                name_ordinal_field1_different[tag] += 1
         # Include each length before its bytes so concatenation cannot erase
         # row boundaries. These are ordered anonymous values, not name ids.
         row_field0_digest.update(data[value_target:value_end])
@@ -1237,6 +1321,26 @@ def _parse_parallel_root_subgraph(
         ],
         "field5Field0ReferenceCount": field5_count,
         "field5Field0ReferencedBytes": referenced_bytes,
+        "field5Field0EmptyCount": row_field0_empty,
+        "field5Field0NameIdentity": {
+            "status": "exact-current-corpus-suffix-to-parallel-id",
+            "nameCount": field5_count - row_field0_empty,
+            "nameOrdinalByTag": [
+                {"tag": tag, "ordinal": ordinal, "count": count}
+                for (tag, ordinal), count in sorted(name_ordinals.items())
+            ],
+            "ordinalEqualsField1ByTag": dict(sorted(name_ordinal_field1_equal.items())),
+            "ordinalDiffersFromField1ByTag": dict(sorted(name_ordinal_field1_different.items())),
+            "field1AbsentComparisonUsesZero": True,
+        },
+        "field5Field1And2ScalarWordsByTag": [
+            {"tag": tag, "fieldIndex": field_index, "value": value, "count": count}
+            for (tag, field_index, value), count in sorted(scalar_words.items())
+        ],
+        "field5Field1And2AbsentByTag": [
+            {"tag": tag, "fieldIndex": field_index, "count": count}
+            for (tag, field_index), count in sorted(scalar_absent.items())
+        ],
         "field5Field0Representation": "ambiguous",
         "field5Field0RepresentationCandidates": [
             "flatbuffer-string",

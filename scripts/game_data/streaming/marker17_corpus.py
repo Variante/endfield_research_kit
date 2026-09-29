@@ -1,6 +1,6 @@
 """Fail-closed corpus gate for native-selected marker17 anonymous bodies.
 
-This gate consumes the authenticated v15 marker17 directory.  It does
+This gate consumes the authenticated root gate's marker17 directory. It does
 not rerun the larger Streaming parser, but it rereads and authenticates every
 directory reference, including profile-excluded opaque references.
 
@@ -33,7 +33,7 @@ from scripts.game_data.streaming.marker17_native import validate_marker17_native
 from scripts.common import sha256_file_upper as sha256_file
 
 SCHEMA = "endfield.streaming-marker17-bodies-corpus.v2"
-V15_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
+ROOT_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v16"
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -62,6 +62,8 @@ def _require(failures: list[dict[str, Any]], source: str, stage: str,
 
 
 def _source_paths(repo_root: Path) -> dict[str, Path]:
+    # The v2 marker17 report keeps its original provenance field names.
+    # Their bytes are always rechecked against the selected ROOT_SCHEMA.
     return {
         "v15ParserSha256": repo_root / "scripts/game_data/streaming/framing.py",
         "v15CorpusGateSha256": repo_root / "scripts/game_data/streaming/corpus.py",
@@ -248,10 +250,10 @@ def _classify(file_row: dict[str, Any], row: dict[str, Any], selected: dict[int,
     return "supported"
 
 
-def _validate_v15(report: dict[str, Any], expected_input: str, source_hashes: dict[str, str],
+def _validate_root_report(report: dict[str, Any], expected_input: str, source_hashes: dict[str, str],
                   selected: dict[int, int], failures: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], collections.Counter]:
-    source = "v15-report"
-    _require(failures, source, "report-contract", "schema", report.get("schema"), V15_SCHEMA)
+    source = "root-report"
+    _require(failures, source, "report-contract", "schema", report.get("schema"), ROOT_SCHEMA)
     _require(failures, source, "report-contract", "status", report.get("status"), "complete")
     _require(failures, source, "report-contract", "failed", report.get("failed"), False)
     _require(failures, source, "report-contract", "inputSetSha256", str(report.get("inputSetSha256", "")).upper(), expected_input)
@@ -340,10 +342,10 @@ def _validate_outer(outer: dict[str, Any], header: dict[str, Any] | None, expect
     _require(failures, source, "outer-contract", "publication.ledgerSha256",
              str((outer.get("publication") or {}).get("ledgerSha256", "")).upper(), ledger_sha)
     provenance = report.get("provenance") or {}
-    _require(failures, "v15-report", "outer-join", "outerLedgerSha256",
+    _require(failures, "root-report", "outer-join", "outerLedgerSha256",
              str(provenance.get("outerLedgerSha256", "")).upper(), ledger_sha)
     for field in ("primaryAssets", "fallbackAssets"):
-        _require(failures, "v15-report", "outer-join", field, provenance.get(field), outer.get(field))
+        _require(failures, "root-report", "outer-join", field, provenance.get(field), outer.get(field))
     if header is not None:
         _require(failures, "outer-ledger", "ledger-contract", "inputSetSha256",
                  str(header.get("inputSetSha256", "")).upper(), expected_input)
@@ -474,7 +476,7 @@ def _finalize(*, expected_input: str, failures: list[dict[str, Any]], partial: b
         }},
         "nativeValidation": native, "failures": failures,
         "evidenceBoundary": {
-            "exact": "Authenticated logical ranges, the v15 two-wrapper byte ranges, selected header/tag/count domains, anonymous strides, and parser EOF are checked.",
+            "exact": "Authenticated logical ranges, the root-gate two-wrapper byte ranges, selected header/tag/count domains, anonymous strides, and parser EOF are checked.",
             "structuralOnly": "Record bytes and anonymous gaps remain opaque.",
             "unresolved": "Native final cursor, concrete runtime receipt, field names, object population and game semantics remain unresolved.",
         },
@@ -508,7 +510,7 @@ def sweep(*, repo_root: Path, report_path: Path, outer_summary_path: Path, ledge
     else:
         native = validate_marker17_native_contract(game_root=Path(game_root))
     target_keys = _validate_native_profile(native, failures, source_start.get("marker17NativeContractSha256", ""))
-    directory_files, directory_counts = _validate_v15(report, expected_input, source_start, target_keys, failures)
+    directory_files, directory_counts = _validate_root_report(report, expected_input, source_start, target_keys, failures)
     _validate_outer(outer, header, expected_input, ledger_sha_start, report, failures)
     joined = _join_ledger(directory_files, ledger_rows, failures)
     selected = directory_files[:max_files] if max_files is not None else directory_files

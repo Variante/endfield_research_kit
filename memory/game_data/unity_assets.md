@@ -227,6 +227,77 @@ is not identity.
   modular NPC and VFX composition; world visibility/spawn policy.
 - Material keyword/pass/queue selection and runtime overrides; native texture
   descriptors and mip payloads outside validated families.
+- `InitChunkData` proves entity ids, names and matrices but currently exposes no
+  prefab Source+PathID/hash field. The Map page's generic entity-name to Mesh
+  family join therefore remains a presentation candidate, even if the Mesh
+  object itself has an exact AssetMap source/offset/PathID. A current example
+  is a world instance named `P_prop_com_plane+1_001_01` whose selected Mesh
+  object is cataloged under a dialog-timeline prefab: the shared family name
+  alone cannot establish that the world instance uses that prefab or Mesh.
+  A targeted parse of that dialog actor prefab did recover its AssetBundle
+  root GameObject and reciprocal Transform hierarchy, with direct MeshFilter
+  PPtrs resolving through the ordered CABMap dependency to the candidate Mesh.
+  That closes prefab-to-Mesh identity inside the actor prefab, but no serialized
+  source identity links the streamed entity to this prefab. The Unity object
+  store contains AssetBundle documents for the chain, while its published class
+  set has no GameObject, Transform, MeshFilter, or MeshRenderer documents;
+  those built-in objects required a targeted installed-bundle parse. A runtime
+  observation from the streamed entity id to a prefab resource path or root
+  source CAB+PathID would close the remaining selection gap.
+  Current runtime capture profiles do not observe this pair. The reviewed
+  Streaming native rows remain anonymous at the relevant edge, so hooking a
+  nearby scene read and correlating by name, timestamp or position would not
+  establish ownership. A capture hook needs a validated same-call entity id
+  and selected prefab identity, authenticated against the installed native
+  inputs and emitted with a bounded completeness receipt.
+  Only the separate level/HLOD/grid/cluster hash contract closes HLOD Mesh
+  identity; generic objects still need a streamed entity-to-prefab selection
+  relation or a direct entity-to-renderer/Mesh runtime observation.
+  A bounded current-build native probe rejects the generic
+  `FlatBufferConvertContextV2::ConvertAssetFromImpl_Injected` internal call as
+  that Map hook: it takes a conversion context and property key, reads the
+  context's packed property table, and returns a Unity object pointer. A
+  separate named getter reads the context's entity-name string, but the
+  reviewed native path does not bind the Init row's ID/name column, a prefab
+  root, and a source CAB+PathID/resource path at either call boundary. The
+  managed wrapper's one literal direct caller does not supply the missing
+  identity pair; other dispatch routes remain unexcluded. A checked runtime
+  entity-construction caller/selection ABI is still needed before a dedicated
+  capture profile can be built or a game session requested.
+  A further selected-build probe of the Init group branch found an ID-keyed
+  runtime map: each slot-6 numeric ID can be paired with an eight-byte value
+  from a per-group runtime vector. That value's meaning is anonymous, and the
+  conditional branch carries no prefab or renderer source identity. A bounded
+  follow-up traced the first selected new-record consumer: the second root's
+  field-3 ID is used to look up that map, the value is passed to a scope
+  setup and copied into an anonymous child record. The scope puts the first
+  root's selected row field-3 table and field-0 string into a conversion
+  context, then forwards the map value to a dynamic callback. The selected
+  group loader constructs the value as a 32-bit descriptor-slot index plus
+  a 32-bit counter, rather than a Unity object pointer. The selected default
+  callback uses the low 32 bits to index an anonymous context table and then
+  select a 576-byte group row. The immediate helpers use the row's bit masks,
+  stride and data pointer to resolve anonymous fields. The callback takes up
+  to three eight-byte field values, interns each nonzero value as an opaque
+  key, and appends 24-byte external-asset request records containing the
+  original key, a kind value, and its local index. A named native conversion
+  call appends the same record shape. A checked consumer of the matching native
+  context field walks a 24-byte request vector and deduplicates its opaque
+  keys into another local table; this consumer does not resolve a source path,
+  Unity object, or CAB+PathID. Its execution for the target scene is unproved.
+  The selected manager constructor receives the group table pointer from its
+  owner and stores both a copy of that pointer and the address of the owner's
+  pointer field. Thus the group-loader table and the callback context's first
+  pointer alias at construction. A later mutation of that owner field or
+  either manager field is not excluded by this static trace, and there is no
+  live pointer receipt. In the exported target pair, both roots carry the same entity
+  ID at the selected ordinal;
+  this remains a serialized pair witness, not a runtime load receipt. The
+  selected callback's runtime override state and the external-asset request
+  consumer have no proven edge to a prefab source identity. A hook at the
+  current ID lookup or field-intern call would record only an ID plus opaque
+  numeric state; it is not yet a useful prefab-selection capture. A dedicated
+  capture hook or WebUI join still needs that keyed resource-selection edge.
 - Animation/effect activation and controller execution; broader exact
   audio/video trigger ownership, runtime-selected Wwise switch/random media,
   and stronger inferred skill/enemy sound ownership.

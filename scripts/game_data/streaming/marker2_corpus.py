@@ -40,7 +40,7 @@ from scripts.game_data.streaming.pairs import bind_current_pair, index_ordered_p
 
 
 SCHEMA = "endfield.streaming-marker2-corpus.v1"
-ROOT_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
+ROOT_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v16"
 # Candidate location is tmp/animestudio/<task>. The promoted maintained file
 from scripts.repo_paths import REPO_ROOT
 from scripts.game_data.corpus_common import is_bounded_diagnostic_output as _is_bounded_diagnostic_output
@@ -857,7 +857,7 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
     if not partial and not failures:
         identity_sha = shared.sha256_bytes("\n".join(sorted(identity_rows)).encode("utf-8"))
         shared.require(
-            failures, "root-v15", "terminal-reconciliation", "logicalIdentitySetSha256",
+            failures, "root-v16", "terminal-reconciliation", "logicalIdentitySetSha256",
             identity_sha, ((report.get("layer1") or {}).get("logicalIdentitySetSha256")),
         )
         expected_references = (
@@ -865,7 +865,7 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
             .get("nestedElementMarkerCounts", {}).get("2", 0)
         )
         shared.require(
-            failures, "root-v15", "terminal-reconciliation", "marker2ReferenceCount",
+            failures, "root-v16", "terminal-reconciliation", "marker2ReferenceCount",
             counters["marker2References"], expected_references,
         )
     shared.require(

@@ -60,6 +60,7 @@ import subprocess
 import sys
 import zlib
 from array import array
+from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -2139,6 +2140,15 @@ def render_point_cloud(
         row for row in streaming
         if _instance_meshes(row) and not _is_explicit_overhead_cover(row)
     ]
+    mesh_identity_counts = Counter(
+        str(mesh.get("identityEvidence") or "unclassified")
+        for row in resolved for mesh in _instance_meshes(row)
+    )
+    mesh_binding_status = (
+        "name_family_candidate"
+        if mesh_identity_counts.get("name_family_candidate") or mesh_identity_counts.get("unclassified")
+        else "exact_level_hlod_key" if mesh_identity_counts else "unavailable"
+    )
     render_bindings = streaming_texture_bindings(level_id, resolved) if resolved else {}
     cache_signature = _point_render_cache_signature(
         level_id,
@@ -2261,8 +2271,9 @@ def render_point_cloud(
             level_id, elevation_depth, width, height, output_root,
             image_suffix="streaming_elevation",
             source_label=(
-                "full exact streaming-mesh triangle depth"
-                if exact_hlod_matrices else "full recovered streaming-mesh triangle depth"
+                "full exact HLOD-key streaming-mesh triangle depth"
+                if mesh_binding_status == "exact_level_hlod_key" else
+                "streaming-mesh name-candidate triangle depth"
             ),
         )
         point_cloud_overlay = (
@@ -2270,7 +2281,7 @@ def render_point_cloud(
                 level_id, resolved, bounds, width, height, output_root,
                 surface_point_density, render_bindings,
             )
-            if exact_hlod_matrices else
+            if exact_hlod_matrices and mesh_binding_status == "exact_level_hlod_key" else
             render_depth_point_overlay(
                 level_id, detail_depth, width, height, output_root,
                 image_suffix="streaming_points",
@@ -2324,6 +2335,8 @@ def render_point_cloud(
             "pointRadius": 0 if rendered_instances else radius,
             "renderedInstanceCount": rendered_instances,
             "renderedTriangleCount": rendered_triangles,
+            "meshBindingStatus": mesh_binding_status,
+            "meshIdentityCounts": dict(sorted(mesh_identity_counts.items())),
             "renderedVertexSampleCount": rendered_vertex_samples,
             "texturedInstanceCount": textured_instances,
             "texturedTriangleCount": textured_triangles,
@@ -2347,12 +2360,13 @@ def render_point_cloud(
         "modelScene": {
             "status": "streaming_meshes_rasterized" if rendered_instances else "no_recovered_scene_meshes",
             "positionStatus": "exact_streaming_matrix" if mesh_rows else "unavailable",
+            "meshBindingStatus": mesh_binding_status,
             "meshes": list(mesh_rows.values()),
             "meshCount": len(mesh_rows),
             "instanceCount": len(resolved),
         },
         "boundary": (
-            f"Orthographic depth raster of {rendered_instances} static OBJ instances placed by their recovered "
+            f"Orthographic depth raster of {rendered_instances} static OBJ candidates placed by their recovered "
             f"InitChunkData 4x4 matrices ({rendered_triangles} triangles and {rendered_vertex_samples} "
             f"legacy vertex samples). The point layer retains {detail_triangles} detail triangles and "
             f"exclude {excluded_detail_triangles} broad structural/slab triangles. {textured_pixels} visible pixels sample {len(used_textures)} exact "
@@ -2360,7 +2374,9 @@ def render_point_cloud(
             "unresolved or multi-material surface pixels remain transparent and their geometry stays available only on "
             f"the separate grayscale elevation layer. {len(overhead_covers)} explicitly named roof/ceiling instances are "
             "omitted so capped interiors remain readable; no height-based structural culling is applied. The remaining "
-            f"{len(streaming) - rendered_instances} non-rasterized instances are not drawn as location dots."
+            f"{len(streaming) - rendered_instances} non-rasterized instances are not drawn as location dots. "
+            "Generic Mesh selection uses an entity/Mesh name family and does not prove prefab or renderer ownership; "
+            "only exact level/HLOD keys establish the HLOD asset relation."
             if rendered_instances else
             f"Evidence-only point cloud drawn from {len(positions)} exact published registry and quest X/Y/Z transforms. "
             "Points are not connected into terrain and do not claim recovered scene geometry."
@@ -2976,7 +2992,7 @@ def render_hlod_point_samples(
 
 
 def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, detail_props_only=False):
-    """Rasterize exact static instances, sampling proven material base textures."""
+    """Rasterize candidate Meshes at exact matrices, sampling proved base textures."""
     if _raster_mesh_numba is not None:
         return _rasterise_streaming_depth_batched(
             streaming, bounds, width, height, bindings, detail_props_only,
@@ -4983,7 +4999,8 @@ def main(argv: list[str] | None = None) -> int:
                 if scene_id != level_id:
                     manifest["boundary"] = (
                         f"This gameplay map declares the shared art scene {scene_id}; the orthographic image is that "
-                        "scene's exact static projection. Level-specific registry and mission markers remain separate. "
+                        "scene's projection at recovered instance matrices. Mesh ownership has the grade recorded "
+                        "in render.meshBindingStatus. Level-specific registry and mission markers remain separate. "
                         + str(base_manifest.get("boundary") or "")
                     )
         if manifest is None:

@@ -549,11 +549,21 @@
       evidence: "Evidence",
       surfaceAccuracy: "Surface accuracy",
       surface_inferred_hlod_crop: "Inferred HLOD crop",
-      surface_exact_mesh_color_unverified: "Exact mesh placement - color unverified",
-      surface_exact_mesh_partial_base_color: "Exact mesh placement - partial base color",
+      surface_exact_mesh_color_unverified: "Name-matched mesh preview - color unverified",
+      surface_exact_mesh_partial_base_color: "Name-matched mesh preview - partial base color",
+      surface_name_candidate_mesh_color_unverified: "Name-matched mesh preview - color unverified",
+      surface_name_candidate_mesh_partial_base_color: "Name-matched mesh preview - partial base color",
+      surface_exact_hlod_key_mesh_color_unverified: "Exact HLOD mesh placement - color unverified",
+      surface_exact_hlod_key_mesh_partial_base_color: "Exact HLOD mesh placement - partial base color",
+      surface_legacy_streaming_ungraded: "Legacy streaming surface - Mesh relation ungraded",
       surfaceNote_inferred_hlod_crop: "Exact danger markers define the crop; the source-art HLOD grid is inferred.",
-      surfaceNote_exact_mesh_color_unverified: "Mesh geometry and placement are exact; no reliable texture color was recovered.",
-      surfaceNote_exact_mesh_partial_base_color: "Mesh geometry and placement are exact; base color appears only where material bindings were recovered.",
+      surfaceNote_exact_mesh_color_unverified: "The instance matrix is exact; prefab-to-Mesh ownership remains unproved.",
+      surfaceNote_exact_mesh_partial_base_color: "The instance matrix is exact; Mesh ownership remains unproved and base color is partial.",
+      surfaceNote_name_candidate_mesh_color_unverified: "The instance matrix is exact; prefab-to-Mesh ownership remains unproved.",
+      surfaceNote_name_candidate_mesh_partial_base_color: "The instance matrix is exact; Mesh ownership remains unproved and base color is partial.",
+      surfaceNote_exact_hlod_key_mesh_color_unverified: "The instance matrix and level/HLOD mesh key agree; color remains unverified.",
+      surfaceNote_exact_hlod_key_mesh_partial_base_color: "The instance matrix and level/HLOD mesh key agree; base color is partial.",
+      surfaceNote_legacy_streaming_ungraded: "This publication has no per-Mesh binding grade; ownership remains unverified.",
       controls: "Controls",
       collapse: "Collapse panel",
       expand: "Expand panel",
@@ -687,7 +697,9 @@
       minimapTier: "layer",
       scene3d: "Recovered 3D models",
       scene3dHint: "Open a representative OBJ in the existing Assets 3D viewer. Mesh placement is inferred and diagnostic only.",
-      streamingSceneHint: "The instance transform is exact, and matched static OBJ geometry is rasterized into the top-down background.",
+      streamingSceneHint: "The instance transform is exact. Static OBJ candidates match by name; prefab-to-Mesh ownership remains unproved.",
+      exactHlodSceneHint: "The instance transform and level/HLOD Mesh key agree. This identifies the placed HLOD Mesh; runtime visibility remains unobserved.",
+      legacyStreamingBoundary: "Recovered instance matrices place exported OBJ geometry. This older publication does not grade the Mesh relation; its ownership remains unverified.",
       scene3dUnplacedHint: "These level-matched OBJ exports have no recovered scene transform. Open them in Assets for inspection; they are not placed on this map.",
       scene3dUnavailable: "No safe OBJ model is published for this level; the map stays marker-only.",
       documentTitle: "\u6587\u6863\u540d",
@@ -717,11 +729,21 @@
       evidence: "证据",
       surfaceAccuracy: "表面准确度",
       surface_inferred_hlod_crop: "推断的 HLOD 裁切",
-      surface_exact_mesh_color_unverified: "精确网格放置 - 颜色未验证",
-      surface_exact_mesh_partial_base_color: "精确网格放置 - 部分基础色",
+      surface_exact_mesh_color_unverified: "按名称匹配的网格预览 - 颜色未验证",
+      surface_exact_mesh_partial_base_color: "按名称匹配的网格预览 - 部分基础色",
+      surface_name_candidate_mesh_color_unverified: "按名称匹配的网格预览 - 颜色未验证",
+      surface_name_candidate_mesh_partial_base_color: "按名称匹配的网格预览 - 部分基础色",
+      surface_exact_hlod_key_mesh_color_unverified: "精确 HLOD 网格放置 - 颜色未验证",
+      surface_exact_hlod_key_mesh_partial_base_color: "精确 HLOD 网格放置 - 部分基础色",
+      surface_legacy_streaming_ungraded: "旧版 Streaming 表面 - 网格关联未分级",
       surfaceNote_inferred_hlod_crop: "裁切范围由精确的危险地图标记确定；源美术 HLOD 网格为推断放置。",
-      surfaceNote_exact_mesh_color_unverified: "网格几何与放置精确；尚未恢复可靠的贴图颜色。",
-      surfaceNote_exact_mesh_partial_base_color: "网格几何与放置精确；仅已恢复材质绑定的表面显示基础色。",
+      surfaceNote_exact_mesh_color_unverified: "实例矩阵精确；预制体到网格的归属尚未证实。",
+      surfaceNote_exact_mesh_partial_base_color: "实例矩阵精确；网格归属尚未证实，基础色仅部分恢复。",
+      surfaceNote_name_candidate_mesh_color_unverified: "实例矩阵精确；预制体到网格的归属尚未证实。",
+      surfaceNote_name_candidate_mesh_partial_base_color: "实例矩阵精确；网格归属尚未证实，基础色仅部分恢复。",
+      surfaceNote_exact_hlod_key_mesh_color_unverified: "实例矩阵与关卡 HLOD 网格键一致；颜色尚未验证。",
+      surfaceNote_exact_hlod_key_mesh_partial_base_color: "实例矩阵与关卡 HLOD 网格键一致；基础色仅部分恢复。",
+      surfaceNote_legacy_streaming_ungraded: "此版数据没有逐网格的关联等级；归属仍未验证。",
       controls: "控制面板",
       collapse: "收起面板",
       expand: "展开面板",
@@ -850,7 +872,9 @@
       minimapTier: "\u56fe\u5c42",
       scene3d: "Recovered 3D models",
       scene3dHint: "Open a representative OBJ in the existing Assets 3D viewer. Mesh placement is inferred and diagnostic only.",
-      streamingSceneHint: "实例变换为精确恢复，已匹配的静态 OBJ 网格已栅格化进俯视背景。",
+      streamingSceneHint: "实例变换为精确恢复。静态 OBJ 候选按名称匹配；预制体到网格的归属尚未证实。",
+      exactHlodSceneHint: "实例变换与关卡 HLOD 网格键一致，因而可确定放置的 HLOD 网格；运行时可见性尚未观测。",
+      legacyStreamingBoundary: "导出的 OBJ 几何体按已恢复的精确实例矩阵放置。此旧版数据未标注网格关联等级，其归属仍未经验证。",
       scene3dUnavailable: "No safe OBJ model is published for this level; the map stays marker-only.",
     },
   };
@@ -2345,7 +2369,13 @@
           <p class="mr-note">${esc(mapMarkCoverage.boundary || "")}</p></details>`
       : "";
     const bg = data.renderBackground || {};
-    const surfaceEvidence = bg.surfaceEvidence && typeof bg.surfaceEvidence === "object" ? bg.surfaceEvidence : null;
+    const renderBoundary = String(bg.status || "").startsWith("recovered_streaming_")
+      && !bg.render?.meshBindingStatus ? t("legacyStreamingBoundary") : (bg.boundary || "");
+    const surfaceEvidence = bg.surfaceEvidence && typeof bg.surfaceEvidence === "object"
+      ? bg.surfaceEvidence
+      : String(bg.status || "").startsWith("recovered_streaming_")
+        ? { accuracy: "legacy_streaming_ungraded" }
+        : null;
     const surfaceAccuracy = surfaceEvidence?.accuracy
       ? `<div class="mr-surface-evidence" data-accuracy="${esc(surfaceEvidence.accuracy)}"><span>${esc(t("surfaceAccuracy"))}</span><b>${esc(t(`surface_${surfaceEvidence.accuracy}`))}</b><small>${esc(t(`surfaceNote_${surfaceEvidence.accuracy}`))}</small></div>`
       : "";
@@ -2367,7 +2397,9 @@
     }).join("");
     const sceneHint = scene.positionStatus === "unplaced"
       ? t("scene3dUnplacedHint")
-      : (scene.positionStatus === "exact_streaming_matrix" ? t("streamingSceneHint") : t("scene3dHint"));
+      : (scene.positionStatus === "exact_streaming_matrix"
+        ? t(scene.meshBindingStatus === "exact_level_hlod_key" ? "exactHlodSceneHint" : "streamingSceneHint")
+        : t("scene3dHint"));
     const sceneBlock = sceneMeshes.length
       ? `<details><summary>${esc(`${t("scene3d")} (${scene.meshCount || sceneMeshes.length})`)}</summary><p class="mr-note">${esc(sceneHint)}</p><ul class="mr-file-list">${sceneFiles}</ul></details>`
       : `<p class="mr-note"><code>${esc(scene.status || "obj_cluster_files_unavailable")}</code> ${esc(t("scene3dUnavailable"))}</p>`;
@@ -2433,7 +2465,7 @@
           <p class="mr-note"><code>${esc(minimapBg.status || "unknown")}</code>${minimapBg.src
             ? ` · ${t("minimapFrom")}: <b>${minimapBg.tileCount}</b> ${t("minimapTiles")} / ${t("minimapTier")} <b>${minimapBg.layer}</b>`
             : ""}${esc(minimapBg.boundary || "")}</p>
-          <p class="mr-note"><code>${esc(bg.status || "unknown")}</code>${esc(bg.boundary || "")}</p>
+          <p class="mr-note"><code>${esc(bg.status || "unknown")}</code>${esc(renderBoundary)}</p>
           ${sceneBlock}
           ${bg.gridFit ? `<p class="mr-note">${esc(t("gridFit"))}: <b>${Math.round((bg.gridFit.coverage || 0) * 100)}%</b> ${esc(t("gridFitOf"))} ${bg.gridFit.samplePoints} ${esc(t("gridFitMarkers"))} — <code>origin ${bg.gridFit.originX}, ${bg.gridFit.originZ}</code> / <code>${bg.gridFit.baseCellSize}m</code></p>` : ""}
           <p class="mr-note">${esc(data.npcCoverage?.boundary || "")}</p>

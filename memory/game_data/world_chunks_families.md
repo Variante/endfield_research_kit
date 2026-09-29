@@ -78,8 +78,10 @@ also the one level whose Info file keeps a three-field legacy root.
   that had no part in fitting it.
 - **Same rows.** In every current pair the ordered root field-3 ID vector and
   field-4 tag vector are identical (`_join_root_witnesses`), so the two files
-  index the same objects. Row field-0 bytes differ in every pair; the gate
-  records that separately and does not use it as an identity key.
+  index the same objects. Every Streaming row field-0 byte range is empty,
+  while every Init row carries a name whose masked hex suffix matches that
+  index's field-3 ID. The gate checks both family shapes and records the
+  different row-field-0 digests separately from the ordered pair identity.
 - **The groups are Init-only.** No Streaming file has any slot-7 group,
   corpus-wide. The "streaming" file is not the one that holds the placement
   groups -- the naming intuition is backwards.
@@ -142,8 +144,9 @@ the Info path. A concrete runtime root-to-file receipt is not closed.
   count) fires on 17 of 88. Slot 5 has thousands of entries per level against
   about one IV -- it is not a placement list. The enum's names do occur as
   object names ([`world_chunk_transforms.md`](world_chunk_transforms.md)).
-- `componentDataList` as slot 5: element 0 carries 15 distinct kind codes,
-  not one fixed Transform type.
+- `componentDataList` as slot 5: the pooled rows carry varied anonymous
+  scalar words, not one fixed Transform type. The per-tag boundary is in
+  [`world_chunk_slots.md`](world_chunk_slots.md).
 - The fourth filename coordinate as a LOD index (above).
 - The Info row's second field as the constant 4 (a uoffset).
 - The DevOnly Global pair as corrupt or undecodable (raw, admitted by name).

@@ -37,7 +37,7 @@ from scripts.game_data.corpus_common import is_bounded_diagnostic_output as _is_
 
 
 SCHEMA = "endfield.streaming-marker13-corpus.v2"
-ROOT_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
+ROOT_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v16"
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -275,25 +275,25 @@ def read_ledger(path: Path, failures: list[dict[str, Any]]) -> tuple[dict[str, A
 def validate_root_report(report: dict[str, Any], outer: dict[str, Any], header: dict[str, Any] | None,
                          rows: list[dict[str, Any]], expected_input: str, ledger_sha: str,
                          sources: dict[str, str], failures: list[dict[str, Any]]) -> None:
-    require(failures, "root-v15", "root-gate", "schema", report.get("schema"), ROOT_SCHEMA)
-    require(failures, "root-v15", "root-gate", "status", report.get("status"), "complete")
-    require(failures, "root-v15", "root-gate", "failed", report.get("failed"), False)
-    require(failures, "root-v15", "root-gate", "inputSetSha256",
+    require(failures, "root-v16", "root-gate", "schema", report.get("schema"), ROOT_SCHEMA)
+    require(failures, "root-v16", "root-gate", "status", report.get("status"), "complete")
+    require(failures, "root-v16", "root-gate", "failed", report.get("failed"), False)
+    require(failures, "root-v16", "root-gate", "inputSetSha256",
             str(report.get("inputSetSha256", "")).upper(), expected_input)
     summary = report.get("summary") or {}
     for field, expected in (("streamingFiles", len(rows)), ("parsed", len(rows)),
                             ("failed", 0), ("unsupported", 0), ("gateFailures", 0)):
-        require(failures, "root-v15", "root-gate", f"summary.{field}", summary.get(field), expected)
-    require(failures, "root-v15", "root-gate", "failures", report.get("failures"), [])
+        require(failures, "root-v16", "root-gate", f"summary.{field}", summary.get(field), expected)
+    require(failures, "root-v16", "root-gate", "failures", report.get("failures"), [])
     provenance = report.get("provenance") or {}
-    require(failures, "root-v15", "root-gate", "provenance.inputSetSha256",
+    require(failures, "root-v16", "root-gate", "provenance.inputSetSha256",
             str(provenance.get("inputSetSha256", "")).upper(), expected_input)
     for field, source_name in {
         "parserSha256": "rootParserSha256", "corpusGateSha256": "rootCorpusGateSha256",
         "nativeValidatorSha256": "rootNativeValidatorSha256",
         "nativeContractSha256": "rootNativeContractSha256",
     }.items():
-        require(failures, "root-v15", "root-source-gate", field,
+        require(failures, "root-v16", "root-source-gate", field,
                 str(provenance.get(field, "")).upper(), sources.get(source_name))
     require(failures, "outer-summary", "outer-gate", "inputSetSha256",
             str(outer.get("inputSetSha256", "")).upper(), expected_input)
@@ -301,10 +301,10 @@ def validate_root_report(report: dict[str, Any], outer: dict[str, Any], header: 
             (outer.get("summary") or {}).get("fullAuditPassed"), True)
     require(failures, "outer-summary", "outer-gate", "publication.ledgerSha256",
             str((outer.get("publication") or {}).get("ledgerSha256", "")).upper(), ledger_sha)
-    require(failures, "root-v15", "outer-join", "outerLedgerSha256",
+    require(failures, "root-v16", "outer-join", "outerLedgerSha256",
             str(provenance.get("outerLedgerSha256", "")).upper(), ledger_sha)
     for field in ("primaryAssets", "fallbackAssets"):
-        require(failures, "root-v15", "outer-join", field, provenance.get(field), outer.get(field))
+        require(failures, "root-v16", "outer-join", field, provenance.get(field), outer.get(field))
     if header is not None:
         require(failures, "outer-ledger", "outer-gate", "schemaVersion", header.get("schemaVersion"), 1)
         require(failures, "outer-ledger", "outer-gate", "inputSetSha256",
@@ -725,11 +725,11 @@ def sweep(*, repo_root: Path, root_report_path: Path, outer_summary_path: Path,
 
     if not partial and not failures:
         identity_sha = sha256_bytes("\n".join(sorted(identity_rows)).encode("utf-8"))
-        require(failures, "root-v15", "terminal-reconciliation", "logicalIdentitySetSha256",
+        require(failures, "root-v16", "terminal-reconciliation", "logicalIdentitySetSha256",
                 identity_sha, ((report.get("layer1") or {}).get("logicalIdentitySetSha256")))
         expected_references = ((report.get("layer3") or {}).get("nestedElementFraming") or {}).get(
             "nestedElementMarkerCounts", {}).get("13", 0)
-        require(failures, "root-v15", "terminal-reconciliation", "marker13ReferenceCount",
+        require(failures, "root-v16", "terminal-reconciliation", "marker13ReferenceCount",
                 counters["marker13References"], expected_references)
     require(failures, "terminal", "terminal-reconciliation", "files",
             counters["filesSucceeded"] + counters["filesFailed"], len(selected))

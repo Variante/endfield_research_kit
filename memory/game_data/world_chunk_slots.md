@@ -3,10 +3,9 @@
 Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
 [`README.md`](README.md) for the level and lane map.
 
-**Level 3, world lane.** From framing to meaning: slot 5's kind codes, identified
-against a named engine enum rather than a magnitude distribution, and slot 7's
-field-0 descriptor-ID mask. The refused candidates are kept beside the accepted ones, because
-the refusals are what make the accepted reading load-bearing.
+**Level 3, world lane.** Slot 5's row fields 1 and 2 are anonymous stored
+scalars; slot 7's field 0 is the descriptor-ID mask. The old enum proposal
+for the row scalars remains a candidate, not a field name.
 
 **Current framing** (`scripts/game_data/streaming/framing.py`): slot-7 group
 field 3 is a forward uoffset to 8-byte descriptors and field 4 a forward
@@ -15,37 +14,25 @@ uoffset to a wrapper around a byte vector; see
 lesson below is recorded in the docstring of
 `scripts/game_data/streaming/descriptor_component_index_gate.py`.
 
-## Slot-5 kind codes: `StreamingLayer` x `ECSEntityType`
+## Slot-5 row scalars: the old enum proposal
 
-**Scope caveat.** These tests ran on slot-5 rows pooled across the three
-union members ([`world_chunk_union_vectors.md`](world_chunk_union_vectors.md)).
-The later per-tag re-read found field 1 with only 1-2 distinct values per
-member, which cannot produce the pooled `f1` range 0..10, so the record does
-not say which member fields the pooled `f1`/`f2` were. The identification is
-kept as recorded; re-run it per tag before building on it.
+The authenticated full-corpus gate now censuses row fields 1 and 2 separately
+for each root tag and records omitted fields separately. The three tags have
+different row shapes, and Init names carry a `#N` segment that often differs
+from field 1 ([`world_chunk_union_vectors.md`](world_chunk_union_vectors.md)).
+The earlier narrow per-tag result reporting only one or two field-1 values per
+tag did not cover the full range; the complete census is in the generated
+Streaming corpus report.
 
-Five lines supported it, each able to fail:
-
-1. **Range.** `f2` takes `{0..10, 12, 13}`, which excludes `StreamingLayer`
-   and `ProxyEntityType` (11 values each) and fits `ECSEntityType` (14
-   values, all used except 11 `TerrainSplineDecal`). `StreamingComponentType`
-   is excluded by coverage (30 of 44 members unused), not by the withdrawn
-   "maximum 128" argument. `f1` takes exactly `0..10`.
-2. **A terrain join from another block.** Pair `(5, 7)` occurs in 37 of 38
-   terrain levels and 0 of 50 others -- but `(0, 4)` separates them too (38
-   of 38); presence could not tell them apart, counts did. Read as `Collider` + `TerrainCollider`,
-   `(5, 7)`'s count correlates **+1.000** with each terrain level's
-   terrain-file count; `(0, 7)` (`Default` + `TerrainCollider`) +0.956, and
-   `(0, 4)` (`Default` + `SphereCollider`) only +0.728 -- common outdoors
-   without scaling with terrain, as sphere colliders should be.
-3. **An earlier negative discriminates.** `ProxyEntityType` failed its
-   independent IV-count test ([`world_chunks_families.md`](world_chunks_families.md));
-   under `StreamingLayer`, `f1 == 0` is `Default`, which predicts nothing.
-4. **Absence behaves like the default.** `f2` is absent on hundreds of
-   thousands of rows, and `ECSEntityType.Render` is 0.
-5. **Enum values verified.** Metadata defaults give `StreamingLayer` 0..10
-   (`Count` 11), `ECSEntityType` 0..13 (`TypeCount` 14) and `ProxyEntityType`
-   0..10; `ECSEntityType`'s last valid value is exactly `f2`'s maximum.
+The old `StreamingLayer` x `ECSEntityType` reading had three leads: the
+pooled stored values fit those metadata enum ranges, the `(5, 7)` word pair
+scaled with terrain-file counts better than comparison pairs, and omitted
+field 2 was compatible with a zero default. The independent IV-count test
+also rejected `ProxyEntityType` for this slot. These are useful search
+constraints, but they did not check a native consumer of field 1 or field 2
+and pooled the distinct tag members. Even the exact terrain-count relation
+does not name either stored word. Keep both fields anonymous until a checked
+per-tag native read or another independent typed join supplies the names.
 
 ## Slot-7 group field 0
 
@@ -110,8 +97,9 @@ integers, and its bit frequencies decay geometrically.
   97.74, 40.89, 38.05, 33.77, 31.51 -- not monotone (full corpus, seven
   values; the six-value slice run agreed). The shift in the fifth u16 is an
   encoding convenience, not an order.
-- `StreamingComponentType` excluded from the kind codes because it read as
-  "non-sequential, maximum 128": that was a one-byte read of a ulong enum.
+- `StreamingComponentType` excluded from the old kind-code proposal because
+  it read as "non-sequential, maximum 128": that was a one-byte read of a
+  ulong enum and is withdrawn.
 - Group field 1 as a `StreamingLayer` mask (above).
 - Group field 3 as a byte offset into a runtime region sized by root slot 4
   (divisible by 4, below `s4`, not in element order in a quarter of files):
@@ -125,5 +113,6 @@ integers, and its bit frequencies decay geometrically.
 
 - What each descriptor ID, and so each field-0 bit, names: the IDs are
   anonymous column positions until a native consumer or table labels one.
-- Re-run the slot-5 kind-code tests per union tag.
+- Find a checked native consumer or another typed source for root row fields
+  1 and 2, using the current per-tag corpus census as the source boundary.
 - What a slot-7 group is, beyond its descriptors and bounds.

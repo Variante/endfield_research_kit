@@ -15,6 +15,8 @@ field 4 reaches a wrapper around a byte vector; see
 everything here is `scripts/game_data/streaming/framing.py`
 (`_parse_parallel_root_subgraph`), whose docstring records the ID/name rule
 and the tag-to-shape join; the retyping is in its module docstring.
+Its current-corpus gate records the per-tag field-1/2 words and omissions,
+Init name suffixes, and empty Streaming names without assigning enum labels.
 
 ## The root retyped: slots 2-7 are all vectors
 
@@ -52,14 +54,15 @@ No layout appears under two tags; the object-size variants inside a tag are
 ordinary default omission. The maintained gate publishes the tag-to-shape
 join at exact index over the current corpus. The reading is structural: no
 managed union type is identified.
+The paired Streaming rows have the same ordered IDs and tags but empty
+field-0 byte ranges; only Init rows carry the names below.
 
 **Demoted to structural-only by this:** the earlier slot-5 field-by-field
 dereference sweep and nested-table follow, which pooled the three members
 under one field index -- "field 3" is a different field in a 4-, 5- and
-6-slot table. The slot-5 kind-code census also pooled members; its fields
-tested as scalars here, so it is kept, with that caveat, in
-[`world_chunk_slots.md`](world_chunk_slots.md). Re-read per tag before
-concluding.
+6-slot table. The old pooled kind-code/enum reading is not a field name;
+[`world_chunk_slots.md`](world_chunk_slots.md) keeps the candidate and its
+refused shortcuts. The current gate reports fields 1 and 2 per tag.
 
 ## Per-tag rows
 
@@ -68,21 +71,23 @@ control, over 900 Init and Streaming files:
 
 | | field 0 | field 1 | field 2 | field 3 | field 4 | field 5 |
 | --- | --- | --- | --- | --- | --- | --- |
-| tag 1 | name | 1 distinct | -- | 8-byte component mask | 11 distinct | -- |
-| tag 2 | name | 2 distinct | 5 distinct | uoffset to table (100% vs 3.35%) | 16 bytes, always zero | empty vector |
-| tag 3 | name | 2 distinct | 8 distinct | uoffset to table (100% vs 3.87%) | -- | -- |
+| tag 1 | Init name, Streaming empty | anonymous scalar or absent | mostly absent scalar | 8-byte component mask | 11 distinct | -- |
+| tag 2 | Init name, Streaming empty | anonymous scalar or absent | anonymous scalar or absent | uoffset to table (100% vs 3.35%) | 16 bytes, always zero | empty vector |
+| tag 3 | Init name, Streaming empty | anonymous scalar or absent | anonymous scalar or absent | uoffset to table (100% vs 3.87%) | -- | -- |
 
-- **Field 0 is a name.** It resolves to a string 39-41% of the time against a
-  0.19-0.31% control; the rest are empty strings that failed a `0 < count`
-  guard. Decoded, every one parses as `<base>#<N>_<HEX>`. The maintained
+- **Init field 0 is a name; Streaming field 0 is empty.** The earlier string
+  probe required `0 < count` and discarded the empty paired Streaming
+  entries. Every Init name parses as `<base>#<N>_<HEX>`. The maintained
   reader frames it as a length-prefixed byte range followed by a zero and
   keeps "string" and "byte vector" as equal candidates. A table-only test had
   read it as an "id-like scalar" at 3x control -- a real uoffset looks like
   100% against 3%.
-- **The names identify the members.** Tag 1: reflection probes, lights,
+- **The Init names identify the members.** Tag 1: reflection probes, lights,
   `Env_*`; tag 2: `New Game Object`, `MergedCollider_*`; tag 3: `AudioBox_*`,
-  `AudioEmitter_<n>`, `SurfaceTypeData_*`. The `#N` group tracks field 1
-  exactly -- two encodings of one value.
+  `AudioEmitter_<n>`, `SurfaceTypeData_*`. The `#N` segment is independent of
+  row field 1: the complete authenticated census contains mismatches under
+  every tag, including `New Game Object#0` with field 1 equal to 5. The old
+  claim that they tracked exactly came from a narrow slice and is retracted.
 - **Tag 2 field 4 is sixteen always-zero bytes** in every sampled Init and
   Streaming row: reserved or default space, not a transform.
 - **Field 3 of tags 2 and 3 reaches a nested table** whose fields 3/4/5 are
@@ -96,17 +101,14 @@ control, over 900 Init and Streaming files:
 
 ### The ID join is exact
 
-The name's hex suffix is the parallel slot-3 ID masked to 27 bits:
-
-| rule | match over 97,061 names in 2,500 files |
-| --- | --- |
-| `suffix == id & 0x0FFFFFFF` | 98.613% (misses differ only in bit 27) |
-| **`suffix == id & 0x07FFFFFF`** | **100.000%**, no name matching another index |
-
-Slot 3 is an ID vector index-parallel to slot 5, and the name carries the ID
-masked to 27 bits. With the tag and the name this gives each row a type
-member, an identity and a label. The same ID space appears in the slot-6
-group ID vectors, which the descriptor-21 name join uses
+Each Init name's hex suffix is the parallel slot-3 ID masked to 27 bits.
+The 28-bit candidate fails only on bit 27; the 27-bit mask matches every
+authenticated Init row in the current gate, at the same vector index. The
+maintained reader fails on a suffix mismatch or a nonempty paired Streaming
+name. Counts and source hashes live in the generated corpus report. With
+the tag and Init name, each row has a type member, an identity and a label.
+The same ID space appears in the slot-6 group ID vectors, which the
+descriptor-21 name join uses
 ([`world_chunk_unread_region.md`](world_chunk_unread_region.md)).
 
 ### Tag 1 field 3 is a `StreamingComponentType` mask
@@ -166,8 +168,8 @@ with `:)xD`, not `AKPK`, and that scan never reached a bank.
 
 ## Open
 
-- The per-tag re-run of the slot-5 kind-code tests
-  ([`world_chunk_slots.md`](world_chunk_slots.md)).
+- A named native consumer for row fields 1 and 2, beyond their checked
+  per-tag stored-word distributions ([`world_chunk_slots.md`](world_chunk_slots.md)).
 - What the emitter numbers identify.
 - The nested marker directory's record extents and runtime selection
   ([`install_and_vfs.md`](install_and_vfs.md)).

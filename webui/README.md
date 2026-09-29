@@ -296,7 +296,12 @@ world bounds share an explicit transform. Generated contract:
   point, height-mask, and water PNGs plus manifests.
 - Shared-scene identity comes only from the directly addressed
   `LevelConfig/<levelId>.json` streaming path. Streaming-instance sidecars use
-  schema 2 with one `meshes` array per entity base.
+  schema 2 with one `meshes` array per entity base. Newly built Mesh rows record
+  `identityEvidence`: `exact_level_hlod_key` or `name_family_candidate`.
+  The latter is preview geometry with an exact instance matrix but unproved
+  prefab-to-Mesh ownership; Map labels it as such. Older sidecars without the
+  field are unclassified candidates when rebuilt. Already published streaming
+  maps without `surfaceEvidence` show a legacy ungraded badge until refreshed.
 - Every point layer owns its height mask (`pointCloudOverlay.heightMask`), and
   region bounds are derived in the browser from loaded background rectangles.
 - Proximity is never upgraded into ownership; weak spatial or mission context

@@ -4747,7 +4747,7 @@ def _render_background(level_id: str) -> dict:
                     "exact recovered transform may participate in spatial alignment."
                 ),
             }
-        evidence = _danger_surface_evidence(level_id, preview)
+        evidence = _surface_evidence(level_id, preview)
         if evidence:
             preview["surfaceEvidence"] = evidence
         return preview
@@ -4792,9 +4792,11 @@ _DANGER_INFERRED_HLOD_CROPS = frozenset({
 })
 
 
-def _danger_surface_evidence(level_id: str, preview: dict) -> dict | None:
-    """Concise, fail-closed surface accuracy label for the active danger maps."""
+def _surface_evidence(level_id: str, preview: dict) -> dict | None:
+    """Concise, fail-closed surface accuracy label for a recovered map."""
     status = str((preview or {}).get("status") or "")
+    mesh_status = str(((preview or {}).get("render") or {}).get("meshBindingStatus") or "")
+    exact_mesh = mesh_status == "exact_level_hlod_key"
     if level_id in _DANGER_INFERRED_HLOD_CROPS and status.startswith("inferred_hlod_"):
         return {
             "accuracy": "inferred_hlod_crop",
@@ -4804,22 +4806,23 @@ def _danger_surface_evidence(level_id: str, preview: dict) -> dict | None:
                 "source-art HLOD grid."
             ),
         }
-    if level_id == "dung02_bdg002" and status == "recovered_streaming_mesh_topdown":
+    if status in {
+        "recovered_streaming_mesh_topdown", "recovered_streaming_textured_topdown",
+    }:
+        colored = status == "recovered_streaming_textured_topdown"
+        suffix = "partial_base_color" if colored else "color_unverified"
+        grade = "exact_hlod_key_mesh" if exact_mesh else "name_candidate_mesh"
+        prefix = "Exact HLOD mesh placement" if exact_mesh else "Name-matched mesh preview"
+        color_label = "partial base color" if colored else "color unverified"
+        color_evidence = "Recovered base color is partial." if colored else "No reliable texture color is visible."
         return {
-            "accuracy": "exact_mesh_color_unverified",
-            "label": "Exact mesh placement - color unverified",
+            "accuracy": f"{grade}_{suffix}",
+            "label": f"{prefix} - {color_label}",
             "evidence": (
-                "Streaming matrices and matched mesh geometry are exact; no reliable texture color is "
-                "visible in the recovered surface."
-            ),
-        }
-    if level_id == "dung02_bdg005" and status == "recovered_streaming_textured_topdown":
-        return {
-            "accuracy": "exact_mesh_partial_base_color",
-            "label": "Exact mesh placement - partial base color",
-            "evidence": (
-                "Streaming matrices and matched mesh geometry are exact; recovered base color is visible "
-                "only on surfaces with a supported material binding."
+                "Streaming matrices are exact; the Mesh asset is selected by its name family, "
+                f"without a proved prefab/renderer relation. {color_evidence}"
+                if not exact_mesh else
+                f"Streaming matrices and HLOD-key mesh geometry are exact; {color_evidence}"
             ),
         }
     return None

@@ -44,7 +44,7 @@ from scripts.game_data.corpus_common import validate_provenance as _validate_pro
 from scripts.game_data.corpus_common import atomic_write_text as _atomic_write_text
 
 
-SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
+SCHEMA = "endfield.streaming-root-subgraphs-corpus.v16"
 FAILURE_SAMPLE_LIMIT = 25
 RAW_DATA_EXCEPTIONS = {
     "Data/Streaming/PC/DevOnly/test_tifeng_range/Streaming/InitChunkData_Global_0_0.bytes",
@@ -375,6 +375,12 @@ def sweep(
     field2_family_files: collections.Counter[str] = collections.Counter()
     packed_bytes = decoded_bytes = parsed_count = exact_info = partial_data = 0
     info_rows = parallel_rows = field5_references = field5_bytes = 0
+    parallel_empty_names = 0
+    parallel_name_ordinals: collections.Counter[tuple[int, int]] = collections.Counter()
+    parallel_name_field1_equal: collections.Counter[int] = collections.Counter()
+    parallel_name_field1_different: collections.Counter[int] = collections.Counter()
+    parallel_scalar_words: collections.Counter[tuple[int, int, int]] = collections.Counter()
+    parallel_scalar_absent: collections.Counter[tuple[int, int]] = collections.Counter()
     group_count = group_values = descriptors = blob_bytes = 0
     parallel_owned_bytes = parallel_ranges = parallel_reused = 0
     parallel_field5_vectors = parallel_field5_values = 0
@@ -911,6 +917,18 @@ def sweep(
                         parallel_nested_shapes[key] += int(shape.get("count", 0))
                     for value, count in (parallel.get("field4ByteValueCounts") or {}).items():
                         field4_values[str(value)] += int(count)
+                    parallel_empty_names += int(parallel.get("field5Field0EmptyCount", 0))
+                    name_identity = parallel.get("field5Field0NameIdentity") or {}
+                    for item in name_identity.get("nameOrdinalByTag") or []:
+                        parallel_name_ordinals[(int(item["tag"]), int(item["ordinal"]))] += int(item["count"])
+                    for tag, count in (name_identity.get("ordinalEqualsField1ByTag") or {}).items():
+                        parallel_name_field1_equal[int(tag)] += int(count)
+                    for tag, count in (name_identity.get("ordinalDiffersFromField1ByTag") or {}).items():
+                        parallel_name_field1_different[int(tag)] += int(count)
+                    for item in parallel.get("field5Field1And2ScalarWordsByTag") or []:
+                        parallel_scalar_words[(int(item["tag"]), int(item["fieldIndex"]), int(item["value"]))] += int(item["count"])
+                    for item in parallel.get("field5Field1And2AbsentByTag") or []:
+                        parallel_scalar_absent[(int(item["tag"]), int(item["fieldIndex"]))] += int(item["count"])
                     for shape in parallel.get("field5RowShapes") or []:
                         key = json.dumps(
                             [
@@ -1197,6 +1215,26 @@ def sweep(
             ),
             "field5Field0ReferenceCount": field5_references,
             "field5Field0ReferencedBytes": field5_bytes,
+            "field5Field0EmptyCount": parallel_empty_names,
+            "field5Field0InitNameIdentity": {
+                "status": "exact-current-corpus-suffix-to-parallel-id" if not failed else "unvalidated",
+                "nameCount": field5_references - parallel_empty_names,
+                "nameOrdinalByTag": [
+                    {"tag": tag, "ordinal": ordinal, "count": count}
+                    for (tag, ordinal), count in sorted(parallel_name_ordinals.items())
+                ],
+                "ordinalEqualsField1ByTag": dict(sorted(parallel_name_field1_equal.items())),
+                "ordinalDiffersFromField1ByTag": dict(sorted(parallel_name_field1_different.items())),
+                "field1AbsentComparisonUsesZero": True,
+            },
+            "field5Field1And2ScalarWordsByTag": [
+                {"tag": tag, "fieldIndex": field_index, "value": value, "count": count}
+                for (tag, field_index, value), count in sorted(parallel_scalar_words.items())
+            ],
+            "field5Field1And2AbsentByTag": [
+                {"tag": tag, "fieldIndex": field_index, "count": count}
+                for (tag, field_index), count in sorted(parallel_scalar_absent.items())
+            ],
             "field5Field0Representation": "ambiguous",
             "field5Field0RepresentationCandidates": [
                 "flatbuffer-string",
@@ -1334,9 +1372,9 @@ def sweep(
             ),
         },
         "evidenceBoundary": {
-            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte; field-2 is continuous from its vector start through EOF. Current native hashes and bounded accessor/consumer bodies establish the stored representations of row fields 0-5. The selected family-level native read path carries a payload base and requested length, records actual bytes read, and accepts success only when requested and actual lengths match.",
+            "exact": "Logical-file identities, envelopes, roots, Info EOF graphs, and the three indexed anonymous data subgraphs are checked byte-for-byte; field-2 is continuous from its vector start through EOF. Init row field-0 name suffixes equal their parallel field-3 IDs masked to 27 bits, and Streaming row field-0 byte ranges are empty. Current native hashes and bounded accessor/consumer bodies establish the stored representations of row fields 0-5. The selected family-level native read path carries a payload base and requested length, records actual bytes read, and accepts success only when requested and actual lengths match.",
             "direct": "Fields 0-2 are native-consumed scalar32 values, field 3 is two int32 loads, field 4 is six float32 loads, and field 5 is a count-prefixed vector whose elements are loaded as scalar32 hash-table keys. Numeric and Global filename-token relations are exact only over their separately reported current-corpus path families.",
-            "structuralOnly": "Field indices, stored representations, record shapes, counts, ranges, filename-token relations, nested parallel vectors, and the family-level carrier remain anonymous structure. The runtime path value is unavailable, so the carrier is not bound to one authenticated logical-file identity or content hash.",
+            "structuralOnly": "Field indices, stored representations, record shapes, per-tag scalar value distributions, counts, ranges, filename-token relations, nested parallel vectors, and the family-level carrier remain anonymous structure. The #N segment in Init names differs from row field 1 for many rows; neither supplies a semantic field label. The runtime path value is unavailable, so the carrier is not bound to one authenticated logical-file identity or content hash.",
             "ambiguous": "Field-5 row field 0 has two retained representation candidates with the same proven length-prefixed byte range.",
             "unresolved": "The concrete runtime path-to-authenticated-logical-file join, outer-length propagation into FlatBuffer accessors, final cursor, script callback overrides and actual execution, cross-root native dispatch selection, remaining nested marker15 selection, field-5 key namespace and signedness, field names, cross-file ownership, runtime selection, and game semantics are not claimed. The default selector-5 later-phase reader is a conditional static route using the second secondary root; it does not join a particular authenticated file or establish a target width.",
         },
@@ -1376,6 +1414,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Root fields 3/4/5 widths: `{layer3.get('parallelFieldWidths')}`; equal rows: {layer3.get('parallelRowCount', 0):,}.",
         f"- Parallel subgraph per-file range sums: {layer3.get('parallelRangeCountPerFileSum', 0):,} ranges; {layer3.get('parallelOwnedBytesPerFileSum', 0):,} owned bytes (not a whole-file union).",
         f"- Field-5 row field-0 references: {layer3.get('field5Field0ReferenceCount', 0):,}; referenced bytes: {layer3.get('field5Field0ReferencedBytes', 0):,}.",
+        f"- Init row names: {layer3.get('field5Field0InitNameIdentity', {}).get('nameCount', 0):,} exact 27-bit suffix/parallel-ID joins; Streaming row field-0 empty: {layer3.get('field5Field0EmptyCount', 0):,}. Init #N versus row field 1 differs by tag: `{layer3.get('field5Field0InitNameIdentity', {}).get('ordinalDiffersFromField1ByTag', {})}`. Per-tag scalar word/absence counts are in JSON; no enum labels are inferred.",
         f"- Field-5 row field-5 empty count prefixes: {layer3.get('parallelField5Field5VectorCount', 0):,}; values: {layer3.get('parallelField5Field5ValueCount', 0):,}; element width unresolved.",
         f"- Field-5 row field-3 nested tables: {layer3.get('parallelField5Field3NestedTableCount', 0):,}; equal-count width-4/1/4 rows: {layer3.get('parallelField5Field3NestedParallelCount', 0):,}; shapes: `{layer3.get('parallelField5Field3NestedTableShapeCounts')}`.",
         f"- Nested marker-17 target framing: `{layer3.get('nestedElementFraming')}`.",
