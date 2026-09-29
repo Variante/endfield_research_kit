@@ -31,8 +31,8 @@ pointers and raw trailing booleans advance only their declared member order.
 Supplemental routes are tried in order when the reviewed table has no row:
 ``levelscript_task_condition_native`` rows, then the separately gated codecs
 ``taskmap_selected_conditions``, ``taskmap_followon_conditions``,
-``taskmap_submit_condition``, ``taskmap_archery_condition`` and
-``taskmap_game_inst_duration_condition``, each admitted only while its own
+``taskmap_submit_condition``, ``taskmap_archery_condition``,
+``taskmap_game_inst_duration_condition`` and ``taskmap_fac_linking_condition``, each admitted only while its own
 native contract validates the selected build.
 
 Evidence tier: ``exact`` stored layout.  Stored conditions do not establish
@@ -495,6 +495,13 @@ def _decode_levelscript_task_condition(
         game_inst_duration = decode_selected_game_inst_duration_condition(data, start, limit)
         if game_inst_duration is not None:
             return game_inst_duration
+        from scripts.game_data.codecs.levelscript.taskmap_fac_linking_condition import (
+            decode_selected_fac_linking_mode_condition,
+        )
+
+        fac_linking = decode_selected_fac_linking_mode_condition(data, start, limit)
+        if fac_linking is not None:
+            return fac_linking
     if identity is None or identity[1] != member_count:
         return None
     condition_type = identity[0]

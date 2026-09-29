@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.levelscript-encounter-opera-segments-native.v1",
+  "schema": "endfield.levelscript-encounter-opera-segments-native.v2",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -382,6 +382,7 @@
       ]
     }
   ],
+  "supportedSegmentCounts": [1, 2],
   "sourceReceipts": [
     [
       "LevelScriptData/map01_lv007/2800340007.json",
@@ -424,6 +425,13 @@
       2544,
       2592,
       "891283FBBBC0ECB4F93D91B8FBCEB9A6236A0477F635D288A501A9A56AE99F56"
+    ],
+    [
+      "LevelScriptData/map02_lv003/23300000023.json",
+      "82C20D61C63E816BA84C62AAB68BF192A1A98ACA952900719ABC9164879B8569",
+      25322,
+      25427,
+      "ADEC560CE15FC7980FDBADCB203241AA9F78B6A113282709F9B53ACFA32B2366"
     ]
   ]
 }

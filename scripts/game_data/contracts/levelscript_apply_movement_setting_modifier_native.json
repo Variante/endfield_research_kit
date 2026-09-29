@@ -1,0 +1,300 @@
+{
+  "schema": "endfield.levelscript-apply-movement-setting-modifier-native.v1",
+  "status": "exact-current-build",
+  "evidenceBoundary": "exact",
+  "evidenceNote": "Selected ActionBase dispatch, wrapper, complete reader and formatter, ordered native reads, typed string Param context and one ledger-joined source cursor prove stored fields. Runtime movement modification remains unobserved.",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "route": {
+    "family": "ActionBase",
+    "tag": 1313,
+    "typeName": "Beyond.Gameplay.Core.ApplyMovementSettingModifier",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ApplyMovementSettingModifierForMemoryPack",
+    "typeDefinition": 19281,
+    "registeredTypeIndex": 106300,
+    "serializedMemberCount": 9,
+    "inheritedMemberCount": 8,
+    "fields": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int32"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "int32"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "nextID",
+        "int32"
+      ],
+      [
+        "modifierName",
+        "Param<string>"
+      ]
+    ],
+    "nativeDeclaredTypes": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "Beyond.GEnums.ScopeName"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "nextID",
+        "int"
+      ],
+      [
+        "modifierName",
+        "Beyond.Gameplay.Actions.Param`1<string>"
+      ]
+    ]
+  },
+  "dispatcher": {
+    "switchTableRva": 43598100,
+    "switchEntryCount": 1342,
+    "switchTableSha256": "A4B75AA63B2B4EA43A6D2FC11B08085893F62543E3A9B367C34E60E916730C88",
+    "switchTargetRva": 43226176,
+    "switchEntryHex": "E96E5A0500",
+    "bodyRva": 43577011,
+    "usageCellRva": 218465280,
+    "usageRawHex": "793E032000000000",
+    "branchWindow": {
+      "startRva": 43577011,
+      "endRva": 43577139,
+      "sha256": "891F4C74DF3BA74F0D44B25021B5D8EBD9E9D06CAE6F53885BAC22A92DAF9726",
+      "boundary": "selected wrapper usage and branch prefix"
+    },
+    "typeLoadRva": 43577046,
+    "typeLoadHex": "488B1523956C0A"
+  },
+  "methods": [
+    [
+      142238,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ApplyMovementSettingModifierForMemoryPack",
+      "Deserialize",
+      155572704
+    ],
+    [
+      142239,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ApplyMovementSettingModifierForMemoryPack+Beyond_Gameplay_Core_ApplyMovementSettingModifierForMemoryPackFormatter",
+      "Deserialize",
+      155572464
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 155572704,
+      "endRva": 155573285,
+      "sha256": "D151B0445BF13938A76680607350F43529D4860FB5DBE567F9006B6D676AF219",
+      "boundary": "complete-pdata-function"
+    },
+    {
+      "startRva": 155572464,
+      "endRva": 155572553,
+      "sha256": "518C066D774B5681F3F7BFC8E897DF8930AB0EDBE1FD67738A77B476E27CB920",
+      "boundary": "complete-pdata-function"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 155572893,
+    "hex": "807C243809"
+  },
+  "readerHelpers": {
+    "bool": 46827712,
+    "int32": 46827184,
+    "string": 46827264,
+    "Param<string>": 47864976
+  },
+  "orderedReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "dontLogWarning",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155572910,
+      "sourceCallHex": "E80DAE84F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "ID",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155572943,
+      "sourceCallHex": "E8DCAB84F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "releaseWhenExecutionFinished",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155572976,
+      "sourceCallHex": "E8CBAD84F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "uid",
+      "readKind": "string",
+      "sourceCallsiteRva": 155573009,
+      "sourceCallHex": "E8EAAB84F9",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "scopeMask",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155573050,
+      "sourceCallHex": "E871AB84F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "useCurrentScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155573083,
+      "sourceCallHex": "E860AD84F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "useGraphScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155573112,
+      "sourceCallHex": "E843AD84F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "nextID",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155573141,
+      "sourceCallHex": "E816AB84F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "modifierName",
+      "readKind": "Param<string>",
+      "sourceCallsiteRva": 155573177,
+      "sourceCallHex": "E8D28094F9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "ownSetters": [
+    {
+      "memberIndex": 8,
+      "callsiteRva": 155573196,
+      "callHex": "E8FF010000",
+      "targetRva": 155573712,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_ApplyMovementSettingModifierForMemoryPack",
+      "methodIndex": 142235,
+      "setterName": "set___modifierName__"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 8,
+      "instructionRva": 155573164,
+      "instructionHex": "488B15A586C403",
+      "cellRva": 218784344,
+      "usageRawHex": "FFE912C000000000",
+      "methodSpecIndex": 619775,
+      "methodSpec": [
+        428464,
+        -1,
+        13654
+      ],
+      "argumentRawHex": "0858208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647233496,
+        "typeRawHex": "0858208D010000000000150000000000",
+        "carrierPointerVa": 6662674440,
+        "carrierRawHex": "28C0248D01000000C039FE8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6626884032,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 891,
+        "table_slot_va": 6625981304,
+        "record_va": 6626884032,
+        "argument_vector_va": 6669020808,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664879672,
+            "raw_type_record_hex": "C78C00000000000000000E0000000000"
+          }
+        ]
+      },
+      "elementRawHex": "C78C00000000000000000E0000000000",
+      "elementTypeKind": 14,
+      "elementTypeDefinition": null,
+      "elementTypeName": "System.String",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    }
+  ],
+  "enumTypes": [],
+  "sourceLedger": {
+    "summary": "reports/animestudio/jsondata_current_latest.json",
+    "ledger": "reports/animestudio/jsondata_current_files_latest.jsonl.gz",
+    "family": "LevelScriptData"
+  },
+  "sourceReceipts": [
+    [
+      "LevelScriptData/dung02_rcdg003/40700000002.json",
+      "A491C52F60B7777EA95F432AE2F14C80B52F0E33C7DBC6DBA1C70CA1B93C3494",
+      229,
+      290,
+      "FF4227AF63FD87F57FA086F0EB75D7AC896211E94A319BDAD36E23EDE4663F9C"
+    ]
+  ]
+}

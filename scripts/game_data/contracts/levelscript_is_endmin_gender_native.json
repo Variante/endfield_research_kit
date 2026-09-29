@@ -1,0 +1,377 @@
+{
+  "schema": "endfield.levelscript-is-endmin-gender-native.v1",
+  "status": "exact-current-build",
+  "evidenceBoundary": "exact",
+  "evidenceNote": "Selected PureGetter switch jump and registered wrapper; complete generated reader and formatter, eight ordered reads/setters, typed Gender parameter context, native enum backing/members, and three ledger-joined source cursors in one selected file prove the stored getter. Runtime gender evaluation is unobserved.",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "route": {
+    "family": "GetterBase",
+    "tag": 453,
+    "typeName": "Beyond.Gameplay.Actions.IsEndminGender",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_IsEndminGenderForMemoryPack",
+    "typeDefinition": 21643,
+    "registeredTypeIndex": 103878,
+    "serializedMemberCount": 8,
+    "inheritedMemberCount": 7,
+    "ownMemberCount": 1,
+    "fields": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int32"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "int32"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "gender",
+        "Param<Gender>"
+      ]
+    ],
+    "nativeDeclaredTypes": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "Beyond.GEnums.ScopeName"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "gender",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Actions.IsEndminGender+Gender>"
+      ]
+    ]
+  },
+  "dispatcher": {
+    "switchTableRva": 43961008,
+    "switchEntryCount": 1106,
+    "switchTableSha256": "C2543E5D3132A3E5B3845B905279CA8C991E316BE368CC891DCFB9BE8F243064",
+    "switchTargetRva": 43648216,
+    "switchEntryHex": "E9DAF10100",
+    "bodyRva": 43775671,
+    "usageCellRva": 218593608,
+    "usageRawHex": "8D2B032000000000",
+    "branchWindow": {
+      "startRva": 43775671,
+      "endRva": 43775775,
+      "sha256": "E49CC3A26735A5F0DD18CDA7C141D649C9FCD2FBC584672B47CCE52D31BB6193",
+      "boundary": "selected wrapper usage branch prefix"
+    },
+    "typeLoadRva": 43775706,
+    "typeLoadHex": "488B1567826B0A"
+  },
+  "methods": [
+    [
+      157525,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_IsEndminGenderForMemoryPack",
+      "Deserialize",
+      157215656
+    ],
+    [
+      157526,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_IsEndminGenderForMemoryPack+Beyond_Gameplay_Actions_IsEndminGenderForMemoryPackFormatter",
+      "Deserialize",
+      157215416
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 157215656,
+      "endRva": 157216204,
+      "sha256": "EABF6EB265F37C6AFBC4EC63C5418385E0B0B3BD7BFA410EE61C6774A3D429A8",
+      "boundary": "complete generated source reader body"
+    },
+    {
+      "startRva": 157215416,
+      "endRva": 157215505,
+      "sha256": "64FBA742866B8E4F53481B00DF70090D3113F07C12BD4B54179E49495C40B158",
+      "boundary": "complete forwarding formatter body"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 157215845,
+    "hex": "807C243808"
+  },
+  "readerHelpers": {
+    "bool": 46827712,
+    "int32": 46827184,
+    "string": 46827264,
+    "Param<Gender>": 47864976
+  },
+  "orderedReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "dontLogWarning",
+      "readKind": "bool",
+      "sourceCallsiteRva": 157215862,
+      "sourceCallHex": "E8459C6BF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "ID",
+      "readKind": "int32",
+      "sourceCallsiteRva": 157215895,
+      "sourceCallHex": "E8149A6BF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "releaseWhenExecutionFinished",
+      "readKind": "bool",
+      "sourceCallsiteRva": 157215928,
+      "sourceCallHex": "E8039C6BF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "uid",
+      "readKind": "string",
+      "sourceCallsiteRva": 157215961,
+      "sourceCallHex": "E8229A6BF9",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "scopeMask",
+      "readKind": "int32",
+      "sourceCallsiteRva": 157216002,
+      "sourceCallHex": "E8A9996BF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "useCurrentScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 157216031,
+      "sourceCallHex": "E89C9B6BF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "useGraphScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 157216060,
+      "sourceCallHex": "E87F9B6BF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "gender",
+      "readKind": "Param<Gender>",
+      "sourceCallsiteRva": 157216096,
+      "sourceCallHex": "E82B6F7BF9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "setters": [
+    {
+      "memberIndex": 0,
+      "callsiteRva": 157215884,
+      "callHex": "E80F01A9FB",
+      "targetRva": 84405664,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126158,
+      "setterName": "set____dontLogWarning__"
+    },
+    {
+      "memberIndex": 1,
+      "callsiteRva": 157215917,
+      "callHex": "E8A2F7A8FB",
+      "targetRva": 84403284,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126159,
+      "setterName": "set____ID__"
+    },
+    {
+      "memberIndex": 2,
+      "callsiteRva": 157215950,
+      "callHex": "E8A902A9FB",
+      "targetRva": 84406140,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126160,
+      "setterName": "set____releaseWhenExecutionFinished__"
+    },
+    {
+      "memberIndex": 3,
+      "callsiteRva": 157215984,
+      "callHex": "E85BB1C1F9",
+      "targetRva": 52469328,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126161,
+      "setterName": "set____uid__"
+    },
+    {
+      "memberIndex": 4,
+      "callsiteRva": 157216020,
+      "callHex": "E8B311A9FB",
+      "targetRva": 84410060,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126162,
+      "setterName": "set___scopeMask__"
+    },
+    {
+      "memberIndex": 5,
+      "callsiteRva": 157216049,
+      "callHex": "E86A25A9FB",
+      "targetRva": 84415136,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126163,
+      "setterName": "set___useCurrentScope__"
+    },
+    {
+      "memberIndex": 6,
+      "callsiteRva": 157216078,
+      "callHex": "E8591BA9FB",
+      "targetRva": 84412588,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_NodeBaseForMemoryPack",
+      "methodIndex": 126164,
+      "setterName": "set___useGraphScope__"
+    },
+    {
+      "memberIndex": 7,
+      "callsiteRva": 157216115,
+      "callHex": "E8FC010000",
+      "targetRva": 157216628,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_IsEndminGenderForMemoryPack",
+      "methodIndex": 157522,
+      "setterName": "set___gender__"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 7,
+      "readerMethodName": "ReadValue",
+      "instructionRva": 157216083,
+      "instructionHex": "488B153E535804",
+      "cellRva": 230113432,
+      "usageRawHex": "45EA12C000000000",
+      "methodSpecIndex": 619810,
+      "methodSpec": [
+        428464,
+        -1,
+        13690
+      ],
+      "argumentRawHex": "3853208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647235128,
+        "typeRawHex": "3853208D010000000000150000000000",
+        "carrierPointerVa": 6662673208,
+        "carrierRawHex": "28C0248D01000000E0ECED8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6625815776,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 26652,
+        "table_slot_va": 6626187392,
+        "record_va": 6625815776,
+        "argument_vector_va": 6668515120,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6662508184,
+            "raw_type_record_hex": "0C170000000000000000118000000000"
+          }
+        ]
+      },
+      "elementRawHex": "0C170000000000000000118000000000",
+      "elementTypeKind": 17,
+      "elementTypeDefinition": 5900,
+      "elementTypeName": "Beyond.Gameplay.Actions.IsEndminGender+Gender",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    }
+  ],
+  "sourceReceipts": [
+    [
+      "LevelScriptData/map01_lv006/3500240007.json",
+      "1B7A2A3BD6F94832E901469A93364ADF7CF7A9808CFC0826A31C49562DD99625",
+      7000,
+      7045,
+      "727230C02A49CC1AE9F16E810EA6047B4D1ABBB822D63A898C90FF811CC58AAA"
+    ],
+    [
+      "LevelScriptData/map01_lv006/3500240007.json",
+      "1B7A2A3BD6F94832E901469A93364ADF7CF7A9808CFC0826A31C49562DD99625",
+      7073,
+      7118,
+      "F5DAE00079E7D96797CD66B42FF4D8FB51A3A9DE19826BD8EBD1B419B8BF178F"
+    ],
+    [
+      "LevelScriptData/map01_lv006/3500240007.json",
+      "1B7A2A3BD6F94832E901469A93364ADF7CF7A9808CFC0826A31C49562DD99625",
+      7146,
+      7191,
+      "45540157BAE5B0F3CF875DFADFB7077B5F75F4526D5466D09F0F62D30E9D685B"
+    ]
+  ],
+  "enumUnderlying": {
+    "memberIndex": 7,
+    "typeName": "Beyond.Gameplay.Actions.IsEndminGender+Gender",
+    "typeDefinition": 5900,
+    "underlyingType": "int",
+    "members": [
+      {
+        "id": 1,
+        "name": "Male",
+        "fieldIndex": 27161,
+        "token": "0x04006a1a"
+      },
+      {
+        "id": 2,
+        "name": "Female",
+        "fieldIndex": 27162,
+        "token": "0x04006a1b"
+      }
+    ]
+  }
+}

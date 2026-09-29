@@ -1,0 +1,41 @@
+{
+  "schema": "endfield.level-enemy-default-action-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "evidenceBoundary": "direct",
+  "owner": {
+    "wrappedType": "Beyond.Gameplay.LevelEnemyData",
+    "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_LevelEnemyDataForMemoryPack",
+    "wrapperDefinition": 13763,
+    "serializedMemberCount": 30,
+    "readerMethod": [103443, "Beyond.MemoryPack.Beyond_Gameplay_LevelEnemyDataForMemoryPack", "Deserialize", 53255264],
+    "fields": [
+      {"memberIndex": 18, "name": "enemyDefaultActionType", "declaredType": "Beyond.Gameplay.AI.EnemyDefaultActionType", "setterMethodIndex": 103429, "readCallRva": 53256262, "readTargetRva": 46827184, "setterCallRva": 53256284, "setterTargetRva": 53253808},
+      {"memberIndex": 19, "name": "enemyGroupId", "declaredType": "int", "setterMethodIndex": 103430, "readCallRva": 53256295, "readTargetRva": 46827184, "setterCallRva": 53256317, "setterTargetRva": 53253920},
+      {"memberIndex": 21, "name": "extraDelayToRecycleTime", "declaredType": "System.Nullable`1<float>", "setterMethodIndex": 103432, "readCallRva": 53256369, "readTargetRva": 65558368, "setterCallRva": 53256392, "setterTargetRva": 53254144}
+    ],
+    "codeWindows": [
+      {"startRva": 53256249, "endRva": 53256397, "sha256": "6DB03BA45231D36CA6EDBAE33A0D259E859CC97CC8F2C973F04033B63047655F"},
+      {"startRva": 46827184, "endRva": 46827264, "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65"},
+      {"startRva": 65558368, "endRva": 65558574, "sha256": "520F08E6A5C438AD46C7151FD00193AE01FCA608ECE11D5C210619C2EBC2196B"}
+    ]
+  },
+  "enum": {
+    "typeName": "Beyond.Gameplay.AI.EnemyDefaultActionType",
+    "typeDefinition": 7651,
+    "underlyingType": "int",
+    "members": [{"id": 0, "name": "Patrol", "fieldIndex": 32588, "token": "0x04007f4d"}]
+  },
+  "sourceReceipt": {
+    "path": "LevelScriptData/map01_lv001/2100130031.json",
+    "length": 5577,
+    "sha256": "FB1E3C1395423497C4B871FCD709E3B749EB5F0F7EBDD4CF1D82020E453D34D0",
+    "enumValue": {"offset": 3534, "rawHex": "01000000", "name": null},
+    "nullableFloat": {"offset": 4190, "rawHex": "010000000000F042", "hasValueOffset": 0, "floatOffset": 4, "value": 120.0},
+    "expectedStatus": "named_exact"
+  }
+}

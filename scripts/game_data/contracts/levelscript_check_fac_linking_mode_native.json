@@ -1,0 +1,336 @@
+{
+  "schema": "endfield.levelscript-check-fac-linking-mode-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected GameCondition switch entry, wrapper, complete reader and formatter, ordered field reads/setters, two typed Param contexts, integer LinkType enum and one ledger-joined source span prove stored fields.",
+    "unresolved": "Runtime facility-link evaluation and task condition truth are unobserved."
+  },
+  "dispatcher": {
+    "tableRva": 68703464,
+    "entryCount": 314,
+    "tableSha256": "D08932E3090101306862EC57A2C6BC02900C41CC25B0E271D9CD1DBE4B5D0D56"
+  },
+  "route": {
+    "family": "GameCondition",
+    "tag": 193,
+    "typeName": "Beyond.Gameplay.Conditions.CheckIsInFacLinkingMode",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInFacLinkingModeForMemoryPack",
+    "typeDefinition": 14573,
+    "registeredTypeIndex": 106170,
+    "switchTargetRva": 83400575,
+    "bodyRva": 83400575,
+    "usageCellRva": 218777416,
+    "usageRawHex": "753D032000000000",
+    "serializedMemberCount": 6,
+    "inheritedMemberCount": 4,
+    "fields": [
+      [
+        "scopeMask",
+        "enum32"
+      ],
+      [
+        "uniqueId",
+        "string"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "isInFacLinkingMode",
+        "Param<bool>"
+      ],
+      [
+        "targetFacLinkingModeType",
+        "Param<LinkType>"
+      ]
+    ],
+    "nativeDeclaredTypes": [
+      [
+        "scopeMask",
+        "Beyond.GEnums.ScopeName"
+      ],
+      [
+        "uniqueId",
+        "string"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "isInFacLinkingMode",
+        "Beyond.Gameplay.Actions.Param`1<bool>"
+      ],
+      [
+        "targetFacLinkingModeType",
+        "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.GameMech.LinkWireBrain+LinkType>"
+      ]
+    ],
+    "methods": [
+      [
+        109691,
+        "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInFacLinkingModeForMemoryPack",
+        "Deserialize",
+        157794700
+      ],
+      [
+        109692,
+        "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInFacLinkingModeForMemoryPack+Beyond_Gameplay_Conditions_CheckIsInFacLinkingModeForMemoryPackFormatter",
+        "Deserialize",
+        157794460
+      ]
+    ],
+    "codeWindows": [
+      {
+        "startRva": 157794700,
+        "endRva": 157795202,
+        "sha256": "FF9DBA2D86275D01232C210AACF6EBB5B71B6EFD193B28E2AD9313B691131FC1",
+        "boundary": "complete-pdata-function"
+      },
+      {
+        "startRva": 157794460,
+        "endRva": 157794549,
+        "sha256": "49B5D0F2D0B45F1A3998A2F7D89ECABEEE9F1FE39685CA4C9B8A3EEFC74ED22D",
+        "boundary": "complete-pdata-function"
+      }
+    ],
+    "formatterTailJump": {
+      "instructionRva": 157794544,
+      "instructionHex": "E997000000",
+      "targetRva": 157794700
+    },
+    "memberCountInstruction": {
+      "rva": 157794901,
+      "hex": "807C243806"
+    },
+    "orderedReads": [
+      {
+        "memberIndex": 0,
+        "fieldName": "scopeMask",
+        "readKind": "enum32",
+        "readCallRva": 157794925,
+        "readCallHex": "E83EC462F9",
+        "readTargetRva": 46827184,
+        "setterCallRva": 157794947,
+        "setterCallHex": "E8783585FA",
+        "setterTargetRva": 65861632,
+        "setterMethodIndex": 104731,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+        "setterName": "set___scopeMask__"
+      },
+      {
+        "memberIndex": 1,
+        "fieldName": "uniqueId",
+        "readKind": "string",
+        "readCallRva": 157794958,
+        "readCallHex": "E86DC462F9",
+        "readTargetRva": 46827264,
+        "setterCallRva": 157794981,
+        "setterCallHex": "E816B8B8F9",
+        "setterTargetRva": 52460224,
+        "setterMethodIndex": 104732,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+        "setterName": "set___uniqueId__"
+      },
+      {
+        "memberIndex": 2,
+        "fieldName": "useCurrentScope",
+        "readKind": "bool",
+        "readCallRva": 157794992,
+        "readCallHex": "E80BC662F9",
+        "readTargetRva": 46827712,
+        "setterCallRva": 157795010,
+        "setterCallHex": "E8593585FA",
+        "setterTargetRva": 65861664,
+        "setterMethodIndex": 104733,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+        "setterName": "set___useCurrentScope__"
+      },
+      {
+        "memberIndex": 3,
+        "fieldName": "useGraphScope",
+        "readKind": "bool",
+        "readCallRva": 157795021,
+        "readCallHex": "E8EEC562F9",
+        "readTargetRva": 46827712,
+        "setterCallRva": 157795039,
+        "setterCallHex": "E85C3585FA",
+        "setterTargetRva": 65861696,
+        "setterMethodIndex": 104734,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+        "setterName": "set___useGraphScope__"
+      },
+      {
+        "memberIndex": 4,
+        "fieldName": "isInFacLinkingMode",
+        "readKind": "Param<bool>",
+        "readCallRva": 157795057,
+        "readCallHex": "E89A9972F9",
+        "readTargetRva": 47864976,
+        "setterCallRva": 157795076,
+        "setterCallHex": "E823020000",
+        "setterTargetRva": 157795628,
+        "setterMethodIndex": 109687,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInFacLinkingModeForMemoryPack",
+        "setterName": "set____isInFacLinkingMode__"
+      },
+      {
+        "memberIndex": 5,
+        "fieldName": "targetFacLinkingModeType",
+        "readKind": "Param<LinkType>",
+        "readCallRva": 157795094,
+        "readCallHex": "E8759972F9",
+        "readTargetRva": 47864976,
+        "setterCallRva": 157795113,
+        "setterCallHex": "E832020000",
+        "setterTargetRva": 157795680,
+        "setterMethodIndex": 109688,
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInFacLinkingModeForMemoryPack",
+        "setterName": "set____targetFacLinkingModeType__"
+      }
+    ],
+    "paramContexts": [
+      {
+        "memberIndex": 4,
+        "fieldName": "isInFacLinkingMode",
+        "readerMethodName": "ReadValue",
+        "instructionRva": 157795044,
+        "instructionHex": "488B15959DA203",
+        "cellRva": 218783872,
+        "usageRawHex": "5BE912C000000000",
+        "methodSpecIndex": 619693,
+        "methodSpec": [
+          428464,
+          -1,
+          13572
+        ],
+        "argumentRawHex": "9886208D010000000000150000000000",
+        "typeKind": 21,
+        "classCarrier": {
+          "typePointerVa": 6647245576,
+          "typeRawHex": "9886208D010000000000150000000000",
+          "carrierPointerVa": 6662686360,
+          "carrierRawHex": "28C0248D010000004048FE8A0100000000000000000000000000000000000000",
+          "basePointerVa": 6662963240,
+          "baseRawHex": "141A0000000000000000120000000000",
+          "baseDefinitionIndex": 6676,
+          "classInstantiationPointerVa": 6626887744,
+          "opaqueCarrierTailHex": "00000000000000000000000000000000"
+        },
+        "classInstantiation": {
+          "index": 768,
+          "table_slot_va": 6625980320,
+          "record_va": 6626887744,
+          "argument_vector_va": 6669024216,
+          "padding_hex": "00000000",
+          "arguments": [
+            {
+              "index": 0,
+              "type_pointer_va": 6664809048,
+              "raw_type_record_hex": "FA8C0000000000000000028000000000"
+            }
+          ]
+        },
+        "elementRawHex": "FA8C0000000000000000028000000000",
+        "elementTypeKind": 2,
+        "elementTypeDefinition": null,
+        "elementTypeName": "bool"
+      },
+      {
+        "memberIndex": 5,
+        "fieldName": "targetFacLinkingModeType",
+        "readerMethodName": "ReadValue",
+        "instructionRva": 157795081,
+        "instructionHex": "488B15987A4A04",
+        "cellRva": 229785000,
+        "usageRawHex": "47EA12C000000000",
+        "methodSpecIndex": 619811,
+        "methodSpec": [
+          428464,
+          -1,
+          13691
+        ],
+        "argumentRawHex": "C853208D010000000000150000000000",
+        "typeKind": 21,
+        "classCarrier": {
+          "typePointerVa": 6647235080,
+          "typeRawHex": "C853208D010000000000150000000000",
+          "carrierPointerVa": 6662673352,
+          "carrierRawHex": "28C0248D0100000000EDED8A0100000000000000000000000000000000000000",
+          "basePointerVa": 6662963240,
+          "baseRawHex": "141A0000000000000000120000000000",
+          "baseDefinitionIndex": 6676,
+          "classInstantiationPointerVa": 6625815808,
+          "opaqueCarrierTailHex": "00000000000000000000000000000000"
+        },
+        "classInstantiation": {
+          "index": 26653,
+          "table_slot_va": 6626187400,
+          "record_va": 6625815808,
+          "argument_vector_va": 6668515144,
+          "padding_hex": "00000000",
+          "arguments": [
+            {
+              "index": 0,
+              "type_pointer_va": 6662508328,
+              "raw_type_record_hex": "94320000000000000000118000000000"
+            }
+          ]
+        },
+        "elementRawHex": "94320000000000000000118000000000",
+        "elementTypeKind": 17,
+        "elementTypeDefinition": 12948,
+        "elementTypeName": "Beyond.Gameplay.Core.GameMech.LinkWireBrain+LinkType"
+      }
+    ],
+    "sourceReceipts": [
+      [
+        "LevelScriptData/map01_lv001/2100060010.json",
+        "D11615381A7E124DAA36524F15F83D5B50D27AD2639950C4A44B059B814DD3AF",
+        4245,
+        4296,
+        "6810EDDE4F9F6567705CF6223B45E9F238BAB59AA621F34800F1D995B133FD0E"
+      ]
+    ]
+  },
+  "enumAlias": {
+    "wireName": "LinkType",
+    "typeName": "Beyond.Gameplay.Core.GameMech.LinkWireBrain+LinkType",
+    "underlyingType": "int",
+    "width": 4,
+    "members": [
+      {
+        "id": 0,
+        "name": "None",
+        "fieldIndex": 60473,
+        "token": "0x0400ec3a"
+      },
+      {
+        "id": 1,
+        "name": "PowerPole",
+        "fieldIndex": 60474,
+        "token": "0x0400ec3b"
+      },
+      {
+        "id": 2,
+        "name": "Udpipe",
+        "fieldIndex": 60475,
+        "token": "0x0400ec3c"
+      }
+    ]
+  }
+}

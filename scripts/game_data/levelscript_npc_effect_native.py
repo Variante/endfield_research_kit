@@ -12,10 +12,9 @@ backings. Passing `--export-root`, `--ledger` and `--summary` together also
 replays the reviewed source spans against the current JsonData ledger. The
 command prints its audit and exits nonzero unless it validates.
 
-This is an isolated validator: the route is not registered in the shared
-ActionMap layout (`codecs/levelscript/action_map_layouts.json`), so the
-sequential LevelScript owner does not admit it yet. Integrate it there and
-replay the production source corpus before any whole-owner claim.
+The route is registered in the shared ActionMap layout, which admits it only
+while this validator passes on the installed build. Source-span replay is
+exact; whole-owner closure awaits the full JsonData corpus gate.
 
 `PlayEffectOnNpc` (12 members) is a different wrapper from the integrated
 `PlayEffectOnNpcProxy` route (`levelscript_npc_proxy_effect_native`): the

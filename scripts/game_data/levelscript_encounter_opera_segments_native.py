@@ -31,7 +31,7 @@ from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.memorypack.wrapper_members import derive_from_image
 
 
-SCHEMA = "endfield.levelscript-encounter-opera-segments-native.v1"
+SCHEMA = "endfield.levelscript-encounter-opera-segments-native.v2"
 LABEL = "levelscriptEncounterOperaSegmentsNative"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_encounter_opera_segments_native.json"
 _RECORDS = (
@@ -44,6 +44,7 @@ def _contract(path: Path) -> dict[str, Any]:
     records = contract.get("records") or []
     structs = contract.get("structs") or {}
     receipts = contract.get("sourceReceipts") or []
+    segment_counts = contract.get("supportedSegmentCounts")
     if (
         contract.get("schema") != SCHEMA
         or contract.get("status") != "exact-current-build"
@@ -51,6 +52,11 @@ def _contract(path: Path) -> dict[str, Any]:
         != {"GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll"}
         or [row.get("name") for row in records] != list(_RECORDS)
         or set(structs) != set(_RECORDS)
+        or not isinstance(segment_counts, list)
+        or not segment_counts
+        or len(set(segment_counts)) != len(segment_counts)
+        or any(type(count) is not int or count <= 0 or count > 0x10000
+               for count in segment_counts)
         or not receipts
         or any(len(row) != 5 for row in receipts)
         or len({(row[0], row[2]) for row in receipts}) != len(receipts)

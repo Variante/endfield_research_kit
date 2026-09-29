@@ -298,3 +298,36 @@ def decode_constant_entity_ptr_param(
         "paramSource": param_source,
         "path": path,
     }, cursor
+
+
+def decode_entity_ptr_getter_ref_array(
+    payload: bytes,
+    cursor: int,
+) -> tuple[list[dict[str, Any]] | None, int] | None:
+    """Read a counted Param<EntityPtr> array with getter-reference children.
+
+    The selected ListMakeEntityPtr sources reach one getter-reference child
+    each. Other child framings remain unsupported and fail closed.
+    """
+    if cursor + 4 > len(payload):
+        return None
+    count = struct.unpack_from("<i", payload, cursor)[0]
+    cursor += 4
+    if count == -1:
+        return None, cursor
+    if count < 0 or count > 10_000 or count > (len(payload) - cursor) // 27:
+        return None
+    values: list[dict[str, Any]] = []
+    for _ in range(count):
+        child = decode_constant_entity_ptr_param(payload, cursor)
+        if child is None:
+            return None
+        value, cursor = child
+        if (
+            value["logicId"] != 0 or value["slotId"] != 0 or value["useSlotId"]
+            or not 0 <= value["idRef"] <= 0x10000
+            or value["paramSource"] != -1 or value["path"] is not None
+        ):
+            return None
+        values.append(value)
+    return values, cursor

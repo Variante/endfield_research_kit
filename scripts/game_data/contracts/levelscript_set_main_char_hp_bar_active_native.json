@@ -1,0 +1,356 @@
+{
+  "schema": "endfield.levelscript-set-main-char-hp-bar-active-native.v1",
+  "status": "exact-current-build",
+  "evidenceBoundary": "exact",
+  "evidenceNote": "Selected ActionBase dispatch, wrapper, complete reader and formatter, ordered native reads, typed boolean Param context and nine ledger-joined source cursors in seven selected files prove stored fields. Runtime HUD state remains unobserved.",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "route": {
+    "family": "ActionBase",
+    "tag": 1118,
+    "typeName": "Beyond.Gameplay.Actions.SetMainCharHpBarActive",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetMainCharHpBarActiveForMemoryPack",
+    "typeDefinition": 18497,
+    "registeredTypeIndex": 105668,
+    "serializedMemberCount": 9,
+    "inheritedMemberCount": 8,
+    "fields": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int32"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "int32"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "nextID",
+        "int32"
+      ],
+      [
+        "active",
+        "Param<bool>"
+      ]
+    ],
+    "nativeDeclaredTypes": [
+      [
+        "dontLogWarning",
+        "bool"
+      ],
+      [
+        "ID",
+        "int"
+      ],
+      [
+        "releaseWhenExecutionFinished",
+        "bool"
+      ],
+      [
+        "uid",
+        "string"
+      ],
+      [
+        "scopeMask",
+        "Beyond.GEnums.ScopeName"
+      ],
+      [
+        "useCurrentScope",
+        "bool"
+      ],
+      [
+        "useGraphScope",
+        "bool"
+      ],
+      [
+        "nextID",
+        "int"
+      ],
+      [
+        "active",
+        "Beyond.Gameplay.Actions.Param`1<bool>"
+      ]
+    ]
+  },
+  "dispatcher": {
+    "switchTableRva": 43598100,
+    "switchEntryCount": 1342,
+    "switchTableSha256": "A4B75AA63B2B4EA43A6D2FC11B08085893F62543E3A9B367C34E60E916730C88",
+    "switchTargetRva": 43224226,
+    "switchEntryHex": "E9AB960400",
+    "bodyRva": 43524946,
+    "usageCellRva": 218468088,
+    "usageRawHex": "8939032000000000",
+    "branchWindow": {
+      "startRva": 43524946,
+      "endRva": 43525074,
+      "sha256": "EC5EA4142B16AE0DCC4892E8405D5AEFF3A3EB7D9EF0070725E900F2F7CE5888",
+      "boundary": "selected wrapper usage and branch prefix"
+    },
+    "typeLoadRva": 43524981,
+    "typeLoadHex": "488B157C6B6D0A"
+  },
+  "methods": [
+    [
+      136929,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetMainCharHpBarActiveForMemoryPack",
+      "Deserialize",
+      155022944
+    ],
+    [
+      136930,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetMainCharHpBarActiveForMemoryPack+Beyond_Gameplay_Actions_SetMainCharHpBarActiveForMemoryPackFormatter",
+      "Deserialize",
+      155022704
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 155022944,
+      "endRva": 155023525,
+      "sha256": "B3ECB06EA25D9BF0AF1570F24042BABC56D168EA0C2B2EDC60745CB57EBB8F46",
+      "boundary": "complete-pdata-function"
+    },
+    {
+      "startRva": 155022704,
+      "endRva": 155022793,
+      "sha256": "42C0102AD3B6C87F5F98A6D8A5434149082100CAE0BF4C03FBBA5F8D517C01A1",
+      "boundary": "complete-pdata-function"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 155023133,
+    "hex": "807C243809"
+  },
+  "readerHelpers": {
+    "bool": 46827712,
+    "int32": 46827184,
+    "string": 46827264,
+    "Param<bool>": 47864976
+  },
+  "orderedReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "dontLogWarning",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155023150,
+      "sourceCallHex": "E88D118DF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "ID",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155023183,
+      "sourceCallHex": "E85C0F8DF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "releaseWhenExecutionFinished",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155023216,
+      "sourceCallHex": "E84B118DF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "uid",
+      "readKind": "string",
+      "sourceCallsiteRva": 155023249,
+      "sourceCallHex": "E86A0F8DF9",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "scopeMask",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155023290,
+      "sourceCallHex": "E8F10E8DF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "useCurrentScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155023323,
+      "sourceCallHex": "E8E0108DF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "useGraphScope",
+      "readKind": "bool",
+      "sourceCallsiteRva": 155023352,
+      "sourceCallHex": "E8C3108DF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "nextID",
+      "readKind": "int32",
+      "sourceCallsiteRva": 155023381,
+      "sourceCallHex": "E8960E8DF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "active",
+      "readKind": "Param<bool>",
+      "sourceCallsiteRva": 155023417,
+      "sourceCallHex": "E852E49CF9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "ownSetters": [
+    {
+      "memberIndex": 8,
+      "callsiteRva": 155023436,
+      "callHex": "E8FF010000",
+      "targetRva": 155023952,
+      "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Actions_SetMainCharHpBarActiveForMemoryPack",
+      "methodIndex": 136926,
+      "setterName": "set____active__"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 8,
+      "instructionRva": 155023404,
+      "instructionHex": "488B154DE8CC03",
+      "cellRva": 218783872,
+      "usageRawHex": "5BE912C000000000",
+      "methodSpecIndex": 619693,
+      "methodSpec": [
+        428464,
+        -1,
+        13572
+      ],
+      "argumentRawHex": "9886208D010000000000150000000000",
+      "typeKind": 21,
+      "classCarrier": {
+        "typePointerVa": 6647245576,
+        "typeRawHex": "9886208D010000000000150000000000",
+        "carrierPointerVa": 6662686360,
+        "carrierRawHex": "28C0248D010000004048FE8A0100000000000000000000000000000000000000",
+        "basePointerVa": 6662963240,
+        "baseRawHex": "141A0000000000000000120000000000",
+        "baseDefinitionIndex": 6676,
+        "classInstantiationPointerVa": 6626887744,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 768,
+        "table_slot_va": 6625980320,
+        "record_va": 6626887744,
+        "argument_vector_va": 6669024216,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664809048,
+            "raw_type_record_hex": "FA8C0000000000000000028000000000"
+          }
+        ]
+      },
+      "elementRawHex": "FA8C0000000000000000028000000000",
+      "elementTypeKind": 2,
+      "elementTypeDefinition": null,
+      "elementTypeName": "System.Boolean",
+      "baseTypeName": "Beyond.Gameplay.Actions.Param`1"
+    }
+  ],
+  "enumTypes": [],
+  "sourceLedger": {
+    "summary": "reports/animestudio/jsondata_current_latest.json",
+    "ledger": "reports/animestudio/jsondata_current_files_latest.jsonl.gz",
+    "family": "LevelScriptData"
+  },
+  "sourceReceipts": [
+    [
+      "LevelScriptData/dung02_rcdg001/40400000002.json",
+      "A6CBD7695C0DC675604D0B6A9177B299F57D72CCB0543740354DD2CDB742AC3F",
+      901,
+      947,
+      "0B57321CBFDE9B3FE281DBB8265040F15BB300E0A9F5A849B3F11A5EAE52B368"
+    ],
+    [
+      "LevelScriptData/dung02_rcdg002/40600000002.json",
+      "754E562A34AF1C33D68E8D06E113B02216513020ABC0D69F19E1BD4822DC574E",
+      51,
+      97,
+      "F44A441BBA641FEECD11F1EB40FEBA03A3B04422442543E9CF8D6F462C62DD87"
+    ],
+    [
+      "LevelScriptData/dung02_rcdg003/40700000002.json",
+      "A491C52F60B7777EA95F432AE2F14C80B52F0E33C7DBC6DBA1C70CA1B93C3494",
+      51,
+      97,
+      "A6E331395E58D0F8F9C5740F44DFF32865CBDAB9E664EBFCC150F5F2C171B9E6"
+    ],
+    [
+      "LevelScriptData/dung02_rcdg004/42100000002.json",
+      "111343997226882B9CF68F6C1D4D9F1DD11A812D2173B770CCCA3DD28720D050",
+      183,
+      229,
+      "3AFDEC914148F1DBC127FD5CCC4BD5AAF633EA9052ABD8C5A914B14E814D0925"
+    ],
+    [
+      "LevelScriptData/indie_dg002/8700000004.json",
+      "7FF5BCE494331F67F1197F30B7340472B84281804D618B4178C3055E057C7D02",
+      437,
+      483,
+      "D506A890900B6C9641921A61F31BAD6F4F9B55EECFE4DA6234BC101F1089869F"
+    ],
+    [
+      "LevelScriptData/indie_dg002/8700000015.json",
+      "8E422EFC614B7EC32CB1CA521298F9C69487F3627A820C07350C9F35A9156C11",
+      793,
+      839,
+      "CABE5D36FCCD73D6F9F06B022C24C09CC206A22F4929D9A731D6E4DCBA4D30E3"
+    ],
+    [
+      "LevelScriptData/indie_dg002/8700000015.json",
+      "8E422EFC614B7EC32CB1CA521298F9C69487F3627A820C07350C9F35A9156C11",
+      2291,
+      2337,
+      "0AF00D8F9ECA012960DE1581FA3A13E4277A90DDACE37B9B3DFE1867A1FEA909"
+    ],
+    [
+      "LevelScriptData/indie_dg002/8700000016.json",
+      "CB64DF94FD482F049DE27545603B4143898693EA2878B98CAC712C18FCA60039",
+      128,
+      174,
+      "7FB01C1DD7FEC7594B97FF1B72E0399BCB78F18960A4BB6576343E4E0979C6C0"
+    ],
+    [
+      "LevelScriptData/indie_dg002/8700000016.json",
+      "CB64DF94FD482F049DE27545603B4143898693EA2878B98CAC712C18FCA60039",
+      3612,
+      3658,
+      "82D8FFCFEAA6654F025975FA2E57F1FD8172DC9E9FE5C380520F1639E42C6E93"
+    ]
+  ]
+}

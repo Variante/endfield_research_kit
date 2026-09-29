@@ -149,7 +149,7 @@ def _decode_is_endmin_gender(payload: bytes) -> dict[str, Any]:
     raw = gender[0]["value"]
     return params.finish_getter_fields(payload, gender[1], {
         "gender": gender[0],
-        "genderName": {0: "Male", 1: "Female"}.get(raw, ""),
+        "genderName": {1: "Male", 2: "Female"}.get(raw, ""),
         "payloadShape": "gender-param-exact-fields",
     })
 
