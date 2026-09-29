@@ -320,12 +320,31 @@ def _validate_report_gates(
     corpus: Mapping[str, Any],
     native_context: Mapping[str, Any],
     corpus_report_sha256: str | None,
+    scoped_target_path: str | None = None,
 ) -> list[Mapping[str, Any]]:
     require_observer_native_build()
     if corpus.get("format") != SKILL_REPORT_FORMAT:
         raise ReceiptVerificationError("corpus report has an unexpected format")
-    if corpus.get("status") != "complete" or corpus.get("publicationEligible") is not True:
-        raise ReceiptVerificationError("corpus report is not a complete current census")
+    if scoped_target_path is None:
+        if corpus.get("status") != "complete" or corpus.get("publicationEligible") is not True:
+            raise ReceiptVerificationError("corpus report is not a complete current census")
+    else:
+        rows = corpus.get("files")
+        scoped = native_context.get("scopedTargetProvenance")
+        capture_target = native_context.get("captureTarget")
+        if (corpus.get("status") != "partial"
+                or corpus.get("publicationEligible") is not False
+                or corpus.get("targetedVirtualPaths") != [scoped_target_path]
+                or not isinstance(rows, list) or len(rows) != 1
+                or not isinstance(rows[0], Mapping)
+                or rows[0].get("virtualPath") != scoped_target_path
+                or not isinstance(capture_target, Mapping)
+                or capture_target.get("virtualPath") != scoped_target_path
+                or not isinstance(scoped, Mapping)
+                or scoped.get("status") != "scoped-wulfa-unselected"
+                or scoped.get("virtualPath") != scoped_target_path
+                or scoped.get("terminalSelected") is not False):
+            raise ReceiptVerificationError("corpus report or native context differs from exact scoped target")
     if _sha256_text(corpus.get("inputSetSha256"), source="corpus.inputSetSha256") != input_set:
         raise ReceiptVerificationError("receipt input set differs from the current SkillData corpus")
     rows = corpus.get("files")
@@ -415,6 +434,7 @@ def preflight_skilldata_corpus(
     *,
     corpus_report_path: Path = DEFAULT_CORPUS_REPORT,
     native_context_path: Path = DEFAULT_NATIVE_CONTEXT,
+    scoped_target_path: str | None = None,
 ) -> str:
     """Authenticate current corpus/native cross-references and return its input set."""
     corpus, corpus_digest = _load_json_with_sha256(
@@ -438,6 +458,7 @@ def preflight_skilldata_corpus(
         corpus,
         native_context,
         corpus_digest,
+        scoped_target_path,
     )
     return input_set
 
@@ -785,6 +806,7 @@ def verify_skilldata_cursor_capture(
     required_logical_paths: Sequence[str] = (),
     receipt_path: Path | None = None,
     receipt_sha256: str | None = None,
+    scoped_target_path: str | None = None,
 ) -> dict[str, Any]:
     """Verify receipt gates, source-hash joins, native pins and observed cursors."""
     input_set, game_hash, metadata_hash, receipt_unsupported = _require_capture_gates(receipt)
@@ -796,7 +818,7 @@ def verify_skilldata_cursor_capture(
     )
     corpus_rows = _validate_report_gates(
         input_set, game_hash, metadata_hash, corpus_report, native_context,
-        corpus_report_sha256,
+        corpus_report_sha256, scoped_target_path,
     )
     observations = receipt["observations"]
     rows = [

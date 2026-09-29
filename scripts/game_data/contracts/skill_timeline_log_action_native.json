@@ -1,0 +1,181 @@
+{
+  "schema": "endfield.skill-timeline-log-action-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 10,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "primitiveReadContract": "buff_10c_native.json",
+  "dispatcher": {
+    "unionTag": 229,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59854190,
+    "routeWindow": {
+      "startRva": 59854190,
+      "endRva": 59854240,
+      "sha256": "A7B9BB9D90251D6A5B56CDBE3DACCC48B18D3C7AB1725DAD260ED47B230FCF03",
+      "boundary": "selected 0x00E5 type usage and formatter route"
+    },
+    "usageCellRva": 218133016,
+    "usageRawHex": "6142032000000000",
+    "registeredTypeIndex": 106800,
+    "wrapperTypeDefinition": 16227,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_LogAction_LogActionDataForMemoryPack"
+  },
+  "methods": [
+    [
+      121096,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_LogAction_LogActionDataForMemoryPack",
+      "Deserialize",
+      73066160
+    ],
+    [
+      121097,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_LogAction_LogActionDataForMemoryPack+Beyond_Gameplay_Core_LogAction_LogActionDataForMemoryPackFormatter",
+      "Deserialize",
+      73066064
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73066160,
+      "endRva": 73066699,
+      "sha256": "967BF45FD7968C4C8AABECAE2EF4E3FDB2ED2AAFFFFCCF23C79395A0BFD32EF6",
+      "boundary": "selected ten-member reader through normal return"
+    },
+    {
+      "startRva": 73066064,
+      "endRva": 73066160,
+      "sha256": "27382839212CA6F768019F495D25C224E6B58E850419A3A6A048CE8D60BCCA2F",
+      "boundary": "formatter forwarding into selected reader"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 73066339,
+    "hex": "4080FE0A"
+  },
+  "setterMethods": [
+    [
+      121088,
+      "set___alwaysNext__",
+      "System.Boolean"
+    ],
+    [
+      121089,
+      "set___bbKey__",
+      "System.String"
+    ],
+    [
+      121090,
+      "set___logBB__",
+      "System.Boolean"
+    ],
+    [
+      121091,
+      "set___logContext__",
+      "System.Boolean"
+    ],
+    [
+      121092,
+      "set___logStr__",
+      "System.String"
+    ],
+    [
+      121093,
+      "set___returnValue__",
+      "System.Boolean"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 73066355,
+      "sourceCallHex": "E848A16FFE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 73066396,
+      "sourceCallHex": "E80F9F6FFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 73066429,
+      "sourceCallHex": "E8EE9E6FFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 73066462,
+      "sourceCallHex": "E8CD9E6FFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "alwaysNext",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 73066495,
+      "sourceCallHex": "E8BCA06FFE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "bbKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 73066529,
+      "sourceCallHex": "E8DA9E6FFE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "logBB",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 73066563,
+      "sourceCallHex": "E878A06FFE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "logContext",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 73066593,
+      "sourceCallHex": "E85AA06FFE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "logStr",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 73066623,
+      "sourceCallHex": "E87C9E6FFE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "returnValue",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 73066653,
+      "sourceCallHex": "E81EA06FFE",
+      "sourceTargetRva": 46827712
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatch 0x00E5 joins LogAction wrapper to formatter and ten-member reader; each ordered source call is pinned.",
+    "direct": "The selected source reads two signed-length string payloads at the generated positions.",
+    "structuralOnly": "Stored log fields and string bytes do not establish any runtime output.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity, logging execution and enclosing SkillData EOF remain open."
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "schema": "endfield.skill-timeline-continuous-anim-time-scale-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 5,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "primitiveReadContract": "buff_10c_native.json",
+  "blackboardReadContract": "buff_ec_native.json",
+  "dispatcher": {
+    "unionTag": 139,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82211775,
+    "routeWindow": {
+      "startRva": 82211775,
+      "endRva": 82211825,
+      "sha256": "80CB0AE21FE24E7508B19317BCF15E6FF2D2D4A327022539E34EF25689A1A641",
+      "boundary": "selected 0x008B type usage and formatter route"
+    },
+    "usageCellRva": 218733472,
+    "usageRawHex": "4340032000000000",
+    "registeredTypeIndex": 106529,
+    "wrapperTypeDefinition": 16033,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ContinuousSetAnimTimeScale_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      119590,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ContinuousSetAnimTimeScale_DataForMemoryPack",
+      "Deserialize",
+      153712884
+    ],
+    [
+      119591,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ContinuousSetAnimTimeScale_DataForMemoryPack+Beyond_Gameplay_Core_ContinuousSetAnimTimeScale_DataForMemoryPackFormatter",
+      "Deserialize",
+      153712644
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153712884,
+      "endRva": 153713332,
+      "sha256": "4EA60BF0655E5579A27F929CCED8E10A89948EDC44FC019F211223890CEAD218",
+      "boundary": "selected five-member reader through normal return"
+    },
+    {
+      "startRva": 153712644,
+      "endRva": 153712733,
+      "sha256": "57930C6FA73BFC7D568EE239E83245F0ACCD8AC9C3D2F822EDA7F5D032CF50F6",
+      "boundary": "formatter forwarding into selected reader"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 153713073,
+    "hex": "807C243805"
+  },
+  "memberHeaderSourceCall": {
+    "sourceCallsiteRva": 153713009,
+    "sourceCallHex": "E8EA0EA1F9",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [
+    [
+      119587,
+      "set___timeScale__",
+      "Beyond.Blackboard+BlackboardDouble"
+    ]
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 119587,
+      "callsiteRva": 153713243,
+      "callHex": "E8F0010000",
+      "targetRva": 153713744
+    }
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153713090,
+      "sourceCallHex": "E8F90EA1F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 153713130,
+      "sourceCallHex": "E8C10CA1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153713159,
+      "sourceCallHex": "E8A40CA1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153713188,
+      "sourceCallHex": "E8870CA1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "timeScale",
+      "readKind": "blackboard-double",
+      "sourceCallsiteRva": 153713224,
+      "sourceCallHex": "E843E2B0F9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 153713117,
+      "instructionHex": "488B154424DF03",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 153713211,
+      "instructionHex": "488B15DECBD503",
+      "cellRva": 218056224,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected dispatch 0x008B joins ContinuousSetAnimTimeScale wrapper, five-member reader, Priority and BlackboardDouble contexts.",
+    "direct": "Selected source reads four inherited fields and one BlackboardDouble in wrapper order.",
+    "structuralOnly": "Stored timeScale bits do not show an animation clock change or execution.",
+    "unresolved": "Live formatter selection and runtime execution remain open."
+  }
+}

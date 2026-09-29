@@ -1,0 +1,173 @@
+{
+  "schema": "endfield.skill-timeline-dice-float-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "primitiveReadContract": "skill_timeline_check_hit_collider_options_native.json",
+  "bytePayloadReadContract": "buff_10c_native.json",
+  "blackboardReadContract": "buff_ec_native.json",
+  "serializedMemberCount": 7,
+  "dispatcher": {
+    "unionTag": 156,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59836828,
+    "routeWindow": {
+      "startRva": 59836828,
+      "endRva": 59836876,
+      "sha256": "954C489CDA3FA44197C05A953041F89749EE7BACA89A04F384E2B20CCEC0A6C1",
+      "boundary": "selected DiceFloat wrapper load"
+    },
+    "usageCellRva": 218729544,
+    "usageRawHex": "8540032000000000",
+    "registeredTypeIndex": 106562,
+    "wrapperTypeDefinition": 16067,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DiceFloat_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      119876,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DiceFloat_DataForMemoryPack+Beyond_Gameplay_Core_DiceFloat_DataForMemoryPackFormatter",
+      "Deserialize",
+      72393648
+    ],
+    [
+      119875,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DiceFloat_DataForMemoryPack",
+      "Deserialize",
+      72393744
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72393648,
+      "endRva": 72393744,
+      "sha256": "E3AAF834AAFFC0648955200E0A96854B45C1BB5C94577444304009C19945E551",
+      "boundary": "formatter forwarding to selected reader"
+    },
+    {
+      "startRva": 72393744,
+      "endRva": 72394210,
+      "sha256": "81CC0DBD58A4E2493AECDA6D5867F19B6F4C9322B112F29B9CF563FF59921690",
+      "boundary": "seven source reads through normal return"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 72393935,
+    "hex": "4080FE07"
+  },
+  "setterMethods": [
+    [
+      119870,
+      "set___key__",
+      "System.String"
+    ],
+    [
+      119871,
+      "set___max__",
+      "Beyond.Blackboard+BlackboardDouble"
+    ],
+    [
+      119872,
+      "set___min__",
+      "Beyond.Blackboard+BlackboardDouble"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 72393951,
+      "sourceCallHex": "E8DCE379FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 72393992,
+      "sourceCallHex": "E8A3E179FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 72394025,
+      "sourceCallHex": "E882E179FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 72394058,
+      "sourceCallHex": "E861E179FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "key",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 72394091,
+      "sourceCallHex": "E890E179FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "max",
+      "readKind": "blackboard-double",
+      "sourceCallsiteRva": 72394128,
+      "sourceCallHex": "E8FBB689FE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "min",
+      "readKind": "blackboard-double",
+      "sourceCallsiteRva": 72394165,
+      "sourceCallHex": "E8D6B689FE",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 5,
+      "instructionRva": 72394115,
+      "instructionHex": "488B1596A0AE08",
+      "cellRva": 218056224,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble"
+    },
+    {
+      "memberIndex": 6,
+      "instructionRva": 72394152,
+      "instructionHex": "488B1571A0AE08",
+      "cellRva": 218056224,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble"
+    }
+  ],
+  "evidenceBoundary": "The selected AbilityActionData switch route loads the generated DiceFloat wrapper. Its reader tests member count seven and reads the four common scalars, a signed-length byte payload, and two BlackboardDouble values in wrapper member order. Both generic contexts resolve to BlackboardDouble, and the selected child reader retains its independently pinned finite framing. Source values are authored data; live random rolls or branch execution are unobserved."
+}

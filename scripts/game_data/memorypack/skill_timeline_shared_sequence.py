@@ -217,6 +217,42 @@ from scripts.game_data.memorypack.skill_timeline_move_to_location import (
     decode_move_to_location_action,
     validate_current_native_contract as validate_move_to_location_native_contract,
 )
+from scripts.game_data.memorypack.skill_timeline_move_to_slot import (
+    decode_shared_action as decode_move_to_slot_action,
+    validate_current_native_contract as validate_move_to_slot_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_log_action import (
+    decode_shared_action as decode_log_action,
+    validate_current_native_contract as validate_log_action_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_hurt_anim import (
+    decode_shared_action as decode_hurt_anim_action,
+    validate_current_native_contract as validate_hurt_anim_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_save_buff_stack_num_by_tag import (
+    decode_shared_action as decode_save_buff_stack_num_by_tag_action,
+    validate_current_native_contract as validate_save_buff_stack_num_by_tag_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_fracture import (
+    decode_shared_action as decode_fracture_action,
+    validate_current_native_contract as validate_fracture_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_show_combo_skill_ui import (
+    decode_shared_action as decode_show_combo_skill_ui_action,
+    validate_current_native_contract as validate_show_combo_skill_ui_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_try_teleport_squad import (
+    decode_shared_action as decode_try_teleport_squad_action,
+    validate_current_native_contract as validate_try_teleport_squad_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_anim_event_receiver import (
+    decode_shared_action as decode_anim_event_receiver_action,
+    validate_current_native_contract as validate_anim_event_receiver_native_contract,
+)
+from scripts.game_data.memorypack.skill_timeline_continuous_anim_time_scale import (
+    decode_shared_action as decode_continuous_anim_time_scale_action,
+    validate_current_native_contract as validate_continuous_anim_time_scale_native_contract,
+)
 from scripts.game_data.memorypack.skill_timeline_ultimate_time import (
     decode_ultimate_time_action,
     validate_current_native_contract as validate_ultimate_time_native_contract,
@@ -516,6 +552,10 @@ from scripts.game_data.memorypack.skill_timeline_two_action_routes import (
     decode_two_action_route,
     validate_current_native_contract as validate_two_action_routes_native_contract,
 )
+from scripts.game_data.memorypack.skill_timeline_dice_float import (
+    decode_shared_action as decode_dice_float_action,
+    validate_current_native_contract as validate_dice_float_native_contract,
+)
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_shared_sequence_native.json"
@@ -774,6 +814,30 @@ class SharedSequenceReader(Reader):
         return super().empty_damage_collection(kind)
 
     def _action(self, depth: int, tag: int, width: int) -> None:
+        if tag == 0x008B:
+            decode_continuous_anim_time_scale_action(self, depth, tag, width)
+            return
+        if tag == 0x0012:
+            decode_anim_event_receiver_action(self, depth, tag, width)
+            return
+        if tag == 0x018C:
+            decode_try_teleport_squad_action(self, depth, tag, width)
+            return
+        if tag == 0x015F:
+            decode_show_combo_skill_ui_action(self, depth, tag, width)
+            return
+        if tag == 0x00BE:
+            decode_fracture_action(self, depth, tag, width)
+            return
+        if tag == 0x00C8:
+            decode_hurt_anim_action(self, depth, tag, width)
+            return
+        if tag == 0x0137:
+            decode_save_buff_stack_num_by_tag_action(self, depth, tag, width)
+            return
+        if tag == 0x009C:
+            decode_dice_float_action(self, depth, tag, width)
+            return
         if tag in (0x0054, 0x009D):
             decode_two_action_route(self, depth, tag, width)
             return
@@ -977,6 +1041,12 @@ class SharedSequenceReader(Reader):
             return
         if tag == 0x00F8:
             decode_move_to_location_action(self, depth, tag, width)
+            return
+        if tag == 0x00FA:
+            decode_move_to_slot_action(self, depth, tag, width)
+            return
+        if tag == 0x00E5:
+            decode_log_action(self, depth, tag, width)
             return
         if tag == 0x00C6:
             decode_hide_ui_action(self, depth, tag, width)
@@ -2396,6 +2466,188 @@ def _contract() -> dict[str, Any]:
         or len(move_source.get("orderedSourceReads", ())) != 23
     ):
         raise ValueError("skillTimelineSharedSequence.contract:move-to-location-source-drift")
+    slot_route = next((row for row in routes if row.get("tag") == "0x00FA"), None)
+    slot_source = dependency_values.get("skill_timeline_move_to_slot_native.json", {})
+    if (
+        not isinstance(slot_route, dict)
+        or slot_route.get("typeName") != "Beyond.Gameplay.Core.MoveToSlotAction+Data"
+        or slot_route.get("memberCount") != 17
+        or slot_route.get("sourceContract") != {
+            "path": "skill_timeline_move_to_slot_native.json",
+            "schema": "endfield.skill-timeline-move-to-slot-native-contract.v1",
+            "orderedReadRef": "orderedSourceReads",
+        }
+        or slot_source.get("schema") != "endfield.skill-timeline-move-to-slot-native-contract.v1"
+        or slot_source.get("status") != "exact-current-build"
+        or slot_source.get("dispatcher", {}).get("unionTag") != 0x00FA
+        or slot_source.get("serializedMemberCount") != 17
+        or len(slot_source.get("orderedSourceReads", ())) != 17
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:move-to-slot-source-drift")
+    log_route = next((row for row in routes if row.get("tag") == "0x00E5"), None)
+    log_source = dependency_values.get("skill_timeline_log_action_native.json", {})
+    if (
+        not isinstance(log_route, dict)
+        or log_route.get("typeName") != "Beyond.Gameplay.Core.LogAction+Data"
+        or log_route.get("memberCount") != 10
+        or log_route.get("sourceContract") != {
+            "path": "skill_timeline_log_action_native.json",
+            "schema": "endfield.skill-timeline-log-action-native-contract.v1",
+            "orderedReadRef": "orderedSourceReads",
+        }
+        or log_source.get("schema") != "endfield.skill-timeline-log-action-native-contract.v1"
+        or log_source.get("status") != "exact-current-build"
+        or log_source.get("dispatcher", {}).get("unionTag") != 0x00E5
+        or log_source.get("serializedMemberCount") != 10
+        or len(log_source.get("orderedSourceReads", ())) != 10
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:log-action-source-drift")
+    hurt_route = next((row for row in routes if row.get("tag") == "0x00C8"), None)
+    hurt_source = dependency_values.get("skill_timeline_hurt_anim_native.json", {})
+    if (
+        not isinstance(hurt_route, dict)
+        or hurt_route.get("typeName") != "Beyond.Gameplay.Core.HurtAnimAction+Data"
+        or hurt_route.get("memberCount") != 10
+        or hurt_route.get("sourceContract") != {
+            "path": "skill_timeline_hurt_anim_native.json",
+            "schema": "endfield.skill-timeline-hurt-anim-native-contract.v1",
+            "orderedReadRef": "orderedSourceReads",
+        }
+        or hurt_source.get("schema") != "endfield.skill-timeline-hurt-anim-native-contract.v1"
+        or hurt_source.get("status") != "exact-current-build"
+        or hurt_source.get("dispatcher", {}).get("unionTag") != 0x00C8
+        or hurt_source.get("serializedMemberCount") != 10
+        or len(hurt_source.get("orderedSourceReads", ())) != 10
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:hurt-anim-source-drift")
+    save_buff_route = next((row for row in routes if row.get("tag") == "0x0137"), None)
+    save_buff_source = dependency_values.get("skill_timeline_save_buff_stack_num_by_tag_native.json", {})
+    if (
+        not isinstance(save_buff_route, dict)
+        or save_buff_route.get("typeName") != "Beyond.Gameplay.Core.SaveBuffStackNumByTag+Data"
+        or save_buff_route.get("memberCount") != 8
+        or save_buff_route.get("sourceContract") != {
+            "path": "skill_timeline_save_buff_stack_num_by_tag_native.json",
+            "schema": "endfield.skill-timeline-save-buff-stack-num-by-tag-native-contract.v1",
+            "orderedReadRef": "orderedSourceReads",
+        }
+        or save_buff_source.get("schema") != "endfield.skill-timeline-save-buff-stack-num-by-tag-native-contract.v1"
+        or save_buff_source.get("status") != "exact-current-build"
+        or save_buff_source.get("dispatcher", {}).get("unionTag") != 0x0137
+        or save_buff_source.get("serializedMemberCount") != 8
+        or len(save_buff_source.get("orderedSourceReads", ())) != 8
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:save-buff-stack-num-by-tag-source-drift")
+    fracture_route = next((row for row in routes if row.get("tag") == "0x00BE"), None)
+    fracture_source = next(
+        (row for row in frontier.get("actions", ()) if row.get("unionTag") == 0x00BE), None
+    )
+    if (
+        not isinstance(fracture_route, dict)
+        or fracture_route.get("typeName") != "Beyond.Gameplay.Core.FractureAction+Data"
+        or fracture_route.get("memberCount") != 15
+        or fracture_route.get("sourceContract") != {
+            "path": "buff_frontier9.json",
+            "schema": "endfield.buff-frontier9-native-contract.v1",
+            "orderedReadRef": "actions[unionTag=190].readOrder",
+        }
+        or not isinstance(fracture_source, dict)
+        or fracture_source.get("actualTypeName") != fracture_route["typeName"]
+        or fracture_source.get("serializedMemberCount") != 15
+        or tuple(fracture_source.get("readOrder", ())) != (
+            "byte", "scalar32", "scalar32", "scalar32", "target-settings",
+            "blackboard-double", "blackboard-double", "enum32", "direction-settings",
+            "blackboard-double", "bool", "bool", "target-settings",
+            "blackboard-double", "float32",
+        )
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:fracture-source-drift")
+    combo_ui_route = next((row for row in routes if row.get("tag") == "0x015F"), None)
+    residual_frontier = dependency_values.get("buff_residual_frontier.json", {})
+    combo_ui_source = next(
+        (row for row in residual_frontier.get("actions", ()) if row.get("unionTag") == 0x015F),
+        None,
+    )
+    if (
+        not isinstance(combo_ui_route, dict)
+        or combo_ui_route.get("typeName") != "Beyond.Gameplay.Core.ShowComboSkillUI+Data"
+        or combo_ui_route.get("memberCount") != 4
+        or combo_ui_route.get("sourceContract") != {
+            "path": "buff_residual_frontier.json",
+            "schema": "endfield.buff-residual-frontier-native-contract.v1",
+            "orderedReadRef": "actions[unionTag=351].readOrder",
+        }
+        or residual_frontier.get("schema") != "endfield.buff-residual-frontier-native-contract.v1"
+        or residual_frontier.get("status") != "exact-current-build"
+        or not isinstance(combo_ui_source, dict)
+        or combo_ui_source.get("wrapperName")
+        != "Beyond.MemoryPack.Beyond_Gameplay_Core_ShowComboSkillUI_DataForMemoryPack"
+        or combo_ui_source.get("serializedMemberCount") != 4
+        or tuple(combo_ui_source.get("readOrder", ()))
+        != ("byte", "scalar32", "scalar32", "scalar32")
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:show-combo-skill-ui-source-drift")
+    teleport_squad_route = next((row for row in routes if row.get("tag") == "0x018C"), None)
+    teleport_squad_source = dependency_values.get("skill_timeline_try_teleport_squad_native.json", {})
+    if (
+        not isinstance(teleport_squad_route, dict)
+        or teleport_squad_route.get("typeName")
+        != "Beyond.Gameplay.Core.TryToTeleportSquadAction+Data"
+        or teleport_squad_route.get("memberCount") != 4
+        or teleport_squad_route.get("sourceContract") != {
+            "path": "skill_timeline_try_teleport_squad_native.json",
+            "schema": "endfield.skill-timeline-try-teleport-squad-native-contract.v1",
+            "orderedReadRef": "orderedSourceReads",
+        }
+        or teleport_squad_source.get("schema")
+        != "endfield.skill-timeline-try-teleport-squad-native-contract.v1"
+        or teleport_squad_source.get("status") != "exact-current-build"
+        or teleport_squad_source.get("dispatcher", {}).get("unionTag") != 0x018C
+        or teleport_squad_source.get("serializedMemberCount") != 4
+        or len(teleport_squad_source.get("orderedSourceReads", ())) != 4
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:try-teleport-squad-source-drift")
+    anim_event_route = next((row for row in routes if row.get("tag") == "0x0012"), None)
+    anim_event_source = dependency_values.get("skill_timeline_anim_event_receiver_native.json", {})
+    if (
+        not isinstance(anim_event_route, dict)
+        or anim_event_route.get("typeName") != "Beyond.Gameplay.Core.AnimEventReceiver+Data"
+        or anim_event_route.get("memberCount") != 7
+        or anim_event_route.get("sourceContract") != {
+            "path": "skill_timeline_anim_event_receiver_native.json",
+            "schema": "endfield.skill-timeline-anim-event-receiver-native-contract.v1",
+            "orderedReadRef": "orderedSourceReads",
+        }
+        or anim_event_source.get("schema")
+        != "endfield.skill-timeline-anim-event-receiver-native-contract.v1"
+        or anim_event_source.get("status") != "exact-current-build"
+        or anim_event_source.get("dispatcher", {}).get("unionTag") != 0x0012
+        or anim_event_source.get("serializedMemberCount") != 7
+        or len(anim_event_source.get("orderedSourceReads", ())) != 7
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:anim-event-receiver-source-drift")
+    anim_scale_route = next((row for row in routes if row.get("tag") == "0x008B"), None)
+    anim_scale_source = dependency_values.get(
+        "skill_timeline_continuous_anim_time_scale_native.json", {}
+    )
+    if (
+        not isinstance(anim_scale_route, dict)
+        or anim_scale_route.get("typeName")
+        != "Beyond.Gameplay.Core.ContinuousSetAnimTimeScale+Data"
+        or anim_scale_route.get("memberCount") != 5
+        or anim_scale_route.get("sourceContract") != {
+            "path": "skill_timeline_continuous_anim_time_scale_native.json",
+            "schema": "endfield.skill-timeline-continuous-anim-time-scale-native-contract.v1",
+            "orderedReadRef": "orderedSourceReads",
+        }
+        or anim_scale_source.get("schema")
+        != "endfield.skill-timeline-continuous-anim-time-scale-native-contract.v1"
+        or anim_scale_source.get("status") != "exact-current-build"
+        or anim_scale_source.get("dispatcher", {}).get("unionTag") != 0x008B
+        or anim_scale_source.get("serializedMemberCount") != 5
+        or len(anim_scale_source.get("orderedSourceReads", ())) != 5
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:continuous-anim-time-scale-source-drift")
     ultimate_route = next((row for row in routes if row.get("tag") == "0x0194"), None)
     ultimate_source = dependency_values.get("skill_timeline_ultimate_time_native.json", {})
     if (
@@ -2913,6 +3165,25 @@ def _contract() -> dict[str, Any]:
             or len(source.get("orderedSourceReads", ())) != 6
         ):
             raise ValueError(f"skillTimelineSharedSequence.contract:two-action-source-drift:{tag}")
+    dice_route = next((row for row in routes if row.get("tag") == "0x009C"), None)
+    dice_source = dependency_values.get("skill_timeline_dice_float_native.json", {})
+    if (
+        not isinstance(dice_route, dict)
+        or dice_route.get("typeName") != "Beyond.Gameplay.Core.DiceFloat+Data"
+        or dice_route.get("memberCount") != 7
+        or dice_route.get("sourceContract") != {
+            "path": "skill_timeline_dice_float_native.json",
+            "schema": "endfield.skill-timeline-dice-float-native-contract.v1",
+            "orderedReadRef": "orderedSourceReads",
+        }
+        or dice_source.get("schema") != "endfield.skill-timeline-dice-float-native-contract.v1"
+        or dice_source.get("status") != "exact-current-build"
+        or dice_source.get("dispatcher", {}).get("unionTag") != 0x009C
+        or dice_source.get("dispatcher", {}).get("wrapperName")
+        != "Beyond.MemoryPack.Beyond_Gameplay_Core_DiceFloat_DataForMemoryPack"
+        or len(dice_source.get("orderedSourceReads", ())) != 7
+    ):
+        raise ValueError("skillTimelineSharedSequence.contract:dice-float-source-drift")
     return value
 
 
@@ -3052,6 +3323,36 @@ def validate_current_native_contract() -> dict[str, Any]:
         raise ValueError("skillTimelineSharedSequence.native:UnityPlayer.dll:missing")
     if hashlib.sha256(unityplayer.read_bytes()).hexdigest().upper() != expected["unityplayerSha256"]:
         raise ValueError("skillTimelineSharedSequence.native:UnityPlayer.dll:sha256-mismatch")
+    dice_float_validation = validate_dice_float_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    move_to_slot_validation = validate_move_to_slot_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    log_action_validation = validate_log_action_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    hurt_anim_validation = validate_hurt_anim_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    save_buff_stack_num_by_tag_validation = validate_save_buff_stack_num_by_tag_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    fracture_validation = validate_fracture_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    show_combo_skill_ui_validation = validate_show_combo_skill_ui_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    try_teleport_squad_validation = validate_try_teleport_squad_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    anim_event_receiver_validation = validate_anim_event_receiver_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    continuous_anim_time_scale_validation = validate_continuous_anim_time_scale_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
     from scripts.game_data.memorypack.derived_schema import resolve_routes
 
     derived_routes, resolver, derived_audit = resolve_routes(
@@ -3219,6 +3520,16 @@ def validate_current_native_contract() -> dict[str, Any]:
         "enemyWarningNativeValidation": warning_validation,
         "finishAngryNativeValidation": angry_validation,
         "twoActionRoutesNativeValidation": two_action_validation,
+        "diceFloatNativeValidation": dice_float_validation,
+        "moveToSlotNativeValidation": move_to_slot_validation,
+        "logActionNativeValidation": log_action_validation,
+        "hurtAnimNativeValidation": hurt_anim_validation,
+        "saveBuffStackNumByTagNativeValidation": save_buff_stack_num_by_tag_validation,
+        "fractureNativeValidation": fracture_validation,
+        "showComboSkillUINativeValidation": show_combo_skill_ui_validation,
+        "tryTeleportSquadNativeValidation": try_teleport_squad_validation,
+        "animEventReceiverNativeValidation": anim_event_receiver_validation,
+        "continuousAnimTimeScaleNativeValidation": continuous_anim_time_scale_validation,
     }
 
 

@@ -41,6 +41,12 @@ _PROVENANCE_INPUTS = (
     "receipt", "corpusReport", "nativeContext", "verifier",
     "captureTargetSetContract", "captureTargetSetVerifier",
 )
+_REBIND_PROVENANCE_INPUTS = (
+    "receipt", "historicalVerification", "historicalCorpus",
+    "historicalNativeContext", "selectedStatusBasis", "corpusReport",
+    "targetContract", "observerContract", "cursorVerifier",
+    "rebindVerifier", "targetSetOverlay",
+)
 
 
 def _recorded_input(value: Any, *, label: str,
@@ -316,8 +322,13 @@ def apply_verified_capture_target_set(
               expected="valid JSON object", actual=str(exc))
     summary = verification.get("summary") if isinstance(verification, Mapping) else None
     targets = verification.get("targets") if isinstance(verification, Mapping) else None
+    rebind = (isinstance(verification, Mapping) and
+              verification.get("schema") == skill_cursor_capture_target_set.REBIND_OUTPUT_SCHEMA)
     if (not isinstance(verification, Mapping)
-            or verification.get("schema") != skill_cursor_capture_target_set.OUTPUT_SCHEMA
+            or verification.get("schema") not in (
+                skill_cursor_capture_target_set.OUTPUT_SCHEMA,
+                skill_cursor_capture_target_set.REBIND_OUTPUT_SCHEMA,
+            )
             or verification.get("status") != "validated"
             or verification.get("coverageStatus") != "complete"
             or verification.get("publicationEligible") is False
@@ -336,16 +347,32 @@ def apply_verified_capture_target_set(
     provenance = verification.get("provenance")
     if not isinstance(provenance, Mapping):
         _fail("skill-target-set-provenance-missing", source=str(verification_path),
-              expected=list(_PROVENANCE_INPUTS), actual=type(provenance).__name__)
-    expected_paths = {
-        "verifier": Path(skill_cursor_receipt.__file__),
-        "captureTargetSetContract": skill_cursor_capture_target_set.DEFAULT_TARGET_CONTRACT,
-        "captureTargetSetVerifier": Path(skill_cursor_capture_target_set.__file__),
-    }
+              expected=list(_REBIND_PROVENANCE_INPUTS if rebind else _PROVENANCE_INPUTS),
+              actual=type(provenance).__name__)
+    if rebind:
+        expected_paths = {
+            "targetContract": skill_cursor_capture_target_set.DEFAULT_TARGET_CONTRACT,
+            "observerContract": skill_cursor_capture_target_set.context_audit.native.CONTRACT_PATH,
+            "cursorVerifier": Path(skill_cursor_receipt.__file__),
+            "rebindVerifier": Path(skill_cursor_capture_target_set.__file__),
+            "targetSetOverlay": Path(__file__),
+        }
+        names = _REBIND_PROVENANCE_INPUTS
+        # The old verifier files are historical declarations inside the old
+        # report.  Every actual evidence file, including the old report, is
+        # still checked byte-for-byte here and in the replay.
+    else:
+        expected_paths = {
+            "verifier": Path(skill_cursor_receipt.__file__),
+            "captureTargetSetContract": skill_cursor_capture_target_set.DEFAULT_TARGET_CONTRACT,
+            "captureTargetSetVerifier": Path(skill_cursor_capture_target_set.__file__),
+        }
+        names = _PROVENANCE_INPUTS
     inputs = {name: _recorded_input(provenance.get(name), label=name,
                                     expected_path=expected_paths.get(name))
-              for name in _PROVENANCE_INPUTS}
-    if provenance["corpusReport"].get("identitySetSha256") != identity_set_sha256:
+              for name in names}
+    if (not rebind and
+            provenance["corpusReport"].get("identitySetSha256") != identity_set_sha256):
         _fail("skill-target-set-corpus-identity-drift", source=str(verification_path),
               expected=identity_set_sha256,
               actual=provenance["corpusReport"].get("identitySetSha256"))
@@ -377,14 +404,23 @@ def apply_verified_capture_target_set(
                   actual={key: receipt.get(key) for key in
                           ("captureComplete", "pendingRecords", "progressPublicationFailures")}
                   if isinstance(receipt, Mapping) else type(receipt).__name__)
-        replayed = skill_cursor_capture_target_set.verify_capture_target_set(
-            receipt, receipt_path=receipt_path,
-            receipt_sha256=inputs["receipt"]["sha256"],
-            corpus_path=Path(inputs["corpusReport"]["path"]),
-            native_context_path=Path(inputs["nativeContext"]["path"]),
-            target_contract_path=Path(inputs["captureTargetSetContract"]["path"]),
-            diagnose_incomplete=False,
-        )
+        if rebind:
+            replayed = skill_cursor_capture_target_set.verify_capture_target_set_rebind(
+                receipt, receipt_path=receipt_path,
+                receipt_sha256=inputs["receipt"]["sha256"],
+                historical_verification_path=Path(inputs["historicalVerification"]["path"]),
+                corpus_path=Path(inputs["corpusReport"]["path"]),
+                target_contract_path=Path(inputs["targetContract"]["path"]),
+            )
+        else:
+            replayed = skill_cursor_capture_target_set.verify_capture_target_set(
+                receipt, receipt_path=receipt_path,
+                receipt_sha256=inputs["receipt"]["sha256"],
+                corpus_path=Path(inputs["corpusReport"]["path"]),
+                native_context_path=Path(inputs["nativeContext"]["path"]),
+                target_contract_path=Path(inputs["captureTargetSetContract"]["path"]),
+                diagnose_incomplete=False,
+            )
     except (OSError, UnicodeError, json.JSONDecodeError,
             skill_cursor_receipt.ReceiptVerificationError,
             skill_cursor_capture_target_set.context_audit.native.NativeCursorContextError) as exc:
@@ -412,6 +448,7 @@ def apply_verified_capture_target_set(
     roles = {"unresolved": 0, "positiveControl": 0}
     plans: list[tuple[dict[str, Any], Mapping[str, Any], list[Mapping[str, Any]], str]] = []
     retained_control = 0
+    promoted_control = 0
     for target in targets:
         if not isinstance(target, Mapping):
             _fail("skill-target-set-target-invalid", source=str(verification_path),
@@ -458,14 +495,25 @@ def apply_verified_capture_target_set(
                   {key: observation.get(key) for key in ("logicalPath", "logicalSha256", "hardLimit")})
         static, key = _validate_join(row, target, observation)
         if target.get("role") == "positiveControl":
-            if (row.get("coverageStatus") != VERIFIED_CAPTURE_TARGET_EXACT
-                    or row.get("boundaryClass") != "exact-closed"
-                    or row.get("wholeSchemaExact") is not True
-                    or row.get("terminalSelection", {}).get("start") != target["selectedTerminal"]["start"]
-                    or row.get("terminalSelection", {}).get("end") != length):
+            if (row.get("coverageStatus") == VERIFIED_CAPTURE_TARGET_EXACT
+                    and row.get("boundaryClass") == "exact-closed"
+                    and row.get("wholeSchemaExact") is True
+                    and row.get("terminalSelection", {}).get("start") == target["selectedTerminal"]["start"]
+                    and row.get("terminalSelection", {}).get("end") == length):
+                retained_control += 1
+            elif (rebind and row.get("boundaryClass") == "ambiguous"
+                  and row.get("coverageStatus") == "ambiguous-disjoint-independent-ranges"
+                  and row.get("wholeSchemaExact") is False
+                  and isinstance(row.get("boundaryContext"), dict)):
+                # The rebind has independently rechecked this positive
+                # control's copied bytes and cursor.  A stale singleton
+                # report need not be replayed just to close the same source.
+                plans.append((row, target, static, key))
+                promoted_control += 1
+            else:
                 _fail("skill-target-set-existing-exact-conflict", source=path,
-                      expected="matching prior singleton positive control", actual=row.get("terminalSelection"))
-            retained_control += 1
+                      expected="matching prior singleton or reverified ambiguous control",
+                      actual=row.get("terminalSelection"))
             continue
         if (row.get("boundaryClass") != "ambiguous"
                 or row.get("coverageStatus") != "ambiguous-disjoint-independent-ranges"
@@ -478,18 +526,20 @@ def apply_verified_capture_target_set(
     if (len(seen_observations) != len(verified_rows)
             or roles["unresolved"] != summary.get("unresolvedTargets")
             or roles["positiveControl"] != summary.get("positiveControls")
-            or retained_control != roles["positiveControl"]
-            or len(plans) != roles["unresolved"]):
+            or retained_control + promoted_control != roles["positiveControl"]
+            or len(plans) != roles["unresolved"] + promoted_control):
         _fail("skill-target-set-role-accounting-drift", source=str(verification_path),
               expected={"observations": len(verified_rows),
                         "unresolved": summary.get("unresolvedTargets"),
                         "positiveControls": summary.get("positiveControls")},
               actual={"observations": len(seen_observations), **roles,
                       "retainedPositiveControls": retained_control,
+                      "promotedPositiveControls": promoted_control,
                       "promotions": len(plans)})
     for row, target, static, key in plans:
         _promote(row, target, static, key)
     return {**verification_fingerprint,
-            "inputs": [inputs[name] for name in _PROVENANCE_INPUTS],
+            "inputs": [inputs[name] for name in names],
             "targets": len(targets), "promoted": len(plans),
-            "retainedPositiveControls": retained_control}
+            "retainedPositiveControls": retained_control,
+            "promotedPositiveControls": promoted_control}

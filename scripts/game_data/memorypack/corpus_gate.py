@@ -267,16 +267,25 @@ def verify_current_report_inputs(
     *,
     expected_format: str = "animestudio-skilldata-current-vfs-corpus",
     label: str = "SkillData",
+    allow_partial: bool = False,
 ) -> dict[str, Any]:
-    """Recheck live provenance of an already authenticated complete report.
+    """Recheck live provenance of a complete or explicitly scoped report.
 
     This does not re-stream bytes or certify an arbitrary report. Consumers
     must first authenticate the report itself; a report hash alone cannot
     establish that its tool, parser, catalog and chunk inputs are still live.
+    The partial opt-in is for an exact targeted scope checked by its caller;
+    the strict complete-report default remains unchanged.
     """
+    complete = (report.get("status") == "complete"
+                and report.get("publicationEligible") is True)
+    targeted = (allow_partial and report.get("status") == "partial"
+                and report.get("publicationEligible") is False
+                and isinstance(report.get("targetedVirtualPaths"), list)
+                and bool(report["targetedVirtualPaths"]))
     if (report.get("format") != expected_format
-            or report.get("schemaVersion") != 1 or report.get("status") != "complete"
-            or report.get("publicationEligible") is not True):
+            or report.get("schemaVersion") != 1
+            or not (complete or targeted)):
         _fail("report-not-complete", source=f"{label} corpus report", actual=report.get("status"))
     provenance = report.get("provenance")
     if not isinstance(provenance, Mapping):

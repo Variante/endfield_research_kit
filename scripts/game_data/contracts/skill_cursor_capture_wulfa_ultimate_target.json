@@ -1,0 +1,19 @@
+{
+  "schema": "endfield.skill-cursor-capture-target.v1",
+  "status": "selected-current-logical-source",
+  "target": {
+    "virtualPath": "Data/Json/SkillData/chr_0028_wulfa_ultimate_skill.json",
+    "length": 316489,
+    "logicalSha256": "24C45E5DC71C12ABA122D7F8CCD2F4463D7EAD705FC86BBB87A08ED67AC97A16"
+  },
+  "scopedEvidence": {
+    "basis": "tmp/audio-skilldata/try_teleport_squad_unknown_current.json",
+    "controls": "tmp/audio-skilldata/family_samples.json",
+    "source": "export_full/game/Json/SkillData/chr_0028_wulfa_ultimate_skill.json",
+    "oldSharedParser": "tmp/audio-skilldata/skill_timeline_shared_sequence_pre_dice_float.py",
+    "oldSharedContract": "tmp/audio-skilldata/skill_timeline_shared_sequence_native_pre_dice_float.json",
+    "oldCaptureTargetVerifier": "tmp/audio-skilldata/skill_cursor_capture_target_pre_wulfa_capture.py",
+    "oldCursorReceiptVerifier": "tmp/audio-skilldata/skill_cursor_receipt_pre_wulfa_capture.py"
+  },
+  "evidenceBoundary": "One current VFS-authenticated Wulfa logical source for a bounded direct-reader cursor capture. Exact additive parser proof and native reader validation establish ActionGroupData and fields through 42; the capture must select fields 43-47 for this exact copied byte identity. No runtime animation effect is inferred."
+}

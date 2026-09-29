@@ -1,0 +1,96 @@
+{
+  "schema": "endfield.skill-timeline-check-skill-has-hit-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "primitiveReadContract": "skill_timeline_check_hit_collider_options_native.json",
+  "serializedMemberCount": 4,
+  "dispatcher": {
+    "unionTag": 75,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82210063,
+    "routeWindow": {
+      "startRva": 82210063,
+      "endRva": 82210111,
+      "sha256": "489425C7699433BCA7F19677DF2D792B35BFDF3013608B8DA5BD0F9E8AF0F59C",
+      "boundary": "selected CheckSkillHasHit wrapper load"
+    },
+    "usageCellRva": 218338856,
+    "usageRawHex": "AB3F032000000000",
+    "registeredTypeIndex": 106453,
+    "wrapperTypeDefinition": 16681,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckSkillHasHit_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      124584,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckSkillHasHit_DataForMemoryPack+Beyond_Gameplay_Core_CheckSkillHasHit_DataForMemoryPackFormatter",
+      "Deserialize",
+      153905472
+    ],
+    [
+      124583,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckSkillHasHit_DataForMemoryPack",
+      "Deserialize",
+      153905704
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153905472,
+      "endRva": 153905704,
+      "sha256": "5016927D981802D30F233535C340A84C0A336C519D1C5725D45525C91027004B",
+      "boundary": "formatter forwarding to selected reader"
+    },
+    {
+      "startRva": 153905704,
+      "endRva": 153906099,
+      "sha256": "D4EBD88C70BADD2FF5790282FA840F67D053EA7D3F38EB6F8DB947496A49D021",
+      "boundary": "four source reads through normal return"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 153905881,
+    "hex": "807C243804"
+  },
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153905898,
+      "sourceCallHex": "E8D11D9EF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 153905934,
+      "sourceCallHex": "E89D1B9EF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153905963,
+      "sourceCallHex": "E8801B9EF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153905992,
+      "sourceCallHex": "E8631B9EF9",
+      "sourceTargetRva": 46827184
+    }
+  ],
+  "evidenceBoundary": "The selected AbilityActionData switch route loads the generated CheckSkillHasHit wrapper. Its reader body tests member count four and calls a byte reader followed by three DWORD readers in the generated wrapper member order. The bounded source decoder proves stored framing only; it does not observe whether a skill hit, a server action ran, or this ability branch executed."
+}

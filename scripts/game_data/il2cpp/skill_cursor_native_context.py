@@ -133,21 +133,29 @@ def _first_difference(expected: Any, actual: Any, path: str) -> tuple[str, Any, 
     return None
 
 
-def validate_unselected_basis(corpus: Mapping[str, Any], *, source: str) -> tuple[str, int]:
+def validate_unselected_basis(corpus: Mapping[str, Any], *, source: str,
+                              scoped_target_path: str | None = None) -> tuple[str, int]:
     """Reject any selected terminal, stale summary, or unbounded row state."""
     input_set = corpus.get("inputSetSha256")
     _require(isinstance(input_set, str) and HEX64.fullmatch(input_set) is not None,
              "input-set-invalid", source=source, expected="64-hex inputSetSha256", actual=input_set)
+    expected_status = "partial" if scoped_target_path else "complete"
+    expected_publication = False if scoped_target_path else True
     _require(corpus.get("format") == "animestudio-skilldata-current-vfs-corpus"
-             and corpus.get("status") == "complete"
-             and corpus.get("publicationEligible") is True,
-             "basis-not-complete", source=source,
+             and corpus.get("status") == expected_status
+             and corpus.get("publicationEligible") is expected_publication,
+             "basis-status-mismatch", source=source,
              expected={"format": "animestudio-skilldata-current-vfs-corpus",
-                       "status": "complete", "publicationEligible": True},
+                       "status": expected_status, "publicationEligible": expected_publication},
              actual={key: corpus.get(key) for key in ("format", "status", "publicationEligible")})
     rows = corpus.get("files")
     _require(isinstance(rows, list) and bool(rows), "basis-files-invalid", source=source,
              expected="nonempty files array", actual=type(rows).__name__)
+    if scoped_target_path is not None:
+        _require(corpus.get("targetedVirtualPaths") == [scoped_target_path]
+                 and len(rows) == 1 and rows[0].get("virtualPath") == scoped_target_path,
+                 "basis-target-scope-mismatch", source=source,
+                 expected=[scoped_target_path], actual=corpus.get("targetedVirtualPaths"))
     summary = corpus.get("summary")
     _require(isinstance(summary, Mapping), "basis-summary-invalid", source=source,
              expected="summary object", actual=type(summary).__name__)
@@ -318,7 +326,8 @@ def validate_capture_target(corpus: Mapping[str, Any], contract: Mapping[str, An
 
 
 def audit_native_only(corpus_path: Path = DEFAULT_CORPUS,
-                      target_contract_path: Path | None = None) -> dict[str, Any]:
+                      target_contract_path: Path | None = None,
+                      *, scoped_wulfa: bool = False) -> dict[str, Any]:
     corpus_path = Path(corpus_path).resolve()
     contract_path = CONTRACT_PATH.resolve()
     target_contract_path = Path(target_contract_path or TARGET_CONTRACT_PATH).resolve()
@@ -340,10 +349,24 @@ def audit_native_only(corpus_path: Path = DEFAULT_CORPUS,
              actual={"contract": type(contract).__name__,
                      "targetContract": type(target_contract).__name__,
                      "corpus": type(corpus).__name__})
-    input_set, file_count = validate_unselected_basis(corpus, source=str(corpus_path))
+    scoped_path = (
+        "Data/Json/SkillData/chr_0028_wulfa_ultimate_skill.json" if scoped_wulfa else None
+    )
+    input_set, file_count = validate_unselected_basis(
+        corpus, source=str(corpus_path), scoped_target_path=scoped_path,
+    )
     target = validate_capture_target(corpus, target_contract, source=str(target_contract_path))
     try:
-        verify_current_report_inputs(corpus)
+        if scoped_wulfa:
+            from scripts.game_data.memorypack.skill_cursor_wulfa_scope import validate_current_scope
+            scoped_provenance = validate_current_scope(corpus_path, target_contract)
+            _require(target["virtualPath"] == scoped_path
+                     and scoped_provenance["inputSetSha256"] == input_set,
+                     "scoped-target-drift", source=str(target_contract_path),
+                     expected=scoped_path, actual=target["virtualPath"])
+        else:
+            scoped_provenance = None
+            verify_current_report_inputs(corpus)
     except (CensusGateError, OSError, ValueError, KeyError, TypeError) as exc:
         raise NativeCursorContextError("basis-provenance-failed", source=str(corpus_path),
                                        expected="current VFS/source/parser provenance",
@@ -397,6 +420,7 @@ def audit_native_only(corpus_path: Path = DEFAULT_CORPUS,
         "contractReference": contract_reference,
         "captureTargetContractReference": target_contract_reference,
         "captureTarget": target,
+        **({"scopedTargetProvenance": scoped_provenance} if scoped_provenance else {}),
         "auditorReference": auditor_reference,
         "nativeValidation": {"status": "validated", **native_counts},
         "selectedSkillDataReaderOrder": {
@@ -404,6 +428,10 @@ def audit_native_only(corpus_path: Path = DEFAULT_CORPUS,
             "runtimeCursorObserver": observer,
         },
         "evidenceBoundary": (
+            "The one-source Wulfa report has an exact additive parser proof, current source/tool "
+            "provenance, and a selected-build native observer. It is a partial diagnostic, not "
+            "a complete SkillData census or a selected terminal."
+            if scoped_wulfa else
             "The complete-shaped unselected SkillData report has current source/tool provenance "
             "and an exact report digest; this audit does not re-stream every file. Selected "
             "installed native files, registered reader methods, body hashes and 47+2 observer "
@@ -415,8 +443,10 @@ def audit_native_only(corpus_path: Path = DEFAULT_CORPUS,
 
 def preflight_native_only(corpus_path: Path = DEFAULT_CORPUS,
                           context_path: Path = DEFAULT_CONTEXT,
-                          target_contract_path: Path | None = None) -> str:
-    expected = audit_native_only(corpus_path, target_contract_path)
+                          target_contract_path: Path | None = None,
+                          *, scoped_wulfa: bool = False) -> str:
+    expected = audit_native_only(corpus_path, target_contract_path,
+                                 scoped_wulfa=scoped_wulfa)
     context_path = Path(context_path).resolve()
     _require(context_path.is_file(), "context-missing", source=str(context_path),
              expected="native-only context report", actual="missing")
@@ -437,6 +467,8 @@ def preflight_native_only(corpus_path: Path = DEFAULT_CORPUS,
         result = preflight_skilldata_corpus(
             corpus_report_path=corpus_path,
             native_context_path=context_path,
+            scoped_target_path=(expected["captureTarget"]["virtualPath"]
+                                if scoped_wulfa else None),
         )
     except ReceiptVerificationError as exc:
         raise NativeCursorContextError("receipt-preflight-failed", source=str(context_path),
@@ -471,6 +503,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_CONTEXT,
                         help="atomic report output when building")
     parser.add_argument("--preflight", action="store_true")
+    parser.add_argument("--scoped-wulfa", action="store_true",
+                        help="authenticate only the saved Wulfa source and exact additive route proof")
     parser.add_argument("--capture-binding", action="store_true",
                         help="with --preflight print input set and exact target source SHA-256")
     args = parser.parse_args(argv)
@@ -479,14 +513,16 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.preflight:
             result = preflight_native_only(args.corpus_report, args.native_context,
-                                           args.target_contract)
+                                           args.target_contract,
+                                           scoped_wulfa=args.scoped_wulfa)
             if args.capture_binding:
                 context = json.loads(args.native_context.read_text(encoding="utf-8"))
                 print(result, context["captureTarget"]["logicalSha256"])
             else:
                 print(result)
         else:
-            result = audit_native_only(args.corpus_report, args.target_contract)
+            result = audit_native_only(args.corpus_report, args.target_contract,
+                                       scoped_wulfa=args.scoped_wulfa)
             _atomic_json(args.output, result)
             print(json.dumps({"status": result["status"],
                               "inputSetSha256": result["inputSetSha256"],

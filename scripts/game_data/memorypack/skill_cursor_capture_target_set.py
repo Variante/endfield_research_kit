@@ -43,6 +43,16 @@ module then verifies ``<session>/skilldata-cursor/receipt.json`` into
 ``skilldata_cursor_target_set_diagnostic_latest.json``).  The verification
 is what ``memorypack.skill_corpus --capture-target-set-verification`` replays.
 Raw sessions stay under ``scratch/reverse_engineering/endfield_capture/``.
+
+Offline rebind.  After an exporter audit changes inputSetSha256 without a
+game-build change, stream only the reviewed target paths with
+``skill_corpus --target-set-contract`` into a partial report under ``tmp/``.
+``--rebind-current-corpus --historical-verification`` rechecks the unchanged
+raw receipt, historical target binding, current source bytes, native reader
+and static field spans against that exact sparse scope.  Its report retains
+the capture's original input set and can later be replayed by the full corpus
+gate if a complete publication is separately authorized.  It never labels
+the sparse report a full SkillData census.
 """
 
 from __future__ import annotations
@@ -61,6 +71,7 @@ from scripts.repo_paths import REPO_ROOT
 
 
 OUTPUT_SCHEMA = "endfield.skillDataCursorTargetSetVerification.v1"
+REBIND_OUTPUT_SCHEMA = "endfield.skillDataCursorTargetSetRebind.v1"
 DIAGNOSTIC_OUTPUT_SCHEMA = "endfield.skillDataCursorTargetSetDiagnostic.v1"
 RECEIPT_SCHEMA = "endfieldCapture.skillDataCursorCapture.v3"
 DEFAULT_CORPUS = context_audit.DEFAULT_CORPUS
@@ -69,6 +80,9 @@ DEFAULT_TARGET_CONTRACT = context_audit.TARGET_CONTRACT_PATH
 DEFAULT_OUTPUT = REPO_ROOT / "reports/animestudio/skilldata_cursor_target_set_verification_latest.json"
 DEFAULT_DIAGNOSTIC_OUTPUT = (
     REPO_ROOT / "reports/animestudio/skilldata_cursor_target_set_diagnostic_latest.json"
+)
+DEFAULT_REBIND_OUTPUT = (
+    REPO_ROOT / "reports/animestudio/skilldata_cursor_target_set_rebind_latest.json"
 )
 
 LOSS_COUNTERS = (
@@ -463,31 +477,466 @@ def verify_capture_target_set(
     return result
 
 
+def _pinned_historical_input(value: Any, *, label: str,
+                             expected_path: Path | None = None) -> dict[str, Any]:
+    """Authenticate saved evidence bytes without requiring old code to be live."""
+    _require(isinstance(value, Mapping), f"historical {label}: missing file reference")
+    raw_path = value.get("path")
+    _require(isinstance(raw_path, str) and Path(raw_path).is_absolute(),
+             f"historical {label}: expected absolute file path")
+    path = Path(raw_path).resolve()
+    if expected_path is not None:
+        _require(path == expected_path.resolve(),
+                 f"historical {label}: path differs from selected input")
+    actual = context_audit.native._file_reference(path)
+    _require((value.get("length"), value.get("sha256")) ==
+             (actual["length"], actual["sha256"]),
+             f"historical {label}: saved file bytes differ")
+    return actual
+
+
+def verify_capture_target_set_rebind(
+    receipt: Mapping[str, Any], *, receipt_path: Path, receipt_sha256: str,
+    historical_verification_path: Path, corpus_path: Path,
+    target_contract_path: Path = DEFAULT_TARGET_CONTRACT,
+) -> dict[str, Any]:
+    """Recheck a saved complete v3 session on a newly streamed input set.
+
+    The old input-set value remains attached to the capture.  Only the
+    independently authenticated current corpus supplies the new value; every
+    copied source and reader cursor is checked anew before an overlay may use
+    this report.  Old code fingerprints are retained as historical provenance,
+    rather than incorrectly treated as current code.
+    """
+    _require(receipt.get("schema") == RECEIPT_SCHEMA,
+             "receipt.schema: expected v3 target-set capture")
+    legacy_compatible = dict(receipt)
+    legacy_compatible["schema"] = receipt_verifier.SCHEMA
+    from_input, game_hash, metadata_hash, _unsupported = (
+        receipt_verifier._require_capture_gates(legacy_compatible)
+    )
+    _require(receipt.get("pendingRecords") == 0
+             and receipt.get("progressPublicationFailures") == 0,
+             "receipt transport: pending records or progress publication failures")
+    _require("targetSourceSha256" not in receipt,
+             "receipt.targetSourceSha256: singleton binding is invalid in v3")
+    _require((receipt.get("unsupported") == receipt.get("unsupportedSourceLength", 0)
+              + receipt.get("unsupportedSourceIdentity", 0))
+             and all(type(receipt.get(name)) is int and receipt[name] >= 0
+                     for name in ("unsupportedSourceLength", "unsupportedSourceIdentity",
+                                  "wrongCallsite")),
+             "receipt unsupported and callsite counters are invalid")
+
+    historical, historical_sha256 = receipt_verifier._load_json_with_sha256(
+        historical_verification_path, label="historical target-set verification"
+    )
+    historical_provenance = historical.get("provenance")
+    historical_summary = historical.get("summary")
+    historical_targets = historical.get("targets")
+    historical_rows = historical.get("rows")
+    _require(historical.get("schema") == OUTPUT_SCHEMA
+             and historical.get("status") == "validated"
+             and historical.get("coverageStatus") == "complete"
+             and historical.get("publicationEligible") is not False
+             and historical.get("inputSetSha256") == from_input
+             and historical.get("nativeInputs") == {
+                 "gameAssemblySha256": game_hash, "metadataSha256": metadata_hash}
+             and isinstance(historical_provenance, Mapping)
+             and isinstance(historical_summary, Mapping)
+             and historical_summary.get("globalFailureReasons") == []
+             and isinstance(historical_targets, list)
+             and isinstance(historical_rows, list),
+             "historical target-set verification is not complete for this capture")
+    receipt_reference = _pinned_historical_input(
+        historical_provenance.get("receipt"), label="receipt",
+        expected_path=receipt_path,
+    )
+    _require(receipt_reference["sha256"] == receipt_sha256.upper(),
+             "receipt bytes changed since loading")
+    old_corpus_reference = _pinned_historical_input(
+        historical_provenance.get("corpusReport"), label="corpus report"
+    )
+    old_context_reference = _pinned_historical_input(
+        historical_provenance.get("nativeContext"), label="native context"
+    )
+    target_contract_reference = _pinned_historical_input(
+        historical_provenance.get("captureTargetSetContract"),
+        label="target-set contract", expected_path=target_contract_path,
+    )
+    # These verifier files are expected to have changed.  Their old digests
+    # are provenance only; the current implementation rechecks raw evidence.
+    for name in ("verifier", "captureTargetSetVerifier"):
+        recorded = historical_provenance.get(name)
+        _require(isinstance(recorded, Mapping)
+                 and isinstance(recorded.get("path"), str)
+                 and type(recorded.get("length")) is int
+                 and recorded["length"] > 0
+                 and isinstance(recorded.get("sha256"), str)
+                 and context_audit.native.HEX64.fullmatch(recorded["sha256"]) is not None,
+                 f"historical {name}: invalid code provenance")
+
+    contract = receipt_verifier._load_json(
+        target_contract_path, label="target-set contract"
+    )
+    _require(historical_provenance.get("corpusReport", {}).get("identitySetSha256")
+             == contract.get("sourceIdentitySetSha256"),
+             "historical verification and reviewed target-set identity differ")
+    old_context = receipt_verifier._load_json(
+        Path(old_context_reference["path"]), label="historical native context"
+    )
+    selected_basis = contract.get("selectedStatusBasis")
+    _require(isinstance(selected_basis, Mapping)
+             and isinstance(selected_basis.get("path"), str),
+             "target-set contract lacks its historical selected-status basis")
+    selected_path = (REPO_ROOT / selected_basis["path"]).resolve()
+    report_root = (REPO_ROOT / "reports/animestudio").resolve()
+    _require(selected_path.is_relative_to(report_root)
+             and selected_path.name.startswith("skilldata_target_set_selected_basis_")
+             and selected_path.suffix == ".json",
+             "historical selected-status basis path is invalid")
+    selected_reference = _pinned_historical_input(
+        {"path": str(selected_path), "length": selected_basis.get("length"),
+         "sha256": selected_basis.get("sha256")},
+        label="selected-status basis", expected_path=selected_path,
+    )
+    _require(old_context.get("schema") == context_audit.SCHEMA
+             and old_context.get("inputSetSha256") == from_input
+             and old_context.get("corpusReference", {}).get("sha256")
+             == old_corpus_reference["sha256"]
+             and old_context.get("selectedStatusReportReference") == selected_reference
+             and old_context.get("captureTargetSetContractReference", {}).get("sha256")
+             == target_contract_reference["sha256"],
+             "historical native context no longer joins its pinned inputs")
+
+    current_corpus, current_corpus_sha256 = receipt_verifier._load_json_with_sha256(
+        corpus_path, label="current unselected SkillData corpus"
+    )
+    context_audit.native.verify_current_report_inputs(
+        current_corpus, allow_partial=True
+    )
+    to_input = receipt_verifier._sha256_text(
+        current_corpus.get("inputSetSha256"), source="currentCorpus.inputSetSha256"
+    )
+    _require(contract.get("schema") == context_audit.CONTRACT_SCHEMA
+             and contract.get("status") == "selected-current-logical-source-set"
+             and contract.get("captureMaxSourceBytes") == 131072
+             and isinstance(contract.get("targets"), list),
+             "reviewed target-set contract shape is invalid")
+    targets = contract["targets"]
+    target_paths = [row.get("virtualPath") if isinstance(row, Mapping) else None
+                    for row in targets]
+    current_rows = current_corpus.get("files")
+    _require(current_corpus.get("status") == "partial"
+             and current_corpus.get("publicationEligible") is False
+             and isinstance(current_rows, list)
+             and len(current_rows) == len(targets)
+             and current_corpus.get("targetedVirtualPaths") == target_paths
+             and target_paths == sorted(target_paths)
+             and len(target_paths) == len(set(target_paths)),
+             "current target basis is not the exact reviewed sparse scope")
+    _require(current_corpus.get("provenance", {}).get("targetSelectionContract") ==
+             target_contract_reference,
+             "current sparse basis does not pin the reviewed target contract")
+    for target, row in zip(targets, current_rows):
+        _require(isinstance(target, Mapping) and isinstance(row, Mapping)
+                 and target.get("role") in ("unresolved", "positiveControl")
+                 and (row.get("virtualPath"), row.get("length"),
+                      row.get("logicalSha256")) ==
+                 (target.get("virtualPath"), target.get("length"),
+                  target.get("logicalSha256"))
+                 and row.get("inputSetSha256") == to_input
+                 and row.get("blockName") == "JsonData"
+                 and row.get("blockTypeValue") == 19
+                 and row.get("boundaryClass") == "ambiguous"
+                 and row.get("coverageStatus") == "ambiguous-disjoint-independent-ranges"
+                 and row.get("wholeSchemaExact") is False
+                 and row.get("terminalSelection") is None
+                 and isinstance(row.get("framing"), Mapping)
+                 and row["framing"].get("candidateCount") == 2,
+                 f"current sparse target row differs from reviewed source: {target}")
+    _require(to_input != from_input,
+             "rebind requires a new input set; use strict same-input verification")
+    target_sources = [
+        {"sourceLength": row["length"], "sourceSha256": row["logicalSha256"]}
+        for row in targets
+    ]
+    binding_sha256 = context_audit.target_set_binding_sha256(target_sources)
+    _require(receipt.get("targetSources") == target_sources
+             and receipt.get("targetSetBindingSha256") == binding_sha256
+             and historical.get("targetSetBindingSha256") == binding_sha256
+             and old_context.get("targetSources") == target_sources
+             and old_context.get("captureTargetSet") == targets,
+             "capture target binding differs from the reviewed source set")
+    _require(contract.get("nativeInputs") ==
+             {"GameAssembly.dll": game_hash, "global-metadata.dat": metadata_hash},
+             "target-set native pins differ from the captured build")
+    native_contract_path = context_audit.native.CONTRACT_PATH
+    native_contract_reference = context_audit.native._file_reference(native_contract_path)
+    historical_observer_reference = old_context.get("contractReference")
+    _require(isinstance(historical_observer_reference, Mapping)
+             and isinstance(historical_observer_reference.get("path"), str)
+             and Path(historical_observer_reference["path"]).resolve()
+             == native_contract_path.resolve()
+             and type(historical_observer_reference.get("length")) is int
+             and historical_observer_reference["length"] > 0
+             and isinstance(historical_observer_reference.get("sha256"), str)
+             and context_audit.native.HEX64.fullmatch(
+                 historical_observer_reference["sha256"]) is not None,
+             "historical native observer contract provenance is invalid")
+    native_contract = receipt_verifier._load_json(
+        native_contract_path, label="native observer contract"
+    )
+    historical_observer = old_context.get("selectedSkillDataReaderOrder", {})
+    historical_observer = (historical_observer.get("runtimeCursorObserver")
+                           if isinstance(historical_observer, Mapping) else None)
+    _require(isinstance(historical_observer, Mapping)
+             and historical_observer.get("status") == "exact-static-callsite-vector"
+             and historical_observer.get("fieldCallsites")
+             == native_contract.get("fieldCallsites")
+             and historical_observer.get("inlineField")
+             == native_contract.get("inlineField")
+             and historical_observer.get("actionGroupChildCallsites")
+             == native_contract.get("actionGroupChildCallsites")
+             and historical_observer.get("sourceLengths")
+             == native_contract.get("receiptVerifierSourceLengths")
+             and native_contract.get("nativeInputs") == contract.get("nativeInputs")
+             and old_context.get("nativeInputs", {}).get("gameassemblySha256")
+             == game_hash
+             and old_context.get("nativeInputs", {}).get("metadataSha256")
+             == metadata_hash
+             and old_context.get("nativeValidation", {}).get("status")
+             == "validated",
+             "native observer geometry or build differs from the captured context")
+    build_fingerprints = current_corpus.get("provenance", {}).get("buildFingerprints")
+    _require(isinstance(build_fingerprints, list),
+             "current sparse basis lacks native build fingerprints")
+    selected_native = {
+        Path(str(row.get("path"))).name.casefold(): row
+        for row in build_fingerprints if isinstance(row, Mapping)
+    }
+    game_row = selected_native.get("gameassembly.dll")
+    metadata_row = selected_native.get("global-metadata.dat")
+    _require(isinstance(game_row, Mapping) and isinstance(metadata_row, Mapping)
+             and game_row.get("sha256") == game_hash
+             and metadata_row.get("sha256") == metadata_hash,
+             "current sparse basis native paths/hashes differ from receipt")
+    native_gate = context_audit.native.check_installed_native_inputs(
+        game_hash, metadata_hash,
+        gameassembly=Path(game_row["path"]), metadata=Path(metadata_row["path"]),
+    )
+    _require(native_gate.status == "validated",
+             f"selected native inputs {native_gate.status}: {native_gate.detail}")
+    image = context_audit.native.NativeImage(
+        native_gate.gameassembly, native_gate.metadata,
+        label="skill-cursor-target-set-rebind",
+    )
+    native_counts = context_audit.native.validate_native_observer(
+        native_contract, image, source=str(native_contract_path)
+    )
+
+    observations = receipt.get("observations")
+    _require(isinstance(observations, list)
+             and len(observations) == len(targets)
+             and len(historical_targets) == len(targets)
+             and len(historical_rows) == len(targets),
+             "target-set capture does not contain one observation per reviewed target")
+    if "observationCount" in receipt:
+        _require(type(receipt["observationCount"]) is int
+                 and receipt["observationCount"] == len(observations),
+                 "receipt.observationCount differs from its observations")
+    observed_counts: dict[str, int] = {}
+    for index, observation in enumerate(observations):
+        _require(isinstance(observation, Mapping),
+                 f"receipt.observations[{index}]: expected object")
+        source_bytes, digest = receipt_verifier._decode_source(observation, index)
+        _require(len(source_bytes) <= contract["captureMaxSourceBytes"]
+                 and {"sourceLength": len(source_bytes), "sourceSha256": digest}
+                 in target_sources,
+                 f"receipt.observations[{index}]: source outside target set")
+        observed_counts[digest] = observed_counts.get(digest, 0) + 1
+    stats = _target_stats(receipt, target_sources, observed_counts)
+    _require(all(row["observationsPublished"] == 1
+                 and row["duplicateConflicts"] == 0
+                 and row["unverifiedPairs"] == 0 for row in stats),
+             "target-set receipt has missing, conflicting, or unverified pairs")
+    processed = sum(row["observationsPublished"] + row["duplicateIdentical"]
+                    + row["duplicateConflicts"] for row in stats)
+    _require(all(type(receipt.get(field)) is int and receipt[field] == processed
+                 for field in ("observationsProcessed", "publishedRecords", "completedPairs")),
+             "target-set receipt record totals do not reconcile")
+    _require(historical_summary.get("observationCount") == len(targets)
+             and historical_summary.get("unresolvedTargets") ==
+             sum(row["role"] == "unresolved" for row in targets)
+             and historical_summary.get("unresolvedExactClosed") ==
+             historical_summary.get("unresolvedTargets")
+             and historical_summary.get("positiveControls") == 1
+             and historical_summary.get("positiveControlsExactClosed") == 1,
+             "historical verification did not close the entire target set")
+
+    by_path = {row["virtualPath"]: row for row in current_rows}
+    from scripts.game_data.memorypack import skill_cursor_target_set_overlay as overlay
+    verified_rows = [
+        receipt_verifier._verify_observation(observation, index, current_rows, to_input)
+        for index, observation in enumerate(observations)
+    ]
+    observed_indices = {row.get("logicalSha256"): index
+                        for index, row in enumerate(verified_rows)}
+    _require(len(observed_indices) == len(targets),
+             "runtime observations do not identify every target uniquely")
+    prior_targets = {row.get("virtualPath"): row for row in historical_targets
+                     if isinstance(row, Mapping)}
+    _require(len(prior_targets) == len(targets),
+             "historical verification target identities are not unique")
+    rebound_targets = []
+    for target_index, target in enumerate(targets):
+        path, digest, length = (target["virtualPath"], target["logicalSha256"],
+                                target["length"])
+        index = observed_indices.get(digest)
+        _require(type(index) is int, f"{path}: no current runtime observation")
+        observed = verified_rows[index]
+        source_bytes, _source_hash = receipt_verifier._decode_source(observations[index], index)
+        current_row = by_path[path]
+        _require((observed.get("logicalPath"), observed.get("logicalSha256"),
+                  observed.get("hardLimit"), observed.get("boundaryClass"),
+                  observed.get("parserCursor")) ==
+                 (path, digest, length, "exact-closed", length)
+                 and current_row.get("logicalMd5") == hashlib.md5(source_bytes).hexdigest().upper(),
+                 f"{path}: current copied bytes or executed cursor do not close")
+        old_target = prior_targets.get(path)
+        old_row = historical_rows[index]
+        _require(isinstance(old_target, Mapping)
+                 and old_target.get("role") == target["role"]
+                 and old_target.get("status") == "observed-exact-closed"
+                 and old_target.get("captureHealth") == "clean"
+                 and old_target.get("observationCount") == 1
+                 and old_target.get("observationIndices") == [index]
+                 and old_target.get("duplicateConflicts") == 0
+                 and old_target.get("unverifiedPairs") == 0
+                 and old_target.get("sourceLength") == length
+                 and old_target.get("logicalSha256") == digest
+                 and old_target.get("selectedTerminal") == observed.get("candidate")
+                 and old_target.get("runtimeFieldRanges") == observed.get("runtimeFieldRanges")
+                 and old_target.get("actionGroupCheckpoints") ==
+                 observed.get("actionGroupCheckpoints")
+                 and isinstance(old_row, Mapping)
+                 and (old_row.get("logicalPath"), old_row.get("logicalSha256"),
+                      old_row.get("hardLimit")) == (path, digest, length),
+                 f"{path}: current cursor disagrees with historical verified target")
+        rebound = {
+            "virtualPath": path, "sourceLength": length, "logicalSha256": digest,
+            "role": target["role"], "status": "observed-exact-closed",
+            "cursorEvidenceStatus": "exact-closed", "captureHealth": "clean",
+            "observationIndices": [index], "observationCount": 1,
+            "duplicateIdentical": stats[target_index]["duplicateIdentical"],
+            "duplicateConflicts": 0, "unverifiedPairs": 0,
+            "selectedTerminal": observed["candidate"],
+            "runtimeFieldRanges": observed["runtimeFieldRanges"],
+            "actionGroupCheckpoints": observed["actionGroupCheckpoints"],
+            "parserCursor": observed["parserCursor"], "wholeSchemaExact": False,
+            "nestedActionGroupInterior": "unresolved",
+        }
+        overlay._validate_join(current_row, rebound, observed)
+        rebound_targets.append(rebound)
+
+    return {
+        "schema": REBIND_OUTPUT_SCHEMA,
+        "status": "validated", "coverageStatus": "complete",
+        "publicationEligible": True,
+        "fromInputSetSha256": from_input, "inputSetSha256": to_input,
+        "nativeInputs": {"gameAssemblySha256": game_hash,
+                         "metadataSha256": metadata_hash},
+        "targetSetBindingSha256": binding_sha256,
+        "provenance": {
+            "receipt": receipt_reference,
+            "historicalVerification": receipt_verifier._file_provenance(
+                historical_verification_path, historical_sha256),
+            "historicalCorpus": old_corpus_reference,
+            "historicalNativeContext": old_context_reference,
+            "selectedStatusBasis": selected_reference,
+            "corpusReport": {**receipt_verifier._file_provenance(
+                corpus_path, current_corpus_sha256),
+                "identitySetSha256": current_corpus["identitySetSha256"]},
+            "targetContract": target_contract_reference,
+            "historicalObserverContract": dict(historical_observer_reference),
+            "observerContract": native_contract_reference,
+            "cursorVerifier": context_audit.native._file_reference(
+                Path(receipt_verifier.__file__)),
+            "rebindVerifier": context_audit.native._file_reference(Path(__file__)),
+            "targetSetOverlay": context_audit.native._file_reference(
+                Path(overlay.__file__)),
+        },
+        "nativeValidation": {"status": "validated", **native_counts},
+        "summary": {
+            "unresolvedTargets": historical_summary["unresolvedTargets"],
+            "unresolvedExactClosed": historical_summary["unresolvedTargets"],
+            "positiveControls": 1, "positiveControlsExactClosed": 1,
+            "observationCount": len(verified_rows), "globalFailureReasons": [],
+        },
+        "targets": rebound_targets, "rows": verified_rows,
+        "evidenceBoundary": (
+            "The old loss-free v3 capture retains its original input set. An exact "
+            "27-source current VFS/stream target basis and the selected native observer "
+            "reconfirm each copied logical source and all direct reader cursors through "
+            "EOF. Current static ActionGroup and top-level field spans agree for each "
+            "source; populated ActionGroup child interiors and gameplay branch execution "
+            "remain unresolved."
+        ),
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("receipt", type=Path)
-    parser.add_argument("--corpus-report", type=Path, default=DEFAULT_CORPUS)
+    parser.add_argument("--corpus-report", type=Path)
     parser.add_argument("--native-context", type=Path, default=DEFAULT_NATIVE_CONTEXT)
     parser.add_argument("--target-contract", type=Path, default=DEFAULT_TARGET_CONTRACT)
     parser.add_argument("--output", type=Path)
     parser.add_argument("--diagnose-incomplete", action="store_true",
                         help="verify retained rows in a failed v3 transport; always non-publishable")
+    parser.add_argument("--rebind-current-corpus", action="store_true",
+                        help="recheck a complete historical v3 receipt against its exact current sparse target scope")
+    parser.add_argument("--historical-verification", type=Path,
+                        help="complete original target-set verification, required for offline rebind")
     args = parser.parse_args(argv)
-    output = args.output or (DEFAULT_DIAGNOSTIC_OUTPUT if args.diagnose_incomplete
+    if args.rebind_current_corpus:
+        if args.diagnose_incomplete or args.historical_verification is None or args.corpus_report is None:
+            parser.error("offline rebind requires --historical-verification and --corpus-report, without --diagnose-incomplete")
+    elif args.historical_verification is not None:
+        parser.error("--historical-verification requires --rebind-current-corpus")
+    output = args.output or (DEFAULT_REBIND_OUTPUT if args.rebind_current_corpus
+                             else DEFAULT_DIAGNOSTIC_OUTPUT if args.diagnose_incomplete
                              else DEFAULT_OUTPUT)
+    protected = [args.receipt, args.target_contract]
+    if args.corpus_report is not None:
+        protected.append(args.corpus_report)
+    if args.historical_verification is not None:
+        protected.append(args.historical_verification)
+    if output.resolve() in {path.resolve() for path in protected}:
+        parser.error("--output must not replace a receipt or evidence input")
     try:
         receipt, digest = receipt_verifier._load_json_with_sha256(
             args.receipt, label="target-set capture receipt"
         )
-        result = verify_capture_target_set(
-            receipt, receipt_path=args.receipt, receipt_sha256=digest,
-            corpus_path=args.corpus_report, native_context_path=args.native_context,
-            target_contract_path=args.target_contract,
-            diagnose_incomplete=args.diagnose_incomplete,
-        )
+        if args.rebind_current_corpus:
+            result = verify_capture_target_set_rebind(
+                receipt, receipt_path=args.receipt, receipt_sha256=digest,
+                historical_verification_path=args.historical_verification,
+                corpus_path=args.corpus_report,
+                target_contract_path=args.target_contract,
+            )
+        else:
+            result = verify_capture_target_set(
+                receipt, receipt_path=args.receipt, receipt_sha256=digest,
+                corpus_path=args.corpus_report or DEFAULT_CORPUS,
+                native_context_path=args.native_context,
+                target_contract_path=args.target_contract,
+                diagnose_incomplete=args.diagnose_incomplete,
+            )
     except (receipt_verifier.ReceiptVerificationError,
-            context_audit.native.NativeCursorContextError) as exc:
-        result = {"schema": DIAGNOSTIC_OUTPUT_SCHEMA if args.diagnose_incomplete
+            context_audit.native.NativeCursorContextError,
+            context_audit.native.CensusGateError, OSError, ValueError, KeyError, TypeError) as exc:
+        result = {"schema": REBIND_OUTPUT_SCHEMA if args.rebind_current_corpus
+                  else DIAGNOSTIC_OUTPUT_SCHEMA if args.diagnose_incomplete
                   else OUTPUT_SCHEMA, "status": "failed", "diagnostic": str(exc)}
         if args.diagnose_incomplete:
             result["publicationEligible"] = False

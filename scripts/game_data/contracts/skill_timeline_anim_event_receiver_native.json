@@ -1,0 +1,207 @@
+{
+  "schema": "endfield.skill-timeline-anim-event-receiver-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 7,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "primitiveReadContract": "buff_10c_native.json",
+  "sequenceReadContract": "buff_damage_sequence_action_condition_native.json",
+  "dispatcher": {
+    "unionTag": 18,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82208084,
+    "routeWindow": {
+      "startRva": 82208084,
+      "endRva": 82208134,
+      "sha256": "E9174D4EF54EA1529A0E3F2BC06C8E9CFF0E5C2C7E0519BA75A1AD83476E4659",
+      "boundary": "selected 0x0012 type usage and formatter route"
+    },
+    "usageCellRva": 218707168,
+    "usageRawHex": "6F3E032000000000",
+    "registeredTypeIndex": 106295,
+    "wrapperTypeDefinition": 15919,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimEventReceiver_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      118554,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimEventReceiver_DataForMemoryPack",
+      "Deserialize",
+      153675848
+    ],
+    [
+      118555,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimEventReceiver_DataForMemoryPack+Beyond_Gameplay_Core_AnimEventReceiver_DataForMemoryPackFormatter",
+      "Deserialize",
+      153675608
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153675848,
+      "endRva": 153676364,
+      "sha256": "9E8F8C1A95661FBDA3D9118C2735B8E3F90E74617FB7C6767003AF492FB1949C",
+      "boundary": "selected seven-member reader through normal return"
+    },
+    {
+      "startRva": 153675608,
+      "endRva": 153675697,
+      "sha256": "70DDBB2D9D68D5708EEE130B76F3E89AF17D98DFA2CE8E7D331D647E1A8CC434",
+      "boundary": "formatter forwarding into selected reader"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 153676037,
+    "hex": "807C243807"
+  },
+  "memberHeaderSourceCall": {
+    "sourceCallsiteRva": 153675973,
+    "sourceCallHex": "E8969FA1F9",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [
+    [
+      118549,
+      "set___actionOnEvent__",
+      "Beyond.Gameplay.Core.SequenceActionData"
+    ],
+    [
+      118550,
+      "set___blackboardKey__",
+      "System.String"
+    ],
+    [
+      118551,
+      "set___eventId__",
+      "System.String"
+    ]
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 118549,
+      "callsiteRva": 153676215,
+      "callHex": "E82C020000",
+      "targetRva": 153676776
+    },
+    {
+      "memberIndex": 5,
+      "methodIndex": 118550,
+      "callsiteRva": 153676245,
+      "callHex": "E83E020000",
+      "targetRva": 153676824
+    },
+    {
+      "memberIndex": 6,
+      "methodIndex": 118551,
+      "callsiteRva": 153676275,
+      "callHex": "E850020000",
+      "targetRva": 153676872
+    }
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153676054,
+      "sourceCallHex": "E8A59FA1F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 153676094,
+      "sourceCallHex": "E86D9DA1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153676127,
+      "sourceCallHex": "E84C9DA1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153676160,
+      "sourceCallHex": "E82B9DA1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "actionOnEvent",
+      "readKind": "sequence-action-data",
+      "sourceCallsiteRva": 153676196,
+      "sourceCallHex": "E8E772B1F9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "blackboardKey",
+      "readKind": "bounded-byte-payload",
+      "sourceCallsiteRva": 153676226,
+      "sourceCallHex": "E8399DA1F9",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "eventId",
+      "readKind": "bounded-byte-payload",
+      "sourceCallsiteRva": 153676256,
+      "sourceCallHex": "E81B9DA1F9",
+      "sourceTargetRva": 46827264
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 153676081,
+      "instructionHex": "488B15F0B4DF03",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 153676183,
+      "instructionHex": "488B15CA64D603",
+      "cellRva": 218058344,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected dispatch 0x0012 joins AnimEventReceiver wrapper, seven-member reader, SequenceActionData and Priority contexts.",
+    "direct": "Selected source reads inherited fields, one nested sequence and two bounded strings in wrapper order.",
+    "structuralOnly": "Stored event keys and nested actions do not show that an animation event fired.",
+    "unresolved": "Later SkillData actions, live formatter selection and runtime execution remain open."
+  }
+}

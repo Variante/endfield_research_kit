@@ -202,6 +202,16 @@
       }
     },
     {
+      "tag": "0x009C",
+      "typeName": "Beyond.Gameplay.Core.DiceFloat+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_dice_float_native.json",
+        "schema": "endfield.skill-timeline-dice-float-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x007B",
       "typeName": "Beyond.Gameplay.Core.Conditions.CheckSuperArmor+Data",
       "memberCount": 7,
@@ -376,6 +386,26 @@
       "sourceContract": {
         "path": "skill_timeline_move_to_location_native.json",
         "schema": "endfield.skill-timeline-move-to-location-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00FA",
+      "typeName": "Beyond.Gameplay.Core.MoveToSlotAction+Data",
+      "memberCount": 17,
+      "sourceContract": {
+        "path": "skill_timeline_move_to_slot_native.json",
+        "schema": "endfield.skill-timeline-move-to-slot-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00E5",
+      "typeName": "Beyond.Gameplay.Core.LogAction+Data",
+      "memberCount": 10,
+      "sourceContract": {
+        "path": "skill_timeline_log_action_native.json",
+        "schema": "endfield.skill-timeline-log-action-native-contract.v1",
         "orderedReadRef": "orderedSourceReads"
       }
     },
@@ -1050,6 +1080,16 @@
       "memberCount": 9
     },
     {
+      "tag": "0x0137",
+      "typeName": "Beyond.Gameplay.Core.SaveBuffStackNumByTag+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "skill_timeline_save_buff_stack_num_by_tag_native.json",
+        "schema": "endfield.skill-timeline-save-buff-stack-num-by-tag-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x0140",
       "typeName": "SaveTargetDistanceAction",
       "memberCount": 7
@@ -1328,6 +1368,16 @@
       }
     },
     {
+      "tag": "0x00BE",
+      "typeName": "Beyond.Gameplay.Core.FractureAction+Data",
+      "memberCount": 15,
+      "sourceContract": {
+        "path": "buff_frontier9.json",
+        "schema": "endfield.buff-frontier9-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=190].readOrder"
+      }
+    },
+    {
       "tag": "0x00BF",
       "typeName": "Beyond.Gameplay.Core.GainBreakingAttackAtb+Data",
       "memberCount": 7,
@@ -1343,7 +1393,11 @@
       "tag": "0x00C8",
       "typeName": "Beyond.Gameplay.Core.HurtAnimAction+Data",
       "memberCount": 10,
-      "evidence": "derivedPlanCorpusVerified"
+      "sourceContract": {
+        "path": "skill_timeline_hurt_anim_native.json",
+        "schema": "endfield.skill-timeline-hurt-anim-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     },
     {
       "tag": "0x00D2",
@@ -1406,6 +1460,16 @@
         "path": "skill_timeline_set_ability_entity_main_char_native.json",
         "schema": "endfield.skill-timeline-set-ability-entity-main-char-native-contract.v1",
         "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x015F",
+      "typeName": "Beyond.Gameplay.Core.ShowComboSkillUI+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "buff_residual_frontier.json",
+        "schema": "endfield.buff-residual-frontier-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=351].readOrder"
       }
     },
     {
@@ -1501,6 +1565,16 @@
       "typeName": "Beyond.Gameplay.Core.ToggleMeshAction+ToggleMeshActionData",
       "memberCount": 8,
       "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x018C",
+      "typeName": "Beyond.Gameplay.Core.TryToTeleportSquadAction+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_try_teleport_squad_native.json",
+        "schema": "endfield.skill-timeline-try-teleport-squad-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     },
     {
       "tag": "0x018F",
@@ -1691,6 +1765,26 @@
       "sourceContract": {
         "path": "skill_timeline_modify_camera_lock_point_native.json",
         "schema": "endfield.skill-timeline-modify-camera-lock-point-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0012",
+      "typeName": "Beyond.Gameplay.Core.AnimEventReceiver+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_anim_event_receiver_native.json",
+        "schema": "endfield.skill-timeline-anim-event-receiver-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x008B",
+      "typeName": "Beyond.Gameplay.Core.ContinuousSetAnimTimeScale+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_continuous_anim_time_scale_native.json",
+        "schema": "endfield.skill-timeline-continuous-anim-time-scale-native-contract.v1",
         "orderedReadRef": "orderedSourceReads"
       }
     },
@@ -2141,6 +2235,9 @@
       "path": "buff_frontier9.json"
     },
     {
+      "path": "buff_residual_frontier.json"
+    },
+    {
       "path": "skill_custom_root_motion_native.json"
     },
     {
@@ -2205,6 +2302,27 @@
     },
     {
       "path": "skill_timeline_move_to_location_native.json"
+    },
+    {
+      "path": "skill_timeline_move_to_slot_native.json"
+    },
+    {
+      "path": "skill_timeline_log_action_native.json"
+    },
+    {
+      "path": "skill_timeline_hurt_anim_native.json"
+    },
+    {
+      "path": "skill_timeline_try_teleport_squad_native.json"
+    },
+    {
+      "path": "skill_timeline_anim_event_receiver_native.json"
+    },
+    {
+      "path": "skill_timeline_continuous_anim_time_scale_native.json"
+    },
+    {
+      "path": "skill_timeline_save_buff_stack_num_by_tag_native.json"
     },
     {
       "path": "skill_timeline_ultimate_time_native.json"
@@ -2433,6 +2551,9 @@
     },
     {
       "path": "skill_timeline_two_action_routes_native.json"
+    },
+    {
+      "path": "skill_timeline_dice_float_native.json"
     },
     {
       "path": "skill_selector_finder_typhoea_native.json"

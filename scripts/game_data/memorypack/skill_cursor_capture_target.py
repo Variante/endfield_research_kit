@@ -108,6 +108,7 @@ def verify_capture_target(
     corpus_path: Path = DEFAULT_CORPUS,
     native_context_path: Path = DEFAULT_NATIVE_CONTEXT,
     target_contract_path: Path = DEFAULT_TARGET_CONTRACT,
+    scoped_wulfa: bool = False,
 ) -> dict[str, Any]:
     """Require a complete exact-target cursor while retaining all legacy gates."""
     contract, contract_sha256 = receipt_verifier._load_json_with_sha256(
@@ -119,6 +120,19 @@ def verify_capture_target(
     path, length, digest = _target_binding(
         receipt, native_context, contract, contract_sha256
     )
+    if scoped_wulfa:
+        from scripts.game_data.il2cpp.skill_cursor_native_context import (
+            NativeCursorContextError, preflight_native_only,
+        )
+        if path != "Data/Json/SkillData/chr_0028_wulfa_ultimate_skill.json":
+            raise receipt_verifier.ReceiptVerificationError("scoped Wulfa mode has a different target")
+        try:
+            preflight_native_only(corpus_path, native_context_path,
+                                  target_contract_path, scoped_wulfa=True)
+        except NativeCursorContextError as exc:
+            raise receipt_verifier.ReceiptVerificationError(
+                f"scoped Wulfa preflight failed: {exc}"
+            ) from exc
     result = receipt_verifier.verify_skilldata_cursor_capture(
         receipt,
         corpus_report_path=corpus_path,
@@ -126,6 +140,7 @@ def verify_capture_target(
         required_logical_paths=(path,),
         receipt_path=receipt_path,
         receipt_sha256=receipt_sha256,
+        scoped_target_path=path if scoped_wulfa else None,
     )
     summary = result["summary"]
     verified_lengths = summary["verifiedSourceLengths"]
@@ -177,6 +192,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--corpus-report", type=Path, default=DEFAULT_CORPUS)
     parser.add_argument("--native-context", type=Path, default=DEFAULT_NATIVE_CONTEXT)
     parser.add_argument("--target-contract", type=Path, default=DEFAULT_TARGET_CONTRACT)
+    parser.add_argument("--scoped-wulfa", action="store_true",
+                        help="replay the current Wulfa-only native and source gate")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
     try:
@@ -190,6 +207,7 @@ def main(argv: list[str] | None = None) -> int:
             corpus_path=args.corpus_report,
             native_context_path=args.native_context,
             target_contract_path=args.target_contract,
+            scoped_wulfa=args.scoped_wulfa,
         )
     except receipt_verifier.ReceiptVerificationError as exc:
         result = {"schema": OUTPUT_SCHEMA, "status": "failed", "diagnostic": str(exc)}

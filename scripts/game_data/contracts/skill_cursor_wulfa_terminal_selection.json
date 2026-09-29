@@ -1,0 +1,36 @@
+{
+  "schema": "endfield.skill-cursor-source-terminal-selection.v1",
+  "status": "observed-exact-source",
+  "source": {
+    "virtualPath": "Data/Json/SkillData/chr_0028_wulfa_ultimate_skill.json",
+    "length": 316489,
+    "logicalSha256": "24C45E5DC71C12ABA122D7F8CCD2F4463D7EAD705FC86BBB87A08ED67AC97A16"
+  },
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "receipt": {
+    "path": "scratch/reverse_engineering/endfield_capture/20260929T134937Z/skilldata-cursor/receipt.json",
+    "length": 640787,
+    "sha256": "BB5C9C8D4C2BD8B65B1F5F40CEB0E65F9E462CAEDB81C996CB96F81B62E4EB16"
+  },
+  "actionGroupChildCursors": [
+    {"childIndex": 0, "cursorAfter": 6},
+    {"childIndex": 1, "cursorAfter": 315044}
+  ],
+  "terminalSelection": {
+    "candidateIndex": 0,
+    "encoding": "one-member-wrapper",
+    "start": 316388,
+    "end": 316489,
+    "fieldRanges": [
+      {"fieldIndex": 43, "fieldName": "switchToCenterBeforeCast", "start": 316388, "end": 316389},
+      {"fieldIndex": 44, "fieldName": "tagDuringAttach", "start": 316389, "end": 316394},
+      {"fieldIndex": 45, "fieldName": "toggleBuffs", "start": 316394, "end": 316398},
+      {"fieldIndex": 46, "fieldName": "uiRangeHints", "start": 316398, "end": 316488},
+      {"fieldIndex": 47, "fieldName": "useAIExclusiveFrame", "start": 316488, "end": 316489}
+    ]
+  },
+  "evidenceBoundary": "exact stored-file framing for this copied Wulfa source and selected native build: the verified executed field and ActionGroup cursors match current static fields 0-42, choose the earlier terminal candidate and end at physical EOF. It does not show ultimate execution or animation behavior."
+}

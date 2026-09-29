@@ -1,0 +1,199 @@
+{
+  "schema": "endfield.skill-timeline-save-buff-stack-num-by-tag-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 8,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "primitiveReadContract": "buff_10c_native.json",
+  "targetReadContract": "buff_ec_native.json",
+  "queryReadContract": "buff_b4_native.json",
+  "dispatcher": {
+    "unionTag": 311,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82217411,
+    "routeWindow": {
+      "startRva": 82217411,
+      "endRva": 82217461,
+      "sha256": "3112ABD2866453B0D6EA10FACA6DE14B346D6269F35453E164627E6A96509386",
+      "boundary": "selected 0x0137 type usage and formatter route"
+    },
+    "usageCellRva": 218190360,
+    "usageRawHex": "FD43032000000000",
+    "registeredTypeIndex": 107006,
+    "wrapperTypeDefinition": 16389,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveBuffStackNumByTag_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      122417,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveBuffStackNumByTag_DataForMemoryPack",
+      "Deserialize",
+      153812500
+    ],
+    [
+      122418,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveBuffStackNumByTag_DataForMemoryPack+Beyond_Gameplay_Core_SaveBuffStackNumByTag_DataForMemoryPackFormatter",
+      "Deserialize",
+      153812268
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153812500,
+      "endRva": 153813100,
+      "sha256": "CB6F2F9551907D4A0B700B94F0AC14CEDDDF6DD8265ECAFA0AFB6C8A10D73639",
+      "boundary": "selected eight-member reader through normal return"
+    },
+    {
+      "startRva": 153812268,
+      "endRva": 153812500,
+      "sha256": "19B37A0071D6BAEA9660540618ACABE50938F8F08CE20FC3E0D56E045A91BCD7",
+      "boundary": "formatter forwarding into selected reader"
+    },
+    {
+      "startRva": 3199088,
+      "endRva": 3199118,
+      "sha256": "BD5F8F0DACCACFC4ECF2436EC01AA13F0C792D00E850F7701147CF79F2491AEB",
+      "boundary": "GameplayTagQuery generic read helper"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 153812713,
+    "hex": "807C244808"
+  },
+  "setterMethods": [
+    [
+      122411,
+      "set___buffStackNumType__",
+      "Beyond.Gameplay.Core.BuffStackNumType"
+    ],
+    [
+      122412,
+      "set___checkTarget__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ],
+    [
+      122413,
+      "set___key__",
+      "System.String"
+    ],
+    [
+      122414,
+      "set___tagQuery__",
+      "Beyond.Gameplay.Core.GameplayTagQuery"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153812730,
+      "sourceCallHex": "E8C1899FF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153812770,
+      "sourceCallHex": "E889879FF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153812803,
+      "sourceCallHex": "E868879FF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153812836,
+      "sourceCallHex": "E847879FF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "buffStackNumType",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153812876,
+      "sourceCallHex": "E81F879FF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "checkTarget",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 153812916,
+      "sourceCallHex": "E8D75CAFF9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "key",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 153812946,
+      "sourceCallHex": "E829879FF9",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "tagQuery",
+      "readKind": "query-profile",
+      "sourceCallsiteRva": 153812981,
+      "sourceCallHex": "E876D005F7",
+      "sourceTargetRva": 3199088
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 5,
+      "instructionRva": 153812903,
+      "instructionHex": "488B155A17DB03",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings"
+    },
+    {
+      "memberIndex": 7,
+      "instructionRva": 3199094,
+      "instructionHex": "4C8B05DB7DCE0C",
+      "cellRva": 218058328,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatch 0x0137 joins the SaveBuffStackNumByTag wrapper to its eight-member reader and two typed nested reads.",
+    "direct": "The source reads five fixed-width fields, TargetSettings, a bounded string and GameplayTagQuery in wrapper order.",
+    "structuralOnly": "Stored key, tag and stack-type bytes do not establish a runtime buff stack or chosen target.",
+    "unresolved": "Live formatter selection, execution, branch results and enclosing SkillData EOF remain open."
+  }
+}
