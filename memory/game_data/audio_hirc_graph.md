@@ -167,10 +167,16 @@ Detail lives in the owning modules; this is the boundary.
   need the selected-build gate in
   [`wwise_effect_native.py`](../../scripts/webui/audio/semantics/wwise_effect_native.py)
   over [`wwise_effect_parameters_native.json`](../../scripts/game_data/contracts/wwise_effect_parameters_native.json).
-  Convolution Reverb and Mastering Suite are joined to their methods structurally,
-  so the page shows their selected-build class identity and contiguous read span,
-  with no named or decoded settings; RoomVerb keeps eleven unnamed
-  floats. Slot flags are authored, not runtime DSP.
+  Convolution Reverb and Mastering Suite are joined to their methods structurally.
+  Their reviewed contract partitions each contiguous input span into anonymous
+  word copies, scalar loads and byte zero-tests/extensions, with an exact native
+  instruction witness for each read. The gate checks those witnesses and refuses
+  gaps, overlaps, incompatible widths and a partition that misses its declared
+  end. The page shows serialized offset, width and raw bits; a scalar load may
+  add a float32 representation view, not a named setting, unit or processed native
+  value. A short block publishes no read rows; a longer block retains its unread
+  suffix. These methods do not test the supplied length. RoomVerb keeps eleven
+  unnamed floats. Slot flags and native input reads are authored, not runtime DSP.
 - **Buses and NodeBase tail.** The bus forest is typed and complete. The NodeBase
   tail yields AuxParams (user-defined aux slots reach aux buses; no populated
   early-reflections target), AdvSettings, State groups and RTPC curves, checked by an

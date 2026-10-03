@@ -42,6 +42,14 @@ Story rebuild.
 Story's own `conv/*.json` never carries voice. Controls and rendering rules are
 in the header comment of `webui/app.js`.
 
+`webui/src/features/story/branches.js` renders the compact branch overview
+from the selected conversation and its existing mission publication; it adds
+no builder input or new recovery pass. `render(conv, options)` returns a fresh
+detached details element or `null`, so switching to a conversation without
+branches clears the previous overview with the conversation fragment. Local
+line and content links use the same `line`/`cid` Story destinations as Character
+appearances, including opening collapsed branch ancestors.
+
 ## Evidence boundary
 
 - Case-insensitive resource matching is accepted only when unique; authored
@@ -52,6 +60,16 @@ in the header comment of `webui/app.js`.
 - Timeline scheduling proves authored placement, not runtime activation.
 - Manual order and option placement are visibly manual and never promoted to
   source evidence.
+- The branch overview distinguishes exact `sceneGraphLinks` routes, authored
+  SNS `next` content references, stored option groups without a route witness,
+  and manual presentation or placement. A manual label on an otherwise direct
+  route retains both annotations. Local line paths, return loops and explicit
+  terminal outcomes remain local; a missing destination stays unresolved.
+  Mission `sourceBackedSceneEdges` are displayed with their stored evidence
+  kind: authored menu availability is not execution order. Weak/fallback
+  scene-order evidence and unresolved scene connections stay visible beside
+  the overview. The panel never turns file order or native address order into
+  a canonical playthrough; source file/node diagnostics remain behind debug.
 - A `DialogOptionTable` group number filling a missing `DialogTextTable` line
   number remains a placement fallback when no DialogTree or Timeline route
   witnesses it. In `dlg_f1m15_1`, group `5` currently appears after line

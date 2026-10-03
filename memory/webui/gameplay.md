@@ -34,6 +34,48 @@ sole writer is the `asset-refs` stage. Audio recovery may still publish
 them. Frontend rendering rules are in the header comment of
 `webui/src/features/gameplay/index.js`.
 
+List thumbnails reuse the optional asset sidecar. Characters use its horizontal
+face banner (the third gallery image in the current publication), selected by
+dimensions after applying the Administrator gender filter. Missing banners leave
+a text row instead of falling back to full illustrations. Other kinds use their
+first representative image. Rows refresh when the sidecar arrives or the gender
+changes; missing or broken images leave the text usable. This adds no new
+publication dependency or inferred asset owner.
+
+Character and enemy reading views prioritize parsed mechanisms and named
+attributes. `mechanics.js` turns gated DamageUnit operands, explicit projectile
+callbacks and decoded Buff modifiers into concise effect summaries. It omits
+disabled actions and their descendants, preserves conditional context, and
+never borrows another skill's level blackboard or evaluates a runtime operand
+from its stored fallback. Duplicate records do not become hit counts or an
+execution order. Combat and base talents are separate; raw action parameters
+and the reference navigator remain in debug information. Enemy variants use neutral
+configuration numbers unless the publication supplies a distinct name. Their
+selection changes the attribute template, modifiers and initial Buffs together;
+it does not establish phases or difficulty order. Unnamed attributes stay
+unnamed, and template combat fields remain separate from independent attributes
+rather than being merged into final values. Buff effects and their recovery
+status remain visible in normal view.
+
+Game descriptions are claims to check, not implementation evidence. The
+description audit distinguishes support for a named damage type or an exactly
+matched Poise parameter from unverified effects. Numeric comparison requires
+the same placeholder, owning skill, selected level, typed operand and native
+calculation gates; ambiguous calculations remain unverified. A difference is
+shown with both values for review, without calling it a confirmed gameplay bug.
+Damage-type support does not validate targets, triggers, duration or cardinality.
+In particular, an authored freeze/energy-return statement is not proved by a
+generic CreateBuff action, and enemy reflection or stance descriptions cannot
+be proved from initial Buffs alone. Missing parsed evidence is not evidence that
+the implementation is absent. Unknown effect families stay explicitly unverified.
+
+Items combine `UseItemTable`, `UsableItemChestTable` and `RecoverApItemTable`.
+AP recovery is the authored `apRecoverValue`; operator supplies are the
+`item_char_ap_supply_*` subset of that table. Existing entries gain AP data
+without a duplicate identity. Dataset tabs separate entity kinds, with item
+subtypes derived from the authored display/type fields and AP table membership.
+The page registry already requires the complete `table` block for this stage.
+
 ## Evidence boundary
 
 - Authored stats and level points are shown as authored. The Loadout view
@@ -90,11 +132,49 @@ them. Frontend rendering rules are in the header comment of
 ```bat
 python -m scripts.webui.gameplay.build_gameplay
 python -m scripts.webui.gameplay.build_gameplay --stage projectiles
+python -m scripts.webui.gameplay.build_gameplay --stage skill-refs
 python -m scripts.webui.gameplay.build_gameplay --stage asset-refs --default-language CN
 ```
 
 Use the canonical wrapper when cross-page Assets, Audio, source-graph, or
 Story inputs changed.
+
+## Authored skill reference navigator
+
+`skill_refs.py` publishes `data/gameplay/skill_refs/` from the last Data page's
+SkillData publication. The shared `data_inspector/publication.py` reader checks
+the root, catalog and shards against the selected export's complete loose-file
+signature and source identities. The consumer also authenticates the recorded
+native pair against the selected installation and requires a validated wrapper
+plan. Missing or stale inputs publish a visible unavailable reason; this stage
+does not build Data. An alternate `--export-root` requires `--game-root` so it
+cannot silently validate another installation.
+
+Character and enemy debug details show the current entry's exact skill IDs, with an
+all-skill catalog, shared search/facets, lazy per-skill records, back navigation,
+and incoming skill references inside an expandable navigator. Exact group
+membership supplies friendly skill names; a bounded label map translates known
+action types while preserving their raw type and fields. The normal mechanism
+view shares the navigator's authenticated record cache. Named action unions
+must be available before their damage is summarized, so missing action context
+cannot silently enable a disabled branch. Explicit enabled projectile callbacks
+may load one additional skill-reference step; their values still cannot borrow
+the parent's blackboard. Each node retains its nested source path, parent
+context and nearest stored frame
+interval, and named operands preserve their explicit selection flags. Static
+CreateBuff item references require `readIdFromBlackboard` to be false; a runtime
+key never promotes the stored fallback ID into a target. Explicit named fields
+link static next-skill, Buff and projectile IDs; dynamic blackboard keys are
+shown as parameters and never treated as target IDs. A unique SkillData ID is
+a direct stored reference. Buff filename presence is source-only evidence and
+does not validate the Buff's interior. Projectile definitions are available
+only when their byte-complete published source identity and raw-data hash still
+match the selected Unity store. Ambiguous or absent targets remain visible.
+
+Stored frame intervals are not converted into seconds, and list order does not
+claim runtime execution order. Conditional and nested contexts stay visible;
+anonymous values remain structural-only. This view does not calculate damage
+or attach audio. Its source links reuse the Data page's file navigation.
 
 ## Highest-value remaining gaps
 

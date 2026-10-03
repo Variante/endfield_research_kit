@@ -113,6 +113,107 @@ every file's content.
   order stay unresolved until an exact consumer trace or observed runtime event
   joins them; the source joins never become a Story edge or order on their own.
 
+## Shared mission state and condition connections
+
+[`mission_shared_native.py`](../../scripts/game_data/mission_shared_native.py)
+re-evaluates the reviewed named claims in
+[`mission_shared_native.json`](../../scripts/game_data/contracts/mission_shared_native.json)
+against explicitly selected assembly and metadata paths, with input gates
+before and after evaluation. Its bodies are limited to exact `.pdata` extents
+and unwind-owned fragments; unnamed helper bytes do not silently supply a
+callee. Field predicates match offsets, not typed receivers or complete control
+flow. The typed chains below also rely on reviewed instruction and metadata
+evidence. All behavior describes native default paths: live IFix selection,
+server policy and unvisited runtime execution remain unresolved.
+
+- Mission quest state, objective progress, and LevelScript task state use
+  separate message paths. `MissionSystem.Handle_QuestStateUpdate` reaches
+  `StartQuest`/`SucceedQuest`; `Handle_MissionStateUpdate` reaches
+  `CompleteMission`. Objective updates copy `ObjectiveData` and refresh
+  progress. Runtime `ObjectiveData.Copy` callers distinguish logic and display
+  destinations in both initial synchronization and later updates; duplicate
+  copies of one incoming condition are not independent completion messages.
+  Its receiver fields are before-copy snapshots, so a missing old receiver ID
+  does not erase the explicitly observed incoming ID.
+  Tracking data identifies navigation/presentation targets and does
+  not replace a completion condition. These consumers do not establish a
+  Mission quest-to-LevelScript task owner.
+- `StartQuest` distinguishes restoration from a newly entered quest. The
+  world-ready restore path passes `isNewQuest=false`; the quest-state update
+  path derives the flag from the prior state. A method entry alone cannot
+  identify a new progression. Client lifecycle phase dispatch uses the exact
+  `(questId, QuestAction)` pair in `MissionRuntimeAsset.runtimeClientActionMap`,
+  reconstructed from matching key/value array positions. A missing key returns
+  without an authored ActionMap action; a hit forwards the stored start-node ID
+  to `ActionMapAsset.RunAction`. Other script or server effects remain possible.
+  An observed null ActionMap key does not mean the phase map is empty: explicit
+  mission/start-node carriers and authenticated caller sites can still retain
+  its dispatch into an embedded action map.
+  Daily variants can share a localized title, root condition IDs and radio
+  assets while selecting different scripts and start nodes. Identify the
+  observed variant through explicit mission/quest carriers and the retained
+  definition; neither the visible title nor a reused radio ID selects it.
+  A condition ID alone is not a globally unique mission owner.
+- `CheckTalkOptionFinish` belongs to `GameConditionBoth`. Activation resolves
+  and caches its dialog/finish operands, checks existing finish history
+  immediately, and binds `Check` to `ON_SYNC_ALL_DIALOG` and `ON_FINISH_DIALOG`;
+  deactivation removes both bindings. The corresponding CinematicSystem
+  handlers populate or update the client finish-history dictionary before
+  raising those notifications. A negative configured finish ID accepts an
+  existing history entry; a nonnegative ID must occur in its recorded finish list.
+  This can use synchronized prior history and is distinct from a UI exit.
+  `SetFinishId` stores a local value and `_SendServer` forwards supplied finish
+  IDs/options, but their complete cached-value/request/reply ownership remains
+  unresolved. Entry observations from the typed Mission trace recipe show that
+  the supplied finish ID can differ from the cached field at `_SendServer`;
+  retain both instead of substituting the cache for the outgoing argument.
+  Sends have been observed in both `Exiting` and `Exited` states through
+  different callers, which does not by itself identify their branch predicate.
+  A quest configured with `CheckTalkOptionFinish` can have observed success
+  and a generic condition deactivation without any entry at the selected
+  type's `OnActivate`, `Check`, or `OnDeactivate` hooks. Matching the authored
+  dialog/finish operands to playback does not close that execution gap; the
+  runtime condition type, alternate implementation path, and server decision
+  remain unresolved.
+- `CheckActivityConditionalStageStatus` and `GameConditionServerPlaceHolder`
+  inherit the server-condition lane and declare no local `Check`; the activity
+  class also declares no activation override. Activity-stage descriptions and
+  block-condition admission are configuration consumers, not proof of a local
+  stage-state query. Placeholder conditions can compare delivered progress
+  locally; the client does not reveal the server criterion that produced it.
+  Keep authored stage/comparator/threshold parameters, received progress, and
+  authoritative completion policy as distinct evidence. Condition lifecycle
+  entries can retain progress equal to the threshold while the cached result
+  remains `Undecided`; these snapshots do not observe a `Check` return or prove
+  that a local comparison produced `True`.
+- LevelScript local condition changes send script/task/condition identity and
+  absolute progress (`isAdd=false`). Incoming task-state messages apply task
+  state through manager/runtime/task-runtime consumers. Separate condition maps
+  look up condition IDs, update `TaskCondition.isCompleted` and invoke its
+  completion delegate inline; a hook on the named invoker alone misses this
+  path. `TaskCondition.OnTaskStateCompleted` disposes the condition rather than
+  writing that flag. The native default `UpdateLevelScriptTaskStartFinish` path
+  is a no-op, while script-done synchronization follows its own state update.
+  The typed `UpdateTrackingObjectiveCompleted` entry is shared tracking
+  behavior: captures include both setting and clearing completion, including
+  clearing calls without an intervening observed progress-message handler.
+  Its objective-kind argument is not a condition-map key; it does not expose
+  unchanged map items or uniquely identify the source condition.
+  Neither task IDs nor temporal proximity supply Mission quest ownership.
+
+The reusable entry/field declarations are in
+[`mission_trace_capture.json`](../../scripts/game_data/contracts/mission_trace_capture.json).
+Interpret their observations with the session's retained profile and explicit
+source identities; entry snapshots do not prove successful returns or message
+causality. Capture inventories and sequence-level corroboration remain under
+`reports/runtime_capture/`.
+
+Use the named MissionRuntimeAsset schema reader for corpus comparisons;
+its reviewed baseline count is not a current denominator. Export freshness and
+schema closure describe stored definitions, not VFS byte identity or runtime
+activation. Changing census counts, exact native windows, excluded proof checks
+and inventories stay under `reports/runtime_capture/`.
+
 ## LevelScript FMV path to installed Video
 
 `PlayFmvAction._moviePath` is a stored constant `Param<string>`. Each

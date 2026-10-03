@@ -20,6 +20,96 @@ semantic binding. Exporting an object does not prove its live prefab
 composition, selected material variant, animation state, effect activation, or
 placement time.
 
+The Endminf amber ribbon capture contract in
+[`endminf_amber_trail_capture.json`](../../scripts/game_data/contracts/endminf_amber_trail_capture.json)
+authenticates current M46 source shader variants, sampled texture identities,
+material buffer layout and selected native inputs. Fresh installed-carrier
+extraction corrected obsolete pixel programs. The current plain SRP pair also
+renders trails: `_USE_TRAIL` is diagnostic, not a renderer identity. Shader
+prefixes and texture descriptors only admit candidates; material identity
+requires full archived shader, texture and material byte joins. Material byte
+508 is `_BlendTint.a`, not the legacy `_UseBlend` property. Stored tint RGB is
+sRGB; uploaded constants carry Unity's linear conversion, with unchanged alpha.
+
+Retained M46 indexed billboards have zero referenced vertex RGBA and do not
+change colour; the first dormant owner replays byte-for-byte. The visible
+ribbons instead use non-indexed `DrawInstanced` triangle strips. The corrected
+lane preserves the real vertex/instance starts, each input-layout-consumed IA
+slot, full constants, three sampled textures, fixed state and each owner's
+preceding colour/depth. A bound index buffer is not an input to that call.
+The complete strip packet joins all M46 source inputs and has positive
+referenced alpha and changed colour. Each of its three retail owners replays
+on retained inputs with zero differing packed colour pixels. Shared material
+identity alone did not establish this renderer contribution; exact replay did.
+
+The reconstruction exposed two transport errors. Unity 6's active-colour-space
+trail baking darkened vertex RGB compared with the retained retail bytes;
+the lab runtime corrects that transport while preserving the authored flag.
+Retail sampling uses bilinear Repeat for main/flow and Clamp for colour.
+The earlier reconstruction used Clamp and Mirror on those two roles. The
+material-specific recovered sampler tuple corrects this and materially reduces
+the proven entrance-peak error. A stale lab flow image also bound at the wrong
+size. The reusable native-texture builder and Unity importer now gate on the
+selected native inputs and current source payload, preserve BC7 bytes and bind
+the current single-mip flow. GPU inspection proves its byte join, but that
+replacement did not change the sampled image metric. Do not infer an image
+cause merely from a corrected descriptor.
+
+Ribbon geometry and timing remain open after these fixes. Wall time since
+`CharEffect.Play` and global shader time do not establish particle simulation
+age. The capture observer now queries the already authenticated root's
+`ParticleSystem.time`, count and playing state beside exact-owner Animator
+state reads, on the original Play thread. It revalidates particle/GameObject
+instance identities, retains its native query interval and fails closed on
+missing APIs, invalid state or identity changes. This is a direct root clock;
+the child trail clock remains an unresolved join. The verifier reports native
+root-clock brackets without assigning child ages or fitting simulation phase. The new packet provides valid brackets for every
+retained strip and all three retail replays remain exact. A body-clock
+comparison, conditional on supplied owner mapping and native stage origin,
+finds matching strip topology after removing only complete duplicate endpoint
+records, byte-identical colour and sub-millimetre positional differences.
+This constrains geometry without promoting the root clock to child identity.
+
+GPU payload inspection verifies every mip of all three sampled textures.
+A separate pixel-shader substitution keeps retail vertex outputs, geometry,
+textures and preceding colour/depth intact. Its unchanged retail-shader
+translation is exact; the corrected lab pixel shader differs only by packed
+colour rounding at a few pixels. That test excludes lab vertex UV transforms
+and downstream composition, which remain independent boundaries.
+
+The shared Character Info refraction effect has a separate update-history
+boundary. Its child uses the authored fixed seed, but equal seed and final
+particle age do not guarantee equal geometry: variable update intervals can
+change integration, custom-data evaluation and unsorted particle order. Layer
+ablation assigns the largest early strip residual to `CharEffect/trail`, not
+the background portrait. Replaying retained Animator Tick intervals at the
+same final pose time materially improves that frame and nearby controls.
+The lab's reusable cadence builder validates consecutive observations and
+stable root/state/thread identity, preserves the existing endpoint tolerance,
+and retains an explicit diagnostic boundary. This supports a cadence cause
+without fitting the source seed, delay or material, and does not turn a root
+clock into a proved child clock. See lab finding 959 and its maintained
+`tools/build_endminf_capture_cadence.py` / `tools/scene_video_join.py` consumers.
+
+Shared-strip packet coverage must be checked at the resource-owner level:
+a shader archive or draw-census match does not prove its geometry was copied.
+The older dedicated packets constrain pixel math but do not authenticate the
+later phase now under investigation. The reviewed
+`scripts/game_data/contracts/endminf_shared_strip_capture.json` drives two
+phase windows and the selected build/shader/mask gates in EndfieldCapture.
+`tools/EndfieldCapture/tools/verify_endminf_shared_strip_capture.py` requires
+same-Play root-clock brackets, complete consumed inputs, explicit MRT/depth
+before and after each owner, and changed colour. Its native replay and source
+material-constant join are subsequent checks; direct root time still cannot
+be promoted to child particle age. The shared root is reused across character
+pages: its name, instance identity and successful Play alone do not identify
+an Endminf visit. The first live two-phase packet was fully retained and replayed
+exactly but preceded all Endminf Ticks, so it failed the visit join. The shared
+profile now publishes the original Play timestamp only after an authenticated
+Endminf entrance Tick with the same-thread, revalidated root. Tests cover other
+pages first, root recycling, notification retry, deduplication and hook epochs.
+Target-visit validation still needs the corrected capture in the lab's queue.
+
 Every exported Unity type is already in a decoded or standard format:
 AnimationClip as YAML with its curves and keyframes; Animator, AnimatorController,
 AnimatorOverrideController, PlayableDirector, Material, MonoBehaviour and
@@ -298,9 +388,67 @@ is not identity.
   current ID lookup or field-intern call would record only an ID plus opaque
   numeric state; it is not yet a useful prefab-selection capture. A dedicated
   capture hook or WebUI join still needs that keyed resource-selection edge.
+- The selected portrait clock observer contract is maintained at
+  `scripts/game_data/contracts/endminf_portrait_clock_capture.json`. Native
+  metadata proves the PlayIn/SampleClip argument ABIs and wrapper field types;
+  the scene-video runtime observes the original calls on their invoking thread,
+  with identities, unscaled-time queries and render clocks. Retained direct
+  call arguments remain separate from a visible portrait/source-curve join.
+  Validate a reader's consumed unpatched APIs independently from method
+  entries already replaced by another installed observer. Rechecking the full
+  Animator entry set after Animator installation caused the first portrait
+  startup failure; its object-reader gate is now separate, with a regression
+  that retains rejection of changed reader bytes.
+  The observed 1.17 px portrait displacement under an approximate visit lead
+  improves with the earlier measured lead, but the remaining peak is not
+  explained by that timing control. The shader's native 8-bit alpha rounding
+  is now reproduced; no global fitted UI clock is promoted.
 - Animation/effect activation and controller execution; broader exact
   audio/video trigger ownership, runtime-selected Wwise switch/random media,
   and stronger inferred skill/enemy sound ownership.
 
 The goal is an evidence-first catalog, not a claim that every gameplay id has
 one uniquely reconstructed renderable prefab.
+
+The live portrait observer now separates repeated PlayIn calls on the same
+wrapper into their own QPC-bounded visits. Forced reset/end samples alone do
+not prove natural progression. Retained SampleClip arguments joined to source
+curves and portrait vertices corroborate position and byte alpha; multiple
+updates before a draw remain ambiguous. The unscaled-time query is separate
+from effective tween elapsed time. A following Animator read shared by two
+sync draws gives conditional body age, even with a small interpolation residual.
+Use the retained prior Tick control before attributing a large image error to
+animation. The remaining early portrait residual survives matching UVs, alpha
+and subpixel corner placement. Scene-video retains portrait VS constants but
+omits its PS constants and sampled depth. The accepted early material packet
+supplies both: native replay and portrait fragment/texture substitutions are
+exact; matched lab GPU depth changes only 85 output pixels. This constrains
+clipping at that packet, not every animation phase or later composition.
+The bounded front-camera profile is reviewed in
+`scripts/game_data/contracts/endminf_early_coat_portrait_capture.json`; require
+full native shader, consumed IA/CB/SRV payloads and draw-local colour copies
+before replaying that question. No global visit lead or source curve change
+is justified by these diagnostics.
+
+Diff-layer ablations identify the early shared refraction strips separately
+from the portrait. Replaying retained variable update intervals at the same
+endpoint improves those strips without changing source particle parameters;
+it remains a capture diagnostic, not proof of a child-clock join. The accepted two-phase strip packet separates a burst-age workaround from
+continuous emission: delaying the entire lab system aligned the initial burst
+but moved later births. Keeping the retained root clock and deferring only the
+time-zero bursts reproduces particle order, GPU colour/UV and custom data in
+both phases, with roughly 0.05 mm vertex RMS. Native draws replay exactly;
+geometry substitution leaves small floating-point/rasterization error. This is
+a retained-clock correction, not a universal child-clock or UI-event rule. The
+shared-strip capture request is closed. The remaining
+fabric-detail mismatch survives strip removal. Matching native shader identity
+and global mip bias cannot prove matching sampled texture levels, sampler LOD,
+material constants or temporal history. Require the early coat packet's full
+fragment inputs before changing texture imports or normal strength. The accepted
+packet's complete 512-square diffuse/normal/packed chains match source mip tails;
+the lab intentionally keeps its 2048-square textures. Draw-aligned Cloth01
+controls show close broad highlights and shadows, with little improvement from
+substituting retail's screen-shadow mask. Do not fit lighting strength from the
+fine-detail residual or generalize this owner to hair and stones. The portrait
+uses point/clamp depth sampling. Its actual bound depth must be inspected;
+the lab's separate DOF depth readback is not a substitute for that identity.

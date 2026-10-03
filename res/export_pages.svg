@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1220" height="1636" viewBox="0 0 1220 1636" role="img" aria-labelledby="export-pages-title export-pages-desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1308" height="1754" viewBox="0 0 1308 1754" role="img" aria-labelledby="export-pages-title export-pages-desc">
 <title id="export-pages-title">What each WebUI page extracts</title>
-<desc id="export-pages-desc">A matrix of the structured blocks, Unity classes and indexes each export.bat page extracts with --from-game, and a diagram of which pages read another page&#x27;s published output: each arrow points from the page that publishes the data to the page that reads it.</desc>
+<desc id="export-pages-desc">A matrix of the structured blocks, Unity classes and indexes each export.bat page extracts with --from-game, and the optional publication reads between independent pages: each arrow points from the page that publishes the data to the page that reads it.</desc>
 <style>
   /* The WebUI's single light palette (webui/style.css): white surface, slate
      text, orange accent, teal secondary. There is no dark variant. */
@@ -48,6 +48,8 @@
   .edge-after { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
   .arrow-show { fill: var(--accent); }
   .arrow-after { fill: var(--muted); }
+  .edge-optional { fill: none; stroke: var(--live); stroke-width: 2; stroke-dasharray: 2 5; }
+  .arrow-optional { fill: var(--live); }
 </style>
 <defs>
   <marker id="arrow-show" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -56,15 +58,19 @@
   <marker id="arrow-after" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
     <path d="M0 0 L10 5 L0 10 Z" class="arrow-after"/>
   </marker>
+  <marker id="arrow-optional" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0 0 L10 5 L0 10 Z" class="arrow-optional"/>
+  </marker>
 </defs>
-<rect width="1220" height="1636" rx="12" class="bg"/>
+<rect width="1308" height="1754" rx="12" class="bg"/>
 <text x="32" y="44" class="title" text-anchor="start">What each WebUI page extracts</text>
 <text x="32" y="67" class="subtitle" text-anchor="start">export.bat PAGE --from-game exports the union of the named pages&#x27; inputs. Every cell is declared per build task in scripts/webui/pages.py.</text>
 <rect x="344" y="92" width="88" height="754" class="col-band"/>
 <rect x="520" y="92" width="88" height="754" class="col-band"/>
 <rect x="696" y="92" width="88" height="754" class="col-band"/>
 <rect x="872" y="92" width="88" height="754" class="col-band"/>
-<rect x="1064" y="92" width="88" height="754" rx="6" class="debug-band"/>
+<rect x="1048" y="92" width="88" height="754" class="col-band"/>
+<rect x="1152" y="92" width="88" height="754" rx="6" class="debug-band"/>
 <text x="388.0" y="112" class="col-title" text-anchor="middle">Story + Text</text>
 <text x="388.0" y="129" class="col-key" text-anchor="middle">story</text>
 <text x="476.0" y="112" class="col-title" text-anchor="middle">+ media</text>
@@ -75,18 +81,20 @@
 <text x="652.0" y="129" class="col-key" text-anchor="middle">characters</text>
 <text x="740.0" y="112" class="col-title" text-anchor="middle">Gameplay</text>
 <text x="740.0" y="129" class="col-key" text-anchor="middle">gameplay</text>
-<text x="828.0" y="112" class="col-title" text-anchor="middle">Audio</text>
-<text x="828.0" y="129" class="col-key" text-anchor="middle">audio</text>
-<text x="916.0" y="112" class="col-title" text-anchor="middle">Assets</text>
-<text x="916.0" y="129" class="col-key" text-anchor="middle">assets</text>
-<text x="1004.0" y="112" class="col-title" text-anchor="middle">Data</text>
-<text x="1004.0" y="129" class="col-key" text-anchor="middle">data</text>
-<text x="1108.0" y="112" class="col-title" text-anchor="middle">Debug</text>
-<text x="1108.0" y="129" class="col-key" text-anchor="middle">debug</text>
-<line x1="32" y1="140" x2="1152" y2="140" class="rule-strong"/>
+<text x="828" y="112" class="col-title" text-anchor="middle">Production</text>
+<text x="828" y="129" class="col-key" text-anchor="middle">production</text>
+<text x="916" y="112" class="col-title" text-anchor="middle">Audio</text>
+<text x="916" y="129" class="col-key" text-anchor="middle">audio</text>
+<text x="1004" y="112" class="col-title" text-anchor="middle">Assets</text>
+<text x="1004" y="129" class="col-key" text-anchor="middle">assets</text>
+<text x="1092" y="112" class="col-title" text-anchor="middle">Data</text>
+<text x="1092" y="129" class="col-key" text-anchor="middle">data</text>
+<text x="1196" y="112" class="col-title" text-anchor="middle">Debug</text>
+<text x="1196" y="129" class="col-key" text-anchor="middle">debug</text>
+<line x1="32" y1="140" x2="1240" y2="140" class="rule-strong"/>
 <text x="32" y="161" class="section" text-anchor="start">STRUCTURED BLOCKS</text>
 <text x="326" y="161" class="section-note" text-anchor="end">game/</text>
-<line x1="32" y1="167" x2="1152" y2="167" class="rule"/>
+<line x1="32" y1="167" x2="1240" y2="167" class="rule"/>
 <text x="40" y="187.5" class="label" text-anchor="start">Table</text>
 <text x="326" y="187.0" class="note" text-anchor="end">table</text>
 <circle cx="388.0" cy="183.0" r="6.5" class="m-fill own"/>
@@ -94,168 +102,172 @@
 <circle cx="564.0" cy="183.0" r="6.5" class="m-fill own"/>
 <circle cx="652.0" cy="183.0" r="6.5" class="m-fill own"/>
 <circle cx="740.0" cy="183.0" r="6.5" class="m-fill own"/>
-<circle cx="828.0" cy="183.0" r="6.5" class="m-fill own"/>
-<circle cx="916.0" cy="183.0" r="5.5" class="m-ring own"/>
-<rect x="999.0" y="178.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="177.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="194" x2="1152" y2="194" class="rule-faint"/>
+<circle cx="828" cy="183" r="6.5" class="m-fill own"/>
+<circle cx="916" cy="183.0" r="6.5" class="m-fill own"/>
+<circle cx="1004" cy="183.0" r="5.5" class="m-ring own"/>
+<rect x="1087" y="178.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="177.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="194" x2="1240" y2="194" class="rule-faint"/>
 <text x="40" y="211.5" class="label" text-anchor="start">JsonData</text>
 <text x="326" y="211.0" class="note" text-anchor="end">json-data</text>
 <circle cx="388.0" cy="207.0" r="6.5" class="m-fill own"/>
 <circle cx="476.0" cy="207.0" r="6.5" class="m-fill own"/>
 <circle cx="564.0" cy="207.0" r="6.5" class="m-fill own"/>
+<circle cx="652" cy="207" r="5.5" class="m-ring own"/>
 <circle cx="740.0" cy="207.0" r="5.5" class="m-ring own"/>
-<circle cx="828.0" cy="207.0" r="5.5" class="m-ring own"/>
-<circle cx="1004.0" cy="207.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="201.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="218" x2="1152" y2="218" class="rule-faint"/>
+<circle cx="916" cy="207.0" r="5.5" class="m-ring own"/>
+<circle cx="1092" cy="207.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="201.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="218" x2="1240" y2="218" class="rule-faint"/>
 <text x="40" y="235.5" class="label" text-anchor="start">Video</text>
 <text x="326" y="235.0" class="note" text-anchor="end">video, audit-video</text>
 <circle cx="388.0" cy="231.0" r="5.5" class="m-used"/>
 <circle cx="476.0" cy="231.0" r="5.5" class="m-ring own"/>
-<circle cx="916.0" cy="231.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="225.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="242" x2="1152" y2="242" class="rule-faint"/>
+<circle cx="1004" cy="231.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="225.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="242" x2="1240" y2="242" class="rule-faint"/>
 <text x="40" y="259.5" class="label" text-anchor="start">Lua</text>
 <text x="326" y="259.0" class="note" text-anchor="end">lua</text>
-<rect x="999.0" y="250.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="249.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="266" x2="1152" y2="266" class="rule-faint"/>
+<rect x="1087" y="250.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="249.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="266" x2="1240" y2="266" class="rule-faint"/>
 <text x="40" y="283.5" class="label" text-anchor="start">Terrain height grids</text>
 <text x="326" y="283.0" class="note" text-anchor="end">terrain-height</text>
 <circle cx="564.0" cy="279.0" r="5.5" class="m-ring own"/>
-<rect x="999.0" y="274.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="273.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="290" x2="1152" y2="290" class="rule-faint"/>
+<rect x="1087" y="274.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="273.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="290" x2="1240" y2="290" class="rule-faint"/>
 <text x="40" y="307.5" class="label" text-anchor="start">Whole Terrain</text>
 <text x="326" y="307.0" class="note" text-anchor="end">terrain</text>
-<rect x="999.0" y="298.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="297.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="314" x2="1152" y2="314" class="rule-faint"/>
+<rect x="1087" y="298.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="297.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="314" x2="1240" y2="314" class="rule-faint"/>
 <text x="40" y="331.5" class="label" text-anchor="start">Undecoded blocks</text>
 <text x="326" y="331.0" class="note" text-anchor="end">raw/ (bytes)</text>
-<rect x="999.0" y="322.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="321.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="338" x2="1152" y2="338" class="rule-faint"/>
+<rect x="1087" y="322.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="321.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="338" x2="1240" y2="338" class="rule-faint"/>
 <text x="32" y="359" class="section" text-anchor="start">UNITY JSON DOCUMENTS</text>
 <text x="326" y="359" class="section-note" text-anchor="end">game/Unity.sqlite</text>
-<line x1="32" y1="365" x2="1152" y2="365" class="rule"/>
+<line x1="32" y1="365" x2="1240" y2="365" class="rule"/>
 <text x="40" y="385.5" class="label" text-anchor="start">TextAsset</text>
 <circle cx="388.0" cy="381.0" r="6.5" class="m-fill own"/>
 <circle cx="476.0" cy="381.0" r="6.5" class="m-fill own"/>
-<rect x="999.0" y="376.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="375.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="392" x2="1152" y2="392" class="rule-faint"/>
+<rect x="1087" y="376.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="375.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="392" x2="1240" y2="392" class="rule-faint"/>
 <text x="40" y="409.5" class="label" text-anchor="start">MonoBehaviour</text>
 <circle cx="388.0" cy="405.0" r="6.5" class="m-fill own"/>
 <circle cx="476.0" cy="405.0" r="6.5" class="m-fill own"/>
 <circle cx="740.0" cy="405.0" r="5.5" class="m-ring own"/>
-<circle cx="828.0" cy="405.0" r="5.5" class="m-ring own"/>
-<rect x="999.0" y="400.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="399.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="416" x2="1152" y2="416" class="rule-faint"/>
+<circle cx="916" cy="405.0" r="5.5" class="m-ring own"/>
+<rect x="1087" y="400.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="399.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="416" x2="1240" y2="416" class="rule-faint"/>
 <text x="40" y="433.5" class="label" text-anchor="start">PlayableDirector</text>
 <circle cx="388.0" cy="429.0" r="6.5" class="m-fill own"/>
 <circle cx="476.0" cy="429.0" r="6.5" class="m-fill own"/>
 <circle cx="740.0" cy="429.0" r="5.5" class="m-ring own"/>
-<circle cx="828.0" cy="429.0" r="5.5" class="m-ring own"/>
-<rect x="999.0" y="424.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="423.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="440" x2="1152" y2="440" class="rule-faint"/>
+<circle cx="916" cy="429.0" r="5.5" class="m-ring own"/>
+<rect x="1087" y="424.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="423.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="440" x2="1240" y2="440" class="rule-faint"/>
 <text x="40" y="457.5" class="label" text-anchor="start">MonoScript</text>
 <circle cx="740.0" cy="453.0" r="5.5" class="m-ring own"/>
-<rect x="999.0" y="448.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="447.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="464" x2="1152" y2="464" class="rule-faint"/>
+<rect x="1087" y="448.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="447.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="464" x2="1240" y2="464" class="rule-faint"/>
 <text x="40" y="481.5" class="label" text-anchor="start">Material</text>
 <circle cx="564.0" cy="477.0" r="5.5" class="m-ring own"/>
 <circle cx="740.0" cy="477.0" r="5.5" class="m-ring own"/>
-<circle cx="916.0" cy="477.0" r="5.5" class="m-ring own"/>
-<rect x="999.0" y="472.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="471.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="488" x2="1152" y2="488" class="rule-faint"/>
+<circle cx="1004" cy="477.0" r="5.5" class="m-ring own"/>
+<rect x="1087" y="472.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="471.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="488" x2="1240" y2="488" class="rule-faint"/>
 <text x="40" y="505.5" class="label" text-anchor="start">AnimatorController</text>
-<circle cx="828.0" cy="501.0" r="5.5" class="m-ring own"/>
-<circle cx="1004.0" cy="501.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="495.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="512" x2="1152" y2="512" class="rule-faint"/>
+<circle cx="916" cy="501.0" r="5.5" class="m-ring own"/>
+<circle cx="1092" cy="501.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="495.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="512" x2="1240" y2="512" class="rule-faint"/>
 <text x="40" y="529.5" class="label" text-anchor="start">AnimatorOverrideController</text>
-<circle cx="828.0" cy="525.0" r="5.5" class="m-ring own"/>
-<circle cx="1004.0" cy="525.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="519.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="536" x2="1152" y2="536" class="rule-faint"/>
+<circle cx="916" cy="525.0" r="5.5" class="m-ring own"/>
+<circle cx="1092" cy="525.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="519.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="536" x2="1240" y2="536" class="rule-faint"/>
 <text x="40" y="553.5" class="label" text-anchor="start">8 more classes</text>
 <text x="326" y="553.0" class="note" text-anchor="end">AssetBundle, ...</text>
-<rect x="999.0" y="544.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="543.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="560" x2="1152" y2="560" class="rule-faint"/>
+<rect x="1087" y="544.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="543.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="560" x2="1240" y2="560" class="rule-faint"/>
 <text x="32" y="581" class="section" text-anchor="start">CONVERTED MEDIA</text>
 <text x="326" y="581" class="section-note" text-anchor="end">game/Unity/&lt;Type&gt;/</text>
-<line x1="32" y1="587" x2="1152" y2="587" class="rule"/>
+<line x1="32" y1="587" x2="1240" y2="587" class="rule"/>
 <text x="40" y="607.5" class="label" text-anchor="start">Texture2D</text>
 <text x="326" y="607.0" class="note" text-anchor="end">PNG</text>
+<circle cx="828" cy="603.0" r="5.5" class="m-used"/>
 <circle cx="476.0" cy="603.0" r="5.5" class="m-ring own"/>
 <circle cx="564.0" cy="603.0" r="5.5" class="m-ring own"/>
 <circle cx="652.0" cy="603.0" r="5.5" class="m-ring own"/>
-<circle cx="916.0" cy="603.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="597.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="614" x2="1152" y2="614" class="rule-faint"/>
+<circle cx="1004" cy="603.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="597.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="614" x2="1240" y2="614" class="rule-faint"/>
 <text x="40" y="631.5" class="label" text-anchor="start">Sprite</text>
-<text x="326" y="631.0" class="note" text-anchor="end">PNG</text>
+<text x="326" y="631.0" class="note" text-anchor="end">crop JSON</text>
+<circle cx="828" cy="627.0" r="5.5" class="m-used"/>
 <circle cx="476.0" cy="627.0" r="5.5" class="m-ring own"/>
 <circle cx="652.0" cy="627.0" r="5.5" class="m-ring own"/>
-<circle cx="916.0" cy="627.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="621.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="638" x2="1152" y2="638" class="rule-faint"/>
+<circle cx="1004" cy="627.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="621.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="638" x2="1240" y2="638" class="rule-faint"/>
 <text x="40" y="655.5" class="label" text-anchor="start">Mesh</text>
 <text x="326" y="655.0" class="note" text-anchor="end">OBJ</text>
 <circle cx="564.0" cy="651.0" r="5.5" class="m-ring own"/>
 <circle cx="652.0" cy="651.0" r="5.5" class="m-ring own"/>
-<circle cx="916.0" cy="651.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="645.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="662" x2="1152" y2="662" class="rule-faint"/>
+<circle cx="1004" cy="651.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="645.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="662" x2="1240" y2="662" class="rule-faint"/>
 <text x="40" y="679.5" class="label" text-anchor="start">Animator</text>
 <text x="326" y="679.0" class="note" text-anchor="end">FBX</text>
 <circle cx="652.0" cy="675.0" r="5.5" class="m-ring own"/>
-<circle cx="916.0" cy="675.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="669.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="686" x2="1152" y2="686" class="rule-faint"/>
+<circle cx="1004" cy="675.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="669.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="686" x2="1240" y2="686" class="rule-faint"/>
 <text x="40" y="703.5" class="label" text-anchor="start">AnimationClip</text>
 <text x="326" y="703.0" class="note" text-anchor="end">.anim</text>
-<circle cx="828.0" cy="699.0" r="5.5" class="m-ring own"/>
-<rect x="999.0" y="694.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="693.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="710" x2="1152" y2="710" class="rule-faint"/>
+<circle cx="916" cy="699.0" r="5.5" class="m-ring own"/>
+<rect x="1087" y="694.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="693.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="710" x2="1240" y2="710" class="rule-faint"/>
 <text x="40" y="727.5" class="label" text-anchor="start">Shader, Font, TextAsset</text>
 <text x="326" y="727.0" class="note" text-anchor="end">.shader .ttf</text>
-<rect x="999.0" y="718.0" width="10" height="10" rx="1.5" class="m-file"/>
-<rect x="1102.5" y="717.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="734" x2="1152" y2="734" class="rule-faint"/>
+<rect x="1087" y="718.0" width="10" height="10" rx="1.5" class="m-file"/>
+<rect x="1190.5" y="717.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="734" x2="1240" y2="734" class="rule-faint"/>
 <text x="32" y="755" class="section" text-anchor="start">INDEXES AND LIVE READS</text>
-<line x1="32" y1="761" x2="1152" y2="761" class="rule"/>
+<line x1="32" y1="761" x2="1240" y2="761" class="rule"/>
 <text x="40" y="781.5" class="label" text-anchor="start">Asset maps</text>
 <text x="326" y="781.0" class="note" text-anchor="end">every Unity export</text>
 <circle cx="388.0" cy="777.0" r="5.5" class="m-ring own"/>
 <circle cx="476.0" cy="777.0" r="5.5" class="m-ring own"/>
 <circle cx="564.0" cy="777.0" r="5.5" class="m-ring own"/>
 <circle cx="740.0" cy="777.0" r="5.5" class="m-ring own"/>
-<circle cx="828.0" cy="777.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="771.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="788" x2="1152" y2="788" class="rule-faint"/>
+<circle cx="916" cy="777.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="771.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="788" x2="1240" y2="788" class="rule-faint"/>
 <text x="40" y="805.5" class="label" text-anchor="start">Object index</text>
 <text x="326" y="805.0" class="note" text-anchor="end">with the carriers</text>
 <circle cx="388.0" cy="801.0" r="6.5" class="m-fill own"/>
 <circle cx="476.0" cy="801.0" r="6.5" class="m-fill own"/>
 <circle cx="740.0" cy="801.0" r="5.5" class="m-ring own"/>
-<circle cx="828.0" cy="801.0" r="5.5" class="m-ring own"/>
-<rect x="1102.5" y="795.5" width="11" height="11" rx="1.5" class="m-debug"/>
-<line x1="32" y1="812" x2="1152" y2="812" class="rule-faint"/>
+<circle cx="916" cy="801.0" r="5.5" class="m-ring own"/>
+<rect x="1190.5" y="795.5" width="11" height="11" rx="1.5" class="m-debug"/>
+<line x1="32" y1="812" x2="1240" y2="812" class="rule-faint"/>
 <text x="40" y="829.5" class="label" text-anchor="start">Installed client</text>
 <text x="326" y="829.0" class="note" text-anchor="end">read while building</text>
 <path d="M564.0 818.0 L571.0 825.0 L564.0 832.0 L557.0 825.0 Z" class="m-live"/>
-<path d="M828.0 818.0 L835.0 825.0 L828.0 832.0 L821.0 825.0 Z" class="m-live"/>
-<path d="M1108.0 818.0 L1115.0 825.0 L1108.0 832.0 L1101.0 825.0 Z" class="m-live"/>
-<line x1="32" y1="836" x2="1152" y2="836" class="rule-faint"/>
+<path d="M916 818 L923 825 L916 832 L909 825 Z" class="m-live"/>
+<path d="M1196 818 L1203 825 L1196 832 L1189 825 Z" class="m-live"/>
+<line x1="32" y1="836" x2="1240" y2="836" class="rule-faint"/>
 <circle cx="47" cy="872" r="6.5" class="m-fill own"/>
 <text x="60" y="876" class="legend" text-anchor="start">required: must exist and be current</text>
 <circle cx="387" cy="872" r="5.5" class="m-ring own"/>
@@ -270,78 +282,72 @@
 <text x="740" y="900" class="legend" text-anchor="start">extracted by debug</text>
 <text x="32" y="930" class="foot" text-anchor="start">story extracts text only; story-media adds its images and videos; voice lines come from Audio. Data shows every output the other pages do not, undecoded blocks as bytes.</text>
 <text x="32" y="948" class="foot" text-anchor="start">No page named (every column) extracts the same as debug. Asset maps are refreshed by every Unity export; MonoBehaviour and PlayableDirector are exported together with the object index.</text>
-<line x1="32" y1="974" x2="1188" y2="974" class="rule-strong"/>
-<text x="32" y="1008" class="title-2" text-anchor="start">Which pages read another page&#x27;s output</text>
-<text x="32" y="1030" class="subtitle" text-anchor="start">A page builds only itself and never writes another page&#x27;s files. What it shows from another page is whatever that page last published.</text>
-<rect x="32" y="1048" width="1156" height="130" rx="8" class="legend-panel"/>
-<text x="48" y="1073" class="legend-head" text-anchor="start">Arrows follow the data: A → B means B reads what A published. The arrowhead is always the reader.</text>
-<rect x="48" y="1090" width="28" height="24" rx="4" class="box"/>
-<text x="62.0" y="1106" class="mini" text-anchor="middle">A</text>
-<path d="M78 1102 L121 1102" class="edge-after" marker-end="url(#arrow-after)"/>
-<rect x="124" y="1090" width="28" height="24" rx="4" class="box"/>
-<text x="138.0" y="1106" class="mini" text-anchor="middle">B</text>
-<text x="172" y="1106" class="legend-strong" text-anchor="start">Read while building</text>
-<text x="172" y="1125" class="legend" text-anchor="start">B&#x27;s builder reads the files A published under webui/data.</text>
-<text x="172" y="1143" class="legend" text-anchor="start">In one export.bat run A builds first. When B is built alone,</text>
-<text x="172" y="1161" class="legend" text-anchor="start">it uses A&#x27;s last publication, or goes without it.</text>
-<rect x="620" y="1090" width="28" height="24" rx="4" class="box"/>
-<text x="634.0" y="1106" class="mini" text-anchor="middle">A</text>
-<path d="M650 1102 L693 1102" class="edge-show" marker-end="url(#arrow-show)"/>
-<rect x="696" y="1090" width="28" height="24" rx="4" class="box"/>
-<text x="710.0" y="1106" class="mini" text-anchor="middle">B</text>
-<text x="744" y="1106" class="legend-strong" text-anchor="start">Read in the browser</text>
-<text x="744" y="1125" class="legend" text-anchor="start">B&#x27;s page fetches the files A published while you browse.</text>
-<text x="744" y="1143" class="legend" text-anchor="start">Build order does not matter: B shows the data</text>
-<text x="744" y="1161" class="legend" text-anchor="start">once A has been built, and omits it until then.</text>
-<rect x="32" y="1206" width="1000" height="56" rx="8" class="source-band"/>
-<text x="48" y="1230" class="box-title" text-anchor="start">Story + Text</text>
-<text x="48" y="1248" class="box-note" text-anchor="start">builds from no other page</text>
-<text x="1016" y="1230" class="box-note" text-anchor="end">story: lang/CN conv, missions, actors, index</text>
-<text x="1016" y="1248" class="box-note" text-anchor="end">story-media: + story_media.json</text>
-<rect x="32" y="1350" width="160" height="60" rx="8" class="box"/>
-<text x="112.0" y="1375" class="box-title" text-anchor="middle">Characters</text>
-<text x="112.0" y="1393" class="box-note" text-anchor="middle">character index</text>
-<rect x="312" y="1350" width="160" height="60" rx="8" class="box"/>
-<text x="392.0" y="1375" class="box-title" text-anchor="middle">Map</text>
-<text x="392.0" y="1393" class="box-note" text-anchor="middle">sidecars, preview</text>
-<rect x="592" y="1350" width="160" height="60" rx="8" class="box"/>
-<text x="672.0" y="1375" class="box-title" text-anchor="middle">Audio</text>
-<text x="672.0" y="1393" class="box-note" text-anchor="middle">decode, voice sidecars</text>
-<rect x="872" y="1350" width="160" height="60" rx="8" class="box"/>
-<text x="952.0" y="1375" class="box-title" text-anchor="middle">Gameplay</text>
-<text x="952.0" y="1393" class="box-note" text-anchor="middle">graph, combat</text>
-<rect x="1068" y="1350" width="120" height="60" rx="8" class="box box-alone"/>
-<text x="1128.0" y="1375" class="box-title" text-anchor="middle">Data</text>
-<text x="1128.0" y="1393" class="box-note" text-anchor="middle">datasets, files</text>
-<text x="1128.0" y="1430" class="box-note" text-anchor="middle">reads no other page;</text>
-<text x="1128.0" y="1446" class="box-note" text-anchor="middle">no page reads it</text>
-<rect x="32" y="1498" width="1000" height="56" rx="8" class="source-band"/>
-<text x="48" y="1522" class="box-title" text-anchor="start">Assets</text>
-<text x="48" y="1540" class="box-note" text-anchor="start">builds from no other page</text>
-<text x="1016" y="1522" class="box-note" text-anchor="end">assets/index.json</text>
-<text x="1016" y="1540" class="box-note" text-anchor="end">media, material and model relations</text>
-<path d="M112 1262 L112 1347" class="edge-after" marker-end="url(#arrow-after)"/>
-<text x="120" y="1310" class="edge-label" text-anchor="start">actor names</text>
-<path d="M392 1262 L392 1347" class="edge-after" marker-end="url(#arrow-after)"/>
-<text x="400" y="1310" class="edge-label" text-anchor="start">mission markers</text>
-<path d="M648 1262 L648 1347" class="edge-after" marker-end="url(#arrow-after)"/>
-<text x="640" y="1310" class="edge-label" text-anchor="end">conversations</text>
-<path d="M696 1350 L696 1265" class="edge-show" marker-end="url(#arrow-show)"/>
-<text x="704" y="1302" class="edge-label show" text-anchor="start">voice lines</text>
-<text x="704" y="1318" class="edge-label show" text-anchor="start">(audio/conv)</text>
-<path d="M952 1262 L952 1347" class="edge-after" marker-end="url(#arrow-after)"/>
-<text x="960" y="1310" class="edge-label" text-anchor="start">wiki titles, source graph</text>
-<path d="M472 1380 L589 1380" class="edge-after" marker-end="url(#arrow-after)"/>
-<text x="532.0" y="1372" class="edge-label" text-anchor="middle">world placements</text>
-<path d="M872 1380 L755 1380" class="edge-after" marker-end="url(#arrow-after)"/>
-<text x="812.0" y="1372" class="edge-label" text-anchor="middle">gameplay index</text>
-<text x="812.0" y="1396" class="edge-label" text-anchor="middle">+ projectiles</text>
-<path d="M112 1498 L112 1413" class="edge-after" marker-end="url(#arrow-after)"/>
-<text x="120" y="1458" class="edge-label" text-anchor="start">media paths</text>
-<path d="M392 1498 L392 1413" class="edge-after" marker-end="url(#arrow-after)"/>
-<text x="400" y="1458" class="edge-label" text-anchor="start">material colours</text>
-<path d="M952 1498 L952 1413" class="edge-after" marker-end="url(#arrow-after)"/>
-<text x="960" y="1458" class="edge-label" text-anchor="start">asset refs</text>
-<text x="32" y="1590" class="foot" text-anchor="start">A full run builds each page after the pages its dashed arrows come from: Story and Assets, then Characters, Map and Gameplay, then Audio.</text>
-<text x="32" y="1610" class="foot" text-anchor="start">Updates compares two complete exports (build_updates.bat OLD NEW) and is not part of export.bat.</text>
+<line x1="32" y1="974" x2="1276" y2="974" class="rule-strong"/>
+<text x="32" y="1008" class="title-2">Which pages read another page&#x27;s output</text>
+<text x="32" y="1030" class="subtitle">Each page builds independently and writes only its own files. Arrows show publication reads; the arrowhead is the reader.</text>
+<rect x="32" y="1048" width="1244" height="104" rx="8" class="legend-panel"/>
+<path d="M48 1076 L94 1076" class="edge-after" marker-end="url(#arrow-after)"/>
+<text x="110" y="1080" class="legend-strong">Read while building</text>
+<text x="48" y="1105" class="legend">Selected producers run first in a shared export.</text>
+<text x="48" y="1125" class="legend">Otherwise the reader uses their last output.</text>
+<path d="M460 1076 L506 1076" class="edge-show" marker-end="url(#arrow-show)"/>
+<text x="522" y="1080" class="legend-strong">Read in the browser</text>
+<text x="460" y="1105" class="legend">The page fetches the last published output.</text>
+<text x="460" y="1125" class="legend">Build order does not matter.</text>
+<path d="M872 1076 L918 1076" class="edge-optional" marker-end="url(#arrow-optional)"/>
+<text x="934" y="1080" class="legend-strong">Optional previous publication</text>
+<text x="872" y="1105" class="legend">The builder reads an existing publication.</text>
+<text x="872" y="1125" class="legend">Data runs first when both pages are selected.</text>
+<text x="48" y="1170" class="section">PUBLISHER</text>
+<text x="420" y="1170" class="section">READERS</text>
+<text x="818" y="1170" class="section">PUBLISHED INFORMATION</text>
+<rect x="48" y="1182" width="228" height="54" rx="8" class="box"/>
+<text x="162" y="1214" class="box-title" text-anchor="middle">Story + Text</text>
+<path d="M276 1209 L416 1209" class="edge-after" marker-end="url(#arrow-after)"/>
+<rect x="420" y="1182" width="370" height="54" rx="8" class="box"/>
+<text x="605" y="1214" class="box-title" text-anchor="middle">Map &#183; Audio &#183; Gameplay</text>
+<text x="818" y="1205" class="legend">Mission markers &#183; conversations</text>
+<text x="818" y="1224" class="box-note">Wiki titles and source graph</text>
+<rect x="48" y="1254" width="228" height="54" rx="8" class="box"/>
+<text x="162" y="1286" class="box-title" text-anchor="middle">Assets</text>
+<path d="M276 1281 L416 1281" class="edge-after" marker-end="url(#arrow-after)"/>
+<rect x="420" y="1254" width="370" height="54" rx="8" class="box"/>
+<text x="605" y="1286" class="box-title" text-anchor="middle">Characters &#183; Map &#183; Gameplay</text>
+<text x="818" y="1277" class="legend">Media paths &#183; material colours</text>
+<text x="818" y="1296" class="box-note">Asset references</text>
+<rect x="48" y="1326" width="228" height="54" rx="8" class="box"/>
+<text x="162" y="1358" class="box-title" text-anchor="middle">Map + Gameplay</text>
+<path d="M276 1353 L416 1353" class="edge-after" marker-end="url(#arrow-after)"/>
+<rect x="420" y="1326" width="370" height="54" rx="8" class="box"/>
+<text x="605" y="1358" class="box-title" text-anchor="middle">Audio</text>
+<text x="818" y="1349" class="legend">World placements &#183; gameplay index</text>
+<text x="818" y="1368" class="box-note">Projectile references</text>
+<rect x="48" y="1398" width="228" height="54" rx="8" class="box"/>
+<text x="162" y="1430" class="box-title" text-anchor="middle">Audio</text>
+<path d="M276 1425 L416 1425" class="edge-show" marker-end="url(#arrow-show)"/>
+<rect x="420" y="1398" width="370" height="54" rx="8" class="box"/>
+<text x="605" y="1430" class="box-title" text-anchor="middle">Story + Text</text>
+<text x="818" y="1421" class="legend">Voice and event sidecars</text>
+<text x="818" y="1440" class="box-note">lang/&lt;LANG&gt;/audio/conv/</text>
+<rect x="48" y="1470" width="228" height="54" rx="8" class="box"/>
+<text x="162" y="1502" class="box-title" text-anchor="middle">Story + Text</text>
+<path d="M276 1497 L416 1497" class="edge-show" marker-end="url(#arrow-show)"/>
+<rect x="420" y="1470" width="370" height="54" rx="8" class="box"/>
+<text x="605" y="1502" class="box-title" text-anchor="middle">Characters</text>
+<text x="818" y="1493" class="legend">Appearance navigation after an exact</text>
+<text x="818" y="1512" class="box-note">source-row, speaker and text check</text>
+<rect x="48" y="1542" width="228" height="54" rx="8" class="box"/>
+<text x="162" y="1574" class="box-title" text-anchor="middle">Data</text>
+<path d="M276 1569 L416 1569" class="edge-optional" marker-end="url(#arrow-optional)"/>
+<rect x="420" y="1542" width="370" height="54" rx="8" class="box"/>
+<text x="605" y="1574" class="box-title" text-anchor="middle">Map &#183; Gameplay</text>
+<text x="818" y="1565" class="legend">Last published encounter and skill datasets</text>
+<text x="818" y="1584" class="box-note">Optional; no cross-page build requirement</text>
+<rect x="32" y="1620" width="1244" height="74" rx="8" class="legend-panel"/>
+<rect x="48" y="1633" width="228" height="48" rx="8" class="box box-alone"/>
+<text x="162" y="1662" class="box-title" text-anchor="middle">Production</text>
+<text x="308" y="1650" class="legend-strong">Table catalog with reused media; no other page is built or read.</text>
+<text x="308" y="1672" class="legend">Recipes, encyclopedia groups and uses come from Tables; available exported images supply icons.</text>
+<text x="32" y="1722" class="foot">Optional or missing publications reduce the displayed detail; they never cause a page to rebuild another page.</text>
+<text x="32" y="1742" class="foot">Updates compares two complete exports (build_updates.bat OLD NEW) and is not part of export.bat.</text>
 </svg>

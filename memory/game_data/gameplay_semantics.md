@@ -47,14 +47,44 @@ semantics stay unresolved (below).
   the outer fields and storage order, not action behavior; the opaque physical
   remainder after a stop is not a decoded record.
 - `buff.frame_buff_named_middle` continues through the modifier lists,
-  `dispelConfig` and an opaque `iconConfig` to the accepted `id` marker; the
-  suffix reader closes `id` through `waitFirstTriggerInterval` at EOF. Any
-  other processor route or unsupported condition action stops at its tag.
+  `dispelConfig` and native-gated exact `iconConfig` to the accepted `id`
+  marker; without that gate, `iconConfig` stays opaque. The suffix reader
+  closes `id` through `waitFirstTriggerInterval` at EOF. Any unsupported
+  processor route or condition action stops at its tag.
 - The selected-build `memorypack.derived_plans`/`derived_values` route decodes
   whole `BuffData`/`SkillData` records to EOF with id/filename agreement. It
   does not upgrade the bounded legacy readers, and the JsonData gate's BuffData
   `schema_decoded` state also needs a recorded root receipt (`jsondata_corpus`).
   Its PlaySound actions: [`audio_naming_coverage.md`](audio_naming_coverage.md).
+- [`buff_selected_roots.py`](../../scripts/game_data/memorypack/buff_selected_roots.py)
+  composes independent positive-heal, scene-object event-map,
+  attribute/condition and recursive sword-damage child receipts through all
+  thirty root fields. Each route retains its selected logical identity,
+  current native and child gates, contiguous field cursors, source ID and
+  physical EOF. Only the complete current family census admits these source
+  rows; a standalone selected diagnostic does not authorize publication or
+  establish that its actions execute.
+
+## SkillData stored action members
+
+[`skill_timeline_two_five_member.py`](../../scripts/game_data/memorypack/skill_timeline_two_five_member.py)
+also admits `CheckTargetInScreen`, `ConvertWeaknessToInterruptible`,
+`PatrolRefreshCheckPoint`, `PlayNormalDashAnimAction`,
+`TyphoeaArcheryClearMissileAction`, and `TyphoeaArcheryGetPhantomPosAction`.
+Each keeps its own union identity, generated wrapper, whole native reader and
+owned continuation fragments. Their four inherited members precede one
+concrete member: respectively `TargetSettings`, `TargetSettings`, a float,
+a byte, a byte, or a string. The contracts recheck the ordered source calls,
+exact final setter and any nested MethodSpec context against the explicitly
+selected native inputs before the shared Skill reader admits them.
+
+This closes stored action grammar only. A nonzero byte keeps its raw value;
+the managed names do not prove a screen test, converter behavior, distance
+units, dash direction, missile visibility, target ownership or execution.
+Null wrappers and null child values remain independent, and every decoded
+action must end at the next authenticated source boundary. Whole SkillData
+publication still requires the complete current family receipt and the
+source-bound prior cursor selection.
 
 ## The rules every contract shares
 
@@ -103,6 +133,16 @@ Each was violated at least once and caught.
   a serialized action's live provider selection. A dedicated hook needs a
   validated same-call or stable-key bridge between source identity, union tag,
   and selected provider before a capture is requested for that join.
+  The existing Skill cursor profile supplies admitted source identity and
+  before/after child cursors, but omits the provider result. The current
+  [IL2CPP context contract](../../scripts/game_data/contracts/il2cpp_context_audit_native.json)
+  proves a conditional MethodSpec chain through `ReadPackable`, `ReadValue`
+  and `GetFormatter`, followed by cache lookup, construction and dispatch.
+  It does not establish initialized companion contexts or cache contents.
+  A useful provider extension must retain that admitted source scope and
+  record the actual companion context, returned formatter, class dispatch
+  target/companion pair and source cursors together. Repeating the existing
+  cursor or execution profile does not supply this missing observation.
 - **Legacy suffix ownership for partial rows.** An unsupported action or
   damage-processor route leaves a physical gap in the bounded reader; the
   derived whole-record route does not convert that row into a complete one.
@@ -122,7 +162,16 @@ expressions, units, target choice or an observed execution.
 **Recovery queue.** Close the remaining damage-processor routes from their
 native union contexts, then the unsupported condition actions and
 `buffEventAction` actions (until then those outer frames cannot join the named
-middle); decode `iconConfig`'s 19-member body last, keeping its boundary.
+middle). The selected
+[`buff_icon_config_native.json`](../../scripts/game_data/contracts/buff_icon_config_native.json)
+contract already closes `iconConfig`'s 19-member stored body at the following
+independently accepted `id` marker; its presentation behavior stays unresolved.
+The residual Skill action tags are a separate offline grammar queue: for
+example `ReadSkillSettingData` already has a selected Buff reader contract,
+while `PauseComboSkillTime`, `EffectControlAction` and
+`InverseSpellInfliction` have finite native source bodies whose child calls
+can be joined independently. Missing admission of these stored layouts is
+not a reason to request a provider capture.
 
 ## What the published Gameplay datasets establish
 

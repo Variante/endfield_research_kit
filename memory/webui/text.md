@@ -21,6 +21,12 @@ but does not imply narrative ownership.
    the result to the row as `fields`.
 5. The frontend renders known row shapes plus `fields`, and retains raw JSON
    for fields that have no maintained presentation.
+6. [`reference_activity_guides`](../../scripts/webui/story/reference_activity_guides.py)
+   projects achievement tiers and plating requirements, activity prerequisites,
+   authored stages/tasks/milestones, dungeon references and fixed reward items
+   into `guide.sections`. The reference bundle publishes these rows even when
+   they contain no localized text. The same row navigation, search and shared
+   pagination cover guides and generic rows.
 
 ## Primary generated outputs
 
@@ -45,6 +51,26 @@ navigation are in the header comment of
 - Unsupported row shapes remain raw and searchable rather than being silently
   dropped. A table with structured fields but no localized text is published
   on its fields alone.
+- Guides describe stored configuration, not live unlocks, current event
+  availability, condition execution, or player progress. Achievement tiers and
+  each nested activity stage keep their source paths and record boundaries;
+  display order is not a prerequisite chain.
+- Reward expansion follows the exact `RewardTable` key and its `itemBundles`
+  item IDs. It shows quantities and absent item rows explicitly. A nonempty
+  `probItemBundles` is a separately labeled random-reward count, never a fixed
+  item grant. Reward rows have their own guide, making reward links navigable
+  even without localized text.
+- Stage condition sidecars link only when their exact row key and each stored
+  `stageId` agree. A task's explicit completion condition IDs link to the
+  completion-condition table; unlock IDs with no proved target remain labeled
+  unresolved. Condition type/comparison codes and typed parameter views are
+  available in a compact disclosure, without inventing predicate meanings.
+- Authored time ranges remain their stored strings and indexed ranges. No
+  timezone, regional selection, current availability or scheduling semantics
+  are inferred from them.
+- The shared pager bounds rendered rows while all loaded guide fields and
+  localized text remain searchable. Following a field reference selects the
+  target's page and keeps the requested row visible under the existing search.
 
 ## Focused refresh commands
 
@@ -64,4 +90,6 @@ Table extraction is stale.
 - The page has no cross-page deep-link target, so a maintained field cannot
   open a mission on Story or an item on Gameplay. Either add a receiving
   contract to those pages or keep such references as named provenance.
-- Keep large tables responsive without truncating searchable data.
+- Complete condition semantics and activity families outside the maintained
+  guide registry still require explicit source-backed rules; generic text and
+  raw-file access remain available for those tables.

@@ -150,37 +150,149 @@ Generated outputs live under `reports/story/build/`, `reports/story/recovery/`,
 `reports/source_graph/`. Counts, edge inventories, native addresses, hashes,
 per-level examples, and session proof belong there rather than here.
 
-## Deferred bounded Story capture plan
+## Bounded Story capture
 
-Planned, not implemented, and authorizing no capture until explicitly
-revisited. Operational commands and capture restrictions are owned by
-[`EndfieldCapture/README.md`](../../tools/EndfieldCapture/README.md); the
-generic gameplay-semantics profile is not a Mission/LevelScript/Story tracer,
-so recheck provider capabilities when resuming.
+EndfieldCapture has a dedicated Mission trace provider. Operational commands
+and prelaunch restrictions are owned by
+[`EndfieldCapture/README.md`](../../tools/EndfieldCapture/README.md).
+`scripts/game_data/mission_trace_capture_prepare.py` resolves the symbolic
+method signatures and typed field paths in the reviewed
+`scripts/game_data/contracts/mission_trace_capture.json` against the explicitly
+selected client. Preparation authenticates the executable, native image and
+metadata, proves field paths and entry ABI, rejects folded method aliases,
+and derives fresh body windows. The older retained mission-trace manifest is
+an offline reference and does not authorize attachment to a different build.
 
-The maintained mission trace has dialog acceptance and playback-key hooks,
-but its manifest targets an earlier client and its read-only current-install
-preflight refuses the executable identity. The supported `EndfieldCapture`
-profiles still have no Story-key, chosen-option, initiating-action and accepted
-playback identity in one observation or validated correlation chain. Audio
-posts and optional recording can show a voice request in a bounded session,
-but cannot promote that request to a selected dialog option or Story trigger.
-Revalidate a narrowly selected current-build Story method and its source
-carrier before authoring a dedicated capture profile or requesting a session.
+The provider journals bounded method-entry observations of SNS reading and
+resolved option selection, mission and quest transitions, LevelScript source
+identities, authored action keys and nodes, dialogue/trunk/option boundaries,
+and cutscene, radio and communication requests. Stored strings require a
+proved reference read; inline value types retain their stored bits. Optional
+null carriers remain visible separately from unreadable or truncated reads.
+No getter, dictionary enumeration or engine callback is invoked.
 
-- Start from one concrete static-evidence gap and one short, repeatable NPC
-  interaction leading to one Story and its completion callback. Record the
-  initial mission/objective, interaction target, and chosen option. Existing
-  bounded audio capture plus optional recording can establish observed
-  playback, never its trigger or mission ownership.
-- Before a dedicated observer, authenticate the current native inputs and
-  validate each selected method body, ABI, payload boundary, and identity
-  carrier. Observe only
-  `trigger -> condition result -> LevelScript action -> Story start/end -> callback or quest-state change`,
-  retaining source-connectable trigger/entity/LevelScript identities,
-  condition inputs and results, Story key and initiating action,
-  playback-instance lifetime, callback/successor identity, and supplied
-  mission/quest identities where proven.
+The general profile also observes shared synchronization, objective copy/refresh,
+quest-action dispatch, dialogue history/request/condition and LevelScript
+task/completion boundaries. Before-copy fields do not prove applied state, and
+per-changed-objective tracking carries an objective kind rather than a unique
+condition key. Incoming container contents, unchanged items and server rules
+remain unresolved. Generic condition polling is excluded from the default
+profile because entry frequency is not bounded by state changes.
+
+The mission-specific `OnSubConditionProgressChanged` observer retains the
+supplied quest, condition and integer progress alongside explicitly named
+pre-entry caches. Its request argument is not a snapshot of every incoming
+objective value, and entering the method does not prove delivery or server
+acceptance. Keep its caller path and live coverage unresolved until observed;
+advanced-progress UI refresh is a separate path.
+
+The capture objective is a general model of mission behavior across the corpus.
+Assess coverage by shared mechanism: restoration versus new acceptance,
+partial and combined-condition progress, authored action dispatch, branching,
+quest success/failure/pause, and final mission completion. Keep authored
+configuration, validated native consumer behavior, observed entries and a clean
+end-to-end session distinct. A hook firing once admits that observed case;
+installing every hook does not establish coverage of every mission or condition
+family. Prefer the next available mission that exercises an uncovered mechanism
+over repeating an already understood sequence. Preserve normal login, separate
+countable actions with visible progress, and retain the final transition and
+any separately performed claim.
+
+The default source snapshot covers all available mission definitions and
+LevelData/LevelScript/template/configuration families with shared semantic
+tables. A focused archive changes only source retention, not runtime filtering.
+The offline inspector uses the retained profile, preserves raw scalar bits/nulls,
+and reports observed/unobserved coverage separately from receipt completeness.
+Explicit quest membership can join a retained mission definition; pointer reuse,
+temporal proximity and concurrent observations do not establish ownership.
+
+Installation readiness is separate from observed health. The launcher waits
+for advancing atomic status snapshots, recorded rows and a sustained healthy
+baseline before authorizing progression, and surfaces live losses or failed
+reads immediately. A healthy startup baseline does not validate carriers that
+have not yet been entered. Hook transitions check thread/context operations,
+patches, rollback and resumption; a failed transaction remains failed even if
+recovery restores execution. Unrecoverable rollback or resumption retains the
+runtime until external process exit rather than running unsafe cleanup.
+The assembly observer anchors its stack with a saved frame pointer and restores
+flags before a valid Windows epilogue; offline tests check the actual Windows
+unwinder at every instruction boundary. A callback timeout retains borrowed
+storage and explicitly marks counters provisional. Collection requires stable
+final counters with no active callbacks or undrained records.
+Journal serialization must succeed before appending or counting a row. A
+serialization failure immediately revokes health, preserves earlier valid
+records, and accounts for unwritten admitted records; it cannot wait for the
+collector to discover malformed JSON after irreversible progression.
+A status-publication failure still rejects collection when all admitted rows
+were flushed without loss. An independently completed screen recording may
+cover later gameplay, but cannot restore missing native entries or turn the
+retained journal prefix into a complete capture.
+Snapshot readers share deletion and close their handles before parsing or
+console output. Existing status documents use `ReplaceFileW`; initial
+publication uses a non-replacing move. A bounded open-reader probe demonstrated
+that the former replacing-move path could fail despite delete sharing. Failed
+publication retains its first file, stage and Windows error, and the host
+preserves the provider's original diagnostic. Older receipts without those
+details cannot establish the historical failing OS operation.
+A clean retail restoration capture with the repaired runtime admits this
+publication path through final collection. This complements the bounded
+open-reader tests; it does not certify every contention pattern or reclassify
+an older failed journal as complete.
+The startup/SNS pilot admitted live content updates and the following quest
+handoff. That admission covers the observed boundaries; later dialogue and
+mission routes still need their own capture evidence. Startup also enters
+`StartMission` with `stateChanged=false` and `StartQuest` with
+`isNewQuest=false`; later progression enters `StartQuest` with
+`isNewQuest=true`. A method entry alone therefore cannot identify a newly
+accepted mission or a newly reached quest.
+
+Typed metadata interpretation identifies the observed quest handoff's client
+success and client start action phases. These lifecycle dispatches do not prove
+that an authored action exists or executed: the retained mission has empty
+client action maps. Its explicit predecessor dependency agrees with the
+observed handoff, supporting that visited edge without recovering the policy
+for all branches. Objective tracking and completion conditions remain separate:
+an SNS tracking target can coexist with a server-placeholder condition, and
+the client observations do not reveal the authoritative completion rule.
+LevelScript runtime state also requires typed interpretation; activation is
+not automatically a script-finished event or a Story ordering edge.
+
+The dialogue continuation admitted option selection, ordered trunk entries,
+finish boundaries and further quest handoffs. Selected option ids can join
+directly to stored `DialogTreeOptionNode` entries read through
+`UnityObjectStore` and the maintained dialogue-tree readers, even when the
+sampled option carrier's dialogue and trunk fields are null. Keep source
+membership separate from the missing runtime carrier fields. Stored tree
+connections can independently confirm an observed nonnumeric trunk order;
+sorting trunk suffixes would discard that route evidence. A configured
+dialogue UI action's dungeon id can also match an observed script level id,
+providing a named content association without proving quest selection policy,
+action execution or asynchronous causality. Fresh supporting Unity/config
+sources outside a session's archive need their own identities and provenance.
+Quest success/start entries can precede dialogue-exit callbacks, so exit
+callback timing is not interchangeable with dialogue finish or quest handoff.
+
+Decode scalar sentinels
+using the retained field type and bit width: a terminal SNS content value can
+appear as an unsigned bit pattern for a negative signed integer. Null action
+owner keys remain an ownership gap even when capture is lossless.
+
+Join sources through explicit script ids, stored source-path hash bits,
+authored action keys and node identities, and observed Story/SNS ids. A clock
+or address ordering never establishes source ownership or mission order.
+QPC, tick time and a UTC anchor permit comparison with the separate primary
+display recording; its first-frame receipt time is an approximate anchor.
+Capture context remains unfiltered so intervening events are retained.
+
+Entries establish that a named boundary was entered, not its return value,
+successful playback, asynchronous parentage or an initial mission-state
+snapshot. Same-thread entry order is observable; concurrent thread timing
+does not prove causality. Unchosen routes and activity before capture remain
+unresolved. A complete receipt means the observer stopped cleanly with no
+recorded losses or failed/truncated reads, not that every mission mechanism
+was observed. Preserve partial journals on failure; never publish them as
+complete evidence.
+
 - Cross-thread or asynchronous links need validated correlation identities;
   timestamps and process-local pointers do not establish causality or source
   identity. A received server notification does not reveal the server's
@@ -196,12 +308,31 @@ carrier before authoring a dedicated capture profile or requesting a session.
   bounded sessions for a repeat and a controlled alternative, never modifying
   game state through the observer. Keep raw sessions in
   `scratch/reverse_engineering/endfield_capture/`, compact reviewed results in
-  `reports/story/recovery/`, and durable conclusions here. Expand to quest
-  conditions and cross-Story callbacks only after the first chain has a
-  complete identity join.
+  `reports/story/recovery/`, and durable conclusions here. Additional quest
+  condition and cross-Story callback observations need a named missing identity
+  join or shared rule that retained sessions and offline consumers cannot decide.
 
 ## Remaining gaps
 
+- Mission work starts with retained-session/source reconciliation through
+  `mission_trace_inspect` and the shared native claims. Keep authored topology,
+  observed quest handoffs, restoration, and unresolved ownership separate;
+  collection completeness and hook coverage answer different questions.
+- Prioritize condition creation and scope/implementation selection: explain why
+  a configured `CheckTalkOptionFinish` objective can complete without entering
+  its specialized hooks. Trace graph/client/server scope, virtual dispatch and
+  IFix routing offline before choosing new observations. The stored `$type`
+  does not establish the instantiated receiver or executed implementation.
+- Recover change-level objective and LevelScript property connections through
+  authenticated scalar consumers carrying quest/condition or script/property
+  identities. Root completion flags and tracking objective kinds cannot explain
+  individual combined-condition progress. Prove field reads and event-rate bounds
+  before adding observers; preserve the no-getter/no-container-traversal boundary.
+- Once installation and collection failures are resolved, capture an available
+  unfinished route through its final quest and mission-completion entry, retaining
+  the supplied completion identity. Select daily variants by explicit runtime
+  carriers. Require a complete final receipt; startup restoration or a later
+  screen-only completion cannot close a missing native transition.
 - Revisit exact playback ownership only when server policy, payload-aware
   runtime evidence, or a new typed client carrier becomes available.
 - Close more CallServer callbacks and server placeholders through bounded typed

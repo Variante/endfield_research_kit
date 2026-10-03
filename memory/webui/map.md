@@ -61,6 +61,47 @@ coverage live under `reports/assets/map_recovery/`.
 - A streaming sidecar failure stops the canonical map phase instead of silently
   substituting sparse points.
 
+### Interactive devices and facility names
+
+[`interactive_catalog.py`](../../scripts/webui/map/interactive_catalog.py)
+projects the maintained `game_data.interactive_binary` reader's exact
+`InteractiveTable.objectToTemplate` keys onto registry-backed markers. A
+unique inverse `InteractiveFacWrapperTable.interactiveTemplateId` join to
+`FactoryBuildingTable.name.id` and the CN/EN text tables supplies the official
+facility name. Ambiguous wrappers or missing text never manufacture a name;
+an absent or undecodable InteractiveTable publishes an unavailable catalog
+diagnostic and leaves the existing marker classification in place.
+
+Pressure plates, energy locks, switches, repair/purification devices,
+barriers, water/gas mechanisms, terminals, guide objects and facility families
+use bounded identifier stems for presentation categories. These categories
+are `structuralOnly`, independently of the `exact` template and name joins.
+They prove neither runtime state nor interaction availability. Object-specific
+stems take priority over generic template families; a gas-core template keeps
+its more specific category. Unclassified objects retain the generic bucket.
+Classification never changes coordinates, mission ownership or Story links.
+
+The payload carries localized category labels and glyph keys in its facets,
+per-marker `interactive` identity metadata, and shared source links under
+`interactiveCatalog`; source files are expanded in the inspector only when
+needed. The offline detailId legend consumes exact official names, never
+promotes a category label to a recovered object name, and is regenerated with
+the Map interactive legend skill.
+
+The legend distinguishes plotted counts from catalog totals. A separate
+floor-hidden count applies the same type, Story, map-mark, mission and NPC-phase
+filters before testing floor visibility; its action reveals only floors of
+otherwise eligible points. Mission-owned points retain their existing floor
+bypass. A partially selected parent selects its whole group when clicked.
+
+Registry previews use the placed identity as well as the file URL: world and
+NPC keys address their exact dictionaries, while script identities match the
+global script ID and slot together. Selecting another point in the same file
+must update the focused row, and an earlier asynchronous response must not
+replace it. Opening the registry without an entity shows its inventory summary,
+not a missing-identity error. An explicit identity without a match still fails
+closed.
+
 ### Render layers, one grade at a time
 
 - Static OBJ projection carries an exact matrix and a separately graded Mesh
@@ -253,6 +294,7 @@ Marker eligibility, slot action bindings, and carrier identity domains are in
 python -m scripts.webui.map.build_map_recovery_data --with-preview
 python -m scripts.webui.map.build_map_recovery_preview --level LEVEL
 python -m scripts.webui.map.build_map_recovery_preview --refresh-exact-fallbacks-only
+python -m scripts.webui.map.build_map_encounters
 ```
 
 Previews checkpoint after each completed scene and reuse matching outputs;
@@ -260,6 +302,40 @@ normal input changes invalidate the affected cache, and `--no-render-cache`
 forces a rerender for audits. Use the canonical export when installed inputs or
 extracted assets changed. Mission Pipeline remains a standalone recovery
 workflow, not a WebUI page.
+
+## Authored encounters and scene conditions
+
+`scripts/webui/map/build_map_encounters.py` publishes Map-owned compact sidecars
+under `webui/data/map_recovery/encounters/` from Data's last published LevelData,
+SpawnerConfig, AtmosphericNpcData and MapConfig datasets. It checks catalog and
+shard identities/counts, source paths/sizes and the selected export's source
+signature; native-backed families also require matching selected native
+provenance. Missing or stale families disappear from the sidecar and retain a
+visible diagnostic. Map does not rebuild Data. The normal Map builder refreshes
+the sidecar after its map index; `--preview-only` leaves it untouched. An
+alternate `--export-root` requires `--game-root` (the `Endfield_Data` directory)
+to authenticate native-backed rows, instead of falling back to another install.
+
+The frontend reuses shared facets, query matching and Data source links. Its
+encounter browser separates current-map and unplaced records, and selecting a
+record overlays only its proved authored coordinates. Placement joins are:
+
+- LevelData `sceneId` plus stored spawner host position, joined to exactly one
+  SpawnerConfig `configId`; waves, action library keys and route ids stay scoped
+  to that configuration. Action positions retain their stored coordinate space.
+- Enemy-group member pointers joined to a unique `world:<levelLogicId>` enemy
+  transform in current LevelData from the same level. Unresolved script slots
+  and duplicate pointers remain unplaced; no centroid is invented.
+- Named NPC proxy `levelId` and its stored entity position. Opaque proxy bodies
+  retain source records without an inferred level or position.
+- Explicit MapConfig `levelStrIds` associates scene states and conditions with
+  levels, without assigning map-wide conditions to individual entities.
+
+Enemy/NPC patrols show their stored point sequence and actions. General patrol
+records and spawner routes preserve local/world-offset fields without plotting
+an assumed transform. Coordinates, timestamps, counts, raw modes, comparison
+codes and variable defaults describe configuration; they establish neither live
+activation, current condition results, visible NPCs nor traversable paths.
 
 ## Highest-value remaining gaps
 

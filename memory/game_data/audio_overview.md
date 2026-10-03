@@ -20,6 +20,70 @@ Evidence may advance only one layer at a time. A stronger downstream fact does
 not retroactively make every upstream candidate unique. Layers 5-6 need a host
 process or a bounded capture ([`audio_native_hooks.md`](audio_native_hooks.md)).
 
+Prioritize shared package, codec, HIRC and consumer rules by the current files
+or graph cohorts they can advance. A named voice is a possible representative,
+not the recovery unit. Reuse recorded observations and offline byte comparisons
+before requesting new runtime evidence. A receiver-ownership capture must state
+its runtime question separately from any verified file-coverage gain; observing
+more entries does not itself decode more files. The common admission and stop
+criteria live in the game-data entry point's recovery queue.
+
+The reusable [`package corpus gate`](../../scripts/game_data/wwise_package_corpus.py)
+now inventories every available AKPK package under the current authenticated VFS
+roster, including hotfix packages. It checks each complete logical payload
+against its recorded digest and preserves sector, full-width key, language,
+package and row ordinal. The available corpus contains repeated bank identities
+across base/hotfix packages and distinct external keys with the same low word.
+Therefore neither a bank ID nor a truncated external key is a globally unique
+media identity. Keep all candidates until an independent precedence or full-key
+join decides them. Header geometry and whole-package bytes do not bind an
+existing decoded output or establish the package used by a live handle.
+
+The Windows AKPK language sector is a bounded ID/offset table followed by
+NUL-terminated UTF-16LE labels. The reader uses that explicit profile, checks
+offsets and unique IDs, and preserves unclaimed bytes; it does not guess a
+different encoding. An entry's language ID joins only its own package's table.
+An absent ID stays unresolved. Stored labels describe package metadata, not
+the spoken language of a decoded clip or the language selected at runtime;
+package path names do not replace this join.
+
+The shared AKPK reader also checks each bank entry's transformed BKHD prefix:
+the stored bank ID must equal its full bank-sector key, and the declared header
+must fit the entry. This establishes a cross-format stored identity, not package
+uniqueness. Base/hotfix variants can have different HIRC bodies, including a
+different ordering of the same Event action IDs. Preserve package-qualified
+bank and object identities and the authored array order; an unordered action
+set cannot substitute for the bank's stored data. The typed bank reader
+[`hirc_v150.py`](../../scripts/webui/audio/semantics/hirc_v150.py) owns the
+body interpretation, while the package corpus gate owns complete-roster and
+bank-prefix checks.
+
+The CLI's direct-media filename uses the full `UInt64` entry key; the low word
+is a crypto seed, not its filename identity. Its package parser knows the
+sector, row ordinal and numeric language, but the WEM entry passed to conversion
+drops those fields. Embedded bank media also needs its parent bank entry and
+DIDX position: a repeated bank key alone is not a decoded-media collision.
+Embedded and direct entries can share a media key while both contain `PLUG`
+data, which the CLI skips before naming an output. Count actual write candidates
+after that distinction instead of treating every catalog row as playable media.
+The current source manifest retains only output path, coarse source-bank folder
+and block, with one record per output path. The Python builder consumes that
+manifest in a temporary directory and retains only those coarse tags. Existing
+`contentSha256` values hash decoded file bytes, not stored package-entry bytes.
+
+The maintained decode producer should persist a versioned receipt per source
+occurrence: complete VFS package identity and digest; sector, full-width key,
+numeric language, explicitly defined ordinal and extent; embedded bank/DIDX
+ancestry when present; stored encoded bytes, clear WEM and decoded output hashes
+as distinct stages; decoder identity/configuration and actual output path.
+Retain every source occurrence when output names coincide and state which bytes
+were written instead of silently replacing a path-keyed receipt. Pass this
+structured provenance through the Python metadata/index projection, keeping
+full-width keys as strings. This offline pipeline join applies across packages;
+repeated single-sound captures cannot replace it. The producer owners are
+`EndfieldAkpkPackage`, `EndfieldAudioCli` and the decode/source-metadata path in
+[`build_audio.py`](../../scripts/webui/audio/build_audio.py).
+
 Counts change per input set (current `reports/animestudio/hirc_*_current_latest.*`);
 this file keeps boundaries, witnessed joins, gaps and corrections. Code owners
 under `scripts/webui/audio/`: `build_audio.py`, `semantics/hirc_action_corpus.py`
@@ -27,6 +91,44 @@ under `scripts/webui/audio/`: `build_audio.py`, `semantics/hirc_action_corpus.py
 parse), `wwise_enums.py` (SDK enum contract). Layouts: [`audio_hirc_parser.md`](audio_hirc_parser.md);
 graph and typed parse: [`audio_hirc_graph.md`](audio_hirc_graph.md); non-HIRC
 sections: [`audio_bank_format.md`](audio_bank_format.md).
+
+AudioDialog path hashing and flattened output names are naming rules; neither
+a unique current full-key candidate nor a current package digest establishes
+the provenance of an existing decoded file. Stored-entry hashes and existing
+FLAC hashes can be added independently offline, but proving the historical
+conversion edge requires its retained receipt, exact surviving WEM bytes, or an
+explicit offline decode/PCM comparison. The full managed
+`Voice/<language>/<path>` argument is also distinct
+from the physical AKPK catalog identity. Closing this join requires a proved
+path-to-entry relation plus a selected-input receipt carrying both encoded
+entry and decoded-file hashes. Package/VFS freshness alone does not supply
+that missing decode receipt. A selected external-row probe now records both
+encoded-entry and decoded-file hashes and compares their decoded PCM exactly.
+The row matches a captured voice completion descriptor and its calculated full
+path key, closing this bounded offline comparison. The live package backing
+pointer still has no recorded file identity, so this does not extend to every
+decoded voice or establish game-side decoded output. A combined read recording
+now supplies platform completion status/byte counts and local pre-transform
+snapshots. The selected voice's transform metadata spans its encoded length,
+and its sparse buffer DWORDs match the same installed entry. Numeric and
+background cohorts also match sampled encoded bytes in the bounded index.
+The reviewed aligned native XOR path agrees with the offline reader; predicted
+clear words remain calculations. Full live buffer contents, file-handle
+lifetime, game codec identity and final output are separate gaps. Header-only AKPK framing
+and shared crypto live in `scripts/game_data/wwise_package.py`; generated
+selected-entry inventories and decode receipts stay under `reports/audio/`.
+Selected numeric candidates from the same sparse read witness now also have
+bounded offline encoded-entry/WEM/FLAC receipts with equal decoded PCM.
+They include mono, stereo and four-channel streams, so numeric descriptors
+must not all be labelled UI sounds. The reusable
+[`selected-entry comparison`](../../scripts/webui/audio/semantics/package_decode_witness.py)
+checks exact header/row/sample identity before extraction. Its receipt
+projector checks retained selected bytes and current FLAC identity without
+repeating decoding; historical decoder results remain explicitly offline.
+Static possible Event reaches do not become the Event selected in the capture.
+The current projection preserves the broader boundary
+in `scripts/webui/audio/semantics/runtime_observations.py`; the request and
+native source evidence is documented in [`audio_native_hooks.md`](audio_native_hooks.md).
 
 ## The structural lanes
 
@@ -186,13 +288,16 @@ selected-leaf probability gate, so siblings need not sum to 100). Open inside
 them: plug-in-specific value tables, leaves with no same-bank declaration,
 runtime bus and leaf selection.
 
-1. **Plug-in parameter blocks.** Convolution Reverb and Mastering Suite have a
-   direct registration -> factory -> vtable -> `SetParamsBlock` join but stay
-   opaque (an older unchecked DLL pin once let stale native labels onto the
-   page; the effect contract now binds the selected hashes). The next witness is
-   plug-in-specific parameter definitions or exact native consumers
-   ([`audio_hirc_graph.md`](audio_hirc_graph.md)); never fit names from
-   corpus correlation.
+1. **Plug-in parameter meanings.** Convolution Reverb and Mastering Suite now
+   have exact anonymous native read partitions after the selected registration
+   -> factory -> vtable -> `SetParamsBlock` join. The reviewed effect contract
+   records each load or byte zero-test and its instruction witness; the reader
+   exposes offset, width and raw bits under `structuralOnly`. Scalar loads may
+   show a float32 representation view, which proves no control name, unit,
+   transformed value or DSP role. Names still need plug-in-specific parameter
+   definitions or exact native consumers ([`audio_hirc_graph.md`](audio_hirc_graph.md));
+   never fit them from corpus correlation. Short serialized blocks and malformed
+   partitions produce bounded diagnostics and no read rows.
 2. **Layers 5 and 6 need a host, not a reader**: link the SDK Profile libraries,
    load the game's `.pck` files through the sample file-package I/O, register
    the plug-ins the game compiles in, and use the Query API and output capture

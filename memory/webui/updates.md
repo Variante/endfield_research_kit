@@ -20,7 +20,10 @@ WebUI source edits, generated reports, or scratch data as game updates.
    registry), and diff them as a Characters-page sidecar
    ([`characters`](../../scripts/webui/updates/characters.py)), without
    feeding the result back into character recovery or grouping.
-5. Publish the feed; scanner cache and history remain under
+5. Compare linked authored Story, Gameplay, Map and Production source records with the
+   same projection for both exports and publish their page sidecars
+   ([`page_records`](../../scripts/webui/updates/page_records.py)).
+6. Publish the feed; scanner cache and history remain under
    `.game-data-tracker/`.
 
 The normal build publishes every matching entry and the page paginates the
@@ -52,7 +55,41 @@ matching rules).
 
 ## Primary generated outputs
 
-`webui/data/updates/latest.json` and `webui/data/updates/characters.json`.
+`webui/data/updates/latest.json` and
+`webui/data/updates/{characters,story,map,gameplay,production}.json`.
+
+`page_records.py` compares the same export-only source projection on both
+sides: Story table conversations and available cutscene object documents;
+Map level definitions, per-level registry rows and authored level/config/script
+files; Gameplay primary rows and their exact string references to related
+tables and serialized files; Production catalog joins from raw item, recipe,
+building, shop, cost and achievement rows. Production reuses its catalog builder
+on both exports, retaining grouped medal identities, each original tier's source,
+and matching limited-item records with their explicit `LTItemTable` mapping.
+It compares direct displayed relationships without recursively following
+the entire recipe network. Numeric strings and I18nText wrappers do not
+create Gameplay table links: skill description values must not resolve to
+item-type catalogs and pull unrelated characters into an entry's comparison.
+Linked serialized files use canonical export-relative paths, so the same file
+comparison contract applies as on Map. Linked localization uses only common languages.
+These badges report authored-source changes, not final recovery parity or
+runtime behavior. Missing primary catalogs publish an unavailable sidecar;
+missing optional tables are excluded on both sides. Gameplay compares each
+kind whose primary table exists on both sides and reports unavailable kinds
+in `skippedKinds`; this does not suppress changes in the other kinds. Entries are uncapped and
+independent of media flags. Deleted IDs are retained as comparison data,
+without inserting old content into current page datasets.
+Story/Map/Gameplay/Production sidecar schema 3 adds field-level `changes` and a bounded
+`file` comparison for changed linked export files; Characters schema 4 includes
+catalog field changes. One-sided records retain field paths so the frontend
+can select a common data language. Comparison values serialize integers beyond
+JavaScript's safe range as exact decimal strings, including nested values,
+so text-handle IDs retain their precision. Linked file comparisons reuse the feed's
+maintained readers and preview limits, including coverage and truncation notes.
+The normal detail panels expose old/current values without enabling debug;
+grouped Map variants retain their source owners instead of overwriting a
+sibling variant's change. Status-only legacy sidecars retain their badges with
+an explicit missing-detail explanation.
 Page controls, the decoded-diff panel, and the client-side waveform view are in
 the header comment of `webui/src/features/updates/index.js`.
 
@@ -72,6 +109,9 @@ the header comment of `webui/src/features/updates/index.js`.
 - The audio waveform comparison is a listening aid, not evidence of semantic
   event changes.
 - Both complete roots are mandatory. There is no first-run installed-VFS mode.
+- Map file families and Gameplay serialized-file families participate only
+  when present in both exports. The Map sidecar records compared and skipped
+  families; grouped navigation highlights changes in any physical variant.
 - The Characters sidecar fails closed: missing, invalid, empty, or legacy
   exports publish an unavailable sidecar rather than treating the roster as new,
   and only languages present on both sides participate. Asset flags do not

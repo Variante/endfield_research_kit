@@ -35,9 +35,9 @@ the rest.
 | | `webui/story/` | Story and Text page data plus shared Story evidence |
 | | `webui/story_recovery/` | Story audits, OCR ordering, runtime traces, candidate generation, and `refresh_audio_hook_catalog.py` (re-pins the audio capture hook catalog to the installed build) |
 | | `webui/mission_pipeline/` | standalone Mission Pipeline recovery (not a WebUI page); `runtime_contract_native.py` re-derives `RUNTIME_CONTRACT` by name on the installed build and labels each native chain row |
-| | `webui/{assets,audio,characters,gameplay,map,recovery,updates}/` | one folder per page: its `build_*.py` entry point and helper modules |
+| | `webui/{assets,audio,characters,gameplay,map,production,recovery,updates}/` | one folder per page: its `build_*.py` entry point and helper modules |
 | | `webui/audio/semantics/` | Audio's reusable evidence owners (see *Audio decode, indexing and semantics*), including `conversation_sidecar.py` (the per-conversation Story sidecars the Story page merges), `decoded_payload_event_names.py` and `runtime_capture_import.py` (validates one bounded EndfieldCapture audio session) |
-| | `webui/recovery/` | the debug-only Recovery page: `build_recovery.py` plus `recovery_declarations.json` (reviewed enum names, family rules, per-type entries and evidence text); reads reports, asset maps, the VFS index and `memory/game_data/README.md`'s level table, never installed bytes |
+| | `webui/recovery/` | the debug-only Recovery page: `build_recovery.py` plus `recovery_declarations.json` (reviewed enum names, family rules, per-type entries and evidence text); reads reports, asset maps, the VFS index and `memory/game_data/README.md`'s level table; `jsondata_stages.py` authenticates the optional current registry and checks exact path-partitioned L2 declarations before publication |
 | | `webui/decoded_payloads.py` | export-relative path to the `game_data` reader that owns it, rendered as diffable text |
 | **Shared** | `common.py`, `source_paths.py`, `repo_paths.py` | helpers used by both lines; `repo_paths.REPO_ROOT` is the only repo-root anchor |
 | **Tests** | `tests/` | stdlib `unittest`, untracked, run by explicit module path |
@@ -73,6 +73,7 @@ depth-computed repo root; run directly as a file it exits with the
 | Mission Pipeline recovery (standalone, not WebUI) | `python -m scripts.webui.mission_pipeline.build_mission_pipeline_data --refresh-source-story-gap-queue` |
 | Compare exports for Updates | `.\build_updates.bat OLD NEW` |
 | Rebuild the Recovery progress page | `python -m scripts.webui.recovery.build_recovery` |
+| Check Recovery JsonData L2 declarations | `python -m scripts.webui.recovery.jsondata_stages` |
 | Serve or package | `python serve.py` / `python -m scripts.webui.package` |
 
 The wrappers load `endfield_paths.bat`, then apply explicit path flags.
@@ -99,9 +100,10 @@ requirements without running anything.
 | `story` (`text`) | text only: Table, JsonData; TextAsset, MonoBehaviour, PlayableDirector JSON. Narrative video is read when another run extracted it (`uses`), reported as reused otherwise | Story and Text |
 | `story-media` | `story` plus video, Texture2D, Sprite | Story and Text, `story_media.json` (`build_assets --publish story-media`) |
 | `map` | Table, JsonData, Terrain height grids; Material JSON; Texture2D, Mesh | Map; its render colours come from the published Assets index |
-| `characters` | Table; Texture2D, Mesh, Sprite, Animator | Characters, resolving media through the published Assets index |
+| `characters` | Table; optional JsonData, Texture2D, Mesh, Sprite, Animator | Characters, including direct story speaker discovery; media through the published Assets index |
 | `assets` | Table, video; Material JSON; Texture2D, Mesh, Sprite, Animator | the Assets index (`build_assets --publish index`) |
 | `gameplay` | Table, JsonData; MonoBehaviour, PlayableDirector, MonoScript, Material JSON | Gameplay, projectiles, source graph, combat; asset links from the published Assets index |
+| `production` | Table; reuses existing Texture2D/Sprite icons without extracting them | item sources and uses, recipes, encyclopedia building groups and dimensions, configured shop rewards, and upgrade references |
 | `audio` | Table, JsonData; MonoBehaviour, PlayableDirector, animator-controller JSON; AnimationClip; CN audio decode | Audio, and the Story voice-line sidecars (`lang/CN/audio/conv/`) |
 | `data` | everything decodable except other pages' media: Table, JsonData, Lua, whole Terrain; every Unity JSON class; AnimationClip, Shader, Font, TextAsset | the Data page's decoded datasets; its file viewer serves the rest |
 | none, `all` | the union of the above, which with Data is everything | every page except Updates |
@@ -169,14 +171,30 @@ python -m scripts.game_data.sprite_crops check
 | Mission Pipeline recovery | `webui/mission_pipeline/build_mission_pipeline_data.py` | standalone recovery reports/data |
 | Map | `webui/map/build_map_recovery_data.py` (its docstring documents the `export.bat map` sequence, `--with-preview`, `--preview-only`, `--jobs` and the render cache) | `reports/assets/map_recovery/`, `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `webui/data/map_recovery/` |
 | Map01 RegionMap3D package | `webui/map/build_map_region3d.py` | a self-contained package plus its provenance sidecar |
-| Characters | `webui/characters/build_character_data.py` | character indexes and versioned final-catalog snapshots |
+| Characters | `webui/characters/build_character_data.py` | character indexes, per-identity appearance sidecars, and versioned final-catalog snapshots |
 | Decoded Data Inspector | `webui/data_inspector/build_data_inspector.py` | generic catalogs and lazy decoded-record shards |
 | Gameplay | `webui/gameplay/build_gameplay.py` | Gameplay datasets; its `asset-refs` stage is the sole writer of `webui/data/assets/gameplay_refs.json` |
+| Production | `webui/production/build_production.py` | `webui/data/production/manifest.json` and localized catalogs/shards under `lang/<LANG>/production/` |
 | Assets | `webui/assets/build_assets.py` (`--mode default` for the served page) | asset indexes, `table_owners.json` and media lookup |
 | Audio | `webui/audio/build_audio.py` | decoded/relinked audio plus compact semantic evidence and shards |
-| Updates | `webui/updates/build_updates.py` | `webui/data/updates/latest.json`, `webui/data/updates/characters.json` |
+| Updates | `webui/updates/build_updates.py` | `webui/data/updates/{latest,characters,story,map,gameplay}.json` |
 | Recovery progress | `webui/recovery/build_recovery.py` | `webui/data/recovery/index.json` |
 | Packaging | `webui/package.py` | distributable static package |
+
+Map's normal builder also runs `webui/map/build_map_encounters.py`; its focused
+command refreshes only the encounter sidecars from Data's last publication.
+`webui/map/interactive_catalog.py` supplies Map's exact Interactive template
+and localized facility-name joins, plus structural display categories, from
+the existing exported tables; the normal Map data build publishes them.
+Map and Gameplay share `webui/data_inspector/publication.py` to validate that
+publication before projecting their own views. Story/Text guide projections
+live in `webui/story/reference_activity_guides.py` beside the existing
+structured-field renderer.
+
+Gameplay's `--stage skill-refs` refreshes its skill/action/reference sidecars
+from the current Data publication, with `--export-root` and `--game-root`
+selecting the source export and native proof when needed. Normal Gameplay
+runs include this stage; missing or stale optional sources remain visible.
 
 For the reviewed single Map02 water footprint and its saved selected live
 receipt, refresh only its existing render manifest, then attach that manifest
@@ -227,12 +245,22 @@ serialized registry is incomplete.
 .\pack_webui.bat story,audio,media,resource
 .\pack_webui.bat story --dry-run
 python -m scripts.webui.characters.build_character_data --languages CN --default-language CN
+python -m scripts.webui.data_inspector.build_data_inspector --dataset levelscript-data
+python -m scripts.webui.data_inspector.build_data_inspector --dataset levelscript-template-data
+python -m scripts.webui.data_inspector.build_data_inspector --dataset spawner-config --dataset atmospheric-npc --dataset map-config
 python -m scripts.webui.data_inspector.build_data_inspector --dataset buff-action-receipts
+python -m scripts.webui.data_inspector.build_data_inspector --dataset buff-data
+python -m scripts.webui.data_inspector.build_data_inspector --dataset dynamic-components
 python -m scripts.game_data.attribute_formula_native
 python -m scripts.webui.assets.build_assets --mode default
 tools\frida-runtime\venv\Scripts\python.exe -m scripts.webui.gameplay.capture_runtime_tags --duration 600 --output scratch\reverse_engineering\gameplay_tag_runtime\capture.jsonl
 python -m scripts.webui.gameplay.build_gameplay --stage base --languages CN --default-language CN --runtime-tag-capture scratch\reverse_engineering\gameplay_tag_runtime\capture.jsonl
 ```
+
+Characters reads raw speaker Tables and optional NPC proxy Json independently
+of generated Story data. `characters/story_speakers.py` owns speaker discovery
+and bounded evidence samples; names without speaker ids remain unresolved
+candidates. Use `.\export.bat characters` for a checked Characters-only rebuild.
 
 ## Story recovery
 
@@ -350,6 +378,9 @@ duplicate native catalogs, broad `ImportError` fallbacks, or a second scan:
 `name_recovery`, `authored_payload_event_names` (`gameplay_audio` keeps
 SkillData/BuffData), `decoded_payload_event_names`, `play_sound_actions`,
 `entity_contexts`, `conversation_sidecar`, and `event_projection`/`event_summary`.
+`conversation_sidecar` includes per-conversation linked-file search text in its
+index; `event_summary` includes the event detail's file references in list rows.
+Story search rows and Data catalogs use the same `webui/search.py` extractor.
 `webui.story.level_bindings` owns the LevelScript dynamic string property
 resolution audio lifecycle evidence reads. Ownership and native-hook
 boundaries are in
@@ -358,17 +389,260 @@ and [`memory/game_data/audio_native_hooks.md`](../memory/game_data/audio_native_
 
 ### Optional read-only runtime observation
 
-Both audio observers are optional, read-only, and part of no export, Updates
-or packaging flow; validate the manifest and payload contract before any
-authorized staging. `runtime_trace_audio_native_capture` documents the native
-fallback and its handshake gates. Keep raw sessions under the relevant scratch
-recovery topic with their provider and completeness summary.
+Mission/Story capture uses the dedicated EndfieldCapture Mission trace:
 
 ```bat
-python -m scripts.webui.story_recovery.runtime_trace_audio_native_capture --check-only --native-library PATH\AudioCapture.dll
-tools\frida-runtime\venv\Scripts\python.exe -m scripts.webui.story_recovery.runtime_trace capture --profile audio --check-only
+tools\EndfieldCapture\StartMissionCapture.bat -CheckOnly
+tools\EndfieldCapture\StartMissionCapture.bat
+```
+
+The first command derives and checks the selected native profile using the
+existing binaries without starting the game. To rebuild and run the focused
+tests, run `tools\EndfieldCapture\BuildMissionTraceCapture.bat` separately.
+Run the live command as administrator with Endfield closed;
+wait for `MISSION TRACE READY` after the observed health check before advancing
+missions. Type `stop` in the host, keeping Endfield open until saved.
+`game_data/mission_trace_capture_prepare.py` owns offline signature/field/ABI
+proof and generated profiles under `reports/runtime_capture/`;
+`game_data/mission_trace_source_archive.py` defaults to all available mission,
+LevelScript and shared semantic sources; `-Mission KEY` on the launcher selects
+a smaller archive. It retains provenance before game launch. Source snapshots
+retain exported identities and do not claim current-native validation.
+`python -m scripts.game_data.mission_trace_inspect --session SESSION --output-dir reports/runtime_capture/INSPECTION --join-sources`
+verifies collected identities, decodes retained typed fields and reports observed
+versus unobserved hooks without changing the session. Optional quest ownership
+joins use explicit retained mission membership, never ID spelling or timing.
+Operational details and entry-only evidence limits live in the tool's README
+and `memory/webui/story_recovery.md`.
+
+`game_data/mission_shared_native.py` re-proves shared Mission/dialog/LevelScript
+consumer claims from `game_data/contracts/mission_shared_native.json` using
+required `--gameassembly` and `--metadata` paths. It writes
+`reports/runtime_capture/mission-shared-native.json`, gates inputs before and
+after evaluation, and exposes no native rows for failed or pending groups.
+Field predicates alone do not prove receiver ownership; durable interpretations
+live in `memory/game_data/story_carriers.md`.
+
+The current live Audio capture workflow uses **EndfieldCapture only**:
+
+```bat
+tools\EndfieldCapture\StartCapture.bat audio source-owner --preflight-only --no-pause
+tools\EndfieldCapture\StartCapture.bat audio source-owner
+tools\EndfieldCapture\StartCapture.bat audio source-provider
+tools\EndfieldCapture\StartCapture.bat audio source-io
+tools\EndfieldCapture\StartCapture.bat audio source-transfer
+```
+
+Follow its prelaunch-only workflow with Endfield closed; see the tool's README.
+The `source-owner` selection prepares the current reviewed native inputs
+offline, then records both managed post methods and eight bounded native
+entries. Numpad 2 starts/stops the Audio window; Numpad 9 finalizes the
+session. Keep Endfield open until saved. The classic five-hook mode remains
+separate. Entry-only observations carry no native result or parent nesting.
+No export, Updates or packaging flow requires live observation.
+`source-provider` is the combined Audio recovery selection: it adds local
+decoder preparation, ordinary/alternate factories, ordinary open dispatch and
+provider descriptor input to the source/owner observations. When a capture is
+needed, choose representatives of the missing branches and use one Audio window,
+with brief idle intervals; do not restart the host for each sound. Additional
+voice names alone do not establish branch diversity. Entry arguments do not
+establish successful file opening or lifetime.
+`source-io` retains that whole selection and adds retained provider descriptors,
+selected device I/O context, and external-package path/hash-key lookup inputs.
+It uses independent retention/package native gates. A complete recording now
+admits these inputs. The expanded activation v6 also samples the package
+completion entry's request, status and existing descriptor through the separate
+`wwise_package_result_native` gate; activation v5 retains its exact recipe.
+A complete activation v6 recording now supplies completion fields. Activation
+v7 retains that exact recipe and adds default read-batch, platform read-completion
+and bounded pre-transform entries under `wwise_package_read_native`. It samples
+platform error/transferred bytes, local descriptor/transfer fields and one
+guarded pre-transform buffer DWORD. The first batch record is bounded; it does
+not represent every record in a larger batch. Use one window and play each
+available representative once; package lookup fan-out needs no repeated play.
+A complete v7 recording now admits the read fields. `package_read_observations`
+groups the whole window's descriptor geometry and transform ranges;
+`package_read_witness` compares sampled encoded words against a supplied bounded
+VFS index without extracting media. `wwise_package_transform_native` separately
+gates the aligned native XOR path and anonymous transfer callback dispatch.
+`source-transfer` preserves the earlier recipes and adds bounded transfer/block
+owner and completion-node receiver snapshots in one window, under the transform
+companion gate. The dispatcher and both proved receiver handlers are entry-only;
+block recycling keeps later carrier fields separate from the original transfer.
+Its declared managed external-post ABI also retains original cookie and raw
+Beyond codec arguments, without equating that enum with a Wwise codec instance.
+No particular voice is required. This selection addresses runtime receiver
+ownership; it has no established gain in file-schema coverage. Defer further
+recording until the missing shared rule, representative branches and stop
+criteria are stated under the
+[`capture admission policy`](../memory/game_data_recovery.md#recovery-queue).
+When justified, combine contrasting playback categories in one window; a manual
+voice, ordinary sound effect and streaming transition are possible probes, not
+proof of distinct native paths. Repeats and random gameplay triggers are not
+required. Whole-window coverage counters and stratified display samples expose
+the branches actually observed, without claiming coverage of the installed corpus.
+`managed_post_observations` recovers local managed argument/result pairs from
+the same admitted session. The recorded scalar is Event ID, not external cookie
+or package key; `runtime_capture_import` v2 corrects its former `sourceKey` label.
+
+`build_audio --package-catalog-only --package-input-set-sha256 SHA` refreshes
+only the static package inventory in an existing Audio publication. The owning
+raw gate, `scripts.game_data.wwise_package_corpus`, joins every available PCK
+to the current VFS roster and full logical-payload hash, then inventories typed
+header entries with the shared `wwise_package` reader. It writes
+`reports/audio/package_corpus_current.json`; its direct command accepts
+`--expected-input-set-sha256 SHA`. Missing packages, repeated typed keys and
+low-word collisions remain explicit. No capture, media decode or live package
+precedence is inferred. `semantics/package_catalog.py` owns the compact page
+projection; a focused refresh preserves Event/media shards and other evidence.
+Full semantic rebuilds revalidate a previously published package roster through
+that gate, so its inventory does not need a second manual publication command.
+
+| Owner / command | Output / boundary |
+| --- | --- |
+| `python -m scripts.webui.story_recovery.prepare_endfield_source_owner --game-root "PATH\\Endfield Game"` | `reports/audio/endfield_source_owner_manifest.json` and preflight; selected source/queue/carrier gates, no attachment |
+| `python -m scripts.webui.audio.semantics.source_owner_capture --session SESSION --game-root "PATH\\Endfield Game"` | strict native entry audit under `reports/audio/`; staged recipe/runtime, closed windows and receipt gates; local source/carrier/provider inputs, independently gated callers and address points |
+
+Publish a complete native entry session with the single Audio command:
+`python -m scripts.webui.audio.build_audio --semantics-only --game-root "PATH\Endfield Game\Endfield_Data" --native-entry-session SESSION`.
+Add `--native-entry-package-index INDEX` for optional header/encoded-word
+candidate comparisons; it requires the native session and does not claim a
+complete overlay index or live backing filename.
+Add `--native-entry-decode-witness RECEIPT` with that index to show a prior
+offline selected-entry PCM comparison whose current candidate/decoded inputs
+still match. Receipt publication never reruns the decoder or creates a live
+read-to-codec claim; `package_decode_witness` owns this optional child.
+For an already published Audio page, use `--native-entry-only` on the same
+command with an explicit game root and native session to refresh just this
+independent disclosure. It atomically updates Audio's index, detects a concurrent
+publication and writes `reports/audio/endfield_native_entry_refresh_latest.json`.
+It performs the required native/session audit; decode, Event/media semantics and
+historical paired-trace publication retain their existing outputs. The mode is
+exclusive with `--semantics-only`, decode/HIRC options and runtime-trace import.
+Use `--runtime-source-only --runtime-trace-bundle BUNDLE --game-root GAME_DATA`
+to re-audit the native source/owner child of an already published bundle.
+Its path and SHA must match the publication; managed requests, Event/media
+annotations and independent native-entry/package children are preserved.
+The focused result is `reports/audio/runtime_source_refresh_latest.json`.
+The independent `nativeEntryObservations` detail replays admission and never
+joins Event/media rows or historical paired relations. `source_observer_profile`
+owns shared pure recipes; capture wrappers own preparation and launching.
+`source_io_observations` owns the local retained-provider/package-key child and
+the independently gated completion snapshots. It compares external descriptor
+key low words and modulo-width block geometry, groups repeated descriptors and
+prioritizes text-bearing samples before bounding the whole-window summary.
+`scripts/game_data/wwise_package.py` owns header-only AKPK index framing and
+shared media/header crypto; it reads payload bounds without loading media.
+The package-transform gate separately owns the complete embedded-transfer
+initializer, producer calls and conditional primary-provider receiver slot.
+Its lookup keys stay decimal strings; the path/key cohorts never create Event/media bindings.
+
+The generic source-observer commands below are retained for offline preparation,
+auditing and replay of historical recordings. Their Frida live launchers and
+the experimental native injector are not this user's capture route.
+
+```bat
 python -m scripts.webui.story_recovery.runtime_trace import --profile audio CAPTURE.jsonl
 ```
+
+For source ownership recovery, prepare the minimal generic profile from the
+reviewed `game_data/wwise_source_native.py` contract loader. Preparation is
+stdlib-only and requires an explicit install root; it checks the selected
+native bodies, managed bridge signatures and generic manifest before atomically
+publishing under `reports/audio/`. Both managed bridges and all four source
+hooks are required. The Frida Python binding is needed only for live capture;
+this profile does not use the native EndfieldCapture provider.
+
+```bat
+python -m scripts.webui.story_recovery.prepare_audio_source_observer --game-root "PATH\Endfield Game"
+python -m scripts.webui.story_recovery.runtime_trace capture --profile audio --manifest reports/audio/source_observer_profile.json --game-root "PATH\Endfield Game" --check-only
+python -m scripts.webui.story_recovery.audit_audio_source_capture --game-root "PATH\Endfield Game" --manifest reports/audio/source_observer_profile.json --input scratch/reverse_engineering/audio_source_observer/capture.jsonl --output reports/audio/source_observer_capture_audit.json
+python -m scripts.webui.story_recovery.runtime_trace import --profile audio scratch/reverse_engineering/audio_source_observer/capture.jsonl --output reports/audio/source_observer_import.json
+```
+
+For the authenticated anonymous caller/owner boundary, prepare a separate
+profile with `--include-source-consumer --output
+reports/audio/source_consumer_observer_profile.json --report
+reports/audio/source_consumer_observer_preflight.json`, then use that manifest
+with the same capture/audit commands. It adds fixed owner-member reads and
+synchronous native parent evidence; constructor hooks and source lifetime
+remain outside this profile. The default profile stays unchanged.
+The historical Frida-only PowerShell wrapper that chained preparation, capture
+and `archive_runtime_capture.py save` is removed; live captures use
+EndfieldCapture only. `archive_runtime_capture.py` still records a SHA256
+inventory for a retained session's trace, diagnostics, profile and preflight.
+
+The `--include-source-bridge` profile targets the descriptor-selection
+handoff. It prepares that exact recipe against the additional
+`game_data/wwise_source_queue_native.py` contract, then observes true selector,
+clone, wide-text setter, factory, constructor, consumer and LockDataPtr entries.
+It omits the default startup SetSource hooks. Fixed playback fields and one
+descriptor are bounded; descriptor reads require a count of one, text requires
+a nonzero text pointer, and constructed owner fields are sampled only on return.
+Other descriptor counts and queued managed-request ownership remain unresolved.
+The default and consumer recipes still replay without the companion contract.
+`-OwnerCarrier` adds the independently gated command-4 carrier entry to the
+bridge recipe (`--include-owner-carrier` in the preparation command). It samples
+current/pending decoder-owner pointers and fixed owner/source fields on entry
+only; the handler may release a decoder, so return samples stay null. Stored
+source data remains an anonymous pointer. Pointer matches do not establish
+generation, continuity from an earlier selector, text, media or managed ownership.
+
+| Preservation command | Result |
+| --- | --- |
+| `python -m scripts.webui.story_recovery.archive_runtime_capture save --session-id ID --kind audio-source --input ROLE=PATH` (repeat `--input`; optional repeated `--note`) | ZIP with SHA256 inventory at `reports/audio/captures/ID.zip`; include trace, diagnostics, the session profile and preflight |
+| `python -m scripts.webui.story_recovery.archive_runtime_capture verify reports/audio/captures/ID.zip` | verifies every archived byte against its inventory; preservation only, not capture correctness |
+| `python -m scripts.webui.story_recovery.audit_capture_crash_dump --input CLOSED.dmp --output reports/audio/crash_dump_audit.json` | bounded offline Windows minidump framing, exception/context and module ranges; optional `--compare-dbghelp`; missing memory and raw stack words do not establish crash cause |
+
+Reuse saved sessions for later audits before requesting another capture. Choose
+a new capture for a specific missing hook or representative branch; recording
+every voice is unnecessary. Older recordings retain their historical evidence,
+but cannot supply fields or hooks that were not enabled.
+
+`python -m scripts.game_data.wwise_decoder_provider_native --gameassembly GA
+--metadata META --ak-sound-engine AK` audits the offline decoder/owner/source
+reads and conditional provider-descriptor transport. Its reviewed contract
+authenticates complete native groups and typed fields/branches, retaining
+live provider identity and argument-halfword codec meaning as unresolved.
+`--include-storage` additionally validates the provider initialization,
+selected slots, output interfaces and UTF-16 storage using the same opened
+images. Its downstream gate fails independently of preparation.
+`--include-dispatch` also validates source-based preparation and observed caller
+return sites through `wwise_source_provider_dispatch_native`, reusing those
+images. This child supplies the native entry audit's local provider summary;
+it creates no cross-call or file identity. Audio's
+`semantics/source_provider.py` publishes the static result through
+`build_audio --semantics-only`; it needs no new capture and adds no Event/media
+ownership. Missing or mismatched selected inputs produce no static claims.
+`--include-package` authenticates the complete external-path FNV-1-64 route
+and keyed package-table lookup through `wwise_external_package_native`;
+`--include-retention` authenticates provider/device entry reads through
+`wwise_provider_retention_native` and implies storage. Both reuse the opened
+images. Computed package keys are conditional identities, not live lookup rows.
+
+Start observation before loading the chosen voiced line, play it once and keep
+the adjacent diagnostics. For a larger local recording, explicitly raise the
+auditor's `--max-input-bytes` and `--max-events`; the report records both limits,
+and full snapshot, sequence, sample and clean-stop checks still apply. Run the strict audit after the capture process exits;
+an unavailable pair claim, missing sample or late diagnostic prevents promotion.
+Consumer representatives have a separate bounded sample budget. The strict
+auditor independently checks immediate active same-thread parents, ordered
+entry/return intervals, authenticated owner/source/output roles, and matching
+field snapshots before reporting consumer/LockDataPtr relations. Invalid
+recorded relations withhold all source summaries; absent parents stay unresolved.
+Fixed fields preserve external cookies, source lookup words and SetSource
+arguments as separate identities, without file, codec or audibility ownership.
+
+To include these anonymous summaries in Audio, import with repeated
+`--source-observer-manifest TRACE=PROFILE` associations, explicit `--game-root`,
+and `--source-max-input-bytes`/`--source-max-events` budgets when needed. Every
+associated trace must also be a positional input. Each receives a fresh strict
+audit against its own saved profile and adjacent diagnostics; unassociated
+historical traces retain their original import scope. The public
+`build_audio --semantics-only --runtime-trace-bundle BUNDLE` command replays
+these exact saved inputs against its explicitly selected native files before
+publishing a bounded anonymous capture panel; native rows never gain Event
+or media ownership from that summary.
 
 ## Updates
 
@@ -392,7 +666,12 @@ audits only) expands both SQLite stores into per-document entries. Text is
 classified by content and rendered through the reader `webui/decoded_payloads.py`
 routes to; changing that routing requires refreshing the baseline. Relocation
 matching, exclusions and `--sample-limit` are in `build_updates.py`; the
-Characters sidecar rules are in `webui/updates/characters.py`. Pruning is
+Characters sidecar rules are in `webui/updates/characters.py`;
+`webui/updates/page_records.py` compares authored Story conversations, Map
+levels, Gameplay and Production source records for optional page badges and previous/current
+field and linked-file comparisons, independently of asset flags and sample
+limits. Linked-file previews reuse the feed's bounded maintained readers.
+Pruning is
 destructive: preview with `--dry-run`; the guard rejects the current export
 and repository root and never touches a Unity object store.
 
@@ -469,6 +748,7 @@ are under `reports/animestudio/` unless another directory is shown.
 | `terrain.{layer_paths,tile_slots,layer_slots,virtual_texture_managed,manager_bridge}_native`, `terrain.shader_sampling` | selected native path templates, tile and layer render-property slots, managed texture handoff, Terrain-manager bridge, authored shader sample | `reports/terrain/` |
 | `irradiance_path_native`, `irradiance_volume_corpus` | IV V3 path construction, stream route and cursor; every current IV index and room against the VFS ledger, with the checked per-magic index-word additive relations | `reports/irradiance/` |
 | `dynamic_stream_area_corpus`, `dynamic_aux_pair_corpus` | DynamicStreaming `FBStreamArea` and paired `fb_init`/`fb_streaming` framing over authenticated VFS bytes | `dynamic_*_latest.*` |
+| `dynamic_scalar_components_native` | native field layouts and direct authored MissionCondition string-slot consumer, plus current main-file census; explicit `--gameassembly`/`--metadata`, `--input-root`, `--expected-input-set-sha256` | `dynamic_scalar_components_native_latest.{json,md}` |
 | `dynamic_*_native` (main, data_index, system_routing, root_comp, resource_comp, sludge_surf_tile, stream_area, version, version_ban, active_version, aux_bridge, visibility_runtime) | selected-build layouts, accessors and call chains, rejoined to a targeted dump (`--input-root`) where they read stored records | `dynamic_*_native_latest.*`, `dynamic_visibility_runtime_claims_latest.json` |
 | `dynamic_{visibility_area,visibility_state,streaming_config,main_path}_join`, `dynamic_version_id_domain`, `portal_center_join` | joins of validated native reports with the area corpus, MapConfig, exports and LevelData portals | `dynamic_*_latest.*`, `reports/game_data/portal_center_join_latest.json` |
 | `bundle_manifest_{corpus,native}`, `bundle_cab_dependency_corpus`, `bundle_cab_exceptions`, `bundle_external_identity_corpus` | `manifest.hgmmap` from the bundle-manifest dump (`--manifest`); CAB dependencies against `export_full/meta/cab_map` | `bundle_*_latest.json` |
@@ -477,11 +757,15 @@ are under `reports/animestudio/` unless another directory is shown.
 | `ifix_vm_{instruction,operands}_native`, `ifix_external_signatures_native` | IFix VM opcodes, operand joins and extern signatures over supplied patch dumps | `ifix_*_current.json` |
 | `streaming.corpus`, `streaming.marker{17,13,2}_corpus`, `streaming.marker15_gap_corpus` | block-15 root subgraphs and marker bodies (`marker15_gap` takes `--scene`) | `streaming_*_latest.*` |
 | `streaming.descriptor_{name_corpus,names,component_index_gate,mask_corpus}` | Init slot-7 descriptor names and anonymous mask positions | `reports/chunk_data/` |
-| `jsondata_corpus` | identity and routing of every JsonData file, with a per-file status consumers gate on | `jsondata_current_latest.{json,md}`, `jsondata_current_files_latest.jsonl.gz` |
+| `jsondata_corpus` | identity and routing of every JsonData file, with a per-file status consumers gate on; `--buff-report`/`--skill-report` select complete family receipts without overwriting a historical cursor basis; failed runs preserve prior publications and record bounded validator/predicate/source-hash diagnostics; unsafe output aliases fail before companion publication | `jsondata_current_latest.{json,md}`, `jsondata_current_files_latest.jsonl.gz`, companion `.validation.json` |
 | `jsondata_schema_coverage` | named bytes per family and bucket, ranked by unnamed bytes (never read `bytesConsumed` as coverage) | `reports/game_data/jsondata_schema_coverage*.json` |
 | `levelscript_first_stop_census` | reruns the LevelScript sequential owner on every `bounded_partial` file of the JsonData receipt and ranks first refusals by whole files (`--expected-input-set-sha256`, plus `--summary`/`--ledger`/`--export-root`) | `reports/game_data/levelscript_partial_first_stops_current.json` |
+| `levelscript_on_squad_member_usp_native` | `--game-root` or explicit `--gameassembly`/`--metadata`: authenticate parent typed reads and isolated child grammars; shared provider selection remains unresolved and the canonical owner refuses positive headers | CLI audit only; direct outer-wrapper null branch is supported |
+| `levelscript_provider_capture` | Historical Frida-backed Usp provider probe, unavailable in the current EndfieldCapture-only workflow; its source/native preparation remains reference evidence, not a current capture request | `reports/game_data/levelscript_provider_capture/`; observations only, no reader admission |
+| `levelscript_pos_rot_native` | `--game-root`: authenticate the isolated PosRot two-member field order against selected native inputs; the positive parent list/provider join remains unresolved and is refused by the LevelScript owner | CLI audit only; no positive-list admission |
 | `gpu_ui_corpus`, `levelscript_fmv_video_corpus`, `leveldata_bezier_knot_corpus`, `leveldata_spline_runtime_native`, `map_mark_relations` | GPUI named schemas; LevelScript `moviePath` to Video; LevelData knot frames; spline consumer; GameplayConfig map-mark joins | `gpu_ui_current_latest.json`, `reports/story/recovery/`, `reports/game_data/` |
 | `memorypack.skill_corpus`, `memorypack.skill_timeline_cursor`, `memorypack.skill_cursor_*`, `il2cpp.skill_cursor_*` | SkillData whole-file gate and the cursor-capture verification chain (the capture workflow is in `memorypack.skill_cursor_capture_target_set`) | `skilldata_*_latest.*` |
+| `memorypack.skill_corpus --source-corpus BASIS --expected-source-corpus-sha256 SHA` | Selection-only replay of a complete current all-unselected basis: authenticate every ledger identity and current parser/native/catalog/CLI/chunk receipt before and after, then apply the existing cursor/capture flags without another VFS stream; keep `--output` distinct from the basis | complete report with `provenance.selectionReplay`; helper owner: `memorypack.skill_corpus_replay` |
 | `memorypack.skill_cursor_wulfa_scope`, `il2cpp.skill_cursor_native_context --scoped-wulfa`, `memorypack.skill_cursor_capture_target --scoped-wulfa` | Reuse the Wulfa one-source VFS row plus authenticated controls for a source-bound capture preflight and receipt check; `StartCapture.bat skilldata-cursor targeted --skilldata-wulfa-target --preflight-only --no-pause` checks the host without launching | scoped native context and later diagnostic receipt verification under `reports/animestudio/` |
 | `memorypack.skill_cursor_wulfa_terminal` | Replay the verified Wulfa-only receipt and join its selected terminal cursor to exact static fields 0-42 and ActionGroup children; the reviewed selection contract is `skill_cursor_wulfa_terminal_selection.json` | `reports/animestudio/skilldata_cursor_wulfa_terminal_latest.json` (one-source diagnostic) |
 | `memorypack.skill_cursor_seraph_capture` | Bind the Seraph ultimate source to the v3 target-set recorder, reuse authenticated controls, and preflight with `StartCapture.bat skilldata-cursor targeted --skilldata-seraph-target --preflight-only --no-pause`; the receipt verifier reports only the executed cursor | `reports/animestudio/skill_cursor_seraph_ultimate_context_latest.json`, `skilldata_cursor_seraph_ultimate_verification_latest.json` |
@@ -489,10 +773,10 @@ are under `reports/animestudio/` unless another directory is shown.
 | `memorypack.skill_cursor_scoped_group` | Prepare/preflight a reviewed 1-32 source v3 binding (`--contract`), then require every copied source and cursor to close in a loss-free receipt. Contract v1 checks one selected current VFS report; v2 combines previously checked one-source reports without re-streaming or rehashing unchanged chunks. Launcher mode `StartCapture.bat skilldata-cursor targeted --skilldata-scoped-group CONTRACT` uses the prepared context | `reports/animestudio/skill_cursor_scoped_group_{context_latest.json,binding.txt}`, later `skilldata_cursor_scoped_group_verification_latest.json` (cursor-only diagnostic) |
 | `memorypack.skill_cursor_lizhiyan_pograni_join` | Replay the reviewed grouped receipt and current one-source report fingerprints; join selected native-gated ActionGroups and fields 0-42 to the observed terminal cursors in the Lizhiyan combo and Pograni ultimate sources | `reports/animestudio/skilldata_cursor_lizhiyan_pograni_join_latest.json` (two-source diagnostic; family publication remains separate) |
 | `memorypack.skill_timeline_{check_ability_entity_cur_duration,set_ability_entity_duration,voice_interrupt,perfect_dodge_direction,change_specific_layer}`, `memorypack.skill_cursor_zhuangfy_*_join` | Five selected-native route readers and four saved source/cursor joins. The saved join reports remain historical diagnostics: their frozen VFS basis carries the parser fingerprint from before shared admission, so the strict current-source gate rejects a fresh join run until a reviewed rebind or current basis exists | saved `reports/animestudio/skilldata_cursor_zhuangfy_*_join_latest.json` (nonpublishable) |
-| `memorypack.skill_timeline_shared_sequence` | Shared SkillData parser now admits those five selected-native routes; use `memorypack.skill_corpus --target-virtual-path PATH` to replay only an affected partial source under the current VFS audit, keeping partial output under `tmp/` or `scratch/` | bounded diagnostic report; complete-family gate remains the publication boundary |
-| `memorypack.skill_timeline_set_ignore_global_time_scale` | `--source`, `--gameassembly`, `--metadata`, `--output`: native-gated `0x0152` first-action read from the hash-pinned Pograni SkillData copy; the focused continuation closes its ActionGroup only in a selected-source diagnostic | caller's `--output` under `reports/`, `tmp/`, or `scratch/` (nonpublishable) |
+| `memorypack.skill_timeline_shared_sequence` | Shared SkillData reader authenticates each admitted domain contract, including CheckSkillHasHit, SetIgnoreGlobalTimeScale and DispelAction; `memorypack.skill_corpus --target-virtual-path PATH` remains a bounded diagnostic under the current VFS audit | diagnostic output under `tmp/` or `scratch/`; complete-family gate remains the publication boundary |
+| `memorypack.skill_timeline_set_ignore_global_time_scale` | Native-gated SetIgnoreGlobalTimeScale action reader; standalone `--source`, `--gameassembly`, `--metadata`, `--output` inspects the selected Pograni source; the shared reader consumes the same grammar after its own selected-build gate | shared route consumed by `memorypack.skill_corpus`; standalone output nonpublishable |
 | `memorypack.skill_sparse_corpus_compose` | Compose authenticated prior controls with newly streamed unknown SkillData sources (`--controls`, `--unknowns`, `--old-parser-source`, `--family-verification`, repeated `--expected-unknown`); route rebind also takes `--old-shared-parser-source` and `--old-shared-contract`, proving exact route additions and the reviewed HurtAnim promotion did not affect controls | caller's diagnostic `--output` under `tmp/` or `scratch/` |
-| `memorypack.skill_timeline_check_skill_has_hit` | Isolated selected-native `CheckSkillHasHit` action decoder joined to one current source (`--source`, `--corpus-report`, `--virtual-path`, `--output`); does not publish a family result | caller's diagnostic `--output` under `tmp/` or `scratch/` |
+| `memorypack.skill_timeline_check_skill_has_hit` | Native-gated CheckSkillHasHit action decoder admitted through the shared reader; `--source`, `--corpus-report`, `--virtual-path`, `--output` retains the one-source diagnostic | shared route consumed by `memorypack.skill_corpus`; standalone output nonpublishable |
 | `memorypack.skill_timeline_dice_float` | Isolated selected-native `DiceFloat` action decoder joined to one current SkillData source (`--source`, `--corpus-report`, `--virtual-path`, `--output`); does not publish a family result | caller's diagnostic `--output` under `tmp/` or `scratch/` |
 | `memorypack.skill_timeline_move_to_slot` | Selected-native `0x00FA` MoveToSlot action reader and 17-member contract; the shared SkillData parser admits it only after the current native gate | consumed by `memorypack.skill_corpus` |
 | `memorypack.skill_timeline_log_action` | Selected-native `0x00E5` LogAction reader and ten-member contract, including two bounded string payloads; admitted through the shared native gate | consumed by `memorypack.skill_corpus` |
@@ -503,11 +787,17 @@ are under `reports/animestudio/` unless another directory is shown.
 | `memorypack.skill_timeline_try_teleport_squad` | Selected-native `0x018C` TryToTeleportSquadAction four-member reader and reviewed source-order contract; closes one action but leaves later Wulfa timeline framing to the shared parser | consumed by `memorypack.skill_corpus` |
 | `memorypack.skill_timeline_anim_event_receiver` | Selected-native `0x0012` AnimEventReceiver seven-member reader with a reviewed nested SequenceActionData; `--source`, `--corpus-report`, `--virtual-path` isolate a current first stop | diagnostic `--output` under `tmp/` or `scratch/`; shared parser route consumed by `memorypack.skill_corpus` |
 | `memorypack.skill_timeline_continuous_anim_time_scale` | Selected-native `0x008B` ContinuousSetAnimTimeScale five-member reader with `BlackboardDouble` child; closes Wulfa's ActionGroup while terminal selection stays source specific | consumed by `memorypack.skill_corpus` |
-| `memorypack.skill_timeline_dispel` | Selected-native `0x009F` DispelAction nine-member reader, reusing the reviewed Buff source order and nested contexts; closes only Seraph's selected action in a one-source diagnostic | reader only; shared SkillData admission pending |
+| `memorypack.skill_timeline_dispel` | Native-gated DispelAction nine-member reader, reusing the reviewed Buff source order and nested contexts; admitted through the shared reader | consumed by `memorypack.skill_corpus` |
 | `memorypack.{buff,buff_1b,npc_montage,lipsync}_corpus` | whole-family MemoryPack gates | `*_current_latest.{json,md}` |
 | `memorypack.buff_*_receipt`, `memorypack.buff_*_child_corpus`, `buff_action_receipt_corpus`, `buff_create_action_root_corpus`, `buff_stacking_compact_corpus`, `buff_shared_nested_receipt_corpus` | per-route selected-native readers replayed on current source bytes; the Buff root admits only the compositions each docstring names | `buff_*_current_latest.json` |
 | `memorypack.buff_damage_gradual_condition_receipt` | `--buff-report`, `--export-root`, `--source`, `--expected-input-set-sha256`, `--output`: join one selected gradual Buff source to current native and prior complete-report receipts, then verify the exact condition and whole-root EOF | caller's `--output` under `reports/` |
 | `memorypack.buff_heal_check_tag_selected`, `memorypack.buff_heal_processor_zero` | `--input`, `--source`, `--audit-report`, `--buff-report`, `--output`: replay the selected positive heal modifier's native-audited condition and tag-zero processor; the root's `decode_selected_positive_heal_buff` composes them with its 30-field reader | caller's `--output` under `reports/` (selected diagnostics) |
+| `memorypack.buff_selected_roots` | Shared source-bound positive-heal, BreakPassing event-map, attribute-plus-empty-condition/tag-ten and recursive sword damage root admission and canonical replay, consumed by `buff_corpus` and `jsondata_corpus`; the Buff gate's `--selected-native-audit` defaults to the existing current IL2CPP context audit without rerunning it | complete-family `selectedSourceRoots` cohorts and registry replay input pins; standalone selected diagnostics stay nonpublishable |
+| `memorypack.buff_attribute_modifier`, `memorypack.buff_residual_census` | Shared native-gated AttributeModifierData collection/element reader; residual census authenticates the current family/source receipt and excludes exact roots before ranking (`--replay-no-positive` adds diagnostic forward-root replay) | shared Buff root admission; `reports/game_data/buff_residual_census_latest.json`, never standalone family promotion |
+| `memorypack.buff_event_maps`, `memorypack.buff_recursive_actions` and their control, ID/string, selector/geometry child owners | Distinct Ability/Buff event-map read orders and recursively named action/selector children under typed native joins; bounded list counts are independent of selected fixture names | shared root receipt through `buff_corpus` and canonical JsonData replay; unsupported nested unions refuse admission |
+| `memorypack.buff_compare_float_blackboard_children`, `memorypack.buff_damage_check_entity_num_target_children` | Library composition of independently gated parent typed calls and bounded child readers on exact source spans; the selected sword's operands and null/empty target children remain diagnostic-only | caller-owned diagnostics under `reports/` or `tmp/`; no whole-condition or Buff root promotion |
+| `memorypack.buff_damage_sword_condition_receipt` | Explicit `--gameassembly`, `--metadata`, `--audit-report`, raw `--source-file` and `--output`: compose independently gated actions, nested IfElse children and sequence envelopes on the reviewed selected source | diagnostic under `reports/`; exact stored condition only; its owning modifier/root composition supplies canonical admission, with no runtime result |
+| `memorypack.buff_damage_sword_selected` | Explicit `--gameassembly`, `--metadata`, `--audit-report`, raw `--source-file`, authenticated `--outer-row` and `--output`: compose the recursive sword condition, processor and enum under typed parent joins; the sole root reader owns its thirty-field continuation | selected child diagnostic under `reports/`; canonical admission belongs to `buff_selected_roots` and the complete Buff gate |
 | `memorypack.{derived_schema,derived_plans,derived_actions,derived_values,union_subtypes,action_dispatcher,wrapper_members}` | build-derived read plans, dispatch and wrapper member orders (`derived_plans --corpus` is the adoption gate) | `reports/game_data/memorypack_*.json` |
 | `memorypack.{target_settings,effect_config,damage_unit}_corpus` | selected enum labels over exact SkillData/BuffData records | `reports/game_data/memorypack_*.json` |
 | `memorypack.*_native` (multiply_attribute, atk_scale, definite_value, breaking_attack, damage_action_route, damage_action_poise_route, poise_result, buff_1b_action), `scripts.webui.gameplay.route_audit` | selected unpatched formula and route bodies; exact character damage-route partition | `reports/game_data/` |
@@ -528,6 +818,7 @@ After one route changes, `python -m scripts.game_data.levelscript_targeted_repla
 
 | Kind | Modules (`levelscript_*_native`) |
 | --- | --- |
+| Shared camera fields | `camera_look_at` (camera layouts and the typed `CameraBlendCurveKey` reader; `--game-root`, stdout native audit) |
 | ActionBase actions | `add_buffs_to_target_selves`, `add_tracking_point`, `tracking_point`, `remove_tracking_point`, `archery_stage`, `typhoea_chip_id`, `audio_cue`, `block_auto_music_change_cancel`, `block_battle_music`, `bool_compare`, `building_pos_hint_show`, `building_pos_hint_hide`, `cutscene_teleport`, `enemy_patrol_start`, `entities_visibility`, `environment_enable`, `event_args_float`, `fac_build_effect`, `fac_change_building`, `fac_get_building_position`, `fac_guide_hint_enable`, `fac_set_interact_locked_state`, `fac_top_view_range`, `finish_buffs`, `finish_scene_effect`, `is_look_at_point_in_screen`, `list_add_value_entity_ptr`, `manually_stop_guide`, `mark_task_condition_failed`, `npc_effect`, `npc_stop_cur_montage`, `npc_proxy_effect`, `npc_proxy_patrol_stop`, `override_npc_dialog`, `play_voice_narrative`, `post_audio_status`, `stop_radio`, `require_settlement_show`, `settlement_followon`, `settlement_upgrade_show`, `reset_follow_camera`, `resume_spawner`, `scripted_char_teleport_to`, `scripted_char_patrol_start`, `stop_char_scripted_mode`, `send_lua_event1`, `set_enemy_ui_show_range`, `set_fac_mode`, `set_forbid_map_teleport`, `set_list_buff`, `show_chapter_completed_panel`, `show_chapter_panel_direct`, `show_finish_toast`, `show_start_toast`, `start_seq_loop`, `start_subgame_countdown`, `stop_subgame_countdown_by_handle`, `start_track_camera`, `exit_camera`, `switch_to_camera`, `track_camera`, `toggle_clear_screen_but_radio_v2`, `toggle_main_hud_ignore`, `set_squad_special_idle_enable`, `set_squad_enable_relax_idle`, `character_play_montage`, `set_decoration_animator_int`, `set_decoration_view_state`, `entity_move_to_with_speed`, `move_bamboo_last`, `set_bamboo_pos_index`, `start_fmv_and_teleport`, `start_narrative_black_screen_teleport`, `disable_hud_fade`, `start_cutscene_hide_scene_object`, `start_cutscene_control_scene_object`, `stop_effect_on_npc_proxy`, `set_main_char_hp_bar_active`, `destroy_ability_entity`, `teleport_gameplay_npc`, `apply_movement_setting_modifier`, `toggle_ui_dev_only`, `set_squad_icon_active`, `skip_entity_die_display`, `water_height` |
 | ActionHeader events | `header` (snapshot enter/leave), `entity_hp_changed`, `entity_scanned`, `squad_fight_header`, `squad_all_die_header`, `mission_changed_header`, `leader_enter_trigger_volume`, `on_leader_enter_trigger_volume_list`, `on_spawner_entity_spawn`, `on_spawner_group_begin`, `on_spawner_group_complete`, `on_spawner_start`, `on_spawner_wave_begin`, `on_spawner_pause`, `on_spawner_entity_die`, `on_entity_die`, `on_encounter_intro_part_end`, `on_npc_dirty_block_cleaned`, `on_server_dialog_exit`, `on_level_reset`, `on_specific_entity_die`, `on_specific_entity_list_die`, `on_script_pre_start`, `on_client_global_var_changed`, `on_sub_game_start`, `on_npc_patrol_checkpoint_reach`, `on_physical_no_guard`, `on_physical_infliction`, `on_any_entity_die`, `on_any_enemy_poise_zero`, `on_any_enemy_poise_knot_break`, `on_aether_lock_endpoint_scanned`, `on_blight_miasma_weak_guide`, `on_cutscene_exit`, `on_bb_variable_changed`, `on_start_script_controlled_char_mode`, `on_encounter_activated`, `on_encounter_battle_part_begin`, `on_encounter_battle_part_end`, `on_entity_cast_skill`, `on_spell_abnormal_start`, `settlement_ready_performance`, `archery_advanced_headers`, `on_train_level_event`, `on_enemy_take_last_attack_damage`, `on_spell_infliction`, `on_map_var_changed` (OnMapVarChanged), `on_enemy_in_fight` (OnEnemyInFight) |
 | PureGetter getters | `getter_int`, `getter_compare`, `getter_entity_ptr`, `getter_levelscript_ptr`, `getter_list_buff`, `get_cur_squad_all_dead`, `get_character_template_id`, `float_getter_int_to_float`, `float_getter_plus`, `get_interactive_property_int`, `get_mission_save_property_int`, `bool_getter_mult_or`, `npc_get_pack_anim_has_clean`, `get_script_task_objective_is_completed`, `is_endmin_gender`, `entity_to_string`, `get_mission_state`, `get_is_leader_in_trigger_volume`, `check_performance_ready`, `list_make_entity_ptr` |

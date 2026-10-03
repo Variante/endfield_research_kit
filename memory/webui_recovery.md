@@ -12,6 +12,7 @@ and behavior contracts remain in [`../webui/README.md`](../webui/README.md).
 | Map | [`webui/map.md`](webui/map.md) | `scripts.webui.map.build_map_recovery_data` |
 | Characters | [`webui/characters.md`](webui/characters.md) | `scripts.webui.characters.build_character_data` |
 | Gameplay | [`webui/gameplay.md`](webui/gameplay.md) | `scripts.webui.gameplay.build_gameplay` |
+| Production | [`webui/production.md`](webui/production.md) | `scripts.webui.production.build_production` |
 | Audio | [`webui/audio.md`](webui/audio.md) | `scripts.webui.audio.build_audio` |
 | Assets | [`webui/assets.md`](webui/assets.md) | `scripts.webui.assets.build_assets` |
 | Text | [`webui/text.md`](webui/text.md) | `scripts.webui.story` |
@@ -21,6 +22,19 @@ and behavior contracts remain in [`../webui/README.md`](../webui/README.md).
 Mission Pipeline is a standalone recovery workflow, not a WebUI page or normal
 export stage. Retired Progression and Combat & Projectiles pages stay retired;
 their useful data belongs to Gameplay.
+
+Production reuses Story's safe rich-text renderer and raw-tag display setting;
+shared facet chips accept optional decorative icons.
+
+Gameplay, Production, Audio and Data use the same dataset-tab bar directly below their
+sidebar title. Gameplay tabs separate entity kinds and keep subtype filtering
+within the selected dataset; generated data remains Gameplay-owned.
+
+Updates owns optional `updates/{characters,story,map,gameplay}.json`
+sidecars. Page consumers add change badges and old/current detail panels to
+their current publications, including grouped Map variants and linked files;
+the comparison never writes into another page's dataset or alters its
+recovery evidence. See [Updates](webui/updates.md) for the comparison boundary.
 
 ## Export flow
 
@@ -61,6 +75,14 @@ voice files, event audio, dialog lifecycle hooks) as its own
 `lang/<code>/audio/conv/<key>.json` sidecar, which the Story page merges at
 load, so a Story rebuild keeps its voice and Audio never edits `conv/`. A new
 cross-page link takes the same shape.
+
+Map encounters and Gameplay skill references consume Data's last publication
+through the shared publication validator. Each publishes only its own compact
+sidecars, authenticates source signatures and any required selected native
+inputs, and exposes missing or stale families visibly. An optional `after`
+edge orders a combined build; it does not add Data to a standalone page run.
+Character appearances similarly use the last Story publication for exact
+source verification in the browser, without a Story build dependency.
 
 `story` extracts text only (tables, JsonData, the Story Unity classes); the
 video override gate reports its stem checks as skipped when no video was
@@ -118,6 +140,9 @@ all publication stages succeed.
   remains on the Audio page.
 - List-page layout, pagination, and search semantics are shared frontend
   contracts in [`../webui/README.md`](../webui/README.md).
+  Linked file names stay searchable before detail loading; Audio publishes
+  Story's audio-file search text in its own conversation index, alongside the
+  per-conversation sidecars, without rewriting Story outputs.
 - Reuse an existing `http://127.0.0.1:8765/` server before starting another.
 
 ## Verification
@@ -160,3 +185,7 @@ recompressed. Each archive includes a UTF-8 Chinese usage note; extract
 resources last because its complete asset index replaces the compact
 media-only index. Decoded Data-page datasets are local output and are not
 packaged.
+
+Shared frontend sorting uses adjacent category and direction selects through
+`webui/src/ui/sort.js`; direction has an accessible name without a visible label
+and remains selectable for every category, including default ordering.

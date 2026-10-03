@@ -136,7 +136,8 @@ rem Updates pipeline:
 rem - compare WebUI-facing text JSON in the two exports
 rem - compare CharacterTable rows and localized names for Characters-page tags
 rem - compare exported image/model/video/audio assets by default
-rem - write Updates feed and Characters-page change sidecar
+rem - compare Story, Map and Gameplay source records for page highlights
+rem - write Updates feed and all four page change sidecars
 python -m scripts.webui.updates.build_updates%ROOT_ARGS%%MODE_ARGS%%EXTRA_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
@@ -180,6 +181,8 @@ echo first-time or installed-VFS tracking mode exists.
 echo.
 echo   old: %ENDFIELD_PREVIOUS_EXPORT_ROOT%
 echo   new: %ENDFIELD_EXPORT_ROOT%
+echo.
+echo Story, Map, Gameplay and Characters show page change badges from this run.
 echo.
 echo What gets compared:
 echo   The text/JSON that the WebUI displays (Table, MissionRuntimeAsset,
@@ -228,6 +231,7 @@ echo.
 echo Writes:
 echo   webui\data\updates\latest.json
 echo   webui\data\updates\characters.json
+echo   webui\data\updates\story.json, map.json, gameplay.json
 echo   reports\updates\game-data-change-summary.json and .md
 echo.
 echo Notes:

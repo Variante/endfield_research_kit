@@ -519,8 +519,10 @@ Setup and export internals:
   focused|default|full` and `--animestudio-scope`/`--asset-mode`. A local test
   pins the level ladder and that every offered block has a `game/` or `raw/`
   folder. Streaming, DynamicStreaming, IV, ExtendData, IFixPatch and the
-  bundle manifest are undecoded: they go to `raw/` for the Data page's byte
-  view only, nothing builds from them, and the recovery tools still stream
+  bundle manifest remain byte-for-byte exports under `raw/`. The Data page
+  shows their bytes; authenticated component projections may read existing
+  raw files through maintained readers and selected native/source gates.
+  Recovery tools still stream
   them from the installed client with `AnimeStudio.CLI stream`. Bundles and
   audio packages are never dumped.
   Lua is not a Story input; it ships with the Data page (and every all-page
@@ -780,6 +782,14 @@ cmake -S tools\EndfieldCapture -B tools\EndfieldCapture\build-local -G "Visual S
 cmake --build tools\EndfieldCapture\build-local --config Release --parallel
 ctest --test-dir tools\EndfieldCapture\build-local -C Release --output-on-failure
 ```
+
+For this user's live runtime captures, use **EndfieldCapture only**. Do not
+recommend, install, or run Frida capture/attachment, or substitute another
+injector. Retained generic/Frida profiles and traces remain useful for offline
+audits; their presence does not authorize live use. EndfieldCapture's separate
+`audio source-owner` and extended `audio source-provider` recipes observe entries only, and cannot substitute for
+the historical paired generic recipe's result/nesting claims. Check native
+coverage and its selected-build gates before requesting a capture.
 
 Use `tools\EndfieldCapture\StartCapture.bat` only with Endfield closed and
 follow its exact-build, prelaunch, one-attachment, bounded-session, and

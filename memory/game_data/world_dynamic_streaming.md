@@ -29,10 +29,11 @@ play.
 | --- | --- |
 | [`dynamic_main_native`](../../scripts/game_data/dynamic_main_native.py) | main `SingleGrid` vector widths; DataMask presence test |
 | [`dynamic_data_index_native`](../../scripts/game_data/dynamic_data_index_native.py) | DataIndex layout; grid-local Type/Index partitions |
+| [`dynamic_scalar_components_native`](../../scripts/game_data/dynamic_scalar_components_native.py) | scalar and spatial inline component getters, builder field parameters, MissionCondition string-index consumer and current-corpus value census |
 | [`dynamic_system_routing_native`](../../scripts/game_data/dynamic_system_routing_native.py) | `EDynamicSceneData` to system route |
-| [`dynamic_root_comp_native`](../../scripts/game_data/dynamic_root_comp_native.py) | RootComp layout and partition, visible groups and controller, template lookup and match, lifecycle, IdComp branch |
+| [`dynamic_root_comp_native`](../../scripts/game_data/dynamic_root_comp_native.py) | RootComp layout and partition, authenticated directory-to-instance owner decoder, visible groups and controller, template lookup and match, lifecycle, IdComp branch |
 | [`dynamic_resource_comp_native`](../../scripts/game_data/dynamic_resource_comp_native.py) | ResourceComp, ResourceGroupWithStateDesc, cross-grid payloads |
-| [`dynamic_sludge_surf_tile_native`](../../scripts/game_data/dynamic_sludge_surf_tile_native.py) | `SludgeComp.SurfTileIDs`; `PrimitiveIntList` closure |
+| [`dynamic_sludge_surf_tile_native`](../../scripts/game_data/dynamic_sludge_surf_tile_native.py) | `SludgeComp.SurfTileIDs`; `PrimitiveIntList` closure; conditional navmesh consumer |
 | [`dynamic_visibility_area_join`](../../scripts/game_data/dynamic_visibility_area_join.py), [`dynamic_visibility_state_join`](../../scripts/game_data/dynamic_visibility_state_join.py) | visible-group values to area IDs and MapConfig states |
 | [`dynamic_visibility_runtime_native`](../../scripts/game_data/dynamic_visibility_runtime_native.py) | body claims: scene state, conditions, MapConfig and streaming-config load, loader file selection, area dealer and centers, portal assignment, spawn and AOI |
 | [`dynamic_streaming_config_join`](../../scripts/game_data/dynamic_streaming_config_join.py) | MapConfig to `StreamingMapConfig` asset and scene roots |
@@ -46,9 +47,16 @@ play.
 ## Main grids
 
 - **Vector extent (exact).** Selected accessor and builder widths bound every
-  current grid vector count word and body without overlap. This is exact
-  vector extent, not whole-file closure: grid tables, string bodies, padding
-  and nested record fields are not yet owned. `DataMask` stays a raw `UInt64`.
+  current grid vector count word and body without overlap. The shared reader
+  now also bounds root/grid table objects, both root vectors, shared vtables
+  and complete `TotalStr` UTF-8 strings including their count and NUL byte,
+  rejecting partial overlap or an alias between different allocation kinds.
+  Exact shared vtable/string extents are counted once. Every uncovered range,
+  including the physical tail, stays explicitly recorded as a residual; the
+  authenticated current main corpus has only zero-filled residuals. This is
+  allocation extent, not a padding proof or nested-record field closure.
+  Positive `Desc` table targets still need a reader; the current empty vector
+  supplies no target evidence. `DataMask` stays a raw `UInt64`.
 - **Filename (exact).** Every current `fb_main` filename decodes to its own
   root `UniqueId` under the selected `GetPath` packed-ID rule (low byte, next
   byte, one high nibble). Which ID the game requests is open.
@@ -66,7 +74,15 @@ play.
   load, reload and enter reach `_ParseLoad`, which walks DataIndex entries
   (bounded by the template's `comps`, not stored `Comps.Num`), routes each
   Type to its system and can call `RegisterEntity`. The IdComp branch reads
-  `UniqueId` and rejoins routing.
+  `UniqueId` and rejoins routing. The public
+  `decode_authenticated_root_components` decoder authenticates current raw
+  bytes before rechecking main framing, directory target bounds, group
+  tiling and the fresh authored template signatures. It returns each
+  checked directory reference with its source-local grid, component-vector
+  and instance ordinals, and the owning RootComp ordinal and typed entity
+  label. This closes the authored `RootComp.Comps` -> directory `DataIndex`
+  -> component instance join. It does not assign indirectly grouped
+  children or demonstrate that the authored entity exists in play.
 - **ResourceComp (structural).** Its five groups partition their same-grid
   vectors; each resource descriptor's inner group partitions `Model`,
   `Effect` or `Ecs` targets across grids and files, resolved by scene path
@@ -75,7 +91,154 @@ play.
 - **`PrimitiveIntList` closure (structural).** RootComp visibility,
   ResourceGroup visibility and Sludge `SurfTileIDs` spans are disjoint and
   tile each grid's `PrimitiveIntList` exactly. `SurfTileIDs` values are
-  nonzero stored tile IDs with no known consumer.
+  nonzero stored tile IDs. Their selected conditional navmesh consumer is
+  authenticated separately from the stored partition.
+
+## Scalar and spatial inline components
+
+`dynamic_scalar_components_native` closes the stored layouts of
+`MissionCondition`, `ActivityCondition`, `MapVarControlComp`, `PoiControlComp`,
+`TreeRootComp`, `DecorationRootComp`, `ConveyorBeltComp` and
+`ConveyorBeltBoxComp` (**exact selected layout**). Each generated getter's
+metadata return type and native position read establishes its field type
+and byte offset. The generated constructor's named field parameters,
+record width and alignment agree with the main vector contract. Complete
+main allocation framing and authenticated VFS path/length/MD5 joins run
+before the corpus census; a different or missing native build produces no
+layout.
+
+The same contract also closes `Vector3`, `SeatComp`, `FactoryBlockComp`,
+`SceneGridInfo`, `ExtraSceneComp`, `NavModifyArea`, `Bounds`, `ConveyorPath`,
+`WaterPipeComp`, `InteractiveStateComp`, `GlobalVarControlComp` and
+`SettlementControlComp`. Selected `Vector3` getter fast paths
+read named `Single` fields `X`, `Y` and `Z` at byte offsets zero, four and
+eight; the constructor names those same three fields and declares their
+inline width. Typed nested getters pass the containing record's position
+plus a proved offset to checked carrier initializers, which retain the
+ByteBuffer and return a `Vector3` carrier. Their constructor's flattened
+parameters independently match the named axes. This establishes stored
+`SeatComp.Pos`/`Rot`, factory and scene-grid `Center`, and extra-scene
+`MinPos`/`MaxPos`/`CurrentPos`; scalar `Radius`, `Len`, `Direction`, seat
+keys and the byte Boolean `RaiseLevelEvent` retain their declared types.
+The same carrier proof covers the additional named position, rotation,
+scale and bounds fields. Conveyor paths retain the generated names
+`WorldStartPoint`, `WorldEndPoint` and `WorldCenter`; a stored name alone
+does not prove the live transform used by their consumer. Water-pipe
+angles, delays, heights and interactive IDs, and interactive/global/settlement
+control scalars retain their declared types. These are authored spatial
+and control fields, without world-space, parent-transform, rotation-unit,
+radius-unit, target-table, operator-enum or live occupancy claims.
+
+Keep representation separate from meaning. `MissionCondition.IsQuest` and
+`IsSame` are stored `Int32`, while `MapVarControlComp.ControlLoad` and the
+conveyor entry/exit fields are byte-sized native Booleans. Map variable
+`CompareValue` is signed `Int64`; `CompareType`, `MapKey`, `MapId` and the
+four `Extra` fields stay signed integers with no inferred operator, target
+or sentinel meaning. `TreeRootComp.NormalModel` is signed `Int64`, distinct
+from the conveyors' unsigned group IDs. A getter name ending in `Id` or
+`Tid` does not establish an external table key or rule out a string-vector
+index. Consumers must prove those joins before labels are projected.
+
+`MissionCondition.Id` now has that independent consumer proof (**direct
+selected unpatched path**). `RegisterEntityCaredCondition` retains the
+containing `FBDynamicSceneChunkData` carrier and passes the generated `Id`
+getter's signed integer result to `DynamicSceneChunkStrExt.GetStrSpan`.
+That method selects root field `TotalStr`, bounds the signed index, reads
+its four-byte string uoffset and byte length, and returns the stored span.
+Index zero is an ordinary string slot: it can contain a quest key, not an
+absence sentinel. Negative and out-of-range indices return an empty span
+on this selected path; the census reports that fallback separately from a
+resolved authored empty string. All current authored condition indices
+resolve within their own containing root. The returned span is passed to
+`DynamicSceneRuntimeStringManager.GetStrKey`; an allocated runtime key is
+not the stored index and is not established by this offline join.
+
+The census keeps the original integer beside its resolved authored text.
+Mission and quest keys may support a definition-level UI link after the
+matching published definition is checked, but this does not establish that
+the condition ran, passed or activated an entity. Other component IDs have
+no equivalent target proof yet.
+
+The current corpus has no authored `ActivityCondition`,
+`DecorationRootComp` or `Bounds` examples, so their generated layouts do not establish
+usage. Unassigned internal bytes in tree, conveyor and map-variable
+records are zero in the authenticated current corpus; they remain reported
+gaps, not a runtime padding or allocator proof. Counts, distributions,
+bounded record samples and source MD5s belong in
+`reports/animestudio/dynamic_scalar_components_native_latest.{json,md}`.
+Enum meanings, control-ID targets, evaluated conditions and live activation
+remain unresolved.
+
+`decode_authenticated_main` lets a caller reuse existing exported raw
+bytes after the explicit selected-native layout gate and current VFS
+receipt gate. It checks the receipt's length and MD5 before complete main
+framing and field decoding; the census also records each file's SHA256.
+The public result retains source-relative grid and component ordinals,
+original scalar values and separate proved string references, with nested
+vectors represented by named axes. A component's entity or group owner is
+not established by its position in a vector; direct directory references
+can acquire an authored RootComp association only through the independent
+root decoder and its current template gate. These associations retain
+their directory ordinal, rather than treating vector order as entity order.
+Raw `Vector3`, `NavModifyArea`, condition and path children have no owner
+projection unless a specific checked DataGroup join establishes it.
+Corpus and report receipts
+must describe the current native inputs and current bytes before a Data
+view projects them; bounded report samples are not a substitute for the
+authenticated decoder.
+
+The next runtime witness for this branch is a single selected scene/grid
+load or reload: record the selected MapConfig and streaming configuration,
+the requested `fb_main` path and accepted bytes, the grid UniqueId,
+RootComp position and matched template component list, then the actual
+DataIndex/system route and `RegisterEntity` call. Record whether the
+selected iFix path is active. A condition-controlled example additionally
+needs the stored TotalStr key, evaluated condition result and selected
+state/area list at that call. This would test the conditional native path
+and authored owner join against a live entity; offline directory or string
+membership cannot supply that observation. Indirect DataGroup ownership
+remains a separate static join rather than a reason to require a capture.
+
+## Sludge surface tile consumer
+
+`dynamic_sludge_surf_tile_native` authenticates the selected unpatched
+`DynamicSceneSludgeSystem._GetSludgeSurfTileIDs` path (**direct conditional**).
+The original generated getter and inlined collector return the same
+`SurfTileIDs` group position with the same ByteBuffer carrier. Checked group
+`Index`/`Num` accessors select grid-local `PrimitiveIntList` entries. Each
+iteration rejects a negative index, an index at or above the generated
+vector length, and a zero or negative Int32 value. Positive Int32 values
+are sign-extended to UInt64, so only the positive Int32 range is retained.
+The indexed accessor clone shares the registered generated accessor's
+vtable slot, vector helper, stride and selected little-endian Int32 read;
+the length accessor is itself registered.
+
+The output is the supplied `List<UInt64>`, cleared before the selected loop.
+Its static `Add` companion is joined through the bounded MethodSpec and
+class-instantiation tables, separately from the inline insertion helper.
+That helper and the registered generic candidate agree on the list size
+field, qword insertion stride and resize target. This closes the selected
+insertion relationship without treating shared code or a static companion
+as a live MethodInfo; the resize helper implementation remains open.
+
+`_AreSurfTilesLoaded` passes each retained UInt64 ID to the registered
+`NavMeshChunkManager.IsSurfaceLoaded` method. A false result returns false
+immediately; a null, empty or exhausted selected list path returns true.
+`_TryApplyNavMeshState` passes the same local collector output to this check
+and reaches `_ApplyNavAndMaybeUnbind` on the selected empty-list or
+load-check-true branch. This establishes **conditional navmesh use**, not
+active Sludge state, an observed tile load, or a successful state mutation.
+Live grid/component selection, patch routes, deferred callbacks and
+physical/rendering effects remain unresolved.
+
+A runtime receipt must correlate the caller's global ID/state, selected
+scene/file identity and grid ID, Sludge wrapper/group `Index`/`Num`, produced
+UInt64 IDs, each `IsSurfaceLoaded` result, the aggregate load-check result,
+and the reached apply or deferred callback under one bounded thread/call
+lineage. It must include the exact selected native build and loss/overflow
+status. A graphics/audio-only session or a method-name hit cannot establish
+that join; an observation profile needs these specific call/data receipts
+before a capture is useful for Sludge recovery.
 
 ## Visibility and scene state
 
@@ -202,10 +365,12 @@ Tiers are marked inline above. **Exact** covers VFS identity, vector and
 tail framing, the filename-to-root ID and the auxiliary pair bytes;
 **direct** covers selected accessors and the conditional native routes;
 partitions, the template match and cross-file joins are **structural only**.
-**Unresolved:** other nested main fields and whole-file closure; `DataMask`;
+**Unresolved:** other nested main fields, positive table-reference targets and
+allocator-backed proof for the zero-filled residual ranges; `DataMask`;
 auxiliary descriptors other than 21 and whole-root closure; `Entry.Id`
-meaning beyond the IdComp join; resource state conditions; a Sludge tile
-consumer; live login bytes, branch-version value, registration execution
+meaning beyond the IdComp join; resource state conditions; live Sludge tile
+selection and navmesh effects; live login bytes, branch-version value,
+registration execution
 and repeated-segment captures; and every live selection: MapConfig,
 streaming and template asset loads, grid and area activation, evaluated
 conditions, version phase, ban results and ban-set reuse, auxiliary file and
@@ -243,8 +408,12 @@ Each was tested and refused; the module docstring has the reasoning.
 
 1. A component-ownership witness for descriptor 21 or a source-backed meaning
    for another auxiliary descriptor, with a runtime path/provider receipt.
-2. A selected consumer of `SurfTileIDs` and of the ResourceGroup state scalars.
+2. A selected consumer of the ResourceGroup state scalars. The Sludge
+   `SurfTileIDs` group-to-primitive/list and load-check-to-apply joins are
+   authenticated conditional native consumers; a live Sludge/grid/tile
+   receipt and deferred callback behavior remain the next Sludge boundary.
 3. Runtime receipts (exact build, caller, file identity) for MapConfig and
    streaming-config selection, grid and area activation, version phase and
    ban results, portal AOI and spawn, and the squad teleport `pos` source.
-4. The remaining nested main fields and whole-file closure, then `DataMask`.
+4. The remaining nested main fields and positive table targets, then an
+   allocator-backed residual/padding proof and `DataMask`.
