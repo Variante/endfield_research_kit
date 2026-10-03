@@ -17,7 +17,7 @@ Primary parent-repo build wrappers:
 .\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
 
-`rebuild.ps1` uses the isolated SDK at `tools\AnimeStudio\.dotnet\dotnet.exe` unless `-UseSystemDotnet` is passed. Supported targets are `CLI`, `GUI`, `Patcher`, and `AllManaged`; common Endfield work normally needs only `CLI`.
+`rebuild.bat` (`python -m scripts.game_data.extraction.animestudio.rebuild`) uses the isolated SDK at `tools\AnimeStudio\.dotnet\dotnet.exe` unless `--use-system-dotnet` is passed. Supported targets are `CLI`, `GUI`, `Patcher`, and `AllManaged`; common Endfield work normally needs only `CLI`.
 
 Standalone build from `tools\AnimeStudio`:
 

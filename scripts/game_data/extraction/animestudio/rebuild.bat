@@ -1,25 +1,11 @@
 @echo off
 setlocal
-
-if /I "%~1"=="--help" goto :help
-if /I "%~1"=="-h" goto :help
-if /I "%~1"=="/?" goto :help
-if /I "%~1"=="/h" goto :help
-if /I "%~1"=="help" goto :help
-
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0rebuild.ps1" %*
-exit /b %errorlevel%
-
-:help
-echo Usage: scripts\game_data\extraction\animestudio\rebuild.bat [-Target CLI^|GUI^|Patcher^|AllManaged] [-Configuration Debug^|Release] [-NoRestore] [-UseSystemDotnet] [-DryRun]
-echo.
-echo Rebuilds the local tools\AnimeStudio managed projects used by export wrappers.
-echo It prefers the repo-local .NET SDK installed by setup_dotnet9.bat.
-echo.
-echo Common examples:
-echo   scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI
-echo   scripts\game_data\extraction\animestudio\rebuild.bat -Target AllManaged -Configuration Release
-echo   scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI -NoRestore
-echo.
-endlocal
-exit /b 0
+pushd "%~dp0..\..\..\.."
+set "ARGS=%*"
+if /I "%~1"=="/?" set "ARGS=--help"
+if /I "%~1"=="/h" set "ARGS=--help"
+if /I "%~1"=="help" set "ARGS=--help"
+python -m scripts.game_data.extraction.animestudio.rebuild %ARGS%
+set "RC=%errorlevel%"
+popd
+exit /b %RC%
