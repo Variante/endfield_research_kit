@@ -36,7 +36,12 @@ below it, a level 4 declared ``closed``, a missing asset map or VFS index, and
 an asset-map chunk no VFS index assigns to a declared block all abort the
 build. A path matching no family is kept as ``Other / unclassified`` with all
 four levels ``notAssessed``; so is an asset-map type with no declaration.
-``sources`` records each input's size and mtime.
+``sources`` records each input's size and mtime. The CLI additionally runs
+an optional JsonData L2 consistency preflight before the volume scan. Its
+separate checker authenticates current registry receipts, including installed
+fingerprints, without re-decoding payloads. An absent optional registry is
+published as an unavailable check; a present stale or mismatched registry
+stops publication and leaves the previous page payload untouched.
 
 Run from the repository root::
 
@@ -62,6 +67,13 @@ if __package__ in {None, ""}:
 from scripts.common import EXPORT_LAYOUT, OUT_DIR, REPORTS_DIR, ROOT, write_canonical_json
 from scripts.source_paths import ExportLayout
 from scripts.repo_paths import REPO_ROOT
+from scripts.webui.recovery.jsondata_stages import (
+    DEFAULT_LEDGER as JSONDATA_LEDGER_PATH,
+    DEFAULT_SUMMARY as JSONDATA_SUMMARY_PATH,
+    DEFAULT_OUTPUT as JSONDATA_CHECK_OUTPUT,
+    check_jsondata_stages,
+    describe_failure,
+)
 
 SCHEMA = "endfield.recovery-progress.v5"
 DECLARATIONS_SCHEMA = "endfield.recovery-progress-declarations.v4"
@@ -903,6 +915,9 @@ def build_payload(
     export_root: Path | None = None,
     generated_at: str | None = None,
     repo_root: Path = REPO_ROOT,
+    jsondata_summary_path: Path | None = None,
+    jsondata_ledger_path: Path = JSONDATA_LEDGER_PATH,
+    jsondata_check_output_path: Path | None = None,
 ) -> dict[str, Any]:
     # Cheap inputs first: the corpus sweep reads a 450k-row profile, so a
     # malformed declaration should fail before paying for it.
@@ -915,11 +930,24 @@ def build_payload(
     stage_states = _resolve_stage_states(declarations)
     object_types = resolve_object_types(declarations, repo_root=repo_root)
     export_root = EXPORT_LAYOUT.root if export_root is None else export_root
+    jsondata_check = None
+    if jsondata_summary_path is not None:
+        block = next((row for row in vfs_blocks if row["enumName"] == "JsonData"), None)
+        if block is None:
+            raise RecoveryInputError("JsonData declarations are missing for the registry preflight")
+        jsondata_check = check_jsondata_stages(
+            block, summary_path=jsondata_summary_path, ledger_path=jsondata_ledger_path,
+            export_root=export_root,
+        )
+        if jsondata_check_output_path is not None:
+            write_canonical_json(jsondata_check_output_path, jsondata_check)
+        if jsondata_check["status"] not in {"verified", "missing"}:
+            raise RecoveryInputError(describe_failure(jsondata_check))
     measured = read_vfs_profile(vfs_profile_path, vfs_blocks)
     asset_types = read_asset_map_types(export_root, vfs_blocks)
     blocks = _publish_blocks(vfs_blocks, measured, object_types, asset_types)
 
-    return {
+    payload = {
         "schema": SCHEMA,
         "generatedAt": generated_at
         or dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z"),
@@ -947,6 +975,9 @@ def build_payload(
             "blocks": blocks,
         },
     }
+    if jsondata_check is not None:
+        payload["declarationChecks"] = {"jsondataL2": jsondata_check}
+    return payload
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -964,6 +995,12 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="print the per-block family stages after writing",
     )
+    parser.add_argument(
+        "--jsondata-summary", type=Path, default=JSONDATA_SUMMARY_PATH,
+        help="optional current JsonData registry; a present stale/mismatched receipt refuses publication",
+    )
+    parser.add_argument("--jsondata-ledger", type=Path, default=JSONDATA_LEDGER_PATH,
+                        help="per-file ledger pinned by the JsonData registry")
     args = parser.parse_args(argv)
 
     try:
@@ -973,6 +1010,9 @@ def main(argv: list[str] | None = None) -> int:
             declarations_path=DECLARATIONS_PATH,
             memory_index_path=MEMORY_INDEX_PATH,
             vfs_profile_path=VFS_PROFILE_PATH,
+            jsondata_summary_path=args.jsondata_summary,
+            jsondata_ledger_path=args.jsondata_ledger,
+            jsondata_check_output_path=JSONDATA_CHECK_OUTPUT,
         )
     except RecoveryInputError as exc:
         raise SystemExit(f"recovery build failed closed: {exc}") from exc
@@ -982,6 +1022,10 @@ def main(argv: list[str] | None = None) -> int:
         output = ROOT / output
     write_canonical_json(output, payload)
 
+    check = payload.get("declarationChecks", {}).get("jsondataL2")
+    if check:
+        print(f"jsondata-stage-consistency: verified {len(check['families'])} path families"
+              if check["status"] == "verified" else describe_failure(check))
     totals = payload["vfs"]["totals"]
     blocks = payload["vfs"]["blocks"]
     print(

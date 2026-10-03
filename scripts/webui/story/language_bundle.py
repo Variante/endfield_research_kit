@@ -13,6 +13,7 @@ from difflib import SequenceMatcher
 from functools import lru_cache as _radio_cont_lru_cache
 from pathlib import Path
 from pathlib import Path as _RadioContPath
+from scripts.webui.search import linked_file_search_text
 from scripts.webui.story.context import (
     ADMIN_ACTOR_IDS,
     ATMOS_CLUSTER_TABLE_PATH,
@@ -338,6 +339,10 @@ from scripts.webui.story.reference_structured_fields import (
     MISSION_SOURCE as STRUCTURED_MISSION_SOURCE,
     ReferenceResolver,
     structured_reference_fields,
+)
+from scripts.webui.story.reference_activity_guides import (
+    ActivityGuideResolver,
+    activity_reference_guide,
 )
 from scripts.webui.story.timeline_action_evidence import build_conversation_action_debug
 from scripts.webui.story.option_anchor_reports import (
@@ -1956,6 +1961,7 @@ def build_language_bundle(
     written_mission_paths: set[str] = set()
     conv_media_tags_by_key: dict[str, set[str]] = defaultdict(set)
     conv_hint_search_text_by_key: dict[str, str] = {}
+    conv_file_search_text_by_key: dict[str, str] = {}
     scene_order_analysis_by_payload_id: dict[int, dict] = {}
     scene_order_gap_sources: dict[str, tuple[Path, dict, dict | None]] = {}
     inferred_option_anchor_rows_by_key: dict[str, dict] = {}
@@ -1965,6 +1971,7 @@ def build_language_bundle(
     def write_conv_payload(out_key: str, payload: dict) -> Path:
         path = conv_dir / f"{out_key}.json"
         write_json(path, payload)
+        conv_file_search_text_by_key[out_key] = linked_file_search_text(payload)
         inferred_anchor_row = inferred_option_anchor_row(payload, out_key)
         if inferred_anchor_row is None:
             inferred_option_anchor_rows_by_key.pop(out_key, None)
@@ -7942,6 +7949,21 @@ def build_language_bundle(
         row_name=structured_row_name,
     )
 
+    def guide_text(node) -> str:
+        if isinstance(node, str):
+            return node
+        if not isinstance(node, dict):
+            return ""
+        text_id = node.get("id")
+        resolved = brace_text(t(text_id, preferred_source="game")) if text_id else ""
+        return resolved or str(node.get("text") or "") or (f"[unresolved i18n: {text_id}]" if text_id else "")
+
+    guide_resolver = ActivityGuideResolver(
+        references=structured_resolver,
+        row_data=lambda table, key: collection_table_payload("game", f"{table}.json").get(key),
+        text=guide_text,
+    )
+
     def write_raw_reference_bundle() -> dict:
         reference_dir.mkdir(parents=True, exist_ok=True)
         generated = int(time.time())
@@ -7968,6 +7990,7 @@ def build_language_bundle(
                 raw_rows: dict[str, object] = {}
                 table_texts = 0
                 table_structured_rows = 0
+                table_guide_rows = 0
                 for row_index, (row_id, row) in enumerate(
                     sorted(payload.items(), key=lambda item: str(item[0])),
                     start=1,
@@ -7985,7 +8008,8 @@ def build_language_bundle(
                         row,
                         structured_resolver,
                     )
-                    if not text_nodes and not structured_fields:
+                    guide = activity_reference_guide(table_name, row_key, row, guide_resolver)
+                    if not text_nodes and not structured_fields and not guide:
                         continue
                     texts = reference_row_texts(text_nodes)
                     table_texts += len(texts)
@@ -8012,6 +8036,9 @@ def build_language_bundle(
                     if structured_fields:
                         row_payload["fields"] = structured_fields
                         table_structured_rows += 1
+                    if guide:
+                        row_payload["guide"] = guide
+                        table_guide_rows += 1
                     row_payloads.append(row_payload)
                     raw_rows[row_key] = resolve_reference_raw_i18n(
                         row,
@@ -8052,6 +8079,9 @@ def build_language_bundle(
                     # A maintained structured-field renderer covers this table.
                     table_row["renderer"] = "structured"
                     table_row["structuredRows"] = table_structured_rows
+                if table_guide_rows:
+                    table_row["renderer"] = "guide"
+                    table_row["guideRows"] = table_guide_rows
                 table_index.append(table_row)
         table_index.sort(key=lambda row: (row["source"], row["label"], row["table"]))
         index_payload = {
@@ -19997,10 +20027,12 @@ def build_language_bundle(
     search_entries: list[dict] = []
     for entry in index_entries:
         search_text = str(entry.pop("x", "") or "").strip()
-        if search_text:
+        file_text = conv_file_search_text_by_key.get(str(entry.get("k") or ""), "")
+        if search_text or file_text:
             search_entries.append({
                 "k": str(entry.get("k") or ""),
                 "x": search_text,
+                "linkedFileSearch": file_text,
             })
     write_json(out_dir / "actors.json", {
         "generated": generated,

@@ -24,9 +24,10 @@ installs a vtable whose ``+0x28`` slot is ``SetParamsBlock``. Gain and RoomVerb
 are ``slotControl`` witnesses (their slots are independently SDK-named);
 Convolution Reverb and Mastering Suite are ``structuralOnly``: the contract
 proves the registration, factory and constructor bodies, vtable target, slot
-and method body, and the method's contiguous input read span, but no field
-name, value label, forwarding role or DSP behavior. The page may show the
-validated class identity and read span while keeping authored settings opaque.
+and method body, and an exact partition of the method's input reads. The
+page may show anonymous load offsets, widths and raw bits. Scalar loads may
+add a float32 representation view, which proves no control name, unit,
+processed value, forwarding role or DSP behavior.
 Neither method checks the supplied length, so a span is a direct read, not a ``uSize`` acceptance rule,
 and the shipped ``uSize`` distribution is not proved by this contract.
 Convolution's impulse-response media ids stay exact bank data and never become
@@ -43,6 +44,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import struct
 from functools import lru_cache
 from pathlib import Path
@@ -58,7 +60,7 @@ CONTRACT_PATH = CONTRACTS_DIR / "wwise_effect_parameters_native.json"
 @lru_cache(maxsize=1)
 def load_effect_parameter_contract() -> dict[str, Any]:
     contract = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
-    if contract.get("schema") != "endfield.wwise-effect-parameters-native.v2":
+    if contract.get("schema") != "endfield.wwise-effect-parameters-native.v3":
         raise ValueError("unsupported Wwise effect parameter contract")
     return contract
 
@@ -78,6 +80,137 @@ def effect_parameter_structural_schema(plugin_class_id: int) -> dict[str, Any] |
         return None
     row = contract.get("structuralSchemas", {}).get(f"0x{plugin_class_id:08x}")
     return row if row and row.get("status") == "structuralOnly" else None
+
+
+class EffectReadLayoutError(ValueError):
+    """A bounded diagnostic for a reviewed anonymous read partition."""
+
+    def __init__(self, class_id: str, check: str, offset: int | None, expected: Any, actual: Any):
+        self.diagnostic = {
+            "failedCheck": check,
+            "failedClassId": class_id,
+            "failedSerializedOffset": offset,
+            "expected": str(expected)[:160],
+            "actual": str(actual)[:160],
+        }
+        super().__init__(
+            f"{class_id} {check} at serialized offset {offset}: "
+            f"expected {self.diagnostic['expected']}; actual {self.diagnostic['actual']}"
+        )
+
+
+def validate_structural_input_reads(
+    class_id: str, schema: dict[str, Any], body: bytes | None = None,
+) -> None:
+    """Check a complete anonymous partition and its bounded native witnesses.
+
+    The reviewed contract owns addressing and load identities; method hashing
+    binds those facts to the selected DLL. These checks refuse overlaps, gaps,
+    incompatible widths and native instruction witnesses outside that method.
+    A scalar load is a representation witness, never a public parameter name.
+    """
+    def fail(check: str, offset: int | None, expected: Any, actual: Any) -> None:
+        raise EffectReadLayoutError(class_id, check, offset, expected, actual)
+
+    span = schema.get("contiguousInputReadBytes")
+    if type(span) is not int or span <= 0:
+        fail("nativeReadSpan", None, "positive integer", span)
+    rows = schema.get("inputReads")
+    if not isinstance(rows, list) or not rows:
+        fail("nativeInputReads", None, "nonempty read list", type(rows).__name__)
+    widths = {"word32Copy": 4, "scalar32Load": 4, "byteZeroTest": 1, "byteZeroExtend": 1}
+    cursor = 0
+    method_size = schema["setParamsBlock"]["bodyLength"]
+    if type(method_size) is not int or method_size <= 0:
+        fail("nativeMethodSpan", None, "positive integer", method_size)
+    bases = schema.get("inputBaseWitnesses")
+    if not isinstance(bases, list) or not bases:
+        fail("nativeInputBases", None, "nonempty base witness list", type(bases).__name__)
+    for row in [*bases, *rows]:
+        if not isinstance(row, dict):
+            fail("nativeReadRecord", cursor, "object", type(row).__name__)
+        at = row.get("bodyOffset")
+        encoded = row.get("instructionHex")
+        try:
+            witness = bytes.fromhex(encoded) if isinstance(encoded, str) else b""
+        except ValueError:
+            witness = b""
+        if type(at) is not int or not witness or at < 0 or at + len(witness) > method_size:
+            fail("nativeReadInstructionExtent", row.get("serializedOffset"),
+                 f"nonempty instruction inside {method_size}-byte method", f"{at}+{len(witness)}")
+        if body is not None and body[at:at + len(witness)] != witness:
+            fail("nativeReadInstructionBytes", row.get("serializedOffset"),
+                 witness.hex(), body[at:at + len(witness)].hex())
+    for row in rows:
+        offset = row.get("serializedOffset")
+        width = row.get("byteWidth")
+        kind = row.get("readKind")
+        if type(offset) is not int or offset != cursor:
+            fail("nativeReadPartitionOffset", cursor, cursor, offset)
+        if kind not in widths or type(width) is not int or width != widths[kind]:
+            fail("nativeReadWidth", cursor, widths.get(kind, "supported read kind"), f"{kind}/{width}")
+        cursor += width
+        if cursor > span:
+            fail("nativeReadPartitionOverrun", offset, span, cursor)
+    if cursor != span:
+        fail("nativeReadPartitionEnd", cursor, span, cursor)
+
+
+def decode_effect_parameter_native_reads(
+    plugin_class_id: int, parameter_data: bytes, *, native_evidence_validated: bool = False,
+) -> dict[str, Any] | None:
+    """Project raw serialized values at reviewed anonymous native read offsets.
+
+    The caller must supply its selected-build gate result. No named settings or
+    transformed native values are produced, and a short block yields no rows.
+    Longer blocks retain an explicit unread suffix rather than fitting a size.
+    """
+    if not native_evidence_validated:
+        return None
+    schema = effect_parameter_structural_schema(plugin_class_id)
+    if schema is None:
+        return None
+    class_id = f"0x{plugin_class_id:08x}"
+    try:
+        validate_structural_input_reads(class_id, schema)
+    except (KeyError, TypeError, ValueError) as exc:
+        return {
+            "parameterNativeReadParserStatus": "failedClosed",
+            "parameterNativeReadDiagnostic": getattr(exc, "diagnostic", {
+                "failedCheck": "nativeInputReadContract", "failedClassId": class_id,
+                "detail": str(exc)[:240],
+            }),
+        }
+    span = schema["contiguousInputReadBytes"]
+    if len(parameter_data) < span:
+        return {
+            "parameterNativeReadParserStatus": "failedClosed",
+            "parameterNativeReadDiagnostic": {
+                "failedCheck": "serializedBlockCoversNativeReads", "failedClassId": class_id,
+                "expectedMinimumBytes": span, "actualBytes": len(parameter_data),
+                "sourceSha256": hashlib.sha256(parameter_data).hexdigest(),
+            },
+        }
+    rows = []
+    for read in schema["inputReads"]:
+        offset, width = read["serializedOffset"], read["byteWidth"]
+        raw = parameter_data[offset:offset + width]
+        row = {
+            "serializedOffset": offset, "byteWidth": width, "readKind": read["readKind"],
+            "rawHex": raw.hex(), "rawUnsigned": int.from_bytes(raw, "little"),
+            "evidenceBoundary": "structuralOnly",
+        }
+        if read["readKind"] == "scalar32Load":
+            value = struct.unpack("<f", raw)[0]
+            row["float32View"] = value if math.isfinite(value) else None
+        rows.append(row)
+    return {
+        "parameterNativeReadParserStatus": "exactNativeReadPartition",
+        "parameterNativeReads": rows,
+        "parameterNativeUnreadByteLength": len(parameter_data) - span,
+        "parameterNativeReadEvidenceBoundary": "structuralOnly",
+        "parameterNativeReadSemanticBoundary": schema["meaningBoundary"],
+    }
 
 
 def _pe_body(image: bytes, rva: int, length: int) -> bytes:
@@ -231,6 +364,7 @@ def check_effect_parameter_native_inputs(game_root: Path) -> dict[str, Any]:
             body = _pe_body(image, int(method["rva"], 16), method["bodyLength"])
             if hashlib.sha256(body).hexdigest().casefold() != method["bodySha256"].casefold():
                 raise ValueError(f"structural SetParamsBlock body mismatch for {class_id}")
+            validate_structural_input_reads(class_id, row, body)
             validated_structural_class_ids.append(class_id)
         for class_id, witness in witnesses.items():
             if witness["role"] == "slotControl":
@@ -244,6 +378,8 @@ def check_effect_parameter_native_inputs(game_root: Path) -> dict[str, Any]:
             _validate_registration_witness(image, image_base, class_id, witness, int(method["rva"], 16))
     except (KeyError, TypeError, ValueError, struct.error) as exc:
         result.update(status="mismatched", detail=str(exc))
+        if isinstance(exc, EffectReadLayoutError):
+            result["diagnostic"] = exc.diagnostic
         return result
     result["validatedClassIds"] = sorted(validated_class_ids)
     result["validatedStructuralClassIds"] = sorted(validated_structural_class_ids)

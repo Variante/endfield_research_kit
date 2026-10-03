@@ -39,11 +39,12 @@ from scripts.repo_paths import REPO_ROOT
 ROOT = REPO_ROOT
 WEBUI_DATA_ROOT = ROOT / "webui" / "data"
 
-STAGES = ("base", "projectiles", "asset-refs", "combat", "audit")
+STAGES = ("base", "projectiles", "skill-refs", "asset-refs", "combat", "audit")
 
 STAGE_HELP = {
     "base": "Gameplay base index (data/lang/<LANG>/gameplay/index.json).",
     "projectiles": "Exact projectile behavior and event hashes (data/gameplay/projectiles.json).",
+    "skill-refs": "Authored SkillData actions/references from the last current Data publication (data/gameplay/skill_refs/).",
     "asset-refs": "Compact Gameplay-to-Assets sidecar; needs a current Assets index.",
     "combat": "Debug-only combat relationships; needs a current source graph.",
     "audit": "Gameplay recovery coverage/schema audit reports (read-only).",
@@ -123,14 +124,17 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--export-root",
         type=Path,
-        help="Export root for --audit-scope full.",
+        help="Export root for skill-refs or --audit-scope full.",
     )
+    parser.add_argument("--game-root", type=Path, help="Selected Endfield_Data directory for skill-refs native proof.")
     args = parser.parse_args(argv)
     selected_stages = set(args.stage or STAGES)
-    if args.export_root is not None and args.audit_scope != "full":
-        parser.error("--export-root requires --audit-scope full")
-    if (args.audit_scope != "active" or args.export_root is not None) and "audit" not in selected_stages:
-        parser.error("--audit-scope/--export-root require the audit stage to be selected")
+    if args.export_root is not None and "skill-refs" not in selected_stages and args.audit_scope != "full":
+        parser.error("--export-root requires skill-refs or --audit-scope full")
+    if args.audit_scope != "active" and "audit" not in selected_stages:
+        parser.error("--audit-scope requires the audit stage to be selected")
+    if args.game_root is not None and "skill-refs" not in selected_stages:
+        parser.error("--game-root requires the skill-refs stage to be selected")
     return args
 
 
@@ -160,6 +164,14 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
         from scripts.webui.gameplay import projectiles
 
         return int(projectiles.main([]) or 0)
+    if stage == "skill-refs":
+        from scripts.webui.gameplay import skill_refs
+
+        argv = []
+        for flag, value in (("--export-root", args.export_root), ("--game-root", args.game_root)):
+            if value is not None:
+                argv.extend((flag, str(value)))
+        return int(skill_refs.main(argv) or 0)
     if stage == "asset-refs":
         return build_asset_refs_stage(args.default_language)
     if stage == "combat":

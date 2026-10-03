@@ -62,6 +62,7 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.audio.build_audio"
     )
 
+from scripts.game_data import wwise_package
 from scripts.common import require_export_layout
 from scripts.common import WEBUI_BUILD_DIR
 
@@ -95,7 +96,7 @@ from scripts.webui.audio.semantics.projectile_audio import projectile_event_key,
 from scripts.webui.audio.semantics.gameplay_audio import animation_clip_action_kind, animation_clip_audio_events, animation_clip_context, animation_clip_path_id, animation_clip_reachability_status, animation_controller_contexts, animation_override_contexts, animation_override_reachability_status, animator_controller_state_clip_refs, animestudio_storage_root, annotate_play_sound_action_owner_links, collect_animation_controller_index, collect_animation_override_index, collect_buff_play_sound_actions, collect_gameplay_animation_audio, collect_gameplay_audio_references, collect_gameplay_profile_voices, compact_gameplay_audio_link, enemy_template_animation_tokens, enemy_template_skill_references, enemy_template_source_files, enrich_gameplay_play_sound_actions, gameplay_buff_audio, gameplay_character_token_owners, gameplay_config_records, iter_json_strings, length_prefixed_matches, link_gameplay_audio, play_sound_action_marker, profile_voice_action_kind, seed_buff_play_sound_events
 from scripts.webui.audio.semantics.hirc_v150 import add_hirc_bus_definition_candidate, add_hirc_effect_definition_candidate, collect_hirc_decoded_sound_definitions, decode_hirc_v150_effect_parameters, finalize_hirc_post_process_catalog, hirc_action_target_id, hirc_action_type, hirc_bus_parent_path, hirc_event_action_ids, hirc_object_parent_id, hirc_reciprocal_child_list, hirc_v150_bus_processing, hirc_v150_control_action, hirc_v150_effect_definition, hirc_v150_empty_music_children, hirc_v150_layer_child_candidate, hirc_v150_layer_tail, hirc_v150_music_random_sequence_structure, hirc_v150_music_segment_structure, hirc_v150_music_structure, hirc_v150_music_switch_structure, hirc_v150_music_track, hirc_v150_node_processing, hirc_v150_playback_action, hirc_v150_random_sequence_properties, hirc_v150_sound_source, hirc_v150_switch_mapping, iter_bnk_sections, parse_hirc_objects, refine_hirc_v150_music_switch_selector_ownership, resolve_hirc_post_process_summary, summarize_hirc_action_dispatch, summarize_hirc_node_processing, summarize_hirc_object_types, traverse_hirc_event
 from scripts.webui.audio.semantics.wwise_effect_native import check_effect_parameter_native_inputs, load_effect_parameter_contract
-from scripts.webui.audio.build_audio_semantics import build_audio_semantic_data
+from scripts.webui.audio.build_audio_semantics import build_audio_semantic_data, refresh_native_entry_data, refresh_package_catalog_data, refresh_runtime_source_data
 from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavailable, iter_published_objects
 
 
@@ -202,7 +203,8 @@ EVENT_BANK_FILE_REGEX = r"(^|[\\/])(?:[^\\/]*banks|hotfix[^\\/]*)\.pck$"
 # byte, so it must not keep publishing them.
 # 46 adds the gated decoded-payload member source. Older caches cannot carry it.
 # 47 keeps unmatched member candidates out of the published Event-name pool.
-EVENT_EVIDENCE_SCHEMA_VERSION = 48
+# 49 adds anonymous native effect-read records to HIRC event evidence.
+EVENT_EVIDENCE_SCHEMA_VERSION = 50
 HASHED_EVENT_KEY_RE = re.compile(r"^hashed-event:0x([0-9a-f]{8})$", re.IGNORECASE)
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
@@ -742,57 +744,8 @@ def audio_id_from_path(path: str) -> str:
     return PurePosixPath(path.replace("\\", "/")).stem.lower()
 
 
-def derive_vfs_key(seed: int) -> int:
-    key = ((seed & 0xFF) ^ 0x9C5A0B29) * 81861667
-    key &= 0xFFFFFFFF
-    for shift in (8, 16, 24):
-        key = (key ^ ((seed >> shift) & 0xFF)) * 81861667
-        key &= 0xFFFFFFFF
-    return key
-
-
-def decrypt_vfs_bytes(data: bytearray, start: int, length: int, seed: int, data_offset: int = 0) -> None:
-    key_index = (seed + (data_offset >> 2)) & 0xFFFFFFFF
-    pos = start
-    remaining = length
-    alignment = data_offset & 3
-    if alignment:
-        key = derive_vfs_key(key_index)
-        to_align = min(4 - alignment, remaining)
-        for i in range(to_align):
-            data[pos] ^= (key >> ((alignment + i) * 8)) & 0xFF
-            pos += 1
-        remaining -= to_align
-        key_index = (key_index + 1) & 0xFFFFFFFF
-
-    for _ in range(remaining // 4):
-        key = derive_vfs_key(key_index)
-        value = int.from_bytes(data[pos : pos + 4], "little") ^ key
-        data[pos : pos + 4] = value.to_bytes(4, "little")
-        pos += 4
-        key_index = (key_index + 1) & 0xFFFFFFFF
-
-    trailing = remaining & 3
-    if trailing:
-        key = derive_vfs_key(key_index)
-        for i in range(trailing):
-            data[pos + i] ^= (key >> (i * 8)) & 0xFF
-
-
-def decrypt_akpk_bytes(raw_data: bytes, label: str) -> bytes:
-    data = bytearray(raw_data)
-    if data[:4] == b":)xD":
-        header_size = int.from_bytes(data[4:8], "little")
-        decrypt_vfs_bytes(data, 12, header_size - 4, header_size)
-        data[:4] = b"AKPK"
-        data[8:12] = (1).to_bytes(4, "little")
-    if data[:4] != b"AKPK":
-        raise ValueError(f"invalid AKPK magic: {label}")
-    return bytes(data)
-
-
 def iter_akpk_bank_payloads_from_bytes(raw_data: bytes, label: str) -> list[tuple[int, bytes]]:
-    data = decrypt_akpk_bytes(raw_data, label)
+    data = wwise_package.decrypt_akpk_bytes(raw_data, label)
     if len(data) < 28:
         return []
     header_size = unpack_from("<I", data, 4)[0]
@@ -826,7 +779,7 @@ def iter_akpk_bank_payloads_from_bytes(raw_data: bytes, label: str) -> list[tupl
         if size <= 0 or real_offset + size > len(data):
             continue
         payload = bytearray(data[real_offset : real_offset + size])
-        decrypt_vfs_bytes(payload, 0, len(payload), file_id)
+        wwise_package.decrypt_vfs_bytes(payload, 0, len(payload), file_id)
         if payload[:4] == b"BKHD":
             banks.append((file_id, bytes(payload)))
     return banks
@@ -834,7 +787,7 @@ def iter_akpk_bank_payloads_from_bytes(raw_data: bytes, label: str) -> list[tupl
 
 def iter_akpk_media_ids_from_bytes(raw_data: bytes, label: str) -> list[int]:
     """Every WEM media id in an AKPK package (banks DIDX + sounds + externals sectors)."""
-    data = decrypt_akpk_bytes(raw_data, label)
+    data = wwise_package.decrypt_akpk_bytes(raw_data, label)
     ids: list[int] = []
     if len(data) < 28:
         return ids
@@ -2401,7 +2354,8 @@ def collect_event_audio_index(
                         existing = linked_by_key[link_key]
                         existing_evidence = existing.setdefault("wwiseMediaEvidence", [])
                         for row in media_evidence_by_id.get(media_id, []):
-                            bank_row = {**row, "bankId": bank_id, "bankPackage": PurePosixPath(bank_name.replace("\\", "/")).name}
+                            bank_row = {**row, "bankId": bank_id, "bank": bank_name,
+                                        "bankPackage": PurePosixPath(bank_name.replace("\\", "/")).name}
                             if bank_row not in existing_evidence:
                                 existing_evidence.append(bank_row)
                         continue
@@ -2416,7 +2370,8 @@ def collect_event_audio_index(
                         "source": "wwiseHirc",
                         "contentSha256": content_sha256(audio_entry),
                         "wwiseMediaEvidence": [
-                            {**row, "bankId": bank_id, "bankPackage": PurePosixPath(bank_name.replace("\\", "/")).name}
+                            {**row, "bankId": bank_id, "bank": bank_name,
+                             "bankPackage": PurePosixPath(bank_name.replace("\\", "/")).name}
                             for row in media_evidence_by_id.get(media_id, [])
                         ],
                     }
@@ -4593,6 +4548,9 @@ def build_audio(args: argparse.Namespace) -> int:
         metadata_path=args.metadata.resolve() if args.metadata else metadata_path,
         gameassembly_path=args.game_root.parent / "GameAssembly.dll",
         cutscene_events=cutscene_audio_events,
+        native_entry_session=(args.native_entry_session.resolve() if args.native_entry_session is not None else None),
+        native_entry_package_index=(args.native_entry_package_index.resolve() if args.native_entry_package_index is not None else None),
+        native_entry_decode_witness=(args.native_entry_decode_witness.resolve() if args.native_entry_decode_witness is not None else None),
         runtime_trace_bundle=(
             args.runtime_trace_bundle.resolve()
             if args.runtime_trace_bundle is not None else None
@@ -4645,6 +4603,9 @@ def build_audio_semantics_only(args: argparse.Namespace) -> int:
             (args.game_root.parent / "GameAssembly.dll").resolve()
             if args.game_root is not None else None
         ),
+        native_entry_session=(args.native_entry_session.resolve() if args.native_entry_session is not None else None),
+        native_entry_package_index=(args.native_entry_package_index.resolve() if args.native_entry_package_index is not None else None),
+        native_entry_decode_witness=(args.native_entry_decode_witness.resolve() if args.native_entry_decode_witness is not None else None),
         runtime_trace_bundle=(
             args.runtime_trace_bundle.resolve()
             if args.runtime_trace_bundle is not None else None
@@ -4660,6 +4621,31 @@ def build_audio_semantics_only(args: argparse.Namespace) -> int:
     return 0
 
 
+def build_native_entry_only(args: argparse.Namespace) -> int:
+    report=refresh_native_entry_data(language=args.language,webui_root=args.webui_root.resolve(),
+        session=args.native_entry_session.resolve(),gameassembly=(args.game_root.parent/'GameAssembly.dll').resolve(),
+        metadata=(args.metadata or args.game_root/'il2cpp_data'/'Metadata'/'global-metadata.dat').resolve(),
+        package_index=args.native_entry_package_index.resolve() if args.native_entry_package_index is not None else None,
+        decode_witness=args.native_entry_decode_witness.resolve() if args.native_entry_decode_witness is not None else None)
+    json_dump(REPO_ROOT/'reports/audio/endfield_native_entry_refresh_latest.json',report)
+    print(json.dumps({key:report[key] for key in ('status','session','entryCount','detail') if key in report}))
+    return 0 if report.get('claimsAvailable') else 2
+
+
+def build_runtime_source_only(args: argparse.Namespace) -> int:
+    report = refresh_runtime_source_data(
+        language=args.language, webui_root=args.webui_root.resolve(),
+        bundle=args.runtime_trace_bundle.resolve(),
+        gameassembly=(args.game_root.parent / 'GameAssembly.dll').resolve(),
+        metadata=(args.metadata or args.game_root / 'il2cpp_data' / 'Metadata' / 'global-metadata.dat').resolve(),
+    )
+    json_dump(REPO_ROOT / 'reports/audio/runtime_source_refresh_latest.json', report)
+    print(json.dumps({key: report[key] for key in (
+        'nativeSourceObservationsStatus', 'nativeSourceObservationsReason', 'nativeSourceObservationsDetail',
+    ) if key in report}))
+    return 0 if report.get('nativeSourceObservationsStatus') == 'ready' else 2
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", choices=sorted(LANGUAGES), default="CN")
@@ -4669,10 +4655,19 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default="all",
     )
     parser.add_argument("--skip-decode", action="store_true", help="Only rebuild the audio index and story links.")
-    parser.add_argument(
+    mode=parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--semantics-only", action="store_true",
         help="Rebuild only Audio page semantics from the existing decoded Audio index.",
     )
+    mode.add_argument('--native-entry-only',action='store_true',
+                      help='Refresh only the independent native-entry disclosure in an existing current Audio publication; requires an explicit game root and session.')
+    mode.add_argument('--package-catalog-only', action='store_true',
+                      help='Audit every available AKPK package and refresh only the static inventory in an existing Audio publication; no capture or decode.')
+    mode.add_argument('--runtime-source-only', action='store_true',
+                      help='Re-audit only native source/owner observations from the already published runtime bundle; requires an explicit game root and matching bundle.')
+    parser.add_argument('--package-input-set-sha256', default=None,
+                        help='Required expected current VFS audit identity for --package-catalog-only.')
     parser.add_argument(
         "--refresh-hirc",
         action="store_true",
@@ -4705,8 +4700,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--metadata", type=Path, default=None)
     parser.add_argument(
         "--runtime-trace-bundle", type=Path, default=None,
-        help="Optional verified audio runtime-trace bundle for Event/media rows.",
+        help="Optional runtime-trace bundle for managed requests and separately audited anonymous source observations.",
     )
+    parser.add_argument("--native-entry-session", type=Path, default=None,
+                        help="One complete EndfieldCapture source-owner session; publish entry snapshots separately from paired captures.")
+    parser.add_argument("--native-entry-package-index", type=Path, default=None,
+                        help="Optional VFS package candidate index for bounded encoded-word comparisons with the admitted native-entry session.")
+    parser.add_argument("--native-entry-decode-witness", type=Path, default=None,
+                        help="Optional prior offline selected-entry PCM comparison receipt; current inputs are checked without decoding again.")
     parser.add_argument("--streaming-assets", type=Path, default=None)
     parser.add_argument("--fallback-assets", type=Path, default=None)
     parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT_ROOT)
@@ -4718,14 +4719,33 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Decoded audio root containing shared and per-language folders. Default: <export-root>/game/Audio.",
     )
     args = parser.parse_args(argv)
-    if args.semantics_only and (
+    if args.package_catalog_only != (args.package_input_set_sha256 is not None):
+        parser.error('--package-catalog-only requires --package-input-set-sha256, used only with this mode')
+    if args.package_catalog_only and any(value is not None for value in (
+        args.game_root, args.metadata, args.runtime_trace_bundle, args.native_entry_session,
+        args.native_entry_package_index, args.native_entry_decode_witness)):
+        parser.error('--package-catalog-only uses the selected VFS audit and does not accept native/capture options')
+    if args.native_entry_package_index is not None and args.native_entry_session is None:
+        parser.error("--native-entry-package-index requires --native-entry-session")
+    if args.native_entry_decode_witness is not None and args.native_entry_package_index is None:
+        parser.error("--native-entry-decode-witness requires --native-entry-package-index")
+    if args.native_entry_only and (args.native_entry_session is None or args.game_root is None):
+        parser.error('--native-entry-only requires --native-entry-session and an explicit --game-root')
+    if args.native_entry_only and args.runtime_trace_bundle is not None:
+        parser.error('--native-entry-only does not refresh runtime-trace bundles')
+    if args.runtime_source_only and (args.runtime_trace_bundle is None or args.game_root is None):
+        parser.error('--runtime-source-only requires --runtime-trace-bundle and an explicit --game-root')
+    if args.runtime_source_only and any(value is not None for value in (
+        args.native_entry_session, args.native_entry_package_index, args.native_entry_decode_witness)):
+        parser.error('--runtime-source-only does not refresh native-entry sessions')
+    if (args.semantics_only or args.native_entry_only or args.package_catalog_only or args.runtime_source_only) and (
         args.skip_decode or args.refresh_hirc or args.refresh_lua_audio
         or args.block != "all" or args.decode_jobs != 0
         or args.streaming_assets is not None or args.fallback_assets is not None
         or args.audio_dumper != DEFAULT_AUDIO_DUMPER
     ):
-        parser.error("--semantics-only cannot be combined with decode or HIRC refresh options")
-    if args.game_root is None and not args.semantics_only:
+        parser.error("focused Audio refresh cannot be combined with decode or HIRC refresh options")
+    if args.game_root is None and not (args.semantics_only or args.native_entry_only or args.package_catalog_only or args.runtime_source_only):
         args.game_root = DEFAULT_GAME_ROOT
     if args.game_root is not None:
         if args.streaming_assets is None:
@@ -4741,7 +4761,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 if __name__ == "__main__":
     _args = parse_args()
-    require_export_layout(_args.export_root)
+    if _args.package_catalog_only:
+        _catalog = refresh_package_catalog_data(language=_args.language, webui_root=_args.webui_root.resolve(),
+                                               expected_input_set_sha256=_args.package_input_set_sha256)
+        print(json.dumps({'status': _catalog['status'], **_catalog.get('summary', {}),
+                          **({'diagnostic': _catalog['diagnostic']} if 'diagnostic' in _catalog else {})}))
+        raise SystemExit(0 if _catalog['status'] == 'validated' else 2)
+    if not (_args.native_entry_only or _args.runtime_source_only):require_export_layout(_args.export_root)
     raise SystemExit(
+        build_runtime_source_only(_args) if _args.runtime_source_only else
+        build_native_entry_only(_args) if _args.native_entry_only else
         build_audio_semantics_only(_args) if _args.semantics_only else build_audio(_args)
     )

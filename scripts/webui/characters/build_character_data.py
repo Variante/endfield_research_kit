@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import time
@@ -23,6 +24,8 @@ from scripts.common import WEBUI_BUILD_DIR, read_json
 from scripts.game_data import sprite_crops
 from scripts.game_data.unity_store import open_store_if_present
 from scripts.source_paths import ExportLayout
+from scripts.webui.characters.story_speakers import TABLES as STORY_SPEAKER_TABLES, add_proxy_speakers, add_story_speakers
+from scripts.webui.characters.appearances import TABLES as APPEARANCE_TABLES, add_extra_appearances
 
 
 CONVERTED_MEDIA_TYPES = ("Texture2D", "Sprite", "Mesh", "Animator", "AnimationClip")
@@ -288,7 +291,11 @@ class CharacterCatalog:
             "NpcTable": 1,
             "TextTable": 2,
             "SNSChatTable": 3,
-            "Story actor registry": 4,
+            "DialogTextTable": 4,
+            "RadioTable": 4,
+            "MailSenderTable": 4,
+            "NpcProxyTable": 4,
+            "NpcProxyExDataTable": 4,
         }
         for row in self.records.values():
             localized_names = [
@@ -376,6 +383,14 @@ class CharacterCatalog:
     def payload(self, sources: list[dict[str, Any]]) -> dict[str, Any]:
         rows = []
         for row in self.records.values():
+            appearances = row.get("appearances", [])
+            appearances.sort(key=lambda item: (item["source"], item["key"]))
+            row["appearanceCount"] = len(appearances)
+            row["appearanceSources"] = sorted({item["source"] for item in appearances})
+            if appearances:
+                row["appearancesSignature"] = hashlib.sha256(
+                    json.dumps(appearances, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                ).hexdigest()
             row["aliases"] = unique_strings(row["aliases"])
             row["names"].sort(key=lambda item: (
                 {
@@ -383,7 +398,11 @@ class CharacterCatalog:
                     "NpcTable": 1,
                     "TextTable": 2,
                     "SNSChatTable": 3,
-                    "Story actor registry": 4,
+                    "DialogTextTable": 4,
+                    "RadioTable": 4,
+                    "MailSenderTable": 4,
+                    "NpcProxyTable": 4,
+                    "NpcProxyExDataTable": 4,
                 }.get(item["source"], 9),
                 0 if item.get("language") == self.language else (1 if not item.get("language") else 2),
                 item["text"].casefold(),
@@ -405,7 +424,7 @@ class CharacterCatalog:
             "generated": int(time.time()),
             "language": self.language,
             "sources": sources,
-            "counts": {"records": len(rows), **dict(sorted(counts.items()))},
+            "counts": {"records": len(rows), "appearances": sum(row["appearanceCount"] for row in rows), **dict(sorted(counts.items()))},
             "records": rows,
         }
 
@@ -414,7 +433,6 @@ def build_language_payload(
     language: str,
     roots: list[tuple[str, Path]],
     fallback_language: str,
-    actor_path: Path,
     asset_index_path: Path,
 ) -> dict[str, Any]:
     catalog = CharacterCatalog(language)
@@ -492,22 +510,30 @@ def build_language_payload(
         )
     sources.append({"source": "SNSChatTable", "table": "SNSChatTable.json", "rule": "all named SNS chat rows"})
 
-    actor_payload = read_json(actor_path, {})
-    actor_names = actor_payload.get("actorNames") if isinstance(actor_payload, dict) else {}
-    if isinstance(actor_names, dict):
-        for actor_id, names in actor_names.items():
-            row = catalog.record(actor_id, "actor")
-            catalog.add_alias(row, actor_id)
-            for name in names if isinstance(names, list) else [names]:
-                catalog.add_name(row, name, "Story actor registry", str(actor_id), language=language)
-            catalog.add_evidence(
-                row,
-                "Story actor registry",
-                "assembled_actor_name",
-                str(actor_id),
-                note="Generated from dialog, environment talk, SNS/mail, NPC templates, and related Story sources.",
-            )
-        sources.append({"source": "Story actor registry", "path": rel_path(actor_path), "rule": "all actorNames entries"})
+    speaker_tables = {name: load_merged_table(roots, name + ".json") for name in STORY_SPEAKER_TABLES}
+    sources.extend(add_story_speakers(
+        catalog,
+        speaker_tables,
+        lambda node: localized_text(node, i18n, fallback_i18n),
+        lambda node: localized_text(node, fallback_i18n, {}),
+        language,
+    ))
+    sources.extend(add_extra_appearances(
+        catalog, {name: load_merged_table(roots, name + ".json") for name in APPEARANCE_TABLES},
+        lambda node: localized_text(node, i18n, fallback_i18n), language,
+    ))
+    json_dir = ExportLayout(roots[0][1].parents[1]).json_dir / "GameplayConfig"
+    proxy_rows = read_json(json_dir / "NpcProxyTable.json", {}).get("dataTable") or {}
+    proxy_info = read_json(json_dir / "NpcProxyExDataTable.json", {}).get("proxyInfoData") or {}
+    add_proxy_speakers(
+        catalog, speaker_tables.get("EnvTalkTable", {}), proxy_rows, proxy_info,
+        load_merged_table(roots, "NpcTemplateGroupTable.json"),
+        lambda key: localized_text(text_table.get(key), i18n, fallback_i18n), language,
+    )
+    for source, rows in (("NpcProxyTable", proxy_rows), ("NpcProxyExDataTable", proxy_info)):
+        if rows:
+            sources.append({"source": source, "path": rel_path(json_dir / (source + ".json")),
+                            "rule": "explicit ambient-speaker proxy name references"})
 
     # roots[] are <export root>/game/Table; the export root is two levels up.
     entries, asset_source_path = iter_asset_entries(asset_index_path, roots[0][1].parents[1])
@@ -542,9 +568,18 @@ def main(argv: list[str] | None = None) -> int:
         language = str(raw_language).strip().upper()
         if not language:
             continue
-        actor_path = args.out_dir / language / "actors.json"
-        payload = build_language_payload(language, roots, fallback, actor_path, args.asset_index)
+        payload = build_language_payload(language, roots, fallback, args.asset_index)
         output = args.out_dir / language / "characters" / "index.json"
+        for row in payload["records"]:
+            appearances = row.pop("appearances", [])
+            if appearances:
+                relative_path = f"appearances/{row['id']}.json"
+                row["appearancesPath"] = relative_path
+                write_json(output.parent / relative_path, {
+                    "schema": "characterAppearances.v1", "generated": payload["generated"],
+                    "language": language, "identity": row["id"], "entries": appearances,
+                    "sourceSignature": row["appearancesSignature"],
+                })
         write_json(output, payload)
         write_json(snapshot_dir / f"{language}.json", payload)
         outputs.append((language, output, payload["counts"]))

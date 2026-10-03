@@ -113,8 +113,9 @@ PAGES: dict[str, Page] = {
         Page("map", "Map", ("map_recovery_preview",)),
         Page("characters", "Characters", ("characters",)),
         Page("gameplay", "Gameplay", (
-            "gameplay", "projectiles", "gameplay_asset_refs_after_graph", "combat_relationships",
+            "gameplay", "projectiles", "gameplay_skill_refs", "gameplay_asset_refs_after_graph", "combat_relationships",
         )),
+        Page("production", "Production", ("production",)),
         Page("audio", "Audio", ("audio",)),
         Page("assets", "Assets", ("assets",)),
         Page("data", "Data", ("data_inspector",), serves=DATA_FILES),
@@ -161,6 +162,14 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     of = ExtractionScope.of
     tasks: list[TaskSpec] = []
 
+    # Production's catalog needs only tables; icons reuse already exported media.
+    tasks.append(TaskSpec(
+        "production",
+        (module("scripts.webui.production.build_production", "--languages", "CN", "--default-language", "CN"),),
+        reads=of(("table",)),
+        uses=of(convert_types=("Texture2D", "Sprite")),
+    ))
+
     # ---- Story and Text Tables ---------------------------------------------
     # The guide audits the object index for Story consumer evidence, the
     # evidence refresh rebuilds the intermediates under webui/data/_build/story,
@@ -186,7 +195,7 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     tasks.append(TaskSpec(
         "map_recovery",
         (module("scripts.webui.map.build_map_recovery_data", "--jobs", jobs),),
-        after=("story",),
+        after=("story", "data_inspector"),
         reads=of(("table", "json-data")),
         # Height grids feed the elevation underlay; Texture2D the minimap
         # chunks; Mesh the unplaced-model links.
@@ -244,13 +253,13 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
         ),
     ))
     # Resolves media through the published asset index (scanning game/Unity
-    # when it is missing) and actor names through Story's actors.json.
+    # when it is missing). Speaker discovery reads exported Tables directly.
     tasks.append(TaskSpec(
         "characters",
         (module("scripts.webui.characters.build_character_data", "--languages", "CN", "--default-language", "CN"),),
-        after=("assets", "story"),
+        after=("assets",),
         reads=of(("table",)),
-        optional=of(convert_types=("Texture2D", "Sprite", "Mesh", "Animator")),
+        optional=of(("json-data",), convert_types=("Texture2D", "Sprite", "Mesh", "Animator")),
     ))
 
     # ---- Gameplay -----------------------------------------------------------
@@ -270,6 +279,19 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
         "projectiles",
         (module("scripts.webui.gameplay.build_gameplay", "--stage", "projectiles"),),
         optional=of(json_types=CARRIERS),
+    ))
+
+    skill_ref_args = ["--stage", "skill-refs"]
+    if options.export_root:
+        skill_ref_args += ["--export-root", str(options.export_root)]
+    if options.game_root:
+        skill_ref_args += ["--game-root", str(options.game_root)]
+    tasks.append(TaskSpec(
+        "gameplay_skill_refs",
+        (module("scripts.webui.gameplay.build_gameplay", *skill_ref_args),),
+        needs=("gameplay", "projectiles"),
+        after=("data_inspector",),
+        optional=of(("json-data",), CARRIERS),
     ))
 
     def asset_refs(name: str, needs: tuple[str, ...]) -> TaskSpec:
@@ -337,7 +359,7 @@ def build_tasks(options: BuildOptions) -> dict[str, TaskSpec]:
     tasks.append(TaskSpec(
         "data_inspector",
         (module("scripts.webui.data_inspector.build_data_inspector"),),
-        optional=of(("json-data",), ("AnimatorController", "AnimatorOverrideController")),
+        optional=of(("json-data", "dynamic-streaming"), ("AnimatorController", "AnimatorOverrideController", "MonoBehaviour", "PlayableDirector")),
     ))
 
     by_name: dict[str, TaskSpec] = {}

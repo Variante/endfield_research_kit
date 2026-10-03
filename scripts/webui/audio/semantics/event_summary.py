@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import Counter
 from typing import Any
+from scripts.webui.search import linked_file_search_text
 
 def semantic_context_group(kind: Any) -> str:
     value = str(kind or "")
@@ -345,6 +346,7 @@ def event_summary_row(row: dict[str, Any], detail_shard: str) -> dict[str, Any]:
     )
     summary = {key: row[key] for key in keys if row.get(key) not in (None, "", [])}
     summary.update({
+        "linkedFileSearch": linked_file_search_text(row),
         "contextGroups": sorted({semantic_context_group(kind) for kind in display_context_kinds} - {""}),
         "contextKinds": sorted(display_context_kinds),
         "triggerBindingStatuses": sorted({

@@ -79,6 +79,7 @@ from scripts.game_data.cutscene_case_resolution_native import (
     load_cutscene_case_resolution_contract,
 )
 from scripts.webui.map.map_recovery_sources import authored_streaming_scene, isolated_art_source
+from scripts.webui.map.interactive_catalog import enrich_markers, load_catalog
 from scripts.game_data.terrain.height import render_height_layer, write_height_index
 
 
@@ -4845,6 +4846,12 @@ def _facets(markers: list[dict], quest_points: list[dict], missions: list[str]) 
             sub_kind,
             {"count": 0, "label": row.get("label") or ""},
         )
+        interactive = row.get("interactive") or {}
+        if interactive.get("subKind") == sub_kind:
+            # A category label must never become the first placed building's
+            # individual name (e.g. one power-supply model).
+            sub.update(labels=interactive["labels"], icon=interactive["icon"],
+                       label=interactive["labels"]["zh"])
         sub["count"] += 1
 
     mission_rows: dict[str, dict] = {mission: {"markers": 0, "questPoints": 0, "stories": 0} for mission in missions}
@@ -5115,6 +5122,13 @@ def build_level(
                 if key in rendered:
                     layer[key] = rendered[key]
 
+    interactive_catalog, interactive_audit = load_catalog(ROOT / EXPORT_ROOT_REL)
+    interactive_audit = {**interactive_audit, "sourceFiles": {
+        key: _related(f"{EXPORT_ROOT_REL}/{source}", "interactive_type",
+                      "Interactive template / facility-name source; identifier families are structural hints only")
+        for key, source in interactive_audit.get("sources", {}).items()
+    }}
+    enrich_markers(markers, interactive_catalog, language)
     facets = _facets(markers, quest_points, missions)
     digest_files = {
         digest["missionId"]: set(digest.get("fileRefs") or [])
@@ -5149,6 +5163,7 @@ def build_level(
         # screens, not a translated UI label.
         "regionKey": _region_key(level_id),
         "facets": facets,
+        "interactiveCatalog": interactive_audit,
         "levelId": level_id,
         "idNum": id_num,
         "family": _level_family(level_id),
@@ -6079,6 +6094,10 @@ def main() -> int:
         )),
     }
     (OUT / "index.json").write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    from scripts.webui.map.build_map_encounters import build as build_encounters
+    encounters = build_encounters(data_root=ROOT / "webui/data/data_inspector",
+                                  export_root=EXPORT_LAYOUT.root, map_root=OUT)
+    print(f"map encounters: {encounters['recordCount']} authored records")
     print(
         f"map recovery: {len(entries)} levels, "
         f"{sum(row['markerCount'] for row in entries)} markers, "

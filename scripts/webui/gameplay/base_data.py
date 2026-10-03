@@ -3394,6 +3394,27 @@ def build_usable_item_entries(
             "source": {"table": "UsableItemChestTable.json", "nameTable": "ItemTable.json", "id": item_id},
             "search": search.lower(),
         })
+    by_id = {entry["id"]: entry for entry in entries}
+    for item_id, row in sorted((tables.get("RecoverApItemTable.json") or {}).items()):
+        if not isinstance(row, dict):
+            continue
+        item_id = normalize_id(row.get("id")) or normalize_id(item_id)
+        entry = by_id.get(item_id)
+        if entry is None:
+            base = common_item_payload(item_id, tables, i18n, fallback_i18n, story_wiki_titles)
+            entry = {
+                **base,
+                "kind": "item",
+                "group": f"Item / {base.get('itemTypeLabel') or 'AP supply'}",
+                "useCategory": "ap_supply",
+                "source": {"table": "RecoverApItemTable.json", "nameTable": "ItemTable.json", "id": item_id},
+                "search": " ".join(str(base.get(key) or "") for key in (
+                    "id", "title", "itemTypeLabel", "showingTypeLabel", "description", "decoDescription",
+                )).lower(),
+            }
+            entries.append(entry)
+            by_id[item_id] = entry
+        entry["apSupplyData"] = {"apRecoverValue": row.get("apRecoverValue")}
     return entries
 
 def build_enemy_entries(
@@ -3791,6 +3812,7 @@ def build_language_payload(
         "ItemTypeTable.json",
         "UseItemTable.json",
         "UsableItemChestTable.json",
+        "RecoverApItemTable.json",
         "RewardTable.json",
         "WeaponBasicTable.json",
         "WeaponBreakThroughTemplateTable.json",

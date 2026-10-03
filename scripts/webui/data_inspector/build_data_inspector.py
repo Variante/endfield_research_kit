@@ -27,6 +27,21 @@ Datasets (``DATASET_IDS``):
   fields and byte boundaries where reached, an explicit open field and opaque
   remainder elsewhere, stored spline rows when their collection decodes
   (``has-splines``/``has-knots`` tags). Stored geometry only.
+* ``levelscript-data`` -- ``frame_levelscript_named`` per file: the maintained
+  exact/bounded owner result, reader identity, byte ranges, opaque remainder
+  and earlier-profile refusal diagnostics; no runtime execution is implied.
+  The reviewed union-tag native inputs gate the dataset before cache reuse.
+* ``levelscript-template-data`` -- ``frame_levelscript_template``: named template
+  fields where closed, otherwise endpoint ranges with an explicit opaque middle.
+  The selected-native gate and complete reader snapshot run before cache reuse.
+* ``spawner-config`` -- ``frame_spawner_named``: the sequential enemy library,
+  routes, settings and waves, or the proved prefix and open range on refusal.
+* ``atmospheric-npc`` -- ``frame_atmospheric_npc_table``: complete named proxy
+  rows or the reader's framed/opaque rows. Both world datasets use the reviewed
+  union-tag native gate before cache reuse and describe authored storage.
+* ``map-config`` -- ``decode_map_config``: all validated stored JSON fields,
+  including scene-state indices, typed condition trees and inverse variable
+  dictionaries. No live scene visibility or condition result is implied.
 * ``skill-data`` -- the selected build's generated-wrapper values
   (``derived_values.decode_file``). A record is ``structural_only`` only when
   the native plan validates, the cursor reaches EOF and the stored
@@ -41,7 +56,15 @@ Datasets (``DATASET_IDS``):
   unions only; an unfamiliar array shape withholds the whole inventory. The
   independent SkillData VFS corpus still owns the narrower reviewed
   timeline-action framing claims.
+* ``buff-data`` -- every authenticated current Buff source: canonical-admitted
+  complete root reader receipts, or explicit unresolved framing projections.
+  Registry, family-report, parser, native and exported-byte freshness are
+  rechecked before cache reuse; stored fields establish no runtime behavior.
 * ``buff-action-receipts`` -- optional; see ``buff_action_receipts``.
+* ``dynamic-components`` -- selected-native component layouts decoded from
+  existing raw main files after current-roster and byte authentication. Scalar
+  and vector values, grid/component ordinals and authored string references
+  are preserved; entity ownership and live condition evaluation remain open.
 * ``char-interact-perform`` -- ``decode_char_interact_complete_frame``; a
   file the complete frame rejects falls back to ``frame_char_interact_prefix``
   and is published as a bounded row, never dropped.
@@ -66,7 +89,7 @@ duplicates binary framing; a family without a reader gets a reader and corpus
 gate in ``scripts/game_data`` first.
 
 Deliberately absent: LipSync (exact reader, but needs a paged catalog),
-LevelScriptData and complete BuffData (bounded readers), and Terrain,
+complete BuffData (bounded readers), and Terrain,
 Streaming, irradiance volumes and BundleManifest (anonymous ranges with no
 per-record identity worth browsing).
 
@@ -101,6 +124,7 @@ if __package__ in {None, ""}:
     )
 
 from scripts.common import OUT_DIR, ROOT, check_installed_native_inputs, require_export_layout
+from scripts.webui.data_inspector.current_receipts import select_current_family_report
 from scripts.game_data.animation_config_binary import (
     AnimationConfigFramingError,
     frame_animation_config,
@@ -176,6 +200,19 @@ from scripts.webui.data_inspector.contract import (
     source_descriptor,
 )
 from scripts.webui.data_inspector.buff_action_receipts import load_receipt_records
+from scripts.webui.data_inspector.buff_root_records import load_buff_root_records
+from scripts.webui.data_inspector.dynamic_records import dynamic_main_records, main_raw_files
+from scripts.webui.data_inspector.levelscript_records import (
+    levelscript_record,
+    selected_native_signature as levelscript_native_signature,
+)
+from scripts.webui.data_inspector.levelscript_receipts import try_current_levelscript_records
+from scripts.webui.data_inspector.levelscript_native_inputs import selected_child_native_signature
+from scripts.webui.data_inspector.levelscript_template_records import levelscript_template_record
+from scripts.webui.data_inspector.skill_root_evidence import (
+    attach_skill_root_evidence, try_skill_root_evidence,
+)
+from scripts.webui.data_inspector.world_records import atmospheric_npc_record, map_config_record, spawner_record
 
 
 DATASET_IDS = (
@@ -185,14 +222,21 @@ DATASET_IDS = (
     "animator-override-controller",
     "level-config",
     "level-data",
+    "levelscript-data",
+    "levelscript-template-data",
+    "spawner-config",
+    "atmospheric-npc",
+    "map-config",
+    "dynamic-components",
     "skill-data",
+    "buff-data",
     "buff-action-receipts",
     "char-interact-perform",
     "navmesh",
     "level-mount-point",
     "config-table",
 )
-PUBLISHER_REVISION = 9
+PUBLISHER_REVISION = 16
 _HASH_KEY = re.compile(r"(?:hash|id)$", re.IGNORECASE)
 _SKIP_HASH_KEYS = {"m_pathid", "m_fileid", "pathid", "fileid"}
 
@@ -214,7 +258,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--buff-corpus-report", type=Path,
-        default=ROOT / "reports/animestudio/buffdata_current_latest.json",
+        help="Override the Buff census for action receipts; buff-data always follows the authenticated current registry.",
     )
     parser.add_argument("--force", action="store_true", help="Rebuild unchanged datasets.")
     return parser.parse_args(argv)
@@ -1334,6 +1378,17 @@ def _descriptor_from_manifest(dataset_id: str, manifest: dict[str, Any]) -> dict
     }
 
 
+def _levelscript_native_after_read(input_signature: dict[str, Any]) -> tuple[dict[str, Any] | None, str]:
+    selected = input_signature.get("selectedNative") or {}
+    before = selected.get("childNativeGate")
+    if not isinstance(before, dict):
+        return None, ""
+    after = selected_child_native_signature(None)
+    if after != before or after.get("status") != "validated":
+        return after, "LevelScript native input changed during publication: " + str(after.get("detail") or after.get("source"))
+    return after, ""
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     require_export_layout(args.export_root)
@@ -1384,6 +1439,22 @@ def main(argv: list[str] | None = None) -> int:
             _level_data_record,
             _all_json,
         ),
+        "levelscript-data": (
+            "LevelScript data",
+            "Exact and bounded stored LevelScript owner fields with byte ranges and refused-profile "
+            "diagnostics; no runtime execution or mission ownership is implied.",
+            layout.json_dir / "LevelScriptData",
+            levelscript_record,
+            _all_json,
+        ),
+        "levelscript-template-data": (
+            "LevelScript templates",
+            "Stored template fields and action/task maps, or exact endpoint ranges with an "
+            "explicit opaque middle; the reader's exact or partial status is preserved.",
+            layout.json_dir / "LevelScriptTemplateData",
+            levelscript_template_record,
+            _all_json,
+        ),
         "skill-data": (
             "Skill data",
             "Selected-native SkillData member values, shown only after an exact whole-file "
@@ -1392,13 +1463,43 @@ def main(argv: list[str] | None = None) -> int:
             _skill_data_record,
             _all_json,
         ),
+        "spawner-config": (
+            "Spawner configs",
+            "Stored enemy libraries, patrol routes, settings and wave/group actions; "
+            "bounded prefixes retain their open range and diagnostic.",
+            layout.json_dir / "SpawnerConfig", spawner_record, _all_json,
+        ),
+        "atmospheric-npc": (
+            "Atmospheric NPC records",
+            "Stored NPC proxy fields and authored placements, with exact, framed or opaque "
+            "status from the maintained reader; no runtime spawning is implied.",
+            layout.json_dir / "AtmosphericNpcData", atmospheric_npc_record, _all_json,
+        ),
+        "map-config": (
+            "Map configs",
+            "Validated stored scene-state indices, condition trees, level ids and map-variable "
+            "dictionaries; no current visibility or condition result is implied.",
+            layout.json_dir / "MapConfig", map_config_record, _all_json,
+        ),
+        "buff-data": (
+            "Buff data",
+            "Authenticated complete stored Buff roots and unresolved source rows; "
+            "named receipts do not establish runtime gameplay effects.",
+            layout.json_dir / "BuffData", None, _all_json,
+        ),
         "buff-action-receipts": (
             "Buff action receipts",
-            "Authenticated CreateBuff and FinishBuffAdvanced action spans and wrapper fields; "
-            "the enclosing BuffData schema remains partial.",
+            "Authenticated spans and wrapper fields for eight reviewed Buff action types; "
+            "these child receipts alone do not establish the complete Buff root.",
             layout.json_dir / "BuffData",
             None,
             _all_json,
+        ),
+        "dynamic-components": (
+            "World component records",
+            "Authenticated stored DynamicStreaming components and authored mission keys; "
+            "entity ownership and live condition evaluation remain unresolved.",
+            args.export_root / "raw/DynamicStreaming", None, main_raw_files,
         ),
         "char-interact-perform": (
             "Character interact performances",
@@ -1453,27 +1554,76 @@ def main(argv: list[str] | None = None) -> int:
             input_signature = _input_signature(root, selector)
         skill_registry = None
         skill_definition = None
+        skill_root_evidence = None
         buff_receipt_records = None
+        buff_root_records = None
+        dynamic_records = None
+        levelscript_receipt_records = None
+        native_after_read = None
+        if dataset_id in {"levelscript-data", "levelscript-template-data", "spawner-config", "atmospheric-npc"} and available:
+            family = {"levelscript-data": "LevelScript", "spawner-config": "SpawnerConfig",
+                      "levelscript-template-data": "LevelScriptTemplateData",
+                      "atmospheric-npc": "AtmosphericNpcData"}[dataset_id]
+            native_signature, native_diagnostic = levelscript_native_signature(family=family)
+            input_signature["selectedNative"] = native_signature
+            if native_signature.get("nativeStatus") != "validated":
+                available = False
+                diagnostic = native_diagnostic
+        if dataset_id == "levelscript-data" and available:
+            levelscript_receipt_records, receipt_signature = try_current_levelscript_records(args.export_root)
+            input_signature["canonicalLevelScriptReader"] = receipt_signature
         if dataset_id == "skill-data" and available:
             skill_registry, skill_definition, native_signature, native_diagnostic = _skill_data_plan()
             input_signature["selectedNative"] = native_signature
             if skill_definition is None:
                 available = False
                 diagnostic = native_diagnostic
+            else:
+                skill_root_evidence, skill_receipt_signature = try_skill_root_evidence(args.export_root)
+                input_signature["canonicalSkillRootEvidence"] = skill_receipt_signature
+        if dataset_id == "buff-data" and available:
+            try:
+                buff_root_records, root_signature = load_buff_root_records(args.export_root)
+                input_signature["authenticatedBuffRoots"] = root_signature
+            except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+                available = False
+                diagnostic = f"Buff roots unavailable: {type(exc).__name__}: {str(exc)[:1000]}"
         if dataset_id == "buff-action-receipts" and available:
             try:
+                buff_corpus_report = args.buff_corpus_report
+                if buff_corpus_report is None:
+                    buff_corpus_report, selection_signature = select_current_family_report("BuffData", args.export_root)
+                    input_signature["currentBuffReceiptSelection"] = selection_signature
                 buff_receipt_records, receipt_signature = load_receipt_records(
-                    args.buff_action_receipts_report, args.buff_corpus_report,
+                    args.buff_action_receipts_report, buff_corpus_report,
                     args.export_root,
                 )
                 input_signature["authenticatedReceipts"] = receipt_signature
-            except (OSError, ValueError, KeyError, TypeError,
+            except (OSError, ValueError, RuntimeError, KeyError, TypeError,
                     json.JSONDecodeError) as exc:
                 available = False
                 diagnostic = f"Buff action receipts unavailable: {type(exc).__name__}: {exc}"
-        descriptor = None if args.force or not available else _reusable_descriptor(
+        if dataset_id == "dynamic-components" and available:
+            try:
+                dynamic_records, dynamic_signature = dynamic_main_records(args.export_root)
+                input_signature["authenticatedComponents"] = dynamic_signature
+            except (OSError, ValueError, RuntimeError, KeyError, TypeError) as exc:
+                available = False
+                diagnostic = f"World components unavailable: {type(exc).__name__}: {str(exc)[:1000]}"
+        # A rejected canonical receipt must not fall through to an older page
+        # cache whose size/mtime source signature could conceal changed bytes.
+        force_direct_levelscript = dataset_id == "levelscript-data" and levelscript_receipt_records is None
+        force_direct_skill = dataset_id == "skill-data" and skill_root_evidence is None
+        descriptor = None if args.force or not available or force_direct_levelscript or force_direct_skill else _reusable_descriptor(
             args.out_dir, dataset_id, input_signature, args.shard_size
         )
+        if descriptor is not None and dataset_id in {"levelscript-data", "levelscript-template-data"}:
+            native_after_read, native_drift = _levelscript_native_after_read(input_signature)
+            if native_drift:
+                descriptor = None
+                available = False
+                diagnostic = native_drift
+                input_signature["nativeReadDrift"] = native_after_read
         if descriptor is not None:
             descriptors.append(descriptor)
             print(f"{dataset_id}: reused {descriptor['recordCount']} unchanged records")
@@ -1489,14 +1639,28 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 for path in skill_paths
             ]
+            records = attach_skill_root_evidence(records, skill_root_evidence)
+        elif available and dataset_id == "levelscript-data" and levelscript_receipt_records is not None:
+            records = levelscript_receipt_records
+        elif available and dataset_id == "buff-data":
+            records = buff_root_records
         elif available and dataset_id == "buff-action-receipts":
             records = buff_receipt_records
+        elif available and dataset_id == "dynamic-components":
+            records = dynamic_records
         else:
             records = (
                 [reader(path, args.export_root) for path in selector(root)]
                 if available and unity_type is not None else
                 _build_records(root, args.export_root, reader, selector) if available else []
             )
+        if available and dataset_id in {"levelscript-data", "levelscript-template-data"}:
+            native_after_read, native_drift = _levelscript_native_after_read(input_signature)
+            if native_drift:
+                available = False
+                diagnostic = native_drift
+                input_signature["nativeReadDrift"] = native_after_read
+                records = []
         descriptor = publish_dataset(
             args.out_dir,
             dataset_id=dataset_id,
@@ -1509,12 +1673,27 @@ def main(argv: list[str] | None = None) -> int:
                 "reader": (
                     "scripts.game_data.memorypack.derived_values.decode_file"
                     if dataset_id == "skill-data" else
+                    "scripts.game_data.levelscript_binary.frame_levelscript_named"
+                    if dataset_id == "levelscript-data" else
+                    "scripts.game_data.levelscript_template_binary.frame_levelscript_template"
+                    if dataset_id == "levelscript-template-data" else
+                    "scripts.game_data.spawner_binary.frame_spawner_named"
+                    if dataset_id == "spawner-config" else
+                    "scripts.game_data.atmospheric_npc_binary.frame_atmospheric_npc_table"
+                    if dataset_id == "atmospheric-npc" else
+                    "scripts.game_data.schemas.map_config.decode_map_config"
+                    if dataset_id == "map-config" else
+                    "scripts.game_data.dynamic_scalar_components_native.decode_authenticated_main"
+                    if dataset_id == "dynamic-components" else
+                    "scripts.game_data.memorypack.buff_corpus"
+                    if dataset_id == "buff-data" else
                     "scripts.game_data.memorypack.buff_action_receipt_corpus"
                     if dataset_id == "buff-action-receipts" else
                     f"{reader.__module__}.{reader.__name__}"
                 ),
                 "publisherRevision": PUBLISHER_REVISION,
                 "inputSignature": input_signature,
+                **({"selectedNativeAfterRead": native_after_read} if native_after_read is not None else {}),
             },
             shard_size=args.shard_size,
             available=available,

@@ -2524,11 +2524,7 @@ def build_trigger_context_catalog(
             "runtimeExecutionObserved": 0,
             "runtimeSelectionStatus": "wwiseEventAndPositionedBranchSelectionUnobserved",
             "ownerStatus": "modelViewStateControllerOwnerOnlyInteractiveAssociationNotOwner",
-            "nativeRouteStatus": (
-                "exactCurrentBuildPositionedAndNormalRoutes"
-                if any(row.get("nativeRoute") for row in grouped["modelViewStateAudio"])
-                else "nativeRouteUnavailable"
-            ),
+            "nativeRouteStatus": model_view_projection.native_routes_status(grouped["modelViewStateAudio"]),
             "positionedDirectEventRows": sum(
                 row.get("semanticKind") == "modelViewStatePositionAudioEvent"
                 for row in grouped["modelViewStateAudio"]

@@ -57,6 +57,24 @@ def _context_event_hash(context_key: Any, row: dict[str, Any]) -> int | None:
     return None
 
 
+def native_route_status(route: dict[str, Any] | None, *, positioned: bool = False) -> str:
+    """A name/callsite recheck is narrower than the reviewed full route audit."""
+    if not route:
+        return "nativeRouteUnavailable"
+    if route.get("nativeRederivation"):
+        return "currentBuildCallsitesOnly"
+    return "exactCurrentBuildPositionedRoute" if positioned else "exactCurrentBuildRoute"
+
+
+def native_routes_status(rows: Iterable[dict[str, Any]]) -> str:
+    statuses = {native_route_status(row.get("nativeRoute")) for row in rows}
+    if "currentBuildCallsitesOnly" in statuses:
+        return "currentBuildCallsitesOnly"
+    if "exactCurrentBuildRoute" in statuses:
+        return "exactCurrentBuildRoutes"
+    return "nativeRouteUnavailable"
+
+
 def project_model_view_state_audio_trigger_contexts(
     model_view_semantics: dict[str, Any] | None,
     event_rows: Iterable[dict[str, Any]],
@@ -254,8 +272,8 @@ def project_model_view_state_audio_trigger_contexts(
                             if is_position and positioned_route is not None
                             else "unavailable" if is_position else None
                         ),
-                        "nativeRouteStatus": "exactCurrentBuildPositionedRoute" if is_position and positioned_route is not None else (
-                            "exactCurrentBuildRoute" if not is_position and normal_route is not None else "nativeRouteUnavailable"
+                        "nativeRouteStatus": native_route_status(
+                            positioned_route if is_position else normal_route, positioned=is_position,
                         ),
                     },
                     "activation": {"status": "unobserved", "reason": activation_reason, "behaviorTime": authored.get("behaviorTime")},
@@ -269,8 +287,12 @@ def project_model_view_state_audio_trigger_contexts(
                             if is_position and positioned_route is not None
                             else "unavailable" if is_position else None
                         ),
-                        "audioHandleField": "self+0x28 m_audioHandle" if is_position else None,
-                        "audioHandleMeaning": "managedInternalPlayingId" if is_position else None,
+                        "audioHandleField": "m_audioHandle" if is_position else None,
+                        "audioHandleMeaning": (
+                            "notReprovedOnSelectedBuild" if is_position and positioned_route
+                            and positioned_route.get("nativeRederivation")
+                            else "managedInternalPlayingId" if is_position and positioned_route else None
+                        ),
                         "nativeAkSoundEnginePlayingIdStatus": "unresolved" if is_position else None,
                         "audioHandleWriteStatus": (
                             positioned_route.get("fieldContract", {}).get("audioHandleWrite", {}).get("status")
@@ -375,7 +397,7 @@ def project_model_view_state_audio_trigger_contexts(
                 "status": "unresolved",
                 "selectionStatus": "positionedControlExecutionUnobserved",
                 "nativeControlMethod": native_method,
-                "nativeRouteStatus": "exactCurrentBuildPositionedRoute" if positioned_route is not None else "nativeRouteUnavailable",
+                "nativeRouteStatus": native_route_status(positioned_route, positioned=True),
             },
             "activation": {"status": "unobserved", "reason": authored.get("runtimeActivationStatus") or "modelViewStateBehaviorExecutionNotObserved"},
             "action": {

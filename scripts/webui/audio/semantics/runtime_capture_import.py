@@ -53,10 +53,11 @@ which the static sources already read.)
 post Events that each return their own playing id, and some of those posted
 Events have no recovered name, so hash-only Events are genuinely used -- a
 fact authored evidence alone cannot establish. The external-source post
-carries both the key and the media path in its own arguments, so that pair
-is a join the game makes, and it is many-to-one: one ``externalSourceKey``
-names many different voice files in one session, so a key is not a media
-identifier and no file can be recovered from a key. The key/path text field
+carries both the Event ID and the external-path string in its own arguments,
+so that pair is a join the game makes. The adapter's first scalar fact is
+the Event ID, not an external cookie or package key. One Event ID can name
+many different voice files in one session; it is not a media identifier.
+The key/path text field
 holds 96 bytes, so a path reaching 95 characters is cut and counted under
 ``truncatedPaths``. ``DefaultIoOpenDispatch`` only ever opens banks, each
 probed in order across ``Persistent`` and ``StreamingAssets`` with and
@@ -252,7 +253,7 @@ def observed(records: list[dict[str, Any]], inventory: dict[int, dict[str, Any]]
         paired = results.get(row["captureId"])
         if paired is not None and paired["returnValue"]:
             playing_ids.add(paired["returnValue"])
-    # An external-source post carries both the source key and the media path it
+    # An external-source post carries both the Event ID and the media path it
     # names, in one paired record. That pair is a join the post itself makes --
     # not two facts placed side by side -- so it is reported as one.
     external: dict[int, set] = {}
@@ -288,20 +289,20 @@ def observed(records: list[dict[str, Any]], inventory: dict[int, dict[str, Any]]
             ),
         },
         "externalSourcePosts": {
-            "distinctKeys": len(external),
+            "distinctEventIds": len(external),
             "distinctPaths": len({path for paths in external.values() for path in paths}),
-            "keysNamingMoreThanOnePath": sum(1 for paths in external.values() if len(paths) > 1),
-            "mostPathsForOneKey": max((len(paths) for paths in external.values()), default=0),
+            "eventIdsNamingMoreThanOnePath": sum(1 for paths in external.values() if len(paths) > 1),
+            "mostPathsForOneEventId": max((len(paths) for paths in external.values()), default=0),
             "truncatedPaths": len(truncated_paths),
-            "sample": [{"sourceKey": f"0x{key:08X}", "paths": len(paths),
+            "sample": [{"eventId": f"0x{key:08X}", "paths": len(paths),
                         "path": sorted(paths)[0],
                         "truncated": sorted(paths)[0] in truncated_paths}
                        for key, paths in sorted(external.items())[:20]],
             "boundary": (
-                "The key and the path come from one call's own arguments, so this pair "
-                "is a join the game made, not two facts observed nearby. The key is not "
-                "a media identifier: one key is observed naming many different files, so "
-                "a key-to-file mapping is many-to-one at best. A path reaching the "
+                "The Event ID and path come from one call's own arguments. The first "
+                "scalar fact is an Event ID, not an external cookie or package key. "
+                "An Event ID is not a media identifier: it can name several external "
+                "paths across requests. A path reaching the "
                 "capture's 95-character text bound is cut, and counted under "
                 "truncatedPaths rather than presented as a whole path. None of this "
                 "says whether the media was read, decoded, or heard."
@@ -371,7 +372,7 @@ def build(output: Path, session: Path | None, root: Path = DEFAULT_SESSION_ROOT)
     chosen = session or latest_session(root)
     if chosen is None:
         report: dict[str, Any] = {
-            "schema": "endfield.audio-runtime-capture-import.v1",
+            "schema": "endfield.audio-runtime-capture-import.v2",
             "summary": {
                 "status": "no-session",
                 "detail": f"no session under {root} carries audio/windows.jsonl",
@@ -381,7 +382,7 @@ def build(output: Path, session: Path | None, root: Path = DEFAULT_SESSION_ROOT)
         try:
             body = summarize(chosen, load_inventory())
             report = {
-                "schema": "endfield.audio-runtime-capture-import.v1",
+                "schema": "endfield.audio-runtime-capture-import.v2",
                 **body,
                 "summary": {
                     "status": "validated",
@@ -392,13 +393,13 @@ def build(output: Path, session: Path | None, root: Path = DEFAULT_SESSION_ROOT)
                     "distinctEvents": body["observed"]["postedEvents"]["distinct"],
                     "withoutRecoveredName": body["observed"]["postedEvents"]["withoutRecoveredName"],
                     "openedPaths": body["observed"]["openedPathCount"],
-                    "externalSourceKeys": body["observed"]["externalSourcePosts"]["distinctKeys"],
+                    "externalSourceEventIds": body["observed"]["externalSourcePosts"]["distinctEventIds"],
                     "elapsedSeconds": round(time.perf_counter() - started, 3),
                 },
             }
         except SessionError as error:
             report = {
-                "schema": "endfield.audio-runtime-capture-import.v1",
+                "schema": "endfield.audio-runtime-capture-import.v2",
                 "summary": {"status": "refused", "session": chosen.name,
                             "detail": str(error)},
             }

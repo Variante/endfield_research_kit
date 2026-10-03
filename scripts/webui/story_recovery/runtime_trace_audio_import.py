@@ -90,6 +90,7 @@ from scripts.common import EXPORT_LAYOUT
 ROOT = REPO_ROOT
 EVENT_SCHEMA = "audioRuntimeTrace.event.v1"
 BUNDLE_SCHEMA = "audioRuntimeTrace.v1"
+SOURCE_OBSERVER_SCHEMA = "audioRuntimeTrace.sourceObserver.v1"
 EVENT_KINDS = {
     "session_start",
     "audio_request",
@@ -123,6 +124,14 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--markdown-output", type=Path)
     parser.add_argument("--audio-index", type=Path, default=DEFAULT_INDEX)
     parser.add_argument("--trigger-contexts", type=Path, default=DEFAULT_TRIGGER_CONTEXTS)
+    parser.add_argument("--source-observer-manifest", action="append", metavar="TRACE=PROFILE",
+                        help="Associate an explicit input trace with its own source-observer profile; repeat for audited inputs.")
+    parser.add_argument("--game-root", type=Path,
+                        help="Explicit selected client root required with --source-observer-manifest.")
+    parser.add_argument("--source-max-input-bytes", type=int, default=64 * 1024 * 1024,
+                        help="Maximum immutable bytes per source trace/profile/diagnostics input.")
+    parser.add_argument("--source-max-events", type=int, default=100000,
+                        help="Maximum rows per source trace or diagnostics stream.")
 
 
 def fail(source: str, message: str) -> AudioTraceValidationError:
@@ -188,6 +197,7 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
             "exportFingerprint", "language", "selectedGameRoot", "expectedModulePath", "attachedModulePath",
             "expectedModuleSha256", "expectedNativeModulePath", "attachedNativeModulePath",
             "expectedNativeModuleSha256",
+            "attachedModuleName", "attachedModuleBase", "attachedNativeModuleName", "attachedNativeModuleBase",
         ):
             value = optional_text(row, key, source)
             if value is not None:
@@ -195,6 +205,7 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
         for key in (
             "expectedModuleSize", "attachedModuleSize",
             "expectedNativeModuleSize", "attachedNativeModuleSize",
+            "expectedModuleFileSize", "expectedNativeModuleFileSize",
         ):
             value = row.get(key)
             if value is not None:
@@ -209,11 +220,13 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
         for key in (
             "attachedModulePath", "attachedNativeModulePath",
             "attachedModuleSha256", "attachedNativeModuleSha256",
+            "attachedModuleName", "attachedModuleBase", "attachedNativeModuleName", "attachedNativeModuleBase",
         ):
             value = optional_text(row, key, source)
             if value is not None:
                 event[key] = value
-        for key in ("attachedModuleSize", "attachedNativeModuleSize"):
+        for key in ("attachedModuleSize", "attachedNativeModuleSize", "agentEventCount", "activeNativeCallCount", "activeManagedCallCount",
+                    "agentDiagnosticCount", "deliveredAgentDiagnosticCount"):
             value = row.get(key)
             if value is not None:
                 if isinstance(value, bool) or not isinstance(value, int) or value < 0:
@@ -227,7 +240,7 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
         for key in (
             "modulePathMatch", "moduleSizeMatch",
             "moduleSha256Match", "nativeModulePathMatch", "nativeModuleSizeMatch",
-            "nativeModuleSha256Match", "captureComplete",
+            "nativeModuleSha256Match", "moduleNameMatch", "nativeModuleNameMatch", "captureComplete",
         ):
             value = row.get(key)
             if value is not None:
@@ -235,6 +248,11 @@ def normalize_event(row: dict[str, Any], source: str) -> dict[str, Any]:
                     raise fail(source, f"{key} must be boolean")
                 event[key] = value
     else:
+        agent_seq = row.get("agentEventSeq")
+        if agent_seq is not None:
+            if isinstance(agent_seq, bool) or not isinstance(agent_seq, int) or agent_seq < 0:
+                raise fail(source, "agentEventSeq must be a non-negative integer")
+            event["agentEventSeq"] = agent_seq
         source_kind = optional_text(row, "sourceKind", source)
         hook_name = optional_text(row, "hookName", source)
         if source_kind is None or hook_name is None:
@@ -318,6 +336,111 @@ def read_events(paths: Iterable[Path]) -> tuple[list[dict[str, Any]], list[str]]
         normalize=normalize_event,
         validation_error=AudioTraceValidationError,
     )
+
+
+def read_source_observer_inputs(
+    paths: Iterable[Path], manifests: Iterable[Path], game_root: Path, *,
+    max_input_bytes: int, max_events: int,
+    gameassembly: Path | None = None, metadata: Path | None = None,
+) -> tuple[list[dict[str, Any]], list[str], dict[str, Any]]:
+    """Freshly audit immutable source snapshots using the existing strict owner.
+
+    Import lazily because the auditor uses this module's event normalizer.
+    Every trace has its own frozen profile and diagnostics. No saved report's
+    status or caller-provided source summary is accepted as proof.
+    """
+    from scripts.webui.story_recovery import audit_audio_source_capture as audit
+
+    paths, manifests = list(paths), list(manifests)
+    if not paths or len(paths) != len(manifests) or len(paths) > 32:
+        raise fail("source observer", "provide one frozen manifest per input, in input order")
+    byte_limit = audit._positive_budget(max_input_bytes, "source_max_input_bytes")
+    event_limit = audit._positive_budget(max_events, "source_max_events")
+    selected_root = Path(game_root).resolve()
+    ga = (Path(gameassembly) if gameassembly is not None else selected_root / "GameAssembly.dll").resolve()
+    md = (Path(metadata) if metadata is not None else selected_root / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat").resolve()
+    if ga != selected_root / "GameAssembly.dll" or md != selected_root / "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat":
+        raise fail("source observer", "explicit selected native paths do not match the selected client root")
+    contract, native_gate = audit.load_validated_source_contract(
+        gameassembly=ga, metadata=md,
+        ak_sound_engine=selected_root / "Endfield_Data/Plugins/x86_64/AkSoundEngine.dll",
+    )
+    if contract is None or native_gate.get("status") != "validated":
+        raise fail("source observer native gate", f"{native_gate.get('status')}: {str(native_gate.get('detail'))[:500]}")
+    events: list[dict[str, Any]] = []
+    sources: list[str] = []
+    captures: list[dict[str, Any]] = []
+    session_ids: set[str] = set()
+    selected_paths: set[Path] = set()
+
+    def snapshot_fact(path: Path, raw: bytes) -> dict[str, Any]:
+        return {"path": str(path), "length": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+
+    for path, manifest in zip(paths, manifests):
+        trace, manifest = Path(path).resolve(), Path(manifest).resolve()
+        if trace in selected_paths:
+            raise fail(str(trace), "duplicate source observer input")
+        selected_paths.add(trace)
+        diagnostics = core.diagnostics_path(trace).resolve()
+        profile_raw = audit.read_bounded_snapshot(manifest, max_input_bytes=byte_limit)
+        profile = json.loads(profile_raw)
+        try:
+            recipe_gate = audit.observer.validate_profile_recipe(
+                profile, contract, selected_root, gameassembly=ga, metadata=md,
+                ak_sound_engine=selected_root / "Endfield_Data/Plugins/x86_64/AkSoundEngine.dll",
+            )
+        except core.CaptureConfigurationError as exc:
+            raise fail(str(manifest), str(exc)) from exc
+        # The shared loader owns profile shape validation; compare its bytes
+        # again before publication to guard a concurrent replacement.
+        if audit.capture.load_manifest(manifest) != profile:
+            raise fail(str(manifest), "profile changed before source audit")
+        verified = core.verify_game_files(selected_root, profile)
+        expectations = {
+            prefix: {"path": str(verified[key]), "name": verified[key].name,
+                     "size": audit.pe_mapped_image_size(verified[key]),
+                     "fileSize": verified[key].stat().st_size,
+                     "sha256": profile["files"][key]["sha256"]}
+            for prefix, key in (("Module", "gameAssembly"), ("NativeModule", "akSoundEngine"))
+        }
+        trace_raw = audit.read_bounded_snapshot(trace, max_input_bytes=byte_limit)
+        diagnostic_raw = audit.read_bounded_snapshot(diagnostics, max_input_bytes=byte_limit)
+        normalized = list(audit.read_bounded_events(trace, trace_raw, max_input_bytes=byte_limit, max_events=event_limit))
+        report = audit.audit_events(normalized, profile, expectations,
+            audit.read_bounded_rows(diagnostic_raw, diagnostics, max_events=event_limit), max_events=event_limit,
+            bridge_declaration=recipe_gate.get("queueNativeGate", {}).get("sourceBridgeRelationSpec"),
+            owner_carrier_declaration=recipe_gate.get("ownerCarrierNativeGate", {}).get("ownerCarrierObserverSpec"))
+        if report.get("claimsAvailable") is not True or report.get("status") != "validated":
+            first = (report.get("diagnostics") or [{}])[0]
+            raise fail(str(trace), "strict source audit failed: " + json.dumps(first, ensure_ascii=False)[:1000])
+        ids = sorted(row["sessionId"] for row in normalized if row["kind"] == "session_start")
+        if session_ids.intersection(ids):
+            raise fail(str(trace), "source observer sessions overlap earlier input")
+        session_ids.update(ids)
+        core.verify_game_files(selected_root, profile)
+        for protected, raw in ((manifest, profile_raw), (trace, trace_raw), (diagnostics, diagnostic_raw)):
+            if audit.read_bounded_snapshot(protected, max_input_bytes=byte_limit) != raw:
+                raise fail(str(protected), "source evidence changed during strict audit")
+        try:
+            display = trace.relative_to(ROOT).as_posix()
+        except ValueError:
+            display = trace.as_posix()
+        sources.append(display)
+        events.extend(normalized)
+        captures.append({"sessionIds": ids, "observerProfile": profile["observerProfile"],
+            "trace": snapshot_fact(trace, trace_raw), "manifest": snapshot_fact(manifest, profile_raw),
+            "diagnostics": snapshot_fact(diagnostics, diagnostic_raw),
+            "eventCount": report["eventCount"], "sourcePairCount": report["sourcePairCount"],
+            "sourceSummary": report["sourceSummary"], "evidenceBoundary": report["evidenceBoundary"]})
+        if "queueNativeGate" in recipe_gate:
+            captures[-1]["profileRecipeGate"] = recipe_gate
+    return events, sources, {
+        "schema": SOURCE_OBSERVER_SCHEMA, "status": "verified", "selectedGameRoot": str(selected_root),
+        "selectedNativePaths": {"GameAssembly.dll": str(ga), "global-metadata.dat": str(md)},
+        "nativeInputs": contract["nativeInputs"], "limits": {"maxInputBytes": byte_limit, "maxEvents": event_limit},
+        "captures": captures,
+        "evidenceBoundary": "Fresh strict source audits on exact immutable snapshots and explicitly selected native files. Captured fixed fields and synchronous native nesting only; no managed path, source lifetime, successful lookup, decoded content or audibility is established.",
+    }
 
 
 def read_json_input(path: Path, label: str) -> tuple[Any | None, dict[str, Any]]:
@@ -2076,12 +2199,14 @@ def build_bundle(
                 "selectedGameRoot": event.get("selectedGameRoot"),
                 "expectedModulePath": event.get("expectedModulePath"),
                 "expectedModuleSize": event.get("expectedModuleSize"),
+                "expectedModuleFileSize": event.get("expectedModuleFileSize"),
                 "expectedModuleSha256": event.get("expectedModuleSha256"),
                 "attachedModulePath": event.get("attachedModulePath"),
                 "attachedModuleSize": event.get("attachedModuleSize"),
                 "attachedModuleSha256": event.get("attachedModuleSha256"),
                 "expectedNativeModulePath": event.get("expectedNativeModulePath"),
                 "expectedNativeModuleSize": event.get("expectedNativeModuleSize"),
+                "expectedNativeModuleFileSize": event.get("expectedNativeModuleFileSize"),
                 "expectedNativeModuleSha256": event.get("expectedNativeModuleSha256"),
                 "attachedNativeModulePath": event.get("attachedNativeModulePath"),
                 "attachedNativeModuleSize": event.get("attachedNativeModuleSize"),
@@ -2107,6 +2232,9 @@ def build_bundle(
                 "attachedNativeModulePath", "attachedNativeModuleSize",
                 "attachedNativeModuleSha256", "nativeModulePathMatch", "nativeModuleSizeMatch",
                 "nativeModuleSha256Match", "captureComplete", "droppedEventCount",
+                "attachedModuleName", "attachedModuleBase", "attachedNativeModuleName", "attachedNativeModuleBase",
+                "moduleNameMatch", "nativeModuleNameMatch", "agentEventCount", "activeNativeCallCount", "activeManagedCallCount",
+                "agentDiagnosticCount", "deliveredAgentDiagnosticCount",
             ):
                 if key in event:
                     sessions[session_id][key] = event[key]
@@ -2163,6 +2291,8 @@ def build_bundle(
             for key in (
                 "modulePathMatch", "moduleSizeMatch", "moduleSha256Match",
                 "nativeModulePathMatch", "nativeModuleSizeMatch", "nativeModuleSha256Match",
+                "moduleNameMatch", "nativeModuleNameMatch", "attachedModuleName", "attachedModuleBase",
+                "attachedNativeModuleName", "attachedNativeModuleBase", "attachedModuleSize", "attachedNativeModuleSize",
             )
             if key in session
         }
@@ -2382,14 +2512,80 @@ def markdown(bundle: dict[str, Any]) -> str:
 
 
 def import_trace(args: argparse.Namespace) -> int:
-    events, sources = read_events(args.inputs)
+    manifest_specs = getattr(args, "source_observer_manifest", None)
+    game_root = getattr(args, "game_root", None)
+    if bool(manifest_specs) != bool(game_root):
+        raise fail("source observer", "--source-observer-manifest and --game-root are required together")
+    associations: dict[Path, Path] = {}
+    input_paths = [Path(path).resolve() for path in args.inputs]
+    for spec in manifest_specs or ():
+        if not isinstance(spec, str) or "=" not in spec:
+            raise fail("source observer", "--source-observer-manifest must be TRACE=PROFILE")
+        trace_text, _separator, profile_text = spec.partition("=")
+        if not trace_text or not profile_text:
+            raise fail("source observer", "TRACE=PROFILE needs both paths")
+        trace, profile = Path(trace_text).resolve(), Path(profile_text).resolve()
+        if trace not in input_paths or trace in associations:
+            raise fail(str(trace), "source profile must associate one distinct explicit trace input")
+        associations[trace] = profile
+    source_paths = [path for path in input_paths if path in associations]
+    manifests = [associations[path] for path in source_paths]
+    source_observer = None
+    if manifests:
+        try:
+            audited_events, _audited_sources, source_observer = read_source_observer_inputs(
+                source_paths, manifests, game_root,
+                max_input_bytes=args.source_max_input_bytes, max_events=args.source_max_events)
+        except (ValueError, core.CaptureConfigurationError) as exc:
+            raise fail("source observer", str(exc)[:1000]) from exc
+        captures_by_path = {Path(row["trace"]["path"]): row for row in source_observer["captures"]}
+        events, sources = [], []
+        for path in input_paths:
+            if path in captures_by_path:
+                capture = captures_by_path[path]
+                ids = set(capture["sessionIds"])
+                events.extend(event for event in audited_events if event["sessionId"] in ids)
+                try:
+                    sources.append(path.relative_to(ROOT).as_posix())
+                except ValueError:
+                    sources.append(path.as_posix())
+            else:
+                legacy_events, legacy_sources = read_events([path])
+                events.extend(legacy_events); sources.extend(legacy_sources)
+    else:
+        events, sources = read_events(args.inputs)
     bundle = build_bundle(
         events,
         sources,
         args.audio_index.resolve(),
         args.trigger_contexts.resolve(),
     )
+    if source_observer is not None:
+        bundle["nativePairing"]["sourceObserver"] = source_observer
+        bundle["nativePairing"]["sourceObserverInputScope"] = {
+            "auditedTracePaths": [str(path) for path in source_paths],
+            "unassociatedInputPaths": [str(path) for path in input_paths if path not in associations],
+            "evidenceBoundary": "Only explicitly associated trace/profile snapshots pass the strict source audit. Unassociated inputs retain legacy managed request import and do not authenticate source recipes or source consumer relations.",
+        }
     output = args.output.resolve()
+    if manifests:
+        from scripts.webui.story_recovery import prepare_audio_source_observer as observer
+        protected = [*args.inputs, *manifests, *(core.diagnostics_path(path) for path in args.inputs),
+                     args.audio_index, args.trigger_contexts]
+        protected.extend(Path(game_root) / row["relativePath"] for row in
+                         json.loads(Path(manifests[0]).read_bytes())["files"].values())
+        from scripts.game_data.wwise_source_native import CONTRACT_PATH as source_contract_path
+        protected.extend((source_contract_path, Path(__file__), Path(observer.__file__)))
+        destinations = (output, args.markdown_output or output.with_suffix(".md"))
+        if observer._same_file(Path(destinations[0]), Path(destinations[1])):
+            raise fail(str(output), "JSON and Markdown outputs must be different files")
+        for destination in destinations:
+            try:
+                observer._check_generated_path(Path(destination))
+            except core.CaptureConfigurationError as exc:
+                raise fail(str(destination), str(exc)) from exc
+            if any(observer._same_file(Path(destination), Path(path)) for path in protected):
+                raise fail(str(destination), "output aliases selected source evidence")
     markdown_output = core.write_report(
         output,
         bundle,

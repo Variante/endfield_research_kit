@@ -357,7 +357,9 @@ def _clear_addresses(spec: Mapping[str, Any]) -> dict[str, Any]:
     """A copy with every build address and fingerprint of the reviewed build removed."""
     current: dict[str, Any] = {}
     for key, value in spec.items():
-        if isinstance(value, list):
+        if isinstance(value, Mapping):
+            current[key] = _clear_addresses(value)
+        elif isinstance(value, list):
             current[key] = [_clear_addresses(item) if isinstance(item, Mapping) else item for item in value]
         elif key.endswith(_BUILD_KEY_SUFFIXES) or key in _BUILD_KEYS:
             current[key] = None
@@ -366,8 +368,50 @@ def _clear_addresses(spec: Mapping[str, Any]) -> dict[str, Any]:
     return current
 
 
+def _integer_string_dictionary_rows(
+    build: _Build, constructor: str, literals: Iterable[str],
+) -> list[dict[str, Any]] | None:
+    """Read bounded Dictionary.Add argument windows, never infer keys from order.
+
+    The reviewed x64 shape loads MethodInfo, an immediate integer key, a string
+    literal value and one common receiver immediately before Add. Any other
+    argument shape is unresolved rather than approximated by nearby loads.
+    """
+    calls = {va for va, names in build.calls(constructor)
+             if "System.Collections.Generic.Dictionary`2.Add" in names}
+    loads = {va: literal for literal in literals for va in build.loads.get(literal.lower(), [])}
+    found: dict[int, dict[str, Any]] = {}
+    receivers = set()
+    for start, size in build.spans(constructor):
+        instructions = build.index._decode(start, size)
+        for i, instruction in enumerate(instructions):
+            va = int(str(instruction.get("va") or "0"), 16)
+            if va not in calls or va in found:
+                continue
+            if i < 4:
+                return None
+            window = instructions[i - 4:i]
+            texts = [str(row.get("text") or "") for row in window]
+            key = re.fullmatch(r"mov edx, (0x[0-9a-f]+|[0-9]+)", texts[1])
+            receiver = re.fullmatch(r"mov rcx, (rbx|rbp|rsi|rdi|r12|r13|r14|r15)", texts[3])
+            literal_va = int(str(window[2].get("va") or "0"), 16)
+            if (not texts[0].startswith("mov r9, [rip+")
+                    or not (key or texts[1] == "xor edx, edx")
+                    or not texts[2].startswith("mov r8, [rip+")
+                    or literal_va not in loads or receiver is None):
+                return None
+            receivers.add(receiver.group(1))
+            found[va] = {"voiceType": int(key.group(1), 0) if key else 0,
+                         "triggerKey": loads[literal_va],
+                         "literalLoadVa": f"0x{literal_va:x}",
+                         "mappingAddInvocationVa": f"0x{va:x}"}
+    if not calls or set(found) != calls or len(receivers) != 1:
+        return None
+    return list(found.values())
+
+
 def verify_enemy_voice_action(build: _Build, spec: Mapping[str, Any]) -> tuple[dict[str, Any] | None, str]:
-    """The static constructor loads each trigger key in voiceType order; OnExecute responds."""
+    """Reprove integer/string dictionary additions and the consumer's playback reach."""
     index = build.index
     consumer = _resolve_consumer(index, str(spec.get("consumerType") or ""), str(spec.get("consumerMethod") or ""))
     if consumer is None:
@@ -375,12 +419,11 @@ def verify_enemy_voice_action(build: _Build, spec: Mapping[str, Any]) -> tuple[d
     type_name = _split(consumer)[0]
     constructor = f"{type_name}..cctor"
     rows = list(spec.get("voiceTypes") or [])
-    loads = [build.load_in(str(row["triggerKey"]), constructor) for row in rows]
-    if not loads or any(va is None for va in loads):
-        return None, "trigger-key-not-loaded"
-    ordered = [row["voiceType"] for _va, row in sorted(zip(loads, rows), key=lambda pair: pair[0])]
-    if ordered != sorted(row["voiceType"] for row in rows):
-        return None, "trigger-key-order-changed"
+    additions = _integer_string_dictionary_rows(build, constructor, [str(row["triggerKey"]) for row in rows])
+    expected = {(row["voiceType"], row["triggerKey"]) for row in rows}
+    if (not additions or len(additions) != len(rows) or len(expected) != len(rows)
+            or {(row["voiceType"], row["triggerKey"]) for row in additions} != expected):
+        return None, "trigger-dictionary-arguments-unproved"
     if spec.get("playbackCall") not in build.reach(consumer):
         return None, "sink-not-reached"
     current = _clear_addresses(spec)
@@ -391,40 +434,55 @@ def verify_enemy_voice_action(build: _Build, spec: Mapping[str, Any]) -> tuple[d
         "playbackCallVa": _address(index, spec.get("playbackCall")),
         "mappingConstructorMethodVa": _address(index, constructor),
     })
-    for row, va in zip(current["voiceTypes"], loads):
-        row["literalLoadVa"] = f"0x{va:x}"
+    current["voiceTypes"] = sorted(additions, key=lambda row: row["voiceType"])
+    current["evidenceBoundary"] = (
+        "The selected constructor passes each recorded integer key and string literal "
+        "to Dictionary.Add on one receiver. The named consumer reaches ResponseOnEntity. "
+        "Consumer dictionary selection, argument transport, action ownership and live execution "
+        "are not established by this callsite proof."
+    )
     current["nativeRederivation"] = {"status": "verified", "claims": [
-        "the static constructor loads each trigger key in voiceType order",
+        "the static constructor supplies each voiceType/triggerKey pair as Dictionary.Add arguments",
         "the consumer reaches playbackCall",
-    ]}
+    ], "consumerArgumentFlowStatus": "notReprovedOnSelectedBuild"}
     return current, "verified"
-
-
-def _inlined(build: _Build, target: str, sources: list[str]) -> bool:
-    from scripts.webui.mission_pipeline.runtime_contract_native import ChainResolver
-
-    return ChainResolver(build.index).inlined_into(target, sources)
 
 
 def verify_method_chain(
     build: _Build, spec: Mapping[str, Any], keys: tuple[str, ...]
 ) -> tuple[dict[str, Any] | None, str]:
-    """Each named method is reached by the ones before it (directly, one call down, or inlined)."""
+    """Prove each adjacent named call, including the caller's bounded helpers.
+
+    A common ancestor or an iFix patch marker alone cannot establish a link.
+    These callsites do not establish argument transport or live execution.
+    """
     index = build.index
     chain = [str(spec.get(key) or "") for key in keys]
     missing = [name for name in chain if name not in index.pointers_by_name]
     if missing:
         return None, f"method-missing:{missing[0]}"
-    for position in range(1, len(chain)):
-        earlier = chain[:position]
-        reached = set().union(*(build.reach(name) for name in earlier))
-        if chain[position] not in reached and not _inlined(build, chain[position], earlier):
-            return None, f"link-missing:{chain[position]}"
-    current = _clear_addresses(spec)
+    links = []
+    for before, after in zip(chain, chain[1:]):
+        calls = sorted({va for va, names in build.calls(before) if after in names})
+        if not calls:
+            return None, f"link-missing:{before}->{after}"
+        links.append({"from": before, "to": after,
+                      "callsiteVas": [f"0x{va:x}" for va in calls]})
+    # Publish only freshly proved identities and edges, not reviewed guards or
+    # transport prose that a call graph cannot re-establish on this build.
+    current = {key: name for key, name in zip(keys, chain)}
     for key, name in zip(keys, chain):
         current[f"{key}Index"] = _method_index(index, name)
         current[f"{key}Va"] = _address(index, name)
-    current["nativeRederivation"] = {"status": "verified", "claims": ["each chain method reaches the next"]}
+    current["evidenceBoundary"] = (
+        "Each adjacent method has a named callsite in the preceding method's "
+        "body, fragments or bounded helper. Argument transport, branch selection, "
+        "runtime ownership and live execution are not established by these calls."
+    )
+    current["nativeRederivation"] = {
+        "status": "verified", "claims": ["each adjacent method has a named callsite"],
+        "links": links, "argumentFlowStatus": "notReprovedOnSelectedBuild",
+    }
     return current, "verified"
 
 
@@ -714,16 +772,17 @@ def _endpoint_row(build: _Build, endpoint: Mapping[str, Any], default_type: str 
     full = _resolve_consumer(index, target_type, str(endpoint.get("targetMethod") or ""))
     if full is None:
         return None
-    row = _clear_addresses(endpoint)
-    row.pop("calls", None)
-    row.update({
+    # Resolving a method and listing its callees does not re-prove an old
+    # endpoint's return, branch, tail-transfer or async preparation assertions.
+    return {
         "targetType": _split(full)[0],
+        "targetMethod": _split(full)[1],
         "targetMethodIndex": _method_index(index, full),
         "targetToken": _token(index, full),
         "targetVirtualAddress": _address(index, full),
         "callees": sorted({name for _offset, names in _callees_by_offset(build, full) for name in names}),
-    })
-    return row
+        "evidence": "currentMethodIdentityAndListedCallees",
+    }
 
 
 # Reviewed re-readings of ModelView call targets whose owner changed on a later
@@ -749,7 +808,7 @@ def verify_model_view_route(build: _Build, route: Mapping[str, Any]) -> tuple[di
     Call offsets are re-read from the consumer; endpoint callees are listed by
     name from each endpoint's own body. A field contract keeps only what a name
     re-proves (the ``m_audioHandle`` store); unnamed offsets are cleared and the
-    reviewed branch guards stay as a previous-build reading.
+    old branch guards and endpoint/async assertions are withheld.
     """
     index = build.index
     consumer_spec = route.get("consumer") or {}
@@ -782,7 +841,9 @@ def verify_model_view_route(build: _Build, route: Mapping[str, Any]) -> tuple[di
             "targetToken": _token(index, resolved),
             "targetVirtualAddress": _address(index, resolved),
         })
-    current = _clear_addresses(route)
+    # Build a fresh proof surface. Clearing addresses on the old route alone
+    # would still inherit its stronger endpoint/async/branch status strings.
+    current = {"nativeMappingId": route.get("nativeMappingId")}
     current["consumer"] = {
         **_clear_addresses(consumer_spec),
         "type": _split(consumer)[0],
@@ -800,7 +861,7 @@ def verify_model_view_route(build: _Build, route: Mapping[str, Any]) -> tuple[di
         current["endpointAudits"] = endpoints
     contract = route.get("fieldContract")
     if contract:
-        fields = {key: value for key, value in contract.items() if not key.endswith("Offset")}
+        fields = {}
         handle = dict(contract.get("audioHandleWrite") or {})
         if handle:
             try:
@@ -817,10 +878,19 @@ def verify_model_view_route(build: _Build, route: Mapping[str, Any]) -> tuple[di
                 "offset": f"0x{offset:x}" if offset is not None else None,
                 "status": "verified" if stored else "not-reproved",
             }
-        fields["guardsStatus"] = "reviewedOnPreviousBuild"
+        fields["guardsStatus"] = "notReprovedOnSelectedBuild"
         current["fieldContract"] = fields
     current["evidence"] = "rederivedByNameOnInstalledBuild"
-    current["nativeRederivation"] = {"status": "verified"}
+    current["nativeRederivation"] = {
+        "status": "verified", "scope": "consumerCallsitesAndNamedFieldStore",
+        "claims": ["consumer identity", "each listed consumer callsite"],
+        "unresolved": ["branch guards", "endpoint argument/return flow",
+                       "managed adapter connection", "async preparation", "execution"],
+    }
+    for key in ("endpointAuditStatus", "postAndForgetToAudioAdapterConnectionStatus",
+                "postEventRuntimeStatus", "asyncBoundaryStatus"):
+        if key in route:
+            current[key] = "notReprovedOnSelectedBuild"
     return current, "verified"
 
 
@@ -991,13 +1061,19 @@ def rederive_catalogs(
     routes: Mapping[str, Mapping[str, Any]] | None = None,
     report_path: Path = DEFAULT_REPORT,
     index_factory: Any = None,
+    gameassembly_path: Path | None = None,
+    metadata_path: Path | None = None,
 ) -> dict[str, Any]:
     """Verified rows per catalog plus the audit, for the installed build.
 
     ``catalogs`` maps a catalog name to its ``{event: row}`` table. Without an
     installed build nothing is verified and every catalog is empty.
     """
-    native = check_installed_native_inputs()
+    if gameassembly_path is None or metadata_path is None:
+        return {"status": "missing", "detail": "explicit GameAssembly and metadata paths required",
+                "catalogs": {name: {} for name in catalogs},
+                "routes": {name: None for name in routes or {}}, "withheld": {}}
+    native = check_installed_native_inputs(gameassembly=gameassembly_path, metadata=metadata_path)
     if not native.validated:
         return {"status": native.status, "detail": native.detail, "catalogs": {name: {} for name in catalogs},
                 "routes": {name: None for name in routes or {}}, "withheld": {}}
@@ -1092,7 +1168,9 @@ def current_catalogs(native_context: Any) -> dict[str, dict[str, Any]]:
         return {name: dict(rows) for name, rows in catalogs.items()}
     if not (native_context.gate_verified and native_context.status == "mismatched"):
         return {name: {} for name in catalogs}
-    result = rederive_catalogs(catalogs, routes=reviewed_routes())
+    result = rederive_catalogs(catalogs, routes=reviewed_routes(),
+                              gameassembly_path=native_context.gameassembly_path,
+                              metadata_path=native_context.metadata_path)
     return {name: dict((result.get("catalogs") or {}).get(name) or {}) for name in catalogs}
 
 
@@ -1106,7 +1184,9 @@ def current_routes(native_context: Any) -> dict[str, dict[str, Any] | None]:
         return {name: dict(spec) for name, spec in routes.items()}
     if not (native_context.gate_verified and native_context.status == "mismatched"):
         return {name: None for name in routes}
-    result = rederive_catalogs(reviewed_catalogs(), routes=routes)
+    result = rederive_catalogs(reviewed_catalogs(), routes=routes,
+                              gameassembly_path=native_context.gameassembly_path,
+                              metadata_path=native_context.metadata_path)
     return {name: (result.get("routes") or {}).get(name) for name in routes}
 
 

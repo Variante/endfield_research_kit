@@ -13,6 +13,11 @@ const contextStacks = new Map();
 const callStacks = new Map();
 const nativeCallStacks = new Map();
 let captureCounter = 0;
+let emittedEventCount = 0;
+let emittedDiagnosticCount = 0;
+let captureStopping = false;
+let captureStopped = false;
+let stopReceipt = null;
 
 function rva(value) {
   return gameAssembly.base.add(parseInt(String(value), 16));
@@ -58,19 +63,62 @@ function transmit(channel, payload) {
 }
 
 function diagnostic(kind, values = {}) {
+  emittedDiagnosticCount += 1;
   transmit("diagnostic", { diagnostic: { kind, ...values } });
 }
 
 function event(kind, values = {}) {
+  if (captureStopped) return;
+  emittedEventCount += 1;
   transmit("event", {
     event: {
       kind,
       threadId: currentThreadId(),
       runtimeExecutionObserved: true,
       ...values,
+      agentEventSeq: emittedEventCount - 1,
     },
   });
 }
+
+function activeCallCounts() {
+  let activeNativeCallCount = 0;
+  for (const frames of nativeCallStacks.values()) activeNativeCallCount += frames.length;
+  let activeManagedCallCount = 0;
+  for (const frames of callStacks.values()) activeManagedCallCount += frames.length;
+  return { activeNativeCallCount, activeManagedCallCount };
+}
+
+rpc.exports.stopaudiocapture = function () {
+  if (stopReceipt !== null) return stopReceipt;
+  captureStopping = true;
+  // Refuse new observations, but finish pairs whose entry was already sent.
+  // Yield between checks so an in-flight onLeave can run. The host performs
+  // one script unload afterwards; do not detach interceptors a second time.
+  stopReceipt = new Promise(resolve => {
+    const deadline = Date.now() + 5000;
+    let quietSince = null;
+    function drain() {
+      const counts = activeCallCounts();
+      const now = Date.now();
+      if (counts.activeNativeCallCount === 0 && counts.activeManagedCallCount === 0) {
+        if (quietSince === null) quietSince = now;
+      } else {
+        quietSince = null;
+      }
+      const captureDrained = quietSince !== null && now - quietSince >= 250;
+      if (captureDrained || now >= deadline) {
+        captureStopped = true;
+        resolve({ stopProtocol: "drain-v1", captureDrained, emittedEventCount,
+          emittedDiagnosticCount, ...counts });
+      } else {
+        setTimeout(drain, 10);
+      }
+    }
+    drain();
+  });
+  return stopReceipt;
+};
 
 function pointerString(value) {
   try {
@@ -82,7 +130,9 @@ function pointerString(value) {
 
 function readU64(value) {
   try {
-    return value.toUInt64().toString();
+    // Interceptor register arguments are NativePointer values. UInt64 accepts
+    // their exact hex string; NativePointer has no toUInt64 conversion.
+    return uint64(value.toString()).toString();
   } catch (_) {
     return "";
   }
@@ -120,13 +170,33 @@ function readIl2CppString(value) {
   }
 }
 
+const MAX_NATIVE_UTF16_UNITS = 4096;
+
+function readNativeUtf16String(value) {
+  try {
+    if (!value || value.isNull()) return "";
+    // Frida's explicit length is a character count, not a maximum for a
+    // terminated string. Scan only through the terminator, with a hard bound.
+    // https://frida.re/docs/javascript-api/#nativepointer
+    const units = [];
+    for (let index = 0; index < MAX_NATIVE_UTF16_UNITS; index += 1) {
+      const unit = value.add(index * 2).readU16();
+      if (unit === 0) return String.fromCharCode(...units);
+      units.push(unit);
+    }
+    return null;
+  } catch (_) {
+    return null;
+  }
+}
+
 function readValue(value, kind) {
   try {
     switch (kind || "pointer") {
       case "string":
         return readIl2CppString(value);
       case "utf16":
-        return !value || value.isNull() ? "" : (value.readUtf16String(4096) || "");
+        return readNativeUtf16String(value);
       case "u32":
         return value.toUInt32();
       case "i32":
@@ -191,10 +261,12 @@ function readNativeMemoryValue(pointer, kind) {
         return pointer.readS32();
       case "u64":
         return pointer.readU64().toString();
+      case "utf16Direct":
+        return readNativeUtf16String(pointer);
       case "utf16":
         {
           const stringPointer = pointer.readPointer();
-          return stringPointer.isNull() ? "" : (stringPointer.readUtf16String(4096) || "");
+          return readNativeUtf16String(stringPointer);
         }
       case "pointer":
       default:
@@ -205,11 +277,36 @@ function readNativeMemoryValue(pointer, kind) {
   }
 }
 
-function readNativeMemory(hook, args, stackPointer = null, savedBases = {}) {
+function readNativeMemory(hook, args, stackPointer = null, savedBases = {}, phase = "entry") {
   const values = {};
   for (const spec of hook.memory || []) {
     if (!spec || typeof spec.name !== "string") continue;
     try {
+      if (spec.samplePhase && spec.samplePhase !== phase) {
+        values[spec.name] = null;
+        continue;
+      }
+      if (spec.requireArgument) {
+        const argument = hook.args[spec.requireArgument.name];
+        const value = args[argument.index];
+        if (!value || value.isNull()) {
+          values[spec.name] = null;
+          continue;
+        }
+      }
+      if (spec.requireMemory) {
+        const condition = spec.requireMemory;
+        const observed = values[condition.name];
+        const applicable = condition.nonzero === true
+          ? typeof observed === "string" && /^0x[0-9a-f]+$/i.test(observed)
+            && !/^0x0+$/i.test(observed)
+          : observed === condition.equals;
+        if (!applicable) {
+          // A declared branch guard fails before any pointer or text read.
+          values[spec.name] = null;
+          continue;
+        }
+      }
       let base = null;
       let usingSavedBase = false;
       if (typeof spec.argIndex === "number") {
@@ -401,6 +498,7 @@ function attachHook(hook) {
   try {
     Interceptor.attach(address, {
       onEnter(args) {
+        if (captureStopping) return;
         const threadId = currentThreadId();
         const captureId = `audio-${Process.id}-${++captureCounter}`;
         const callStack = callStackFor(threadId);
@@ -445,6 +543,7 @@ function attachHook(hook) {
         }
       },
       onLeave(retval) {
+        if (!this.audioFrame || captureStopped) return;
         const threadId = currentThreadId();
         const common = {
           hookName: hook.name,
@@ -516,6 +615,7 @@ function attachNativeHook(hook) {
   try {
     Interceptor.attach(address, {
       onEnter(args) {
+        if (captureStopping) return;
         const threadId = currentThreadId();
         this.nativeCaptureId = `audio-native-${Process.id}-${++captureCounter}`;
         const nativeCallStack = nativeCallStackFor(threadId);
@@ -569,6 +669,7 @@ function attachNativeHook(hook) {
         });
       },
       onLeave(retval) {
+        if (!this.nativeFrame || captureStopped) return;
         const threadId = currentThreadId();
         const nativeFrame = this.nativeFrame;
         event("audio_native_result", {
@@ -592,6 +693,7 @@ function attachNativeHook(hook) {
             this.nativeArgs || [],
             this.nativeStackPointer,
             this.nativeMemoryBases || {},
+            "result",
           ),
         });
         const nativeCallStack = nativeCallStacks.get(threadId) || [];

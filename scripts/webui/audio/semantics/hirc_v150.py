@@ -208,7 +208,7 @@ from scripts.webui.audio.semantics.event_projection import HIRC_OBJECT_TYPE_LABE
 from struct import unpack_from
 from scripts.webui.audio.semantics.context_utils import SELECTION_HIRC_TYPES
 from scripts.webui.audio.semantics.wwise_enums import display_labels, enum_name
-from scripts.webui.audio.semantics.wwise_effect_native import effect_parameter_schema, effect_parameter_structural_schema
+from scripts.webui.audio.semantics.wwise_effect_native import decode_effect_parameter_native_reads, effect_parameter_schema, effect_parameter_structural_schema
 
 HIRC_ACTION_OPERATION_LABELS = {
     0x0100: "stop",
@@ -2053,7 +2053,8 @@ def hirc_v150_effect_definition(
     HIRC types 16 and 17 use the same bounded plug-in class ID plus parameter
     blob prefix.  Parameter bytes stay fingerprinted until a plug-in-specific
     writer contract is available; a structurally verified native method adds
-    only its class identity and read span. A valid trailing media prefix is kept as
+    anonymous read records with raw bits and bounded representation views.
+    They establish no public control name or DSP role. A valid trailing media prefix is kept as
     plug-in data and never promoted to a playable Sound-source leaf.
     """
 
@@ -2149,6 +2150,17 @@ def hirc_v150_effect_definition(
                 f"native method reads {read_bytes} bytes; field meanings unresolved"
             ),
         })
+        native_reads = decode_effect_parameter_native_reads(
+            plugin_class_id, parameter_data, native_evidence_validated=True,
+        )
+        if native_reads is not None:
+            definition.update(native_reads)
+            if native_reads["parameterNativeReadParserStatus"] == "exactNativeReadPartition":
+                definition["parameterBoundary"] = "structuralOnlyNativeInputReads"
+                definition["parameterSummary"] = (
+                    f"{len(native_reads['parameterNativeReads'])} anonymous native reads "
+                    f"cover {read_bytes} bytes; control meanings unresolved"
+                )
     return definition
 
 def hirc_v150_music_track(data: bytes) -> dict[str, Any] | None:
@@ -4059,6 +4071,9 @@ def finalize_hirc_post_process_catalog(
                 "parameterSchema", "parameterSummary", "parameterBoundary",
                 "parameterNativeEvidenceStatus",
                 "parameterNativeReadBytes", "parameterNativeReadSpanStatus",
+                "parameterNativeReadParserStatus", "parameterNativeReads",
+                "parameterNativeReadDiagnostic", "parameterNativeUnreadByteLength",
+                "parameterNativeReadEvidenceBoundary", "parameterNativeReadSemanticBoundary",
                 "parameterSemanticBoundary", "parameterRuntimeBoundary",
                 "pluginMediaDependencies", "pluginMediaDependencyCount",
                 "parameterValues", "parameterSetParamsBlockRva",
@@ -4187,6 +4202,9 @@ def resolve_hirc_post_process_summary(
                 "parameterBoundary", "parameterParserStatus", "parameterSchema",
                 "parameterNativeEvidenceStatus",
                 "parameterNativeReadBytes", "parameterNativeReadSpanStatus",
+                "parameterNativeReadParserStatus", "parameterNativeReads",
+                "parameterNativeReadDiagnostic", "parameterNativeUnreadByteLength",
+                "parameterNativeReadEvidenceBoundary", "parameterNativeReadSemanticBoundary",
                 "parameterValues", "parameterSummary", "parameterSetParamsBlockRva",
                 "parameterSemanticBoundary", "parameterRuntimeBoundary",
                 "definitionOccurrenceCount",

@@ -201,15 +201,20 @@ class EventWriter:
         self.diagnostic_handle.close()
 
 
-def find_process(device: Any, process_name: str, wait_seconds: float) -> Any:
+def find_process(device: Any, process_name: str, wait_seconds: float,
+                 *, cancelled: Callable[[], bool] | None = None) -> Any:
     deadline = time.monotonic() + max(wait_seconds, 0)
     announced = False
     while True:
+        if cancelled is not None and cancelled():
+            raise CaptureConfigurationError("capture stop requested while waiting for the process")
         matches = [
             process
             for process in device.enumerate_processes()
             if process.name.casefold() == process_name.casefold()
         ]
+        if cancelled is not None and cancelled():
+            raise CaptureConfigurationError("capture stop requested while waiting for the process")
         if matches:
             if len(matches) > 1:
                 raise CaptureConfigurationError(
@@ -266,15 +271,22 @@ def load_frida() -> Any:
     return frida
 
 
-def wait_for_modules(session: Any, module_names: list[str], timeout_seconds: float = 45) -> None:
+def wait_for_modules(session: Any, module_names: list[str], timeout_seconds: float = 45,
+                     *, cancelled: Callable[[], bool] | None = None) -> None:
+    if cancelled is not None and cancelled():
+        raise CaptureConfigurationError("capture stop requested before module discovery")
     ready = threading.Event()
     failure: list[str] = []
+    last_missing: list[str] | None = None
     source = """
 const required = %s;
+let lastMissing = "";
 function probe() {
   const loaded = new Set(Process.enumerateModules().map((item) => item.name.toLowerCase()));
   const missing = required.filter((name) => !loaded.has(name.toLowerCase()));
   if (!missing.length) { send({ready: true}); return true; }
+  const signature = missing.join(",");
+  if (signature !== lastMissing) { send({missing}); lastMissing = signature; }
   return false;
 }
 if (!probe()) { const timer = setInterval(() => { if (probe()) clearInterval(timer); }, 100); }
@@ -282,17 +294,43 @@ if (!probe()) { const timer = setInterval(() => { if (probe()) clearInterval(tim
     probe = session.create_script(source, name="runtime-module-wait")
 
     def on_message(message: dict[str, Any], _data: bytes | None) -> None:
+        nonlocal last_missing
         if message.get("type") == "error":
             failure.append(str(message.get("description", message)))
             ready.set()
-        elif isinstance(message.get("payload"), dict) and message["payload"].get("ready"):
-            ready.set()
+        elif isinstance(message.get("payload"), dict):
+            payload = message["payload"]
+            if payload.get("ready") is True:
+                ready.set()
+            else:
+                missing = payload.get("missing")
+                if (isinstance(missing, list) and 0 < len(missing) <= len(module_names)
+                        and all(isinstance(name, str) and name in module_names for name in missing)
+                        and len(set(missing)) == len(missing)):
+                    if missing != last_missing:
+                        print(f"Runtime modules still loading: {', '.join(missing)}", flush=True)
+                    last_missing = list(missing)
 
     probe.on("message", on_message)
-    probe.load()
     try:
-        if not ready.wait(timeout_seconds):
-            raise RuntimeError(f"timed out waiting for runtime modules: {', '.join(module_names)}")
+        if cancelled is not None and cancelled():
+            raise CaptureConfigurationError("capture stop requested before module discovery")
+        probe.load()
+        deadline = time.monotonic() + max(timeout_seconds, 0)
+        while not ready.is_set():
+            if cancelled is not None and cancelled():
+                raise CaptureConfigurationError("capture stop requested during module discovery")
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                missing_detail = ', '.join(last_missing) if last_missing else "unknown (no module status received)"
+                raise RuntimeError(
+                    f"timed out after {timeout_seconds:g}s waiting for runtime modules; "
+                    f"last reported missing: {missing_detail}. "
+                    "Finish loading the game before retrying capture."
+                )
+            ready.wait(min(remaining, 0.1))
+        if cancelled is not None and cancelled():
+            raise CaptureConfigurationError("capture stop requested during module discovery")
         if failure:
             raise RuntimeError(f"module-wait agent failed: {failure[0]}")
     finally:

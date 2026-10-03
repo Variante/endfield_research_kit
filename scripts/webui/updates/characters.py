@@ -4,10 +4,10 @@ Every Characters build saves its final catalog under
 ``webui/data/_build/characters/<LANG>.json``. The Updates diff does not read
 that snapshot: it builds two catalogs itself, one per export, with the current
 Characters builder, cached in ``.game-data-tracker/``, each from that export's
-own tables and converted media and without the Story actor registry. Builder
-changes and Story-only inputs therefore never appear as game updates; the
-comparison covers Table and exported-asset identities, not only
-``CharacterTable``. Only languages present on both sides participate. It
+own tables, explicit NPC proxy name references and converted media, without
+generated Story outputs. Builder changes therefore never appear as game
+updates; the comparison covers story speaker Tables and exported-asset
+identities, not only ``CharacterTable``. Only languages present on both sides participate. It
 reports ``added``, ``modified`` and ``deleted``. Missing, invalid, empty or
 legacy exports publish an unavailable empty sidecar instead of treating the
 current roster as entirely new; the sidecar does not alter recovery or
@@ -27,9 +27,10 @@ from scripts.common import ROOT, WEBUI_BUILD_DIR, read_json, rel_path
 from scripts.game_data.unity_store import open_store_if_present
 from scripts.source_paths import ExportLayout
 from scripts.webui.characters.build_character_data import CONVERTED_MEDIA_TYPES
+from scripts.webui.updates.details import source_changes
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 CHARACTER_BUILDER_MODULE = "scripts.webui.characters.build_character_data"
 CHARACTER_BUILDER_SOURCE = ROOT / "scripts" / "webui" / "characters" / "build_character_data.py"
 
@@ -38,20 +39,27 @@ def comparison_character_catalog_dir(export_root: Path, state_dir: Path) -> Path
     """Build one export's Characters catalog for the Updates diff, cached.
 
     Both sides of the diff are built here by the same builder from the same
-    kinds of input: that export's tables and its own converted media (no
-    shared asset index), and no Story actor registry, which exists only for
-    the export the WebUI was built from. A builder change or a Story-only
-    input therefore never shows up as a game update. The cache key covers the
-    builder source, the tables, the media folders the builder scans, and the
-    same types' object documents in game/Unity.sqlite (name, size, SHA256).
+    kinds of input: that export's tables, optional NPC proxy Json and its own
+    converted media (no shared asset index or generated Story outputs).
+    A builder change therefore never shows up as a game update. The cache key
+    covers the builder package, the tables, the optional proxy Json, the media
+    folders it scans, and the same types' object documents in game/Unity.sqlite
+    (name, size, SHA256).
     """
     layout = ExportLayout(export_root)
     digest = hashlib.sha256()
-    digest.update(CHARACTER_BUILDER_SOURCE.read_bytes())
+    for path in sorted(CHARACTER_BUILDER_SOURCE.parent.glob("*.py")):
+        digest.update(path.name.encode("utf-8"))
+        digest.update(path.read_bytes())
     digest.update(str(layout.root.resolve()).encode("utf-8"))
     for path in sorted(layout.table_dir.glob("*.json")):
         stat = path.stat()
         digest.update(f"{path.name}|{stat.st_size}|{stat.st_mtime_ns};".encode("utf-8"))
+    for name in ("NpcProxyTable", "NpcProxyExDataTable"):
+        path = layout.json_dir / "GameplayConfig" / (name + ".json")
+        if path.is_file():
+            stat = path.stat()
+            digest.update(f"{name}|{stat.st_size}|{stat.st_mtime_ns};".encode("utf-8"))
     for type_name in CONVERTED_MEDIA_TYPES:
         type_dir = layout.unity_type_dir(type_name)
         # A folder's mtime changes when a file is added, removed, or renamed.
@@ -206,6 +214,10 @@ def build_character_updates(
             "status": status,
             "characterKey": key,
             "characterId": key,
+            "changes": source_changes(
+                {f"Characters/{key}": old_row} if old_row is not None else None,
+                {f"Characters/{key}": new_row} if new_row is not None else None,
+            ),
         }
         old_names = _record_names(old_row)
         new_names = _record_names(new_row)

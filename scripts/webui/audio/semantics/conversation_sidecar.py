@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from scripts.webui.audio.semantics.context_utils import json_dump, load_json
+from scripts.webui.search import linked_file_search_text
 
 SCHEMA_VERSION = 1
 INDEX_NAME = "index.json"
@@ -66,6 +67,7 @@ def update_sidecars(directory: Path, fields: tuple[str, ...], payload_by_key: Ma
     existing = {path.stem for path in directory.glob("*.json") if path.name != INDEX_NAME}
     changed = 0
     kept: list[str] = []
+    file_search: dict[str, str] = {}
     for key in sorted(existing | set(payload_by_key)):
         current = load_sidecar(directory, key) if key in existing else {}
         updated = {name: value for name, value in current.items() if name not in fields and name != "schemaVersion"}
@@ -82,10 +84,13 @@ def update_sidecars(directory: Path, fields: tuple[str, ...], payload_by_key: Ma
             continue
         payload = {"schemaVersion": SCHEMA_VERSION, **dict(sorted(updated.items()))}
         kept.append(key)
+        text = linked_file_search_text(payload)
+        if text:
+            file_search[key] = text
         if payload != current:
             json_dump(path, payload)
             changed += 1
-    index = {"schemaVersion": SCHEMA_VERSION, "conversations": kept}
+    index = {"schemaVersion": SCHEMA_VERSION, "conversations": kept, "linkedFileSearch": file_search}
     if load_json(directory / INDEX_NAME, None) != index:
         json_dump(directory / INDEX_NAME, index)
     return changed

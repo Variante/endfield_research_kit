@@ -48,6 +48,7 @@ import re
 from typing import Any, Iterable
 
 from scripts.common import write_json
+from scripts.webui.search import linked_file_search_text
 
 
 ROOT_SCHEMA = "endfield.webui.decoded-data-root.v1"
@@ -145,6 +146,7 @@ def _catalog_entry(record: dict[str, Any], shard: str) -> dict[str, Any]:
         "summary": str(record.get("summary") or ""),
         "tags": [str(value) for value in record.get("tags") or [] if str(value)],
         "searchTerms": [str(value) for value in record.get("searchTerms") or [] if str(value)],
+        "linkedFileSearch": linked_file_search_text(record),
         "sourcePath": str(source.get("path") or ""),
         "shard": shard,
     }

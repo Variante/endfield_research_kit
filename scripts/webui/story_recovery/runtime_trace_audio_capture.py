@@ -17,14 +17,16 @@ playback.
 from __future__ import annotations
 
 import argparse
+import math
 import sys
 import threading
 import time
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.game_data.il2cpp.native_image import pe_mapped_image_size
 
 ROOT = REPO_ROOT
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -40,6 +42,13 @@ AUDIO_AGENT_PLACEHOLDER = "__AUDIO_TRACE_CONFIG__"
 MAX_ABI_ARGUMENT_INDEX = 63
 ABI_ARGUMENT_KINDS = frozenset({"pointer", "string", "u32", "i32", "u64", "bool", "utf16"})
 ABI_RETURN_KINDS = ABI_ARGUMENT_KINDS | {"void"}
+
+
+def module_wait_seconds(value: str) -> float:
+    seconds = float(value)
+    if not math.isfinite(seconds) or not 0 < seconds <= 900:
+        raise argparse.ArgumentTypeError("module wait must be finite and greater than zero, at most 900 seconds")
+    return seconds
 
 
 def add_arguments(parser: argparse.ArgumentParser) -> None:
@@ -80,6 +89,14 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         help="Stop the capture after this many seconds; omitted runs until Ctrl+C or detach.",
     )
     parser.add_argument(
+        "--module-wait-seconds", type=module_wait_seconds, default=300.0,
+        help="Seconds to wait for runtime modules after attaching, before arming (default: 300; maximum: 900).",
+    )
+    parser.add_argument(
+        "--stop-file", type=Path,
+        help="Stop cooperatively when this file appears; used by the Windows capture wrapper.",
+    )
+    parser.add_argument(
         "--check-only",
         action="store_true",
         help="Verify files, hook ranges, manifest, and rendered agent without attaching.",
@@ -110,6 +127,8 @@ def _validate_abi_contract(hook: dict[str, Any], label: str) -> None:
         kind = spec.get("kind", "pointer")
         if not isinstance(kind, str) or kind not in ABI_ARGUMENT_KINDS:
             raise core.CaptureConfigurationError(f"{label} args[{name!r}] has unsupported kind")
+        if "allowNull" in spec and (kind != "pointer" or type(spec["allowNull"]) is not bool):
+            raise core.CaptureConfigurationError(f"{label} args[{name!r}] allowNull requires a pointer and boolean")
     string_args = hook.get("stringArgs")
     if string_args is not None and not isinstance(string_args, dict):
         raise core.CaptureConfigurationError(f"{label} stringArgs must be an object")
@@ -241,6 +260,7 @@ def load_manifest(path: Path) -> dict[str, Any]:
         memory = hook.get("memory")
         if memory is not None and not isinstance(memory, list):
             raise core.CaptureConfigurationError(f"nativeHooks[{index}] memory must be a list")
+        previous_memory_kinds: dict[str, str] = {}
         for mem_index, spec in enumerate(memory or []):
             if (
                 not isinstance(spec, dict)
@@ -323,10 +343,41 @@ def load_manifest(path: Path) -> dict[str, Any]:
                 "i32",
                 "u64",
                 "utf16",
+                "utf16Direct",
             }:
                 raise core.CaptureConfigurationError(
                     f"nativeHooks[{index}].memory[{mem_index}] has unsupported kind"
                 )
+            condition = spec.get("requireMemory")
+            if condition is not None:
+                valid = isinstance(condition, dict)
+                name = condition.get("name") if valid else None
+                kind = previous_memory_kinds.get(name) if isinstance(name, str) else None
+                valid = valid and (
+                    (set(condition) == {"name", "equals"} and kind == "u32"
+                     and type(condition["equals"]) is int and 0 <= condition["equals"] <= 0xffffffff)
+                    or (set(condition) == {"name", "nonzero"} and kind == "pointer"
+                        and condition["nonzero"] is True)
+                )
+                if not valid:
+                    raise core.CaptureConfigurationError(
+                        f"nativeHooks[{index}].memory[{mem_index}] requireMemory must test an earlier "
+                        "u32 field for equality or an earlier pointer for nonzero"
+                    )
+            if "samplePhase" in spec and spec["samplePhase"] not in ("entry", "result"):
+                raise core.CaptureConfigurationError(
+                    f"nativeHooks[{index}].memory[{mem_index}] samplePhase must be entry or result"
+                )
+            condition = spec.get("requireArgument")
+            if condition is not None:
+                valid = isinstance(condition, dict) and set(condition) == {"name", "nonzero"}
+                name = condition.get("name") if valid else None
+                argument = (hook.get("args") or {}).get(name) if isinstance(name, str) else None
+                if not valid or condition["nonzero"] is not True or not argument or argument.get("kind") != "pointer":
+                    raise core.CaptureConfigurationError(
+                        f"nativeHooks[{index}].memory[{mem_index}] requireArgument must test a declared pointer for nonzero"
+                    )
+            previous_memory_kinds[spec["name"]] = spec.get("kind", "pointer")
     if native_hooks and not native_module_name:
         raise core.CaptureConfigurationError("nativeHooks require nativeModuleName")
     if not isinstance(value.get("evidenceBoundary"), dict):
@@ -406,6 +457,20 @@ def _attached_file_sha256(path_text: str) -> str | None:
         return None
 
 
+def validated_module_base(value: Any, image_size: int, label: str) -> str:
+    """Bound an ASLR image extent without reading process memory."""
+    if (not isinstance(value, str) or not value.startswith("0x") or not 3 <= len(value) <= 18
+            or any(character not in "0123456789abcdefABCDEF" for character in value[2:])):
+        raise RuntimeError(f"{label}: expected hexadecimal module base")
+    try:
+        base = int(value, 16)
+    except ValueError as exc:
+        raise RuntimeError(f"{label}: invalid module base") from exc
+    if base <= 0 or base % 4096 or not 0 < image_size < 0x800000000000 - base:
+        raise RuntimeError(f"{label}: module extent is outside bounded Win64 user space")
+    return hex(base)
+
+
 def validate_attached_module(
     ready_payload: dict[str, Any],
     expected_module: Path,
@@ -414,7 +479,7 @@ def validate_attached_module(
     actual_path = ready_payload.get("modulePath")
     actual_size = ready_payload.get("moduleSize")
     expected_path = expected_module.resolve()
-    expected_size = expected_path.stat().st_size
+    expected_size = pe_mapped_image_size(expected_path)
     expected_hash = (expected_sha256 or core.sha256_file(expected_path)).casefold()
     if not isinstance(actual_path, str) or not actual_path.strip():
         raise RuntimeError("Frida agent did not report the attached GameAssembly path")
@@ -424,6 +489,7 @@ def validate_attached_module(
     facts = {
         "expectedModulePath": str(expected_path),
         "expectedModuleSize": expected_size,
+        "expectedModuleFileSize": expected_path.stat().st_size,
         "expectedModuleSha256": expected_hash,
         "attachedModulePath": actual_path,
         "attachedModuleSize": actual_size,
@@ -431,13 +497,17 @@ def validate_attached_module(
         "modulePathMatch": core.normalized_path(actual_path) == core.normalized_path(expected_path),
         "moduleSizeMatch": actual_size == expected_size,
         "moduleSha256Match": actual_hash is not None and actual_hash == expected_hash,
+        "moduleNameMatch": isinstance(ready_payload.get("moduleName"), str)
+        and ready_payload["moduleName"].casefold() == expected_path.name.casefold(),
     }
-    if not all(facts[key] for key in ("modulePathMatch", "moduleSizeMatch", "moduleSha256Match")):
+    if not all(facts[key] for key in ("modulePathMatch", "moduleSizeMatch", "moduleSha256Match", "moduleNameMatch")):
         raise RuntimeError(
             "attached GameAssembly does not match the hash-verified module: "
             f"pathMatch={facts['modulePathMatch']}, sizeMatch={facts['moduleSizeMatch']}, "
-            f"sha256Match={facts['moduleSha256Match']}"
+            f"sha256Match={facts['moduleSha256Match']}, nameMatch={facts['moduleNameMatch']}"
         )
+    facts["attachedModuleName"] = expected_path.name
+    facts["attachedModuleBase"] = validated_module_base(ready_payload.get("moduleBase"), expected_size, "GameAssembly")
     return facts
 
 
@@ -447,7 +517,7 @@ def validate_attached_native_module(
     actual_path = ready_payload.get("nativeModulePath")
     actual_size = ready_payload.get("nativeModuleSize")
     expected_path = expected_module.resolve()
-    expected_size = expected_path.stat().st_size
+    expected_size = pe_mapped_image_size(expected_path)
     expected_hash = (expected_sha256 or core.sha256_file(expected_path)).casefold()
     if not isinstance(actual_path, str) or not actual_path.strip():
         raise RuntimeError("Frida agent did not report the attached AkSoundEngine path")
@@ -456,12 +526,15 @@ def validate_attached_native_module(
     facts = {
         "expectedNativeModulePath": str(expected_path),
         "expectedNativeModuleSize": expected_size,
+        "expectedNativeModuleFileSize": expected_path.stat().st_size,
         "expectedNativeModuleSha256": expected_hash,
         "attachedNativeModulePath": actual_path,
         "attachedNativeModuleSize": actual_size,
         "attachedNativeModuleSha256": _attached_file_sha256(actual_path),
         "nativeModulePathMatch": core.normalized_path(actual_path) == core.normalized_path(expected_path),
         "nativeModuleSizeMatch": actual_size == expected_size,
+        "nativeModuleNameMatch": isinstance(ready_payload.get("nativeModuleName"), str)
+        and ready_payload["nativeModuleName"].casefold() == expected_path.name.casefold(),
     }
     facts["nativeModuleSha256Match"] = (
         facts["attachedNativeModuleSha256"] is not None
@@ -469,14 +542,57 @@ def validate_attached_native_module(
     )
     if not all(
         facts[key]
-        for key in ("nativeModulePathMatch", "nativeModuleSizeMatch", "nativeModuleSha256Match")
+        for key in ("nativeModulePathMatch", "nativeModuleSizeMatch", "nativeModuleSha256Match", "nativeModuleNameMatch")
     ):
         raise RuntimeError(
             "attached AkSoundEngine does not match the hash-verified module: "
             f"pathMatch={facts['nativeModulePathMatch']}, sizeMatch={facts['nativeModuleSizeMatch']}, "
-            f"sha256Match={facts['nativeModuleSha256Match']}"
+            f"sha256Match={facts['nativeModuleSha256Match']}, nameMatch={facts['nativeModuleNameMatch']}"
         )
+    facts["attachedNativeModuleName"] = expected_path.name
+    facts["attachedNativeModuleBase"] = validated_module_base(ready_payload.get("nativeModuleBase"), expected_size, "AkSoundEngine")
     return facts
+
+
+def stop_capture_agent(script: Any, writer: Any, capture_failures: list[str], delivered_diagnostics=lambda: 0) -> dict[str, Any]:
+    """Check a responsive agent's captured-frame drain and delivery receipt."""
+    closure = script.exports_sync.stopaudiocapture()
+    expected_count = closure.get("emittedEventCount") if isinstance(closure, dict) else None
+    active_count = closure.get("activeNativeCallCount") if isinstance(closure, dict) else None
+    managed_count = closure.get("activeManagedCallCount") if isinstance(closure, dict) else None
+    diagnostic_count = closure.get("emittedDiagnosticCount") if isinstance(closure, dict) else None
+    valid_counts = all(isinstance(value, int) and not isinstance(value, bool) and value >= 0
+                       for value in (expected_count, active_count, managed_count, diagnostic_count))
+    drained = isinstance(closure, dict) and closure.get("stopProtocol") == "drain-v1" and closure.get("captureDrained") is True
+    flush_deadline = time.monotonic() + 2
+    while (valid_counts and (writer.event_count < expected_count + 1 or delivered_diagnostics() < diagnostic_count)
+           and time.monotonic() < flush_deadline):
+        time.sleep(0.01)
+    delivered_count = writer.event_count - 1
+    facts = {"captureComplete": valid_counts and drained and not capture_failures and active_count == 0
+             and managed_count == 0 and delivered_count == expected_count and delivered_diagnostics() == diagnostic_count}
+    protocol = closure.get("stopProtocol") if isinstance(closure, dict) else None
+    facts.update(captureStopProtocol=protocol if isinstance(protocol, str) and len(protocol) <= 32 else None,
+                 captureDrained=drained)
+    if valid_counts:
+        facts.update(agentEventCount=expected_count, activeNativeCallCount=active_count,
+                     activeManagedCallCount=managed_count, droppedEventCount=max(0, expected_count - delivered_count))
+        facts.update(agentDiagnosticCount=diagnostic_count, deliveredAgentDiagnosticCount=delivered_diagnostics())
+    return facts
+
+
+def validate_stop_file(path: Path | None, protected: list[Path]) -> Path | None:
+    """A request marker must be new and distinct from evidence/native files."""
+    if path is None:
+        return None
+    resolved = path.resolve()
+    selected = core.normalized_path(str(resolved))
+    for item in protected:
+        if selected == core.normalized_path(str(item.resolve())):
+            raise core.CaptureConfigurationError(f"--stop-file aliases protected capture/native input: {item}")
+    if resolved.exists() or path.is_symlink():
+        raise core.CaptureConfigurationError(f"--stop-file already exists; use a fresh request marker: {resolved}")
+    return resolved
 
 
 class AudioEventWriter(core.EventWriter):
@@ -491,21 +607,81 @@ class AudioEventWriter(core.EventWriter):
         self.emit(kind, values)
 
 
+def validate_hook_readiness(
+    manifest: dict[str, Any], ready_payload: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Refuse arming without required hooks; native hooks default to optional."""
+    hooks = ready_payload.get("hooks", {})
+    native_hooks = ready_payload.get("nativeHooks", {})
+    if not isinstance(hooks, dict):
+        raise RuntimeError("audio hook agent returned an invalid hook status payload")
+    if not isinstance(native_hooks, dict):
+        raise RuntimeError("audio hook agent returned an invalid native hook status payload")
+    required_managed = {
+        row["name"] for row in manifest["hooks"]
+        if row.get("required", row["name"] == "AudioAdapter._PostEvent")
+    }
+    required_native = {
+        row["name"] for row in manifest.get("nativeHooks", []) if row.get("required", False)
+    }
+    failed = {name: hooks.get(name, "missing") for name in sorted(required_managed)
+              if hooks.get(name) != "attached"}
+    native_failed = {name: native_hooks.get(name, "missing") for name in sorted(required_native)
+                     if native_hooks.get(name) != "attached"}
+    if failed or native_failed:
+        raise RuntimeError(f"required audio hooks failed to attach: managed={failed}, native={native_failed}")
+    optional_failed = {name: state for name, state in sorted(hooks.items())
+                       if state != "attached" and name not in required_managed}
+    optional_native_failed = {
+        row["name"]: native_hooks.get(row["name"], "missing")
+        for row in sorted(manifest.get("nativeHooks", []), key=lambda row: row["name"])
+        if row["name"] not in required_native and native_hooks.get(row["name"]) != "attached"
+    }
+    return optional_failed, optional_native_failed
+
+
 def run_capture(
     args: argparse.Namespace,
     manifest: dict[str, Any],
     agent_source: str,
     verified: dict[str, Path],
 ) -> int:
+    args.output = (args.output or default_output_path()).resolve()
+    args.stop_file = validate_stop_file(args.stop_file, [args.manifest, args.agent, args.output,
+        core.diagnostics_path(args.output), *verified.values()])
+    stop = threading.Event()
+    previous_sigint = core.install_stop_signal(stop)
+
+    def cancelled() -> bool:
+        return stop.is_set() or (args.stop_file is not None and args.stop_file.is_file())
+
+    try:
+        return _run_capture(args, manifest, agent_source, verified, stop, cancelled)
+    finally:
+        # Repeated Ctrl+C remains a stop request through detach and file close.
+        core.restore_stop_signal(previous_sigint)
+
+
+def _run_capture(
+    args: argparse.Namespace, manifest: dict[str, Any], agent_source: str,
+    verified: dict[str, Path], stop: threading.Event, cancelled: Callable[[], bool],
+) -> int:
+    def check_setup_stop() -> None:
+        if cancelled():
+            raise core.CaptureConfigurationError("audio capture stop requested during setup; no hooks armed")
+
+    check_setup_stop()
     frida = core.load_frida()
     process_name = args.process or manifest["processName"]
     device = frida.get_local_device()
+    check_setup_stop()
     process = (
         core.process_from_verified_pid(device, args.pid, process_name)
         if args.pid is not None
-        else core.find_process(device, process_name, args.wait_seconds)
+        else core.find_process(device, process_name, args.wait_seconds, cancelled=cancelled)
     )
-    output = (args.output or default_output_path()).resolve()
+    check_setup_stop()
+    output = args.output
     start = time.perf_counter()
     session_id = (
         f"{manifest['gameBuild']}-{process.pid}-"
@@ -518,29 +694,50 @@ def run_capture(
             "gameBuild": manifest["gameBuild"],
             "captureTool": f"frida-audio-runtime-trace/{getattr(frida, '__version__', 'unknown')}",
             "exportFingerprint": manifest["files"]["metadata"]["sha256"],
-            "language": manifest.get("language", ""),
+            "language": manifest.get("language") or None,
             "selectedGameRoot": str(args.game_root.resolve()),
             "expectedModulePath": str(verified["gameAssembly"].resolve()),
-            "expectedModuleSize": verified["gameAssembly"].stat().st_size,
+            "expectedModuleSize": pe_mapped_image_size(verified["gameAssembly"]),
+            "expectedModuleFileSize": verified["gameAssembly"].stat().st_size,
             "expectedModuleSha256": manifest["files"]["gameAssembly"]["sha256"],
             "expectedNativeModulePath": str(verified["akSoundEngine"].resolve())
             if "akSoundEngine" in verified else None,
-            "expectedNativeModuleSize": verified["akSoundEngine"].stat().st_size
+            "expectedNativeModuleSize": pe_mapped_image_size(verified["akSoundEngine"])
+            if "akSoundEngine" in verified else None,
+            "expectedNativeModuleFileSize": verified["akSoundEngine"].stat().st_size
             if "akSoundEngine" in verified else None,
             "expectedNativeModuleSha256": manifest["files"]["akSoundEngine"]["sha256"]
             if "akSoundEngine" in verified else None,
             "evidenceBoundary": manifest["evidenceBoundary"],
         },
     )
-    stop = threading.Event()
     ready = threading.Event()
     ready_payload: dict[str, Any] = {}
     module_facts: dict[str, Any] = {}
+    capture_failures: list[str] = []
+    cleanup_started = False
+    callbacks_closed = False
+    callback_lock = threading.RLock()
+    delivered_agent_diagnostics = 0
     session = None
     script = None
+    stop_attempted = False
+    script_loaded = False
 
-    def on_message(message: dict[str, Any], data: bytes | None) -> None:
+    def late_diagnostic(kind: str, values: dict[str, Any]) -> None:
+        # A queued callback must never lose its failure because handles closed.
+        # The strict audit runs only after this capture process has exited.
+        with writer.diagnostics.open("a", encoding="utf-8", newline="\n") as handle:
+            core.EventWriter._write(handle, {"sessionId": writer.session_id, "kind": kind,
+                                            "utc": core.utc_now(), **values})
+
+    def handle_message(message: dict[str, Any], data: bytes | None) -> None:
+        nonlocal delivered_agent_diagnostics
+        if callbacks_closed:
+            late_diagnostic("late_agent_payload", {"message": message, "dataBytes": len(data or b"")})
+            return
         if message.get("type") == "error":
+            capture_failures.append("agent_error")
             writer.diagnostic("agent_error", {"message": message, "dataBytes": len(data or b"")})
             stop.set()
             return
@@ -557,6 +754,7 @@ def run_capture(
             else:
                 writer.diagnostic("event_kind_missing", {"event": payload["event"]})
         elif channel == "diagnostic" and isinstance(payload.get("diagnostic"), dict):
+            delivered_agent_diagnostics += 1
             values = dict(payload["diagnostic"])
             kind = values.pop("kind", "audio_agent_diagnostic")
             writer.diagnostic(str(kind), values)
@@ -566,12 +764,24 @@ def run_capture(
         else:
             writer.diagnostic("unexpected_agent_payload", {"payload": payload})
 
-    def on_detached(*values: Any) -> None:
-        writer.diagnostic("session_detached", {"values": [str(value) for value in values]})
-        stop.set()
+    def on_message(message: dict[str, Any], data: bytes | None) -> None:
+        with callback_lock:
+            handle_message(message, data)
 
-    previous_sigint = core.install_stop_signal(stop)
+    def on_detached(*values: Any) -> None:
+        with callback_lock:
+            kind = "capture_cleanup_detached" if cleanup_started else "session_detached"
+            details = {"values": [str(value) for value in values]}
+            if callbacks_closed:
+                late_diagnostic(kind, details)
+            else:
+                writer.diagnostic(kind, details)
+            if not cleanup_started:
+                capture_failures.append("session_detached")
+                stop.set()
+
     try:
+        check_setup_stop()
         print(f"Attaching read-only audio hooks to {process.name} (PID {process.pid})...", flush=True)
         try:
             session = device.attach(process.pid)
@@ -583,9 +793,12 @@ def run_capture(
         module_names = [manifest["moduleName"]]
         if manifest.get("nativeHooks"):
             module_names.append(manifest["nativeModuleName"])
-        core.wait_for_modules(session, module_names)
+        core.wait_for_modules(session, module_names, timeout_seconds=args.module_wait_seconds, cancelled=cancelled)
+        check_setup_stop()
         script = session.create_script(agent_source, name="audio-runtime-trace")
         script.on("message", on_message)
+        check_setup_stop()
+        script_loaded = True
         script.load()
         if not ready.wait(15):
             raise RuntimeError("audio hook agent did not report ready within 15 seconds")
@@ -601,7 +814,7 @@ def run_capture(
                 {
                     "error": str(exc),
                     "expectedModulePath": str(verified["gameAssembly"].resolve()),
-                    "expectedModuleSize": verified["gameAssembly"].stat().st_size,
+                    "expectedModuleSize": pe_mapped_image_size(verified["gameAssembly"]),
                     "attachedModulePath": ready_payload.get("modulePath"),
                     "attachedModuleSize": ready_payload.get("moduleSize"),
                 },
@@ -622,46 +835,24 @@ def run_capture(
                     {
                         "error": str(exc),
                         "expectedNativeModulePath": str(verified["akSoundEngine"].resolve()),
-                        "expectedNativeModuleSize": verified["akSoundEngine"].stat().st_size,
+                        "expectedNativeModuleSize": pe_mapped_image_size(verified["akSoundEngine"]),
                         "attachedNativeModulePath": ready_payload.get("nativeModulePath"),
                         "attachedNativeModuleSize": ready_payload.get("nativeModuleSize"),
                     },
                 )
                 raise
         writer.diagnostic("attached_module_verified", module_facts)
+        try:
+            optional_failed, optional_native_failed = validate_hook_readiness(manifest, ready_payload)
+        except RuntimeError as exc:
+            writer.diagnostic("required_audio_hook_failed", {"error": str(exc)})
+            raise
         hooks = ready_payload.get("hooks", {})
-        if not isinstance(hooks, dict):
-            raise RuntimeError("audio hook agent returned an invalid hook status payload")
         native_hooks = ready_payload.get("nativeHooks", {})
-        if not isinstance(native_hooks, dict):
-            raise RuntimeError("audio hook agent returned an invalid native hook status payload")
-        manifest_hooks = {hook["name"]: hook for hook in manifest["hooks"]}
-        required_names = {
-            name
-            for name, hook in manifest_hooks.items()
-            if hook.get("required", name == "AudioAdapter._PostEvent")
-        }
-        failed = {
-            name: hooks.get(name, "missing")
-            for name in sorted(required_names)
-            if hooks.get(name) != "attached"
-        }
-        optional_failed = {
-            name: state
-            for name, state in hooks.items()
-            if state != "attached" and name not in required_names
-        }
-        native_failed = {
-            name: native_hooks.get(name, "missing")
-            for name in (hook["name"] for hook in manifest.get("nativeHooks", []))
-            if native_hooks.get(name) != "attached"
-        }
-        if native_failed:
-            writer.diagnostic("optional_audio_native_hook_failed", {"hooks": native_failed})
+        if optional_native_failed:
+            writer.diagnostic("optional_audio_native_hook_failed", {"hooks": optional_native_failed})
         if optional_failed:
             writer.diagnostic("optional_audio_hook_failed", {"hooks": optional_failed})
-        if failed:
-            raise RuntimeError(f"one or more audio hooks failed to attach: {failed}")
         attached_count = sum(state == "attached" for state in hooks.values())
         native_attached_count = sum(state == "attached" for state in native_hooks.values())
         optional_failure_text = (
@@ -677,28 +868,74 @@ def run_capture(
         )
         deadline = time.monotonic() + args.duration if args.duration is not None else None
         while not stop.wait(0.25):
+            if args.stop_file is not None and args.stop_file.is_file():
+                break
             if deadline is not None and time.monotonic() >= deadline:
                 break
-        writer.event("session_end", module_facts)
+        # Stop at the agent before closing the stream. The receipt counts sent
+        # events; compare with delivered events, rather than assuming no loss.
+        stop_attempted = True
+        module_facts.update(stop_capture_agent(script, writer, capture_failures, lambda: delivered_agent_diagnostics))
+        # Dispose the stopped script before sealing host facts; queued failures
+        # remain durable through the callback barrier and adjacent diagnostics.
+        stopped_script = script
+        script = None
+        stopped_script.unload()
+        with callback_lock:
+            module_facts["captureComplete"] &= not capture_failures
+            writer.event("session_end", module_facts)
+    except BaseException as exc:
+        capture_failures.append("capture_failed")
+        with callback_lock:
+            writer.diagnostic("capture_failed", {"error": str(exc)})
+        raise
     finally:
-        core.restore_stop_signal(previous_sigint)
-        if script is not None:
+        cleanup_started = True
+        # Keep repeated Ctrl+C idempotent until transport cleanup and durable
+        # streams are closed; restoring the default earlier can interrupt them.
+        try:
+            if script is not None:
+                stopped_script = script
+                script = None
+                try:
+                    if script_loaded and not stop_attempted:
+                        stop_attempted = True
+                        try:
+                            facts = stop_capture_agent(stopped_script, writer, capture_failures,
+                                                       lambda: delivered_agent_diagnostics)
+                        except Exception as exc:
+                            capture_failures.append("capture_failure_stop_failed")
+                            with callback_lock:
+                                writer.diagnostic("capture_failure_stop_failed", {"error": str(exc)})
+                        else:
+                            with callback_lock:
+                                writer.diagnostic("capture_failure_stop_receipt", facts)
+                finally:
+                    try:
+                        stopped_script.unload()
+                    except Exception as exc:
+                        capture_failures.append("capture_script_unload_failed")
+                        with callback_lock:
+                            writer.diagnostic("capture_script_unload_failed", {"error": str(exc)})
+        finally:
             try:
-                script.unload()
-            except Exception:
-                pass
-        if session is not None:
-            try:
-                session.detach()
-            except Exception:
-                pass
-        writer.close()
+                if session is not None:
+                    try:
+                        session.detach()
+                    except Exception as exc:
+                        capture_failures.append("capture_session_detach_failed")
+                        with callback_lock:
+                            writer.diagnostic("capture_session_detach_failed", {"error": str(exc)})
+            finally:
+                with callback_lock:
+                    writer.close()
+                    callbacks_closed = True
     print(
         f"Capture stopped: {writer.event_count} audio events, "
         f"{writer.diagnostic_count} diagnostics -> {output}",
         flush=True,
     )
-    return 0
+    return 0 if module_facts.get("captureComplete") is True and not capture_failures else 1
 
 
 def capture(args: argparse.Namespace) -> int:
@@ -709,8 +946,11 @@ def capture(args: argparse.Namespace) -> int:
             else core.resolve_installed_game_data_root().parent
         ).resolve()
         args.game_root = selected_game_root
+        args.output = (args.output or default_output_path()).resolve()
         manifest = load_manifest(args.manifest.resolve())
         verified = core.verify_game_files(selected_game_root, manifest)
+        args.stop_file = validate_stop_file(args.stop_file, [args.manifest, args.agent, args.output,
+            core.diagnostics_path(args.output), *verified.values()])
         validate_hook_ranges(
             manifest,
             verified["gameAssembly"],
@@ -726,6 +966,6 @@ def capture(args: argparse.Namespace) -> int:
             print(f"Audio hook manifest and agent are ready ({len(agent_source):,} rendered bytes).")
             return 0
         return run_capture(args, manifest, agent_source, verified)
-    except (core.CaptureConfigurationError, TimeoutError, RuntimeError, KeyError) as exc:
+    except (core.CaptureConfigurationError, TimeoutError, RuntimeError, KeyError, OSError) as exc:
         print(f"Audio runtime capture failed: {exc}", file=sys.stderr)
         return 1

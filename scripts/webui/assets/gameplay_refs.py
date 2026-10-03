@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from scripts.common import read_json, write_json
+from scripts.game_data.media_resolver import icon_shape_rank
 
 
 SCHEMA_VERSION = "gameplayAssetRefs.v10"
@@ -468,14 +469,7 @@ def _is_squareish(asset: dict[str, Any]) -> bool:
 
 
 def _icon_shape_rank(asset: dict[str, Any]) -> tuple[int, float]:
-    dimensions = _asset_dimensions(asset)
-    if not dimensions:
-        return (0, 0.0)
-    width, height = dimensions
-    ratio = width / height if height else 0
-    shape_rank = 0 if 0.625 <= ratio <= 1.6 else 1
-    aspect_delta = abs(width - height) / max(width, height)
-    return (shape_rank, aspect_delta)
+    return icon_shape_rank(*(_asset_dimensions(asset) or (0, 0)))
 
 
 def _asset_identity(asset: dict[str, Any]) -> str:

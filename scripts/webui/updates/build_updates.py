@@ -45,7 +45,9 @@ any ambiguity keeps the original add/delete entry visible.
 
 Every comparison also writes ``webui/data/updates/characters.json`` through
 ``scripts.webui.updates.characters``, independently of the asset flags and
-also under ``--text-only``.
+also under ``--text-only``. ``scripts.webui.updates.page_records`` publishes
+``story.json``, ``map.json``, ``gameplay.json`` and ``production.json`` beside the feed, with the
+same flag independence and export-only source-record evidence boundary.
 
 Run from the repo root:
     python -m scripts.webui.updates.build_updates
@@ -98,6 +100,7 @@ from scripts.source_paths import (
 )
 from scripts.webui.updates.scanner import ScanConfig, is_export_store_relative_path, scan_export_changes
 from scripts.webui.updates.characters import build_character_updates, comparison_character_catalog_dir
+from scripts.webui.updates.page_records import build_page_updates
 
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
 DEFAULT_EXPORT_ROOT = EXPORT_ROOT
@@ -1859,6 +1862,7 @@ def main(argv: list[str] | None = None) -> int:
         previous_source_root=previous_export_root,
         source_root=export_root,
     )
+    page_updates = build_page_updates(previous_export_root, export_root)
 
     prune_result: dict[str, Any] | None = None
     if prune_requested:
@@ -1871,6 +1875,11 @@ def main(argv: list[str] | None = None) -> int:
 
     write_json(out_path, webui_payload, indent=2, compact=False)
     write_json(characters_out_path, character_updates, indent=2, compact=False)
+    for page, payload in page_updates.items():
+        sidecar_path = out_path.parent / f"{page}.json"
+        write_json(sidecar_path, payload, indent=2, compact=False)
+        summary = payload["totals"] if payload["available"] else payload.get("diagnostics")
+        print(f"[build_updates] {page.title()} changes: {summary}; sidecar: {sidecar_path}")
     write_update_feed_history(webui_payload, state_dir)
 
     totals = webui_payload["gameTotals"]

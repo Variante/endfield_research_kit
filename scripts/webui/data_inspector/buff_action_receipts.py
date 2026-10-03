@@ -1,7 +1,7 @@
 """Publish only authenticated Buff action spans, never a whole BuffData decode.
 
-The optional ``buff-action-receipts`` Data-page dataset projects the selected
-``0x0092`` CreateBuff and ``0x00B4`` FinishBuffAdvanced wrapper fields at
+The optional ``buff-action-receipts`` Data-page dataset projects the eight
+reviewed action wrapper fields from the current v7 receipt report at
 their byte spans in exported BuffData files. ``load_receipt_records``
 publishes only when every check holds:
 
@@ -9,12 +9,14 @@ publishes only when every check holds:
   source identity set and input set equal that report's;
 * the corpus report is complete and publication-eligible, with no failed or
   ambiguous file;
-* both tags' native inputs agree and match the installed
-  ``GameAssembly.dll``, ``global-metadata.dat`` and ``UnityPlayer.dll``;
+* each reviewed tag's domain gate authenticates its own selected native layout
+  and the receipt report agrees with that gate's declared input pins;
 * every Buff source's exported logical bytes still match its recorded length
   and SHA256;
-* each span is the exact whole-action range with contiguous named fields and
-  the recorded member count, spans do not overlap, and the report summary
+* each span is independently certified by the corpus and replayed by its selected
+  codec; names, kinds, ranges and structural fields agree with that replay;
+  nested spans may contain one another, crossing
+  or duplicate spans are refused, and the report summary
   matches the recounted spans.
 
 Any failure raises, and the builder marks the dataset unavailable without
@@ -34,13 +36,15 @@ from pathlib import Path
 import re
 from typing import Any
 
-from scripts.common import canonical_json_sha256, check_installed_native_inputs, sha256_file_upper
+from scripts.common import canonical_json_sha256, resolve_installed_native_inputs
+from scripts.game_data.memorypack.buff_action_receipts import (
+    certified_action_spans, replay_action_receipt, validate_selected_native,
+)
 from scripts.webui.data_inspector.contract import source_descriptor
 
 
 _SOURCE = re.compile(r"^Data/Json/BuffData/[^/\\]+[.]json$")
 _HEX = re.compile(r"^[0-9A-Fa-f]{64}$")
-_MEMBERS = {0x0092: 19, 0x00B4: 13}
 _BOUNDARY = (
     "Authenticated BuffData logical bytes and selected native contracts establish only "
     "the listed action spans and their wrapper field names. Nested fields remain "
@@ -61,28 +65,30 @@ def _read(path: Path) -> tuple[bytes, dict[str, Any]]:
     return raw, value
 
 
-def _native_current(inputs_by_tag: dict[str, Any]) -> dict[str, str]:
-    _require(set(inputs_by_tag) == {"0x0092", "0x00B4"}, "native-tag-set")
-    values = list(inputs_by_tag.values())
-    expected = values[0]
-    _require(all(value == expected for value in values), "native-input-disagreement")
-    _require(isinstance(expected, dict) and set(expected) == {
-        "GameAssembly.dll", "global-metadata.dat", "UnityPlayer.dll",
-    }, "native-input-shape")
-    _require(all(isinstance(value, str) and _HEX.fullmatch(value)
-                 for value in expected.values()), "native-input-hash-shape")
-    gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"],
-    )
-    _require(gate.validated, f"native-{gate.status}: {gate.detail}")
-    unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
-    _require(unityplayer.is_file(), "native-UnityPlayer-missing")
-    _require(sha256_file_upper(unityplayer) == expected["UnityPlayer.dll"].upper(),
-             "native-UnityPlayer-mismatch")
-    return {key: value.upper() for key, value in expected.items()}
+def _native_current(
+    inputs_by_tag: dict[str, Any],
+) -> tuple[dict[int, dict[str, Any]], dict[str, str]]:
+    """Revalidate every codec and compare report pins per selected route."""
+    _assembly, metadata = resolve_installed_native_inputs()
+    validations = validate_selected_native(metadata.resolve().parents[2])
+    _require(isinstance(inputs_by_tag, dict)
+             and set(inputs_by_tag) == {f"0x{tag:04X}" for tag in validations}, "native-tag-set")
+    joined: dict[str, str] = {}
+    for tag, validation in validations.items():
+        reported = inputs_by_tag[f"0x{tag:04X}"]
+        _require(isinstance(reported, dict)
+                 and all(isinstance(value, str) and _HEX.fullmatch(value)
+                         for value in reported.values()), "native-input-hash-shape")
+        reported = {name: value.upper() for name, value in reported.items()}
+        expected = {name: value.upper() for name, value in validation["nativeInputs"].items()}
+        _require(reported == expected, f"native-input-disagreement:0x{tag:04X}")
+        for name, value in expected.items():
+            _require(name not in joined or joined[name] == value, "native-input-disagreement")
+            joined[name] = value
+    return validations, joined
 
 
-def _source_rows(buff_report: dict[str, Any], export_root: Path) -> dict[str, str]:
+def _source_rows(buff_report: dict[str, Any], export_root: Path) -> dict[str, dict[str, Any]]:
     rows = buff_report.get("files")
     summary = buff_report.get("summary") or {}
     _require(
@@ -103,7 +109,7 @@ def _source_rows(buff_report: dict[str, Any], export_root: Path) -> dict[str, st
     ]
     _require(canonical_json_sha256(identity_rows) == buff_report.get("identitySetSha256"),
              "buff-identity-set-drift")
-    result: dict[str, str] = {}
+    result: dict[str, dict[str, Any]] = {}
     for row in rows:
         identity = row.get("identity") or {}
         source = identity.get("fileName")
@@ -123,34 +129,52 @@ def _source_rows(buff_report: dict[str, Any], export_root: Path) -> dict[str, st
         path = export_root / "game" / source.removeprefix("Data/")
         data = path.read_bytes()
         _require(len(data) == identity["length"]
-                 and hashlib.sha256(data).hexdigest().upper() == digest.upper(),
+                 and hashlib.sha256(data).hexdigest().upper() == digest.upper()
+                 and hashlib.md5(data).hexdigest().upper()
+                 == identity.get("recomputedFileDataMd5", "").upper(),
                  f"buff-source-bytes:{source}")
-        result[source] = digest.upper()
+        result[source] = {"digest": digest.upper(), "row": row}
     return result
 
 
-def _action_projection(action: dict[str, Any], source: str, digest: str,
-                       source_length: int) -> dict[str, Any]:
+def _action_projection(
+    action: dict[str, Any], source: str, digest: str, data: bytes,
+    native_validations: dict[int, dict[str, Any]], certified_spans: list[dict[str, int]],
+) -> dict[str, Any]:
+    _require(isinstance(action, dict), f"action-shape:{source}")
     tag = action.get("tag")
     start, end = action.get("start"), action.get("end")
     fields = action.get("namedFields")
     _require(
-        type(tag) is int and tag in _MEMBERS
+        type(tag) is int and tag in native_validations
         and type(start) is int and type(end) is int
-        and 0 <= start < end <= source_length
+        and 0 <= start < end <= len(data)
         and action.get("source") == source
         and action.get("logicalSha256", "").upper() == digest
         and action.get("status") == "named-wrapper-exact-span"
         and action.get("wholeActionByteSpanExact") is True
         and action.get("recursiveNamedSchemaExact") is False
         and action.get("wholeBuffDataExact") is False
-        and action.get("memberCount") == _MEMBERS[tag]
-        and isinstance(action.get("typeName"), str) and action["typeName"]
-        and isinstance(fields, list) and len(fields) == _MEMBERS[tag],
+        and type(action.get("memberCount")) is int
+        and 0 < action["memberCount"] < 250
+        and isinstance(fields, list) and len(fields) == action["memberCount"],
         f"action-boundary:{source}:{tag}",
     )
+    replayed = replay_action_receipt(
+        data, source=source, logical_sha256=digest, start=start, end=end, tag=tag,
+        native_validation=native_validations[tag], certified_spans=certified_spans,
+    )
+    for key in ("schema", "source", "logicalSha256", "status", "tag", "typeName",
+                "memberCount", "start", "end", "namedFields", "nestedStructuralFields",
+                "wholeActionByteSpanExact", "recursiveNamedSchemaExact", "wholeBuffDataExact"):
+        _require(action.get(key) == replayed.get(key), f"action-replay-drift:{source}:{tag}:{key}")
+    fields = replayed["namedFields"]
     projected_fields = []
-    cursor = start + 2  # one-byte union tag followed by the wrapper header byte
+    union_header = bytes([tag]) if tag < 250 else b"\xfa" + tag.to_bytes(2, "little")
+    header = union_header + bytes([replayed["memberCount"]])
+    _require(data[start:start + len(header)] == header,
+             f"action-source-header:{source}:{tag}")
+    cursor = start + len(header)
     for field in fields:
         _require(
             isinstance(field, dict)
@@ -167,11 +191,11 @@ def _action_projection(action: dict[str, Any], source: str, digest: str,
         cursor = field["end"]
     _require(cursor == end, f"action-field-end:{source}:{tag}")
     return {
-        "tag": tag, "typeName": action["typeName"],
+        "tag": tag, "typeName": replayed["typeName"],
         "startOffset": start, "endOffset": end,
         "memberCount": len(projected_fields),
         "namedFields": projected_fields,
-        "nestedStructuralFields": action.get("nestedStructuralFields") or [],
+        "nestedStructuralFields": replayed["nestedStructuralFields"],
         "wholeActionByteSpanExact": True,
         "recursiveNamedSchemaExact": False,
         "wholeBuffDataExact": False,
@@ -186,7 +210,7 @@ def load_receipt_records(
     receipt_raw, report = _read(receipt_path)
     buff_raw, buff_report = _read(buff_report_path)
     _require(
-        report.get("schema") == "endfield.buff-action-receipt-corpus.v1"
+        report.get("schema") == "endfield.buff-action-receipt-corpus.v7"
         and report.get("status") == "complete"
         and report.get("publicationEligible") is True
         and report.get("wholeBuffDataExact") is False
@@ -196,7 +220,7 @@ def load_receipt_records(
         and Path(report.get("exportRoot", "")).resolve() == export_root,
         "receipt-report-provenance",
     )
-    native_inputs = _native_current(report.get("nativeInputsByTag") or {})
+    native_validations, native_inputs = _native_current(report.get("nativeInputsByTag") or {})
     source_hashes = _source_rows(buff_report, export_root)
     rows = report.get("files")
     _require(isinstance(rows, list), "receipt-file-list")
@@ -209,17 +233,38 @@ def load_receipt_records(
         _require(isinstance(source, str) and source in source_hashes and source not in seen,
                  f"receipt-source:{source}")
         seen.add(source)
-        digest = source_hashes[source]
+        digest = source_hashes[source]["digest"]
         _require(row.get("logicalSha256", "").upper() == digest,
                  f"receipt-source-hash:{source}")
         path = export_root / "game" / source.removeprefix("Data/")
         actions = row.get("actions")
         _require(isinstance(actions, list) and actions, f"receipt-actions:{source}")
-        spans = [_action_projection(action, source, digest, path.stat().st_size)
+        data = path.read_bytes()
+        _require(hashlib.sha256(data).hexdigest().upper() == digest,
+                 f"receipt-source-changed:{source}")
+        corpus_row = source_hashes[source]["row"]
+        candidates = [candidate for candidate in corpus_row.get("candidates", [])
+                      if isinstance(candidate, dict) and candidate.get("readerAcceptedThroughEof") is True]
+        _require(corpus_row.get("candidateCount") == 1 and len(candidates) == 1,
+                 f"receipt-corpus-candidate:{source}")
+        candidate = candidates[0]
+        _require(all(isinstance(candidate.get(key), dict)
+                     and candidate[key].get("status") == "supported-prefix"
+                     for key in ("currentEventPrefix", "currentRootContinuation"))
+                 and isinstance(candidate.get("namedSchemaReceipt"), dict),
+                 f"receipt-corpus-action-frame:{source}")
+        certified_spans = certified_action_spans(candidate, source=source, length=len(data))
+        spans = [_action_projection(action, source, digest, data, native_validations, certified_spans)
                  for action in actions]
         intervals = sorted((span["startOffset"], span["endOffset"]) for span in spans)
-        _require(all(left[1] <= right[0] for left, right in zip(intervals, intervals[1:])),
-                 f"receipt-overlap:{source}")
+        _require(len(set(intervals)) == len(intervals), f"receipt-duplicate-span:{source}")
+        stack: list[tuple[int, int]] = []
+        for start, end in sorted(intervals, key=lambda interval: (interval[0], -interval[1])):
+            while stack and start >= stack[-1][1]:
+                stack.pop()
+            _require(not stack or (stack[-1][0] < start and end <= stack[-1][1]),
+                     f"receipt-crossing-span:{source}")
+            stack.append((start, end))
         for tag in {span["tag"] for span in spans}:
             files_by_tag[f"0x{tag:04X}"] += 1
         for span in spans:
@@ -246,7 +291,7 @@ def load_receipt_records(
     summary = report.get("summary") or {}
     by_tag = summary.get("byTag") or {}
     _require(summary.get("filesWithNamedActionReceipts") == len(records)
-             and set(by_tag) == {"0x0092", "0x00B4"}
+             and set(by_tag) == {f"0x{tag:04X}" for tag in native_validations}
              and all(by_tag[tag].get("actionSpans") == counts[tag]
                      and by_tag[tag].get("files") == files_by_tag[tag]
                      for tag in by_tag), "receipt-summary-drift")
@@ -256,6 +301,6 @@ def load_receipt_records(
         "sourceIdentitySetSha256": buff_report["identitySetSha256"],
         "inputSetSha256": buff_report["inputSetSha256"],
         "nativeInputs": native_inputs,
-        "publisherRevision": 1,
+        "publisherRevision": 3,
     }
     return records, signature

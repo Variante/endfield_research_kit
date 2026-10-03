@@ -19,7 +19,9 @@ in the generated Audio stats and Event summaries. A verified runtime trace
 bundle (``build_audio --runtime-trace-bundle``) is projected onto Event/media rows only
 when its schema, language and GameAssembly path/size/SHA-256 match; it
 records observed managed request boundaries and exact Event-to-media
-relations, never a selected Wwise branch, decoded leaf or audibility.
+relations, never a selected Wwise branch, decoded leaf or audibility. Optional
+anonymous source summaries are replayed against exact saved inputs and the
+explicitly selected native pair, then published outside Event/media rows.
 """
 
 from __future__ import annotations
@@ -51,6 +53,7 @@ from scripts.source_paths import ExportLayout
 
 from scripts.common import sha256_file as file_sha256
 from scripts.webui.audio.semantics import conversation_sidecar
+from scripts.webui.audio.semantics import package_catalog
 from scripts.webui.audio.semantics import native_callsite_rederivation
 from scripts.webui.audio.semantics.entity_contexts import build_custom_footstep_model, collect_ability_voice_trigger_contexts, collect_char_interact_audio_semantics, collect_gameplay_contexts, collect_patrol_sub_action_audio_semantics, collect_spawner_pre_warn_semantics
 from scripts.webui.audio.semantics.levelsequence import build_levelsequence_audio_contexts, collect_levelsequence_play_actions
@@ -76,6 +79,8 @@ from scripts.webui.audio.semantics import (
     rtpc_alignment,
     runtime_observations,
     scene_backgrounds,
+    source_provider,
+    source_owner_capture,
     table_contexts,
     build_contracts,
     voice_requests,
@@ -917,6 +922,50 @@ def _compact_levelscript_control_rows(rows: Any) -> list[dict[str, Any]]:
     return output
 
 
+def refresh_native_entry_data(*, language: str, webui_root: Path, session: Path,
+                              gameassembly: Path, metadata: Path, package_index: Path | None = None,
+                              decode_witness: Path | None = None) -> dict:
+    """Atomically refresh only the independent native-entry publication."""
+    return _refresh_independent_child(language, webui_root, 'nativeEntryObservations',
+        lambda _current: source_owner_capture.audit(session,gameassembly=gameassembly,metadata=metadata,
+                                          package_index=package_index,decode_witness=decode_witness))
+
+
+def refresh_package_catalog_data(*, language: str, webui_root: Path, expected_input_set_sha256: str) -> dict:
+    """Publish a corpus-wide static package inventory without capture or decoding."""
+    return _refresh_independent_child(language, webui_root, 'packageCatalog',
+        lambda _current: package_catalog.collect(expected_input_set_sha256=expected_input_set_sha256))
+
+
+def refresh_runtime_source_data(*, language: str, webui_root: Path, bundle: Path,
+                                gameassembly: Path, metadata: Path) -> dict:
+    """Re-audit the published bundle's native source child without relinking Audio."""
+    return _refresh_independent_child(language, webui_root, 'runtimeObservations',
+        lambda current: runtime_observations.refresh_native_source_observations(
+            current, bundle, gameassembly=gameassembly, metadata=metadata))
+
+
+def _refresh_independent_child(language, webui_root, key, collect):
+    path=webui_root/'data'/'lang'/language.upper()/'audio'/'index.json'
+    original=path.read_bytes()
+    payload=json.loads(original)
+    if not isinstance(payload,dict) or payload.get('schemaVersion')!=AUDIO_SEMANTIC_SCHEMA_VERSION or payload.get('language')!=language.upper():
+        raise ValueError(f'current Audio publication schema/language required: {path}')
+    report=collect(payload.get(key))
+    payload[key]=report
+    updated=(json.dumps(payload,ensure_ascii=False,indent=2)+'\n').encode('utf-8')
+    handle,temporary=tempfile.mkstemp(prefix='.audio-evidence-',suffix='.partial',dir=path.parent)
+    staged=Path(temporary)
+    try:
+        with os.fdopen(handle,'wb') as output:output.write(updated)
+        if path.read_bytes()!=original:
+            raise ValueError(f'Audio index changed during {key} audit; publication withheld: {path}')
+        os.replace(staged,path)
+    finally:
+        staged.unlink(missing_ok=True)
+    return report
+
+
 def build_audio_semantic_data(
     audio_index: dict[str, Any],
     *,
@@ -927,8 +976,15 @@ def build_audio_semantic_data(
     gameassembly_path: Path | None = None,
     cutscene_events: dict[str, list[str]] | None = None,
     runtime_trace_bundle: Path | None = None,
+    native_entry_session: Path | None = None,
+    native_entry_package_index: Path | None = None,
+    native_entry_decode_witness: Path | None = None,
 ) -> dict[str, Any]:
     language = language.upper()
+    published_package_catalog = package_catalog.rebuild_published(
+        webui_root / 'data' / 'lang' / language / 'audio' / 'index.json',
+        language=language, index_schema=AUDIO_SEMANTIC_SCHEMA_VERSION,
+    )
     native_context = native_evidence.validate_native_audio_evidence(
         metadata_path,
         gameassembly_path,
@@ -963,6 +1019,14 @@ def build_audio_semantic_data(
         )
     runtime_model = native_callsite_rederivation.overlay_runtime_model(
         build_runtime_model(metadata_path, export_root), native_context,
+    )
+    static_provider_preparation = source_provider.build_static_provider_preparation(
+        gameassembly=gameassembly_path, metadata=metadata_path,
+    )
+    native_entry_observations = (
+        source_owner_capture.audit(native_entry_session, gameassembly=gameassembly_path, metadata=metadata_path,
+                                   package_index=native_entry_package_index, decode_witness=native_entry_decode_witness)
+        if native_entry_session is not None else {"status": "notRequested", "claimsAvailable": False}
     )
     current_wwise_event_hashes = {
         int(row.get("eventHash")) & 0xFFFFFFFF
@@ -1292,6 +1356,7 @@ def build_audio_semantic_data(
             media,
             runtime_trace_bundle,
             expected_language=language,
+            native_context=native_context,
         )
     )
     character_namespace_gameplay = (
@@ -2149,6 +2214,9 @@ def build_audio_semantic_data(
         },
         "runtimeModel": runtime_model,
         "runtimeObservations": runtime_observation_projection,
+        "staticProviderPreparation": static_provider_preparation,
+        "nativeEntryObservations": native_entry_observations,
+        "packageCatalog": published_package_catalog,
         "evidenceBoundary": {
             "decodedMedia": "A decoded FLAC/WAV/WEM is a source media object, not proof that it played.",
             "eventMedia": "Possible media leaves use typed Wwise v150 Event -> Action -> reciprocal Children -> Sound/MusicTrack AkBankSourceData edges. Ordinary Codec sources may join decoded media; External Source codec and synthesized Source-plugin records remain non-media playback sources. Play roots and random/sequence/switch/layer relations are preserved; runtime selection and source instantiation are not evaluated. Unsupported plugins, music nodes, and unparsed child structures fail closed.",

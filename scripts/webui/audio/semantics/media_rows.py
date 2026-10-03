@@ -23,7 +23,9 @@ shape is a durable contract; row counts are per build:
   silence, or proof of an effect-free path.
 - Direct NodeBase effect slots (Event ``postProcessSummary.effectNodes``) are
   kept apart from output-bus effects, each with effect id and plug-in, node,
-  slot, authored parameter summary and slot flags. The compact serialized
+  slot, authored parameter summary and slot flags. Anonymous selected-native
+  input reads stay in lazy direct-effect details with structuralOnly status;
+  their representation views do not gain control names. The compact serialized
   effect chain lists direct-node slots first, then each leaf-to-root bus path
   in serialized path and slot order -- an authored join, not observed DSP order.
 - Media-edge types and selection paths (``directSound``, ``layerChild``,
@@ -51,6 +53,7 @@ from __future__ import annotations
 import json
 from scripts.webui.audio.semantics import event_projection
 from scripts.webui.audio.semantics import managed_literals
+from scripts.webui.search import linked_file_search_text
 from collections import defaultdict
 from typing import Any, Iterable
 
@@ -58,6 +61,7 @@ MEDIA_DETAIL_FIELDS = (
     "animationCallbackClipResolutions",
     "postProcessProperties",
     "postProcessEffectChain",
+    "postProcessDirectEffects",
     "postProcessBusControls",
     "postProcessAuxSends",
     "postProcessRanges",
@@ -75,6 +79,7 @@ def split_media_row(row: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any]
     if not detail_row:
         return dict(row), {}
     summary_row = {key: value for key, value in row.items() if key not in detail_row}
+    summary_row["linkedFileSearch"] = linked_file_search_text(row)
     detail_row["id"] = row.get("id")
     return summary_row, detail_row
 
@@ -256,6 +261,17 @@ def _media_post_process_routes(
                             "effectRendered": slot.get("effectRendered"),
                             "resolutionStatus": slot.get("resolutionStatus"),
                         }
+                        # Anonymous native read rows belong to lazy media
+                        # details; named parameterValues are not reconstructed.
+                        for key in (
+                            "parameterByteLength", "parameterSha256",
+                            "parameterNativeEvidenceStatus", "parameterNativeReadBytes",
+                            "parameterNativeReadParserStatus", "parameterNativeReads",
+                            "parameterNativeReadDiagnostic", "parameterNativeUnreadByteLength",
+                            "parameterNativeReadEvidenceBoundary", "parameterNativeReadSemanticBoundary",
+                        ):
+                            if slot.get(key) not in (None, "", []):
+                                effect_row[key] = slot[key]
                         effect_row = {
                             key: value for key, value in effect_row.items()
                             if value not in (None, "", [])

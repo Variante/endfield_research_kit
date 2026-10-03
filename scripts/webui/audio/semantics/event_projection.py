@@ -230,7 +230,7 @@ def compact_media(entry: dict[str, Any]) -> dict[str, Any]:
                 key: row[key]
                 for key in (
                     "rootActionIds", "soundObjectCount", "soundObjectIds", "relationTypes",
-                    "musicTrackObjectCount", "selectionPaths", "bankId", "bankPackage",
+                    "musicTrackObjectCount", "selectionPaths", "bankId", "bank", "bankPackage",
                     "sourceKinds", "pluginIds", "pluginNames", "streamTypes", "sourceBits",
                 )
                 if row.get(key) not in (None, "", [])
@@ -450,22 +450,57 @@ def _selector_candidate_media_id(candidate: dict[str, Any]) -> int | None:
     return _selector_int(candidate.get("mediaId") or candidate.get("id"))
 
 
-def _selector_direct_media_ids(
+def _selector_package_path(value: Any) -> str | None:
+    """A complete stored package scope, never a basename-only identity."""
+    if not isinstance(value, str) or not value or value.strip() != value:
+        return None
+    normalized = value.replace("\\", "/")
+    parts = normalized.split("/")
+    if len(parts) < 2 or any(part in ("", ".", "..") for part in parts) or not normalized.lower().endswith(".pck"):
+        return None
+    return normalized
+
+
+def _selector_package_scopes(
+    evidence_rows: Iterable[dict[str, Any]],
+) -> tuple[dict[tuple[int, str], set[str]], set[int]]:
+    """Resolve old basenames only inside the complete surrounding Event evidence."""
+    scopes: dict[tuple[int, str], set[str]] = defaultdict(set)
+    incomplete: set[int] = set()
+    for evidence in evidence_rows:
+        bank_id = _selector_bank_id(evidence.get("bankId"))
+        if bank_id is None:
+            continue
+        package = _selector_package_path(evidence.get("bank"))
+        if package is None:
+            incomplete.add(bank_id)
+        else:
+            scopes[(bank_id, PurePosixPath(package).name)].add(package)
+    return scopes, incomplete
+
+
+def _selector_direct_media_join(
     child_ids: Iterable[Any],
     media_candidates: Iterable[dict[str, Any]],
     selector_bank_id: int | None,
-) -> list[int]:
-    """Join child IDs to media only through exact ``soundObjectIds`` evidence.
+    selector_bank: Any,
+    package_scopes: dict[tuple[int, str], set[str]],
+    incomplete_scopes: set[int],
+) -> dict[str, Any]:
+    """Join children through Sound IDs in the same full package and bank ID.
 
     A child that is itself a container intentionally has no recursive closure
     here.  Its possible descendants remain unresolved until a direct Sound
-    object edge is present in this Event's media evidence.
+    object edge is present in this Event's media evidence. Legacy basenames
+    resolve only to one full scope in the surrounding Event bank evidence.
+    Missing or ambiguous identities retain candidate IDs, without a direct join.
     """
 
     children = set(_selector_ids(child_ids))
-    if not children or selector_bank_id is None:
-        return []
     direct: set[int] = set()
+    unresolved: set[int] = set()
+    reasons: Counter[str] = Counter()
+    selector_package = _selector_package_path(selector_bank)
     for candidate in media_candidates:
         if not isinstance(candidate, dict):
             continue
@@ -475,14 +510,43 @@ def _selector_direct_media_ids(
         for media_evidence in candidate.get("wwiseMediaEvidence") or ():
             if not isinstance(media_evidence, dict):
                 continue
-            if _selector_bank_id(media_evidence.get("bankId")) != selector_bank_id:
+            media_bank_id = _selector_bank_id(media_evidence.get("bankId"))
+            if media_bank_id is not None and selector_bank_id is not None and media_bank_id != selector_bank_id:
                 continue
-            if children.intersection(_selector_media_sound_object_ids({
+            if not children.intersection(_selector_media_sound_object_ids({
                 "wwiseMediaEvidence": [media_evidence],
             })):
+                continue
+            reason = ""
+            package = _selector_package_path(media_evidence.get("bank"))
+            if selector_bank_id is None or selector_package is None:
+                reason = "selectorPackageIdentityUnavailable"
+            elif media_bank_id is None:
+                reason = "mediaBankIdentityUnavailable"
+            elif media_evidence.get("bank") not in (None, "") and package is None:
+                reason = "mediaPackageIdentityInvalid"
+            elif package is None:
+                basename = media_evidence.get("bankPackage")
+                matches = package_scopes.get((selector_bank_id, basename), set()) if isinstance(basename, str) else set()
+                if selector_bank_id in incomplete_scopes:
+                    reason = "legacyPackageScopeIncomplete"
+                elif len(matches) == 1:
+                    package = next(iter(matches))
+                else:
+                    reason = "legacyPackageScopeAmbiguous" if len(matches) > 1 else "mediaPackageIdentityUnavailable"
+            if reason:
+                unresolved.add(media_id)
+                reasons[reason] += 1
+            elif package == selector_package:
                 direct.add(media_id)
-                break
-    return sorted(direct)
+            else:
+                reasons["differentPackage"] += 1
+    unresolved.difference_update(direct)
+    return {"directMediaIds": sorted(direct), "candidateMediaIds": sorted(unresolved),
+            "status": "partiallyResolvedPackageIdentity" if unresolved and direct else
+                      "unresolvedPackageIdentity" if unresolved else
+                      "exactSamePackageSoundObjectJoin" if direct else "noSamePackageSoundObjectJoin",
+            "diagnostics": dict(sorted(reasons.items()))}
 
 
 def _selector_array(value: Any) -> list[Any] | None:
@@ -554,6 +618,8 @@ def selector_branch_projection(
     evidence_rows: Iterable[dict[str, Any]],
     media_candidates: Iterable[dict[str, Any]],
     selector_groups: Iterable[dict[str, Any]] | None = None,
+    *,
+    package_scope_index: tuple[dict[tuple[int, str], set[str]], set[int]] | None = None,
 ) -> list[dict[str, Any]]:
     """Project the coherent, non-recursive subset of v150 type-6 selectors.
 
@@ -564,14 +630,18 @@ def selector_branch_projection(
     Group and value ids join the selector catalog (``build_contracts``: the
     native-backed voice identity, surface material and local/remote routing
     roles plus the current-metadata music State groups); unmatched ids stay
-    numeric. Package child ids reach decoded media only through exact same-bank
-    ``soundObjectIds`` evidence; malformed or cross-bank structures stay
+    numeric. Package child ids reach decoded media only through same-package,
+    same-bank ``soundObjectIds`` evidence; malformed or cross-bank structures stay
     unresolved and fail closed. Published only on lazy Event-detail records as
     ``selectorBranches``.
     """
 
     catalog = _selector_group_catalog(selector_groups)
     candidates = [row for row in media_candidates if isinstance(row, dict)]
+    evidence_rows = [row for row in evidence_rows if isinstance(row, dict)]
+    package_scopes, incomplete_scopes = (
+        package_scope_index if package_scope_index is not None else _selector_package_scopes(evidence_rows)
+    )
     projected: list[dict[str, Any]] = []
     for evidence in evidence_rows:
         if not isinstance(evidence, dict):
@@ -659,7 +729,11 @@ def selector_branch_projection(
                     outside = set(ownership["mappedChildIdsOutsideChildren"])
                     mapped = bool(child_ids) and not bool(outside.intersection(child_ids))
                     unmapped = not bool(child_ids)
-                    direct_media_ids = _selector_direct_media_ids(child_ids, candidates, _selector_bank_id(raw_bank_id))
+                    media_join = _selector_direct_media_join(
+                        child_ids, candidates, _selector_bank_id(raw_bank_id), bank,
+                        package_scopes, incomplete_scopes,
+                    )
+                    direct_media_ids = media_join["directMediaIds"]
                     package: dict[str, Any] = {
                         "packageIndex": raw_package.get("packageIndex"),
                         "valueId": value_id,
@@ -689,10 +763,14 @@ def selector_branch_projection(
                             "reciprocalChildMappingAbsent" if unmapped else "reciprocalChildMappingPresent"
                         ),
                         "directMediaIds": direct_media_ids,
+                        "unresolvedMediaCandidateIds": media_join["candidateMediaIds"],
+                        "mediaPackageJoinStatus": media_join["status"],
+                        "mediaPackageJoinDiagnostics": media_join["diagnostics"],
                         "mediaStatus": (
                             "directMediaExactSoundObjectJoin"
                             if direct_media_ids
-                            else "descendantMediaUnresolved"
+                            else "mediaPackageIdentityUnresolved"
+                            if media_join["candidateMediaIds"] else "descendantMediaUnresolved"
                         ),
                     }
                     # Keep empty child/media arrays: an authored default with
@@ -1590,6 +1668,13 @@ def build_event_rows(
 
     evidence_by_event: dict[str, list[dict[str, Any]]] = defaultdict(list)
     bank_rows: dict[tuple[str, int], dict[str, Any]] = {}
+    # Individual projections below receive one detailed bank row. Resolve old
+    # basenames against the complete source bank evidence first, including
+    # compact inventory rows; a one-row view would hide same-basename variants.
+    package_scope_index = _selector_package_scopes(
+        row for key in ("eventEvidence", "wwiseEventInventory")
+        for row in audio_index.get(key) or [] if isinstance(row, dict)
+    )
     for evidence in audio_index.get("eventEvidence") or []:
         if not isinstance(evidence, dict):
             continue
@@ -1641,7 +1726,8 @@ def build_event_rows(
         # is promoted below after all evidence rows for the Event are merged;
         # the event summary remains governed by event_summary's field allowlist.
         compact_evidence["_selectorBranches"] = selector_branch_projection(
-            [evidence], candidates.get(key, []), selector_groups
+            [evidence], candidates.get(key, []), selector_groups,
+            package_scope_index=package_scope_index,
         )
         evidence_by_event[key].append(compact_evidence)
         bank_name = str(evidence.get("bank") or "")
@@ -1903,6 +1989,7 @@ def build_event_rows(
                     "rootActionIds": root_action_ids,
                     "relationTypes": relation_types,
                     "bankId": inventory.get("bankId"),
+                    "bank": inventory.get("bank"),
                     "bankPackage": PurePosixPath(str(inventory.get("bank") or "").replace("\\", "/")).name,
                 }],
             })
