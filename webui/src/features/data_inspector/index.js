@@ -33,7 +33,7 @@
 //     `bytesConsumed` quoted in facts is not a consumption claim. Payload
 //     sniffing for a framing status survives only for datasets published
 //     before `payloadKind` existed. No dataset id is hardcoded.
-//   * For a value-only reader the header shows a fully consumed file only when
+//   * For a value-only reader the header shows a cursor at EOF only when
 //     facts.wholeFileCursorExact is true and bytesConsumed equals the source
 //     size. A facts `evidenceBoundary` is labelled as a publisher boundary,
 //     never a decoder claim; a decoder's own payload boundary wins when both
@@ -113,9 +113,9 @@
   // Field names are the decoder's own identifiers, so they are shown verbatim in
   // every locale. Renaming or translating them would make a row unsearchable
   // against the source, the contract JSON, and the reader that produced it.
-  function fieldLabel(key) {
+  function fieldLabel(key, isArrayIndex = false) {
     const raw = String(key ?? "");
-    return /^\d+$/.test(raw) ? `#${Number(raw) + 1}` : raw;
+    return isArrayIndex ? `#${Number(raw) + 1}` : raw;
   }
 
   function statusLabel(value) {
@@ -180,7 +180,8 @@
   }
 
   function buildSearchText(entry) {
-    return [entry.id, entry.title, entry.status, entry.summary, entry.sourcePath, entry._folder,
+    return [window.WebUI.linkedFileSearchText(entry), entry.linkedFileSearch,
+      entry.id, entry.title, entry.status, entry.summary, entry.sourcePath, entry._folder,
       ...(entry.tags || []), ...(entry.searchTerms || [])]
       .join("\n").toLocaleLowerCase();
   }
@@ -523,7 +524,7 @@
   // their declared order and numbered), then whatever framing metadata the
   // decoder published beside them.
   function childEntries(value, key, parent) {
-    if (Array.isArray(value)) return value.map((item, index) => ({ key: String(index), value: item }));
+    if (Array.isArray(value)) return value.map((item, index) => ({ key: String(index), value: item, isArrayIndex: true }));
     const order = declaredOrderOf(value, key, parent);
     const keys = Object.keys(value);
     if (!order) return keys.map((name) => ({ key: name, value: value[name] }));
@@ -587,7 +588,7 @@
   }
 
   function keyHtml(entry) {
-    return `<span class="data-inspector-key">${esc(fieldLabel(entry.key))}</span>`;
+    return `<span class="data-inspector-key">${esc(fieldLabel(entry.key, entry.isArrayIndex))}</span>`;
   }
 
   function metaMarker(entry) {
@@ -698,7 +699,7 @@
   // ---- search over the structure ------------------------------------------
 
   function matchesNode(entry, path, regex) {
-    if (regex.test(path) || regex.test(String(entry.key)) || regex.test(fieldLabel(entry.key))) return true;
+    if (regex.test(path) || regex.test(String(entry.key)) || regex.test(fieldLabel(entry.key, entry.isArrayIndex))) return true;
     const value = entry.value;
     if (value === MISSING || value === null || typeof value === "object") return false;
     return regex.test(String(value));
@@ -1187,13 +1188,13 @@
       : null;
     const consumed = readerConsumed ?? publisherConsumed;
     if (source.bytes !== undefined) {
-      // One size chip: a reader that consumed the whole file is worth stating,
+      // One size chip: a reader cursor at EOF is worth stating,
       // but not as a second chip holding the same number.
       const whole = consumed !== null && consumed === Number(source.bytes);
       chips.push({
         cls: "is-bytes",
         text: whole
-          ? `${formatBytes(source.bytes)} · ${ui("fully consumed", "全部读取")}`
+          ? `${formatBytes(source.bytes)} · ${ui("cursor at EOF", "游标到达文件末尾")}`
           : formatBytes(source.bytes),
       });
       if (consumed !== null && !whole) {
@@ -1225,6 +1226,23 @@
     return `<p class="data-inspector-boundary"><span>${esc(label)}</span>${esc(boundary)}</p>`;
   }
 
+  function canonicalSkillEvidenceHtml(record) {
+    const proof = record.facts?.canonicalRootEvidence;
+    if (!proof || typeof proof.storedFrameExact !== "boolean"
+        || proof.namedSchemaStatus !== "unproved") return "";
+    const framing = proof.storedFrameExact
+      ? ui("Complete stored frame through EOF", "完整存储结构已读至文件末尾")
+      : ui("Stored frame remains partial", "存储结构仍有未解析部分");
+    return `<section class="data-inspector-section data-inspector-skill-evidence">
+      <h3>${esc(ui("Stored Skill evidence", "技能存储结构证据"))}</h3>
+      <p>${esc(framing)} · ${esc(ui("Nested field naming remains unproved", "嵌套字段的完整命名仍未证实"))}</p>
+      <p class="data-inspector-description">${esc(ui(
+        "These source-matched framing facts are separate from the derived values below. Known fields remain available in the structure tree; runtime execution is not established.",
+        "这些与源文件匹配的结构证据独立于下方的派生值。已知字段保留在结构树中；尚未证明运行时执行。",
+      ))}</p>
+    </section>`;
+  }
+
   function renderDetail() {
     const host = state.container;
     const record = state.selectedRecord;
@@ -1253,6 +1271,7 @@
         <div class="data-inspector-detail-body">
           ${record.diagnostic ? `<section class="data-inspector-diagnostic">
             <h3>${esc(ui("Decode diagnostic", "解码诊断"))}</h3><pre>${esc(record.diagnostic)}</pre></section>` : ""}
+          ${canonicalSkillEvidenceHtml(record)}
           ${highlightsHtml(record.facts)}
           ${catalogTermsHtml(entry, record)}
           ${directActionOccurrencesHtml(record)}

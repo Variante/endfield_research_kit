@@ -28,6 +28,9 @@
 //     catalog (validated and missing object-index sources, partial coverage
 //     visible, filters by scene id, mission id or Event); Event chips
 //     navigate to the Event detail, and no Wwise branch or media is copied.
+//   * staticProviderPreparation v1 is a separate static Runtime detail. Only
+//     selected-build validated, allowlisted direct/conditional claims render;
+//     no captured invocation, concrete provider, codec or media link follows.
 //
 // Detail sections (all authored serialized joins)
 //   * Event details list exact SkillData/BuffData PlaySound contexts when the
@@ -57,7 +60,10 @@
 //     selected native gate; others keep raw class IDs, parameter lengths and
 //     hashes and exact plug-in media dependencies. The HIRC overview shows the
 //     gate status and reviewed-class count beside exact/partial/opaque counts;
-//     an absent gate is marked unverified. No live effect or DSP claim.
+//     an absent gate is marked unverified. Verified anonymous input reads show
+//     offset, width, read kind and raw bytes with structuralOnly status. A
+//     scalar32 float view is a representation; no control name, unit, processed
+//     value or runtime DSP role is inferred. No live effect or DSP claim.
 //
 // Status vocabulary, rendered verbatim in details, search and filters
 //   * identity: eventIdentityStatus=grammarHashPreimageNameRecovered with
@@ -195,6 +201,116 @@
       runtimeSystem: "Runtime system",
       runtimeBoundary: "Evidence boundary",
       runtimeObservedRequest: "Verified runtime request",
+      runtimeExternalRequests: "Captured external-source requests",
+      runtimeExternalRequestBoundary: "These full paths and cookies were observed at the managed request boundary. A verified receipt linking the request path, package entry, and decoded file is unavailable, so no media binding is published. Native source selection, file opening, codec use, and audibility remain unresolved.",
+      runtimeExternalRequestCount: "request(s)",
+      runtimeExternalPathCount: "distinct path(s)",
+      runtimeExternalRequestCookie: "Cookie",
+      runtimeExternalRequestUnavailable: "External-source request evidence unavailable",
+      runtimeNativeSourceCaptures: "Captured native source relations",
+      runtimeNativeSourceBoundary: "These anonymous source fields and same-thread native consumer calls passed the strict capture audit. Event/media identity, managed path ownership, pointer lifetime, successful lookup, decoded content and audibility remain unresolved.",
+      runtimeNativeSourceUnavailable: "Native source capture evidence unavailable",
+      runtimeNativeSourcePairs: "source pairs",
+      runtimeNativeSourceNestedPairs: "nested consumer pairs",
+      runtimeNativeSourceFlagStates: "Entry flag bit 8: clear / set / unavailable",
+      runtimeNativeSourceSamplesLimited: "Representative samples are bounded; totals cover the complete audited capture.",
+      runtimeNativeSourceSessions: "capture sessions",
+      runtimeNativeSourceBridge: "Native source selection",
+      runtimeNativeSourceBridgeBoundary: "Selected native text, a cloned source, and a constructed anonymous owner are joined only within the audited same-thread call interval. Managed request ownership, Event/media identity, backing file, decoding, pointer lifetime and audibility remain unresolved.",
+      staticProviderPreparation: "Static provider preparation",
+      staticProviderUnavailable: "Provider preparation evidence unavailable for the selected build",
+      staticProviderDecoderOwnerSource: "The preparation helper reads the decoder’s primary owner, then that owner’s stored source.",
+      staticProviderConditionalPointerOrWord: "In the ordinary branch, a source flag selects the stored data pointer or numeric source word for the provider descriptor.",
+      staticProviderArgumentHalfword: "The upper half of the source argument word is copied into a separate descriptor field. Its codec meaning remains unresolved.",
+      staticProviderAlternateOwnerInput: "The alternate source-kind branch passes a separate owner-held pointer and word to another provider slot.",
+      staticProviderConditionalProviderInterface: "With the reviewed singleton initialization, the ordinary branch returns a secondary provider interface on its success branch; the alternate branch returns the allocation base.",
+      staticProviderConditionalOwnedText: "When allocation succeeds in that ordinary route, non-null UTF-16 descriptor text is copied into owned, NUL-terminated storage. The alternate route retains its incoming pointer and word.",
+      staticProviderStorageUnavailable: "Provider construction and storage evidence unavailable for the selected build",
+      staticProviderBoundary: "These are authenticated static reads and conditional routes. Singleton replacement, live provider invocation, opened file, codec identity, decoder lifetime and audible output remain unresolved.",
+      runtimeNativeSourceBridgeRelations: "verified relations",
+      runtimeNativeSourceBridgeUnresolved: "Unresolved joins",
+      runtimeNativeSourceBridgeText: "Native text",
+      runtimeNativeCaptureWorkflow: "Native source/owner capture uses EndfieldCapture with entry-only observations. New results appear after a complete capture and selected-build audit; native returns, pointer lifetimes and earlier-source continuity remain unresolved.",
+      runtimeNativeEntries: "Native source/owner entry observations",
+      runtimeNativeEntryCount: "entries",
+      runtimeNativeEntryBoundary: "Each count and text belongs to a captured function entry. Texts at different hooks are counted separately; no chain is inferred between calls. Returns, pointer lifetime, managed ownership, provider/file identity and audibility remain unresolved. Zero carrier entries mean this window contains no carrier snapshot.",
+      runtimeNativeEntryStorage: "Source fields at entry: bit 8 clear / set; set with nonzero data pointer / zero stored word 8",
+      runtimeNativeEntryUnavailable: "Entry observations unavailable",
+      runtimeManagedPosts: "Managed request and result pairs",
+      runtimeManagedPostBoundary: "Event ID, audio object and external path were submitted together in one managed call. Its returned playing ID is shown separately. Original external cookie and raw Beyond codec arguments appear only when the declared recipe records them; they do not identify a game codec, asynchronous native reads or audible output.",
+      runtimeManagedPostCounts: "Post pairs / external-source pairs / nonzero returned playing IDs",
+      runtimeManagedPostFields: "Event ID / audio object ID / returned playing ID / callback-type argument",
+      runtimeManagedPostPath: "External path projection",
+      runtimeManagedPostOriginalArguments: "Original external cookie / raw Beyond codec argument",
+      runtimeProviderEntries: "Provider inputs and caller sites",
+      runtimeIoEntries: "Retained providers and package lookup inputs",
+      runtimeIoBoundary: "Retained text and the selected I/O address point are local entry reads. Computed path keys are compared with a separate lookup-input cohort; calls are not paired. A key match does not establish the returned package row, file reading, decoding or audibility.",
+      runtimeIoDescriptor: "Retained descriptor: nonzero / zero / unreadable or guarded out",
+      runtimeIoDevice: "Selected device: nonzero / zero / unreadable or guarded out",
+      runtimeIoAddressPoint: "Selected I/O: matched default package dispatcher / different / unreadable or guarded out",
+      runtimeIoKey: "Computed full-path key",
+      runtimeIoKeyInputs: "Hash inputs / same-key lookup inputs",
+      runtimeIoLookupKey: "Observed lookup key",
+      runtimeIoLookupFacts: "Lookup inputs / reviewed caller / required flags kind / distinct table pointers",
+      runtimeIoTables: "Table row counts at lookup entry",
+      runtimePackageCompletions: "Package descriptor completion entries",
+      runtimePackageCompletionBoundary: "The reviewed completion entry compares its local provider/request/result pointers and incoming status. Descriptor values are observed before request release. No selected lookup row, backing-file identity, media read, decoding or audibility is established.",
+      runtimePackageGeometry: "Descriptor length / block offset / block bytes / byte offset",
+      runtimePackagePathKeys: "Computed full-path key / descriptor low-word match / byte-offset match",
+      runtimePackageReads: "Package read and completion entries",
+      runtimeObservedCoverage: "Coverage of this recording",
+      packageCatalog: "Installed package inventory (offline)",
+      packageCatalogBoundary: "The complete available VFS roster and package bytes were checked offline. Keys retain sector, full width, language value and package identity. Repeated bank keys and matching low words do not select a package, decoded file or live playback.",
+      packageCatalogCounts: "Available packages / indexed entries / distinct typed keys / excluded packages",
+      packageCatalogRepeated: "Repeated typed keys / distinct full-key collisions after truncation to 32 bits",
+      packageCatalogSectors: "Entry sectors",
+      packageCatalogBlocks: "Packages by VFS block",
+      packageCatalogBankIdentities: "Bank headers matched to full bank keys",
+      packageCatalogBankVersions: "Stored bank versions",
+      packageCatalogLanguageLabels: "Stored package language labels / entry counts",
+      packageCatalogLanguageTable: "Stored language IDs and labels",
+      packageCatalogLanguageBoundary: "Labels come from each package's own Windows language table. They do not establish a clip's spoken language or the runtime language selection.",
+      packageCatalogLanguageUnresolved: "Entries without a declared language label",
+      packageCatalogLanguageTruncated: "Language-label preview is limited; complete values remain in the offline report.",
+      packageCatalogRows: "Package identities and entry counts",
+      packageCatalogCollisions: "Key ambiguity examples",
+      packageCatalogLowWords: "Low word / full external keys",
+      runtimeObservedCoverageBoundary: "Counts include all checked entries before display limits. They describe branches observed in this window, not coverage of installed files. Repeated samples do not prove unobserved paths, complete payload contents or allocation lifetimes.",
+      runtimeCoverageChecked: "Checked transform entries",
+      runtimeCoverageEncryption: "Encryption flag values",
+      runtimeCoverageAlignment: "Relative offset modulo 4",
+      runtimeCoverageOrigin: "Relative offset classes",
+      runtimeCoverageRanges: "Descriptor-range cohorts",
+      runtimeSampleStrata: "Displayed / observed sample strata",
+      runtimeSampleCohorts: "Displayed / observed descriptor cohorts",
+      runtimeSampleSelectionBoundary: "Representatives are distributed across observed strata. Aggregate counts include entries omitted from display; unrepresented strata remain listed in the generated data.",
+      runtimePackageReadRanges: "Key low word / transform entries / range bytes / descriptor length / ranges span descriptor / sampled words",
+      runtimePackageReadRangeBoundary: "Ranges group matching descriptor geometry across entries. They describe requested buffer processing; only sampled words were retained. Allocation lifetimes and complete buffer contents remain unresolved.",
+      runtimePackageWordWitness: "Indexed encoded-word comparison",
+      runtimePackageWordBoundary: "Candidate package rows match local descriptor geometry and sampled words. This bounded index comparison does not identify the live backing file or prove decoded output.",
+      runtimePackageWordCounts: "Matched words / sampled words / distinct sampled bytes",
+      runtimePackageOfflineDecode: "Offline selected-entry PCM comparisons",
+      runtimePackageOfflineDecodeBoundary: "Prior offline decodes matched the explicitly selected FLAC PCM. Current candidate bytes and decoded-file identities still match those receipts; decoding is not repeated during this refresh. This does not identify the game's codec instance, live Event selection or audible output.",
+      runtimePackageOfflineDecodeFields: "Encoding / channels / sample rate / duration (s) / PCM bytes equal",
+      runtimePackageBufferSamples: "Representative buffer-word snapshots",
+      runtimePackageStaticProof: "Static transfer and transform proof",
+      runtimeTransferReceivers: "Transfer and completion receiver entries",
+      runtimeTransferReceiverMissing: "This recording does not retain completion receiver fields. A prepared profile could observe them, but further capture is deferred until a shared recovery benefit is established.",
+      runtimeTransferReceiverBoundary: "User-data/block and receiver/node equality are local non-atomic snapshots. Address points select reviewed interfaces, not codec classes. The dispatcher recycles its block before receiver calls; later carrier block values do not establish the original transfer or allocation generation.",
+      runtimePackageStaticBoundary: "The reviewed initializer stores an embedded transfer and its block back-pointer. The reviewed primary-provider and separate queued-receiver interfaces dispatch completion to request-state handlers. These conditional static facts do not identify the live completion receiver or game codec instance.",
+      runtimePackageReadBoundary: "Local read inputs and platform completion arguments are shown separately. The pre-transform entry checks its own cookie descriptor and reviewed caller. Entries are not paired; a buffer word is not decoded PCM or proof of audibility.",
+      runtimePackageReadGeometry: "Descriptor key low word / length / transfer position / requested bytes / transform bytes / pre-transform buffer word",
+      runtimeProviderEntryCallers: "Observed caller roles",
+      runtimeProviderEntryBoundary: "Caller roles match reviewed instruction return sites. Address-point matches and descriptor inputs belong to individual entries. An open-dispatch entry does not prove a file opened; no chain between entries, completed storage, decoding or audibility is inferred.",
+      runtimeProviderEntryText: "Input text pointer: nonzero / null; terminated text",
+      runtimeProviderEntryAddressPoint: "Local address point: matched / different / unreadable",
+      runtimeProviderSourceCaller: "Source-based preparation caller",
+      runtimeProviderDecoderCaller: "Decoder preparation caller",
+      runtimeNativeOwnerCarrier: "Decoder owner snapshots",
+      runtimeNativeOwnerCarrierMatches: "matching owner snapshots",
+      runtimeNativeOwnerCarrierBoundary: "Fixed fields are captured only at the reviewed control-handler entry. Decoder-owner equality is a local snapshot; it does not join earlier source generations or prove decoder creation, a file, codec, playback or an internal branch. Source pointers are not interpreted as text or media.",
+      runtimeNativeSourceBridgeTexts: "distinct native texts",
+      runtimeNativeSourceBridgeDescriptors: "single-descriptor selectors",
       runtimeObservedRequestNote: "This Event was observed at a managed audio request boundary in a hash-verified capture. It proves the request executed in that capture, not Wwise branch selection, decoded-media selection, or audibility.",
       runtimeComponents: "Runtime components",
       hircInventory: "Wwise HIRC inventory",
@@ -243,6 +359,13 @@
       postProcessRoutes: "Serialized post-process routes",
       postProcessBuses: "Output bus paths",
       postProcessBusSemantics: "Serialized Bus processing",
+      nativeEffectReads: "Anonymous native effect reads",
+      nativeReadOffset: "Byte offset",
+      nativeReadWidth: "Bytes",
+      nativeReadKind: "Native read",
+      nativeReadRaw: "Raw bytes (serialized order)",
+      nativeReadFloat: "Float32 view",
+      nativeReadBoundary: "structuralOnly: these are anonymous input loads and byte zero tests. Float32 is a representation view; control names, units, processed values and runtime DSP roles remain unresolved.",
       postProcessEffects: "Effect buses",
       postProcessDirectEffects: "Direct node effects",
       postProcessEffectChain: "Serialized effect chain",
@@ -433,6 +556,7 @@
       typedTraversal: "Typed traversal",
       selectorEvidence: "Selector evidence",
       selectorBranches: "Possible State/Switch branches",
+      selectorPackageIdentityGap: "Media candidates with unresolved package identity",
       selectorRuntimeUnobserved: "Runtime value and selected branch were not observed; all selector candidates remain possible.",
       musicDecisionTrees: "Music Switch decision trees",
       musicDecisionTreeTreeCount: "trees",
@@ -534,6 +658,116 @@
       runtimeSystem: "\u8fd0\u884c\u65f6\u7cfb\u7edf",
       runtimeBoundary: "\u8bc1\u636e\u8fb9\u754c",
       runtimeObservedRequest: "\u5df2\u9a8c\u8bc1\u8fd0\u884c\u65f6\u8bf7\u6c42",
+      runtimeExternalRequests: "已捕获的外部音源请求",
+      runtimeExternalRequestBoundary: "这些完整路径与 Cookie 在托管请求边界被观测到。缺少将请求路径、资源包条目与解码文件相连的已验证凭据，因此未发布媒体绑定。原生音源选择、文件打开、编解码器使用与可听性仍未确定。",
+      runtimeExternalRequestCount: "次请求",
+      runtimeExternalPathCount: "个不同路径",
+      runtimeExternalRequestCookie: "Cookie",
+      runtimeExternalRequestUnavailable: "外部音源请求证据不可用",
+      runtimeNativeSourceCaptures: "已捕获的原生音源关系",
+      runtimeNativeSourceBoundary: "这些匿名音源字段和同线程原生消费者调用通过了严格捕获审计。Event/媒体身份、托管路径归属、指针生命周期、查找成功、解码内容与可听性仍未确定。",
+      runtimeNativeSourceUnavailable: "原生音源捕获证据不可用",
+      runtimeNativeSourcePairs: "组音源调用",
+      runtimeNativeSourceNestedPairs: "组嵌套消费者调用",
+      runtimeNativeSourceFlagStates: "入口标志位 8：未设置 / 已设置 / 不可用",
+      runtimeNativeSourceSamplesLimited: "代表样本数量有限；计数覆盖完整的已审计捕获。",
+      runtimeNativeSourceSessions: "个捕获会话",
+      runtimeNativeSourceBridge: "原生音源选择",
+      runtimeNativeSourceBridgeBoundary: "所选原生文本、克隆音源和构造出的匿名所有者，仅在已审计的同线程调用区间内关联。托管请求归属、Event/媒体身份、实际文件、解码、指针生命周期与可听性仍未确定。",
+      staticProviderPreparation: "静态供给器准备流程",
+      staticProviderUnavailable: "所选版本的供给器准备证据不可用",
+      staticProviderDecoderOwnerSource: "准备函数先读取解码器的主所有者，再读取该所有者保存的音源。",
+      staticProviderConditionalPointerOrWord: "普通分支通过音源标志，在数据指针与数值音源字段之间选择供给器描述符输入。",
+      staticProviderArgumentHalfword: "音源参数字段的高半字被复制到独立的描述符字段；其编码格式含义仍未确定。",
+      staticProviderAlternateOwnerInput: "另一音源类型分支将所有者保存的独立指针和数值字段传给供给器的另一接口。",
+      staticProviderConditionalProviderInterface: "在已核验的单例初始化下，普通分支成功时返回供给器的次级接口；另一分支返回分配基址。",
+      staticProviderConditionalOwnedText: "该普通路径分配成功时，将非空 UTF-16 描述符文本复制到自有、以零结尾的存储中；另一条路径保留传入的指针和数值字段。",
+      staticProviderStorageUnavailable: "所选版本的供给器构造与存储证据不可用",
+      staticProviderBoundary: "这些是已验证的静态读取和条件路径。单例替换、实时供给器调用、打开的文件、编码格式、解码器生命周期与可听输出仍未确定。",
+      runtimeNativeSourceBridgeRelations: "组已验证关系",
+      runtimeNativeSourceBridgeUnresolved: "未验证关联",
+      runtimeNativeSourceBridgeText: "原生文本",
+      runtimeNativeOwnerCarrier: "解码器所有者快照",
+      runtimeNativeCaptureWorkflow: "原生音源／所有者采集使用 EndfieldCapture，仅记录函数入口。新结果需完成采集并通过当前版本审计后才会显示；原生返回值、指针生命周期及先前音源的连续性仍未确定。",
+      runtimeNativeEntries: "原生音源／所有者入口观测",
+      runtimeNativeEntryCount: "次入口",
+      runtimeNativeEntryBoundary: "每个计数与文本均属于一次函数入口观测。不同函数的文本分别计数，不推断调用之间的关联。返回值、指针生命周期、托管归属、提供者／文件身份及可听性仍未确定。载体入口为零仅表示本窗口没有载体快照。",
+      runtimeNativeEntryStorage: "入口音源字段：位 8 未设置／已设置；已设置且数据指针非零／存储字 8 为零",
+      runtimeNativeEntryUnavailable: "入口观测不可用",
+      runtimeManagedPosts: "托管请求与返回配对",
+      runtimeManagedPostBoundary: "Event ID、音频对象和外部路径属于同一次托管调用，返回的播放 ID 单独显示。仅在声明的方案确实记录时显示原始外部 cookie 与 Beyond 编解码器参数；这些值不确定游戏编解码器、异步原生读取的归属或可听输出。",
+      runtimeManagedPostCounts: "请求配对／外部音源配对／非零返回播放 ID",
+      runtimeManagedPostFields: "Event ID／音频对象 ID／返回播放 ID／回调类型参数",
+      runtimeManagedPostPath: "外部路径投影",
+      runtimeManagedPostOriginalArguments: "原始外部 cookie／原始 Beyond 编解码器参数",
+      runtimeProviderEntries: "提供者输入与调用点",
+      runtimeIoEntries: "保留的提供者与包查找输入",
+      runtimeIoBoundary: "保留文本与所选 I/O 地址点均为局部入口读取。计算的路径键与另一组查找输入比较，不配对调用。键匹配不证明返回的包记录、文件读取、解码或可听性。",
+      runtimeIoDescriptor: "保留描述符：非零／零／不可读或未满足读取条件",
+      runtimeIoDevice: "所选设备：非零／零／不可读或未满足读取条件",
+      runtimeIoAddressPoint: "所选 I/O：匹配默认包派发器／不同／不可读或未满足读取条件",
+      runtimeIoKey: "完整路径计算键",
+      runtimeIoKeyInputs: "哈希输入／相同键的查找输入",
+      runtimeIoLookupKey: "已观测查找键",
+      runtimeIoLookupFacts: "查找输入／已验证调用点／所需标志类型／不同表指针",
+      runtimeIoTables: "查找入口处的表记录数",
+      runtimePackageCompletions: "包描述符完成入口",
+      runtimePackageCompletionBoundary: "已验证的完成入口比较局部提供者／请求／结果指针与传入状态。描述符字段在请求释放前观测，不证明所选查找记录、底层文件身份、媒体读取、解码或可听性。",
+      runtimePackageGeometry: "描述符长度／块偏移／块字节数／字节偏移",
+      runtimePackagePathKeys: "完整路径计算键／描述符低位匹配／字节偏移匹配",
+      runtimePackageReads: "包读取与完成入口",
+      runtimeObservedCoverage: "本次记录的覆盖范围",
+      packageCatalog: "已安装音频包清单（离线）",
+      packageCatalogBoundary: "已离线检查全部可用 VFS 音频包及其完整字节。键保留索引区类型、完整位宽、语言值和包身份。重复的音频库键或相同的低位不确定所选音频包、解码文件或运行时播放。",
+      packageCatalogCounts: "可用包／索引记录／不同类型化键／缺失而排除的包",
+      packageCatalogRepeated: "重复类型化键／截断为 32 位后冲突的不同完整键组",
+      packageCatalogSectors: "索引区记录数",
+      packageCatalogBlocks: "各 VFS 类型的音频包数",
+      packageCatalogBankIdentities: "与完整音频库键匹配的库头数",
+      packageCatalogBankVersions: "存储的音频库版本",
+      packageCatalogLanguageLabels: "包内存储的语言标签／索引记录数",
+      packageCatalogLanguageTable: "存储的语言 ID 与标签",
+      packageCatalogLanguageBoundary: "标签来自各音频包自身的 Windows 语言表；不能据此确定音频实际使用的语言或运行时语言选择。",
+      packageCatalogLanguageUnresolved: "语言标签未声明的索引记录",
+      packageCatalogLanguageTruncated: "语言标签预览已限量；完整内容保留在离线报告中。",
+      packageCatalogRows: "音频包身份与索引记录数",
+      packageCatalogCollisions: "键歧义示例",
+      packageCatalogLowWords: "低位／完整外部源键",
+      runtimeObservedCoverageBoundary: "计数包含显示限制前的所有已检查入口，只描述本次窗口观测到的分支，不代表已安装文件的覆盖率。重复采样不证明未观测路径、完整载荷内容或分配生命周期。",
+      runtimeCoverageChecked: "已检查的变换入口",
+      runtimeCoverageEncryption: "加密标志取值",
+      runtimeCoverageAlignment: "相对偏移除以 4 的余数",
+      runtimeCoverageOrigin: "相对偏移类别",
+      runtimeCoverageRanges: "描述符范围分组",
+      runtimeSampleStrata: "已显示／已观测采样分层",
+      runtimeSampleCohorts: "已显示／已观测描述符分组",
+      runtimeSampleSelectionBoundary: "代表样本分散到已观测的各层。汇总计数包含未显示的入口；生成数据仍列出未获显示的分层。",
+      runtimePackageReadRanges: "键低位 / 变换入口数 / 范围字节 / 描述符长度 / 范围覆盖描述符 / 采样字数",
+      runtimePackageReadRangeBoundary: "范围按入口中相同的描述符几何分组，表示请求的缓冲处理；只保留了采样字。分配生命周期和完整缓冲内容仍未确定。",
+      runtimePackageWordWitness: "索引包编码字比较",
+      runtimePackageWordBoundary: "候选包记录匹配入口中的描述符几何和采样字。索引范围有限；比较不确定运行中的后备文件，也不证明解码输出。",
+      runtimePackageWordCounts: "匹配字数 / 采样字数 / 不同采样字节数",
+      runtimePackageOfflineDecode: "离线所选记录 PCM 比较",
+      runtimePackageOfflineDecodeBoundary: "先前离线解码与明确选择的 FLAC PCM 相同。当前候选字节与解码文件身份仍符合这些回执，本次刷新不重复解码。这不确定游戏编解码器实例、运行时 Event 选择或可听输出。",
+      runtimePackageOfflineDecodeFields: "编码／声道／采样率／时长（秒）／PCM 字节相同",
+      runtimePackageBufferSamples: "代表性缓冲字快照",
+      runtimePackageStaticProof: "静态传输与变换证明",
+      runtimeTransferReceivers: "传输与完成接收者入口",
+      runtimeTransferReceiverMissing: "此记录未保留完成接收者字段。现有方案可用于观测，但在明确可推广的恢复收益前，暂缓新增捕获。",
+      runtimeTransferReceiverBoundary: "用户数据／传输块以及接收者／节点相等仅是局部非原子快照。地址点选择已审阅接口，不确定编解码器类。派发器在调用接收者前回收传输块，后续载体中的传输块值不证明原始传输或分配生命周期。",
+      runtimePackageStaticBoundary: "已审阅的初始化器保存内嵌传输记录及其所在块的反向指针。已审阅的主提供者和独立排队接收者接口将完成状态派发给请求状态处理函数。这些条件性静态事实不确定运行中的完成接收者或游戏解码器实例。",
+      runtimePackageReadBoundary: "读取输入和系统完成参数分别显示。缓冲变换前入口检查自身 cookie 描述符和已审阅调用点。入口不配对；一个缓冲字不代表解码 PCM 或可听输出。",
+      runtimePackageReadGeometry: "描述符键低位／长度／传输位置／请求字节数／变换字节数／变换前缓冲字",
+      runtimeProviderEntryCallers: "已观测调用方角色",
+      runtimeProviderEntryBoundary: "调用方角色由已验证的指令返回位置确定。地址点匹配与描述符输入均属于单次入口。打开派发入口不证明文件打开成功；不推断入口之间的链路、存储完成、解码或可听性。",
+      runtimeProviderEntryText: "输入文本指针：非零／空；已终止文本",
+      runtimeProviderEntryAddressPoint: "本次入口地址点：匹配／不同／不可读",
+      runtimeProviderSourceCaller: "音源请求准备调用点",
+      runtimeProviderDecoderCaller: "解码器准备调用点",
+      runtimeNativeOwnerCarrierMatches: "所有者匹配快照",
+      runtimeNativeOwnerCarrierBoundary: "固定字段仅在已验证的控制处理函数入口采样。解码器所有者相等只表示局部快照，不关联先前音源的生命周期，也不证明解码器创建、文件、编解码器、播放或内部执行分支。音源指针不作为文本或媒体解释。",
+      runtimeNativeSourceBridgeTexts: "种原生文本",
+      runtimeNativeSourceBridgeDescriptors: "个单描述符选择器",
       runtimeObservedRequestNote: "\u6b64 Event \u5728\u5df2\u9a8c\u8bc1\u54c8\u5e0c\u7684\u6355\u83b7\u4e2d\u4e8e\u97f3\u9891\u8bf7\u6c42\u8fb9\u754c\u88ab\u89c2\u5bdf\u5230\u3002\u8fd9\u4ec5\u8bc1\u660e\u8be5\u6355\u83b7\u4e2d\u7684\u8bf7\u6c42\u6267\u884c\uff0c\u4e0d\u8bc1\u660e Wwise \u5206\u652f\u3001\u5df2\u89e3\u7801\u5a92\u4f53\u6216\u53ef\u542c\u6027\u3002",
       runtimeComponents: "\u8fd0\u884c\u65f6\u7ec4\u4ef6",
       hircInventory: "Wwise HIRC \u5e93\u5b58",
@@ -582,6 +816,13 @@
       postProcessRoutes: "\u5df2\u5e8f\u5217\u5316\u540e\u5904\u7406\u8def\u7531",
       postProcessBuses: "\u8f93\u51fa Bus \u8def\u5f84",
       postProcessBusSemantics: "\u5df2\u5e8f\u5217\u5316 Bus \u5904\u7406",
+      nativeEffectReads: "\u533f\u540d\u539f\u751f\u6548\u679c\u8bfb\u53d6",
+      nativeReadOffset: "\u5b57\u8282\u504f\u79fb",
+      nativeReadWidth: "\u5b57\u8282\u6570",
+      nativeReadKind: "\u539f\u751f\u8bfb\u53d6",
+      nativeReadRaw: "\u539f\u59cb\u5b57\u8282\uff08\u5e8f\u5217\u5316\u987a\u5e8f\uff09",
+      nativeReadFloat: "Float32 \u8868\u793a",
+      nativeReadBoundary: "structuralOnly\uff1a\u8fd9\u4e9b\u662f\u533f\u540d\u8f93\u5165\u8bfb\u53d6\u548c\u5b57\u8282\u96f6\u503c\u5224\u65ad\u3002Float32 \u53ea\u662f\u8868\u793a\u5f62\u5f0f\uff1b\u63a7\u4ef6\u540d\u79f0\u3001\u5355\u4f4d\u3001\u5904\u7406\u540e\u503c\u548c\u8fd0\u884c\u65f6 DSP \u7528\u9014\u4ecd\u672a\u89e3\u6790\u3002",
       postProcessEffects: "\u6548\u679c Bus",
       postProcessDirectEffects: "\u8282\u70b9\u76f4\u63a5\u6548\u679c",
       postProcessEffectChain: "\u5e8f\u5217\u5316\u6548\u679c\u94fe",
@@ -772,6 +1013,7 @@
       typedTraversal: "\u7c7b\u578b\u5316\u904d\u5386",
       selectorEvidence: "\u9009\u62e9\u5668\u8bc1\u636e",
       selectorBranches: "\u53ef\u80fd的 State/Switch \u5206\u652f",
+      selectorPackageIdentityGap: "音频包身份未确定的媒体候选",
       selectorRuntimeUnobserved: "\u672a\u89c2\u5bdf\u8fd0\u884c\u65f6\u503c\u548c\u5df2\u9009\u5206\u652f\uff1b\u6240\u6709\u9009\u62e9\u5668\u5019\u9009\u9879\u4ecd\u53ef\u80fd\u3002",
       musicDecisionTrees: "\u97f3\u4e50 Switch \u51b3\u7b56\u6811",
       musicDecisionTreeTreeCount: "\u68f5\u6811",
@@ -1378,6 +1620,8 @@
   function searchText(record, kind, taxonomy = {}) {
     const numericHashes = [record?.hash, record?.eventHash].filter((value) => Number.isInteger(Number(value)));
     const values = [
+      window.WebUI.linkedFileSearchText(record),
+      record?.linkedFileSearch,
       recordTitle(record, kind), recordId(record, kind), recordCategory(record), recordScope(record), recordSource(record),
       record?.name, record?.title,
       ...asArray(record?.relatedEventCategories).flatMap((value) => [value, categoryLabel(value)]),
@@ -1764,6 +2008,7 @@
     const promise = (async () => {
       try {
         await loadNotes(force);
+        await window.WebUI.updateBadges.loadFiles();
         const path = INDEX_PATH(nextLanguage);
         const response = await window.WebUI.fetchWithProgress(path, {
           signal: state.indexController.signal,
@@ -1853,16 +2098,17 @@
         <aside id="audio-left">
           <header>
             <h1 id="audio-title"></h1>
+          <div class="audio-mode-switch page-mode-switch" role="group" aria-label="Audio dataset">
+            <button id="audio-events-mode" class="audio-mode-button page-mode-button is-active" type="button" data-audio-mode="events" aria-pressed="true"></button>
+            <button id="audio-media-mode" class="audio-mode-button page-mode-button" type="button" data-audio-mode="media" aria-pressed="false"></button>
+          </div>
+
             <div id="audio-stats"><span id="audio-count">?</span> <span id="audio-count-label"></span></div>
             <div class="sidebar-header-actions">
               <button id="audio-filter-toggle" class="panel-toggle" type="button" aria-controls="audio-filter-panel" aria-expanded="true"></button>
               <button id="audio-reset" type="button"></button>
             </div>
           </header>
-          <div class="audio-mode-switch" role="group" aria-label="Audio dataset">
-            <button id="audio-events-mode" class="audio-mode-button is-active" type="button" data-audio-mode="events" aria-pressed="true"></button>
-            <button id="audio-media-mode" class="audio-mode-button" type="button" data-audio-mode="media" aria-pressed="false"></button>
-          </div>
           <div id="audio-filter-panel" class="filters">
             <section class="filter-section filter-section-basic" data-filter-section="audio-basic" data-fixed-open="1">
               <div class="filter-section-title"><span id="audio-basic-filter-label"></span></div>
@@ -2153,8 +2399,15 @@
   function syncSortControl() {
     const row = $("#audio-sort-row", state.container);
     const select = $("#audio-sort", state.container);
-    if (row) row.hidden = state.mode !== "media";
-    if (select) select.value = state.sort;
+    if (row) row.hidden = false;
+    if (select) {
+      for (const option of select.options) {
+        option.disabled = state.mode === "events" && option.value.startsWith("duration-");
+      }
+      if (state.mode === "events" && state.sort.startsWith("duration-")) state.sort = "title";
+      select.value = state.sort;
+    }
+    window.WebUI.sorting?.refresh();
   }
 
   function resetFilters({ render = true } = {}) {
@@ -2207,8 +2460,8 @@
       const searchable = `${record.search}\n${normalizeLower(recordNote(record))}`;
       if (tokens.length && !window.WebUI.queryMatches(searchable, tokens)) return false;
       return facets.matches(record);
-    }).sort((a, b) => {
-      if (state.mode === "events" || state.sort === "purpose-priority") {
+    }).sort(window.WebUI.sorting.comparator("audio-sort", (a, b) => {
+      if (state.sort === "purpose-priority") {
         const priority = { highest: 0, secondary: 1, resolved: 2, resolvedTerminal: 3 };
         const left = priority[a.raw?.purposeInvestigationPriority] ?? 2;
         const right = priority[b.raw?.purposeInvestigationPriority] ?? 2;
@@ -2224,7 +2477,7 @@
         }
       }
       return a.title.localeCompare(b.title, undefined, { numeric: true }) || a.key.localeCompare(b.key, undefined, { numeric: true });
-    });
+    }));
     state.pager?.setTotal(state.filtered.length);
     const pageRecords = state.pager ? state.pager.slice(state.filtered) : state.filtered;
     const pageStart = state.pager ? state.pager.page * state.pager.pageSize : 0;
@@ -2278,6 +2531,7 @@
       const noteMarker = noteLine ? `<span class="audio-row-note-marker" title="${esc(t("hasManualNote"))}" aria-label="${esc(t("hasManualNote"))}">\u270e</span>` : "";
       const noteTitle = noteLine ? `<span class="audio-row-note-title">\u2014 ${esc(noteLine)}</span>` : "";
       button.innerHTML = `<span class="audio-row-title-line"><span class="audio-row-kind">${esc(state.mode === "events" ? t("event") : t("mediaItem"))}</span><span class="audio-row-title">${esc(row.record.title)}</span>${noteTitle}${noteMarker}${fileStats}</span><span class="audio-row-meta">${esc(row.record.listMeta)}</span>`;
+      button.querySelector(".audio-row-title")?.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(row.record.raw));
       fragment.appendChild(button);
       index += 1;
     }
@@ -2355,6 +2609,9 @@
     body.replaceChildren();
     if (selected) {
       body.appendChild(recordPanel(selected));
+      title.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(selected.raw));
+      body.insertAdjacentHTML("afterbegin", window.WebUI.updateBadges.fileDetails(selected.raw));
+      window.WebUI.updateBadges.decorateFiles(body);
     } else {
       body.appendChild(runtimePanel());
       const empty = document.createElement("p");
@@ -2369,6 +2626,582 @@
     return parts.join(" · ");
   }
 
+  function runtimeExternalRequestsSection(projection) {
+    if (!projection || projection.status === "notRequested") return null;
+    const ready = projection.status === "ready" && projection.externalSourceRequestsStatus === "ready";
+    const requests = ready ? asArray(projection.externalSourceRequests).filter((row) => row && typeof row.externalSourceKey === "string").slice(0, 32) : [];
+    const unavailable = projection.status === "degraded" || projection.externalSourceRequestsStatus === "degraded";
+    if (!requests.length && !unavailable) return null;
+    const section = document.createElement("details");
+    section.className = "audio-runtime-system audio-runtime-external-requests";
+    const summary = document.createElement("summary");
+    summary.textContent = t("runtimeExternalRequests")
+      + (ready ? ` (${formatNumber(projection.externalSourceRequestCount || 0)} ${t("runtimeExternalRequestCount")} / ${formatNumber(projection.externalSourcePathCount || 0)} ${t("runtimeExternalPathCount")})` : "");
+    section.appendChild(summary);
+    section.appendChild(noteSection(t("runtimeBoundary"), t("runtimeExternalRequestBoundary")));
+    if (unavailable) {
+      section.appendChild(noteSection(t("runtimeExternalRequestUnavailable"), humanize(projection.externalSourceRequestsReason || projection.reason || projection.status)));
+      return section;
+    }
+    for (const request of requests) {
+      const item = document.createElement("div");
+      item.className = "audio-runtime-external-request";
+      const path = document.createElement("code");
+      path.textContent = request.externalSourceKey;
+      const facts = document.createElement("p");
+      facts.textContent = `${formatNumber(request.observationCount || 0)} ${t("runtimeExternalRequestCount")}`
+        + ` / ${t("runtimeExternalRequestCookie")}: ${asArray(request.externalCookies).slice(0, 32).join(" / ")}`;
+      item.append(path, facts);
+      section.appendChild(item);
+    }
+    return section;
+  }
+
+  function runtimeNativeEntrySection(projection) {
+    if (!projection || projection.status === "notRequested") return null;
+    const ready = projection.status === "validated" && projection.claimsAvailable === true;
+    const section = document.createElement("details");
+    section.className = "audio-runtime-system audio-runtime-native-entries";
+    const summary = document.createElement("summary");
+    summary.textContent = t("runtimeNativeEntries") + (ready
+      ? ` (${formatNumber(projection.entryCount || 0)} ${t("runtimeNativeEntryCount")})` : "");
+    section.appendChild(summary);
+    section.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeEntryBoundary")));
+    if (!ready) {
+      section.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), projection.detail || projection.nativeGate?.detail || humanize(projection.status)));
+      return section;
+    }
+    section.appendChild(noteSection(t("runtimeNativeSourceSessions"), normalize(projection.session)));
+    const counts = projection.hookCounts && typeof projection.hookCounts === "object" ? projection.hookCounts : {};
+    section.appendChild(noteSection(t("runtimeNativeEntryCount"), Object.entries(counts).slice(0, 32)
+      .map(([kind, count]) => `${humanize(kind)}: ${formatNumber(count)}`).join(" / ")));
+    const posts = projection.managedPostObservations;
+    if (posts) {
+      const detail = document.createElement("details");
+      detail.className = "audio-runtime-managed-posts";
+      const title = document.createElement("summary");
+      title.textContent = t("runtimeManagedPosts");
+      detail.appendChild(title);
+      detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeManagedPostBoundary")));
+      if (posts.status !== "validated") {
+        detail.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), posts.detail || humanize(posts.status)));
+      } else {
+        detail.appendChild(noteSection(t("runtimeManagedPostCounts"),
+          [posts.counts?.postPairs, posts.counts?.externalSourcePairs, posts.counts?.nonzeroPlayingIdPairs]
+            .map(value => formatNumber(value || 0)).join(" / ")));
+        for (const row of (posts.samples || []).slice(0, 32)) {
+          const item = document.createElement("div");
+          item.appendChild(noteSection(row.hookName || t("unknown"),
+            `${t("runtimeManagedPostFields")}: ${normalize(row.eventId)} / ${normalize(row.audioObjectId)} / ${normalize(row.returnedPlayingId)} / ${normalize(row.callbackType)}`));
+          if (row.externalPathProjection) item.appendChild(noteSection(t("runtimeManagedPostPath"),
+            `${row.externalPathProjection} / ${humanize(row.externalPathState)}`));
+          if (row.externalCookie != null && row.rawBeyondCodecArgument != null) {
+            item.appendChild(noteSection(t("runtimeManagedPostOriginalArguments"),
+              `${normalize(row.externalCookie)} / ${normalize(row.rawBeyondCodecArgument)}`));
+          }
+          detail.appendChild(item);
+        }
+        if (posts.samplesTruncated) detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceSamplesLimited")));
+      }
+      section.appendChild(detail);
+    }
+    const providers = projection.providerEntryObservations;
+    if (providers) {
+      const detail = document.createElement("details");
+      detail.className = "audio-runtime-provider-entries";
+      const title = document.createElement("summary");
+      title.textContent = t("runtimeProviderEntries");
+      detail.appendChild(title);
+      detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeProviderEntryBoundary")));
+      if (providers.status !== "validated") {
+        detail.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), providers.detail || humanize(providers.status)));
+      } else {
+        for (const [kind, row] of Object.entries(providers.hooks || {}).slice(0, 4)) {
+          const item = document.createElement("div");
+          item.appendChild(noteSection(humanize(kind), `${formatNumber(row.entryCount || 0)} ${t("runtimeNativeEntryCount")}`));
+          const callerLabels = {sourceBasedPreparation: t("runtimeProviderSourceCaller"), decoderPreparation: t("runtimeProviderDecoderCaller")};
+          item.appendChild(noteSection(t("runtimeProviderEntryCallers"), Object.entries(row.callerRoles || {}).slice(0, 8)
+            .map(([role, count]) => `${callerLabels[role] || humanize(role)}: ${formatNumber(count)}`).join(" / ")));
+          if (row.inputText) item.appendChild(noteSection(t("runtimeProviderEntryText"),
+            [row.inputText.nonzeroPointer, row.inputText.nullPointer, row.inputText.terminatedText].map((value) => formatNumber(value || 0)).join(" / ")));
+          if (row.addressPoint) item.appendChild(noteSection(t("runtimeProviderEntryAddressPoint"),
+            [row.addressPoint.matched, row.addressPoint.different, row.addressPoint.unreadable].map((value) => formatNumber(value || 0)).join(" / ")));
+          detail.appendChild(item);
+        }
+      }
+      section.appendChild(detail);
+    }
+    const io = projection.ioEntryObservations;
+    if (io) {
+      const detail = document.createElement("details");
+      detail.className = "audio-runtime-io-entries";
+      const title = document.createElement("summary");
+      title.textContent = t("runtimeIoEntries");
+      detail.appendChild(title);
+      detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeIoBoundary")));
+      if (io.status !== "validated") {
+        detail.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), io.detail || humanize(io.status)));
+      } else {
+        for (const [kind, row] of Object.entries(io.hooks || {}).slice(0, 4)) {
+          detail.appendChild(noteSection(humanize(kind), `${formatNumber(row.entryCount || 0)} ${t("runtimeNativeEntryCount")}`));
+          for (const [field, label] of [["retainedDescriptor", "runtimeIoDescriptor"], ["selectedDevice", "runtimeIoDevice"]]) {
+            if (row[field]) detail.appendChild(noteSection(t(label),
+              [row[field].nonzero, row[field].zero, row[field].unreadableOrGuardedOut].map((value) => formatNumber(value || 0)).join(" / ")));
+          }
+          if (row.ioAddressPoint) detail.appendChild(noteSection(t("runtimeIoAddressPoint"),
+            [row.ioAddressPoint.matchedDefaultPackageIo, row.ioAddressPoint.different, row.ioAddressPoint.unreadableOrGuardedOut].map((value) => formatNumber(value || 0)).join(" / ")));
+        }
+        for (const row of asArray(io.pathKeyCandidates).slice(0, 32)) {
+          const item = document.createElement("div");
+          const path = document.createElement("code");
+          path.textContent = normalize(row.path).slice(0, 160);
+          item.appendChild(path);
+          item.appendChild(noteSection(t("runtimeIoKey"), typeof row.computedKey === "string" ? row.computedKey : ""));
+          item.appendChild(noteSection(t("runtimeIoKeyInputs"),
+            [row.hashInputEntryCount, row.sameKeyLookupInputEntryCount].map((value) => formatNumber(value || 0)).join(" / ")));
+          detail.appendChild(item);
+        }
+        for (const row of asArray(io.lookupKeys).slice(0, 32)) {
+          detail.appendChild(noteSection(t("runtimeIoLookupKey"), typeof row.key === "string" ? row.key : ""));
+          detail.appendChild(noteSection(t("runtimeIoLookupFacts"),
+            [row.entryCount, row.reviewedCallerEntryCount, row.requiredKindEntryCount, row.distinctTablePointerCount].map((value) => formatNumber(value || 0)).join(" / ")));
+          detail.appendChild(noteSection(t("runtimeIoTables"), Object.entries(row.tableCounts || {}).slice(0, 16)
+            .map(([rows, count]) => `${rows}: ${formatNumber(count)}`).join(" / ")));
+        }
+        if (io.pathKeyCandidatesTruncated || io.lookupKeysTruncated) detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceSamplesLimited")));
+        const completions = io.packageCompletionObservations;
+        if (completions) {
+          const completed = document.createElement("details");
+          completed.className = "audio-runtime-package-completions";
+          const title = document.createElement("summary");
+          title.textContent = t("runtimePackageCompletions");
+          completed.appendChild(title);
+          completed.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageCompletionBoundary")));
+          if (completions.status !== "validated") {
+            completed.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), completions.detail || humanize(completions.status)));
+          } else {
+            completed.appendChild(noteSection(t("runtimeNativeEntryCount"), Object.entries(completions.counts || {}).slice(0, 12)
+              .map(([kind, count]) => `${humanize(kind)}: ${formatNumber(count)}`).join(" / ")));
+            for (const row of asArray(completions.samples).slice(0, 12)) {
+              const path = document.createElement("code");
+              path.textContent = normalize(row.path).slice(0, 160) || `#${row.keyLow ?? "?"}`;
+              completed.appendChild(path);
+              completed.appendChild(noteSection(t("runtimePackageGeometry"), [row.byteLength, row.blockOffset, row.blockBytes, row.byteOffset]
+                .map((value) => value == null ? "?" : String(value)).join(" / ")));
+              if (row.computedPathKey) {
+                completed.appendChild(noteSection(t("runtimePackagePathKeys"), `${String(row.computedPathKey)} / ${humanize(row.pathKeyLowComparison)} / ${humanize(row.byteOffsetComparison)}`));
+              }
+              if (row.entryCount > 1) completed.appendChild(noteSection(t("runtimeNativeEntryCount"), formatNumber(row.entryCount)));
+            }
+          }
+          detail.appendChild(completed);
+        }
+        const reads = io.packageReadObservations;
+        if (reads) {
+          const appendSampleSelection = (parent, selection) => {
+            if (!selection) return;
+            parent.appendChild(noteSection(t("runtimeSampleStrata"),
+              [selection.representedStratumCount, selection.stratumCount].map(value => formatNumber(value || 0)).join(" / ")));
+            parent.appendChild(noteSection(t("runtimeBoundary"), t("runtimeSampleSelectionBoundary")));
+          };
+          const readDetail = document.createElement("details");
+          readDetail.className = "audio-runtime-package-reads";
+          const title = document.createElement("summary");
+          title.textContent = t("runtimePackageReads");
+          readDetail.appendChild(title);
+          readDetail.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageReadBoundary")));
+          if (reads.status !== "validated") {
+            readDetail.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), reads.detail || humanize(reads.status)));
+          } else {
+            if (reads.alignedTransformGate) {
+              readDetail.appendChild(noteSection(t("runtimePackageStaticProof"), humanize(reads.alignedTransformGate.status)));
+              if (reads.alignedTransformGate.status === "validated") readDetail.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageStaticBoundary")));
+            }
+            for (const counters of [reads.counts, reads.platformErrorCounts, reads.transferComparisons]) {
+              readDetail.appendChild(noteSection(t("runtimeNativeEntryCount"), Object.entries(counters || {}).slice(0, 16)
+                .map(([kind, count]) => `${humanize(kind)}: ${formatNumber(count)}`).join(" / ")));
+            }
+            const coverage = reads.observedCoverage;
+            if (coverage) {
+              const observed = document.createElement("details");
+              observed.className = "audio-runtime-observed-coverage";
+              const title = document.createElement("summary");
+              title.textContent = t("runtimeObservedCoverage");
+              observed.appendChild(title);
+              observed.appendChild(noteSection(t("runtimeBoundary"), t("runtimeObservedCoverageBoundary")));
+              observed.appendChild(noteSection(t("runtimeCoverageChecked"), formatNumber(coverage.checkedTransformEntryCount || 0)));
+              for (const [label, key] of [["runtimeCoverageEncryption", "encryptionFlagCounts"],
+                ["runtimeCoverageAlignment", "relativeOffsetModulo4Counts"], ["runtimeCoverageOrigin", "relativeOffsetCounts"],
+                ["runtimeCoverageRanges", "descriptorRangeCohortCounts"]]) {
+                observed.appendChild(noteSection(t(label), Object.entries(coverage[key] || {})
+                  .map(([kind, count]) => `${humanize(kind)}: ${formatNumber(count)}`).join(" / ") || t("unknown")));
+              }
+              if (reads.descriptorCohortSelection) observed.appendChild(noteSection(t("runtimeSampleCohorts"),
+                [reads.descriptorCohortSelection.representedCohortCount, reads.distinctDescriptorCohortCount]
+                  .map(value => formatNumber(value || 0)).join(" / ")));
+              appendSampleSelection(observed, reads.sampleSelection);
+              readDetail.appendChild(observed);
+            }
+            const bufferSamples = document.createElement("details");
+            const bufferTitle = document.createElement("summary");
+            bufferTitle.textContent = t("runtimePackageBufferSamples");
+            bufferSamples.appendChild(bufferTitle);
+            for (const row of asArray(reads.samples).slice(0, 16)) {
+              bufferSamples.appendChild(noteSection(t("runtimePackageReadGeometry"), [row.descriptorKeyLow, row.descriptorByteLength,
+                row.transferFilePosition, row.transferRequestedBytes, row.transferTransformBytes, row.preTransformBufferWord]
+                .map((value) => value == null ? "?" : String(value)).join(" / ")));
+            }
+            if (asArray(reads.descriptorCohorts).length) {
+              readDetail.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageReadRangeBoundary")));
+              for (const row of asArray(reads.descriptorCohorts).slice(0, 16)) {
+                readDetail.appendChild(noteSection(t("runtimePackageReadRanges"), [row.descriptorKeyLow, row.entryCount,
+                  row.transformRangeBytes, row.descriptorByteLength, row.transformRangesSpanDescriptor, row.distinctSampledWordCount]
+                  .map((value) => value == null ? "?" : String(value)).join(" / ")));
+              }
+            }
+            const witness = reads.encodedWordWitness;
+            if (witness) {
+              const comparison = document.createElement("details");
+              comparison.className = "audio-runtime-package-word-witness";
+              const comparisonTitle = document.createElement("summary");
+              comparisonTitle.textContent = t("runtimePackageWordWitness");
+              comparison.appendChild(comparisonTitle);
+              comparison.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageWordBoundary")));
+              if (witness.status === "conditionalIndexedComparison") {
+                const matches = asArray(witness.matches).slice().sort((a, b) => (a.sector !== "externals") - (b.sector !== "externals"));
+                for (const row of matches.slice(0, 16)) {
+                  const file = document.createElement("code");
+                  file.textContent = `${normalize(row.fileName).slice(0, 160)} / #${String(row.key)}`;
+                  comparison.appendChild(file);
+                  comparison.appendChild(noteSection(t("runtimePackageWordCounts"),
+                    [row.matchedWordCount, row.sampleCount, row.distinctSampledByteCount].map((value) => formatNumber(value)).join(" / ")));
+                }
+              } else comparison.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), witness.detail || humanize(witness.status)));
+              readDetail.appendChild(comparison);
+            }
+            const offline = reads.offlineDecodeObservations;
+            if (offline) {
+              const comparison = document.createElement("details");
+              comparison.className = "audio-runtime-offline-decode";
+              const title = document.createElement("summary");
+              title.textContent = t("runtimePackageOfflineDecode");
+              comparison.appendChild(title);
+              comparison.appendChild(noteSection(t("runtimeBoundary"), t("runtimePackageOfflineDecodeBoundary")));
+              if (offline.status === "historicalOfflineSelectedEntryComparison" && offline.currentInputsMatch === true) {
+                for (const row of asArray(offline.rows).slice(0, 32)) {
+                  comparison.appendChild(noteSection(`${normalize(row.fileName)} / #${normalize(row.key)}`,
+                    `${t("runtimePackageOfflineDecodeFields")}: ` + [row.encoding, row.channels, row.sampleRate,
+                      Number.isFinite(row.duration) ? row.duration.toFixed(3) : "?", row.pcmBytesEqual]
+                      .map(value => value == null ? "?" : String(value)).join(" / ")));
+                }
+              } else comparison.appendChild(noteSection(t("runtimeNativeEntryUnavailable"),
+                offline.diagnostic?.detail || humanize(offline.status)));
+              readDetail.appendChild(comparison);
+            }
+            const receivers = reads.transferReceiverObservations;
+            if (receivers) {
+              const entries = document.createElement("details");
+              entries.className = "audio-runtime-transfer-receivers";
+              const title = document.createElement("summary");
+              title.textContent = t("runtimeTransferReceivers");
+              entries.appendChild(title);
+              entries.appendChild(noteSection(t("runtimeBoundary"), t("runtimeTransferReceiverBoundary")));
+              if (receivers.status === "validated") {
+                appendSampleSelection(entries, receivers.sampleSelection);
+                entries.appendChild(noteSection(t("runtimeNativeEntryCount"), Object.entries(receivers.counts || {})
+                  .slice(0, 16).map(([key,value]) => `${humanize(key)}: ${formatNumber(value)}`).join(" / ")));
+                entries.appendChild(noteSection(t("runtimeProviderEntryAddressPoint"), Object.entries(receivers.interfaceFamilyCounts || {})
+                  .slice(0, 12).map(([key,value]) => `${humanize(key)}: ${formatNumber(value)}`).join(" / ")));
+                for (const row of asArray(receivers.samples).slice(0, 24)) {
+                  entries.appendChild(noteSection(row.sourceKind || t("unknown"), Object.entries(row)
+                    .filter(([key]) => key !== "sourceKind").map(([key,value]) => `${humanize(key)}: ${value == null ? "?" : String(value)}`).join(" / ")));
+                }
+              } else entries.appendChild(noteSection(t("runtimeNativeEntryUnavailable"), receivers.detail || humanize(receivers.status)));
+              readDetail.appendChild(entries);
+            } else readDetail.appendChild(noteSection(t("runtimeTransferReceivers"), t("runtimeTransferReceiverMissing")));
+            readDetail.appendChild(bufferSamples);
+          }
+          detail.appendChild(readDetail);
+        }
+      }
+      section.appendChild(detail);
+    }
+    const storage = projection.sourceStorageByHook && typeof projection.sourceStorageByHook === "object" ? projection.sourceStorageByHook : {};
+    for (const [kind, row] of Object.entries(storage).slice(0, 18)) {
+      section.appendChild(noteSection(humanize(kind), `${t("runtimeNativeEntryStorage")}: `
+        + [row.bit8Clear, row.bit8Set, row.bit8SetNonzeroDataPointer, row.bit8SetZeroWord8].map((value) => formatNumber(value || 0)).join(" / ")));
+    }
+    for (const group of asArray(projection.nativeTextsByHook).slice(0, 9)) {
+      const detail = document.createElement("details");
+      const title = document.createElement("summary");
+      title.textContent = `${humanize(group.sourceKind)} / ${formatNumber(group.observationCount || 0)} ${t("runtimeNativeEntryCount")} / ${formatNumber(group.distinctTextCount || 0)} ${t("runtimeNativeSourceBridgeTexts")}`;
+      detail.appendChild(title);
+      for (const row of asArray(group.texts).slice(0, 32)) {
+        const item = document.createElement("p");
+        const text = document.createElement("code");
+        text.textContent = normalize(row.text).slice(0, 160);
+        item.append(text, document.createTextNode(` / ${formatNumber(row.entryCount || 0)} ${t("runtimeNativeEntryCount")}`));
+        detail.appendChild(item);
+      }
+      if (group.textsTruncated) detail.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceSamplesLimited")));
+      section.appendChild(detail);
+    }
+    const carrier = projection.ownerCarrierSnapshots || {};
+    section.appendChild(noteSection(t("runtimeNativeOwnerCarrier"), `${formatNumber(carrier.entries || 0)} ${t("runtimeNativeEntryCount")} / ${formatNumber(carrier.matchingOwnerEntries || 0)} ${t("runtimeNativeOwnerCarrierMatches")}`));
+    return section;
+  }
+
+  function runtimeNativeSourceSection(projection) {
+    if (!projection || !projection.nativeSourceObservationsStatus || projection.nativeSourceObservationsStatus === "notRequested") return null;
+    const ready = projection.status === "ready" && projection.nativeSourceObservationsStatus === "ready";
+    const unavailable = projection.status === "degraded" || projection.nativeSourceObservationsStatus === "degraded";
+    const captures = ready ? asArray(projection.nativeSourceCaptures).filter((row) => row && typeof row === "object").slice(0, 32) : [];
+    if (!captures.length && !unavailable) return null;
+    const section = document.createElement("details");
+    section.className = "audio-runtime-system audio-runtime-native-source";
+    const summary = document.createElement("summary");
+    summary.textContent = t("runtimeNativeSourceCaptures") + (ready
+      ? ` (${formatNumber(projection.nativeSourceCaptureCount || 0)} / ${formatNumber(projection.nativeSourcePairCount || 0)} ${t("runtimeNativeSourcePairs")} / ${formatNumber(projection.nativeSourceNestedPairCount || 0)} ${t("runtimeNativeSourceNestedPairs")})` : "");
+    section.appendChild(summary);
+    section.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceBoundary")));
+    if (unavailable) {
+      section.appendChild(noteSection(t("runtimeNativeSourceUnavailable"), humanize(projection.nativeSourceObservationsReason || projection.reason || projection.status)));
+      return section;
+    }
+    let sampleBudget = 48;
+    for (const capture of captures) {
+      const item = document.createElement("details");
+      const title = document.createElement("summary");
+      title.textContent = asArray(capture.sessionIds).slice(0, 32).join(" / ") + ` / ${capture.observerProfile || ""}`;
+      if (capture.sessionIdsTruncated) title.textContent += ` / ${formatNumber(capture.sessionCount || 0)} ${t("runtimeNativeSourceSessions")}`;
+      item.appendChild(title);
+      const source = capture.sourceSummary && typeof capture.sourceSummary === "object" ? capture.sourceSummary : {};
+      const counts = source.sourceKindCounts && typeof source.sourceKindCounts === "object" ? source.sourceKindCounts : {};
+      item.appendChild(noteSection(t("runtimeNativeSourcePairs"), Object.entries(counts).slice(0, 32).map(([kind, count]) => `${kind}: ${formatNumber(count)}`).join(" / ")));
+      const bridge = source.sourceBridgeRelations;
+      if (bridge?.schema === "endfield.audio-source-bridge-relations.v1") {
+        const selections = document.createElement("details");
+        const selectionTitle = document.createElement("summary");
+        selectionTitle.textContent = `${t("runtimeNativeSourceBridge")} / ${formatNumber(bridge.pathChainCount || 0)} ${t("runtimeNativeSourceBridgeRelations")} / ${formatNumber(bridge.distinctPathCount || 0)} ${t("runtimeNativeSourceBridgeTexts")} / ${formatNumber(bridge.singleDescriptorSelectorCount || 0)} ${t("runtimeNativeSourceBridgeDescriptors")}`;
+        selections.appendChild(selectionTitle);
+        selections.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceBridgeBoundary")));
+        const unresolved = bridge.unresolvedCounts;
+        if (unresolved && typeof unresolved === "object") {
+          const joined = Object.entries(unresolved).slice(0, 32).map(([kind, count]) => `${kind}: ${formatNumber(count)}`).join(" / ");
+          if (joined) selections.appendChild(noteSection(t("runtimeNativeSourceBridgeUnresolved"), joined));
+        }
+        for (const row of asArray(bridge.rows).slice(0, 32)) {
+          if (!row || typeof row.path !== "string") continue;
+          const path = document.createElement("details");
+          const pathTitle = document.createElement("summary");
+          pathTitle.textContent = `${t("runtimeNativeSourceBridgeText")}: ${row.path.slice(0, 4095)} / ${formatNumber(row.chainCount || 0)} ${t("runtimeNativeSourceBridgeRelations")}`;
+          path.appendChild(pathTitle);
+          for (const sample of asArray(row.samples).slice(0, 4)) {
+            if (!sample || typeof sample !== "object") continue;
+            if (sampleBudget <= 0) break;
+            sampleBudget--;
+            const representative = document.createElement("details");
+            const heading = document.createElement("summary");
+            heading.textContent = `${sample.selectorCaptureId || ""} → ${sample.cloneCaptureId || ""} → ${sample.constructorCaptureId || ""} → ${sample.consumerCaptureId || ""} → ${sample.lockCaptureId || ""}`;
+            const sequence = {}, monotonicMs = {};
+            for (const role of ["selector", "clone", "setter", "factory", "constructor", "consumer", "lock"]) {
+              sequence[role] = asArray(sample.sequence?.[role]).slice(0, 2);
+              monotonicMs[role] = asArray(sample.monotonicMs?.[role]).slice(0, 2);
+            }
+            const fields = document.createElement("pre");
+            fields.textContent = JSON.stringify({
+              threadId: sample.threadId, sequence, monotonicMs,
+              setterCaptureId: sample.setterCaptureId, factoryCaptureId: sample.factoryCaptureId,
+              originalSourcePointer: sample.originalSourcePointer, selectedSourcePointer: sample.selectedSourcePointer,
+              primaryOwnerPointer: sample.primaryOwnerPointer, consumerOwnerPointer: sample.consumerOwnerPointer,
+              outputPointer: sample.outputPointer, descriptorWideTextPointer: sample.descriptorWideTextPointer,
+              retainedTextPointer: sample.retainedTextPointer, playbackSerialWord: sample.playbackSerialWord,
+              configAddressPointRva: sample.configAddressPointRva, configDispatchKind: sample.configDispatchKind,
+              sourceAfter: sample.sourceAfter, lockOutputAfter: sample.lockOutputAfter,
+            }, null, 2);
+            representative.append(heading, fields);
+            path.appendChild(representative);
+          }
+          selections.appendChild(path);
+        }
+        item.appendChild(selections);
+      }
+      const ownerCarrier = source.ownerCarrierRelations;
+      if (ownerCarrier?.schema === "endfield.audio-owner-carrier-relations.v1") {
+        const owners = document.createElement("details");
+        const ownerTitle = document.createElement("summary");
+        ownerTitle.textContent = `${t("runtimeNativeOwnerCarrier")} / ${formatNumber(ownerCarrier.ownerDecoderSnapshotMatchCount || 0)} ${t("runtimeNativeOwnerCarrierMatches")}`;
+        owners.appendChild(ownerTitle);
+        owners.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeOwnerCarrierBoundary")));
+        if (ownerCarrier.unresolvedCounts && typeof ownerCarrier.unresolvedCounts === "object") {
+          const joined = Object.entries(ownerCarrier.unresolvedCounts).slice(0, 32).map(([kind, count]) => `${kind}: ${formatNumber(count)}`).join(" / ");
+          if (joined) owners.appendChild(noteSection(t("runtimeNativeSourceBridgeUnresolved"), joined));
+        }
+        for (const sample of asArray(ownerCarrier.samples).slice(0, 48)) {
+          if (!sample || typeof sample !== "object") continue;
+          if (sampleBudget <= 0) break;
+          sampleBudget--;
+          const representative = document.createElement("details");
+          const heading = document.createElement("summary");
+          heading.textContent = `${sample.controlCaptureId || ""} / ${sample.selectedSnapshotSide || ""}`;
+          const decoderSnapshots = {}, sourceSnapshot = {};
+          for (const side of ["current", "pending"]) {
+            const value = sample.decoderSnapshots?.[side];
+            if (value && typeof value === "object") decoderSnapshots[side] = {
+              decoderPointer: value.decoderPointer, decoderOwnerPointer: value.decoderOwnerPointer,
+            };
+          }
+          for (const name of ["sourceLookupWord", "sourceStoredWord4", "sourceStoredWord8", "sourceFlagsWord", "sourceDataPointer", "sourceArgumentWord24"]) {
+            if (sample.sourceSnapshot && typeof sample.sourceSnapshot === "object" && name in sample.sourceSnapshot) sourceSnapshot[name] = sample.sourceSnapshot[name];
+          }
+          const fields = document.createElement("pre");
+          fields.textContent = JSON.stringify({
+            threadId: sample.threadId, sequence: asArray(sample.sequence).slice(0, 2),
+            monotonicMs: asArray(sample.monotonicMs).slice(0, 2), callerRva: sample.callerRva,
+            primaryOwnerAddressPointRva: sample.primaryOwnerAddressPointRva,
+            primaryOwnerPointer: sample.primaryOwnerPointer, carrierPointer: sample.carrierPointer,
+            storedSourcePointer: sample.storedSourcePointer,
+            selectedSnapshotSide: sample.selectedSnapshotSide,
+            matchingSnapshotSides: asArray(sample.matchingSnapshotSides).filter((side) => ["current", "pending"].includes(side)).slice(0, 2),
+            decoderSnapshots, sourceSnapshot,
+          }, null, 2);
+          representative.append(heading, fields);
+          owners.appendChild(representative);
+        }
+        item.appendChild(owners);
+      }
+      const relations = source.sourceConsumerRelations && typeof source.sourceConsumerRelations === "object" ? source.sourceConsumerRelations : {};
+      for (const row of asArray(relations.rows).slice(0, 32)) {
+        const states = row?.stateCounts || {};
+        item.appendChild(noteSection(row?.sourceKind || t("unknown"), `${formatNumber(row?.pairCount || 0)} ${t("runtimeNativeSourceNestedPairs")} / ${t("runtimeNativeSourceFlagStates")}: ${formatNumber(states.clear || 0)} / ${formatNumber(states.set || 0)} / ${formatNumber(states.unavailable || 0)}`));
+        for (const state of ["clear", "set", "unavailable"]) {
+          for (const sample of asArray(row?.samples?.[state]).slice(0, 4)) {
+            if (sampleBudget <= 0) break;
+            sampleBudget--;
+            const representative = document.createElement("details");
+            const heading = document.createElement("summary");
+            heading.textContent = `${state} / ${sample?.consumerCaptureId || ""} → ${sample?.lockCaptureId || ""}`;
+            const fields = document.createElement("pre");
+            fields.textContent = JSON.stringify({
+              threadId: sample?.threadId, sequence: asArray(sample?.sequence).slice(0, 4),
+              anonymousOwnerPointer: sample?.anonymousOwnerPointer, sourcePointer: sample?.sourcePointer,
+              outputPointer: sample?.outputPointer, sourceOwnerOffset: sample?.sourceOwnerOffset,
+              outputOwnerOffset: sample?.outputOwnerOffset, outputBefore: sample?.outputBefore, outputAfter: sample?.outputAfter,
+            }, null, 2);
+            representative.append(heading, fields);
+            item.appendChild(representative);
+          }
+        }
+      }
+      section.appendChild(item);
+    }
+    section.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeSourceSamplesLimited")));
+    return section;
+  }
+
+  function staticProviderPreparationSection(projection) {
+    if (!projection || projection.schema !== "endfield.audio-static-provider-preparation.v1" || projection.evidenceKind !== "static") return null;
+    const section = document.createElement("details");
+    section.className = "audio-runtime-system audio-static-provider";
+    const heading = document.createElement("summary");
+    heading.textContent = t("staticProviderPreparation");
+    section.appendChild(heading);
+    if (projection.status !== "validated") {
+      section.appendChild(noteSection(t("staticProviderUnavailable"), String(projection.reason || projection.status || "unavailable").slice(0, 320)));
+      return section;
+    }
+    const labels = {
+      decoderOwnerSource: ["direct", "staticProviderDecoderOwnerSource"],
+      conditionalPointerOrWord: ["conditional", "staticProviderConditionalPointerOrWord"],
+      argumentHalfword: ["direct", "staticProviderArgumentHalfword"],
+      alternateOwnerInput: ["conditional", "staticProviderAlternateOwnerInput"],
+      conditionalProviderInterface: ["conditional", "staticProviderConditionalProviderInterface", "storage"],
+      conditionalOwnedText: ["conditional", "staticProviderConditionalOwnedText", "storage"],
+    };
+    const seen = new Set();
+    for (const claim of asArray(projection.claims).slice(0, 8)) {
+      if (!Object.prototype.hasOwnProperty.call(labels, claim?.id)) continue;
+      const entry = labels[claim?.id];
+      if (!entry || entry[0] !== claim.evidenceBoundary || seen.has(claim.id)) continue;
+      if (entry[2] === "storage" && projection.providerStorageStatus !== "validated") continue;
+      seen.add(claim.id);
+      section.appendChild(noteSection(humanize(entry[0]), t(entry[1])));
+    }
+    if (projection.providerStorageStatus && projection.providerStorageStatus !== "validated") {
+      section.appendChild(noteSection(t("staticProviderStorageUnavailable"), String(projection.providerStorageReason || projection.providerStorageStatus).slice(0, 320)));
+    }
+    section.appendChild(noteSection(t("runtimeBoundary"), t("staticProviderBoundary")));
+    return section;
+  }
+
+  function packageCatalogSection(projection) {
+    if (!projection || projection.schema !== "endfield.audio-package-catalog.v1") return null;
+    if (projection.status === "notRequested") return null;
+    const section = document.createElement("details");
+    section.className = "audio-runtime-system audio-static-package-catalog";
+    const title = document.createElement("summary");
+    title.textContent = t("packageCatalog");
+    section.appendChild(title);
+    if (projection.status !== "validated") {
+      section.appendChild(noteSection(t("staticProviderUnavailable"),
+        String(projection.diagnostic?.detail || projection.diagnostic?.code || projection.status)));
+      return section;
+    }
+    section.appendChild(noteSection(t("runtimeBoundary"), t("packageCatalogBoundary")));
+    const counts = projection.summary || {};
+    section.appendChild(noteSection(t("packageCatalogCounts"),
+      [counts.packageCount, counts.entryCount, counts.distinctTypedKeyCount, counts.excludedPackageCount]
+        .map(value => formatNumber(value || 0)).join(" / ")));
+    section.appendChild(noteSection(t("packageCatalogRepeated"),
+      [counts.repeatedTypedKeyCount, counts.lowWordCollisionCount].map(value => formatNumber(value || 0)).join(" / ")));
+    if (Number.isInteger(counts.bankHeaderIdentityCount)) {
+      section.appendChild(noteSection(t("packageCatalogBankIdentities"), counts.bankHeaderIdentityCount.toLocaleString()));
+    }
+    for (const [label, values] of [["packageCatalogSectors", counts.sectorCounts], ["packageCatalogBlocks", counts.packageBlockCounts], ["packageCatalogBankVersions", counts.bankVersionCounts]]) {
+      section.appendChild(noteSection(t(label), Object.entries(values || {})
+        .map(([key, value]) => `${key}: ${formatNumber(value)}`).join(" / ")));
+    }
+    if (counts.languageLabelCounts) {
+      section.appendChild(noteSection(t("packageCatalogLanguageLabels"), Object.entries(counts.languageLabelCounts)
+        .map(([key, value]) => `${key}: ${formatNumber(value)}`).join(" / ")));
+      section.appendChild(noteSection(t("runtimeBoundary"), t("packageCatalogLanguageBoundary")));
+      if (counts.unresolvedLanguageLabelCount) {
+        section.appendChild(noteSection(t("packageCatalogLanguageUnresolved"), formatNumber(counts.unresolvedLanguageLabelCount)));
+      }
+      if (counts.languageLabelsOmitted || counts.languageLabelCountsTruncated) {
+        section.appendChild(noteSection(t("packageCatalogLanguageLabels"), t("packageCatalogLanguageTruncated")));
+      }
+    }
+    const packages = document.createElement("details");
+    const heading = document.createElement("summary");
+    heading.textContent = t("packageCatalogRows");
+    packages.appendChild(heading);
+    for (const row of asArray(projection.packages).slice(0, 64)) {
+      const labels = asArray(row.languageTable?.rows)
+        .map(value => `${value.id} = ${value.label ?? `${String(value.labelPreview || "")}…`}`).join(" / ");
+      const limited = row.languageTable?.rowsTruncated || asArray(row.languageTable?.rows).some(value => value.labelTruncated);
+      packages.appendChild(noteSection(`${normalize(row.block)} / ${normalize(row.path)}`,
+        [Object.entries(row.counts || {}).map(([key, value]) => `${key}: ${formatNumber(value)}`).join(" / "),
+          labels ? `${t("packageCatalogLanguageTable")}: ${labels}` : "",
+          limited ? t("packageCatalogLanguageTruncated") : ""].filter(Boolean).join("\n")));
+    }
+    section.appendChild(packages);
+    const ambiguity = document.createElement("details");
+    const ambiguityTitle = document.createElement("summary");
+    ambiguityTitle.textContent = t("packageCatalogCollisions");
+    ambiguity.appendChild(ambiguityTitle);
+    for (const row of asArray(projection.lowWordCollisions).slice(0, 32)) {
+      ambiguity.appendChild(noteSection(t("packageCatalogLowWords"),
+        `${row.keyLow} / ${asArray(row.fullKeys).map(String).join(" / ")}`));
+    }
+    for (const row of asArray(projection.repeatedTypedKeys).slice(0, 32)) {
+      ambiguity.appendChild(noteSection(`${normalize(row.sector)} / ${normalize(row.key)} / ${row.language}`,
+        asArray(row.entries).map(entry => `${normalize(entry.block)}: ${normalize(entry.path)}`).join(" / ")));
+    }
+    section.appendChild(ambiguity);
+    return section;
+  }
+
   function runtimePanel() {
     const runtimeCandidate = state.index?.runtimeSystem || state.index?.runtimeModel;
     const runtime = runtimeCandidate && typeof runtimeCandidate === "object" ? runtimeCandidate : {};
@@ -2377,6 +3210,17 @@
     const heading = document.createElement("h2");
     heading.textContent = t("runtimeSystem");
     panel.appendChild(heading);
+    const packageCatalog = packageCatalogSection(state.index?.packageCatalog);
+    if (packageCatalog) panel.appendChild(packageCatalog);
+    panel.appendChild(noteSection(t("runtimeBoundary"), t("runtimeNativeCaptureWorkflow")));
+    const capturedEntries = runtimeNativeEntrySection(state.index?.nativeEntryObservations);
+    if (capturedEntries) panel.appendChild(capturedEntries);
+    const capturedRequests = runtimeExternalRequestsSection(state.index?.runtimeObservations);
+    if (capturedRequests) panel.appendChild(capturedRequests);
+    const capturedSources = runtimeNativeSourceSection(state.index?.runtimeObservations);
+    if (capturedSources) panel.appendChild(capturedSources);
+    const staticProvider = staticProviderPreparationSection(state.index?.staticProviderPreparation);
+    if (staticProvider) panel.appendChild(staticProvider);
     const descriptionCandidate = runtime.overview ?? runtime.description ?? runtime.summary ?? runtime.evidenceBoundary;
     const description = ["string", "number", "boolean"].includes(typeof descriptionCandidate) ? normalize(descriptionCandidate) : "";
     if (description) {
@@ -4827,6 +5671,7 @@
           : (packageRow.valueId !== undefined ? "unresolved value" : "value");
         const childCount = asArray(packageRow.childIds).length;
         const directMedia = asArray(packageRow.directMediaIds);
+        const unresolvedMedia = asArray(packageRow.unresolvedMediaCandidateIds);
         const childLabel = packageRow.mappedStatus === "mappedChildOutsideReciprocalChildren"
           ? `${formatNumber(childCount)} mapped selector candidate${childCount === 1 ? "" : "s"} / outside ownership evidence`
           : packageRow.unmapped
@@ -4841,6 +5686,7 @@
           packageRow.isDefault ? "authored default" : "",
           childLabel,
           mediaLabel(directMedia, packageRow.mediaStatus === "descendantMediaUnresolved" ? "descendant media unresolved" : ""),
+          unresolvedMedia.length ? `${t("selectorPackageIdentityGap")}: ${formatNumber(unresolvedMedia.length)}` : "",
         ].filter(Boolean).join(" / ");
         body.appendChild(packageLine);
       }
@@ -5310,6 +6156,93 @@
       });
   }
 
+  function nativeEffectReadSection(record) {
+    const definitions = new Map(asArray(state.index?.hircSummary?.postProcessSummary?.busDefinitions)
+      .filter((row) => row && typeof row === "object")
+      .map((row) => [normalize(row.busIdHex || row.busId).toLowerCase(), row]));
+    const effects = new Map();
+    const busIds = new Set();
+    const add = (slot) => {
+      if (!slot || slot.parameterNativeEvidenceStatus !== "structuralOnly") return;
+      if (!slot.parameterNativeReadDiagnostic && slot.parameterNativeReadParserStatus !== "exactNativeReadPartition") return;
+      const key = `${slot.effectIdHex || slot.pluginClassIdHex}:${slot.parameterSha256 || ""}`;
+      if (!effects.has(key)) effects.set(key, slot);
+    };
+    const addBus = (id) => {
+      const normalized = normalize(id).toLowerCase();
+      if (normalized) busIds.add(normalized);
+    };
+    const raw = record?.raw || {};
+    asArray(raw.postProcessDirectEffects).forEach(add);
+    for (const path of asArray(raw.postProcessBusPaths)) asArray(path).forEach(addBus);
+    asArray(raw.postProcessEffectBusIds).forEach(addBus);
+    for (const route of asArray(raw.postProcessAuxSends)) asArray(route.busPathIdHexes).forEach(addBus);
+    for (const evidence of asArray(raw.evidence)) {
+      const processing = evidence?.postProcessSummary;
+      for (const node of asArray(processing?.effectNodes)) asArray(node?.effects).forEach(add);
+      for (const bus of [...asArray(processing?.outputBuses), ...asArray(processing?.auxiliaryBuses)]) {
+        addBus(bus?.busIdHex || bus?.busId);
+        asArray(bus?.busPathIdHexes).forEach(addBus);
+      }
+    }
+    for (const id of busIds) asArray(definitions.get(id)?.effects).forEach(add);
+    if (!effects.size) return null;
+    const section = document.createElement("details");
+    section.className = "audio-native-read-section";
+    const heading = document.createElement("summary");
+    heading.textContent = `${t("nativeEffectReads")} / structuralOnly / ${formatNumber(effects.size)}`;
+    section.appendChild(heading);
+    section.appendChild(noteSection("structuralOnly", t("nativeReadBoundary")));
+    for (const slot of [...effects.values()].slice(0, 12)) {
+      const block = document.createElement("details");
+      block.className = "audio-native-read-block";
+      const label = document.createElement("summary");
+      label.textContent = [slot.pluginName || slot.pluginClassIdHex, slot.effectIdHex,
+        slot.parameterSummary || "", "structuralOnly"].filter(Boolean).join(" / ");
+      block.appendChild(label);
+      if (slot.parameterNativeReadDiagnostic) {
+        const diagnostic = slot.parameterNativeReadDiagnostic;
+        block.appendChild(noteSection("failedClosed", JSON.stringify(diagnostic)));
+      } else {
+        const rows = asArray(slot.parameterNativeReads)
+          .filter((row) => row && row.evidenceBoundary === "structuralOnly");
+        const wrap = document.createElement("div");
+        wrap.className = "audio-native-read-scroll";
+        const table = document.createElement("table");
+        table.className = "audio-native-read-table";
+        const head = document.createElement("thead");
+        const titles = document.createElement("tr");
+        for (const key of ["nativeReadOffset", "nativeReadWidth", "nativeReadKind", "nativeReadRaw", "nativeReadFloat"]) {
+          const cell = document.createElement("th");
+          cell.scope = "col";
+          cell.textContent = t(key);
+          titles.appendChild(cell);
+        }
+        head.appendChild(titles);
+        const body = document.createElement("tbody");
+        for (const read of rows.slice(0, 128)) {
+          const row = document.createElement("tr");
+          const floatView = read.float32View !== undefined && read.float32View !== null
+            && Number.isFinite(Number(read.float32View)) ? String(read.float32View) : "—";
+          for (const value of [read.serializedOffset, read.byteWidth, read.readKind, read.rawHex, floatView]) {
+            const cell = document.createElement("td");
+            cell.textContent = String(value ?? "?");
+            row.appendChild(cell);
+          }
+          body.appendChild(row);
+        }
+        table.append(head, body);
+        wrap.appendChild(table);
+        block.appendChild(wrap);
+        if (rows.length > 128) block.appendChild(noteSection("truncated", `${rows.length - 128} rows omitted`));
+        if (slot.parameterNativeUnreadByteLength) block.appendChild(noteSection("unread", `${slot.parameterNativeUnreadByteLength} trailing bytes remain outside the native read span`));
+      }
+      section.appendChild(block);
+    }
+    if (effects.size > 12) section.appendChild(noteSection("truncated", `${effects.size - 12} effect definitions omitted`));
+    return section;
+  }
+
   function recordPanel(record) {
     const panel = document.createElement("section");
     panel.className = "audio-panel";
@@ -5534,6 +6467,8 @@
     grid.className = "audio-facts";
     for (const [label, value] of facts) if (value !== undefined && value !== null && value !== "") grid.appendChild(factNode(label, value));
     panel.appendChild(grid);
+    const nativeReads = nativeEffectReadSection(record);
+    if (nativeReads) panel.appendChild(nativeReads);
     const audioCueExpressions = audioCueExpressionSection(raw);
     if (audioCueExpressions) panel.appendChild(audioCueExpressions);
     const levelScriptLifecycle = levelScriptAudioLifecycleSection(raw);

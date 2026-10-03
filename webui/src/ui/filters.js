@@ -26,7 +26,8 @@
   // Render a set of filter chips into `container`.
   //
   //   container  element or selector for the chip wrapper
-  //   items      array of values (string/number) or { value, label, count, title, className }
+  //   items      array of values (string/number) or { value, label, count, title, className, icon }
+  //              icon is an optional decorative image URL
   //              (a per-item className overrides opts.className for that chip)
   //   opts:
   //     active      Set (multi-select) | string (single-select group)
@@ -69,6 +70,14 @@
       chip.className = extraClass ? `chip ${extraClass}` : "chip";
       chip.dataset.value = value;
       chip.textContent = `${labelText}${count ? ` (${formatCount(count)})` : ""}`;
+      if (item.icon) {
+        const icon = document.createElement("img");
+        icon.className = "chip-icon";
+        icon.src = item.icon;
+        icon.alt = "";
+        icon.loading = "lazy";
+        chip.prepend(icon);
+      }
       if (opts.title) {
         const title = typeof opts.title === "function" ? opts.title(value, item) : opts.title;
         if (title) chip.title = title;

@@ -12,6 +12,9 @@
 //     table covered by a maintained renderer carries renderer: "structured" in
 //     the Text index, and a table with structured fields but no localized text
 //     is still listed.
+//   * Authored activity/achievement guides use `guide.sections`, with exact
+//     references rendered by the same field/link controls. Every guide value
+//     is searchable; the shared row pager does not truncate loaded data.
 (() => {
   const REF_TEXTS = {
     zh: {
@@ -47,6 +50,13 @@
       fieldUnresolved: "\u672a\u89e3\u6790",
       fieldOpenRow: "\u5728\u6587\u672c\u8868\u4e2d\u6253\u5f00",
       fieldRefMissing: "\u672a\u5bfc\u51fa\u6b64\u8868",
+      guideAchievement: "成就指南",
+      guideActivity: "活动指南",
+      guideReward: "奖励明细",
+      guideBoundary: "这里展示已配置的目标和奖励；不判断当前开放状态或玩家进度。",
+      guideCodes: "条件配置字段",
+      guideTexts: "其他本地化文本",
+      showingRows: "当前显示",
     },
     en: {
       tab: "Text",
@@ -81,9 +91,15 @@
       fieldUnresolved: "unresolved",
       fieldOpenRow: "Open in Text Tables",
       fieldRefMissing: "table not exported",
+      guideAchievement: "Achievement guide",
+      guideActivity: "Activity guide",
+      guideReward: "Reward breakdown",
+      guideBoundary: "Configured targets and rewards; current availability and player progress are not evaluated.",
+      guideCodes: "Stored condition fields",
+      guideTexts: "Additional localized text",
+      showingRows: "Showing",
     },
   };
-  const ROW_RENDER_LIMIT = Infinity;
   const FILTER_PANEL_STORAGE_KEY = "reference_browser_filters_collapsed";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   // The export keeps one effective table set under game/Table (layout v2).
@@ -97,6 +113,8 @@
     storageSet,
   } = window.WebUI;
   const REF_STATE = {
+    language: "",
+    dataGeneration: 0,
     index: null,
     tables: [],
     selectedTable: null,
@@ -116,6 +134,8 @@
     facets: null,
     collapsedTablePrefixes: new Set(),
     pager: null,
+    rowPager: null,
+    rowPagerKey: "",
     // Row id a maintained structured-field reference asked to focus after the
     // next row render. Cleared once the row is scrolled into view.
     focusRowId: "",
@@ -157,11 +177,11 @@
 
   function currentLanguage() {
     const select = ref$("#language");
-    return (select && select.value) || "CN";
+    return String((select && select.value) || "CN").toUpperCase();
   }
 
-  function referenceDataPath(relativePath) {
-    return dataPath(`reference/${relativePath}`, currentLanguage());
+  function referenceDataPath(relativePath, language = REF_STATE.language || currentLanguage()) {
+    return dataPath(`reference/${relativePath}`, language);
   }
 
   function referenceSourceKey() {
@@ -263,8 +283,8 @@
     return `${source || ""}\u0000${q || ""}`;
   }
 
-  async function fetchReferenceJson(relativePath) {
-    const res = await fetch(referenceDataPath(relativePath));
+  async function fetchReferenceJson(relativePath, language = REF_STATE.language || currentLanguage()) {
+    const res = await fetch(referenceDataPath(relativePath, language));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   }
@@ -280,8 +300,8 @@
     return JSON.parse(String(text || "").replace(/("id"\s*:\s*)(-?\d{15,})(?=\s*[,}])/g, "$1\"$2\""));
   }
 
-  async function fetchRawReferenceJson(relativePath) {
-    const res = await fetch(referenceDataPath(relativePath));
+  async function fetchRawReferenceJson(relativePath, language) {
+    const res = await fetch(referenceDataPath(relativePath, language));
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return parseRawReferenceJson(await res.text());
   }
@@ -332,6 +352,7 @@
 
   function tableMetadataMatches(table, q) {
     return window.WebUI.queryMatches([
+      window.WebUI.linkedFileSearchText(table, referenceSameHashFiles(table)),
       table.label,
       table.table,
       table.source,
@@ -346,6 +367,8 @@
   }
 
   async function loadReferencePayload(table) {
+    const generation = REF_STATE.dataGeneration;
+    const language = REF_STATE.language || currentLanguage();
     const cacheKey = referenceTableKey(table);
     const cached = REF_STATE.tableCache.get(cacheKey);
     if (cached) return cached;
@@ -353,22 +376,25 @@
     const pending = REF_STATE.tableLoads.get(cacheKey);
     if (pending) return pending;
 
-    const promise = fetchReferenceJson(table.file)
+    const promise = fetchReferenceJson(table.file, language)
       .then(async (payload) => {
         if (payload && payload.baseFile) {
-          const basePayload = await fetchReferenceJson(payload.baseFile);
+          const basePayload = await fetchReferenceJson(payload.baseFile, language);
           return mergeReferenceOverlay(basePayload, payload);
         }
         return payload;
       })
-      .then((payload) => {
+      .then(async (payload) => {
+        await Promise.all([window.WebUI.updateBadges.load("reference"), window.WebUI.updateBadges.loadFiles()]);
         const normalized = applyReferenceTableMetadata(payload, table);
-        REF_STATE.tableCache.set(cacheKey, normalized);
-        REF_STATE.tableLoads.delete(cacheKey);
+        if (generation === REF_STATE.dataGeneration) {
+          REF_STATE.tableCache.set(cacheKey, normalized);
+          REF_STATE.tableLoads.delete(cacheKey);
+        }
         return normalized;
       })
       .catch((error) => {
-        REF_STATE.tableLoads.delete(cacheKey);
+        if (generation === REF_STATE.dataGeneration) REF_STATE.tableLoads.delete(cacheKey);
         throw error;
       });
 
@@ -385,32 +411,35 @@
     return order;
   }
 
-  async function loadReferenceI18nMap(sourceKey) {
+  async function loadReferenceI18nMap(sourceKey, language) {
+    const generation = REF_STATE.dataGeneration;
     const source = referenceSourceKey(sourceKey);
-    const cacheKey = `${currentLanguage()}\u0000${source}`;
+    const cacheKey = `${language}\u0000${source}`;
     const cached = REF_STATE.i18nCache.get(cacheKey);
     if (cached) return cached;
 
     const pending = REF_STATE.i18nLoads.get(cacheKey);
     if (pending) return pending;
 
-    const path = exportTablePath(source, `I18nTextTable_${currentLanguage()}.json`);
+    const path = exportTablePath(source, `I18nTextTable_${language}.json`);
     const promise = fetchAbsoluteJson(path)
       .catch(() => ({}))
       .then((payload) => {
         const map = payload && typeof payload === "object" && !Array.isArray(payload) ? payload : {};
-        REF_STATE.i18nCache.set(cacheKey, map);
-        REF_STATE.i18nLoads.delete(cacheKey);
+        if (generation === REF_STATE.dataGeneration) {
+          REF_STATE.i18nCache.set(cacheKey, map);
+          REF_STATE.i18nLoads.delete(cacheKey);
+        }
         return map;
       });
     REF_STATE.i18nLoads.set(cacheKey, promise);
     return promise;
   }
 
-  async function loadReferenceI18nMaps(preferredSource) {
+  async function loadReferenceI18nMaps(preferredSource, language) {
     const maps = {};
     await Promise.all(referenceI18nSourceOrder(preferredSource).map(async (source) => {
-      maps[source] = await loadReferenceI18nMap(source);
+      maps[source] = await loadReferenceI18nMap(source, language);
     }));
     return maps;
   }
@@ -462,12 +491,12 @@
     return JSON.stringify(payload == null ? null : payload, null, 2);
   }
 
-  async function loadReferenceRawDisplay(file) {
+  async function loadReferenceRawDisplay(file, language) {
     let sourceError = null;
     if (file && file.exportPath) {
       try {
         const payload = await fetchRawExportJson(file.exportPath);
-        const maps = await loadReferenceI18nMaps(file.sourceKey);
+        const maps = await loadReferenceI18nMaps(file.sourceKey, language);
         return {
           text: formatRawReferencePayload(resolveRawReferenceStructure(payload, maps, file.sourceKey)),
           displayPath: rawDisplayPath(file.exportPath),
@@ -479,19 +508,21 @@
     }
 
     if (file && file.fallbackPath) {
-      const payload = await fetchRawReferenceJson(file.fallbackPath);
+      const payload = await fetchRawReferenceJson(file.fallbackPath, language);
       return {
         text: formatRawReferencePayload(bundledRawReferencePayload(payload)),
         displayPath: file.fallbackPath,
-        href: referenceDataPath(file.fallbackPath),
+        href: referenceDataPath(file.fallbackPath, language),
       };
     }
     throw sourceError || new Error(refText("rawUnavailable"));
   }
 
   async function loadReferenceRawText(file) {
+    const generation = REF_STATE.dataGeneration;
+    const language = REF_STATE.language || currentLanguage();
     const cacheKey = JSON.stringify([
-      currentLanguage(),
+      language,
       file && file.sourceKey || "",
       file && file.tableName || "",
       file && file.exportPath || "",
@@ -503,14 +534,16 @@
     const pending = REF_STATE.rawTextLoads.get(cacheKey);
     if (pending) return pending;
 
-    const promise = loadReferenceRawDisplay(file)
+    const promise = loadReferenceRawDisplay(file, language)
       .then((display) => {
-        REF_STATE.rawTextCache.set(cacheKey, display);
-        REF_STATE.rawTextLoads.delete(cacheKey);
+        if (generation === REF_STATE.dataGeneration) {
+          REF_STATE.rawTextCache.set(cacheKey, display);
+          REF_STATE.rawTextLoads.delete(cacheKey);
+        }
         return display;
       })
       .catch((error) => {
-        REF_STATE.rawTextLoads.delete(cacheKey);
+        if (generation === REF_STATE.dataGeneration) REF_STATE.rawTextLoads.delete(cacheKey);
         throw error;
       });
 
@@ -543,21 +576,28 @@
     syncReferenceFilterPanel();
   }
 
-  async function ensureReferenceIndex() {
+  async function ensureReferenceIndex(language = currentLanguage()) {
+    // app.js announces a language only after its Story load completes. Text
+    // may already be in use, so the event must not erase the same publication.
+    if (language !== REF_STATE.language) resetReferenceData(language);
     if (REF_STATE.index) return REF_STATE.index;
     if (REF_STATE.loadingIndex) return REF_STATE.loadingIndex;
 
+    const generation = REF_STATE.dataGeneration;
     window.WebUI.showLoader("reference");
-    REF_STATE.loadingIndex = window.WebUI.fetchWithProgress(referenceDataPath("index.json"), {
+    REF_STATE.loadingIndex = window.WebUI.fetchWithProgress(referenceDataPath("index.json", language), {
       // Downloading is only part of the work; reserve the last 10% for parsing
       // and rendering so the bar does not sit at 100% while the page is busy.
-      onProgress: (ratio) => window.WebUI.updateLoader("reference", ratio == null ? null : ratio * 0.9),
+      onProgress: (ratio) => {
+        if (generation === REF_STATE.dataGeneration) window.WebUI.updateLoader("reference", ratio == null ? null : ratio * 0.9);
+      },
     })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
       .then((payload) => {
+        if (generation !== REF_STATE.dataGeneration) return null;
         REF_STATE.index = payload || {};
         REF_STATE.tables = aggregateReferenceTables(Array.isArray(payload && payload.tables) ? payload.tables : []);
         REF_STATE.loadingIndex = null;
@@ -568,6 +608,7 @@
         return REF_STATE.index;
       })
       .catch((error) => {
+        if (generation !== REF_STATE.dataGeneration) return null;
         REF_STATE.loadingIndex = null;
         window.WebUI.hideLoader("reference");
         showReferenceError(error);
@@ -576,7 +617,9 @@
     return REF_STATE.loadingIndex;
   }
 
-  function resetReferenceData() {
+  function resetReferenceData(language = currentLanguage()) {
+    REF_STATE.language = language;
+    REF_STATE.dataGeneration += 1;
     REF_STATE.index = null;
     REF_STATE.tables = [];
     REF_STATE.selectedTable = null;
@@ -592,6 +635,8 @@
     REF_STATE.contentScansDone.clear();
     REF_STATE.collapsedTablePrefixes.clear();
     REF_STATE.focusRowId = "";
+    REF_STATE.rowPagerKey = "";
+    REF_STATE.rowPager?.setTotal(0, { reset: true });
     clearTimeout(REF_STATE.contentScanTimer);
     REF_STATE.contentScanTimer = 0;
     REF_STATE.contentScanKey = "";
@@ -651,6 +696,8 @@
   }
 
   function resetReferenceFilters() {
+    const sort = ref$("#reference-sort");
+    if (sort) sort.value = "default";
     const q = ref$("#reference-q");
     if (q) q.value = "";
     clearTimeout(REF_STATE.contentScanTimer);
@@ -706,6 +753,9 @@
   }
 
   function compareReferenceTablesForList(a, b) {
+    const key = ref$("#reference-sort")?.value || "default";
+    if (key === "rows") return Number(b.rows || b.rowCount || 0) - Number(a.rows || a.rowCount || 0);
+    if (key === "name") return String(a.label || a.table || "").localeCompare(String(b.label || b.table || ""), undefined, { numeric: true });
     const prefixDiff = tablePrefix(a).localeCompare(tablePrefix(b));
     if (prefixDiff) return prefixDiff;
     const nameDiff = String(a.label || a.table || "").localeCompare(String(b.label || b.table || ""));
@@ -791,7 +841,7 @@
       renderQueued = true;
       setTimeout(() => {
         renderQueued = false;
-        if (REF_STATE.contentScanKey === key && referenceSearchKey(referenceQuery(), sourceFilterKey()) === key) {
+        if (REF_STATE.contentScanToken === token && REF_STATE.contentScanKey === key && referenceSearchKey(referenceQuery(), sourceFilterKey()) === key) {
           renderReferenceList();
         }
       }, 0);
@@ -803,6 +853,7 @@
         if (tableMetadataMatches(table, q)) continue;
         try {
           const payload = await loadReferencePayload(table);
+          if (REF_STATE.contentScanToken !== token) return;
           if ((payload.rows || []).some((row) => rowMatches(row, q))) {
             matches.add(referenceTableKey(table));
             queueRender();
@@ -842,7 +893,7 @@
     const q = referenceQuery();
     syncReferenceFilterSectionActiveCounts();
     const sourceKey = sourceFilterKey();
-    const rows = filteredTables().slice().sort(compareReferenceTablesForList);
+    const rows = filteredTables().slice().sort(window.WebUI.sorting.comparator("reference-sort", compareReferenceTablesForList));
     REF_STATE.pager?.setTotal(rows.length);
     const pageRows = REF_STATE.pager ? REF_STATE.pager.slice(rows) : rows;
     list.replaceChildren();
@@ -874,6 +925,7 @@
   }
 
   async function selectReferenceTable(table) {
+    const generation = REF_STATE.dataGeneration;
     REF_STATE.selectedTable = table;
     REF_STATE.selectedPayload = null;
     renderReferenceList();
@@ -888,10 +940,11 @@
 
     try {
       const payload = await loadReferencePayload(table);
-      if (!REF_STATE.selectedTable || referenceTableKey(REF_STATE.selectedTable) !== referenceTableKey(table)) return;
+      if (generation !== REF_STATE.dataGeneration || REF_STATE.selectedTable !== table) return;
       REF_STATE.selectedPayload = payload;
       renderReferenceRows();
     } catch (error) {
+      if (generation !== REF_STATE.dataGeneration || REF_STATE.selectedTable !== table) return;
       ref$("#reference-detail-meta").textContent =
         refText("loadError") + (error && error.message ? error.message : String(error));
     }
@@ -929,9 +982,11 @@
     const node = document.createElement("div");
     node.className = "reference-field-value";
     const ref = field && field.ref;
-    const value = String(field && field.value || "");
+    const value = String(field?.value ?? "");
+    const display = field && field.name ? String(field.name) : value;
+    const quantity = field && field.quantity !== undefined ? ` × ${field.quantity}` : "";
     if (!ref) {
-      node.textContent = value;
+      node.textContent = value + quantity;
       return node;
     }
     const target = referenceTableByStem(ref.table);
@@ -941,18 +996,18 @@
       button.type = "button";
       button.className = "reference-field-link";
       button.title = `${refText("fieldOpenRow")}: ${ref.table} / ${ref.row}`;
-      button.textContent = value;
+      button.textContent = display + quantity;
       button.addEventListener("click", () => focusReferenceRow(target, ref.row));
       node.appendChild(button);
     } else {
       const text = document.createElement("span");
-      text.textContent = value;
+      text.textContent = display + quantity;
       node.appendChild(text);
     }
     const note = document.createElement("span");
     note.className = "reference-field-ref";
     const parts = [`${ref.table} / ${ref.row}`];
-    if (field.name) parts.push(field.name);
+    if (value !== String(ref.row || "")) parts.push(value);
     if (!resolved) parts.push(refText("fieldUnresolved"));
     else if (!target) parts.push(refText("fieldRefMissing"));
     note.textContent = parts.join(" | ");
@@ -977,7 +1032,7 @@
       line.className = "reference-field";
       const label = document.createElement("div");
       label.className = "reference-field-label";
-      label.textContent = String(field && field.label || field && field.field || "");
+      label.textContent = referenceFieldLabel(field);
       label.title = String(field && field.field || "");
       line.appendChild(label);
       line.appendChild(renderReferenceFieldValue(field));
@@ -986,11 +1041,90 @@
     item.appendChild(section);
   }
 
+  function referenceFieldLabel(field) {
+    return String((refLocale() === "zh" && field?.labelZh) || field?.label || field?.field || "");
+  }
+
+  function renderReferenceGuide(item, row) {
+    const guide = row && row.guide;
+    if (!Array.isArray(guide?.sections) || !guide.sections.length) return false;
+    const block = document.createElement("div");
+    block.className = "reference-guide";
+    const heading = document.createElement("div");
+    heading.className = "reference-fields-title";
+    heading.textContent = refText(guide.kind === "achievement" ? "guideAchievement" : guide.kind === "reward" ? "guideReward" : "guideActivity");
+    block.appendChild(heading);
+    const note = document.createElement("p");
+    note.className = "reference-field-ref";
+    note.textContent = refText("guideBoundary");
+    block.appendChild(note);
+    for (const group of guide.sections) {
+      const section = document.createElement("section");
+      section.className = "reference-fields reference-guide-section";
+      const title = document.createElement("div");
+      title.className = "reference-fields-title";
+      title.textContent = referenceFieldLabel(group);
+      title.title = String(group.path || "");
+      section.appendChild(title);
+      if (group.title) {
+        const description = document.createElement("p");
+        description.textContent = group.title;
+        section.appendChild(description);
+      }
+      let technical = null;
+      for (const field of group.fields || []) {
+        const line = document.createElement("div");
+        line.className = "reference-field";
+        const label = document.createElement("div");
+        label.className = "reference-field-label";
+        label.textContent = referenceFieldLabel(field);
+        label.title = String(field.field || "");
+        line.append(label, renderReferenceFieldValue(field));
+        if (field.technical) {
+          if (!technical) {
+            technical = document.createElement("details");
+            const summary = document.createElement("summary");
+            summary.textContent = refText("guideCodes");
+            technical.appendChild(summary);
+            section.appendChild(technical);
+          }
+          technical.appendChild(line);
+        } else {
+          section.appendChild(line);
+        }
+      }
+      block.appendChild(section);
+    }
+    item.appendChild(block);
+    return true;
+  }
+
+  function ensureReferenceRowPager(wrap) {
+    if (REF_STATE.rowPager) return REF_STATE.rowPager;
+    const host = document.createElement("div");
+    host.id = "reference-row-pager";
+    wrap.before(host);
+    REF_STATE.rowPager = window.WebUI.pagination.createPager({
+      container: host,
+      storageKey: "reference_rows_page_size",
+      defaultPageSize: 100,
+      onChange: renderReferenceRows,
+    });
+    return REF_STATE.rowPager;
+  }
+
   function referenceRowFieldHaystack(row) {
     const out = [];
     for (const field of (row && row.fields) || []) {
       out.push(field.field, field.label, field.value, field.name);
       if (field.ref) out.push(field.ref.table, field.ref.row);
+    }
+    for (const section of row?.guide?.sections || []) {
+      out.push(section.label, section.labelZh, section.title, section.path);
+      for (const field of section.fields || []) {
+        out.push(field.field, field.label, field.labelZh, field.value, field.name, field.quantity);
+        if (field.ref) out.push(field.ref.table, field.ref.row);
+      }
     }
     return out;
   }
@@ -999,6 +1133,7 @@
     const tokens = window.WebUI.parseQuery(q);
     if (!tokens.length) return true;
     const haystack = [row.id, row.title, row.bucket];
+    haystack.push(window.WebUI.linkedFileSearchText(row));
     for (const item of row.texts || []) {
       haystack.push(item.field, item.hint, item.path, item.i18nId, item.text);
     }
@@ -1019,7 +1154,13 @@
     const rows = (payload.rows || []).filter(
       (row) => rowMatches(row, q) || (focusRowId && String(row.id || "") === focusRowId),
     );
-    const shownRows = rows.slice(0, ROW_RENDER_LIMIT);
+    const wrap = ref$("#reference-rows");
+    const pager = ensureReferenceRowPager(wrap);
+    const pagerKey = `${table.file}\u0000${q}`;
+    pager.setTotal(rows.length, { reset: REF_STATE.rowPagerKey !== pagerKey });
+    REF_STATE.rowPagerKey = pagerKey;
+    if (focusRowId) pager.showIndex(rows.findIndex((row) => String(row.id || "") === focusRowId));
+    const shownRows = pager.slice(rows);
     const metaParts = [
       payload.table || table.table,
       table.sourceLabel || table.source,
@@ -1027,11 +1168,11 @@
       `${table.texts || 0} ${refText("texts")}`,
     ];
     if (rows.length > shownRows.length) {
-      metaParts.push(`${refText("showingFirst")} ${shownRows.length}`);
+      const start = pager.page * pager.pageSize + 1;
+      metaParts.push(`${refText("showingRows")} ${start}–${start + shownRows.length - 1}`);
     }
     ref$("#reference-detail-meta").textContent = metaParts.filter(Boolean).join(" | ");
 
-    const wrap = ref$("#reference-rows");
     wrap.replaceChildren();
     if (!shownRows.length) {
       const empty = document.createElement("div");
@@ -1045,13 +1186,24 @@
       const item = document.createElement("div");
       item.className = "reference-row";
       item.dataset.rowId = String(row.id || "");
+      const updateId = `${String(table.table || "").replace(/\.json$/, "")}/${row.id}`;
+      item.dataset.updateSource = updateId;
       const title = row.title && row.title !== row.id ? row.title : row.id;
       item.innerHTML =
         `<div class="reference-row-head">` +
-          `<span class="reference-row-title">${escapeHtml(title)}</span>` +
+          `<span class="reference-row-title">${escapeHtml(title)}${window.WebUI.updateBadges.sourceHtml(updateId)}</span>` +
           `<span class="reference-row-id">${escapeHtml(row.id || "")}</span>` +
         `</div>`;
+      const hasGuide = renderReferenceGuide(item, row);
       renderReferenceFields(item, row);
+      let textsHost = item;
+      if (hasGuide && (row.texts || []).length) {
+        textsHost = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.textContent = refText("guideTexts");
+        textsHost.appendChild(summary);
+        item.appendChild(textsHost);
+      }
       for (const text of row.texts || []) {
         const textNode = document.createElement("div");
         textNode.className = "reference-text";
@@ -1060,9 +1212,11 @@
           `<div class="reference-text-field">${escapeHtml(label)}</div>` +
           `<div class="reference-text-path">${escapeHtml(text.path || "")}${text.i18nId ? " | " + escapeHtml(text.i18nId) : ""}</div>` +
           `<div class="reference-text-body">${escapeHtml(text.text || "")}</div>`;
-        item.appendChild(textNode);
+        textsHost.appendChild(textNode);
       }
       wrap.appendChild(item);
+      window.WebUI.updateBadges.decorate(item, "reference", updateId);
+      item.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.panel("reference", updateId));
     }
     applyReferenceRowFocus(wrap);
   }
@@ -1103,6 +1257,7 @@
     return files;
   }
   async function renderReferenceRaw(table) {
+    const generation = REF_STATE.dataGeneration;
     const wrap = ref$("#reference-raw");
     if (!wrap) return;
     wrap.replaceChildren();
@@ -1133,7 +1288,7 @@
         };
       }
     }));
-    if (!REF_STATE.selectedTable || referenceTableKey(REF_STATE.selectedTable) !== selectedKey) return;
+    if (generation !== REF_STATE.dataGeneration || !REF_STATE.selectedTable || referenceTableKey(REF_STATE.selectedTable) !== selectedKey) return;
 
     wrap.replaceChildren();
     for (const result of results) {
@@ -1173,9 +1328,9 @@
     renderReferenceRaw(REF_STATE.selectedTable);
   }
 
-  function maybeLoadReference() {
+  function maybeLoadReference(language = currentLanguage()) {
     if (document.body.dataset.activeView === "reference" || window.location.hash === "#reference") {
-      ensureReferenceIndex();
+      ensureReferenceIndex(language);
     }
   }
 
@@ -1195,14 +1350,27 @@
     });
     window.addEventListener("hashchange", () => setTimeout(maybeLoadReference, 0));
     window.addEventListener("webui:ui-locale-changed", refreshReference);
-    window.addEventListener("webui:language-changed", () => {
-      resetReferenceData();
+    window.addEventListener("webui:language-changed", (event) => {
+      const language = String(event.detail?.language || currentLanguage()).toUpperCase();
+      if (language !== REF_STATE.language) resetReferenceData(language);
       applyReferenceStrings();
-      setTimeout(maybeLoadReference, 0);
+      setTimeout(() => {
+        if (language === REF_STATE.language) maybeLoadReference(language);
+      }, 0);
     });
   }
 
   function initReference() {
+    const sort = document.createElement("select");
+    sort.id = "reference-sort";
+    const refreshSortLabels = () => {
+      const en = window.WEBUI_UI_LOCALE === "en";
+      sort.replaceChildren(new Option(en ? "Type and name" : "类型和名称", "default"), new Option(en ? "Name" : "名称", "name"));
+    };
+    refreshSortLabels();
+    ref$("#reference-q")?.parentElement.after(sort);
+    sort.addEventListener("change", () => { REF_STATE.pager?.reset(); renderReferenceList(); });
+    window.addEventListener("webui:ui-locale-changed", () => { const value = sort.value; refreshSortLabels(); sort.value = value; });
     ensureReferencePanelToggle();
     REF_STATE.pager = window.WebUI.pagination?.createPager({
       container: "#reference-pager",

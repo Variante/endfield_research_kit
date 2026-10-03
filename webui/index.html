@@ -5,12 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#21095;&#24773;&#23545;&#35805; &middot; &#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855;</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260701-gp5">
-<link rel="stylesheet" href="style.css?v=20260927-asset-stats1">
-  <link rel="stylesheet" href="src/features/characters/style.css?v=20260902-character-updates">
-  <link rel="stylesheet" href="src/features/map_recovery/style.css?v=20260924-map114">
-  <link rel="stylesheet" href="src/features/audio/style.css?v=20260812-construction1">
-  <link rel="stylesheet" href="src/features/data_inspector/style.css?v=20260925-facets1">
-  <link rel="stylesheet" href="src/features/recovery/style.css?v=20260924-recovery10">
+<link rel="stylesheet" href="style.css?v=20261002-detail4">
+  <link rel="stylesheet" href="src/features/characters/style.css?v=20261002-appearances2">
+  <link rel="stylesheet" href="src/features/production/style.css?v=20261002-production3">
+  <link rel="stylesheet" href="src/features/story/branches.css?v=20261002-expansion1">
+  <link rel="stylesheet" href="src/features/map_recovery/style.css?v=20261002-devices2">
+  <link rel="stylesheet" href="src/features/audio/style.css?v=20261002-update-details3">
+  <link rel="stylesheet" href="src/features/data_inspector/style.css?v=20261002-update-details3">
+  <link rel="stylesheet" href="src/features/recovery/style.css?v=20261002-update-details3">
+  <link rel="stylesheet" href="src/features/gameplay/skill_refs.css?v=20261002-expansion1">
+  <link rel="stylesheet" href="src/features/gameplay/style.css?v=20261002-mechanics2">
 </head>
 <body data-active-view="story">
 <a class="skip-link" href="#views">Skip to current view</a>
@@ -35,6 +39,7 @@
       <button id="map-recovery-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="map-recovery-view" tabindex="-1" data-view="map-recovery" data-i18n="mapRecoveryTab">地图</button>
       <button id="characters-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="characters-view" tabindex="-1" data-view="characters" data-i18n="charactersTab">人物</button>
       <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay" data-i18n="gameplayTab">玩法</button>
+      <button id="production-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="production-view" tabindex="-1" data-view="production" data-i18n="productionTab">生产</button>
       <button id="reference-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="reference-view" tabindex="-1" data-view="reference" data-i18n="referenceTab">文本</button>
       <button id="audio-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="audio-view" tabindex="-1" data-view="audio" data-i18n="audioTab">&#38899;&#39057;</button>
       <button id="assets-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="assets-view" tabindex="-1" data-view="assets" data-i18n="assetsTab">资源</button>
@@ -269,11 +274,16 @@
       <div id="data-inspector-app"></div>
     </section>
 
+    <section id="production-view" class="page-view" data-view="production" role="tabpanel" aria-labelledby="production-tab" tabindex="0" hidden>
+      <div id="production-app"></div>
+    </section>
+
     <section id="gameplay-view" class="page-view" data-view="gameplay" role="tabpanel" aria-labelledby="gameplay-tab" tabindex="0" hidden>
       <div id="gameplay-app">
         <aside id="gameplay-left">
           <header>
             <h1 id="gameplay-title">Gameplay</h1>
+            <div id="gameplay-kind-tabs" class="page-mode-switch" role="group" aria-label="Gameplay dataset"></div>
             <div id="gameplay-stats"><span id="gameplay-count">?</span> <span id="gameplay-count-label">entries</span></div>
             <div class="sidebar-header-actions">
               <button id="gameplay-filter-toggle" class="panel-toggle" type="button" aria-controls="gameplay-filter-panel" aria-expanded="true">Hide filters</button>
@@ -288,14 +298,18 @@
               </div>
               <div id="gameplay-filter-section-basic-body" class="filter-section-body filter-section-body-stack">
                 <input id="gameplay-q" type="search" placeholder="Search weapon / character / skill / stat">
-              </div>
-            </section>
-            <section class="filter-section is-collapsed" data-filter-section="gameplay-kind" data-default-collapsed="1">
-              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-kind-body">
-                <span id="gameplay-kind-label">Kind</span>
-              </button>
-              <div id="gameplay-filter-section-kind-body" class="filter-section-body" hidden>
-                <div id="gameplay-kind-filter" class="chips" data-multi="1"></div>
+                <div class="filter-control-row">
+                  <label id="gameplay-sort-label" for="gameplay-sort">Sort</label>
+                  <select id="gameplay-sort" aria-labelledby="gameplay-sort-label">
+                    <option id="gameplay-sort-default" value="default">Default</option>
+                    <option id="gameplay-sort-title" value="title">Name</option>
+                    <option id="gameplay-sort-title-desc" value="title-desc">Name (descending)</option>
+                    <option id="gameplay-sort-rarity-desc" value="rarity-desc">Rarity (high to low)</option>
+                    <option id="gameplay-sort-rarity-asc" value="rarity-asc">Rarity (low to high)</option>
+                    <option id="gameplay-sort-type" value="type">Type</option>
+                    <option id="gameplay-sort-id" value="id">ID</option>
+                  </select>
+                </div>
               </div>
             </section>
             <section class="filter-section is-collapsed" data-filter-section="gameplay-job" data-default-collapsed="1">
@@ -336,6 +350,14 @@
               </button>
               <div id="gameplay-filter-section-enemy-type-body" class="filter-section-body" hidden>
                 <div id="gameplay-enemy-type-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-item-type" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-item-type-body">
+                <span id="gameplay-item-type-label">Item type</span>
+              </button>
+              <div id="gameplay-filter-section-item-type-body" class="filter-section-body" hidden>
+                <div id="gameplay-item-type-filter" class="chips" data-multi="1"></div>
               </div>
             </section>
             <section class="filter-section is-collapsed" data-filter-section="gameplay-rarity" data-default-collapsed="1">
@@ -651,22 +673,30 @@
 <script src="src/core/paths.js?v=20260925-data-merge1"></script>
 <script src="src/ui/media_player.js?v=20260812-multimedia5"></script>
 <script src="src/ui/splitter.js?v=20260701-gp5"></script>
-<script src="src/ui/filters.js?v=20260701-gp5"></script>
-<script src="src/ui/facets.js?v=20260925-facets1"></script>
+<script src="src/ui/filters.js?v=20261002-production2"></script>
+<script src="src/ui/facets.js?v=20261002-production2"></script>
+<script src="src/ui/sort.js?v=20261002-expansion1"></script>
 <script src="src/ui/pagination.js?v=20260925-page1000"></script>
-<script src="app_labels.js?v=20260925-facets1"></script>
+<script src="src/ui/update_badges.js?v=20261002-update-details3"></script>
+<script src="app_labels.js?v=20261002-expansion1"></script>
 <script src="app_tree.js?v=20260925-facets1"></script>
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
-<script src="app.js?v=20260927-audio-sidecar1"></script>
-<script src="assets.js?v=20260928-sprite-crop1"></script>
-  <script src="src/features/characters/index.js?v=20260925-facets1"></script>
-<script src="src/features/gameplay/labels.js?v=20260924-gp17"></script>
+<script src="src/features/story/branches.js?v=20261002-expansion1"></script>
+<script src="app.js?v=20261002-production2"></script>
+<script src="assets.js?v=20261002-expansion1"></script>
+<script src="src/features/characters/appearances.js?v=20261002-appearances2"></script>
+  <script src="src/features/characters/index.js?v=20261002-expansion1"></script>
+<script src="src/features/production/index.js?v=20261002-detail4"></script>
+<script src="src/features/gameplay/labels.js?v=20261002-mechanics2"></script>
 <script src="src/features/gameplay/loadout.js?v=20260924-gp17"></script>
-    <script src="src/features/gameplay/index.js?v=20260925-facets1"></script>
+<script src="src/features/gameplay/skill_refs.js?v=20261002-mechanics2"></script>
+<script src="src/features/gameplay/mechanics.js?v=20261002-mechanics2"></script>
+    <script src="src/features/gameplay/index.js?v=20261002-mechanics2"></script>
 <script src="src/features/audio/index.js?v=20260925-facets1"></script>
-  <script src="src/features/map_recovery/index.js?v=20260924-map115"></script>
+<script src="src/features/map_recovery/encounters.js?v=20261002-expansion1"></script>
+  <script src="src/features/map_recovery/index.js?v=20261002-devices2"></script>
 <script src="src/features/next_views.js?v=20260821-map1"></script>
-<script src="src/features/reference/index.js?v=20260925-facets1"></script>
+<script src="src/features/reference/index.js?v=20261002-expansion1"></script>
 <script src="src/features/updates/index.js?v=20260925-facets1"></script>
 <script src="src/features/recovery/index.js?v=20260924-recovery10"></script>
 <script src="src/features/data_inspector/index.js?v=20260925-data-merge1"></script>

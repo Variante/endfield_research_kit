@@ -245,9 +245,9 @@
       files: ui("Browse export-store rows, loose export files and decoded datasets", "浏览导出存储中的行、独立导出文件与解码数据集"),
       sql: ui("Run one read-only SQL statement over a store", "对存储执行一条只读 SQL 语句"),
     };
-    return `<div class="data-page-modes" role="tablist" aria-label="${esc(ui("Data page mode", "数据页模式"))}">${MODES
+    return `<div class="data-page-modes page-mode-switch" role="tablist" aria-label="${esc(ui("Data page mode", "数据页模式"))}">${MODES
       .map((mode) => `<button type="button" role="tab" data-data-mode="${mode}" title="${esc(titles[mode])}"
-        class="${mode === active ? "is-active" : ""}" aria-selected="${mode === active}">${esc(labels[mode])}</button>`)
+        class="page-mode-button ${mode === active ? "is-active" : ""}" aria-selected="${mode === active}">${esc(labels[mode])}</button>`)
       .join("")}</div>`;
   }
 
@@ -724,9 +724,9 @@
     pane.innerHTML = `
       <div class="data-inspector-shell data-page-shell">
         <aside id="data-files-left" class="data-page-left">
-          ${modeSwitchHtml("files")}
           <header>
             <h1>${esc(ui("Data", "数据"))}</h1>
+            ${modeSwitchHtml("files")}
             <div id="data-files-stats" class="data-page-stats"></div>
             <div class="sidebar-header-actions">
               <button id="data-files-filter-toggle" class="panel-toggle" type="button" aria-controls="data-files-filter-panel" aria-expanded="true"></button>
@@ -1077,7 +1077,7 @@
     if (!decodedReady() || (files.query && files.field !== "name")) return [];
     const rows = ensureFacets().filter(page.decoded.records);
     const compare = decodedApi()?.comparator(files.sort);
-    return compare ? rows.sort(compare) : rows;
+    return compare ? rows.sort(window.WebUI.sorting.comparator("data-files-sort", compare)) : rows;
   }
 
   // One page of the listed sources, read as one sequence: each store segment
@@ -2117,9 +2117,9 @@
     pane.innerHTML = `
       <div class="data-inspector-shell data-page-shell">
         <aside id="data-sql-left" class="data-page-left data-sql-left">
-          ${modeSwitchHtml("sql")}
           <header>
             <h1>${esc(ui("SQL query", "SQL 查询"))}</h1>
+            ${modeSwitchHtml("sql")}
             <div class="data-page-stats">${esc(ui(
               "One read-only statement · first 500 rows · stopped after 15 s",
               "一条只读语句 · 最多 500 行 · 15 秒后停止",

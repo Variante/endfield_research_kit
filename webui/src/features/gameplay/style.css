@@ -1,0 +1,102 @@
+/* Character and enemy reading views; other Gameplay kinds keep their layout. */
+.gameplay-overview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 28px;
+  margin: 12px 0 4px;
+  font-family: var(--sans);
+}
+.gameplay-overview > div { min-width: 56px; }
+.gameplay-overview dt { color: var(--muted); font-size: 11px; margin-bottom: 2px; }
+.gameplay-overview dd { margin: 0; font-size: 14px; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.gameplay-source-meta { margin-bottom: 0; overflow-wrap: anywhere; }
+.gameplay-contents {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0 0 15px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.gameplay-contents button, .gameplay-variant-options button {
+  appearance: none;
+  font: inherit;
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 12px;
+  cursor: pointer;
+}
+.gameplay-contents button:hover, .gameplay-variant-options button:hover { background: var(--hover); color: var(--text); }
+.gameplay-reading-view [data-gameplay-section] { scroll-margin-top: 18px; }
+.gameplay-reading-view > .gameplay-section { padding-top: 24px; }
+.gameplay-reading-view .gameplay-section-title { letter-spacing: .02em; font-size: 16px; margin-bottom: 16px; }
+.gameplay-reading-view .gameplay-skill-notes { padding: 0; list-style: none; margin: 0 0 16px; }
+.gameplay-reading-view .gameplay-skill-notes li + li { margin-top: 6px; }
+.gameplay-reading-view .gameplay-skill-blocks { gap: 16px; }
+.gameplay-reading-view .gameplay-skill-block { border: 1px solid var(--border); border-radius: 10px; padding: 18px; background: var(--panel); }
+.gameplay-reading-view .gameplay-skill-block-head { margin-bottom: 14px; }
+.gameplay-reading-view .gameplay-skill-block-title > strong { font-size: 16px; }
+.gameplay-reading-view .gameplay-skill-type { font-size: 11px; padding: 3px 8px; border-radius: 4px; color: var(--accent-2-text); background: var(--hover); }
+.gameplay-reading-view .gameplay-description { font-size: 13px; line-height: 1.85; }
+.gameplay-reading-view .gameplay-skill-level-footer { border-top: 0; padding-top: 6px; }
+.gameplay-disclosure { min-width: 0; margin: 12px 0 0; border: 1px solid var(--border); border-radius: 7px; background: var(--panel); }
+.gameplay-disclosure > summary { cursor: pointer; padding: 11px 13px; font-size: 12px; color: var(--text); }
+.gameplay-disclosure > summary::marker { color: var(--muted); }
+.gameplay-disclosure > summary > small { margin-left: 12px; color: var(--muted); font-size: 11px; font-weight: 400; }
+.gameplay-disclosure[open] > summary { border-bottom: 1px solid var(--border); }
+.gameplay-disclosure-body { padding: 12px; min-width: 0; }
+.gameplay-disclosure-body > :first-child { margin-top: 0; }
+.gameplay-disclosure-body > :last-child { margin-bottom: 0; }
+.gameplay-reading-view .gameplay-talent-level { background: var(--panel); border-radius: 7px; }
+.gameplay-reading-view .gameplay-talent-level-title { margin-bottom: 6px; }
+.gameplay-reading-view .gameplay-talent-levels { gap: 12px; }
+.gameplay-reading-view .gameplay-trait-card { border-left: 3px solid var(--accent-2); padding: 14px 16px; border-radius: 0 7px 7px 0; }
+.gameplay-reading-view .gameplay-trait-card .gameplay-skill-title { color: var(--muted); font-size: 11px; }
+.gameplay-section-intro { font-size: 12px; color: var(--muted); line-height: 1.7; margin: 0 0 12px; }
+.gameplay-variant-options { display: flex; flex-wrap: wrap; gap: 7px; }
+.gameplay-reading-view [data-enemy-variant-dependent] { margin-top: 18px; }
+.gameplay-reading-view [data-enemy-variant-dependent] .gameplay-section-title { font-size: 14px; margin-bottom: 12px; }
+.gameplay-reading-view .gameplay-variant-switch { margin-bottom: 18px; }
+.gameplay-variant-options button.is-selected { color: var(--accent-2-text); border-color: var(--accent-2); background: var(--hover); font-weight: 600; }
+.gameplay-reading-view .gameplay-variant-pane { border: 0; padding: 0; margin: 0; }
+.gameplay-reading-view .gameplay-variant-table { font-size: 11px; }
+.gameplay-reading-view .gameplay-variant-table th code { font-weight: 400; }
+.gameplay-reading-view .gameplay-buff-card > summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+.gameplay-reading-view .gameplay-buff-card > summary::before { content: "+"; color: var(--muted); }
+.gameplay-reading-view .gameplay-buff-card[open] > summary::before { content: "−"; }
+.gameplay-reading-view .gameplay-buff-card > summary code { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.gameplay-reading-view .gp-skill-refs { border-top: 0; margin-top: 24px; padding-top: 0; }
+.gameplay-reading-view .gp-skill-refs > summary { font-size: 14px; font-weight: 600; }
+.gameplay-reading-view .gp-skill-refs-content { padding: 14px; }
+.gameplay-mechanics { margin: 0 0 18px; }
+.gameplay-mechanics h4 { margin: 0 0 12px; font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: .06em; }
+.gameplay-mechanic-list { margin: 0; display: grid; gap: 10px; font-size: 13px; }
+.gameplay-mechanic-row { display: grid; grid-template-columns: minmax(5em, 105px) minmax(0, 1fr); gap: 12px; align-items: baseline; line-height: 1.7; }
+.gameplay-mechanic-row dt { color: var(--accent-2-text); font-weight: 600; }
+.gameplay-mechanic-row dd { margin: 0; overflow-wrap: anywhere; }
+.gameplay-mechanic-row.is-pending { font-size: 11px; }
+.gameplay-mechanic-row.is-pending dt, .gameplay-mechanic-row.is-pending dd { color: var(--muted); }
+.gameplay-mechanic-context { display: inline-block; margin-right: 7px; padding: 0 5px; border-radius: 3px; background: var(--hover); color: var(--muted); font-size: 11px; }
+.gameplay-authored-description { border-top: 1px solid var(--border); padding-top: 12px; }
+.gameplay-caption { display: block; color: var(--muted); font-size: 11px; margin-bottom: 5px; }
+.gameplay-description-audit { margin-top: 12px; padding: 10px 12px; border-left: 2px solid var(--border); background: var(--hover); border-radius: 0 5px 5px 0; }
+.gameplay-description-audit .gameplay-mechanic-list { gap: 5px; font-size: 11px; }
+.gameplay-description-audit .gameplay-mechanic-row { font-size: 11px; }
+.gameplay-description-audit.has-review { border-left-color: var(--accent-2); }
+.gameplay-audit-note { margin: 7px 0 0; font-size: 11px; color: var(--muted); line-height: 1.7; }
+.gameplay-reading-view .gameplay-effect-summary { padding: 15px; }
+.gameplay-effect-summary .gameplay-buff-card-head { margin-bottom: 14px; }
+@media (max-width: 700px) {
+  .gameplay-overview { gap: 10px 20px; }
+  .gameplay-overview dd { font-size: 13px; }
+  .gameplay-reading-view .gameplay-skill-block { padding: 13px; }
+  .gameplay-reading-view .gameplay-skill-block-head { flex-wrap: wrap; }
+  .gameplay-reading-view .gameplay-level-slider-control { flex-wrap: wrap; max-width: 100%; }
+  .gameplay-reading-view .gameplay-level-slider { min-width: 0; max-width: 100%; }
+  .gameplay-disclosure > summary > small { display: block; margin: 5px 0 0 14px; }
+  .gameplay-reading-view .gp-skill-refs-content { padding: 10px; }
+  .gameplay-mechanic-row { grid-template-columns: 5em minmax(0, 1fr); gap: 8px; font-size: 12px; }
+}

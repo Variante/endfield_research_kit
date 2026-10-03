@@ -330,6 +330,7 @@
 
   function entrySearchText(entry) {
     return [
+      window.WebUI.linkedFileSearchText(entry),
       entry.path,
       entry.status,
       entry.category,
@@ -415,6 +416,10 @@
   }
 
   function compareEntries(a, b) {
+    return window.WebUI.sorting.comparator("updates-sort", compareEntriesBase)(a, b);
+  }
+
+  function compareEntriesBase(a, b) {
     const mode = sortMode();
     if (mode === "status") {
       const statusDiff = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);

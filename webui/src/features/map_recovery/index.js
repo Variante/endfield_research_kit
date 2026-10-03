@@ -88,7 +88,7 @@
   const ENTITY_SCALE_MAX = 3;
   const ENTITY_SCALE_STEP = 1.25;
   const POINT_HEIGHT_SLICE_COUNT = 32;
-  const MAP_ASSET_VERSION = "20260924-map113";
+  const MAP_ASSET_VERSION = "20261002-map-devices";
   const PAN_OVERHANG = 96; // px of surface a pan may run past the content edge
   const MAP_RAIL_OFFSET = 72; // keep the map's visual centre clear of the left rail
   const LABEL_ZOOM = 1.7; // minor entity labels stay hidden below this zoom
@@ -134,6 +134,8 @@
     regionScope: "single", // map01/map02: load one selected zone or the complete authored region
     kinds: new Set(),
     subKinds: new Set(),
+    expandedKinds: new Set(["device", "travel"]),
+    typeQuery: "",
     mapLayers: new Set(), // raw UILevelMapLoadConfig tier ids in the loaded region
     modelLayers: new Set(["terrain", "elevation", "surface", "water", "points"]),
     layerOpacities: { minimap: 1, terrain: 1, elevation: 1, surface: 1, water: 1, points: 0.82 },
@@ -148,6 +150,7 @@
     entityScale: 1,
     nodes: [],
     locationLabels: [],
+    encounter: null,
     selectedId: "",
     previewId: "",
     inspectorKey: "",
@@ -180,6 +183,7 @@
     lastNodeScale: null, // skip per-node writes while a pan keeps the same scale
     lastLocationScale: null,
     loadRequest: 0,
+    mapLoadRequest: 0,
     loadController: null,
   };
 
@@ -235,6 +239,13 @@
   };
   const relatedFiles = (node) => {
     const rows = (node?.relatedFiles || []).filter((row) => row && row.path);
+    const source = state.payloads.get(node?.levelId) || state.map;
+    if (node?.interactive) {
+      for (const [key, row] of Object.entries(source?.interactiveCatalog?.sourceFiles || {})) {
+        if (key !== "table" && node.interactive.nameEvidence !== "exact") continue;
+        if (row?.path && !rows.some((pin) => pin.path === row.path)) rows.push(row);
+      }
+    }
     const registry = node?.registryBacked ? registryPin(node) : null;
     if (!registry || rows.some((row) => row.path === registry.path)) return rows;
     return [...rows, { ...registry, note: t("registryBacked"), focus: registryFocus(node) }];
@@ -246,6 +257,40 @@
     zh: { story: "剧情", travel: "移动设施", device: "交互装置", scenery: "场景物件", trigger: "触发区域", enemy: "敌人", npc: "NPC", spawn: "出生点", narrative: "叙事锚点", collectible: "收集物", waypoint: "任务坐标", quest: "任务点", campfire_teleport: "营火传送点", spaceship_visit_portal: "访问传送门", teleport_point: "传送点" },
   };
   const kindLabel = (kind) => (isZh() ? KIND_LABELS.zh : KIND_LABELS.en)[kind] || kind;
+  const GENERIC_SUBTYPES = {
+    zh: { interactive: "未细分交互物", facility: "未细分设施" },
+    en: { interactive: "Other interactives", facility: "Other facilities" },
+  };
+  const subtypeLabel = (subKind, info = {}) => info.labels?.[isZh() ? "zh" : "en"]
+    || GENERIC_SUBTYPES[isZh() ? "zh" : "en"][subKind]
+    || (isZh() && info.label) || kindLabel(subKind).replaceAll("_", " ");
+  // Small code-native glyphs are shared by the legend and the map itself.
+  const DEVICE_GLYPHS = {
+    power: "M1,-5 L-3,1 H0 L-1,5 L4,-1 H1 Z",
+    hub: "M0,-5 L5,0 L0,5 L-5,0 Z M0,-2 V2 M-2,0 H2",
+    box: "M-4,-3 H4 V4 H-4 Z M-4,-3 L0,-5 L4,-3 M0,-3 V4",
+    travel: "M-5,-4 L5,-1 M-3,-3 V4 M3,-2 V4",
+    combat: "M-4,4 V0 H1 L4,-4 M-2,4 H3 M0,-1 L2,1",
+    plate: "M-5,2 L0,4 L5,2 L0,0 Z M0,-5 V-1 M-2,-3 L0,-1 L2,-3",
+    lock: "M-4,-1 H4 V5 H-4 Z M-2,-1 V-3 A2,2 0 0 1 2,-3 V-1 M0,1 V3",
+    switch: "M-4,4 H4 M0,4 V0 L3,-4 M1,-4 H4 V-1",
+    laser: "M-5,0 H5 M-2,-4 L0,-1 L2,-4 M-2,4 L0,1 L2,4",
+    repair: "M-4,4 L2,-2 M1,-5 V-2 H4 M4,-5 V-2 L2,0",
+    purify: "M0,-5 L1,-1 L5,0 L1,1 L0,5 L-1,1 L-5,0 L-1,-1 Z",
+    barrier: "M-4,-5 V5 M4,-5 V5 M-4,-3 L4,3 M-4,1 L1,5",
+    door: "M-4,5 V-5 H4 V5 M1,0 H2 M-5,5 H5",
+    water: "M0,-5 Q-6,1 -3,4 Q0,6 3,4 Q6,1 0,-5 Z",
+    scan: "M-5,-2 V-5 H-2 M2,-5 H5 V-2 M5,2 V5 H2 M-2,5 H-5 V2 M-2,0 H2",
+    camera: "M-5,-3 H-2 L-1,-5 H2 L3,-3 H5 V4 H-5 Z M2,0 A2,2 0 1 0 -2,0 A2,2 0 1 0 2,0",
+    guide: "M0,5 V-2 M0,-2 Q-6,-7 -5,0 Q-4,4 0,1 Q4,4 5,0 Q6,-7 0,-2",
+    flag: "M-3,5 V-5 H4 L2,-2 L4,1 H-3",
+    terminal: "M-5,-4 H5 V2 H-5 Z M0,2 V5 M-3,5 H3 M-3,-2 H2",
+    shop: "M-5,-1 L-3,-5 H3 L5,-1 Z M-4,0 V5 H4 V0 M-1,5 V2 H2 V5",
+  };
+  const deviceGlyph = (icon) => DEVICE_GLYPHS[icon]
+    ? `<path class="mr-device-glyph" d="${DEVICE_GLYPHS[icon]}"/>` : "";
+  const subtypeIcon = (icon) => icon && DEVICE_GLYPHS[icon]
+    ? `<svg class="mr-type-icon" viewBox="-8 -8 16 16" aria-hidden="true">${deviceGlyph(icon)}</svg>` : "";
   // Re-plotting a full map is a few hundred milliseconds of SVG layout, and the
   // two-level layer tree invites several clicks in a row, so filter changes
   // coalesce into a single render. This deliberately uses a timer rather than
@@ -346,14 +391,19 @@
   };
 
   const mapTreeHtml = () => {
+    const sort = state.mapSort || "default";
+    const compare = (a, b) => {
+      if (sort === "stories") return (b.storyKeyCount || 0) - (a.storyKeyCount || 0);
+      return String(sort === "name" ? mapTitle(a) : a.id).localeCompare(String(sort === "name" ? mapTitle(b) : b.id), undefined, { numeric: true });
+    };
     const groups = new Map();
-    for (const row of state.index?.maps || []) {
+    for (const row of [...(state.index?.maps || [])].sort(window.WebUI.sorting.comparator("map-sort", (a, b) => sort === "default" ? (state.index.maps.indexOf(a) - state.index.maps.indexOf(b)) : compare(a, b)))) {
       const family = row.family || "Other";
       if (!groups.has(family)) groups.set(family, []);
       groups.get(family).push(row);
     }
     return [...groups.entries()].map(([family, rows]) => `<section class="mr-map-group"><h3>${esc(family)}</h3>${rows.map((row) => (
-      `<button type="button" class="mr-map-item${row.id === state.selected ? " is-active" : ""}" data-map-id="${esc(row.id)}" title="${esc(mapTitle(row))}"><b>${esc(mapTitle(row))}</b><span>${row.storyKeyCount || 0}${esc(t("countStories"))}</span></button>`
+      `<button type="button" class="mr-map-item${row.id === state.selected ? " is-active" : ""}" data-map-id="${esc(row.id)}" title="${esc(mapTitle(row))}"><b>${esc(mapTitle(row))} ${window.WebUI.updateBadges.html("map", [row.id, ...(row.variants || []).map((variant) => variant.id)])}</b><span>${row.storyKeyCount || 0}${esc(t("countStories"))}</span></button>`
     )).join("")}</section>`).join("");
   };
 
@@ -386,32 +436,43 @@
   // The layer tree is two levels deep because "collectible" is not one thing:
   // chests, ore nodes and currency pickups are separate answers to separate
   // questions. A kind with a single subKind stays a plain row - nesting it would
-  // be noise. Counts come from the published facets rather than a node scan, so
-  // a hidden layer still shows how much it is hiding.
-  const layerTreeHtml = (data) => {
+  // be noise. Published facets supply totals; plotted rows supply shown counts.
+  const layerTreeHtml = (data, markerRows) => {
     const kinds = data.facets?.kinds || {};
+    const shownCounts = new Map();
+    for (const row of markerRows) {
+      for (const key of [row.kind, `${row.kind}:${row.subKind || row.kind}`]) {
+        shownCounts.set(key, (shownCounts.get(key) || 0) + 1);
+      }
+    }
+    const countHtml = (key, total) => `<span class="mr-layer-count" title="${isZh() ? "已显示 / 总计" : "Shown / total"}">${shownCounts.get(key) || 0}/${total}</span>`;
     return Object.entries(kinds).map(([kind, info]) => {
       // The chip carries its layer's own hue when checked (--mr-chip), so a
       // green swatch never sits on an orange "on" tint.
       const color = KIND_COLORS[kind] || "#8b9298";
       const swatch = `<span class="mr-swatch" style="background:${esc(color)}"></span>`;
-      const head = `<label class="mr-layer" style="--mr-chip:${esc(color)}" title="${esc(`${info.count}${t("countMarkers")}${info.storyCount ? ` · ${info.storyCount}${t("countStories")}` : ""}`)}">`
-        + `<input type="checkbox" data-map-kind="${esc(kind)}" ${state.kinds.has(kind) ? "checked" : ""}>`
-        + `${swatch}${esc(kindLabel(kind))}<span class="mr-layer-count">${info.count}${info.storyCount ? `<i>+${info.storyCount}</i>` : ""}</span></label>`;
       const subs = Object.entries(info.subKinds || {});
+      const single = subs.length === 1 ? subs[0] : null;
+      const selected = state.kinds.has(kind) ? subs.filter(([sub]) => state.subKinds.has(sub)).length : 0;
+      const partial = selected > 0 && selected < subs.length;
+      const search = single ? `${kindLabel(kind)} ${single[0]} ${single[1].label || ""} ${Object.values(single[1].labels || {}).join(" ")}` : "";
+      const shown = single?.[1].labels ? subtypeLabel(...single) : kindLabel(kind);
+      const head = `<label class="mr-layer" ${single ? `data-type-search="${esc(search.toLowerCase())}"` : ""} style="--mr-chip:${esc(color)}" title="${esc(`${kindLabel(kind)} · ${info.count}${t("countMarkers")}${info.storyCount ? ` · ${info.storyCount}${t("countStories")}` : ""}`)}">`
+        + `<input type="checkbox" data-map-kind="${esc(kind)}" ${state.kinds.has(kind) && !partial ? "checked" : ""}>`
+        + `${subtypeIcon(single?.[1].icon) || swatch}${esc(shown)}${countHtml(kind, info.count)}</label>`;
       if (subs.length < 2) return `<div class="mr-layer-group">${head}</div>`;
       const rows = subs
         .sort((a, b) => b[1].count - a[1].count)
         .map(([subKind, sub]) => {
-          // The recovered labels are Chinese, so an English reader is better
-          // served by the subKind slug. Both are always in the tooltip.
-          const shown = isZh() ? (sub.label || kindLabel(subKind)) : kindLabel(subKind);
+          const shown = subtypeLabel(subKind, sub);
           const title = sub.label && sub.label !== subKind ? `${sub.label} / ${subKind}` : subKind;
-          return `<label class="mr-layer mr-sublayer" style="--mr-chip:${esc(color)}" title="${esc(title)}"><input type="checkbox" data-map-subkind="${esc(subKind)}" ${state.subKinds.has(subKind) ? "checked" : ""}>`
-            + `${esc(shown)}<span class="mr-layer-count">${sub.count}</span></label>`;
+          const search = `${kindLabel(kind)} ${subKind} ${sub.label || ""} ${Object.values(sub.labels || {}).join(" ")}`;
+          return `<label class="mr-layer mr-sublayer" data-type-search="${esc(search.toLowerCase())}" style="--mr-chip:${esc(color)}" title="${esc(title)}"><input type="checkbox" data-map-parent="${esc(kind)}" data-map-subkind="${esc(subKind)}" ${state.kinds.has(kind) && state.subKinds.has(subKind) ? "checked" : ""}>`
+            + `${subtypeIcon(sub.icon)}${esc(shown)}${countHtml(`${kind}:${subKind}`, sub.count)}</label>`;
         })
         .join("");
-      return `<div class="mr-layer-group">${head}<div class="mr-sublayers">${rows}</div></div>`;
+      const selectionLabel = selected ? `${isZh() ? "已选" : "Selected"} ${selected}/${subs.length}` : String(subs.length);
+      return `<div class="mr-layer-group"><div class="mr-layer-heading">${head}</div><details class="mr-type-details" data-map-type-group="${esc(kind)}" ${state.expandedKinds.has(kind) ? "open" : ""}><summary>${isZh() ? "细分类别" : "Subtypes"} · <span class="mr-type-selection">${selectionLabel}</span></summary><div class="mr-sublayers">${rows}</div></details></div>`;
     }).join("");
   };
 
@@ -471,8 +532,13 @@
         variant.markerCount ? `${variant.markerCount}${t("countMarkers")}` : "",
         variant.storyKeyCount ? `${variant.storyKeyCount}${t("countStories")}` : "",
       ].filter(Boolean).join(" / ");
-      return `<button type="button" class="mr-map-variant${active ? " is-active" : ""}" data-map-variant="${esc(variant.id)}" aria-pressed="${active ? "true" : "false"}"><b>${esc(mapTitle(variant))}</b>${counts ? `<span>${esc(counts)}</span>` : ""}</button>`;
+      return `<button type="button" class="mr-map-variant${active ? " is-active" : ""}" data-map-variant="${esc(variant.id)}" aria-pressed="${active ? "true" : "false"}"><b>${esc(mapTitle(variant))} ${window.WebUI.updateBadges.html("map", variant.id)}</b>${counts ? `<span>${esc(counts)}</span>` : ""}</button>`;
     }).join("")}</div>`;
+  };
+
+  const mapUpdateIds = () => {
+    const entry = (state.index?.maps || []).find((row) => row.id === state.selected);
+    return [state.selected, state.selectedVariant, ...(entry?.variants || []).map((variant) => variant.id)];
   };
 
   // A pinned dialog file is the same payload the Story view renders, so its
@@ -515,6 +581,12 @@
   const nodeDisplayLabel = (node) => {
     if (node.type === "quest") return String(node.questId).replace("e0m0_", "");
     if (isEnvironmentTalkNode(node)) return isZh() ? "\u73af\u5883\u5bf9\u8bdd" : "Environment dialogue";
+    const interactive = node.interactive;
+    if (interactive && ["device", "travel", "scenery"].includes(node.kind)) {
+      const language = isZh() ? "zh" : "en";
+      const name = interactive.names?.[language] || interactive.labels?.[language];
+      if (name) return plainText(name);
+    }
     const alias = node.detailAlias && (isZh() ? node.detailAlias.zh : node.detailAlias.en);
     const base = alias && alias !== node.label ? `${alias} / ${node.label}` : String(node.label || node.identity);
     return node.kind === "npc" && node.phaseLabel ? `${base} · ${node.phaseLabel}` : base;
@@ -940,8 +1012,13 @@
         [t("coordinates"), coords],
       ]
       : [
-        [t("name"), node.label],
-        [t("kind"), node.kind],
+        [t("name"), nodeDisplayLabel(node)],
+        [t("kind"), kindLabel(node.kind)],
+        [isZh() ? "细分类别" : "Subtype", node.interactive?.labels?.[isZh() ? "zh" : "en"]],
+        [isZh() ? "名称来源" : "Name source", node.interactive?.nameEvidence === "exact" ? (isZh() ? "游戏建筑表" : "Game building table") : ""],
+        [isZh() ? "分类依据" : "Classification", node.interactive?.classificationEvidence === "structuralOnly" ? (isZh() ? "按配置标识归类；不代表当前可交互" : "Configuration identifier family; does not establish current interactability") : ""],
+        [isZh() ? "交互模板" : "Interactive template", node.interactive?.templateId],
+        [isZh() ? "设施编号" : "Building ID", node.interactive?.buildingId],
         [t("identity"), node.identity],
         [t("detailId"), node.detailId],
         [t("mapMarkTemplate"), node.mapMark?.templateId],
@@ -1187,6 +1264,46 @@
 
   // ---------------------------------------------------------------- view sync
 
+  function encounterGeometry() {
+    const geometry = window.WebUI?.mapEncounters?.geometry(state.encounter) || { points: [], route: false };
+    const p = state.projection;
+    if (!p) return { points: [], route: false };
+    const inverted = !!state.payloads.get(state.encounter?.levelId)?.mapConfig?.needInverseXZ;
+    return { ...geometry, points: geometry.points.map((point) => {
+      let { x, z } = point;
+      if (inverted) {
+        const cx = p.minX + p.viewW / p.fitScale / 2;
+        const cz = p.maxZ - p.viewH / p.fitScale / 2;
+        [x, z] = [cx + (z - cz), cz - (x - cx)];
+      }
+      return { x: p.viewX + (x - p.minX) * p.fitScale, y: p.viewY + (p.maxZ - z) * p.fitScale };
+    }) };
+  }
+
+  function drawEncounter() {
+    const layer = root()?.querySelector(".mr-encounter-overlay");
+    const m = metrics();
+    if (!layer || !m) return;
+    const { points, route } = encounterGeometry();
+    const radius = 5 / (m.k * state.transform.scale);
+    layer.innerHTML = `${route && points.length > 1 ? `<polyline points="${points.map((p) => `${p.x},${p.y}`).join(" ")}"/>` : ""}${points.map((p, index) => `<circle cx="${p.x}" cy="${p.y}" r="${radius}"><title>${esc(`${state.encounter?.title || ""} · ${index + 1}`)}</title></circle>`).join("")}`;
+  }
+
+  function selectEncounter(row, pan) {
+    state.encounter = row;
+    drawEncounter();
+    const { points } = encounterGeometry();
+    if (pan && points.length) {
+      const xs = points.map((p) => p.x);
+      const ys = points.map((p) => p.y);
+      const scale = state.transform.scale;
+      animateTo(clamped({ scale,
+        x: WIDTH / 2 + MAP_RAIL_OFFSET - scale * (Math.min(...xs) + Math.max(...xs)) / 2,
+        y: HEIGHT / 2 - scale * (Math.min(...ys) + Math.max(...ys)) / 2,
+      }));
+    }
+  }
+
   function applyTransform() {
     const host = root();
     const m = metrics();
@@ -1205,6 +1322,7 @@
     }
     const { x, y, scale } = state.transform;
     host.querySelector(".mr-viewport")?.setAttribute("transform", `translate(${x.toFixed(3)} ${y.toFixed(3)}) scale(${scale.toFixed(5)})`);
+    drawEncounter();
     // Counter-scaling every node by 1/(k*scale) makes its local units render as
     // container pixels, so glyphs and markers keep one constant on-screen size
     // at any zoom or container width. Panning keeps the scale, so the per-node
@@ -1452,6 +1570,9 @@
 
   // ---------------------------------------------------------------- inspector
 
+  const fileFocusKey = (focus) => JSON.stringify(focus || null);
+  const fileSelected = (href, focus) => href === state.filePath && fileFocusKey(focus) === fileFocusKey(state.fileFocus);
+
   function fileRow(pin, active) {
     const focus = pin.focus ? encodeURIComponent(JSON.stringify(pin.focus)) : "";
     return `<div class="mr-file${pin.strength === "weak" ? " is-weak" : ""}${active ? " is-active" : ""}">
@@ -1467,8 +1588,8 @@
     if (!pins.length) return `<p class="mr-placeholder">${esc(t("noFiles"))}</p>`;
     const strong = pins.filter((pin) => pin.strength !== "weak");
     const weak = pins.filter((pin) => pin.strength === "weak");
-    const render = (rows) => rows.map((pin) => fileRow(pin, pin.href === state.filePath)).join("");
-    const activeWeak = weak.some((pin) => pin.href === state.filePath);
+    const render = (rows) => rows.map((pin) => fileRow(pin, fileSelected(pin.href, pin.focus))).join("");
+    const activeWeak = weak.some((pin) => fileSelected(pin.href, pin.focus));
     return `${strong.length ? `<div class="mr-files">${render(strong)}</div>` : ""}`
       + (weak.length
         ? `<details class="mr-weak-files"${activeWeak ? " open" : ""}><summary>${esc(`${t("weakerLinks")} (${weak.length})`)}</summary><div class="mr-files">${render(weak)}</div></details>`
@@ -1489,8 +1610,9 @@
     state.inspectorKey = key;
 
     if (!node) {
-      head.innerHTML = `<p class="mr-role">${esc(t("inspector"))}</p><h2>${esc(mapTitle(state.map || {}))}</h2>`;
+      head.innerHTML = `<p class="mr-role">${esc(t("inspector"))}</p><h2>${esc(mapTitle(state.map || {}))} ${window.WebUI.updateBadges.html("map", state.selectedVariant || state.selected)}</h2>`;
       body.innerHTML = `<p class="mr-placeholder">${esc(t("inspectorHint"))}</p>${mapFilesHtml()}<div class="mr-viewer-slot"></div>`;
+      window.WebUI.updateBadges.mountFiles(body);
       bindFilePicks(body);
       renderViewer();
       return;
@@ -1503,6 +1625,7 @@
       <h3 class="mr-section-title">${esc(`${t("relatedFiles")} (${nodeFiles.length})`)}</h3>
       ${fileListHtml(nodeFiles)}
       <div class="mr-viewer-slot"></div>`;
+    window.WebUI.updateBadges.mountFiles(body);
     bindFilePicks(body);
     renderViewer();
   }
@@ -1525,15 +1648,15 @@
 
   function syncFileSelection() {
     root()?.querySelectorAll("[data-map-file]").forEach((button) => {
-      const active = button.dataset.mapFile === state.filePath;
+      const active = button.dataset.mapFile === state.filePath
+        && (button.dataset.mapFileFocus || "") === (state.fileFocus ? encodeURIComponent(fileFocusKey(state.fileFocus)) : "");
       button.setAttribute("aria-pressed", active ? "true" : "false");
       button.closest(".mr-file")?.classList.toggle("is-active", active);
     });
   }
 
-  function openFile(href, path, focus = null) {
-    const sameFocus = JSON.stringify(focus) === JSON.stringify(state.fileFocus);
-    state.filePath = href === state.filePath && sameFocus ? "" : href;
+  function openFile(href, path, focus = null, toggle = true) {
+    state.filePath = toggle && fileSelected(href, focus) ? "" : href;
     state.filePathLabel = path || "";
     state.fileFocus = state.filePath ? focus : null;
     syncFileSelection();
@@ -1549,6 +1672,7 @@
       return;
     }
     const href = state.filePath;
+    const focus = state.fileFocus;
     const label = state.filePathLabel || href;
     slot.innerHTML = `<section class="mr-viewer"><div class="mr-viewer-head"><b>${esc(fileName(label))}</b>${storyLink(label, t("openInStory"))}<span></span></div>
       <div class="mr-viewer-body"><p class="mr-viewer-state">${esc(t("loadingFile"))}</p></div></section>`;
@@ -1558,7 +1682,7 @@
     getFile(href).then((result) => {
       // The reader can pick another file (or another node) while a fetch is in
       // flight; only the still-current selection is allowed to paint.
-      if (state.filePath !== href) return;
+      if (!fileSelected(href, focus)) return;
       const current = host.querySelector(".mr-viewer-slot .mr-viewer");
       if (!current) return;
       const meta = current.querySelector(".mr-viewer-head span");
@@ -1580,7 +1704,7 @@
         return;
       }
       if (result.kind === "registry") {
-        target.innerHTML = registryExcerptHtml(result.registry, state.fileFocus);
+        target.innerHTML = registryExcerptHtml(result.registry, focus);
         target.querySelector(".mr-registry-hit")?.scrollIntoView({ block: "center" });
         return;
       }
@@ -1623,6 +1747,14 @@
   }
 
   function registryExcerptHtml(registry, focus) {
+    if (!focus) {
+      const counts = [
+        [isZh() ? "世界实体" : "World entities", Object.keys(registry?.worldEntityBriefInfos || {}).length],
+        [isZh() ? "脚本实体" : "Script entities", registry?.m_scriptEntityIdList?.length || 0],
+        [isZh() ? "NPC 代理" : "NPC proxies", Object.keys(registry?.npcProxyBriefInfos || {}).length],
+      ];
+      return `<p class="mr-viewer-state">${isZh() ? "选择地图上的实体，可查看其对应的注册表原始记录。" : "Select a placed entity on the map to inspect its exact registry row."}</p><dl class="mr-fields">${counts.map(([label, count]) => `<dt>${esc(label)}</dt><dd>${count}</dd>`).join("")}</dl>`;
+    }
     let excerpt = null;
     let source = "";
     if (focus?.kind === "world") {
@@ -1693,23 +1825,26 @@
   function selectNode(id) {
     const next = state.selectedId === id ? "" : id;
     state.selectedId = next;
-    if (!next) {
-      state.filePath = "";
-      state.filePathLabel = "";
-    }
+    state.filePath = "";
+    state.filePathLabel = "";
+    state.fileFocus = null;
     syncSelection();
     layoutLabelsSafely();
     renderInspector();
     // Pinning a node opens its strongest file straight away, so the common case
     // (click a marker, read the dialog it triggers) takes one interaction.
-    if (!next) return;
+    if (!next) {
+      renderViewer();
+      return;
+    }
     // A story file is what the reader is usually after, so it wins the auto-open
     // even when a stronger placement file is listed above it.
     const pins = visibleFilePins(relatedFiles(state.nodes.find((row) => row.id === next)));
     const first = pins.find((pin) => pin.relation.startsWith("story"))
       || pins.find((pin) => pin.strength !== "weak")
       || pins[0];
-    if (first && first.href !== state.filePath) openFile(first.href, first.path);
+    if (first) openFile(first.href, first.path, first.focus || null, false);
+    else renderViewer();
   }
 
   // Selection lives in state, so the pressed state and the pinned styling have
@@ -1726,10 +1861,12 @@
     state.selectedId = "";
     state.previewId = "";
     state.filePath = "";
+    state.fileFocus = null;
     syncSelection();
     layoutLabelsSafely();
     syncTip();
     renderInspector();
+    renderViewer();
   }
 
   function layoutLabelsSafely() {
@@ -1899,16 +2036,11 @@
 
   // ---------------------------------------------------------------- rendering
 
-  function render() {
-    const host = root();
-    const data = state.map;
-    if (!host || !data) return;
-    host.querySelectorAll(".mr-bg-point-cloud[data-point-filter-url]").forEach(revokePointFilter);
-
+  function selectMapRows(data) {
     // A level pools every mission that plays in it, so isolating one mission is
     // the difference between a readable route and a wall of markers. A node with
-    // no mission of its own is level art: it is only shown when no mission is
-    // selected, because claiming it for the selected mission would be a lie.
+    // no mission of its own remains independently selectable level art; it
+    // is never attributed to the selected mission.
     const matchesMission = (row) => !!state.mission && (
       (row.missions || []).includes(state.mission)
       || (row.missionContexts || []).includes(state.mission)
@@ -1924,15 +2056,14 @@
       return ids.length ? ids.some((id) => state.mapLayers.has(id)) : true;
     };
     const missionSelected = !!state.mission;
-    const questRows = ((state.showQuests || missionSelected) ? (data.questPoints || []) : [])
-      .filter((row) => questInMission(row) && (missionSelected || inMapLayer(row)))
+    const eligibleQuests = ((state.showQuests || missionSelected) ? (data.questPoints || []) : [])
+      .filter(questInMission)
       .map((row) => ({ ...row, type: "quest", position: finitePosition(row.position) }))
       .filter((row) => row.position);
-    const markerRows = (data.markers || [])
+    const eligibleMarkers = (data.markers || [])
       .filter((row) => inMission(row))
       .filter((row) => inNpcPhase(row))
       .filter((row) => matchesMission(row) || (state.kinds.has(row.kind) && state.subKinds.has(row.subKind || row.kind)))
-      .filter((row) => matchesMission(row) || inMapLayer(row))
       .filter((row) => matchesMission(row) || !state.storyOnly || Number(row.storyCount || 0) > 0)
       .filter((row) => !state.mapMarkOnly || !!row.mapMark)
       .map((row) => ({
@@ -1944,6 +2075,24 @@
         position: finitePosition(row.position),
       }))
       .filter((row) => row.position);
+    const questRows = eligibleQuests.filter((row) => missionSelected || inMapLayer(row));
+    const markerRows = eligibleMarkers.filter((row) => matchesMission(row) || inMapLayer(row));
+    const hiddenRows = [
+      ...eligibleQuests.filter((row) => !missionSelected && !inMapLayer(row)),
+      ...eligibleMarkers.filter((row) => !matchesMission(row) && !inMapLayer(row)),
+    ];
+    return {
+      questRows, markerRows, floorHidden: hiddenRows.length,
+      hiddenFloorIds: [...new Set(hiddenRows.flatMap((row) => row.mapLayerIds || []))],
+    };
+  }
+
+  function render() {
+    const host = root();
+    const data = state.map;
+    if (!host || !data) return;
+    host.querySelectorAll(".mr-bg-point-cloud[data-point-filter-url]").forEach(revokePointFilter);
+    const { questRows, markerRows, floorHidden, hiddenFloorIds } = selectMapRows(data);
 
     // Start/end pins are derived strictly from each mission's authored
     // questOrder.  They describe the endpoints of the published tracking
@@ -2355,7 +2504,10 @@
       const hasStory = quest ? false : (node.storyCount || 0) > 0;
       const endpoint = quest && node.endpointRole;
       const endpointLabel = endpoint ? t(endpoint === "start" ? "missionStart" : "missionEnd") : "";
-      const markerGlyph = node.kind === "enemy"
+      const icon = ["device", "travel"].includes(node.kind) && node.interactive?.icon;
+      const markerGlyph = icon
+        ? `<rect class="mr-shape" x="-9" y="-9" width="18" height="18" rx="4" fill="${esc(kindColor(node))}"/>${deviceGlyph(icon)}`
+        : node.kind === "enemy"
         ? `<path class="mr-shape" d="M0,-8 L8,0 L0,8 L-8,0 Z" fill="${esc(kindColor(node))}"/>`
         : node.kind === "device"
           ? `<rect class="mr-shape" x="-6.5" y="-6.5" width="13" height="13" rx="2" fill="${esc(kindColor(node))}"/>`
@@ -2379,7 +2531,7 @@
         + `<text class="mr-label" x="${node.labelOffset.x}" y="${node.labelOffset.y}">${esc(node.labelText)}</text></g>`;
     }).join("");
 
-    const layerControls = layerTreeHtml(data);
+    const layerControls = layerTreeHtml(data, markerRows);
     const modelLayerControls = modelLayerControlsHtml();
     const height = state.pointHeightRange;
     const heightSpan = height ? Math.max(height.max - height.min, 1e-9) : 1;
@@ -2406,11 +2558,18 @@
       <div class="mr-layer-actions">
         <button type="button" data-map-layers="all">${esc(t("layersAll"))}</button>
         <button type="button" data-map-layers="none">${esc(t("layersNone"))}</button>
+        <button type="button" data-map-layers="facilities">${isZh() ? "设施与机关" : "Facilities"}</button>
         <button type="button" data-map-layers="story">${esc(t("layersStory"))}</button>
         ${(data.markers || []).some((row) => row.mapMark) ? `<button type="button" data-map-layers="marks" aria-pressed="${state.mapMarkOnly}">${esc(t("layersMapMarks"))}</button>` : ""}
       </div>
       <p class="mr-note mr-layer-selection-hint">${esc(t("layerSelectionHint"))}</p>
-      <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer" style="--mr-chip:${QUEST_COLOR}"><input type="checkbox" data-map-quests ${state.showQuests ? "checked" : ""}><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>${esc(kindLabel("quest"))}<span class="mr-layer-count">${data.questPoints.length}</span></label>` : ""}${layerControls}</div>
+      <div class="mr-filter-summary" role="status"><span>${isZh() ? "已显示" : "Shown"} <b>${state.nodes.length}${floorHidden ? ` / ${state.nodes.length + floorHidden}` : ""}</b> ${isZh() ? "个点位" : "points"}</span>
+        ${floorHidden ? `<button type="button" data-map-matched-floors>${isZh() ? `${floorHidden} 个点位被楼层隐藏 · 显示所在楼层` : `${floorHidden} hidden by floor · Show their floors`}</button>` : ""}
+      </div>
+      <input class="mr-type-search" type="search" data-map-type-search value="${esc(state.typeQuery)}" placeholder="${isZh() ? "查找类型，如：供电、开关…" : "Find a type: power, switch…"}" aria-label="${isZh() ? "查找设施与对象类型" : "Find facility and object types"}">
+      <p class="mr-type-count-hint">${isZh() ? "数量：已显示 / 总计。搜索仅筛选下方类型列表。" : "Counts: shown / total. Search filters the type list only."}</p>
+      <p class="mr-note mr-type-empty" hidden>${isZh() ? "没有匹配的类型" : "No matching types"}</p>
+      <div class="mr-layers">${(data.questPoints || []).length ? `<label class="mr-layer" style="--mr-chip:${QUEST_COLOR}"><input type="checkbox" data-map-quests ${state.showQuests ? "checked" : ""}><span class="mr-swatch" style="background:${QUEST_COLOR}"></span>${esc(kindLabel("quest"))}<span class="mr-layer-count">${questRows.length}/${data.questPoints.length}</span></label>` : ""}${layerControls}</div>
       <p class="mr-floor-help">${esc(t("help"))}</p>
     </section>`;
     const unlinked = (data.unlinkedMissionFiles || []).filter((path) => String(path || "").trim()).sort((a, b) => a.localeCompare(b));
@@ -2472,7 +2631,7 @@
       <span class="mr-tool-sep" aria-hidden="true"></span>` : "";
 
     host.innerHTML = `<div class="mr-map" tabindex="0" role="group" aria-label="${esc(`${mapTitle(data)} - ${t("mapSurface")}`)}">
-        <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-location-labels">${locationLabelSvg}</g><g class="mr-routes">${routeSvg}</g><g class="mr-trigger-zones">${triggerZoneSvg}</g><g class="mr-nodes">${nodeSvg}</g></g></svg>
+        <svg class="mr-canvas" viewBox="0 0 ${WIDTH} ${HEIGHT}" role="group" aria-label="${esc(mapTitle(data))}"><rect width="100%" height="100%" class="mr-map-bg"/><g class="mr-viewport">${backgroundImages}<g class="mr-location-labels">${locationLabelSvg}</g><g class="mr-routes">${routeSvg}</g><g class="mr-trigger-zones">${triggerZoneSvg}</g><g class="mr-nodes">${nodeSvg}</g><g class="mr-encounter-overlay"></g></g></svg>
         <div class="mr-tip" hidden></div>
         <div class="mr-floor-tip" hidden></div>
         <div class="mr-coordinate-tip" hidden aria-hidden="true"></div>
@@ -2509,8 +2668,8 @@
         </div>
         <div class="mr-float-body">
           <div class="mr-browser-tree">
-            <nav class="mr-map-column" aria-label="${esc(t("title"))}">${mapTreeHtml()}</nav>
-            <section class="mr-task-column" aria-label="${esc(t("mission"))}"><h2>${esc(t("mission"))}</h2>${variantControls}${missionControls}<div class="mr-task-map-status">${mapMetrics}${surfaceAccuracy}</div></section>
+            <nav class="mr-map-column" aria-label="${esc(t("title"))}"><select id="map-sort"><option value="default">${esc(isZh() ? "默认排序" : "Default order")}</option><option value="name">${esc(isZh() ? "名称" : "Name")}</option><option value="id">ID</option><option value="stories">${esc(isZh() ? "剧情数量" : "Story count")}</option></select>${mapTreeHtml()}</nav>
+            <section class="mr-task-column" aria-label="${esc(t("mission"))}"><h2>${esc(t("mission"))}</h2>${window.WebUI.updateBadges.html("map", mapUpdateIds())}${window.WebUI.updateBadges.panel("map", mapUpdateIds())}${variantControls}${missionControls}<div class="mr-task-map-status">${mapMetrics}${surfaceAccuracy}</div></section>
             ${objectFilters}
             <section class="mr-inspector-column" aria-label="${esc(t("inspector"))}">
               <h2>${esc(t("inspector"))}</h2>
@@ -2518,6 +2677,7 @@
               <div class="mr-inspector-body"></div>
             </section>
           </div>
+          ${window.WebUI?.mapEncounters?.markup() || ""}
           <div class="mr-technical-evidence">
           <h2>${esc(t("evidence"))}</h2>
            <p class="mr-note"><b>${state.backgrounds.length}</b> ${esc(surfaceLabel)}</p>
@@ -2563,8 +2723,9 @@
         </div>
       </aside>
       `;
-    bindMap(host);
+    bindMap(host, hiddenFloorIds);
     revealSelectedMap(host);
+    window.WebUI?.mapEncounters?.mount(host, selectEncounter);
     state.inspectorKey = "";
     renderInspector();
     applyTransform();
@@ -2572,7 +2733,54 @@
 
   // ---------------------------------------------------------------- events
 
-  function bindMap(host) {
+  function bindMap(host, hiddenFloorIds = []) {
+    const clearExclusiveFilters = () => {
+      state.mission = "";
+      state.missionPhase = "";
+      state.storyOnly = false;
+      state.mapMarkOnly = false;
+    };
+    const filterTypes = () => {
+      const query = state.typeQuery.trim().toLocaleLowerCase();
+      let matches = 0;
+      host.querySelectorAll(".mr-layer-group").forEach((group) => {
+        const rows = [...group.querySelectorAll("[data-type-search]")];
+        for (const row of rows) row.hidden = !!query && !row.dataset.typeSearch.includes(query);
+        const visible = rows.length ? rows.some((row) => !row.hidden)
+          : group.textContent.toLocaleLowerCase().includes(query);
+        group.hidden = !visible;
+        if (visible) matches += 1;
+        const details = group.querySelector("[data-map-type-group]");
+        if (details) details.open = query ? visible : state.expandedKinds.has(details.dataset.mapTypeGroup);
+      });
+      const empty = host.querySelector(".mr-type-empty");
+      if (empty) empty.hidden = matches > 0;
+    };
+    host.querySelector("[data-map-type-search]")?.addEventListener("input", (event) => {
+      state.typeQuery = event.currentTarget.value;
+      filterTypes();
+    });
+    host.querySelector("[data-map-matched-floors]")?.addEventListener("click", () => {
+      for (const id of hiddenFloorIds) state.mapLayers.add(id);
+      render();
+    });
+    filterTypes();
+    host.querySelectorAll("[data-map-type-group]").forEach((details) => details.addEventListener("toggle", () => {
+      if (state.typeQuery.trim()) return;
+      if (details.open) state.expandedKinds.add(details.dataset.mapTypeGroup);
+      else state.expandedKinds.delete(details.dataset.mapTypeGroup);
+    }));
+    const sort = host.querySelector("#map-sort");
+    if (sort) {
+      sort.value = state.mapSort || "default";
+      sort.addEventListener("change", () => {
+        state.mapSort = sort.value;
+        const nav = host.querySelector(".mr-map-column");
+        nav.querySelectorAll(".mr-map-group").forEach((group) => group.remove());
+        nav.insertAdjacentHTML("beforeend", mapTreeHtml());
+        nav.querySelectorAll("[data-map-id]").forEach((button) => button.addEventListener("click", () => { void switchMap(button.dataset.mapId); }));
+      });
+    }
     host.querySelector(".mr-display-menu")?.addEventListener("toggle", (event) => {
       state.displayMenuOpen = event.currentTarget.open;
     });
@@ -2601,16 +2809,34 @@
       state.pendingFitTarget = "nodes";
       render();
     }));
-    host.querySelectorAll("[data-map-kind]").forEach((input) => input.addEventListener("change", () => {
-      state.kinds = new Set([...host.querySelectorAll("[data-map-kind]:checked")].map((row) => row.dataset.mapKind));
-      scheduleRender();
-    }));
+    host.querySelectorAll("[data-map-kind]").forEach((input) => {
+      const kind = input.dataset.mapKind;
+      const subs = Object.keys(state.map?.facets?.kinds?.[kind]?.subKinds || {});
+      const selected = state.kinds.has(kind) ? subs.filter((sub) => state.subKinds.has(sub)).length : 0;
+      input.indeterminate = selected > 0 && selected < subs.length;
+      input.addEventListener("change", () => {
+        clearExclusiveFilters();
+        if (input.checked) {
+          state.kinds.add(kind);
+          for (const sub of subs) state.subKinds.add(sub);
+        } else state.kinds.delete(kind);
+        scheduleRender();
+      });
+    });
     host.querySelectorAll("[data-map-subkind]").forEach((input) => input.addEventListener("change", () => {
-      // Only the rendered subKinds are in the DOM, so the set is rebuilt from
-      // the boxes plus every subKind whose kind has no nested rows.
-      const shown = new Set([...host.querySelectorAll("[data-map-subkind]")].map((row) => row.dataset.mapSubkind));
-      const checked = [...host.querySelectorAll("[data-map-subkind]:checked")].map((row) => row.dataset.mapSubkind);
-      state.subKinds = new Set([...[...state.subKinds].filter((key) => !shown.has(key)), ...checked]);
+      clearExclusiveFilters();
+      const kind = input.dataset.mapParent;
+      const subs = Object.keys(state.map?.facets?.kinds?.[kind]?.subKinds || {});
+      if (input.checked) {
+        // A hidden parent must not silently mask a newly selected subtype,
+        // nor should selecting one subtype reveal all of its siblings.
+        if (!state.kinds.has(kind)) for (const sub of subs) state.subKinds.delete(sub);
+        state.kinds.add(kind);
+        state.subKinds.add(input.dataset.mapSubkind);
+      } else {
+        state.subKinds.delete(input.dataset.mapSubkind);
+        if (!subs.some((sub) => state.subKinds.has(sub))) state.kinds.delete(kind);
+      }
       scheduleRender();
     }));
     host.querySelectorAll("[data-map-layer-opacity]").forEach((input) => input.addEventListener("input", (event) => {
@@ -2669,7 +2895,8 @@
       const mode = button.dataset.mapLayers;
       const kinds = state.map?.facets?.kinds || {};
       const markKinds = new Set((state.map?.markers || []).filter((row) => row.mapMark).map((row) => row.kind));
-      const keep = ([kind, info]) => (mode === "all" ? true : mode === "story" ? info.storyCount > 0 : mode === "marks" ? markKinds.has(kind) : false);
+      const keep = ([kind, info]) => (mode === "all" ? true : mode === "facilities" ? ["device", "travel"].includes(kind) : mode === "story" ? info.storyCount > 0 : mode === "marks" ? markKinds.has(kind) : false);
+      clearExclusiveFilters();
       state.storyOnly = mode === "story";
       state.mapMarkOnly = mode === "marks";
       state.showQuests = mode === "all";
@@ -2999,7 +3226,7 @@
         merged.count += info.count || 0;
         merged.storyCount += info.storyCount || 0;
         for (const [subKind, sub] of Object.entries(info.subKinds || {})) {
-          const entry = (merged.subKinds[subKind] ||= { count: 0, storyCount: 0, label: sub.label || subKind });
+          const entry = (merged.subKinds[subKind] ||= { ...sub, count: 0, storyCount: 0, label: sub.label || subKind });
           entry.count += sub.count || 0;
           entry.storyCount += sub.storyCount || 0;
           if (sub.label) entry.label = sub.label;
@@ -3108,6 +3335,7 @@
   // ---------------------------------------------------------------- lifecycle
 
   async function loadMap(id, { includeRegion = state.regionScope === "all" && stitchOnInitialOpen(id), variantId = "" } = {}) {
+    const request = ++state.mapLoadRequest;
     const rows = state.index?.maps || [];
     const row = rows.find((item) => item.id === id)
       || rows.find((item) => (item.variants || []).some((variant) => variant.id === id))
@@ -3134,6 +3362,9 @@
     await Promise.all(members.map(async (member) => {
       member.payload = await ensurePayload(member.row);
     }));
+    if (request !== state.mapLoadRequest) return false;
+    await window.WebUI?.mapEncounters?.load(members.map((member) => member.id));
+    if (request !== state.mapLoadRequest) return false;
     // A few regions at most should stay resident; the rest are re-fetchable.
     if (state.payloads.size > 40) {
       for (const cached of [...state.payloads.keys()]) {
@@ -3144,6 +3375,7 @@
     state.selectedVariant = selectedRow.id;
     state.map = mergeRegion(members, selectedRow.id);
     if (!state.map) return false;
+    state.encounter = null;
     if (!includeRegion) {
       for (const cached of [...state.payloads.keys()]) {
         if (cached !== selectedRow.id && regionKey(cached) === key) state.payloads.delete(cached);
@@ -3198,14 +3430,18 @@
   async function switchMap(id, variantId = "") {
     window.WebUI?.setViewBusy?.("map-recovery", true);
     window.WebUI?.showLoader?.("map-recovery", t("loading"));
+    const pending = loadMap(id, { variantId });
+    const request = state.mapLoadRequest;
     try {
-      return await loadMap(id, { variantId });
+      return await pending;
     } catch (error) {
-      renderLoadError(error);
+      if (request === state.mapLoadRequest) renderLoadError(error);
       return false;
     } finally {
-      window.WebUI?.setViewBusy?.("map-recovery", false);
-      window.WebUI?.hideLoader?.("map-recovery");
+      if (request === state.mapLoadRequest) {
+        window.WebUI?.setViewBusy?.("map-recovery", false);
+        window.WebUI?.hideLoader?.("map-recovery");
+      }
     }
   }
 
@@ -3225,6 +3461,7 @@
     const host = root();
     if (!host) return false;
     const request = ++state.loadRequest;
+    ++state.mapLoadRequest;
     state.loadController?.abort();
     state.loadController = new AbortController();
     host.innerHTML = `<div class="mr-load-state" role="status" aria-live="polite"><span>${esc(t("loading"))}</span></div>`;
@@ -3239,6 +3476,7 @@
           onProgress: (ratio) => window.WebUI?.updateLoader?.("map-recovery", ratio == null ? null : ratio * 0.3, t("loading")),
         })
         : state.index;
+      await Promise.all([window.WebUI.updateBadges.load("map"), window.WebUI.updateBadges.loadFiles()]);
       if (request !== state.loadRequest) return null;
       window.WebUI?.updateLoader?.("map-recovery", 0.35, t("loading"));
       await window.WebUI?.nextPaint?.();

@@ -1,0 +1,24 @@
+.story-branch-overview { margin: 12px 0 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-bg); padding: 12px 14px; }
+.story-branch-overview > summary { cursor: pointer; font-weight: 650; }
+.story-branch-overview > summary span { margin-left: 8px; font-size: .8em; color: var(--muted); font-weight: 400; }
+.story-branch-boundary, .story-branch-note, .story-branch-scene-links p { font-size: .84rem; opacity: .8; line-height: 1.5; margin: 10px 0; }
+.story-branch-groups { display: grid; gap: 12px; }
+.story-branch-group { border: 1px solid var(--border); border-radius: 7px; overflow: hidden; }
+.story-branch-group > header { padding: 8px 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: rgba(125, 145, 165, .07); font-size: .8rem; }
+.story-branch-group ul { list-style: none; margin: 0; padding: 4px 12px; }
+.story-branch-group li { padding: 7px 0 7px 12px; border-left: 2px solid var(--accent); }
+.story-branch-choice { padding-left: 4px; }
+.story-branch-choice strong { font-size: .9rem; font-weight: 550; overflow-wrap: anywhere; }
+.story-branch-choice small { display: block; font-size: .72rem; color: var(--muted); overflow-wrap: anywhere; }
+.story-branch-route { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 9px; font-size: .82rem; line-height: 1.7; margin: 4px 0; }
+.story-branch-overview a { color: var(--accent-text); overflow-wrap: anywhere; }
+.story-branch-evidence { padding: 2px 6px; border: 1px solid var(--border); border-radius: 5px; font-size: .72rem; white-space: nowrap; }
+.story-branch-evidence[data-boundary="manual"] { color: #77409a; }
+.story-branch-evidence[data-boundary="structuralOnly"], .story-branch-unresolved { color: var(--status-modified); font-size: .82rem; }
+.story-branch-group > p { margin: 8px 12px; }
+.story-branch-source { font-size: .7rem; color: var(--muted); overflow-wrap: anywhere; }
+.story-branch-scene-links { margin-top: 12px; font-size: .85rem; }
+.story-branch-scene-links summary { cursor: pointer; }
+.story-branch-scene-links ul { margin: 8px 0; padding-left: 18px; }
+.story-branch-scene-links li { margin: 5px 0; overflow-wrap: anywhere; }
+.story-branch-scene-links li > span { font-size: .73rem; opacity: .7; }

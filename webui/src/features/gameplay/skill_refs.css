@@ -1,0 +1,45 @@
+.gp-skill-refs { margin: 20px 0; padding-top: 18px; border-top: 1px solid var(--border); }
+.gp-skill-refs h3 { margin: 0 0 10px; }
+.gp-ref-note { color: var(--muted); font-size: 12px; line-height: 1.55; }
+.gp-ref-diagnostic { padding: 10px; border-left: 3px solid #b88d45; background: rgba(184, 141, 69, .1); overflow-wrap: anywhere; }
+.gp-ref-controls { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; margin: 12px 0; }
+.gp-ref-controls label { display: flex; gap: 7px; align-items: center; }
+.gp-ref-controls input { flex: 1; min-width: 140px; }
+.gp-ref-controls :is(input, select, button), .gp-ref-pager button { padding: 6px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--panel); color: var(--text); font: inherit; }
+.gp-ref-controls button, .gp-ref-pager button { cursor: pointer; }
+.gp-ref-controls button:disabled, .gp-ref-pager button:disabled { opacity: .5; cursor: default; }
+.gp-ref-controls button:not(:disabled):hover, .gp-ref-pager button:not(:disabled):hover { background: var(--hover); }
+.gp-ref-facets { margin-bottom: 9px; }
+.gp-ref-layout { display: grid; grid-template-columns: minmax(180px, .8fr) minmax(0, 2.2fr); gap: 14px; align-items: start; }
+.gp-ref-list { max-height: 430px; overflow: auto; border: 1px solid var(--border); border-radius: 5px; }
+.gp-ref-list > button { display: block; width: 100%; border: 0; border-bottom: 1px solid var(--border); text-align: left; padding: 8px; background: transparent; color: inherit; cursor: pointer; }
+.gp-ref-list > button:is(:hover, .is-selected) { background: var(--hover); }
+.gp-ref-list :is(strong, small) { display: block; overflow-wrap: anywhere; font-size: 12px; }
+.gp-ref-list small, .gp-ref-links small { color: var(--muted); margin-top: 3px; }
+.gp-ref-list > p { margin: 10px; font-size: 12px; }
+.gp-ref-pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 7px; font-size: 12px; }
+.gp-ref-record-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; font-size: 12px; }
+.gp-ref-record-head strong { flex-basis: 100%; font-size: 14px; overflow-wrap: anywhere; }
+.gp-ref-table { max-height: 330px; overflow: auto; border: 1px solid var(--border); }
+.gp-ref-table table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.gp-ref-table th { position: sticky; top: 0; background: var(--panel); text-align: left; }
+.gp-ref-table :is(th, td) { padding: 6px 7px; border-bottom: 1px solid var(--border); }
+.gp-ref-table tr.is-selected { background: var(--hover); }
+.gp-ref-table small { display: block; color: var(--muted); }
+.gp-ref-table button, .gp-ref-links button, .gp-ref-incoming button, .gp-ref-target-skills button { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-align: left; overflow-wrap: anywhere; font: inherit; }
+.gp-ref-node, .gp-ref-target, .gp-ref-incoming { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
+.gp-ref-node h4, .gp-ref-target h4, .gp-ref-incoming h4 { margin: 0 0 7px; overflow-wrap: anywhere; }
+.gp-ref-path { font: 11px/1.5 monospace; color: var(--muted); overflow-wrap: anywhere; }
+.gp-ref-fields { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr); font-size: 12px; margin: 10px 0; }
+.gp-ref-fields :is(dt, dd) { margin: 0; padding: 4px 7px; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+.gp-ref-fields dt { color: var(--muted); }
+.gp-ref-links { list-style: none; margin: 9px 0; padding: 0; }
+.gp-ref-links li { padding: 7px 0; overflow-wrap: anywhere; font-size: 12px; }
+.gp-ref-links small { display: block; }
+.gp-ref-kind { color: var(--muted); }
+.gp-ref-incoming button, .gp-ref-target-skills button { display: block; margin-top: 5px; font-size: 12px; }
+@media (max-width: 900px) {
+  .gp-ref-layout { grid-template-columns: minmax(0, 1fr); }
+  .gp-ref-list { max-height: 180px; }
+  .gp-ref-fields { grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr); }
+}

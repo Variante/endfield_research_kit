@@ -79,6 +79,7 @@
   //              value `values` yields over the rendered items
   //   counts     Map | object | (value) => number   explicit counts (server-side
   //              groups); otherwise counted from the items
+  //   icon       (value) => image URL    optional decorative chip icon
   //   label      (value) => string        title  (value) => string (tooltip; an
   //              `items` entry's own `title` wins)
   //   className  string | (value) => string   extra chip classes
@@ -240,6 +241,7 @@
         return {
           ...entry,
           label: entry.label ?? (spec.label ? spec.label(entry.value) : String(entry.value)),
+          icon: entry.icon ?? (spec.icon ? spec.icon(entry.value) : ""),
           className: classes,
         };
       });

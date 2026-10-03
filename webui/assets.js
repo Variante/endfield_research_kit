@@ -31,6 +31,7 @@
     "story",
     "characters",
     "gameplay",
+    "production",
     "audio",
     "map-recovery",
     "assets",
@@ -664,6 +665,7 @@
       story: "storyPageTitle",
       characters: "charactersPageTitle",
       gameplay: "gameplayPageTitle",
+      production: "productionPageTitle",
       audio: "audioPageTitle",
       "map-recovery": "mapRecoveryPageTitle",
       assets: "assetsPageTitle",
@@ -830,6 +832,7 @@
       // of freezing. nextPaint() lets each value render before the next blocking
       // step runs, so the percentage tracks the actual work.
       .then(async (payload) => {
+        await window.WebUI.updateBadges.loadFiles();
         window.WebUI.updateLoader("assets", 0.5);
         await window.WebUI.nextPaint();
 
@@ -1176,6 +1179,7 @@
       entry.groupRaw = familyGroupInfo.raw;
       entry.familyKey = `${entry.source}::${familyGroupInfo.key}`.toLowerCase();
       entry.searchText = [
+        window.WebUI.linkedFileSearchText(entry),
         entry.rel,
         entry.name,
         entry.dir,
@@ -1462,7 +1466,7 @@
 
     ASSET_STATE.searchTokens = tokens;
     ASSET_STATE.searchScores = tokens.length ? scores : null;
-    ASSET_STATE.filtered.sort((a, b) => compareAssets(a, b, filters.sort));
+    ASSET_STATE.filtered.sort(window.WebUI.sorting.comparator("asset-sort", (a, b) => compareAssets(a, b, filters.sort)));
     ASSET_STATE.pager?.setTotal(ASSET_STATE.filtered.length);
     $("#asset-shown").textContent = ASSET_STATE.filtered.length.toLocaleString();
     $("#asset-total").textContent = ASSET_STATE.entries.length.toLocaleString();
@@ -1597,7 +1601,7 @@
     const filteredItems = ASSET_STATE.pager ? ASSET_STATE.pager.slice(ASSET_STATE.filtered) : ASSET_STATE.filtered;
     const items = [...filteredItems].sort((a, b) => {
       const delta = (scores.get(b) || 0) - (scores.get(a) || 0);
-      return delta || compareAssets(a, b, ASSET_STATE.filters.sort);
+      return delta || window.WebUI.sorting.comparator("asset-sort", (left, right) => compareAssets(left, right, ASSET_STATE.filters.sort))(a, b);
     });
 
     const rows = [];
@@ -1703,6 +1707,7 @@
     const name = document.createElement("div");
     name.className = "asset-row-name";
     name.textContent = entry.name;
+    name.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(entry));
     line1.appendChild(name);
 
     const size = document.createElement("div");
@@ -1875,6 +1880,7 @@
     $("#asset-detail").hidden = false;
     const activeVariant = getActiveAssetFile(entry);
     $("#asset-detail-title").textContent = entry.name;
+    $("#asset-detail-title").insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileHtml(activeVariant || entry));
     $("#asset-detail-meta").textContent = activeVariant ? activeVariant.rel : entry.rel;
     $("#asset-open-raw").href = assetHref(activeVariant ? activeVariant.rel : entry.rel);
     renderCurrentFileDownload(entry);
@@ -1882,6 +1888,10 @@
     renderRelated(entry);
     renderVariants(entry);
     renderRelations(entry);
+    const detail = $("#asset-detail");
+    detail.querySelectorAll(":scope > .version-update-details").forEach((node) => node.remove());
+    detail.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.fileDetails(activeVariant || entry));
+    window.WebUI.updateBadges.decorateFiles(detail);
     ASSET_STATE.detailToken += 1;
     resetAssetPreviewSurface();
     syncPreviewBackgroundControls(entry);

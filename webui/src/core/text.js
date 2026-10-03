@@ -15,6 +15,36 @@
     return String(value || "").toLowerCase().includes(q);
   }
 
+  // Index nested file references without stringifying unrelated record fields.
+  // Keep both the path and basename, including decoded URL spellings.
+  function linkedFileSearchText(...values) {
+    const files = new Set();
+    const seen = new Set();
+    function visit(value) {
+      if (typeof value === "string") {
+        let decoded = value;
+        try { decoded = decodeURIComponent(value); } catch (_error) { /* Keep malformed URLs searchable. */ }
+        for (const text of new Set([value, decoded])) {
+          const normalized = text.replace(/\\/g, "/");
+          const paths = normalized.match(/[^\s<>"'?#=]+\.[a-z][a-z0-9]{0,11}(?=$|[\s<>"'?#&])/gi) || [];
+          // A scalar path may contain spaces (unlike paths embedded in markup).
+          if (!/[\n<>"']/.test(normalized) && /^[^?#]+\.[a-z][a-z0-9]{0,11}(?:[?#].*)?$/i.test(normalized)) {
+            paths.push(normalized.split(/[?#]/)[0]);
+          }
+          for (const path of paths) {
+            files.add(path);
+            files.add(path.split("/").pop());
+          }
+        }
+      } else if (value && typeof value === "object" && !seen.has(value)) {
+        seen.add(value);
+        for (const child of Object.values(value)) visit(child);
+      }
+    }
+    values.forEach(visit);
+    return [...files].join("\n");
+  }
+
   function formatNumber(value) {
     const number = Number(value);
     return Number.isFinite(number) ? number.toLocaleString() : "";
@@ -89,6 +119,7 @@
   Object.assign(WebUI, {
     escapeHtml,
     textIncludes,
+    linkedFileSearchText,
     formatNumber,
     formatSignedNumber,
     applyTemplate,

@@ -214,6 +214,20 @@
    kind hides everything below it. */
 .mr-layer-group { display: flex; flex-direction: column; gap: 3px; }
 .mr-layer-group > .mr-layer { align-self: flex-start; }
+.mr-layer-heading { display: flex; align-items: center; }
+.mr-type-details > summary { cursor: pointer; color: var(--muted); font-size: 10px; padding: 2px 0 3px 12px; }
+.mr-type-search { width: 100%; box-sizing: border-box; min-width: 0; margin: 0 0 8px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 5px; color: var(--text); background: var(--bg); font: inherit; font-size: 11px; }
+.mr-type-search:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mr-filter-summary { display: grid; gap: 4px; margin: 0 0 10px; font-size: 11px; color: var(--muted); }
+.mr-filter-summary b { color: var(--text); font-variant-numeric: tabular-nums; }
+.mr-filter-summary button { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-align: left; cursor: pointer; }
+.mr-filter-summary button:hover { text-decoration: underline; }
+.mr-filter-summary button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mr-type-count-hint { margin: -3px 0 8px; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.mr-layer-group[hidden], .mr-sublayer[hidden], .mr-type-empty[hidden] { display: none; }
+.mr-type-icon { width: 16px; height: 16px; flex: 0 0 16px; color: var(--mr-chip); }
+.mr-device-glyph { fill: none; stroke: #fff; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+.mr-type-icon .mr-device-glyph { stroke: currentColor; }
 
 .mr-sublayers {
   display: flex;
@@ -248,6 +262,7 @@
 
 .mr-layer-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-bottom: 6px;
 }
@@ -482,6 +497,13 @@
   background: color-mix(in srgb, var(--mr-chip, var(--mr-story)) 12%, transparent);
   color: var(--text);
 }
+.mr-layer:has(input:indeterminate) {
+  border-style: dashed;
+  border-color: var(--mr-chip, var(--mr-story));
+  background: color-mix(in srgb, var(--mr-chip, var(--mr-story)) 6%, transparent);
+  color: var(--text);
+}
+.mr-layer:has(input:indeterminate) .mr-swatch { border-radius: 1px; height: 3px; }
 .mr-layer:has(input:disabled) { cursor: default; opacity: 0.85; }
 .mr-layer:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 .mr-layer input { position: absolute; width: 1px; height: 1px; opacity: 0; }
@@ -1186,3 +1208,41 @@
    is emphasised against the unchanging level totals beside it. */
 .mr-metric-active b { color: var(--accent-text); }
 .mr-metric-active { color: var(--text); }
+
+/* Authored encounters share the map browser and leave its layer filters intact. */
+.mr-encounters { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.mr-encounters > summary { cursor: pointer; font-weight: 650; }
+.mr-encounters > summary b { margin-left: 6px; color: var(--muted); }
+.mr-encounter-toolbar { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.mr-encounter-toolbar input { flex: 1 1 180px; min-width: 0; }
+.mr-encounter-toolbar input, .mr-encounter-toolbar select,
+.mr-encounter-toolbar button, .mr-encounter-pages button,
+.mr-encounter-detail > button { padding: 6px 8px; border: 1px solid var(--border); border-radius: 5px; background: var(--panel); color: var(--text); }
+.mr-encounter-browser { display: grid; grid-template-columns: minmax(170px, .75fr) minmax(0, 1.8fr); gap: 12px; margin-top: 10px; }
+.mr-encounter-list, .mr-encounter-detail { min-width: 0; max-height: 470px; overflow: auto; }
+.mr-encounter-detail { padding: 0 7px; overflow-wrap: anywhere; }
+.mr-encounter-pick { display: block; width: 100%; padding: 7px; border: 1px solid transparent; border-radius: 5px; background: transparent; color: var(--text); text-align: left; cursor: pointer; overflow-wrap: anywhere; }
+.mr-encounter-pick b, .mr-encounter-pick small { display: block; }
+.mr-encounter-pick small { color: var(--muted); font-size: 10px; margin-top: 3px; }
+.mr-encounter-pick:hover, .mr-encounter-pick.is-active { background: var(--hover); border-color: var(--border); }
+.mr-encounter-pick.is-active b { color: var(--accent-text); }
+.mr-encounter-pages { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 7px 0; }
+.mr-encounter-sources { display: flex; gap: 5px 10px; flex-wrap: wrap; margin: 8px 0; font: 10px var(--mono); }
+.mr-encounter-diagnostic { border-left: 3px solid #c98d38; padding-left: 8px; font-size: 11px; overflow-wrap: anywhere; }
+.mr-encounter-table { overflow: auto; max-width: 100%; margin: 7px 0; }
+.mr-encounter-table table { border-collapse: collapse; width: 100%; font-size: 11px; }
+.mr-encounter-table td, .mr-encounter-table th { border-bottom: 1px solid var(--border); padding: 5px; text-align: left; vertical-align: top; }
+.mr-encounter-fields { font-size: 11px; }
+.mr-encounter-fields dd { overflow-wrap: anywhere; }
+.mr-encounter-detail details { padding: 6px 0; }
+.mr-encounter-detail summary { cursor: pointer; }
+.mr-encounter-detail h3 { font-size: 13px; margin: 4px 0 8px; }
+.mr-encounter-detail h4 { font-size: 12px; margin: 12px 0 5px; }
+.mr-encounter-wave { border-top: 1px solid var(--border); }
+.mr-encounter-overlay { pointer-events: none; }
+.mr-encounter-overlay circle { fill: #ffe29a; stroke: #614719; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.mr-encounter-overlay polyline { fill: none; stroke: #d89935; stroke-width: 2; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
+@media (max-width: 760px) {
+  .mr-encounter-browser { grid-template-columns: 1fr; }
+  .mr-encounter-list { max-height: 200px; }
+}

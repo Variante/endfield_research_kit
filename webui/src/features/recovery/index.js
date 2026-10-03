@@ -11,7 +11,9 @@
 //
 // Debug-only page (#recovery, revealed by Show debug info). Behavior contract:
 //   * The bar measures payload bytes or logical-file count. Hatched segments
-//     are catalog-declared files whose chunks are absent locally. Widths use
+//     are catalog-declared files whose chunks are absent locally; distinct
+//     patterns also keep unverified metadata and failed/incomplete reads in
+//     the inventory. Widths use
 //     log10(1 + 100 * value / smallest nonzero value) so small blocks stay
 //     visible; hover and keyboard focus give the measured value and true
 //     share, and selecting a segment opens and focuses its block in the tree.
@@ -32,12 +34,15 @@
       pageTitle: "恢复进度",
       intro: "上方为各 VFS 数据块的体量；下方文件树按数据块列出每类逻辑文件及其 L1–L4 恢复状态。体量为实测，状态为对所引记忆主题的声明性解读，不是百分比。",
       overviewTitle: "数据块体量",
-      overviewNote: "段宽为对数刻度，只表示体量，不表示恢复程度；斜纹为已声明但本地未安装。点击某段可在下方文件树中定位。",
+      overviewNote: "段宽为对数刻度，只表示体量，不表示恢复程度；纹理区分未安装、元数据未验证及读取失败，全部计入体量。点击某段可在下方文件树中定位。",
       metricBytes: "按载荷字节",
       metricFiles: "按逻辑文件",
       metricLabel: "体量度量",
       legendProfiled: "本地已读取",
       legendAbsent: "已声明、未安装",
+      legendUnverified: "元数据未验证",
+      legendFailed: "读取失败或不完整",
+      availability: "可用性",
       ofTotal: "占全部",
       treeTitle: "文件类型与恢复状态",
       levels: "层级",
@@ -50,7 +55,7 @@
       chunks: "chunk",
       noFiles: "本地概况中无文件",
       avail_absent: "未安装",
-      avail_mixed: "部分可用",
+      avail_mixed: "可用性混合",
       unclassified: "未分类",
       unclassifiedNote: "没有任何已声明模式匹配这些路径，因此不声明任何阶段。",
       pattern: "路径模式",
@@ -58,6 +63,8 @@
       sharedStages: "阶段沿用自",
       source: "来源",
       limit: "证据边界",
+      registryVerified: "JsonData 的 L2 声明已与当前已认证的逐文件登记结果核对。",
+      registryMissing: "当前 JsonData 登记结果不可用；L2 状态仍是声明，未进行逐文件核对。",
       generated: "生成于",
       rebuild: "重建",
       loadError: "无法加载恢复进度数据。请先运行构建命令。",
@@ -68,12 +75,15 @@
       pageTitle: "Recovery Progress",
       intro: "The bar shows each VFS block's volume. The tree lists every logical-file type under its block with its L1–L4 recovery state. Volumes are measured; states are declared readings of the cited memory topic, not percentages.",
       overviewTitle: "Block volume",
-      overviewNote: "Log-scaled widths show volume only, never recovery; hatched sections are declared but not installed locally. Select a section to find it in the tree.",
+      overviewNote: "Log-scaled widths show volume only, never recovery. Patterns distinguish absent chunks, unverified metadata, and failed reads; all remain in the inventory. Select a section to find it in the tree.",
       metricBytes: "by payload bytes",
       metricFiles: "by logical files",
       metricLabel: "Volume measure",
       legendProfiled: "read locally",
       legendAbsent: "declared, not installed",
+      legendUnverified: "metadata unverified",
+      legendFailed: "read failed or incomplete",
+      availability: "Availability",
       ofTotal: "of total",
       treeTitle: "File types and recovery state",
       levels: "Levels",
@@ -86,7 +96,7 @@
       chunks: "chunks",
       noFiles: "no files in the local profile",
       avail_absent: "not installed",
-      avail_mixed: "partly available",
+      avail_mixed: "mixed availability",
       unclassified: "unclassified",
       unclassifiedNote: "No declared pattern matches these paths, so no stage is claimed.",
       pattern: "Path pattern",
@@ -94,6 +104,8 @@
       sharedStages: "Stages shared with",
       source: "source",
       limit: "evidence limit",
+      registryVerified: "JsonData L2 declarations match the current authenticated per-file registry.",
+      registryMissing: "The current JsonData registry is unavailable; L2 states remain declarations without a per-file check.",
       generated: "Generated",
       rebuild: "rebuild",
       loadError: "Recovery progress data could not be loaded. Run the build command first.",
@@ -123,6 +135,15 @@
 
   // A glyph per stage state, so a state never depends on colour alone.
   const STATE_GLYPHS = { closed: "●", partial: "◐", open: "○", notAssessed: "?" };
+
+  // Matches the v5 measured.byAvailability buckets. A failed or unverified
+  // read is still declared inventory, so it must stay in the bar denominator.
+  const AVAILABILITIES = [
+    ["profiled", "legendProfiled"],
+    ["absent", "legendAbsent"],
+    ["unverified", "legendUnverified"],
+    ["failed", "legendFailed"],
+  ];
 
   const STATE = {
     payload: null,
@@ -235,6 +256,17 @@
   function renderOverview(payload) {
     const wrap = section(t("overviewTitle"), t("overviewNote"));
 
+    // Profiled sections first, then every other declared availability bucket.
+    // Log-scaled widths keep every nonzero section visible; the tooltip keeps
+    // its true share of the complete declared inventory.
+    const pieces = [];
+    for (const [availability, label] of AVAILABILITIES) {
+      for (const block of payload.vfs.blocks) {
+        const value = metricOf(block, availability);
+        if (value > 0) pieces.push({ block, availability, label, value });
+      }
+    }
+
     const toolbar = el("div", "recovery-toolbar");
     const toggle = el("div", "recovery-toggle");
     toggle.setAttribute("role", "group");
@@ -252,7 +284,9 @@
     }
     toolbar.appendChild(toggle);
     const legend = el("div", "recovery-legend");
-    for (const [cls, key] of [["", "legendProfiled"], [" is-absent", "legendAbsent"]]) {
+    for (const [availability, key] of AVAILABILITIES) {
+      if (!pieces.some((piece) => piece.availability === availability)) continue;
+      const cls = availability === "profiled" ? "" : ` is-${availability}`;
       const item = el("span", "recovery-legend-item");
       item.appendChild(el("span", `recovery-swatch${cls}`));
       item.appendChild(el("span", null, t(key)));
@@ -261,16 +295,6 @@
     toolbar.appendChild(legend);
     wrap.appendChild(toolbar);
 
-    // Profiled sections first, then the hatched declared-but-absent ones.
-    // Log-scaled widths keep every nonzero section visible; the tooltip keeps
-    // the true measured share.
-    const pieces = [];
-    for (const availability of ["profiled", "absent"]) {
-      for (const block of payload.vfs.blocks) {
-        const value = metricOf(block, availability);
-        if (value > 0) pieces.push({ block, availability, value });
-      }
-    }
     const total = pieces.reduce((sum, piece) => sum + piece.value, 0) || 1;
     const smallest = Math.min(...pieces.map((piece) => piece.value));
     const weight = (value) => Math.log10(1 + (100 * value) / smallest);
@@ -279,16 +303,16 @@
     const bar = el("div", "recovery-segbar");
     bar.setAttribute("role", "group");
     bar.setAttribute("aria-label", t("overviewTitle"));
-    for (const { block, availability, value } of pieces) {
-      const absent = availability === "absent";
-      const piece = el("button", `recovery-segbar-piece${absent ? " is-absent" : ""}`);
+    for (const { block, availability, label, value } of pieces) {
+      const profiled = availability === "profiled";
+      const piece = el("button", `recovery-segbar-piece${profiled ? "" : ` is-${availability}`}`);
       piece.type = "button";
       piece.style.width = `${(weight(value) / weightTotal) * 100}%`;
-      if (!absent) piece.style.background = LANE_COLORS[block.lane] || "var(--accent-2)";
+      if (profiled) piece.style.background = LANE_COLORS[block.lane] || "var(--accent-2)";
       const share = value / total;
       const shareText = share < 0.00005 ? "<0.01%" : `${(share * 100).toFixed(2)}%`;
       const volume = STATE.metric === "files" ? `${num(value)} ${t("files")}` : bytes(value);
-      const summary = `${volume} · ${shareText} ${t("ofTotal")}${absent ? ` · ${t("legendAbsent")}` : ""}`;
+      const summary = `${volume} · ${shareText} ${t("ofTotal")} · ${t(label)}`;
       piece.setAttribute("aria-label", `${block.enumName}: ${summary}`);
       const tip = () => showTip(piece, [block.enumName, laneLabel(block.lane), summary]);
       piece.addEventListener("mouseenter", tip);
@@ -342,13 +366,29 @@
     return key;
   }
 
+  function sortedRecoveryRows(rows) {
+    return [...rows].sort(window.WebUI.sorting.comparator("recovery-sort", (a, b) => {
+      if (!STATE.sort || STATE.sort === "default") return rows.indexOf(a) - rows.indexOf(b);
+      if (STATE.sort === "bytes") return (b.measured?.declaredBytes || 0) - (a.measured?.declaredBytes || 0);
+      if (STATE.sort === "files") return (b.measured?.files || 0) - (a.measured?.files || 0);
+      return String(a.enumName || a.id).localeCompare(String(b.enumName || b.id), undefined, { numeric: true });
+    }));
+  }
+
   function renderTree(payload) {
     const wrap = section(t("treeTitle"));
     wrap.appendChild(renderKey(payload));
+    const sort = el("select");
+    sort.id = "recovery-sort";
+    const en = STATE.locale === "en";
+    sort.append(new Option(en ? "Default order" : "默认排序", "default"), new Option(en ? "Name" : "名称", "name"), new Option(en ? "Bytes" : "字节数", "bytes"), new Option(en ? "File count" : "文件数", "files"));
+    sort.value = STATE.sort || "default";
+    sort.addEventListener("change", () => { STATE.sort = sort.value; render(); });
+    wrap.appendChild(sort);
 
     const browser = el("div", "recovery-browser");
     const tree = el("ul", "recovery-tree");
-    for (const block of payload.vfs.blocks) {
+    for (const block of sortedRecoveryRows(payload.vfs.blocks)) {
       if (block.families?.length) tree.appendChild(renderBlock(payload, block));
     }
     browser.appendChild(tree);
@@ -381,7 +421,7 @@
 
     const list = el("ul", "recovery-families");
     list.hidden = !open;
-    for (const family of block.families) list.appendChild(renderFamily(payload, block, family));
+    for (const family of sortedRecoveryRows(block.families)) list.appendChild(renderFamily(payload, block, family));
     item.appendChild(list);
 
     toggle.addEventListener("click", () => {
@@ -509,6 +549,18 @@
     );
     detail.appendChild(el("p", null, family.declared ? localized(family, "description") : t("unclassifiedNote")));
 
+    const availability = el("dl", "recovery-availability");
+    availability.setAttribute("aria-label", t("availability"));
+    for (const [id, label] of AVAILABILITIES) {
+      const bucket = measured.byAvailability?.[id];
+      if (!bucket?.files) continue;
+      const row = el("div");
+      row.appendChild(el("dt", null, t(label)));
+      row.appendChild(el("dd", null, sizeLine(bucket)));
+      availability.appendChild(row);
+    }
+    if (availability.children.length) detail.appendChild(availability);
+
     detail.appendChild(stageList(payload, family.stages));
 
     if (family.pathRegex) {
@@ -546,6 +598,11 @@
     const header = el("header", "recovery-header");
     header.appendChild(el("h1", null, t("pageTitle")));
     header.appendChild(el("p", "recovery-note", t("intro")));
+    const registry = payload.declarationChecks?.jsondataL2;
+    if (registry?.status === "verified" || registry?.status === "missing") {
+      header.appendChild(el("p", "recovery-note recovery-registry-check",
+        t(registry.status === "verified" ? "registryVerified" : "registryMissing")));
+    }
     body.appendChild(header);
     body.appendChild(renderOverview(payload));
     body.appendChild(renderTree(payload));

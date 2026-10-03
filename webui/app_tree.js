@@ -7,7 +7,7 @@ function normalizeSearchText(value) {
 // Concatenate every searchable field of an entry into one lowercased blob, so a
 // multi-token query can be OR-matched and scored against it in one pass.
 function entrySearchHaystack(e) {
-  const parts = [e.k, e.m, e.title, e.p, e.x];
+  const parts = [e.k, e.m, e.title, e.p, e.x, e.linkedFileSearch, e.audioFileSearch];
   const missionName = missionDisplay(entryTreeMissionId(e), entryDataType(e));
   if (missionName) parts.push(missionName);
   for (const dataType of entryTreeDataTypes(e)) {
@@ -29,7 +29,7 @@ function entrySearchHaystack(e) {
     parts.push(aid);
     for (const nm of (STATE.actorNames[aid] || [])) parts.push(nm);
   }
-  return normalizeSearchText(parts.filter(Boolean).join("\n"));
+  return parts.filter(Boolean).join("\n").toLowerCase();
 }
 
 function entrySearchAliasBaseKey(key) {
@@ -991,7 +991,7 @@ function applyFilters() {
       const hay = entrySearchHaystack(e);
       let score = 0;
       for (const token of tokens) {
-        if (hay.includes(token) || entryMatchesOptionIdSearch(e, token)) score += 1;
+        if (window.WebUI.queryMatches(hay, [token]) || entryMatchesOptionIdSearch(e, token)) score += 1;
       }
       if (score <= 0) return false;
       scores.set(e.k, score);
@@ -1168,6 +1168,10 @@ function compareEntryName(a, b) {
 }
 
 function makeItemSorter(mode) {
+  return WebUI.sorting.comparator("sort", makeBaseItemSorter(mode));
+}
+
+function makeBaseItemSorter(mode) {
   const kindRank = (k) => KIND_ORDER[k] ?? 99;
   const lineCount = (entry) => {
     const count = Number(entry && entry.n);

@@ -1,10 +1,12 @@
 // Characters page behavior contract (webui/README.md links here; evidence
 // limits are in memory/webui/characters.md).
-//   * Merges table, Story and asset identities while retaining source
+//   * Merges table and asset identities while retaining source
 //     provenance. Merge and name overrides (overrides/character_merges.json,
 //     overrides/character_name_overrides.json) are live inputs written
 //     through serve.py and need no rebuild. Debug-only controls must not
-//     leak into normal navigation.
+//     leak into normal navigation. Direct story-table discovery is independent
+//     of Story builds. Labels without actor ids remain separate candidates
+//     even when their names match; only explicit overrides can merge them.
 //   * The optional data/updates/characters.json supplies version-change
 //     badges and filters. Added or modified ids join the constituent ids and
 //     aliases of an already-recovered identity group; deleted ids are
@@ -56,11 +58,19 @@
     CharacterTable: "CharacterTable",
     NpcTable: "NpcTable",
     SNSChatTable: "SNSChatTable",
-    "Story actor registry": ui("Story sources", "剧情角色来源"),
+    DialogTextTable: ui("Dialogue speakers", "对白说话者"),
+    RadioTable: ui("Radio speakers", "通讯说话者"),
+    EnvTalkTable: ui("Ambient speakers", "环境对话说话者"),
+    MailSenderTable: ui("Mail senders", "邮件发件人"),
+    NpcProxyTable: ui("Ambient name overrides", "环境对话名称覆盖"),
+    NpcProxyExDataTable: ui("Ambient speaker references", "环境对话说话者引用"),
     "Exported assets": ui("Exported assets", "导出资源"),
   }[source] || source);
-  const EVIDENCE_TYPE_FILTERS = ["major_npc_asset", "npc_animal_asset", "dlg_npc_asset", "icon_npc_asset", "sns_npc_asset", "actor_asset", "npc_asset"];
+  const EVIDENCE_TYPE_FILTERS = ["story_speaker", "story_speaker_label", "story_joint_speaker", "major_npc_asset", "npc_animal_asset", "dlg_npc_asset", "icon_npc_asset", "sns_npc_asset", "actor_asset", "npc_asset"];
   const evidenceTypeLabel = (type) => ({
+    story_speaker: ui("Authored speaker", "源数据说话者"),
+    story_speaker_label: ui("Unresolved speaker label", "待确认说话者名称"),
+    story_joint_speaker: ui("Joint speaker", "合说人物"),
     actor_asset: ui("Story actor", "剧情角色"),
     major_npc_asset: ui("Major NPC", "重要 NPC"),
     dlg_npc_asset: ui("Dialogue NPC", "对话 NPC"),
@@ -103,7 +113,7 @@
   }[key] || key);
   // A group has no official name when every observed name came from the
   // "Exported asset identifier" fallback (i.e. no CharacterTable/NpcTable/
-  // TextTable/SNSChatTable/Story actor registry entry ever named it).
+  // TextTable/SNSChatTable/story-table entry ever named it).
   function hasOfficialName(row) {
     return (row.names || []).some((name) => name.source !== "Exported asset identifier");
   }
@@ -130,6 +140,7 @@
     character: ui("Playable character", "可玩角色"),
     npc: "NPC",
     actor: ui("Story actor", "剧情角色"),
+    story_candidate: ui("Speaker candidate", "说话者候选"),
     asset_npc: ui("Asset NPC", "资源 NPC"),
   }[kind] || kind);
 
@@ -168,16 +179,19 @@
     });
   }
 
-  function updateStatusesForGroup(row) {
+  function updatesForGroup(row, entries) {
     const ids = new Set([
       row.id,
       ...(row.mergedIds || []),
       ...(row.aliases || []),
       ...(row.records || []).flatMap((record) => [record.id, ...(record.aliases || [])]),
     ].map(normalizedName).filter(Boolean));
-    return [...new Set(normalizedUpdateEntries()
-      .filter((entry) => entry.status !== "deleted" && (entry.ids || [entry.id]).some((id) => ids.has(normalizedName(id))))
-      .map((entry) => entry.status))];
+    return entries.filter((entry) => entry.status !== "deleted" &&
+      (entry.ids || [entry.id]).some((id) => ids.has(normalizedName(id))));
+  }
+
+  function updateStatusesForGroup(row, entries) {
+    return [...new Set(updatesForGroup(row, entries).map((entry) => entry.status))];
   }
 
   function deletedUpdateRows() {
@@ -194,11 +208,40 @@
       }));
   }
 
+  let displayCache = null;
+  const searchTexts = new WeakMap();
+  const statsCache = new WeakMap();
+
+  function searchText(row) {
+    if (!searchTexts.has(row)) {
+      searchTexts.set(row, [
+        window.WebUI.linkedFileSearchText(row),
+        row.id, row.primaryName,
+        ...(row.aliases || []),
+        ...(row.names || []).map((item) => `${item.text} ${item.key}`),
+        ...(row.records || []).flatMap((identity) => [
+          identity.id,
+          ...(identity.evidence || []).flatMap((item) => [item.key, ...(item.paths || []),
+            ...(item.nameNormalizations || []).map((name) => name.originalName)]),
+        ]),
+      ].join(" "));
+    }
+    return searchTexts.get(row);
+  }
+
   function displayRecords() {
-    return [
-      ...groupedRecords().map((row) => ({ ...row, updateStatuses: updateStatusesForGroup(row) })),
+    const groups = groupedRecords();
+    if (displayCache?.groups === groups && displayCache.updates === state.updateData
+        && displayCache.language === state.language) return displayCache.rows;
+    const entries = normalizedUpdateEntries();
+    const rows = [
+      ...groups.map((row) => ({ ...row, updateStatuses: updateStatusesForGroup(row, entries) })),
       ...deletedUpdateRows(),
     ];
+    // Build once when source inputs change, before the first search keystroke.
+    rows.forEach(searchText);
+    displayCache = { groups, updates: state.updateData, language: state.language, rows };
+    return rows;
   }
 
   function normalizedName(value) {
@@ -229,11 +272,25 @@
     return ids[0] || "";
   }
 
+  let groupCache = null;
+
   function groupedRecords() {
+    // Overrides replace their objects on edit. Queries, filters, sort and
+    // selection can reuse the same grouping without losing live edits.
+    if (groupCache?.data === state.data && groupCache.merges === state.mergeOverrides
+        && groupCache.names === state.nameOverrides) return groupCache.rows;
+    const rows = buildGroupedRecords();
+    groupCache = { data: state.data, merges: state.mergeOverrides, names: state.nameOverrides, rows };
+    return rows;
+  }
+
+  function buildGroupedRecords() {
     const byName = new Map();
     for (const row of state.data?.records || []) {
       const primaryName = String(row.primaryName || row.id || "").trim();
-      const nameKey = normalizedName(primaryName) || normalizedName(row.id);
+      const nameKey = row.kind === "story_candidate"
+        ? `candidate:${normalizedName(row.id)}`
+        : normalizedName(primaryName) || normalizedName(row.id);
       let group = byName.get(nameKey);
       if (!group) {
         group = {
@@ -364,7 +421,7 @@
     name_overridden: (row) => !!row.nameOverridden,
   };
 
-  // Chip groups over displayRecords(): single-select kind/source/NPC type
+  // Chip groups over displayRecords(): single-select kind/source/evidence type
   // (clicking the active chip returns to "all"), AND-combined special keys,
   // and OR-combined version-change statuses. Counts are totals over all rows.
   function ensureFacets() {
@@ -372,7 +429,7 @@
       countMode: "total",
       groups: [
         { id: "kind", container: "#characters-kind-filter", section: "characters-kind", single: true,
-          values: (row) => row.kinds, items: ["character", "npc", "actor", "asset_npc"], label: kindLabel },
+          values: (row) => row.kinds, items: ["character", "npc", "actor", "story_candidate", "asset_npc"], label: kindLabel },
         { id: "source", container: "#characters-source-filter", section: "characters-source", single: true,
           values: (row) => row.sourceTypes, label: sourceLabel, order: (a, b) => (a < b ? -1 : a > b ? 1 : 0) },
         { id: "evidenceType", container: "#characters-evidence-type-filter", section: "characters-evidence-type", single: true,
@@ -391,6 +448,7 @@
   }
 
   function rowStats(row) {
+    if (statsCache.has(row)) return statsCache.get(row);
     let evidenceGroups = 0;
     let assetPathSamples = 0;
     let assetCount = 0;
@@ -404,7 +462,9 @@
         assetCount += Number(item.count) || 0;
       }
     }
-    return { identities: (row.records || []).length, evidenceGroups, assetPathSamples, assetCount };
+    const stats = { identities: (row.records || []).length, evidenceGroups, assetPathSamples, assetCount };
+    statsCache.set(row, stats);
+    return stats;
   }
 
   function sortValue(row, key) {
@@ -416,12 +476,19 @@
     return 0;
   }
 
+  let nameCollator = null;
+  let collatorLanguage = "";
+
   function compareCharacterNames(a, b) {
     const aName = String(a.primaryName || a.id || "");
     const bName = String(b.primaryName || b.id || "");
     const locale = ({ CN: "zh-Hans-CN", EN: "en", JP: "ja", KR: "ko" })[state.language];
-    return aName.localeCompare(bName, locale, { numeric: true, sensitivity: "base" })
-      || String(a.id || "").localeCompare(String(b.id || ""), locale, { numeric: true, sensitivity: "base" });
+    if (!nameCollator || collatorLanguage !== state.language) {
+      nameCollator = new Intl.Collator(locale, { numeric: true, sensitivity: "base" });
+      collatorLanguage = state.language;
+    }
+    return nameCollator.compare(aName, bName)
+      || nameCollator.compare(String(a.id || ""), String(b.id || ""));
   }
 
   function sortRecords(rows) {
@@ -535,17 +602,7 @@
         }
       }
       if (!tokens.length) return true;
-      const haystack = [
-        row.id,
-        row.primaryName,
-        ...(row.aliases || []),
-        ...(row.names || []).map((item) => `${item.text} ${item.key}`),
-        ...(row.records || []).flatMap((identity) => [
-          identity.id,
-          ...(identity.evidence || []).flatMap((item) => [item.key, ...(item.paths || [])]),
-        ]),
-      ].join(" ");
-      return window.WebUI.queryMatches(haystack, tokens);
+      return window.WebUI.queryMatches(searchText(row), tokens);
     });
     return sortRecords(rows);
   }
@@ -726,12 +783,12 @@
               </div>
               <div class="filter-control-row">
                 <label for="characters-sort">${ui("Sort", "排序")}</label>
-                <div class="characters-sort-controls">
-                  <select id="characters-sort">${SORT_KEYS.map((key) => `<option value="${esc(key)}"${state.sortKey === key ? " selected" : ""}>${esc(sortKeyLabel(key))}</option>`).join("")}</select>
-                  <select id="characters-sort-direction" aria-label="${esc(ui("Sort direction", "排序方向"))}" title="${esc(ui("Sort direction", "排序方向"))}"${state.sortKey === "default" ? " disabled" : ""}>
+                <div class="characters-sort-controls sort-controls">
+                  <div class="sort-control"><label for="characters-sort">${ui("Category", "类别")}</label><select id="characters-sort">${SORT_KEYS.map((key) => `<option value="${esc(key)}"${state.sortKey === key ? " selected" : ""}>${esc(sortKeyLabel(key))}</option>`).join("")}</select></div>
+                  <div class="sort-control"><label for="characters-sort-direction" hidden>${ui("Order", "顺序")}</label><select id="characters-sort-direction" aria-label="${esc(ui("Sort direction", "排序方向"))}" title="${esc(ui("Sort direction", "排序方向"))}">
                     <option value="asc"${state.sortDirection === "asc" ? " selected" : ""}>${ui("Ascending ↑", "正序 ↑")}</option>
                     <option value="desc"${state.sortDirection === "desc" ? " selected" : ""}>${ui("Descending ↓", "倒序 ↓")}</option>
-                  </select>
+                  </select></div>
                 </div>
               </div>
             </div>
@@ -754,7 +811,7 @@
           </section>
           <section class="filter-section is-collapsed" data-filter-section="characters-evidence-type">
             <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="characters-evidence-type-filter-body">
-              <span id="characters-evidence-type-filter-label">${ui("NPC type", "NPC类型")}</span>
+              <span id="characters-evidence-type-filter-label">${ui("Evidence type", "证据类型")}</span>
             </button>
             <div id="characters-evidence-type-filter-body" class="filter-section-body" hidden>
               <div id="characters-evidence-type-filter" class="chips" data-multi="1"></div>
@@ -807,7 +864,7 @@
       const direction = state.container.querySelector("#characters-sort-direction");
       if (direction) {
         direction.value = state.sortDirection;
-        direction.disabled = nextKey === "default";
+        direction.disabled = false;
       }
       renderList();
     });
@@ -832,7 +889,7 @@
       const direction = state.container.querySelector("#characters-sort-direction");
       if (direction) {
         direction.value = state.sortDirection;
-        direction.disabled = true;
+        direction.disabled = false;
       }
       renderFilterChips();
       renderList();
@@ -921,6 +978,17 @@
     if (item.assetKind) facts.push(`asset kind: ${item.assetKind}`);
     if (item.matchedIdentity) facts.push(`${ui("matched existing identity", "匹配现有身份")}: ${item.matchedIdentity}`);
     if (item.matchRule) facts.push(`${ui("match rule", "匹配规则")}: ${String(item.matchRule).replaceAll("_", " ")}`);
+    if (item.speakerId) facts.push(`${ui("Speaker id", "说话者 ID")}: ${item.speakerId}`);
+    if (item.participantName) facts.push(`${ui("Joint speaker participant", "合说人物")}: ${item.participantName}`);
+    if (item.matchedSpeakerId) facts.push(`${ui("Matched standalone speaker id", "匹配独立说话者 ID")}: ${item.matchedSpeakerId}`);
+    if (item.npcNameId) facts.push(`NPC name id: ${item.npcNameId}`);
+    if (item.nameKey) facts.push(`${ui("Name key", "名称键")}: ${item.nameKey}`);
+    if (item.nameKeys?.length) facts.push(`${ui("Name keys", "名称键")}: ${item.nameKeys.join(", ")}`);
+    for (const normalization of item.nameNormalizations || []) {
+      facts.push(`${ui("Speaker name normalized", "说话者名称规范化")}: ${normalization.originalName} → ${normalization.name}`);
+    }
+    if (item.evidenceBoundary) facts.push(`${ui("Evidence", "证据级别")}: ${item.evidenceBoundary}`);
+    if (item.occurrenceCount) facts.push(`${Number(item.occurrenceCount).toLocaleString()} ${ui("speaker observations", "条说话者记录")}`);
     if (item.count) facts.push(`${Number(item.count).toLocaleString()} ${ui("matching exported files", "个匹配的导出文件")}`);
     return facts;
   }
@@ -966,6 +1034,7 @@
         ${evidenceKey}
         ${facts.length ? `<ul>${facts.map((fact) => `<li>${esc(fact)}</li>`).join("")}</ul>` : ""}
         ${item.note ? `<p>${esc(item.note)}</p>` : ""}
+        ${(item.samples || []).length ? `<details><summary>${ui("Story text samples", "剧情文本示例")} (${item.samples.length})</summary><ul>${item.samples.map((sample) => `<li><code>${esc(sample.key)}</code>${sample.name ? ` · ${esc(sample.name)}` : ""}${sample.text ? `<p>${esc(sample.text)}</p>` : ""}</li>`).join("")}</ul></details>` : ""}
         ${paths.length ? (item.count < 20 ? `<div class="characters-paths" style="margin-top:.5rem">${paths.map((path) => renderAssetPathLink(path)).join("")}</div>` : `<details><summary>${ui("Asset path samples", "资源路径示例")} (${paths.length}${item.count > paths.length ? ` / ${item.count}` : ""})</summary><div class="characters-paths">${paths.map((path) => renderAssetPathLink(path)).join("")}</div></details>`) : ""}
       </article>`;
   }
@@ -977,10 +1046,16 @@
       .sort((a, b) => a.label.localeCompare(b.label));
   }
 
+  let detailCache = null;
+
   function renderDetail() {
     const detail = state.container?.querySelector("#characters-detail");
     if (!detail) return;
     const row = displayRecords().find((item) => item.id === state.selectedId);
+    const flagged = row ? state.flaggedIds.has(row.id) : false;
+    if (detailCache?.element === detail && detailCache.row === row
+        && detailCache.debug === state.showDebug && detailCache.flagged === flagged) return;
+    detailCache = { element: detail, row, debug: state.showDebug, flagged };
     if (!row) {
       detail.innerHTML = `<div class="characters-empty">${ui("Select an identity to inspect its names and evidence.", "选择一个身份以查看名称与证据。")}</div>`;
       return;
@@ -999,9 +1074,11 @@
           <p>${ui("This identity is absent from the current CharacterTable. It is shown only from the Updates comparison and cannot be merged or renamed here.", "该身份已不在当前 CharacterTable 中。此处仅展示 Updates 比较保存的旧版本快照，不能在这里合并或改名。")}</p>
           ${row.oldName ? `<div class="characters-name"><strong>${esc(row.oldName)}</strong><span>${ui("Previous name", "旧版名称")}</span></div>` : ""}
         </section>`;
+      window.WebUI.updateBadges.mount(detail, "characters", row.updateId);
       return;
     }
     const stats = rowStats(row);
+    const updateIds = updatesForGroup(row, normalizedUpdateEntries()).map((entry) => entry.id);
     const isFlagged = state.flaggedIds.has(row.id);
     detail.innerHTML = `
       <header class="characters-detail-header">
@@ -1017,6 +1094,7 @@
           <div>${stats.assetPathSamples.toLocaleString()} ${ui("asset path samples", "资源路径示例")}</div>
         </div>
       </header>
+      <section class="characters-section" data-character-appearances></section>
       <section class="characters-section">
         <h3>${ui("Grouped identities", "已合并的身份")}</h3>
         <div class="characters-identity-list">${row.records.map((identity) => `
@@ -1098,6 +1176,8 @@
           </section>`).join("")}
         </div>
       </section>`;
+    window.WebUI.updateBadges.mount(detail, "characters", updateIds);
+    window.WebUI.characterAppearances?.mount(detail.querySelector("[data-character-appearances]"), row.records, currentLanguage());
     detail.querySelectorAll("[data-unmerge-id]").forEach((button) => {
       button.addEventListener("click", () => unmergeCharacter(button.dataset.unmergeId || ""));
     });
@@ -1365,12 +1445,14 @@
           .catch(() => null),
         loadMergeOverrides(force),
         loadNameOverrides(force),
+        window.WebUI.updateBadges.loadFiles(),
       ]);
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       const data = await response.json();
       if (token !== state.loadToken) return null;
       state.data = data;
       state.updateData = updateData?.available === false || !Array.isArray(updateData?.entries) ? null : updateData;
+      window.WebUI.updateBadges.register("characters", state.updateData);
       if (!state.updateData) state.facets?.reset({ silent: true, only: ["update"] });
       state.selectedId = "";
       renderShell();

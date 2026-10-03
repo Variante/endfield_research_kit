@@ -117,6 +117,7 @@ const STATE = {
   audioSidecarKeys: null,
   audioSidecarPromise: null,
   audioSidecarLanguage: "",
+  audioSidecarFileSearch: {},
   storyTriggerManifest: {},
   storyTriggerPromise: null,
   storyTriggerLoadState: "idle",
@@ -618,13 +619,16 @@ function applyStorySearchPayload(payload) {
   for (const row of (payload && payload.entries) || []) {
     const key = String(row && row.k || "");
     const text = String(row && row.x || "").trim();
-    if (key && text) byKey.set(key, text);
+    if (key) byKey.set(key, { text, files: String(row.linkedFileSearch || "") });
   }
 
   if (!byKey.size) return;
   for (const entry of STATE.entries || []) {
-    const text = byKey.get(String(entry && entry.k || ""));
-    if (text) entry.x = text;
+    const row = byKey.get(String(entry && entry.k || ""));
+    if (row) {
+      entry.x = row.text;
+      entry.linkedFileSearch = row.files;
+    }
   }
 }
 
@@ -633,20 +637,21 @@ async function ensureStorySearchIndexLoaded(languageCode = STATE.language, token
   if (STATE.storySearchPromise) return STATE.storySearchPromise;
 
   const rel = STATE.index && typeof STATE.index.search === "string" ? STATE.index.search : "";
-  if (!rel) {
-    STATE.storySearchLoaded = true;
-    STATE.storySearchLanguage = languageCode;
-    return true;
-  }
-
-  STATE.storySearchPromise = fetchJson(dataPath(rel, languageCode), { fresh: true })
+  const searchPayload = rel ? fetchJson(dataPath(rel, languageCode), { fresh: true })
     .then((res) => {
       if (!res.ok) throw new Error(`${rel} HTTP ${res.status}`);
       return res.json();
-    })
-    .then((payload) => {
+    }).catch(() => ({ entries: [] })) : Promise.resolve({ entries: [] });
+  STATE.storySearchPromise = searchPayload
+    .then(async (payload) => {
       if (token !== STATE.indexRequestToken || STATE.language !== languageCode) return false;
       applyStorySearchPayload(payload);
+      await Promise.all([loadAudioSidecarIndex(languageCode), ensureInlineImageAssetLookup()]);
+      if (token !== STATE.indexRequestToken || STATE.language !== languageCode) return false;
+      for (const entry of STATE.entries || []) {
+        const images = inlineImageIdsInText(entry.x).flatMap(resolveInlineImageAssetCandidates);
+        entry.linkedFileSearch = [entry.linkedFileSearch, window.WebUI.linkedFileSearchText(images)].filter(Boolean).join("\n");
+      }
       STATE.storySearchLoaded = true;
       STATE.storySearchLanguage = languageCode;
       STATE.storySearchPromise = null;
@@ -1475,15 +1480,26 @@ function storyOrderPositionForEntry(entry) {
 // lines appear once the Audio page is built, in whatever order the pages were.
 function loadAudioSidecarIndex(languageCode) {
   if (STATE.audioSidecarLanguage === languageCode) {
-    if (STATE.audioSidecarKeys) return Promise.resolve(STATE.audioSidecarKeys);
+    if (STATE.audioSidecarKeys) {
+      if (STATE.language === languageCode) {
+        for (const entry of STATE.entries || []) entry.audioFileSearch = String(STATE.audioSidecarFileSearch[entry.k] || "");
+      }
+      return Promise.resolve(STATE.audioSidecarKeys);
+    }
     if (STATE.audioSidecarPromise) return STATE.audioSidecarPromise;
   }
   STATE.audioSidecarLanguage = languageCode;
   STATE.audioSidecarKeys = null;
+  STATE.audioSidecarFileSearch = {};
   STATE.audioSidecarPromise = fetchJson(dataPath("audio/conv/index.json", languageCode))
     .then(async (res) => {
       if (!res.ok) return new Set();
       const payload = await res.json();
+      if (STATE.audioSidecarLanguage === languageCode && STATE.language === languageCode) {
+        const fileSearch = payload && payload.linkedFileSearch || {};
+        STATE.audioSidecarFileSearch = fileSearch;
+        for (const entry of STATE.entries || []) entry.audioFileSearch = String(fileSearch[entry.k] || "");
+      }
       return new Set(Array.isArray(payload && payload.conversations) ? payload.conversations : []);
     })
     .catch(() => new Set())
@@ -3557,6 +3573,8 @@ async function switchLanguage(languageCode, { preserveSelection = true, requeste
     STATE.characterNames = computeCharacterNames(STATE.entries);
     applyStoryOrderGroupingOverridesToEntries(STATE.entries);
     applyOptionOverrideFlagsToEntries(await loadOptionOverridePayload(), STATE.entries);
+    await Promise.all([window.WebUI.updateBadges.load("story"), window.WebUI.updateBadges.loadFiles()]);
+    if (token !== STATE.indexRequestToken) return;
     STATE.entryByKey = new Map(STATE.entries.map((entry) => [entry.k, entry]));
     STATE.readingArchiveLinksByKey = buildReadingArchiveLinkIndex(STATE.entries);
     STATE.archiveMetadataByKey = new Map();
@@ -3982,6 +4000,7 @@ function renderItem(row) {
       `<span class="badge ${kindCls}">${escapeHtml(kindNm)}</span>` +
       phaseChip +
       ocrRankChip +
+      window.WebUI.updateBadges.html("story", e.k) +
       `<span class="item-key">${highlightTextFragment(displayEntryTitle(e), STATE.filters.q)}</span>` +
       storyOrderTagBadge +
       automaticUnusedBadge +
@@ -4174,7 +4193,7 @@ function buildSnsBranchGroups(conv) {
       return { option: opt, lines: branchLines };
     });
 
-    byAnchorCid.set(line.cid, { branches, mergeCid });
+    byAnchorCid.set(line.cid, { branches, mergeCid, anchorCid: line.cid });
   }
 
   return { byAnchorCid, skipCids };
@@ -4184,6 +4203,7 @@ function renderSnsBranchLine(line, convKey = "") {
   const item = document.createElement("div");
   item.className = "line branch-flow-line branch-sns-line" + (line && line.text ? "" : " empty");
   setLineAnchor(item, convKey, resolveLineId(line));
+  setContentAnchor(item, convKey, line.cid);
 
   const speaker = document.createElement("div");
   speaker.className = "actor";
@@ -4230,6 +4250,7 @@ function renderSnsBranchLine(line, convKey = "") {
 function renderSnsBranchGroup(group, convKey = "") {
   const block = document.createElement("div");
   block.className = "opt-block opt-block-inline opt-block-sns";
+  setContentAnchor(block, convKey, group.anchorCid);
 
   const optGroup = document.createElement("div");
   optGroup.className = "opt-group opt-group-branches";
@@ -4315,12 +4336,42 @@ function setLineAnchor(node, convKey, lineId) {
 
 function scrollToLineAnchor(convKey, lineId) {
   const anchor = document.getElementById(lineAnchorId(convKey, lineId));
+  return revealStoryAnchor(anchor);
+}
+
+function setContentAnchor(node, convKey, cid) {
+  if (!node || !convKey || cid == null) return;
+  node.dataset.contentId = String(cid);
+  if (!node.id) node.id = `content-${encodeURIComponent(convKey)}-${encodeURIComponent(cid)}`;
+}
+
+function revealStoryAnchor(anchor) {
   if (!anchor) return false;
+  for (let parent = anchor.parentElement; parent; parent = parent.parentElement) {
+    if (parent.tagName === "DETAILS") parent.open = true;
+  }
   anchor.scrollIntoView({ block: "center", behavior: "smooth" });
   anchor.classList.remove("line-flash");
   void anchor.offsetWidth;
   anchor.classList.add("line-flash");
   return true;
+}
+
+function focusStoryDeepLink(conv) {
+  const params = new URLSearchParams(window.location.search);
+  const key = String(params.get("story") || params.get("conv") || "");
+  if (!key || conversationAliasBaseKey(key) !== conversationAliasBaseKey(conv.key)) return;
+  const lineId = params.get("line");
+  const cid = params.get("cid");
+  if (!lineId && cid == null) return;
+  requestAnimationFrame(() => {
+    if (STATE.selectedKey !== conv.key) return;
+    // Content ids distinguish rows whose source line ids repeat (EnvTalk and Remote).
+    const anchor = cid != null
+      ? [...$("#conv-lines").querySelectorAll("[data-content-id]")].find((node) => node.dataset.contentId === cid)
+      : document.getElementById(lineAnchorId(conv.key, lineId));
+    revealStoryAnchor(anchor);
+  });
 }
 
 function createLineJumpChip(conv, lineId, labelKey, className, titleKey) {
@@ -6862,6 +6913,7 @@ function renderConv(conv) {
   if (!conv) return;
   showConvPane();
   $("#conv-title").textContent = displayConvTitle(conv);
+  $("#conv-title").insertAdjacentHTML("beforeend", window.WebUI.updateBadges.html("story", conv.key));
   const lineOrderWrap = $("#conv-line-order");
   const lineOrderBlock = STATE.showDebug ? renderLineOrderRecovery(conv) : null;
   lineOrderWrap.replaceChildren();
@@ -7056,6 +7108,13 @@ function renderConv(conv) {
   const hintBlock = renderConversationHints(conv);
   if (hintBlock) frag.appendChild(hintBlock);
 
+  const branchOverview = window.WebUI.storyBranches?.render(conv, {
+    missionTimelineRecovery,
+    language: STATE.language,
+    showDebug: STATE.showDebug,
+  });
+  if (branchOverview) frag.appendChild(branchOverview);
+
   const dialogLifecycleAudioBlock = renderDialogLifecycleAudioBlock(conv);
   if (dialogLifecycleAudioBlock) frag.appendChild(dialogLifecycleAudioBlock);
 
@@ -7247,6 +7306,7 @@ function renderConv(conv) {
       + (ln.id && uncoveredLineIdSet.has(ln.id) ? " line-uncovered" : "")
       + (ln.id && duplicateTimestampLineIdSet.has(ln.id) ? " line-duplicate-timestamp" : "");
     setLineAnchor(row, conv.key, ln.id);
+    setContentAnchor(row, conv.key, ln.cid);
 
     const actor = document.createElement("div");
     actor.className = "actor";
@@ -8051,6 +8111,7 @@ function renderConv(conv) {
         row.dataset.genderOnly = ln.gender;
       }
       setLineAnchor(row, conv.key, ln.id);
+      setContentAnchor(row, conv.key, ln.cid);
       if (conv.kind === "dlg" && ln.id) renderedDlgLineIds.add(ln.id);
 
     const actor = document.createElement("div");
@@ -8250,7 +8311,9 @@ function renderConv(conv) {
   }
 
   wrap.replaceChildren(frag);
+  window.WebUI.updateBadges.mount(wrap, "story", conv.key);
   $("#right").scrollTop = 0;
+  focusStoryDeepLink(conv);
 }
 
 function renderMissionContext(missionExtras) {
@@ -10249,6 +10312,7 @@ function resolveInlineTagDisplayMode(preferred = "") {
 }
 
 function refreshInlineTagDisplayMode() {
+  window.dispatchEvent(new CustomEvent("webui:inline-tag-mode-changed"));
   if (!STATE.entries.length) return;
   applyFilters();
   if (!STATE.selectedKey) return;
@@ -10307,7 +10371,7 @@ function hasInlineRichTextTag(text) {
 function renderHighlightedRichTextHtml(text, q) {
   const source = String(text || "");
   const parts = [];
-  const tokenRe = /<image\b(?!\s*=)[^>]*>[\s\S]*?<\/image>|<image\s*=[^>]+>|<image\b(?=[^>]*(?:src|source|path|name|id)\s*=)[^>]*>|<@[^>]*>([\s\S]*?)<\/>|<s>([\s\S]*?)<\/s>/gi;
+  const tokenRe = /<image\b(?!\s*=)[^>]*>[\s\S]*?<\/image>|<image\s*=[^>]+>|<image\b(?=[^>]*(?:src|source|path|name|id)\s*=)[^>]*>|<@[^>]*>([\s\S]*?)<\/>|<s>([\s\S]*?)<\/s>|<b>([\s\S]*?)<\/b>/gi;
   let lastIndex = 0;
   let match;
 
@@ -10321,11 +10385,13 @@ function renderHighlightedRichTextHtml(text, q) {
       parts.push(renderInlineImageTagHtml(extractInlineImageIdFromTag(rawToken), q, rawToken));
     } else if (match[2] !== undefined) {
       parts.push(`<span class="rich-strike">${renderHighlightedRichTextHtml(match[2] || "", q)}</span>`);
+    } else if (match[3] !== undefined) {
+      parts.push(`<b>${renderHighlightedRichTextHtml(match[3] || "", q)}</b>`);
     } else if (/^<@nar\.mark\b/i.test(rawToken)) {
       const inner = match[1] || "";
       parts.push(highlightTextFragment("#".repeat([...inner].length), q));
     } else {
-      parts.push(`<span class="rich-tag">${highlightTextFragment(match[1] || "", q)}</span>`);
+      parts.push(`<span class="rich-tag">${renderHighlightedRichTextHtml(match[1] || "", q)}</span>`);
     }
 
     lastIndex = tokenRe.lastIndex;
