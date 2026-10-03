@@ -92,7 +92,8 @@ def _member_plan(registry: Any, definition: int) -> list[dict[str, Any]]:
     ]
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None, metadata: Path | None = None,
+                                    target_parent_tags: tuple[int, ...] | None = None) -> dict[str, Any]:
     """Check the selected action and all reached simple nested readers."""
     contract = _contract()
     dependencies = contract["reviewedDependencies"]
@@ -143,6 +144,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         raise ValueError(f"{LABEL}.contract:route-or-source")
     gate = check_installed_native_inputs(
         expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         return {"status": gate.status, "detail": gate.detail}
@@ -151,7 +153,9 @@ def validate_current_native_contract() -> dict[str, Any]:
         return {"status": "missing", "detail": str(unity)}
     if hashlib.sha256(unity.read_bytes()).hexdigest().upper() != expected["UnityPlayer.dll"]:
         return {"status": "mismatched", "detail": "UnityPlayer.dll hash differs"}
-    sequence_native = sequence.validate_current_native_contract()
+    paths = ({"gameassembly": gate.gameassembly, "metadata": gate.metadata}
+             if gameassembly is not None or metadata is not None else {})
+    sequence_native = sequence.validate_current_native_contract(**paths)
     if sequence_native.get("status") != "validated":
         return {"status": sequence_native.get("status", "failed"),
                 "sequence": sequence_native}
@@ -206,10 +210,10 @@ def validate_current_native_contract() -> dict[str, Any]:
             or context["typeName"] != plan[4 + index]["declaredType"]
         ):
             raise ValueError(f"{LABEL}.native:nested-context:{index}")
-    target_native = target.validate_current_native_contract()
-    direction_native = direction.validate_current_native_contract(target_native=target_native)
-    selector_native = selector.validate_current_native_contract(target_native=target_native)
-    query_native = query.validate_current_native_contract()
+    target_native = target.validate_current_native_contract(parent_tags=target_parent_tags, **paths)
+    direction_native = direction.validate_current_native_contract(target_native=target_native, **paths)
+    selector_native = selector.validate_current_native_contract(target_native=target_native, **paths)
+    query_native = query.validate_current_native_contract(**paths)
     if (
         any(nested.get("status") != "validated"
             or nested.get("nativeInputs") != expected

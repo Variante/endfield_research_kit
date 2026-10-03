@@ -13,12 +13,10 @@ import struct
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
-from scripts.game_data.il2cpp.context import method_spec_usage_index
-from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
-from scripts.game_data.il2cpp.protocol import runtime_type_field_offsets
+from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data.memorypack import buff_adding_cooldown as blackboard
+from scripts.game_data.memorypack import buff_attribute_modifier as attribute_modifier
 from scripts.game_data.memorypack import buff_damage_modifier_receipt as modifier
 from scripts.game_data.memorypack import buff_damage_sequence_action_condition_receipt as sequence
 from scripts.game_data.memorypack import buff_damage_modify_calc_result_processor_child_receipt as processor
@@ -29,7 +27,7 @@ from scripts.game_data.memorypack.buff_root_no_positive_native import (
 
 
 LABEL = "buffEmptyConditionTagTenSelected"
-SCHEMA = "endfield.buff-empty-condition-tag-ten-selected-native-contract.v2"
+SCHEMA = "endfield.buff-empty-condition-tag-ten-selected-native-contract.v3"
 CONTRACT_PATH = CONTRACTS_DIR / "buff_empty_condition_tag_ten_selected_native.json"
 ROOT_PATH = CONTRACTS_DIR / "buff_root_no_positive_native.json"
 PREFIX_PATH = CONTRACTS_DIR / "buff_root_prefix_native.json"
@@ -50,7 +48,7 @@ def _contract() -> dict[str, Any]:
              "processorTen", "enableSide")
     if (
         contract.get("reviewedDependencies")
-        != [ROOT_PATH.name, PREFIX_PATH.name, ATTRIBUTE_PATH.name,
+        != [ROOT_PATH.name, PREFIX_PATH.name, ATTRIBUTE_PATH.name, attribute_modifier.CONTRACT_PATH.name,
             MODIFIER_PATH.name, SEQUENCE_PATH.name, PROCESSOR_PATH.name]
         or not isinstance(path, str)
         or PurePosixPath(path).parts[:3] != ("Data", "Json", "BuffData")
@@ -73,98 +71,9 @@ def _contract() -> dict[str, Any]:
                 < selected["processorTen"][1] == selected["processors"][1]
                 == selected["enableSide"][0] < selected["enableSide"][1]
                 == selected["item"][1] == selected["damageModifier"][1])
-        or len(contract.get("attributeCollectionSetters") or []) != 2
     ):
         raise ValueError(f"{LABEL}.contract:shape")
     return contract
-
-
-def _selected_type(image: Any, name: str) -> Any:
-    owners = [row for row in image.metadata.types
-              if image.metadata.type_full_name(row) == name]
-    if len(owners) != 1:
-        raise ValueError(f"{LABEL}.native:type={name}; matches={len(owners)}")
-    return owners[0]
-
-
-def _validate_attribute_native(
-    contract: dict[str, Any], prefix: dict[str, Any], heal: dict[str, Any],
-) -> dict[str, Any]:
-    """Prove this source's populated root attribute child without the heal route."""
-    if (prefix.get("schemaVersion") != 1
-            or prefix["methods"][5] != heal["methods"][3]
-            or len(prefix.get("codeWindows") or []) < 11
-            or len(heal.get("wrapperSetters", {}).get("attributeModifier", [])) != 4
-            or len(heal.get("attributeValueStores") or []) != 4):
-        raise ValueError(f"{LABEL}.native:attribute-dependency-shape")
-    inputs = contract["nativeInputs"]
-    gate = check_installed_native_inputs(
-        inputs["GameAssembly.dll"], inputs["global-metadata.dat"],
-    )
-    if gate.status != "validated":
-        return {"status": gate.status, "detail": gate.detail}
-    image = open_native_image(gate.gameassembly, gate.metadata)
-    for row in prefix["methods"][2:6]:
-        image.validate_method_row(row, label=LABEL)
-    image.check_windows(prefix["codeWindows"][4:11] + [heal["codeWindows"][3]],
-                        label=LABEL)
-    collection_owner = prefix["methods"][3][1]
-    collection_setters = contract["attributeCollectionSetters"]
-    if image.setter_methods(_selected_type(image, collection_owner),
-                            parameter="typeName", label=LABEL) != [row[:3] for row in collection_setters]:
-        raise ValueError(f"{LABEL}.native:attribute-collection-setters")
-    for row in collection_setters:
-        image.validate_method_row([row[0], collection_owner, row[1], row[3]], label=LABEL)
-    item_owner = prefix["methods"][5][1]
-    item_setters = heal["wrapperSetters"]["attributeModifier"]
-    if image.setter_methods(_selected_type(image, item_owner),
-                            parameter="typeName", label=LABEL) != [row[:3] for row in item_setters]:
-        raise ValueError(f"{LABEL}.native:attribute-item-setters")
-    for row in item_setters:
-        image.validate_method_row([row[0], item_owner, row[1], row[3]], label=LABEL)
-    names = [row[1].removeprefix("set___").removesuffix("__") for row in item_setters]
-    calls = heal["sourceCalls"]["attributeModifier"]
-    contexts = [row for row in heal["genericContexts"] if row["role"] in names]
-    if ([row["role"] for row in calls] != [f"{name}-read" for name in names]
-            or [row["role"] for row in contexts] != names):
-        raise ValueError(f"{LABEL}.native:attribute-read-order")
-    for row in calls:
-        rva = row["instructionRva"]
-        raw = bytes.fromhex(row["rawHex"])
-        if (len(raw) != 5 or raw[0] != 0xE8
-                or image.pe.bytes_at_va(image.pe.image_base + rva, 5) != raw
-                or rva + 5 + struct.unpack_from("<i", raw, 1)[0] != row["targetRva"]):
-            raise ValueError(f"{LABEL}.native:attribute-read={row['role']}")
-    for row, setter in zip(contexts, item_setters):
-        cell, usage = image.nested_usage_cell(row, label=LABEL)
-        index = method_spec_usage_index(
-            usage, image.registration["methodSpecsCount"], source=LABEL, offset=cell,
-        )
-        spec = list(struct.unpack("<iii", image.pe.bytes_at_va(
-            int(image.registration["methodSpecs"], 16) + index * 12, 12,
-        )))
-        args = image.instantiations.resolve(spec[2]).arguments
-        if (index != row["methodSpecIndex"] or spec != row["methodSpec"]
-                or len(args) != 1 or args[0].raw_type_record_hex != row["argumentRawHex"]
-                or image.type_name(struct.unpack_from(
-                    "<I", bytes.fromhex(row["argumentRawHex"]))[0]) != row["typeName"]
-                or row["typeName"] != setter[2]):
-            raise ValueError(f"{LABEL}.native:attribute-context={row['role']}")
-    value_owner = _selected_type(image, heal["wrapperSetters"]["processorZero"][0][2])
-    offsets = runtime_type_field_offsets(
-        image.metadata, image.pe, image.registration, value_owner.index,
-    )
-    if offsets != heal["attributeValueFieldOffsets"]:
-        raise ValueError(f"{LABEL}.native:attribute-field-offsets")
-    for rva, raw_hex, role in heal["attributeValueStores"]:
-        raw = bytes.fromhex(raw_hex)
-        expected = b"\x48\x89\x41" if role == "param" else b"\x89\x41"
-        if (image.pe.bytes_at_va(image.pe.image_base + rva, len(raw)) != raw
-                or raw[:-1] != expected or raw[-1] != offsets[role]):
-            raise ValueError(f"{LABEL}.native:attribute-store={role}")
-    return {"status": "validated", "collectionReadOrder": [
-        row[1].removeprefix("set___").removesuffix("__")
-        for row in collection_setters], "itemReadOrder": names}
 
 
 def validate_current_native_contract() -> dict[str, Any]:
@@ -175,7 +84,6 @@ def validate_current_native_contract() -> dict[str, Any]:
         ROOT_PATH, schema="endfield.buff-root-no-positive-native-contract.v1",
         status="exact-current-build", label=LABEL,
     )
-    prefix = json.loads(PREFIX_PATH.read_text(encoding="utf-8"))
     heal, _ = read_reviewed_contract(
         ATTRIBUTE_PATH, schema="endfield.buff-heal-processor-zero-native-contract.v1",
         status="exact-current-build", label=LABEL,
@@ -203,7 +111,7 @@ def validate_current_native_contract() -> dict[str, Any]:
                 "detail": root_validation.get("detail", "root native gate failed")}
     if root_validation.get("nativeInputs") != native_inputs:
         raise ValueError(f"{LABEL}.native:root-input-drift")
-    attribute_validation = _validate_attribute_native(contract, prefix, heal)
+    attribute_validation = attribute_modifier.validate_current_native_contract()
     if attribute_validation.get("status") != "validated":
         return attribute_validation
     parent_validation = modifier.validate_current_native_contract()

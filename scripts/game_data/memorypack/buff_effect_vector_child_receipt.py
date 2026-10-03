@@ -188,6 +188,44 @@ def validate_current_native_contract() -> dict[str, Any]:
     }
 
 
+def decode_blackboard_vector3_value(
+    data: bytes, *, source: str, logical_sha256: str, start: int, end: int,
+    native_validation: dict[str, Any],
+) -> dict[str, Any]:
+    """Read the exact stored vector; its caller independently owns the typed field."""
+    contract = _contract()
+    if (native_validation.get("status") != "validated"
+            or native_validation.get("nativeInputs") != contract["nativeInputs"]
+            or native_validation.get("vectorMemberNames") != [row["fieldName"] for row in contract["readOrder"]]
+            or not source or hashlib.sha256(data).hexdigest().upper() != logical_sha256.upper()
+            or type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data)):
+        raise ValueError(f"{LABEL}.value:native-source-or-span")
+    reader = Reader(data, source, end)
+    reader.pos = start
+    if reader.peek() == 0xFF:
+        reader.take(1, "null-vector")
+        status = "exact-null"
+        members = []
+    else:
+        reader.header(len(contract["readOrder"]))
+        status = "named-vector-members-exact-span"
+        members = []
+        for name in native_validation["vectorMemberNames"]:
+            member_start = reader.pos
+            reader.scalar_payload()
+            member = scalar.decode_adding_cooldown(
+                data, member_start, reader.pos,
+                native_validation=native_validation["scalarNative"],
+            )
+            if member.get("wholeValueExact") is not True:
+                raise ValueError(f"{LABEL}.value:scalar-child-incomplete")
+            members.append({"fieldName": name, "start": member_start,
+                            "end": reader.pos, "child": member})
+    if reader.pos != end:
+        raise ValueError(f"{LABEL}.value:vector-end")
+    return {"start": start, "end": end, "status": status, "namedMembers": members}
+
+
 def decode_effect_vector_child_receipt(
     data: bytes, *, source: str, logical_sha256: str,
     start: int, end: int, native_validation: dict[str, Any],
@@ -238,30 +276,11 @@ def decode_effect_vector_child_receipt(
         elif field["fieldName"] in contract["vectorParentFields"]:
             if field["kind"] != "vector":
                 raise ValueError(f"{LABEL}.decode:vector-kind={field['fieldName']}")
-            reader = Reader(data, source, field["end"])
-            reader.pos = field["start"]
-            if reader.peek() == 0xFF:
-                reader.take(1, "null-vector")
-                status = "exact-null"
-                members = []
-            else:
-                reader.header(len(contract["readOrder"]))
-                status = "named-vector-members-exact-span"
-                members = []
-                for name in native_validation["vectorMemberNames"]:
-                    member_start = reader.pos
-                    reader.scalar_payload()
-                    member = scalar.decode_adding_cooldown(
-                        data, member_start, reader.pos,
-                        native_validation=native_validation["scalarNative"],
-                    )
-                    members.append({"fieldName": name, "start": member_start,
-                                    "end": reader.pos, "child": member})
-            if reader.pos != field["end"]:
-                raise ValueError(f"{LABEL}.decode:vector-end={field['fieldName']}")
-            vectors.append({"fieldName": field["fieldName"],
-                            "start": field["start"], "end": field["end"],
-                            "status": status, "namedMembers": members})
+            value = decode_blackboard_vector3_value(
+                data, source=source, logical_sha256=logical_sha256,
+                start=field["start"], end=field["end"], native_validation=native_validation,
+            )
+            vectors.append({"fieldName": field["fieldName"], **value})
     if (
         [row["fieldName"] for row in scalars]
         != ["durationScaleBB", "lengthBB"]

@@ -52,7 +52,8 @@ Stored-shape facts this module owns:
 - the two camera-transform actions follow their generated parameter orders
   (the ``WithoutBack`` variant lacks the need-interrupt/reset/use-angle
   prefix); alternative-pose lists are null or empty and the curve key is
-  nullable, so positive poses or a new curve-key shape fail;
+  nullable; present keys use the shared typed string-key wrapper, while
+  positive poses or a new curve-key shape fail;
 - a positive ``ParamListForGraph`` count is read only while
   ``levelscript_param_list_native`` validates the selected owner contract; it
   then reuses the exact ``List<ParamKeyValue>`` codec.
@@ -97,6 +98,8 @@ from scripts.game_data.codecs.levelscript.sequential_owner import _frame_levelsc
 from scripts.game_data.codecs.levelscript.uid_records import _decode_levelscript_uid_record
 from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.levelscript_param_list_native import load_param_list_for_graph_contract
+from scripts.game_data.levelscript_camera_look_at_native import load_camera_look_at_contract
+from scripts.game_data.codecs.levelscript.pos_rot import decode_pos_rot_list
 from typing import Any
 
 # ActionBase types this module reads, with the member count each reader
@@ -361,25 +364,27 @@ def _read_current_camera_transform_fields(
     without_back: bool,
 ) -> tuple[dict[str, Any], int]:
     """Read the two current camera-transform action layouts in generated order."""
+    _, native = load_camera_look_at_contract()
+    if native["status"] != "validated":
+        raise LevelScriptTopLevelFramingError(
+            f"camera {native['failedCheck']}: expected=validated, "
+            f"actual={native['status']}, detail={native['detail']}"
+        )
     start = cursor
     fields: dict[str, Any] = {}
     if cursor + 5 > len(data) or data[cursor] != 0x04:
         raise LevelScriptTopLevelFramingError(
             f"unsupported camera alternativeCameraPoses at offset={cursor}"
         )
-    pose_count = _i32(data, cursor + 1)
-    if pose_count not in (-1, 0):
-        raise LevelScriptTopLevelFramingError(
-            f"unsupported camera alternativeCameraPoses count={pose_count}"
-        )
-    tail = _decode_param_tail(data, cursor + 5)
+    pose_values, pose_end = decode_pos_rot_list(data, cursor + 1)
+    tail = _decode_param_tail(data, pose_end)
     if tail is None:
         raise LevelScriptTopLevelFramingError(
             f"unsupported camera alternativeCameraPoses tail at offset={cursor + 5}"
         )
     binding, cursor = tail
     fields["alternativeCameraPoses"] = {
-        "value": None if pose_count == -1 else [],
+        "value": pose_values,
         **binding,
     }
 
@@ -400,7 +405,7 @@ def _read_current_camera_transform_fields(
             )
         fields[label], cursor = decoded
     fields["blendCurveKey"], cursor = _read_nullable_levelscript_param(
-        data, cursor, _decode_i32_param, "camera blendCurveKey"
+        data, cursor, levelscript_params.decode_camera_blend_curve_key_param, "camera blendCurveKey"
     )
     suffix: tuple[tuple[str, Any], ...] = (
         ("blendStyle", _decode_i32_param),
@@ -1095,6 +1100,12 @@ def _read_reviewed_map_node(
     try:
         return levelscript_action_map.decode_reviewed_node(data, cursor, family)
     except levelscript_action_map.ActionMapCodecError as error:
+        if getattr(error, "diagnostics", {}).get("validator") == "levelscriptOnSquadMemberUspNative":
+            refusal = LevelScriptTopLevelFramingError(
+                f"reviewed {family} at offset={cursor}: {error}"
+            )
+            refusal.diagnostics = error.diagnostics
+            raise refusal from error
         raise LevelScriptTopLevelFramingError(
             f"{original_error}; reviewed {family} at offset={cursor}: {error}"
         ) from error

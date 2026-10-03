@@ -81,7 +81,8 @@ def _store_offset(raw: bytes) -> int:
     return int.from_bytes(raw[cursor:], "little", signed=True)
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None,
+                                     metadata: Path | None = None) -> dict[str, Any]:
     """Recheck selected reader windows, generated members and direct stores."""
     contract = _contract()
     source = json.loads((CONTRACTS_DIR / contract["sourceReaderContract"]).read_bytes())
@@ -95,6 +96,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         raise ValueError(f"{LABEL}.native:source-contract-shape")
     gate = check_installed_native_inputs(
         expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")

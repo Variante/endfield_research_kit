@@ -1,8 +1,9 @@
 """Selected-source SkillData 0x0152 SetIgnoreGlobalTimeScaleAction reader.
 
 The native gate proves seven ordered reads, including the finite
-TargetSettings child. This module checks one saved logical SkillData source
-and its first reached action only; it does not publish a family result.
+TargetSettings child. The CLI checks one saved logical SkillData source;
+the shared reader reuses this grammar only after the same native gate.
+Whole-source publication belongs to the complete SkillData family gate.
 """
 
 from __future__ import annotations

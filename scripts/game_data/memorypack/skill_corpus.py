@@ -78,6 +78,15 @@ fingerprints every JSON dependency declared by the shared timeline route
 contract before and after streaming, so a route update during the run fails
 the report rather than publishing mixed evidence.  A ``--max-files`` run is
 a diagnostic probe, never complete-corpus evidence.
+
+Selection-only replay. ``--source-corpus`` with its explicit
+``--expected-source-corpus-sha256`` reuses a complete current all-unselected
+basis when only the cursor/capture selection needs refreshing. The separate
+``skill_corpus_replay`` owner authenticates source/parser/native/catalog/CLI,
+outer/ledger and raw chunk-selection pins before and after, rejoins every
+stored identity to the complete current ledger, and rejects partial or already
+selected bases. Existing overlays run unchanged; no second VFS stream and no
+new capture are produced. Any reader/input drift requires a fresh full basis.
 """
 
 from __future__ import annotations
@@ -174,6 +183,12 @@ from scripts.game_data.memorypack.skill_cursor_target_overlay import (
 from scripts.game_data.memorypack.skill_cursor_target_set_overlay import (
     VERIFIED_CAPTURE_TARGET_SET_EXACT,
     apply_verified_capture_target_set,
+)
+from scripts.game_data.memorypack.skill_corpus_replay import (
+    load_selection_replay_basis,
+    replay_protected_paths,
+    skill_identity_set_sha256,
+    verify_selection_replay_basis,
 )
 from scripts.game_data.memorypack.schemas import MEMORYPACK_FIELD_SCHEMAS
 
@@ -2077,7 +2092,15 @@ def build_current_census(
     allow_historical_verifier_rebind: bool = False,
     target_contract_path: Path | None = None,
     target_virtual_paths: list[str] | None = None,
+    source_corpus_path: Path | None = None,
+    expected_source_corpus_sha256: str | None = None,
 ) -> dict[str, Any]:
+    if (source_corpus_path is None) != (expected_source_corpus_sha256 is None):
+        _fail("skill-replay-source-pin-required", source="SkillData census",
+              expected="--source-corpus and --expected-source-corpus-sha256 together")
+    if source_corpus_path is not None and (max_files is not None or target_contract_path is not None or target_virtual_paths):
+        _fail("skill-replay-scope-conflict", source="SkillData census",
+              expected="complete source replay without partial/targeted stream selection")
     if max_files is not None:
         _require_int(max_files, source="maxFiles", minimum=1)
     requested_paths, target_contract_start = _targeted_skill_paths(
@@ -2131,6 +2154,8 @@ def build_current_census(
     if outputs:
         protected = [outer_path, ledger_path, Path(__file__),
                      Path(outer["primaryAssets"]), Path(outer["fallbackAssets"])]
+        if source_corpus_path is not None:
+            protected.append(source_corpus_path)
         if cursor_verification_path is not None:
             protected.append(cursor_verification_path)
         if capture_target_verification_path is not None:
@@ -2161,14 +2186,37 @@ def build_current_census(
             if partial:
                 _guard_partial_output(output)
             _guard_output_path(output, protected + [path for path in outputs if path != output])
-    command = _stream_command(cli_path, outer, selected, partial=partial)
-    stream_rows, stderr = _read_stream_rows(command)
-    rows, status_counts, coverage_counts = _join_and_frame(
-        selected,
-        stream_rows,
-        stderr=stderr,
-        expected_input_set_sha256=expected_input_set_sha256,
-    )
+    replay_basis = None
+    if source_corpus_path is not None:
+        replay_basis = load_selection_replay_basis(
+            source_path=source_corpus_path,
+            expected_source_sha256=expected_source_corpus_sha256,
+            ledger_rows=selected,
+            expected_input_set_sha256=expected_input_set_sha256,
+            current_provenance={
+                **provenance_start, "corpusGate": gate_start, "parser": parser_start,
+                "streamToolFingerprints": stream_tool_start,
+                "selectedChunkFingerprints": selected_chunks_start,
+                "selectedChunkResolution": chunk_selection_start,
+                "timelinePlayAnimationContracts": timeline_contract_start,
+            },
+            timeline_contract_paths=timeline_contract_paths,
+        )
+        rows = replay_basis["rows"]
+        status_counts = replay_basis["framingCounts"]
+        if outputs:
+            protected.extend(replay_protected_paths(replay_basis))
+            for output in outputs:
+                _guard_output_path(output, protected + [path for path in outputs if path != output])
+    else:
+        command = _stream_command(cli_path, outer, selected, partial=partial)
+        stream_rows, stderr = _read_stream_rows(command)
+        rows, status_counts, _coverage_counts = _join_and_frame(
+            selected,
+            stream_rows,
+            stderr=stderr,
+            expected_input_set_sha256=expected_input_set_sha256,
+        )
 
     _outer_end, _header_end, end_file_rows, provenance_end = _read_outer_and_ledger(
         outer_path, ledger_path, expected_input_set_sha256=expected_input_set_sha256
@@ -2209,15 +2257,7 @@ def build_current_census(
     for output in outputs:
         _guard_output_path(output, protected + [path for path in outputs if path != output])
 
-    identity_rows = [
-        {key: row[key] for key in (
-            "virtualPath", "blockTypeValue", "length", "logicalMd5", "logicalSha256",
-            "physicalChunkPath", "physicalChunkSource", "metadataProvenance", "overlayState",
-            "chunkOverlayState", "physicalOffset", "encrypted",
-        )}
-        for row in rows
-    ]
-    identity_set_sha256 = _canonical_sha256(identity_rows)
+    identity_set_sha256 = skill_identity_set_sha256(rows)
     cursor_verification_provenance = None
     if cursor_verification_path is not None:
         cursor_verification_provenance = _apply_verified_terminal_selection(
@@ -2291,6 +2331,11 @@ def build_current_census(
         for output in outputs:
             _guard_output_path(output, [Path(item["path"]) for item in
                                         capture_target_set_verification_provenance["inputs"]])
+    replay_provenance = None
+    if replay_basis is not None:
+        replay_provenance = verify_selection_replay_basis(replay_basis)
+        for output in outputs:
+            _guard_output_path(output, protected + [path for path in outputs if path != output])
     coverage_counts = dict(sorted(Counter(row.get("coverageStatus", "failed-framing") for row in rows).items()))
     unique_count = (
         coverage_counts.get("unique-disjoint-independent-ranges", 0)
@@ -2360,6 +2405,7 @@ def build_current_census(
         "inputSetSha256": expected_input_set_sha256.upper(),
         "provenance": {
             **provenance_start,
+            **({"selectionReplay": replay_provenance} if replay_provenance is not None else {}),
             "combinedOuterFingerprintCount": len(provenance_start["sourceFingerprints"]) + len(provenance_start["buildFingerprints"]),
             "streamToolFingerprints": stream_tool_start,
             "selectedChunkFingerprints": selected_chunks_start,
@@ -2478,6 +2524,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--expected-input-set-sha256", required=True)
     parser.add_argument("--max-files", type=int)
     parser.add_argument(
+        "--source-corpus", type=Path,
+        help="reuse a complete current all-unselected SkillData basis for selection-only replay without another VFS stream",
+    )
+    parser.add_argument(
+        "--expected-source-corpus-sha256",
+        help="explicit SHA-256 pin for --source-corpus; required together",
+    )
+    parser.add_argument(
         "--target-set-contract", type=Path,
         help="stream only the exact reviewed SkillData target-set paths (partial report under tmp/scratch)",
     )
@@ -2540,7 +2594,13 @@ def main(argv: list[str] | None = None) -> int:
             allow_historical_verifier_rebind=args.allow_historical_verifier_rebind,
             target_contract_path=args.target_set_contract,
             target_virtual_paths=args.target_virtual_path,
+            source_corpus_path=args.source_corpus,
+            expected_source_corpus_sha256=args.expected_source_corpus_sha256,
         )
+        if args.source_corpus is not None:
+            for output in (args.output, args.output_md):
+                if output is not None:
+                    _guard_output_path(output, [args.source_corpus])
         if args.output_md is not None:
             if args.max_files is not None:
                 _guard_partial_output(args.output_md)

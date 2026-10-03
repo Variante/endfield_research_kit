@@ -1,0 +1,727 @@
+{
+  "schema": "endfield.mission-shared-native-claims.v1",
+  "status": "reviewed",
+  "evidenceBoundary": {
+    "direct": "Named decoded call targets and selected metadata field-offset accesses in exact .pdata bodies and unwind-owned fragments; typed inheritance and declared override absence where specified.",
+    "conditional": "Native default bodies only; runtime IFix selection and actual activation remain unobserved. Offset-access checks alone do not prove receiver type or complete control/data flow.",
+    "unresolved": "Server decision rules, Mission quest to LevelScript task ownership, asynchronous request/reply ownership, unvisited routes and successful returns."
+  },
+  "groups": {
+    "missionLifecycle": {
+      "methods": {
+        "questStateLifecycle": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "Handle_QuestStateUpdate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.SucceedQuest",
+                "Beyond.Gameplay.MissionSystem.StartQuest"
+              ]
+            },
+            {
+              "readsField": "Proto.SC_QUEST_STATE_UPDATE::questId_"
+            },
+            {
+              "readsField": "Proto.SC_QUEST_STATE_UPDATE::questState_"
+            }
+          ]
+        },
+        "missionStateLifecycle": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "Handle_MissionStateUpdate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.CompleteMission",
+                "Beyond.Gameplay.MissionSystem.StartMission",
+                "Beyond.Gameplay.MissionSystem.AvailableMission"
+              ]
+            }
+          ]
+        },
+        "objectiveStateCopyAndRefresh": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "Handle_QuestObjectiveUpdate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem+ObjectiveData.Copy",
+                "Beyond.Gameplay.MissionSystem.RefreshObjectiveProgress"
+              ],
+              "ordered": true
+            }
+          ]
+        },
+        "initialMissionSync": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "Handle_SyncAllMission",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem+ObjectiveData.Copy",
+                "Beyond.Gameplay.MissionSystem._ProcessSyncAllAfterWorldReady"
+              ]
+            }
+          ]
+        },
+        "restoredQuestStart": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "_ProcessSyncAllAfterWorldReady",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.StartQuest"
+              ]
+            },
+            {
+              "zeroArgumentAt": {
+                "call": "Beyond.Gameplay.MissionSystem.StartQuest",
+                "register": "r8d"
+              }
+            }
+          ]
+        },
+        "clientQuestActionForwarding": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "RunQuestAction",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.GetMissionIdByQuestId",
+                "Beyond.Gameplay.MissionSystem.GetMissionInfo",
+                "Beyond.Gameplay.MissionRuntimeAsset.RunQuestAction"
+              ],
+              "ordered": true
+            },
+            {
+              "passesArgumentToCall": {
+                "fromParameter": "questId",
+                "call": "Beyond.Gameplay.MissionRuntimeAsset.RunQuestAction",
+                "toParameter": "questId"
+              }
+            },
+            {
+              "passesArgumentToCall": {
+                "fromParameter": "action",
+                "call": "Beyond.Gameplay.MissionRuntimeAsset.RunQuestAction",
+                "toParameter": "questAction"
+              }
+            }
+          ]
+        },
+        "questActionAvailability": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "SafeRunQuestAction",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.GameUtil.IsLevelAvailable",
+                "Beyond.Gameplay.MissionSystem.RunQuestAction"
+              ],
+              "ordered": true
+            }
+          ]
+        },
+        "runtimePhaseMap": {
+          "type": "Beyond.Gameplay.MissionRuntimeAsset",
+          "method": "RunQuestAction",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionRuntimeAsset.get_runtimeClientActionMap",
+                "Beyond.Gameplay.MissionRuntimeAsset._RunActionInMission"
+              ],
+              "ordered": true
+            }
+          ]
+        },
+        "runtimeActionDispatch": {
+          "type": "Beyond.Gameplay.MissionRuntimeAsset",
+          "method": "_RunActionInMission",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.MissionRuntimeAsset::actionMap"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Actions.ActionMapAsset.RunAction"
+              ]
+            },
+            {
+              "passesArgumentToCall": {
+                "fromParameter": "startNodeID",
+                "call": "Beyond.Gameplay.Actions.ActionMapAsset.RunAction",
+                "toParameter": "startNodeID"
+              }
+            }
+          ]
+        },
+        "runtimePhaseArrays": {
+          "type": "Beyond.Gameplay.MissionRuntimeAsset",
+          "method": "get_runtimeClientActionMap",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.MissionRuntimeAsset::clientActionMapKey"
+            },
+            {
+              "readsField": "Beyond.Gameplay.MissionRuntimeAsset::clientActionMapValue"
+            }
+          ]
+        },
+        "copiedObjectiveState": {
+          "type": "Beyond.Gameplay.MissionSystem+ObjectiveData",
+          "method": "Copy",
+          "claims": [
+            {
+              "readsField": "Proto.QUEST_OBJECTIVE::conditionId_"
+            },
+            {
+              "readsField": "Proto.QUEST_OBJECTIVE::values_"
+            },
+            {
+              "readsField": "Proto.QUEST_OBJECTIVE::isComplete_"
+            },
+            {
+              "writesField": "Beyond.Gameplay.MissionSystem+ObjectiveData::isCompleted"
+            }
+          ]
+        },
+        "conditionResultParentPropagation": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "set_result",
+          "claims": [
+            {
+              "writesField": "Beyond.Gameplay.GameCondition::m_result"
+            },
+            {
+              "readsField": "Beyond.Gameplay.GameCondition::onResultChange"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.CombineCondition.Evaluate"
+              ]
+            }
+          ]
+        },
+        "objectiveProgressValues": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "RefreshObjectiveProgress",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.CombineCondition.FindSubCondition",
+                "Beyond.Gameplay.MissionSystem+ObjectiveData.GetValue"
+              ]
+            },
+            {
+              "readsField": "Beyond.Gameplay.MissionSystem+ObjectiveData::isCompleted"
+            }
+          ]
+        }
+      }
+    },
+    "dialogHistoryAndServerConditions": {
+      "types": {
+        "Beyond.Gameplay.CheckTalkOptionFinish": {
+          "parent": "Beyond.Gameplay.GameConditionBoth"
+        },
+        "Beyond.Gameplay.CheckActivityConditionalStageStatus": {
+          "parent": "Beyond.Gameplay.GameConditionServer",
+          "absentDeclaredMethods": [
+            "Check",
+            "OnActivate"
+          ]
+        },
+        "Beyond.Gameplay.GameConditionServerPlaceHolder": {
+          "parent": "Beyond.Gameplay.GameConditionServer",
+          "absentDeclaredMethods": [
+            "Check"
+          ]
+        }
+      },
+      "methods": {
+        "Beyond.Gameplay.CheckTalkOptionFinish.OnActivate": {
+          "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+          "method": "OnActivate",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.CheckTalkOptionFinish::_dialogId"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckTalkOptionFinish::_finishId"
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckTalkOptionFinish::m_dialogId"
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckTalkOptionFinish::m_finishNum"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Actions.ParamExtensions.GetValue",
+                "Beyond.Gameplay.CheckTalkOptionFinish.Check",
+                "Beyond.EventManager.BindGlobal"
+              ],
+              "ordered": true
+            },
+            {
+              "readsField": "Beyond.PredefinedEventKeys::ON_SYNC_ALL_DIALOG"
+            },
+            {
+              "readsField": "Beyond.PredefinedEventKeys::ON_FINISH_DIALOG"
+            }
+          ],
+          "contract": "Native default activation resolves/caches authored operands, checks existing history, and binds both server-history notifications."
+        },
+        "Beyond.Gameplay.CheckTalkOptionFinish.OnDeactivate": {
+          "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+          "method": "OnDeactivate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.EventManager.UnBindGlobal"
+              ]
+            },
+            {
+              "readsField": "Beyond.PredefinedEventKeys::ON_SYNC_ALL_DIALOG"
+            },
+            {
+              "readsField": "Beyond.PredefinedEventKeys::ON_FINISH_DIALOG"
+            }
+          ],
+          "contract": "Native default deactivation unbinds the same two global event keys."
+        },
+        "Beyond.Gameplay.CinematicSystem.get_dialogFinishInfos": {
+          "type": "Beyond.Gameplay.CinematicSystem",
+          "method": "get_dialogFinishInfos",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.CinematicSystem::m_dialogFinishInfos"
+            }
+          ],
+          "contract": "Returns the client-side dialog history dictionary on its native default path."
+        },
+        "Beyond.Gameplay.CinematicSystem._Handle_SyncAllDialog": {
+          "type": "Beyond.Gameplay.CinematicSystem",
+          "method": "_Handle_SyncAllDialog",
+          "claims": [
+            {
+              "readsField": "Proto.SC_SYNC_ALL_DIALOG::dialogList_"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CinematicSystem::m_dialogFinishInfos"
+            },
+            {
+              "readsField": "Beyond.PredefinedEventKeys::ON_SYNC_ALL_DIALOG"
+            },
+            {
+              "calls": [
+                "System.Collections.Generic.Dictionary`2.Clear",
+                "System.Collections.Generic.Dictionary`2.Add",
+                "Beyond.EventManager.SendGlobal"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Server sync payload clears/repopulates retained client dialog history before sending ON_SYNC_ALL_DIALOG."
+        },
+        "Beyond.Gameplay.CinematicSystem._Handle_FinishDialog": {
+          "type": "Beyond.Gameplay.CinematicSystem",
+          "method": "_Handle_FinishDialog",
+          "claims": [
+            {
+              "readsField": "Proto.SC_FINISH_DIALOG::dialogId_"
+            },
+            {
+              "readsField": "Proto.SC_FINISH_DIALOG::optionIds_"
+            },
+            {
+              "readsField": "Proto.SC_FINISH_DIALOG::finishNums_"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CinematicSystem::m_dialogFinishInfos"
+            },
+            {
+              "writesField": "Beyond.Gameplay.DialogFinishInfo::dialogId"
+            },
+            {
+              "writesField": "Beyond.Gameplay.DialogFinishInfo::optionIds"
+            },
+            {
+              "writesField": "Beyond.Gameplay.DialogFinishInfo::finishIds"
+            },
+            {
+              "readsField": "Beyond.PredefinedEventKeys::ON_FINISH_DIALOG"
+            },
+            {
+              "calls": [
+                "System.Collections.Generic.Dictionary`2.set_Item",
+                "Beyond.EventManager.SendGlobal",
+                "Beyond.Gameplay.Core.NpcManager.RefreshAllNpcOptionInRange",
+                "Beyond.Gameplay.Core.LevelEventManager.RaiseLevelEvent"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Server finish payload creates the dialog-id/options/finish-numbers record and replaces the client dictionary entry before notification and NPC/level refresh."
+        },
+        "Beyond.Gameplay.CinematicSystem.SendFinishDialog": {
+          "type": "Beyond.Gameplay.CinematicSystem",
+          "method": "SendFinishDialog",
+          "claims": [
+            {
+              "calls": [
+                "Proto.CS_FINISH_DIALOG..ctor",
+                "Google.Protobuf.Collections.RepeatedField`1.Add",
+                "Beyond.Network.NetUtil.GetCSMsgIdByType"
+              ],
+              "ordered": true
+            },
+            {
+              "writesField": "Proto.CS_FINISH_DIALOG::dialogId_"
+            }
+          ],
+          "contract": "Native method builds a CS_FINISH_DIALOG request from authored dialog identity and selected finish/options; this claim does not prove delivery."
+        },
+        "Beyond.Gameplay.Core.DialogManager.SetFinishId": {
+          "type": "Beyond.Gameplay.Core.DialogManager",
+          "method": "SetFinishId",
+          "claims": [
+            {
+              "storesArgument": {
+                "field": "Beyond.Gameplay.Core.DialogManager::m_finishId",
+                "argument": "edx"
+              }
+            }
+          ],
+          "contract": "Caches supplied finish id in DialogManager; this method alone does not update server history."
+        },
+        "Beyond.Gameplay.Core.DialogManager._SendServer": {
+          "type": "Beyond.Gameplay.Core.DialogManager",
+          "method": "_SendServer",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.CinematicSystem.SendFinishDialog"
+              ]
+            },
+            {
+              "passesArgumentToCall": {
+                "fromParameter": "finishId",
+                "call": "Beyond.Gameplay.CinematicSystem.SendFinishDialog",
+                "toParameter": "finishId"
+              }
+            },
+            {
+              "passesArgumentToCall": {
+                "fromParameter": "optionIds",
+                "call": "Beyond.Gameplay.CinematicSystem.SendFinishDialog",
+                "toParameter": "optionIds"
+              }
+            }
+          ],
+          "contract": "DialogManager server-send path forwards supplied finishId and optionIds arguments to CinematicSystem.SendFinishDialog; this method does not read the cached m_finishId itself."
+        },
+        "Beyond.Gameplay.Core.DialogManager._AfterExitDialog": {
+          "type": "Beyond.Gameplay.Core.DialogManager",
+          "method": "_AfterExitDialog",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogManager._SendServer",
+                "Beyond.Gameplay.Core.DialogManager._DoExitDialogCallback"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Native after-exit path has an explicit conditional server-send call before its exit-callback invocation; its finishId source is a stack local here and the complete cached-field join remains unresolved."
+        },
+        "Beyond.Gameplay.CheckActivityConditionalStageStatus.AddBlockConditionDescToList": {
+          "type": "Beyond.Gameplay.CheckActivityConditionalStageStatus",
+          "method": "AddBlockConditionDescToList",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.CheckActivityConditionalStageStatus::_activityStageId"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Actions.ParamExtensions.GetValue",
+                "Beyond.Gameplay.ActivitySystem.GetActivityStageConditions",
+                "Beyond.Gameplay.MissionRuntimeAsset+BlockCondition..ctor"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Block-condition description reads authored activity stage id and obtains configured stage conditions; it is presentation/configuration rather than an observed completion check."
+        },
+        "Beyond.Gameplay.CheckActivityConditionalStageStatus.IsValidAsBlockQuestCondition": {
+          "type": "Beyond.Gameplay.CheckActivityConditionalStageStatus",
+          "method": "IsValidAsBlockQuestCondition",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.CheckActivityConditionalStageStatus::_comparer"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckActivityConditionalStageStatus::_progressToCompare"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Actions.ParamExtensions.GetValue"
+              ]
+            },
+            {
+              "comparesResult": {
+                "call": "Beyond.Gameplay.Actions.ParamExtensions.GetValue",
+                "value": 3
+              }
+            },
+            {
+              "comparesResult": {
+                "call": "Beyond.Gameplay.Actions.ParamExtensions.GetValue",
+                "value": 1
+              }
+            }
+          ],
+          "contract": "The authored block predicate is admitted only for comparer GreaterEqual and target state Unlocked on its native default path."
+        },
+        "Beyond.Gameplay.GameConditionServer.OnActivate": {
+          "type": "Beyond.Gameplay.GameConditionServer",
+          "method": "OnActivate",
+          "claims": [
+            {
+              "calls": [
+                "IFix.WrappersManagerImpl.IsPatched"
+              ]
+            },
+            {
+              "notCallsPrefix": "Beyond.Gameplay."
+            },
+            {
+              "matches": "ret"
+            }
+          ],
+          "contract": "Base server condition native default branch returns without a local gameplay call; an IFix override can replace this behavior."
+        },
+        "Beyond.Gameplay.GameConditionServer.OnDeactivate": {
+          "type": "Beyond.Gameplay.GameConditionServer",
+          "method": "OnDeactivate",
+          "claims": [
+            {
+              "calls": [
+                "IFix.WrappersManagerImpl.IsPatched"
+              ]
+            },
+            {
+              "notCallsPrefix": "Beyond.Gameplay."
+            },
+            {
+              "matches": "ret"
+            }
+          ],
+          "contract": "Base server condition native default branch returns without a local gameplay call; an IFix override can replace this behavior."
+        },
+        "Beyond.Gameplay.GameCondition.set_result": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "set_result",
+          "claims": [
+            {
+              "writesField": "Beyond.Gameplay.GameCondition::m_result"
+            },
+            {
+              "readsField": "Beyond.Gameplay.GameCondition::onResultChange"
+            },
+            {
+              "readsField": "Beyond.Gameplay.GameCondition::parent"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.CombineCondition.Evaluate"
+              ]
+            }
+          ],
+          "contract": "Changed active condition result stores m_result, calls its listener and reevaluates its parent combine condition."
+        }
+      }
+    },
+    "levelScriptTaskProgress": {
+      "methods": {
+        "conditionProgress": {
+          "type": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+          "method": "_OnConditionResultChanged",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.GameInstance.get_gameplayNetwork",
+                "Beyond.Gameplay.GameplayNetwork.SendLevelScriptUpdateTaskProgress"
+              ],
+              "ordered": true
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::taskKey"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::conditionId"
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        },
+        "outgoingProgress": {
+          "type": "Beyond.Gameplay.GameplayNetwork",
+          "method": "SendLevelScriptUpdateTaskProgress",
+          "claims": [
+            {
+              "calls": [
+                "Proto.CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS..ctor",
+                "Proto.CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS.set_TaskId",
+                "Proto.SCRIPT_TASK_OBJECTIVE_VALUE_OP..ctor",
+                "Proto.SCRIPT_TASK_OBJECTIVE_VALUE_OP.set_ConditionId",
+                "Google.Protobuf.Collections.RepeatedField`1.Add",
+                "Beyond.Gameplay.BaseNetworkSystem.SendMsg"
+              ],
+              "ordered": true
+            },
+            {
+              "writesField": "Proto.CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS::scriptId_"
+            },
+            {
+              "writesField": "Proto.CS_SCENE_UPDATE_SCRIPT_TASK_PROGRESS::sceneNumId_"
+            },
+            {
+              "writesField": "Proto.SCRIPT_TASK_OBJECTIVE_VALUE_OP::value_"
+            },
+            {
+              "storesConstant": {
+                "field": "Proto.SCRIPT_TASK_OBJECTIVE_VALUE_OP::isAdd_",
+                "value": 0
+              }
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        },
+        "incomingTaskState": {
+          "type": "Beyond.Gameplay.GameplayNetwork",
+          "method": "_Handle_LevelScriptTaskStateUpdate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.ScriptTaskPtr.op_Implicit",
+                "Beyond.Gameplay.Core.LevelScriptManager.UpdateLevelScriptTaskState"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        },
+        "managerTaskState": {
+          "type": "Beyond.Gameplay.Core.LevelScriptManager",
+          "method": "UpdateLevelScriptTaskState",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptManager.TryGetLevelScript",
+                "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateTaskState"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        },
+        "runtimeTaskState": {
+          "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+          "method": "UpdateTaskState",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptRuntime.TryGetTask",
+                "Beyond.Gameplay.Core.LevelScriptRuntime+ScriptTaskRuntime.UpdateTaskState"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        },
+        "incomingConditionMap": {
+          "type": "Beyond.Gameplay.GameplayNetwork",
+          "method": "_Handle_LevelScriptTaskProgressUpdate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateTaskMainObjectiveIsCompleted"
+              ]
+            },
+            {
+              "readsField": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE::conditionCompletedMap_"
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        },
+        "applyConditionMap": {
+          "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+          "method": "UpdateTaskMainObjectiveIsCompleted",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptRuntime.TryGetTask",
+                "Beyond.Gameplay.Core.LevelScriptTaskTrackingManager.UpdateTrackingObjectiveCompleted"
+              ],
+              "ordered": true
+            },
+            {
+              "writesField": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::isCompleted"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::m_onIsCompleteChangeAction"
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        },
+        "processingActivation": {
+          "type": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+          "method": "OnTaskStateProcessing",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.GameCondition.Activate",
+                "Beyond.Gameplay.GameCondition.BindingEvent"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        },
+        "managerDone": {
+          "type": "Beyond.Gameplay.Core.LevelScriptManager",
+          "method": "ServerSyncLevelScriptIsDone",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptContainer.ServerSyncLevelScriptIsDone"
+              ]
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        },
+        "runtimeDone": {
+          "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+          "method": "UpdateIsDone",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptRuntime.get_isDone",
+                "Beyond.Gameplay.Core.LevelScriptRuntime.set_isDone",
+                "Beyond.Gameplay.Core.LevelScriptRuntime.OnScriptIsDoneChanged"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
+        }
+      }
+    }
+  },
+  "excludedChecks": {
+    "coldFragmentEnumForwarding": "Primary-body-only passesEnumMemberToCall does not cover the owned SucceedQuest fragment; current manual byte chain remains in the generated report.",
+    "progressSetterLeaf": "The selected GameCondition.set_progress leaf lacks a .pdata boundary; it is not admitted by the bounded reusable evaluator."
+  }
+}

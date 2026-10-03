@@ -108,13 +108,14 @@ def _dependencies() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     return source, catalog, provider
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None, metadata: Path | None = None) -> dict[str, Any]:
     """Prove one current selected dispatcher, wrapper, and nested provider."""
     contract = _contract()
     _source, _catalog, provider = _dependencies()
     expected = contract["nativeInputs"]
     gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")

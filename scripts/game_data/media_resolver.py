@@ -385,6 +385,14 @@ def score_wiki_video_asset(rel: str, device_type: str = "") -> int:
     return score
 
 
+def icon_shape_rank(width: int, height: int) -> tuple[int, float]:
+    """Display preference for item icons; dimensions do not prove ownership."""
+    if width <= 0 or height <= 0:
+        return (0, 0.0)
+    return (0 if 0.625 <= width / height <= 1.6 else 1,
+            abs(width - height) / max(width, height))
+
+
 def score_inline_image_asset(rel: str, stem: str) -> int:
     rel_lower = str(rel or "").lower()
     score = 1

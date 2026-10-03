@@ -134,6 +134,7 @@ from scripts.game_data.memorypack.skill_timeline_fixed_four import (
     validate_current_native_contract as validate_fixed_four_native_contract,
 )
 from scripts.game_data.memorypack.skill_timeline_two_five_member import (
+    ROUTES as FIVE_MEMBER_ROUTES,
     decode_five_member_action,
     validate_current_native_contract as validate_five_member_native_contract,
 )
@@ -548,6 +549,7 @@ from scripts.game_data.memorypack.skill_timeline_teleport_pos_select import (
     decode_teleport_pos_select_action,
     validate_current_native_contract as validate_teleport_pos_select_native_contract,
 )
+from scripts.game_data.memorypack import skill_timeline_recursive_actions as recursive_actions
 from scripts.game_data.memorypack.skill_timeline_two_action_routes import (
     decode_two_action_route,
     validate_current_native_contract as validate_two_action_routes_native_contract,
@@ -555,6 +557,12 @@ from scripts.game_data.memorypack.skill_timeline_two_action_routes import (
 from scripts.game_data.memorypack.skill_timeline_dice_float import (
     decode_shared_action as decode_dice_float_action,
     validate_current_native_contract as validate_dice_float_native_contract,
+)
+from scripts.game_data.memorypack import (
+    skill_timeline_check_part_tag_match as check_part_tag_match,
+    skill_timeline_check_skill_has_hit as check_skill_has_hit,
+    skill_timeline_set_ignore_global_time_scale as set_ignore_global_time_scale,
+    skill_timeline_dispel as dispel,
 )
 from scripts.game_data.memorypack.skill_timeline_check_ability_entity_cur_duration import (
     decode_check_ability_entity_cur_duration_action,
@@ -576,6 +584,8 @@ from scripts.game_data.memorypack.skill_timeline_change_specific_layer import (
     decode_change_specific_layer_action,
     validate_current_native_contract as validate_change_specific_layer_native_contract,
 )
+
+_ADDITIONAL_SOURCE_MODULES = (check_skill_has_hit, set_ignore_global_time_scale, dispel)
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_shared_sequence_native.json"
@@ -692,6 +702,34 @@ PASSIVE_SOURCE_ROUTES = (
     ),
 )
 TIMELINE_SOURCE_ROUTES = (
+    (
+        "0x0084", "Beyond.Gameplay.Core.Conditions.CheckWeaponTypeCondition+Data",
+        "buff_84_native.json", "member6",
+        ("byte", "scalar32", "scalar32", "scalar32", "target-profile", "scalar32"),
+    ),
+    (
+        "0x0095", "Beyond.Gameplay.Core.CreateGlobalBuffAction+Data",
+        "buff_95_native.json", "member8",
+        ("byte", "scalar32", "scalar32", "scalar32", "byte",
+         "scalar-payload", "global-input-list", "target"),
+    ),
+    (
+        "0x0122", "Beyond.Gameplay.Core.ReadSkillSettingData+Data",
+        "buff_122_native.json", "member5",
+        ("byte", "scalar32", "scalar32", "scalar32", "counted-member4-profiles"),
+    ),
+    (
+        "0x0188", "Beyond.Gameplay.Core.TriggerCustomAbilityEvent+Data",
+        "buff_188_native.json", "member8",
+        ("byte", "scalar32", "scalar32", "scalar32", "paired-payload",
+         "scalar-payload", "target-profile", "target-profile"),
+    ),
+    (
+        "0x012A", "Beyond.Gameplay.Core.RefrainObtainUsp+Data",
+        "buff_12a_native.json", "member7",
+        ("byte", "scalar32", "scalar32", "scalar32", "byte",
+         "tag-list-profile", "target-profile"),
+    ),
     (
         "0x00CE", "Beyond.Gameplay.Core.IgniteAction+Data",
         "buff_ce_native.json", "member8",
@@ -834,6 +872,16 @@ class SharedSequenceReader(Reader):
         return super().empty_damage_collection(kind)
 
     def _action(self, depth: int, tag: int, width: int) -> None:
+        if tag in recursive_actions.READ_KINDS:
+            recursive_actions.decode_recursive_action(self, depth, tag, width)
+            return
+        if tag == check_part_tag_match.TAG:
+            check_part_tag_match.decode_shared_action(self, depth, tag, width)
+            return
+        selected_decoder = _additional_source_readers().get(tag)
+        if selected_decoder is not None:
+            selected_decoder(self, depth, tag, width)
+            return
         if tag == 0x0038:
             decode_check_ability_entity_cur_duration_action(self, depth, tag, width)
             return
@@ -876,7 +924,7 @@ class SharedSequenceReader(Reader):
         if tag in (0x0054, 0x009D):
             decode_two_action_route(self, depth, tag, width)
             return
-        if tag in (0x0148, 0x00E6):
+        if tag in FIVE_MEMBER_ROUTES:
             decode_five_member_action(self, depth, tag, width)
             return
         if tag == 0x0116:
@@ -1254,6 +1302,17 @@ def _contract() -> dict[str, Any]:
     routes = value.get("allowedReachedRoutes")
     if not isinstance(routes, list):
         raise ValueError("skillTimelineSharedSequence.contract:routes")
+    part_contract, part_source = check_part_tag_match._contract()
+    part_route = next((row for row in routes if row.get("tag") == f"0x{check_part_tag_match.TAG:04X}"), {})
+    if (dependency_values.get(check_part_tag_match.CONTRACT_PATH.name) != part_contract
+            or part_route.get("typeName") != check_part_tag_match.TYPE_NAME
+            or part_route.get("memberCount") != part_source["serializedMemberCount"]
+            or part_route.get("sourceContract") != {
+                "path": check_part_tag_match.CONTRACT_PATH.name,
+                "schema": check_part_tag_match.SCHEMA,
+                "orderedReadRef": "actions[unionTag=108].readOrder",
+            }):
+        raise ValueError(f"{LABEL}.contract:check-part-tag-source-drift")
     for route in routes:
         provider_ref = route.get("providerRef")
         if provider_ref is None:
@@ -1489,18 +1548,11 @@ def _contract() -> dict[str, Any]:
             )
         ):
             raise ValueError(f"skillTimelineSharedSequence.contract:action-source-drift:{tag}")
-    for tag, type_name, path, schema in (
-        (
-            "0x0148", "Beyond.Gameplay.Core.SetAbilityEntityToMainChar+Data",
-            "skill_timeline_set_ability_entity_main_char_native.json",
-            "endfield.skill-timeline-set-ability-entity-main-char-native-contract.v1",
-        ),
-        (
-            "0x00E6", "Beyond.Gameplay.Core.LookAtAction+LookAtActionData",
-            "skill_timeline_look_at_native.json",
-            "endfield.skill-timeline-look-at-native-contract.v1",
-        ),
-    ):
+    for tag_value, declaration in FIVE_MEMBER_ROUTES.items():
+        tag = f"0x{tag_value:04X}"
+        type_name = declaration["type"]
+        path = declaration["contract"]
+        schema = declaration["schema"]
         route = next((row for row in routes if row.get("tag") == tag), None)
         source = dependency_values.get(path, {})
         if (
@@ -3249,7 +3301,63 @@ def _contract() -> dict[str, Any]:
         or len(dice_source.get("orderedSourceReads", ())) != 7
     ):
         raise ValueError("skillTimelineSharedSequence.contract:dice-float-source-drift")
+    recursive_source = recursive_actions._contract()
+    if dependency_values.get(recursive_actions.CONTRACT_PATH.name) != recursive_source:
+        raise ValueError(f"{LABEL}.contract:recursive-actions-dependency")
+    for source in recursive_source["routes"]:
+        selected = next((row for row in routes if row.get("tag") == source["tag"]), {})
+        expected_ref = {
+            "path": recursive_actions.CONTRACT_PATH.name,
+            "schema": recursive_actions.SCHEMA,
+            "orderedReadRef": f"routes[tag={source['tag']}].orderedSourceReads",
+        }
+        if (selected.get("typeName") != source["typeName"]
+                or selected.get("memberCount") != source["serializedMemberCount"]
+                or selected.get("sourceContract") != expected_ref):
+            raise ValueError(f"{LABEL}.contract:recursive-action-route:{source['tag']}")
+    additional_routes = {int(row["tag"], 16): row for row in routes}
+    for module in _ADDITIONAL_SOURCE_MODULES:
+        source = module._contract()
+        dispatcher = source.get("dispatcher", {})
+        tag = dispatcher.get("unionTag", source.get("unionTag"))
+        selected = additional_routes.get(tag, {})
+        expected_ref = {
+            "path": module.CONTRACT_PATH.name, "schema": source["schema"],
+            "orderedReadRef": "readKinds" if module is dispel else "orderedSourceReads",
+        }
+        if (dependency_values.get(module.CONTRACT_PATH.name) != source
+                or selected.get("memberCount") != source["serializedMemberCount"]
+                or selected.get("sourceContract") != expected_ref
+                or selected.get("typeName") != (
+                    source["actualTypeName"] if module is dispel
+                    else "Beyond.Gameplay.Core." + (
+                        "CheckSkillHasHit+Data" if module is check_skill_has_hit
+                        else "SetIgnoreGlobalTimeScaleAction+Data"))):
+            raise ValueError(f"{LABEL}.contract:source-reader-drift:{module.LABEL}")
     return value
+
+
+@lru_cache(maxsize=1)
+def _additional_source_readers() -> dict[int, Any]:
+    """Resolve admitted tags from reviewed declarations, without a pinned tag table."""
+    decoders = {module.CONTRACT_PATH.name: module.decode_shared_action
+                for module in _ADDITIONAL_SOURCE_MODULES}
+    return {int(row["tag"], 16): decoders[reference["path"]]
+            for row in _contract()["allowedReachedRoutes"]
+            if isinstance(reference := row.get("sourceContract"), dict)
+            and reference.get("path") in decoders}
+
+
+def _validate_additional_source_readers(*, gameassembly, metadata) -> dict[str, Any]:
+    validations = {}
+    for module in _ADDITIONAL_SOURCE_MODULES:
+        source = module._contract()
+        tag = source.get("dispatcher", {}).get("unionTag", source.get("unionTag"))
+        result = module.validate_current_native_contract(gameassembly=gameassembly, metadata=metadata)
+        if result.get("status") != "validated" or result.get("unionTag") != tag:
+            raise ValueError(f"{LABEL}.native:source-reader:{module.LABEL}:{result.get('status')}:tag-drift")
+        validations[module.LABEL] = result
+    return validations
 
 
 def validate_current_native_contract() -> dict[str, Any]:
@@ -3339,7 +3447,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     check_global_cd_timer_validation = validate_check_global_cd_timer_native_contract()
     add_global_cd_timer_validation = validate_add_global_cd_timer_native_contract()
     five_member_validations = [
-        validate_five_member_native_contract(tag) for tag in (0x0148, 0x00E6)
+        validate_five_member_native_contract(tag) for tag in FIVE_MEMBER_ROUTES
     ]
     play_animation_step_shared_validation = validate_play_animation_step_shared_native_contract()
     blow_off_enemy_validation = validate_blow_off_enemy_native_contract()
@@ -3391,6 +3499,11 @@ def validate_current_native_contract() -> dict[str, Any]:
     dice_float_validation = validate_dice_float_native_contract(
         gameassembly=gate.gameassembly, metadata=gate.metadata,
     )
+    recursive_action_validation = recursive_actions.validate_current_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    additional_source_validations = _validate_additional_source_readers(
+        gameassembly=gate.gameassembly, metadata=gate.metadata)
     zhuangfy_route_validations = {
         "checkAbilityEntityCurDuration": validate_check_ability_entity_cur_duration_native_contract(
             gameassembly=gate.gameassembly, metadata=gate.metadata,
@@ -3465,6 +3578,11 @@ def validate_current_native_contract() -> dict[str, Any]:
         (0x0036, "Beyond.MemoryPack.Beyond_Gameplay_Core_CharWeaponAnimationAction_CharWeaponAnimationActionDataForMemoryPack"),
         (0x0178, "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchModeAction_DataForMemoryPack"),
         (0x004C, "Beyond.MemoryPack.Beyond_Gameplay_Core_ClearProjectileAction_DataForMemoryPack"),
+        (0x0095, "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateGlobalBuffAction_DataForMemoryPack"),
+        (0x0122, "Beyond.MemoryPack.Beyond_Gameplay_Core_ReadSkillSettingData_DataForMemoryPack"),
+        (0x0188, "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerCustomAbilityEvent_DataForMemoryPack"),
+        (0x0084, "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckWeaponTypeCondition_DataForMemoryPack"),
+        (0x012A, "Beyond.MemoryPack.Beyond_Gameplay_Core_RefrainObtainUsp_DataForMemoryPack"),
     ):
         selected = derived_routes.get(tag, {})
         if selected.get("status") not in ("determined", "open") or selected.get("wrapperName") != wrapper:
@@ -3472,6 +3590,23 @@ def validate_current_native_contract() -> dict[str, Any]:
     from scripts.game_data.il2cpp.native_image import open_native_image
 
     image = open_native_image(gate.gameassembly, gate.metadata)
+    part_tag_validation = check_part_tag_match.validate_current_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
+    # These newly reused list/object routes also reprove every recorded generic
+    # context, rather than treating matching method bytes as a provider join.
+    from scripts.game_data.il2cpp.context_audit_memorypack import buff_action_read_order
+
+    reused_context_validations = {}
+    for source_name in (
+        "buff_84_native.json", "buff_95_native.json", "buff_122_native.json",
+        "buff_12a_native.json", "buff_188_native.json",
+    ):
+        reused_context_validations[source_name] = buff_action_read_order(
+            image.pe, image.metadata, image.registration, image.instantiations,
+            image.modules, image.owners, source=str(gate.gameassembly),
+            contract_path=CONTRACT_PATH.parent / source_name,
+        )
     source_window_dependencies = sorted({
         ref["path"]
         for route in contract["allowedReachedRoutes"]
@@ -3479,6 +3614,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         and isinstance(ref.get("path"), str)
         and ref["path"].startswith("buff_")
         and ref["path"].endswith("_native.json")
+        and ref["path"] != check_part_tag_match.CONTRACT_PATH.name
     })
     for name in source_window_dependencies:
         path = (CONTRACT_PATH.parent / name).resolve()
@@ -3495,6 +3631,8 @@ def validate_current_native_contract() -> dict[str, Any]:
         "dependencyCount": len(contract["dependencies"]),
         "facBuildingPlanValidation": "validated",
         "sourceWindowValidation": source_window_dependencies,
+        "reusedBuffContextValidation": sorted(reused_context_validations),
+        "checkPartTagMatchValidation": part_tag_validation,
         "damageUnitGameplayTagListNativeValidation": damage_tag_list_validation,
         "twoDirectionFrontierValidation": frontier_audit["status"],
         "teleportPosSelectNativeValidation": teleport_validation,
@@ -3602,7 +3740,9 @@ def validate_current_native_contract() -> dict[str, Any]:
         "enemyWarningNativeValidation": warning_validation,
         "finishAngryNativeValidation": angry_validation,
         "twoActionRoutesNativeValidation": two_action_validation,
+        "recursiveActionsNativeValidation": recursive_action_validation,
         "diceFloatNativeValidation": dice_float_validation,
+        "additionalSourceReaderNativeValidations": additional_source_validations,
         "zhuangfyRouteNativeValidations": zhuangfy_route_validations,
         "moveToSlotNativeValidation": move_to_slot_validation,
         "logActionNativeValidation": log_action_validation,

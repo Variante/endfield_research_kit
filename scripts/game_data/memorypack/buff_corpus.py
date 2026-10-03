@@ -6,11 +6,18 @@ All matching filename-string anchors are retained, including rejected anchors.
 Promotion is narrow: only singleton rows with a selected-native 30-member
 forward receipt from byte zero to EOF, with source-ID equality, are promoted.
 The admitted cohorts are strict null/empty recursive lists, the bounded
-authenticated DataPair and GlobalModifier branches, the selected single
+authenticated DataPair lists, shared AttributeModifierData arrays and reviewed
+GlobalModifier branch, the selected single
 damage condition/processor combinations whose child receipts are the
 ``buff_damage_*`` modules, and the sole selected CreateBuff action (replayed
 separately by ``buff_create_action_root_corpus``). Every other row keeps its
 structural or nested blocker; nothing here names the whole BuffData schema.
+Four distinct reviewed source paths also compose their positive-heal,
+BreakPassingSmallSceneObject event-map, attribute-plus-empty-condition/tag-ten,
+or recursive sword damage child receipts through all 30 fields. Their selected diagnostics stay
+nonpublishable by themselves; only this complete gate admits exact rows.
+The selected native audit and every helper, contract and native input are
+rechecked before and after the scan.
 
 The denominator is the complete authenticated outer ledger with decrypted
 stream bytes, under the shared ``corpus_gate`` provenance guards.  Every
@@ -55,8 +62,11 @@ from scripts.game_data.memorypack.buff import (
 from scripts.game_data.memorypack.buff_actions import event_prefix
 from scripts.game_data.memorypack.buff_icon_config import validate_current_native_contract
 from scripts.game_data.memorypack import buff_named_schema
+from scripts.game_data.memorypack import buff_attribute_modifier
 from scripts.game_data.memorypack import buff_root_no_positive
+from scripts.game_data.memorypack import buff_event_maps
 from scripts.game_data.memorypack import buff_root_no_positive_native
+from scripts.game_data.memorypack import buff_selected_roots
 from scripts.game_data.memorypack import buff_datapair_native
 from scripts.game_data.memorypack import buff_global_modifier_receipt
 from scripts.game_data.memorypack import buff_damage_modifier_receipt
@@ -132,8 +142,9 @@ BOUNDARY=('Authenticated current VFS logical bytes and the current generated 30-
           'globalModifier lists attach a selected-build child receipt at field 10 while the parent BuffData '
           'row remains partial. The nested '
           '19-member iconConfig and raw-eight dispelConfig children are exact under their current-build native contracts. '
-          'A strict selected-native subset of null/empty recursive-list rows, authenticated DataPair and GlobalModifier branches, and selected damage branches with an empty condition plus tag five or ordered [5,6] processors, one CheckDamageDecorateMask or CheckDamageType action plus tag five or ten, one CheckDamageTypeMask, simple CheckTagMatch, simple CheckMainCharacterCondition, selected CheckBuffStackNumAdvanced, simple CheckHp or simple CheckPoiseValue action plus tag five, one CheckBuffStackNumAdvanced action plus tag nine, one CheckDamageDecorateMask action plus scalar tag zero, two or three, one simple CheckTagMatch action plus scalar tag zero or three, the ordered CheckDamageDecorateMask/CheckDamageTypeMask condition pair, two selected OriginSkillType compound conditions, two selected known-action compound conditions, or the selected nested IfElseAction conditions plus tag five, one NotNextCheckAction/main-character pair plus scalar tag four, and the selected two CheckTwoDirectionAngle actions plus ordered [5,6] processors receives a 30-member byte-zero-to-EOF receipt; '
+          'A strict selected-native subset of null/empty recursive-list rows, authenticated DataPair lists, shared AttributeModifierData arrays, the reviewed GlobalModifier branch, and selected damage branches with an empty condition plus tag five or ordered [5,6] processors, one CheckDamageDecorateMask or CheckDamageType action plus tag five or ten, one CheckDamageTypeMask, simple CheckTagMatch, simple CheckMainCharacterCondition, selected CheckBuffStackNumAdvanced, simple CheckHp or simple CheckPoiseValue action plus tag five, one CheckBuffStackNumAdvanced action plus tag nine, one CheckDamageDecorateMask action plus scalar tag zero, two or three, one simple CheckTagMatch action plus scalar tag zero or three, the ordered CheckDamageDecorateMask/CheckDamageTypeMask condition pair, two selected OriginSkillType compound conditions, two selected known-action compound conditions, or the selected nested IfElseAction conditions plus tag five, one NotNextCheckAction/main-character pair plus scalar tag four, and the selected two CheckTwoDirectionAngle actions plus ordered [5,6] processors receives a 30-member byte-zero-to-EOF receipt; '
           'A sole selected CreateBuff action with exact named children also admits a narrow 30-member root replay through EOF; '
+          'Four distinct source-bound positive-heal, BreakPassingSmallSceneObject event-map, attribute-plus-empty-condition/tag-ten, and recursive sword damage roots also compose named children through all thirty fields under current input pins; their standalone diagnostics remain nonpublishable. '
           'only those VFS-ledger-MD5-matched rows are whole-schema exact, with their SHA256 recorded for later export replay. '
           'Runtime behavior and other BuffData files remain unresolved.')
 
@@ -406,8 +417,10 @@ def join_and_frame(ledger, stream, *, stderr, adding_cooldown_native_validation=
                    root_no_positive_native_validation=None,
                    positive_damage_native_validation=None,
                    single_create_native_validation=None,
+                   shared_event_native_validation=None,
                    datapair_native_validation=None,
-                   global_modifier_native_validation=None):
+                   global_modifier_native_validation=None,
+                   selected_root_context=None):
     by_path={row['virtualPath']:row for row in ledger};seen=set();results=[]
     if len(by_path)!=len(ledger):vfs._fail('duplicate-buff-ledger',source='join')
     for index,row in enumerate(stream):
@@ -501,6 +514,45 @@ def join_and_frame(ledger, stream, *, stderr, adding_cooldown_native_validation=
             framed['wholeSchemaExact'] = True
             framed['boundaryClass'] = 'exact-closed'
             framed['namedOuterFrameStatus'] = 'named_exact_full'
+        if selected_root_context is not None:
+            selected_root = buff_selected_roots.admit_current_source(
+                data, source=path, logical_sha256=logical_sha,
+                outer_row={'identity':identity,'logicalSha256':logical_sha,**framed},
+                root_validation=root_no_positive_native_validation,
+                context=selected_root_context,
+            )
+            if selected_root is not None:
+                framed['rootSelectedSourceBranch'] = selected_root['branch']
+                framed['rootSelectedSourceCandidate'] = 'receipt' in selected_root
+                if 'receipt' in selected_root:
+                    framed['rootSelectedSourceReceipt'] = selected_root['receipt']
+                    framed['wholeSchemaExact'] = True
+                    framed['boundaryClass'] = 'exact-closed'
+                    framed['namedOuterFrameStatus'] = 'named_exact_full'
+                else:
+                    framed['rootSelectedSourceDiagnostic'] = selected_root['diagnostic']
+        shared_event_frame = buff_root_no_positive.is_shared_event_candidate(framed, length=len(data))
+        framed['rootSharedEventFrameCandidate'] = shared_event_frame
+        framed['rootSharedEventCandidate'] = False
+        if (shared_event_frame
+                and (shared_event_native_validation or {}).get('status') == 'validated'):
+            try:
+                event_receipt = buff_root_no_positive.decode_shared_event_root(
+                    data, source=path, expected_sha256=logical_sha,
+                    native_validation=root_no_positive_native_validation,
+                    event_maps_validation=shared_event_native_validation,
+                )
+            except (ValueError, IndexError, KeyError, OverflowError, struct.error) as exc:
+                framed['rootSharedEventRefusal'] = getattr(exc, 'diagnostic', {
+                    'source': path, 'check': 'shared-event-recursive-child',
+                    'actual': f'{type(exc).__name__}: {exc}',
+                })
+            else:
+                framed['rootSharedEventCandidate'] = True
+                framed['rootSharedEventReceipt'] = event_receipt
+                framed['wholeSchemaExact'] = True
+                framed['boundaryClass'] = 'exact-closed'
+                framed['namedOuterFrameStatus'] = 'named_exact_full'
         for candidate in framed.get('candidates',[]):
             context={'inputSetSha256':identity['inputSetSha256'],
                 'logicalFileIdentity':identity['virtualPath'],'logicalSha256':logical_sha,
@@ -570,7 +622,8 @@ def _read_stream_rows(command: list[str]) -> tuple[list[dict], str]:
     return rows, process.stderr
 
 
-def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sha256,outputs=()):
+def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sha256,outputs=(),
+                         selected_native_audit_path=buff_selected_roots.DEFAULT_NATIVE_AUDIT):
     expected=expected_input_set_sha256.upper()
     native_validation=validate_current_native_contract()
     residual_validation=validate_residual_native_contract()
@@ -583,6 +636,11 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         root_validation=root_no_positive_validation,
     )
     single_create_validation=buff_create_action_root_receipt.validate_current_native_contract()
+    shared_event_validation=buff_event_maps.validate_current_native_contract()
+    selected_root_context=buff_selected_roots.prepare_native_context(
+        audit_path=selected_native_audit_path, root_validation=root_no_positive_validation,
+    )
+
     datapair_validation=buff_datapair_native.validate_current_native_contract()
     global_modifier_validation=buff_global_modifier_receipt.validate_current_native_contract()
     if stacking_compact_validation.get('status') != 'validated':
@@ -647,6 +705,10 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             buff_datapair_native.CONTRACT_PATH,
             buff_datapair_native.ROOT_CONTRACT_PATH,
             buff_global_modifier_receipt.CONTRACT_PATH,
+            Path(buff_attribute_modifier.__file__),
+            buff_attribute_modifier.CONTRACT_PATH,
+            buff_attribute_modifier.PREFIX_PATH,
+            buff_attribute_modifier.ATTRIBUTE_PATH,
         )
         positive_damage_sources = (
             Path(buff_damage_modifier_receipt.__file__),
@@ -744,8 +806,10 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             'buffStackingCompactSources':[vfs._fingerprint(path) for path in stacking_compact_sources],
             'buffTimelineEmptySources':[vfs._fingerprint(path) for path in timeline_empty_sources],
             'buffRootNoPositiveSources':[vfs._fingerprint(path) for path in root_no_positive_sources],
+            'buffSharedEventSources':[vfs._fingerprint(path) for path in buff_event_maps.contract_source_paths()],
             'buffPositiveDamageSources':[vfs._fingerprint(path) for path in positive_damage_sources],
             'buffSingleCreateSources':[vfs._fingerprint(path) for path in single_create_sources],
+            'buffSelectedRootSources':buff_selected_roots.recheck_sources(selected_root_context),
             'buffDataPairSources':[vfs._fingerprint(path) for path in datapair_sources],
             'buffGlobalModifierSources':[vfs._fingerprint(path) for path in global_modifier_sources],
             'buffNamedSchema':vfs._fingerprint(Path(buff_named_schema.__file__)),
@@ -763,6 +827,8 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
     protected.extend(Path(row['path']) for row in before['buffRootNoPositiveSources'])
     protected.extend(Path(row['path']) for row in before['buffPositiveDamageSources'])
     protected.extend(Path(row['path']) for row in before['buffSingleCreateSources'])
+    protected.extend(Path(row['path']) for row in before['buffSharedEventSources'])
+    protected.extend(Path(row['path']) for row in before['buffSelectedRootSources'])
     protected.extend(Path(row['path']) for row in before['buffDataPairSources'])
     protected.extend(Path(row['path']) for row in before['buffGlobalModifierSources'])
     # Many logical files share a chunk; protect every distinct physical input once.
@@ -783,8 +849,10 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         root_no_positive_native_validation=root_no_positive_validation,
         positive_damage_native_validation=positive_damage_validation,
         single_create_native_validation=single_create_validation,
+        shared_event_native_validation=shared_event_validation,
         datapair_native_validation=datapair_validation,
         global_modifier_native_validation=global_modifier_validation,
+        selected_root_context=selected_root_context,
     )
     _,_,end_files,end_provenance=vfs._read_outer_and_ledger(outer_path,ledger_path,expected_input_set_sha256=expected)
     after=snapshot()
@@ -861,11 +929,14 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             'buffStackingCompactNativeValidation':stacking_compact_validation,
             'buffTimelineEmptyNativeValidation':timeline_empty_validation,
             'buffRootNoPositiveNativeValidation':root_no_positive_validation,
+            'buffSelectedRootNativeAudit':selected_root_context['audit'],
+            'buffSelectedRootNativeValidation':selected_root_context['validations'],
             'buffPositiveDamageNativeValidation':positive_damage_validation,
             'buffSingleCreateActionNativeValidation':{
                 'status':single_create_validation['status'],
                 'nativeInputs':single_create_validation['nativeInputs'],
             },
+            'buffSharedEventNativeValidation':buff_event_maps.recorded_native_validation(shared_event_validation),
             'buffDataPairNativeValidation':datapair_validation,
             'buffGlobalModifierNativeValidation':global_modifier_validation,
             'buffFrontiersNativeValidation':frontier_validations},'evidenceBoundary':BOUNDARY,
@@ -883,17 +954,25 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
              'currentNamedMiddle':named_middle_summary,
              'byteBoundaryEvidence':boundary_evidence_summary(rows),
              'namedSchemaReceipts':buff_named_schema.summarize_receipts(rows),
+             'filesWholeSchemaExact':sum(row.get('wholeSchemaExact') is True for row in rows),
+             'selectedSourceRoots':buff_selected_roots.summarize(rows),
              'rootNoPositive':{
                  'candidates':len(root_no_positive_rows),
                  'wholeSchemaExact':len(root_no_positive_exact),
                  'logicalBytes':sum(row['identity']['length'] for row in root_no_positive_exact),
-             'boundary':'Only singleton rows with selected-native 30-member forward receipts are promoted: null/empty recursive lists plus authenticated DataPair and GlobalModifier positive branches; other recursive lists remain partial.',
+             'boundary':'Only singleton rows with selected-native 30-member forward receipts are promoted: null/empty recursive lists plus authenticated DataPair lists, AttributeModifierData arrays and the reviewed GlobalModifier positive branch; other recursive lists remain partial.',
              },
              'rootPositiveDamage':{
                  'frameCandidates':len(positive_damage_frames),
                  'wholeSchemaExact':len(positive_damage_exact),
                  'logicalBytes':sum(row['identity']['length'] for row in positive_damage_exact),
                  'boundary':'Only one positive DamageModifier child with an empty condition and tag five or ordered [5,6] processors, one selected CheckDamageDecorateMask or CheckDamageType action with tag five or ten, one CheckDamageTypeMask, simple CheckTagMatch, simple CheckMainCharacterCondition, selected CheckBuffStackNumAdvanced, simple CheckHp or simple CheckPoiseValue action with tag five, one CheckBuffStackNumAdvanced action with tag nine, one CheckDamageDecorateMask action with scalar tag zero, two or three, one simple CheckTagMatch action with scalar tag zero or three, selected OriginSkillType, OrConditionAction, known-action compound or nested IfElseAction condition routes with tag five, the selected NotNextCheckAction/main-character pair with scalar tag four, or two selected CheckTwoDirectionAngle actions with ordered [5,6] processors can rejoin the 30-member root reader through physical EOF. Unsupported variants remain partial.',
+             },
+             'rootSharedEvent':{
+                 'frameCandidates':sum(row.get('rootSharedEventFrameCandidate') is True for row in rows),
+                 'wholeSchemaExact':sum(row.get('rootSharedEventReceipt') is not None for row in rows),
+                 'logicalBytes':sum(row['identity']['length'] for row in rows if row.get('rootSharedEventReceipt')),
+                 'boundary':'Distinct native-typed AbilityActionMap and BuffActionMap lists compose named SequenceActionData, bounded CreateBuff input lists and EffectAction child receipts. Every accepted source replays all thirty original root fields through source-ID equality and physical EOF; unproved child variants remain partial.',
              },
              'rootSingleCreateAction':{
                  'frameCandidates':len(single_create_frames),
@@ -963,13 +1042,15 @@ def main(argv=None):
     parser.add_argument('--outer-ledger',type=Path,default=vfs.DEFAULT_LEDGER)
     parser.add_argument('--cli',type=Path,default=vfs.DEFAULT_CLI)
     parser.add_argument('--expected-input-set-sha256',required=True)
+    parser.add_argument('--selected-native-audit',type=Path,default=buff_selected_roots.DEFAULT_NATIVE_AUDIT,
+                        help='current IL2CPP context audit for selected root routes; rechecked without rerunning it')
     parser.add_argument('--output-json',type=Path,required=True)
     parser.add_argument('--output-md',type=Path,required=True)
     args=parser.parse_args(argv)
     try:
         report=build_current_census(outer_path=args.outer_summary,ledger_path=args.outer_ledger,
             cli_path=args.cli,expected_input_set_sha256=args.expected_input_set_sha256,
-            outputs=(args.output_json,args.output_md))
+            outputs=(args.output_json,args.output_md),selected_native_audit_path=args.selected_native_audit)
     except vfs.CensusGateError as exc:
         print(json.dumps({'status':'failed','diagnostic':exc.diagnostic}));return 1
     vfs._atomic_write_json(args.output_json,report)

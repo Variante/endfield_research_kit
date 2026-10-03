@@ -41,10 +41,12 @@ def _contract() -> dict[str, Any]:
 
 def validate_current_native_contract(
     *, modifier_native: dict[str, Any] | None = None,
+    gameassembly: Path | None = None, metadata: Path | None = None,
 ) -> dict[str, Any]:
     contract = _contract()
     expected = contract["nativeInputs"]
-    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
+    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"],
+                                         gameassembly=gameassembly, metadata=metadata)
     if gate.status != "validated":
         return {"status": gate.status, "detail": gate.detail}
     unity = gate.gameassembly.parent / "UnityPlayer.dll"
@@ -58,7 +60,7 @@ def validate_current_native_contract(
     if parent.get("nativeInputs") != expected:
         raise ValueError(f"{LABEL}.native:parent-input-drift")
     parent_validation = (modifier_native if modifier_native is not None
-                         else validate_damage_modifier_native())
+                         else validate_damage_modifier_native(gameassembly=gate.gameassembly, metadata=gate.metadata))
     if parent_validation.get("status") != "validated":
         return {"status": parent_validation.get("status", "failed"), "parent": parent_validation}
     image.validate_method_row(contract["sequenceMethods"][0], label=LABEL)

@@ -52,7 +52,7 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None, metadata: Path | None = None) -> dict[str, Any]:
     """Compose only the three already reviewed action/child native validators."""
     contract = _contract()
     source = contract["selectedSource"]
@@ -65,9 +65,10 @@ def validate_current_native_contract() -> dict[str, Any]:
         != source["parentAction"]["start"]
     ):
         raise ValueError(f"{LABEL}.contract:prior-child-drift")
-    parent_native = if_else.validate_current_native_contract()
-    compare_native = compare.validate_current_native_contract()
-    modify_native = modify.validate_current_native_contract()
+    paths = {key: value for key, value in (("gameassembly", gameassembly), ("metadata", metadata)) if value is not None}
+    parent_native = if_else.validate_current_native_contract(**paths)
+    compare_native = compare.validate_current_native_contract(**paths)
+    modify_native = modify.validate_current_native_contract(**paths)
     expected = contract["nativeInputs"]
     children = source["nestedActions"]
     if (

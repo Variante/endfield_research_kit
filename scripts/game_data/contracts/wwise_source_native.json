@@ -1,0 +1,1188 @@
+{
+  "schema": "endfield.wwise-source-native.v4",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "captureFiles": {
+    "gameAssembly": {
+      "relativePath": "GameAssembly.dll",
+      "bytes": 256677352,
+      "sha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89"
+    },
+    "metadata": {
+      "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "bytes": 57021288,
+      "sha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+    },
+    "akSoundEngine": {
+      "relativePath": "Endfield_Data/Plugins/x86_64/AkSoundEngine.dll",
+      "bytes": 3586536,
+      "sha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6"
+    },
+    "executable": {
+      "relativePath": "Endfield.exe",
+      "bytes": 823352,
+      "sha256": "b409340ebdf73b07ab945e4200445d26e168a9be060c591d783ba8c9fbcebd17"
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected .pdata body extents, full body hashes, instruction bytes, managed metadata identity/staticness/full runtime parameter and return signatures/registered pointer and 64-byte method windows. Full regular/external parameter counts, ordered names and registered runtime types are proved; selected enum value__ instance fields establish signed 32-bit callbackType and unsigned 32-bit codec storage.",
+    "direct": "SetSource memory/info overloads copy 16 bytes through the aggregate pointer into source+0, OR source+12 with 0x80, store the unsigned scalar at source+24, and memory overload stores the pointer at source+16. Scalar-only overload writes the scalar to source+0 and resets fields. LockDataPtr reads source+12 bit 8: clear passes source+0 to registry lookup; set forwards source+16 pointer and source+8 count into the output reference. Helpers write output pointers at +0/+8/+16 and byte count at +24. The registry implementation has early returns that can retain the incoming output reference; a post-call observation is not by itself a successful lookup.",
+    "structuralOnly": "Info/source words retain anonymous names except directly observed lookup, flags, pointer, and output-count roles. Historical SDK labels are provenance, not a current SDK type-layout proof. The info capture span is the 16-byte copied input region, not a proof of an independently recovered complete C++ type layout.",
+    "conditional": "A complete same-thread SetSource call/result followed by LockDataPtr on the same source pointer, with no intervening captured SetSource on it, can witness local source-to-output-pointer state. Reused pointer addresses, asynchronous managed-to-native work, and uncaptured resets require additional lifetime evidence.",
+    "unresolved": "External key/cookie to source lookup word, backing file identity, codec-family selection, decoded content, execution success, and audibility are not proved by this profile."
+  },
+  "abiSource": "https://learn.microsoft.com/en-us/cpp/build/x64-calling-convention?view=msvc-170",
+  "structures": {
+    "source": {
+      "captureBytes": 28,
+      "fields": [
+        {
+          "name": "sourceLookupWord",
+          "offset": 0,
+          "kind": "u32"
+        },
+        {
+          "name": "sourceStoredWord4",
+          "offset": 4,
+          "kind": "u32"
+        },
+        {
+          "name": "sourceStoredWord8",
+          "offset": 8,
+          "kind": "u32"
+        },
+        {
+          "name": "sourceFlagsWord",
+          "offset": 12,
+          "kind": "u32"
+        },
+        {
+          "name": "sourceDataPointer",
+          "offset": 16,
+          "kind": "pointer"
+        },
+        {
+          "name": "sourceArgumentWord24",
+          "offset": 24,
+          "kind": "u32"
+        }
+      ]
+    },
+    "info": {
+      "captureBytes": 16,
+      "fields": [
+        {
+          "name": "infoWord0",
+          "offset": 0,
+          "kind": "u32"
+        },
+        {
+          "name": "infoWord4",
+          "offset": 4,
+          "kind": "u32"
+        },
+        {
+          "name": "infoWord8",
+          "offset": 8,
+          "kind": "u32"
+        },
+        {
+          "name": "infoWord12",
+          "offset": 12,
+          "kind": "u32"
+        }
+      ]
+    },
+    "mediaRef": {
+      "captureBytes": 28,
+      "fields": [
+        {
+          "name": "mediaRefEntryPointer",
+          "offset": 0,
+          "kind": "pointer"
+        },
+        {
+          "name": "mediaRefAuxPointer",
+          "offset": 8,
+          "kind": "pointer"
+        },
+        {
+          "name": "mediaRefDataPointer",
+          "offset": 16,
+          "kind": "pointer"
+        },
+        {
+          "name": "mediaRefByteCount",
+          "offset": 24,
+          "kind": "u32"
+        }
+      ]
+    }
+  },
+  "methods": [
+    {
+      "key": "sourceLockDataPtr",
+      "rva": "0x1043f0",
+      "bodyLength": 90,
+      "bodySha256": "556cb34caca5e0229e2566389f235a71f6051e9da319789ceb5039d7ea268f52",
+      "priorSdkSymbol": "?LockDataPtr@CAkSource@@QEAAXAEAUAkMediaRef@@@Z",
+      "symbolBoundary": "Historical SDK COFF match labels this method; no SDK files are currently required or re-matched. Capture ABI and field flow are direct selected-body claims.",
+      "args": {
+        "sourceThisPointer": {
+          "index": 0,
+          "kind": "pointer"
+        },
+        "mediaRefOutputPointer": {
+          "index": 1,
+          "kind": "pointer"
+        }
+      },
+      "returnKind": "void",
+      "observe": [
+        {
+          "structure": "source",
+          "argIndex": 0
+        },
+        {
+          "structure": "mediaRef",
+          "argIndex": 1
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "bodyOffset": 4,
+          "instructionHex": "448b410c",
+          "instruction": "mov r8d, dword ptr [rcx + 0xc]"
+        },
+        {
+          "bodyOffset": 8,
+          "instructionHex": "488bc2",
+          "instruction": "mov rax, rdx"
+        },
+        {
+          "bodyOffset": 11,
+          "instructionHex": "410fbae008",
+          "instruction": "bt r8d, 8"
+        },
+        {
+          "bodyOffset": 16,
+          "instructionHex": "7228",
+          "instruction": "jb 0x10442a"
+        },
+        {
+          "bodyOffset": 18,
+          "instructionHex": "41c1e802",
+          "instruction": "shr r8d, 2"
+        },
+        {
+          "bodyOffset": 22,
+          "instructionHex": "4c8bca",
+          "instruction": "mov r9, rdx"
+        },
+        {
+          "bodyOffset": 25,
+          "instructionHex": "8b11",
+          "instruction": "mov edx, dword ptr [rcx]"
+        },
+        {
+          "bodyOffset": 27,
+          "instructionHex": "4183e01f",
+          "instruction": "and r8d, 0x1f"
+        },
+        {
+          "bodyOffset": 31,
+          "instructionHex": "488b0d0a062400",
+          "instruction": "mov rcx, qword ptr [rip + 0x24060a]"
+        },
+        {
+          "bodyOffset": 48,
+          "instructionHex": "e80b0cffff",
+          "instruction": "call 0xf5030"
+        },
+        {
+          "bodyOffset": 58,
+          "instructionHex": "448b4908",
+          "instruction": "mov r9d, dword ptr [rcx + 8]"
+        },
+        {
+          "bodyOffset": 62,
+          "instructionHex": "33d2",
+          "instruction": "xor edx, edx"
+        },
+        {
+          "bodyOffset": 64,
+          "instructionHex": "4c8b4110",
+          "instruction": "mov r8, qword ptr [rcx + 0x10]"
+        },
+        {
+          "bodyOffset": 68,
+          "instructionHex": "488bc8",
+          "instruction": "mov rcx, rax"
+        },
+        {
+          "bodyOffset": 71,
+          "instructionHex": "48c744242000000000",
+          "instruction": "mov qword ptr [rsp + 0x20], 0"
+        },
+        {
+          "bodyOffset": 80,
+          "instructionHex": "e89b52ffff",
+          "instruction": "call 0xf96e0"
+        }
+      ]
+    },
+    {
+      "key": "sourceSetScalar",
+      "rva": "0x104480",
+      "bodyLength": 106,
+      "bodySha256": "0f4c2507fd84ab6fd971ec3a7aac1c02f615c58ab743ed8a04cbc9ee188877af",
+      "priorSdkSymbol": "?SetSource@CAkSource@@QEAAXI@Z",
+      "symbolBoundary": "Historical SDK COFF match labels this method; no SDK files are currently required or re-matched. Capture ABI and field flow are direct selected-body claims.",
+      "args": {
+        "sourceThisPointer": {
+          "index": 0,
+          "kind": "pointer"
+        },
+        "sourceArgumentU32": {
+          "index": 1,
+          "kind": "u32"
+        }
+      },
+      "returnKind": "void",
+      "observe": [
+        {
+          "structure": "source",
+          "argIndex": 0
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "bodyOffset": 15,
+          "instructionHex": "f7410c00040000",
+          "instruction": "test dword ptr [rcx + 0xc], 0x400"
+        },
+        {
+          "bodyOffset": 22,
+          "instructionHex": "8bf2",
+          "instruction": "mov esi, edx"
+        },
+        {
+          "bodyOffset": 24,
+          "instructionHex": "488bd9",
+          "instruction": "mov rbx, rcx"
+        },
+        {
+          "bodyOffset": 27,
+          "instructionHex": "7413",
+          "instruction": "je 0x1044b0"
+        },
+        {
+          "bodyOffset": 29,
+          "instructionHex": "488b5110",
+          "instruction": "mov rdx, qword ptr [rcx + 0x10]"
+        },
+        {
+          "bodyOffset": 33,
+          "instructionHex": "33c9",
+          "instruction": "xor ecx, ecx"
+        },
+        {
+          "bodyOffset": 35,
+          "instructionHex": "e808c9faff",
+          "instruction": "call 0xb0db0"
+        },
+        {
+          "bodyOffset": 40,
+          "instructionHex": "48c7431000000000",
+          "instruction": "mov qword ptr [rbx + 0x10], 0"
+        },
+        {
+          "bodyOffset": 48,
+          "instructionHex": "81630c08f0ffff",
+          "instruction": "and dword ptr [rbx + 0xc], 0xfffff008"
+        },
+        {
+          "bodyOffset": 55,
+          "instructionHex": "834b0c08",
+          "instruction": "or dword ptr [rbx + 0xc], 8"
+        },
+        {
+          "bodyOffset": 59,
+          "instructionHex": "8933",
+          "instruction": "mov dword ptr [rbx], esi"
+        },
+        {
+          "bodyOffset": 66,
+          "instructionHex": "48c7431000000000",
+          "instruction": "mov qword ptr [rbx + 0x10], 0"
+        },
+        {
+          "bodyOffset": 74,
+          "instructionHex": "c74318ffffffff",
+          "instruction": "mov dword ptr [rbx + 0x18], 0xffffffff"
+        },
+        {
+          "bodyOffset": 81,
+          "instructionHex": "c74304ffffffff",
+          "instruction": "mov dword ptr [rbx + 4], 0xffffffff"
+        },
+        {
+          "bodyOffset": 88,
+          "instructionHex": "c7430800000000",
+          "instruction": "mov dword ptr [rbx + 8], 0"
+        }
+      ]
+    },
+    {
+      "key": "sourceSetMemory",
+      "rva": "0x104630",
+      "bodyLength": 122,
+      "bodySha256": "9b4abe624574b13b6af6fc4be6ac18b24a3db616113da589b8c63c9e1a3c37c4",
+      "priorSdkSymbol": "?SetSource@CAkSource@@QEAAXIPEAXUAkMediaInformation@@@Z",
+      "symbolBoundary": "Historical SDK COFF match labels this method; no SDK files are currently required or re-matched. Capture ABI and field flow are direct selected-body claims.",
+      "args": {
+        "sourceThisPointer": {
+          "index": 0,
+          "kind": "pointer"
+        },
+        "sourceArgumentU32": {
+          "index": 1,
+          "kind": "u32"
+        },
+        "sourceInputDataPointer": {
+          "index": 2,
+          "kind": "pointer"
+        },
+        "sourceInfoPointer": {
+          "index": 3,
+          "kind": "pointer"
+        }
+      },
+      "returnKind": "void",
+      "observe": [
+        {
+          "structure": "source",
+          "argIndex": 0
+        },
+        {
+          "structure": "info",
+          "argIndex": 3
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "bodyOffset": 26,
+          "instructionHex": "f7410c00040000",
+          "instruction": "test dword ptr [rcx + 0xc], 0x400"
+        },
+        {
+          "bodyOffset": 33,
+          "instructionHex": "498bf1",
+          "instruction": "mov rsi, r9"
+        },
+        {
+          "bodyOffset": 36,
+          "instructionHex": "498be8",
+          "instruction": "mov rbp, r8"
+        },
+        {
+          "bodyOffset": 39,
+          "instructionHex": "448bf2",
+          "instruction": "mov r14d, edx"
+        },
+        {
+          "bodyOffset": 42,
+          "instructionHex": "488bf9",
+          "instruction": "mov rdi, rcx"
+        },
+        {
+          "bodyOffset": 45,
+          "instructionHex": "7413",
+          "instruction": "je 0x104672"
+        },
+        {
+          "bodyOffset": 47,
+          "instructionHex": "488b5110",
+          "instruction": "mov rdx, qword ptr [rcx + 0x10]"
+        },
+        {
+          "bodyOffset": 51,
+          "instructionHex": "33c9",
+          "instruction": "xor ecx, ecx"
+        },
+        {
+          "bodyOffset": 53,
+          "instructionHex": "e846c7faff",
+          "instruction": "call 0xb0db0"
+        },
+        {
+          "bodyOffset": 58,
+          "instructionHex": "48c7471000000000",
+          "instruction": "mov qword ptr [rdi + 0x10], 0"
+        },
+        {
+          "bodyOffset": 66,
+          "instructionHex": "0f1006",
+          "instruction": "movups xmm0, xmmword ptr [rsi]"
+        },
+        {
+          "bodyOffset": 79,
+          "instructionHex": "0f1107",
+          "instruction": "movups xmmword ptr [rdi], xmm0"
+        },
+        {
+          "bodyOffset": 82,
+          "instructionHex": "814f0c80000000",
+          "instruction": "or dword ptr [rdi + 0xc], 0x80"
+        },
+        {
+          "bodyOffset": 89,
+          "instructionHex": "48c7471000000000",
+          "instruction": "mov qword ptr [rdi + 0x10], 0"
+        },
+        {
+          "bodyOffset": 97,
+          "instructionHex": "48896f10",
+          "instruction": "mov qword ptr [rdi + 0x10], rbp"
+        },
+        {
+          "bodyOffset": 106,
+          "instructionHex": "44897718",
+          "instruction": "mov dword ptr [rdi + 0x18], r14d"
+        }
+      ]
+    },
+    {
+      "key": "sourceSetInfo",
+      "rva": "0x1046b0",
+      "bodyLength": 101,
+      "bodySha256": "072f1eb45f52494d08cc0fed1adb703198e1ce8355a9318fe20c9d681c65f9ff",
+      "priorSdkSymbol": "?SetSource@CAkSource@@QEAAXIUAkMediaInformation@@@Z",
+      "symbolBoundary": "Historical SDK COFF match labels this method; no SDK files are currently required or re-matched. Capture ABI and field flow are direct selected-body claims.",
+      "args": {
+        "sourceThisPointer": {
+          "index": 0,
+          "kind": "pointer"
+        },
+        "sourceArgumentU32": {
+          "index": 1,
+          "kind": "u32"
+        },
+        "sourceInfoPointer": {
+          "index": 2,
+          "kind": "pointer"
+        }
+      },
+      "returnKind": "void",
+      "observe": [
+        {
+          "structure": "source",
+          "argIndex": 0
+        },
+        {
+          "structure": "info",
+          "argIndex": 2
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "bodyOffset": 20,
+          "instructionHex": "f7410c00040000",
+          "instruction": "test dword ptr [rcx + 0xc], 0x400"
+        },
+        {
+          "bodyOffset": 27,
+          "instructionHex": "498bf0",
+          "instruction": "mov rsi, r8"
+        },
+        {
+          "bodyOffset": 30,
+          "instructionHex": "8bea",
+          "instruction": "mov ebp, edx"
+        },
+        {
+          "bodyOffset": 32,
+          "instructionHex": "488bf9",
+          "instruction": "mov rdi, rcx"
+        },
+        {
+          "bodyOffset": 35,
+          "instructionHex": "7413",
+          "instruction": "je 0x1046e8"
+        },
+        {
+          "bodyOffset": 37,
+          "instructionHex": "488b5110",
+          "instruction": "mov rdx, qword ptr [rcx + 0x10]"
+        },
+        {
+          "bodyOffset": 41,
+          "instructionHex": "33c9",
+          "instruction": "xor ecx, ecx"
+        },
+        {
+          "bodyOffset": 43,
+          "instructionHex": "e8d0c6faff",
+          "instruction": "call 0xb0db0"
+        },
+        {
+          "bodyOffset": 48,
+          "instructionHex": "48c7471000000000",
+          "instruction": "mov qword ptr [rdi + 0x10], 0"
+        },
+        {
+          "bodyOffset": 56,
+          "instructionHex": "0f1006",
+          "instruction": "movups xmm0, xmmword ptr [rsi]"
+        },
+        {
+          "bodyOffset": 69,
+          "instructionHex": "0f1107",
+          "instruction": "movups xmmword ptr [rdi], xmm0"
+        },
+        {
+          "bodyOffset": 72,
+          "instructionHex": "814f0c80000000",
+          "instruction": "or dword ptr [rdi + 0xc], 0x80"
+        },
+        {
+          "bodyOffset": 79,
+          "instructionHex": "896f18",
+          "instruction": "mov dword ptr [rdi + 0x18], ebp"
+        },
+        {
+          "bodyOffset": 87,
+          "instructionHex": "48c7471000000000",
+          "instruction": "mov qword ptr [rdi + 0x10], 0"
+        }
+      ]
+    }
+  ],
+  "supportWindows": [
+    {
+      "rva": "0xf5030",
+      "bodyLength": 42,
+      "bodySha256": "10a4b1df8aa4d9ddc6da1f085ec29ece5193c88795a76a2e21b2b810812eb19a",
+      "instructionWitnesses": [
+        {
+          "bodyOffset": 0,
+          "instructionHex": "4183f802",
+          "instruction": "cmp r8d, 2"
+        },
+        {
+          "bodyOffset": 4,
+          "instructionHex": "0f8438020000",
+          "instruction": "je 0xf5272"
+        },
+        {
+          "bodyOffset": 25,
+          "instructionHex": "498bf1",
+          "instruction": "mov rsi, r9"
+        },
+        {
+          "bodyOffset": 28,
+          "instructionHex": "8bfa",
+          "instruction": "mov edi, edx"
+        },
+        {
+          "bodyOffset": 33,
+          "instructionHex": "83faff",
+          "instruction": "cmp edx, -1"
+        },
+        {
+          "bodyOffset": 36,
+          "instructionHex": "0f8409020000",
+          "instruction": "je 0xf5263"
+        }
+      ]
+    },
+    {
+      "rva": "0xf505a",
+      "bodyLength": 521,
+      "bodySha256": "4cb98d8207dafe40776716598d87e9076e2735f1b6f6a8070b98402415131a2a",
+      "instructionWitnesses": [
+        {
+          "bodyOffset": 42,
+          "instructionHex": "8bc7",
+          "instruction": "mov eax, edi"
+        },
+        {
+          "bodyOffset": 62,
+          "instructionHex": "397a08",
+          "instruction": "cmp dword ptr [rdx + 8], edi"
+        },
+        {
+          "bodyOffset": 156,
+          "instructionHex": "488bd7",
+          "instruction": "mov rdx, rdi"
+        },
+        {
+          "bodyOffset": 159,
+          "instructionHex": "488bce",
+          "instruction": "mov rcx, rsi"
+        },
+        {
+          "bodyOffset": 162,
+          "instructionHex": "e87f460000",
+          "instruction": "call 0xf9780"
+        },
+        {
+          "bodyOffset": 224,
+          "instructionHex": "48893e",
+          "instruction": "mov qword ptr [rsi], rdi"
+        },
+        {
+          "bodyOffset": 239,
+          "instructionHex": "4c897608",
+          "instruction": "mov qword ptr [rsi + 8], r14"
+        },
+        {
+          "bodyOffset": 243,
+          "instructionHex": "4c897610",
+          "instruction": "mov qword ptr [rsi + 0x10], r14"
+        },
+        {
+          "bodyOffset": 247,
+          "instructionHex": "44897618",
+          "instruction": "mov dword ptr [rsi + 0x18], r14d"
+        },
+        {
+          "bodyOffset": 475,
+          "instructionHex": "4c8936",
+          "instruction": "mov qword ptr [rsi], r14"
+        },
+        {
+          "bodyOffset": 490,
+          "instructionHex": "4c897608",
+          "instruction": "mov qword ptr [rsi + 8], r14"
+        },
+        {
+          "bodyOffset": 494,
+          "instructionHex": "4c897610",
+          "instruction": "mov qword ptr [rsi + 0x10], r14"
+        },
+        {
+          "bodyOffset": 498,
+          "instructionHex": "44897618",
+          "instruction": "mov dword ptr [rsi + 0x18], r14d"
+        }
+      ]
+    },
+    {
+      "rva": "0xf5263",
+      "bodyLength": 16,
+      "bodySha256": "b41bfa88b733096e81fdb1c064da55832505eeac30613eb436fb4b869e086f59",
+      "instructionWitnesses": [
+        {
+          "bodyOffset": 15,
+          "instructionHex": "c3",
+          "instruction": "ret "
+        }
+      ]
+    },
+    {
+      "rva": "0xf96e0",
+      "bodyLength": 149,
+      "bodySha256": "ec0eddecbea02d922fcbfbb223874457d4c8c96c852fd91883694f60a3808d73",
+      "instructionWitnesses": [
+        {
+          "bodyOffset": 20,
+          "instructionHex": "418bf1",
+          "instruction": "mov esi, r9d"
+        },
+        {
+          "bodyOffset": 23,
+          "instructionHex": "498be8",
+          "instruction": "mov rbp, r8"
+        },
+        {
+          "bodyOffset": 26,
+          "instructionHex": "488bfa",
+          "instruction": "mov rdi, rdx"
+        },
+        {
+          "bodyOffset": 29,
+          "instructionHex": "488bd9",
+          "instruction": "mov rbx, rcx"
+        },
+        {
+          "bodyOffset": 83,
+          "instructionHex": "48893b",
+          "instruction": "mov qword ptr [rbx], rdi"
+        },
+        {
+          "bodyOffset": 86,
+          "instructionHex": "488b7c2450",
+          "instruction": "mov rdi, qword ptr [rsp + 0x50]"
+        },
+        {
+          "bodyOffset": 117,
+          "instructionHex": "48897b08",
+          "instruction": "mov qword ptr [rbx + 8], rdi"
+        },
+        {
+          "bodyOffset": 121,
+          "instructionHex": "897318",
+          "instruction": "mov dword ptr [rbx + 0x18], esi"
+        },
+        {
+          "bodyOffset": 129,
+          "instructionHex": "48896b10",
+          "instruction": "mov qword ptr [rbx + 0x10], rbp"
+        }
+      ]
+    },
+    {
+      "rva": "0xf9780",
+      "bodyLength": 172,
+      "bodySha256": "d68e869debc9e0c9f5921bc39a13f01e8e6a25e3afad1561d301fa993900cedd",
+      "instructionWitnesses": [
+        {
+          "bodyOffset": 24,
+          "instructionHex": "4180781602",
+          "instruction": "cmp byte ptr [r8 + 0x16], 2"
+        },
+        {
+          "bodyOffset": 29,
+          "instructionHex": "498bd8",
+          "instruction": "mov rbx, r8"
+        },
+        {
+          "bodyOffset": 32,
+          "instructionHex": "488bea",
+          "instruction": "mov rbp, rdx"
+        },
+        {
+          "bodyOffset": 35,
+          "instructionHex": "488bf1",
+          "instruction": "mov rsi, rcx"
+        },
+        {
+          "bodyOffset": 40,
+          "instructionHex": "498b7818",
+          "instruction": "mov rdi, qword ptr [r8 + 0x18]"
+        },
+        {
+          "bodyOffset": 46,
+          "instructionHex": "33ff",
+          "instruction": "xor edi, edi"
+        },
+        {
+          "bodyOffset": 48,
+          "instructionHex": "458b7010",
+          "instruction": "mov r14d, dword ptr [r8 + 0x10]"
+        },
+        {
+          "bodyOffset": 52,
+          "instructionHex": "4d8b7808",
+          "instruction": "mov r15, qword ptr [r8 + 8]"
+        },
+        {
+          "bodyOffset": 102,
+          "instructionHex": "48892e",
+          "instruction": "mov qword ptr [rsi], rbp"
+        },
+        {
+          "bodyOffset": 131,
+          "instructionHex": "48897e08",
+          "instruction": "mov qword ptr [rsi + 8], rdi"
+        },
+        {
+          "bodyOffset": 140,
+          "instructionHex": "4c897e10",
+          "instruction": "mov qword ptr [rsi + 0x10], r15"
+        },
+        {
+          "bodyOffset": 144,
+          "instructionHex": "44897618",
+          "instruction": "mov dword ptr [rsi + 0x18], r14d"
+        }
+      ]
+    }
+  ],
+  "managedMethods": [
+    {
+      "methodIndex": 437389,
+      "typeName": "Beyond.Audio.AudioAdapter",
+      "methodName": "_PostEvent",
+      "name": "AudioAdapter._PostEvent",
+      "rva": "0x337f270",
+      "static": true,
+      "returnType": "uint",
+      "bodyLength": 64,
+      "bodySha256": "8ef57b0827f408bf0c3dabbc47f851256364ddd6e46dce3110ca37a28ffc3fe0",
+      "args": {
+        "eventId": {
+          "index": 0,
+          "kind": "u32"
+        },
+        "audioObjectId": {
+          "index": 1,
+          "kind": "u64"
+        }
+      },
+      "returnKind": "u32",
+      "sourceKind": "adapterPostEvent",
+      "parameters": [
+        {
+          "name": "eventId",
+          "type": "uint"
+        },
+        {
+          "name": "audioObjectId",
+          "type": "ulong"
+        },
+        {
+          "name": "callbackType",
+          "type": "Beyond.Audio.AudioCallbackType"
+        },
+        {
+          "name": "originCallback",
+          "type": "Beyond.Audio.AudioEventCallback"
+        },
+        {
+          "name": "originCookie",
+          "type": "object"
+        }
+      ]
+    },
+    {
+      "methodIndex": 437390,
+      "typeName": "Beyond.Audio.AudioAdapter",
+      "methodName": "_PostEventWithExternalSource",
+      "name": "AudioAdapter._PostEventWithExternalSource",
+      "rva": "0x3fa4a80",
+      "static": true,
+      "returnType": "uint",
+      "bodyLength": 64,
+      "bodySha256": "20f6a1d0ef0a1fdd6367436c1a70df568fb1868d2edf267b25e1aa30f725d357",
+      "args": {
+        "eventId": {
+          "index": 0,
+          "kind": "u32"
+        },
+        "audioObjectId": {
+          "index": 1,
+          "kind": "u64"
+        },
+        "externalSourceKey": {
+          "index": 2,
+          "kind": "string"
+        },
+        "externalCookie": {
+          "index": 3,
+          "kind": "u32"
+        }
+      },
+      "returnKind": "u32",
+      "sourceKind": "adapterExternalSourcePostEvent",
+      "parameters": [
+        {
+          "name": "eventId",
+          "type": "uint"
+        },
+        {
+          "name": "audioObjectId",
+          "type": "ulong"
+        },
+        {
+          "name": "externalSourceKey",
+          "type": "string"
+        },
+        {
+          "name": "externalCookie",
+          "type": "uint"
+        },
+        {
+          "name": "callbackType",
+          "type": "Beyond.Audio.AudioCallbackType"
+        },
+        {
+          "name": "callback",
+          "type": "Beyond.Audio.AudioEventCallback"
+        },
+        {
+          "name": "cookie",
+          "type": "object"
+        },
+        {
+          "name": "codec",
+          "type": "Beyond.Audio.AudioCodec"
+        }
+      ]
+    }
+  ],
+  "witnessBoundary": "Instruction witnesses retain only ABI/dataflow/branch/output-write facts. Complete exception-directory windows are hash-checked; full disassembly inventories remain disposable.",
+  "consumers": [
+    {
+      "key": "anonymousOwnerSourceLock",
+      "entryRva": "0xd34b0",
+      "calleeKey": "sourceLockDataPtr",
+      "callRva": "0xd35c2",
+      "returnRva": "0xd35c7",
+      "ownerArgument": {
+        "name": "anonymousCallerOwnerPointer",
+        "index": 0,
+        "kind": "pointer"
+      },
+      "sourcePointerField": {
+        "name": "sourceThisPointer",
+        "offset": 624
+      },
+      "outputReference": {
+        "name": "mediaRefOutputPointer",
+        "offset": 784,
+        "structure": "mediaRef"
+      },
+      "windows": [
+        {
+          "rva": "0xd34b0",
+          "bodyLength": 23,
+          "bodySha256": "e67f505651df2c6f4c915d574506a9cecda39a1c67da93d124432cc803d3afc1",
+          "unwindRva": "0x2f226c",
+          "unwindInfoHex": "0106020006520270",
+          "instructionWitnesses": [
+            {
+              "role": "entryOwnerRegister",
+              "bodyOffset": 6,
+              "instructionHex": "488bf9",
+              "readOrder": "RCX entry owner pointer retained in nonvolatile RDI."
+            }
+          ]
+        },
+        {
+          "rva": "0xd34c7",
+          "bodyLength": 38,
+          "bodySha256": "994dcc3b928663657fcebc1ccdbe2ae7844e84463e0fcb264d08f053e16c1682",
+          "unwindRva": "0x300e34",
+          "unwindInfoHex": "210d04000d34080005640a00b0340d00c7340d006c222f00",
+          "instructionWitnesses": []
+        },
+        {
+          "rva": "0xd34ed",
+          "bodyLength": 115,
+          "bodySha256": "8e430af73e08177be0f516ad6d115d7a3a6f99dc9882430224a591d8c97873d8",
+          "unwindRva": "0x300e4c",
+          "unwindInfoHex": "2105020005540900c7340d00ed340d00340e3000",
+          "instructionWitnesses": []
+        },
+        {
+          "rva": "0xd3560",
+          "bodyLength": 121,
+          "bodySha256": "4623074249905c481399d8a267a249fc635f4a36afd23386cb2fece36519cf16",
+          "unwindRva": "0x300e60",
+          "unwindInfoHex": "21000000c7340d00ed340d00340e3000",
+          "instructionWitnesses": [
+            {
+              "role": "loadSourceArgument",
+              "bodyOffset": 84,
+              "instructionHex": "488b8f70020000",
+              "readOrder": "RCX receives qword from anonymous owner+0x270."
+            },
+            {
+              "role": "addressOutputArgument",
+              "bodyOffset": 91,
+              "instructionHex": "488d9710030000",
+              "readOrder": "RDX receives address of anonymous owner+0x310."
+            },
+            {
+              "role": "callSourceLock",
+              "bodyOffset": 98,
+              "instructionHex": "e8290e0300",
+              "readOrder": "Direct call to reviewed sourceLockDataPtr; next instruction is the observed returnsite."
+            }
+          ]
+        },
+        {
+          "rva": "0xd35d9",
+          "bodyLength": 15,
+          "bodySha256": "8898ac2ab2751f79bcf88574ab2e62cbe5df5bfc412ffbfa0b81ad1fa5ab6452",
+          "unwindRva": "0x300e70",
+          "unwindInfoHex": "2100040000640a0000340800b0340d00c7340d006c222f00",
+          "instructionWitnesses": []
+        },
+        {
+          "rva": "0xd35e8",
+          "bodyLength": 6,
+          "bodySha256": "0c61f32494998963f591fb6f362ab44169f72cfa0df257acdaab71a6e278471a",
+          "unwindRva": "0x300e88",
+          "unwindInfoHex": "21000000b0340d00c7340d006c222f00",
+          "instructionWitnesses": []
+        }
+      ],
+      "evidenceBoundary": {
+        "exact": "All six .pdata segments resolve through current x64 UNWIND_INFO chain records to the root function entry; each complete segment and unwind record is authenticated against selected AkSoundEngine bytes. The observed returnsite is the next instruction after the reviewed direct LockDataPtr call.",
+        "direct": "Entry RCX is retained in nonvolatile RDI throughout this authenticated group. The call reads the source pointer from anonymous owner+0x270 into RCX and passes the address of embedded owner+0x310 as the output reference in RDX.",
+        "structuralOnly": "Anonymous caller owner and its two observed member roles only; no SDK class name, complete owner type layout, sourceArgumentWord24 meaning or codec selection is established.",
+        "conditional": "A strictly validated LockDataPtr pair whose return address resolves to this exact selected-module returnsite can project anonymous owner=mediaRefOutputPointer-0x310, provided the captured non-null pointer supports bounded subtraction. This is a callsite-conditional owner/source/output relation, not independent sampled owner memory.",
+        "unresolved": "Managed voice path to persistent owner/source, allocation/reset/copy lifetime, backing file identity, sourceArgumentWord24 codec/plugin role, decoded content and audibility remain open."
+      }
+    }
+  ],
+  "ownerTransports": [
+    {
+      "key": "anonymousOwnerSourceTransport",
+      "consumerKey": "anonymousOwnerSourceLock",
+      "consumerOwnerOffset": 24,
+      "primarySourcePointerOffset": 648,
+      "addressPointWindow": {
+        "rva": "0x293a30",
+        "bytes": 96,
+        "sha256": "1096a53584b2fe43922a1bc0c3ed5d9dfabcd96850e544789d5477d478f5d857",
+        "consumerEntrySlot": 80
+      },
+      "consumerAdjustmentWitness": {
+        "rva": "0xd359f",
+        "instructionHex": "4c8d47e8",
+        "readOrder": "The reviewed consumer explicitly derives primary owner as its retained entry owner minus0x18 in R8 before its direct helper call."
+      },
+      "constructor": {
+        "key": "anonymousPrimaryOwnerConstructor",
+        "entryRva": "0xd1f90",
+        "windows": [
+          {
+            "rva": "0xd1f90",
+            "bodyLength": 1120,
+            "bodySha256": "305077b3704a4f0e3fbbdb7ef04b3e672dee2a1543ceb51d362270659047d55b",
+            "unwindRva": "0x300e1c",
+            "unwindInfoHex": "011a0a001a7413001a6412001a5411001a3410001ad216e0",
+            "instructionWitnesses": [
+              {
+                "role": "retainConstructorSource",
+                "bodyOffset": 26,
+                "instructionHex": "498be9",
+                "readOrder": "Retain entry R9 source pointer in nonvolatile RBP."
+              },
+              {
+                "role": "retainConstructorOwner",
+                "bodyOffset": 49,
+                "instructionHex": "488bf9",
+                "readOrder": "Retain entry RCX primary owner pointer in nonvolatile RDI."
+              },
+              {
+                "role": "addressConsumerOwner",
+                "bodyOffset": 63,
+                "instructionHex": "4883c118",
+                "readOrder": "Address embedded consumer owner at primary owner+0x18 before its base initialization call."
+              },
+              {
+                "role": "loadConsumerAddressPoint",
+                "bodyOffset": 120,
+                "instructionHex": "488d05211a1c00",
+                "readOrder": "RIP-relative address of the selected consumer address-point window."
+              },
+              {
+                "role": "storeConsumerAddressPoint",
+                "bodyOffset": 127,
+                "instructionHex": "48894718",
+                "readOrder": "Store address point at primary owner+0x18."
+              },
+              {
+                "role": "storeConstructorSource",
+                "bodyOffset": 310,
+                "instructionHex": "4889af88020000",
+                "readOrder": "Store retained source input at primary owner+0x288."
+              },
+              {
+                "role": "returnPrimaryOwner",
+                "bodyOffset": 1095,
+                "instructionHex": "488bc7",
+                "readOrder": "Return retained primary owner pointer in RAX."
+              }
+            ]
+          }
+        ],
+        "ownerArgument": {
+          "name": "anonymousPrimaryOwnerPointer",
+          "index": 0,
+          "kind": "pointer"
+        },
+        "sourceArgument": {
+          "name": "sourceThisPointer",
+          "index": 3,
+          "kind": "pointer"
+        }
+      },
+      "factory": {
+        "key": "anonymousPrimaryOwnerFactory",
+        "entryRva": "0xfc9e0",
+        "windows": [
+          {
+            "rva": "0xfc9e0",
+            "bodyLength": 108,
+            "bodySha256": "ee61237baaa795a1d70aa996fbbb02346bf7dc4ccff24375a8085a4ec633ba12",
+            "unwindRva": "0x2f5150",
+            "unwindInfoHex": "010f06000f6409000f3408000f520b70",
+            "instructionWitnesses": [
+              {
+                "role": "retainFactorySource",
+                "bodyOffset": 28,
+                "instructionHex": "498bf8",
+                "readOrder": "Retain entry R8 source pointer in nonvolatile RDI."
+              },
+              {
+                "role": "testStorageResult",
+                "bodyOffset": 36,
+                "instructionHex": "4885c0",
+                "readOrder": "Test anonymous storage-provider RAX result before the constructor branch."
+              },
+              {
+                "role": "forwardFactorySource",
+                "bodyOffset": 46,
+                "instructionHex": "4c8bcf",
+                "readOrder": "Pass retained source pointer in constructor R9."
+              },
+              {
+                "role": "passConstructorOwner",
+                "bodyOffset": 68,
+                "instructionHex": "488bc8",
+                "readOrder": "Pass anonymous storage-provider RAX result in constructor RCX."
+              },
+              {
+                "role": "callConstructor",
+                "bodyOffset": 71,
+                "instructionHex": "e86455fdff",
+                "readOrder": "Direct call to the reviewed primary-owner constructor."
+              }
+            ]
+          }
+        ],
+        "sourceArgument": {
+          "name": "sourceThisPointer",
+          "index": 2,
+          "kind": "pointer"
+        }
+      },
+      "evidenceBoundary": {
+        "exact": "Selected native input hashes, complete constructor/factory .pdata bodies and unwind records, bounded address-point bytes, consumer function pointer slot and instruction witnesses.",
+        "direct": "Static pointer transport: constructor retains RCX primary owner and R9 source input, addresses the embedded owner at primary+0x18, installs the address point containing the reviewed consumer, and stores source at primary+0x288. The consumer itself derives a primary pointer by subtracting0x18; its source member+0x270 consequently addresses the same storage. Factory retains entry R8 and forwards it to constructor R9 while passing an anonymous storage-provider result in RCX.",
+        "structuralOnly": "Anonymous primary owner, embedded consumer address point and directly proved source-member transport only. This is no SDK class identity, full C++ layout, source initialization/copy contract or allocator classification.",
+        "conditional": "The adjustment relates static constructor and consumer storage roles. A live constructor invocation, actual address point, persistent source pointer and owner lifetime still need an audited runtime pair/lineage; saved LockDataPtr rows alone do not establish those events.",
+        "unresolved": "Upstream source selection/initialization/reset/copy, queued managed voice path to source, sourceArgumentWord24 codec/plugin meaning, file ownership, decoded content and audibility."
+      }
+    }
+  ],
+  "managedEnumStorage": [
+    {
+      "typeDefinitionIndex": 55416,
+      "typeName": "Beyond.Audio.AudioCallbackType",
+      "parentType": "System.Enum",
+      "valueField": "value__",
+      "underlyingType": "int",
+      "evidenceBoundary": "exact selected metadata enum classification and registered value__ field storage type; no enum-value meaning or live codec instance is inferred"
+    },
+    {
+      "typeDefinitionIndex": 55423,
+      "typeName": "Beyond.Audio.AudioCodec",
+      "parentType": "System.Enum",
+      "valueField": "value__",
+      "underlyingType": "uint",
+      "evidenceBoundary": "exact selected metadata enum classification and registered value__ field storage type; no enum-value meaning or live codec instance is inferred"
+    }
+  ]
+}

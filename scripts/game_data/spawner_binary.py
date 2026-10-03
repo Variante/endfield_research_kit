@@ -1170,3 +1170,54 @@ def decode_spawner_wave_map_sequential(
             if unresolved_union else "named-exact"
         ),
     }
+
+
+def frame_spawner_named(data: bytes) -> dict[str, Any]:
+    """Read one named SpawnerConfig cursor, retaining its proved prefix on refusal.
+
+    A suffix match cannot close an unknown prefix. The whole-file status is
+    admitted only by the sequential wave reader at physical EOF; unsupported
+    route or action variants keep the earlier fields and an explicit open range.
+    """
+    boundary = (
+        "exact: stored SpawnerConfig fields and admitted nested routes at their "
+        "sequential cursor; authored settings, positions and actions do not "
+        "establish runtime spawning, execution, or ownership."
+    )
+    try:
+        prefix = decode_spawner_named_prefix(data)
+    except SpawnerEnemyLibraryDecodeError as exc:
+        # The independent enemy-library reader owns this earlier boundary.
+        prefix = decode_spawner_enemy_library(data)
+        reached = int(prefix["enemyLibraryEndOffset"])
+        return {
+            **prefix, "schemaStatus": "bounded_partial",
+            "serializedMemberCount": 5,
+            "closedFields": ["configId", "enemyLibrary"],
+            "bytesConsumed": reached,
+            "openField": {"name": "routeMap", "startOffset": reached},
+            "opaqueRemainder": {"startOffset": reached, "byteLength": len(data) - reached},
+            "diagnostic": str(exc), "evidenceBoundary": boundary,
+        }
+    reached = int(prefix["waveMapOffset"])
+    closed = ["configId", "enemyLibrary", "routeMap", "settings"]
+    try:
+        waves = decode_spawner_wave_map_sequential(data, wave_map_offset=reached)
+    except SpawnerWaveDecodeError as exc:
+        return {
+            **prefix, "schemaStatus": "bounded_partial",
+            "serializedMemberCount": 5, "closedFields": closed,
+            "bytesConsumed": reached,
+            "openField": {"name": "waveMap", "startOffset": reached},
+            "opaqueRemainder": {"startOffset": reached, "byteLength": len(data) - reached},
+            "diagnostic": str(exc), "evidenceBoundary": boundary,
+        }
+    return {
+        **prefix, **waves, "serializedMemberCount": 5,
+        "schemaStatus": (
+            "named_exact" if waves["schemaStatus"] == "named-exact"
+            else waves["schemaStatus"]
+        ),
+        "closedFields": [*closed, "waveMap"],
+        "openField": None, "evidenceBoundary": boundary,
+    }

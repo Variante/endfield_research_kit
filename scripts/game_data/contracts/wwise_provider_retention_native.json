@@ -1,0 +1,234 @@
+{
+  "schema": "endfield.wwise-provider-retention-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "providerRetainedPreparation",
+      "entryRva": "0xb90e0",
+      "requiredRoles": [
+        "retainProvider",
+        "requireDescriptor",
+        "loadDevice",
+        "loadDescriptor",
+        "callResolverSlot",
+        "storeSelectedDevice"
+      ],
+      "windows": [
+        {
+          "rva": "0xb90e0",
+          "bodyLength": 98,
+          "bodySha256": "7163246ea22c88a7a3ba8483372a22cadcb28f8a440423fb51cc98bcc715b9f9",
+          "unwindRva": "0x2f4f54",
+          "unwindInfoHex": "0106020006320270"
+        },
+        {
+          "rva": "0xb9142",
+          "bodyLength": 81,
+          "bodySha256": "65b451aa8d32a4962d9a8226a403480bc4f841f5bccd7bc281c08e7174388300",
+          "unwindRva": "0x2fe8b0",
+          "unwindInfoHex": "210a04000a64080005340700e0900b0042910b00544f2f00"
+        },
+        {
+          "rva": "0xb9193",
+          "bodyLength": 26,
+          "bodySha256": "f70df720f48e9b300a826e7d7db4f6f5d64f04048f22bb7dbcfa2327a7a2931f",
+          "unwindRva": "0x2fe8c8",
+          "unwindInfoHex": "21000000e0900b0042910b00544f2f00"
+        },
+        {
+          "rva": "0xb91ad",
+          "bodyLength": 142,
+          "bodySha256": "f7c03f68a2a422c16edfbb3f37b727049d87e9ae0cc8daa2f26aaa22ed74721e",
+          "unwindRva": "0x2fe8d8",
+          "unwindInfoHex": "210004000064080000340700e0900b0042910b00544f2f00"
+        },
+        {
+          "rva": "0xb923b",
+          "bodyLength": 10,
+          "bodySha256": "b4b15f027986bce5a79de400e98fbda2e9787cf0ad1a83ff2a913736c6f8644b",
+          "unwindRva": "0x2fe8f0",
+          "unwindInfoHex": "2100020000340700e0900b0042910b00544f2f00"
+        },
+        {
+          "rva": "0xb9245",
+          "bodyLength": 6,
+          "bodySha256": "4eeabf8bcdc796d3a19ec782d70470e18a3a52ddfa5cfed7abe03e359a03625d",
+          "unwindRva": "0x2fe8c8",
+          "unwindInfoHex": "21000000e0900b0042910b00544f2f00"
+        },
+        {
+          "rva": "0xb924b",
+          "bodyLength": 69,
+          "bodySha256": "d2cbc249d70b4b357f01e19e22ad34c27d0dfce570d1a82a26d9e73e307f4893",
+          "unwindRva": "0x2fe8f0",
+          "unwindInfoHex": "2100020000340700e0900b0042910b00544f2f00"
+        },
+        {
+          "rva": "0xb9290",
+          "bodyLength": 31,
+          "bodySha256": "bb53162ac884ea31b1c40dfd66c2b1fd2fbd6643dd5036efce4265f2561a3742",
+          "unwindRva": "0x2fe8f0",
+          "unwindInfoHex": "2100020000340700e0900b0042910b00544f2f00"
+        },
+        {
+          "rva": "0xb92af",
+          "bodyLength": 11,
+          "bodySha256": "476fc480906c9b0bfe438883be45ecab0232b348599397cc093f679ee622d0c5",
+          "unwindRva": "0x2fe8c8",
+          "unwindInfoHex": "21000000e0900b0042910b00544f2f00"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainProvider",
+          "rva": "0xb90ea",
+          "instructionHex": "488bf9"
+        },
+        {
+          "role": "requireDescriptor",
+          "rva": "0xb90f3",
+          "instructionHex": "4883792000"
+        },
+        {
+          "role": "loadDevice",
+          "rva": "0xb9103",
+          "instructionHex": "488b4f60"
+        },
+        {
+          "role": "loadDescriptor",
+          "rva": "0xb912b",
+          "instructionHex": "488b5720"
+        },
+        {
+          "role": "callResolverSlot",
+          "rva": "0xb912f",
+          "instructionHex": "ff5008"
+        },
+        {
+          "role": "storeSelectedDevice",
+          "rva": "0xb9232",
+          "instructionHex": "48894760"
+        }
+      ]
+    },
+    {
+      "key": "providerStartPrimary",
+      "entryRva": "0xbadc0",
+      "requiredRoles": [
+        "retainProvider",
+        "loadTable",
+        "loadDevice"
+      ],
+      "windows": [
+        {
+          "rva": "0xbadc0",
+          "bodyLength": 25,
+          "bodySha256": "7f129894d1387cd379292d2cc9c1eb4d4a2879a40b6eedac65f6c8e501668cd7",
+          "unwindRva": "0x2f6974",
+          "unwindInfoHex": "010f06000f5408000f3407000f320b60"
+        },
+        {
+          "rva": "0xbadd9",
+          "bodyLength": 100,
+          "bodySha256": "8939715bbf16472211f2bee630858f713eb06e9542a73c3f028cd27dc680c266",
+          "unwindRva": "0x2feb84",
+          "unwindInfoHex": "2105020005740600c0ad0b00d9ad0b0074692f00"
+        },
+        {
+          "rva": "0xbae3d",
+          "bodyLength": 78,
+          "bodySha256": "2f68232c25ca0791d6db4edbee44168815ff71bd673f19e27a47ab53b787eeb5",
+          "unwindRva": "0x2feb98",
+          "unwindInfoHex": "21000000c0ad0b00d9ad0b0074692f00"
+        },
+        {
+          "rva": "0xbae8b",
+          "bodyLength": 44,
+          "bodySha256": "775b6e4cda0e44f522f6595129b1ab82ea33efe74d414d5c6a2bba3b114197f8",
+          "unwindRva": "0x2feba8",
+          "unwindInfoHex": "2100020000740600c0ad0b00d9ad0b0074692f00"
+        },
+        {
+          "rva": "0xbaeb7",
+          "bodyLength": 41,
+          "bodySha256": "23db4f29921940a6bf391b20217bc81dfc83dd93100240cc405c7d35e24feaee",
+          "unwindRva": "0x2feb98",
+          "unwindInfoHex": "21000000c0ad0b00d9ad0b0074692f00"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainProvider",
+          "rva": "0xbadd6",
+          "instructionHex": "488bf1"
+        },
+        {
+          "role": "loadTable",
+          "rva": "0xbadf4",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "loadDevice",
+          "rva": "0xbae6c",
+          "instructionHex": "488b4e60"
+        }
+      ]
+    },
+    {
+      "key": "deviceIoStorage",
+      "entryRva": "0xb7310",
+      "requiredRoles": [
+        "retainIoArgument",
+        "retainDevice",
+        "storeIoContext"
+      ],
+      "windows": [
+        {
+          "rva": "0xb7310",
+          "bodyLength": 119,
+          "bodySha256": "bdd006ad8905f8694b7404a8222af6f595cc90d827b01038d88f7d9d89d2aca4",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainIoArgument",
+          "rva": "0xb731a",
+          "instructionHex": "488bda"
+        },
+        {
+          "role": "retainDevice",
+          "rva": "0xb731d",
+          "instructionHex": "488bf9"
+        },
+        {
+          "role": "storeIoContext",
+          "rva": "0xb735e",
+          "instructionHex": "48899f28040000"
+        }
+      ]
+    }
+  ],
+  "layouts": {
+    "provider": {
+      "addressPoint": 0,
+      "descriptor": 32,
+      "device": 96
+    },
+    "device": {
+      "ioContext": 1064
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "Preparation reads the retained descriptor and selected device on the primary provider. The later primary start routine reads its device. Device construction retains its incoming I/O context.",
+    "conditional": "Entry snapshots sample existing descriptor text/flags and device I/O address points under nonzero pointer guards. The descriptor layout comes from independently validated owned storage.",
+    "unresolved": "No pointer generation, cross-entry ownership chain, resolver replacement, returned package row, successful file opening, decoded output or audibility is established."
+  }
+}

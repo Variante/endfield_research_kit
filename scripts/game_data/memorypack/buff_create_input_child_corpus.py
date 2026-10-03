@@ -20,8 +20,8 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import ROOT, canonical_json_sha256, sha256_file_upper
-from scripts.game_data.memorypack.buff_action_receipt_corpus import (
-    _selected_candidate, _union_records,
+from scripts.game_data.memorypack.buff_action_receipts import (
+    selected_candidate, certified_action_spans,
 )
 from scripts.game_data.memorypack.buff_create_buff_action_receipt import (
     decode_create_buff_action_receipt,
@@ -124,7 +124,7 @@ def build_report(
                   detail=f"expectedSha={file.get('logicalSha256')} actualSha={digest}; path={data_path}")
         action_file = action_by_source.pop(source, None)
         certified = {(record["tag"], record["start"], record["end"])
-                     for record in _union_records(_selected_candidate(file, source), source, len(data))}
+                     for record in certified_action_spans(selected_candidate(file, source), source=source, length=len(data))}
         if action_file is None:
             continue
         if action_file.get("logicalSha256") != digest:

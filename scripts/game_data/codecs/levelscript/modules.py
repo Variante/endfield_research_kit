@@ -57,6 +57,8 @@ _MAX_STRING_BYTES = 1 << 20
 # Module types with a reviewed codec. Each tag is resolved from the
 # LevelScriptModuleData union by type name, never written down.
 _MODULE_TYPES = (
+    "RollingStoneControllerData",
+    "RunePuzzleData",
     "EncounterData",
     "EncounterDataV2",
     "FogNestControllerData",
@@ -832,7 +834,63 @@ def _parse_water_absorbed_impact(
     }, cursor
 
 
+def _require_module_structure(field: str) -> None:
+    from scripts.game_data.levelscript_module_structures_native import validate
+    audit = validate()
+    if audit.get("status") != "validated":
+        raise LevelScriptModuleCodecError(f"{field}:module-default-grammar:status={audit.get('status')},detail={audit.get('detail')}")
+
+
+def _rolling_launcher(data, cursor, field):
+    _need(data, cursor, 1, field)
+    if data[cursor] != 7:
+        raise LevelScriptModuleCodecError(f'{field}:launcher-member-count={data[cursor]}')
+    cursor += 1
+    values = {}
+    for name, decoder in (('closeAfterRepatriate', _bool), ('freezeTime', _f32),
+                          ('intervalTimeList', lambda d,c,f: _list(d,c,f,_f32)),
+                          ('launcherId', _u64), ('maxCount', _i32), ('preGenerateCount', _i32),
+                          ('templateRollingStone', _entity_ptr)):
+        values[name], cursor = decoder(data, cursor, field + '.' + name)
+    return values, cursor
+
+def _parse_rolling_stone(data, cursor, field):
+    _require_module_structure(field)
+    value, cursor = _list(data, cursor, field + '.launcherDataList', _rolling_launcher)
+    return {'launcherDataList': value}, cursor
+
+def _ulong_int_map(data, cursor, field):
+    count, cursor = _count(data, cursor, field)
+    values = None if count is None else []
+    for index in range(count or 0):
+        _need(data, cursor, 16, field)
+        key, value, padding = struct.unpack_from('<QiI', data, cursor)
+        if padding:
+            raise LevelScriptModuleCodecError(f'{field}:nonzero-raw-pair-padding={padding}')
+        values.append({'key': str(key), 'value': value})
+        cursor += 16
+    return {'count': count, 'values': values}, cursor
+
+def _parse_rune_puzzle(data, cursor, field):
+    _require_module_structure(field)
+    values = {}
+    int_list = lambda d,c,f: _list(d,c,f,_i32)
+    bool_list = lambda d,c,f: _list(d,c,f,_bool)
+    ptr_list = lambda d,c,f: _list(d,c,f,_entity_ptr)
+    for name, decoder in (('anchorPointToIndexMap', _ulong_int_map), ('backIndex', int_list),
+                          ('defaultHide', _bool), ('delayToFinish', _f32),
+                          ('forbidTransitMasks', int_list), ('forwardIndex', int_list),
+                          ('initAnchorPointMatch', bool_list), ('initOccupiedIndex', bool_list),
+                          ('leftIndex', int_list), ('rightIndex', int_list),
+                          ('runeAnchorPointList', ptr_list), ('runeColumnList', ptr_list),
+                          ('runeTypeMap', int_list), ('slidePriorityIndexList', int_list), ('slideTargetIndexMap', int_list)):
+        values[name], cursor = decoder(data, cursor, field + '.' + name)
+    return values, cursor
+
+
 _PARSERS = {
+    "RollingStoneControllerData": (3, _parse_rolling_stone),
+    "RunePuzzleData": (17, _parse_rune_puzzle),
     "EncounterData": (16, _parse_encounter),
     "EncounterDataV2": (16, _parse_encounter),
     "FogNestControllerData": (7, _parse_fog_nest),

@@ -105,6 +105,51 @@ def decode_levelscript_ptr_param(
     }, end
 
 
+def decode_camera_blend_curve_key(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Read the mc1 CameraBlendCurveKey value, leaving Param tails to callers."""
+    if cursor < 0 or cursor + 5 > len(payload) or payload[cursor] != 1:
+        return None
+    size = struct.unpack_from("<i", payload, cursor + 1)[0]
+    cursor += 5
+    if size == -1:
+        key = None
+    elif 0 <= size <= 1 << 20 and cursor + size <= len(payload):
+        try:
+            key = payload[cursor:cursor + size].decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        cursor += size
+    else:
+        return None
+    return {"key": key}, cursor
+
+
+def decode_camera_blend_curve_key_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Read the typed mc4 Param and its mc1 nullable UTF-8 key wrapper.
+
+    This is a bounded wire reader. Camera callers authenticate its formatter
+    through levelscript_camera_look_at_native before admitting named fields.
+    The ordinary idRef/source/path tail retains its shared refusal rules.
+    """
+    if cursor < 0 or cursor >= len(payload) or payload[cursor] != 4:
+        return None
+    value = decode_camera_blend_curve_key(payload, cursor + 1)
+    if value is None:
+        return None
+    key, cursor = value
+    tail = decode_param_tail(payload, cursor)
+    if tail is None:
+        return None
+    binding, end = tail
+    return {"value": key, **binding}, end
+
+
 def decode_constant_string_param(
     payload: bytes,
     cursor: int,

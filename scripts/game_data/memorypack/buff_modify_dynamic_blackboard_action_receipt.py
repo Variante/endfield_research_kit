@@ -17,10 +17,12 @@ import hashlib
 import json
 import struct
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.il2cpp.context import method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.memorypack.action_dispatcher import load_action_routes
 from scripts.game_data.memorypack.buff_actions import Reader
@@ -61,12 +63,56 @@ def _contracts() -> tuple[dict[str, Any], dict[str, Any]]:
     return source, catalog
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def _checked_direct_context(image: Any, context: dict[str, Any], *,
+                            name: str, declared_type: str,
+                            source_path: str) -> dict[str, Any]:
+    """Authenticate one parent-selected ReadValue<T> child from native bytes."""
+    prefix = (f"{LABEL}:nested-context field={name} source={source_path} "
+              f"instructionRva={context.get('instructionRva')} ")
+    if context.get("typeName") != declared_type:
+        raise ValueError(prefix + f"expectedType={declared_type} actualType={context.get('typeName')}")
+    try:
+        cell, usage = image.nested_usage_cell(context, label=LABEL)
+        index = method_spec_usage_index(
+            usage, image.registration["methodSpecsCount"],
+            source=source_path, offset=cell,
+        )
+        spec = list(struct.unpack("<iii", image.pe.bytes_at_va(
+            int(image.registration["methodSpecs"], 16) + index * 12, 12
+        )))
+    except (ValueError, IndexError, KeyError, struct.error) as exc:
+        raise ValueError(prefix + f"check=method-spec expected={context.get('methodSpecIndex')}:{context.get('methodSpec')} actual=unreadable detail={str(exc)[:500]}") from exc
+    if index != context["methodSpecIndex"] or spec != context["methodSpec"]:
+        raise ValueError(prefix + f"check=method-spec expected={context['methodSpecIndex']}:{context['methodSpec']} actual={index}:{spec}")
+    try:
+        method = image.metadata.methods[spec[0]]
+        owner = image.type_name(method.declaring_type)
+        method_name = image.metadata.string(method.name_index)
+        arguments = image.instantiations.resolve(spec[2]).arguments
+        actual_args = [row.raw_type_record_hex for row in arguments[:4]]
+        raw = bytes.fromhex(arguments[0].raw_type_record_hex) if len(arguments) == 1 else b""
+        actual_type = image.type_name(int.from_bytes(raw[:8], "little")) if len(raw) == 16 else None
+    except (ValueError, IndexError, KeyError) as exc:
+        raise ValueError(prefix + f"check=typed-argument expectedType={declared_type} expectedRaw={context.get('argumentRawHex')} actual=unreadable detail={str(exc)[:500]}") from exc
+    if (owner != "MemoryPack.MemoryPackReader" or method_name != "ReadValue"
+            or spec[1] != -1 or len(arguments) != 1 or len(raw) != 16
+            or raw.hex().upper() != context["argumentRawHex"].upper()
+            or int.from_bytes(raw[:8], "little") != context["typeDefinition"]
+            or raw[10] != 0x12 or actual_type != declared_type):
+        raise ValueError(prefix + f"check=typed-argument expectedType={declared_type} expectedMethod=MemoryPack.MemoryPackReader.ReadValue<T> expectedRaw={context['argumentRawHex']} actualType={actual_type} actualMethod={owner}.{method_name} actualArgs={actual_args}")
+    return {"fieldName": name, "typeName": declared_type,
+            "methodSpecIndex": index, "instructionRva": context["instructionRva"]}
+
+
+def validate_current_native_contract(
+    *, gameassembly: Path | None = None, metadata: Path | None = None,
+) -> dict[str, Any]:
     """Recheck the selected dispatcher, source bytes and generated member order."""
     source, catalog = _contracts()
     inputs = catalog["nativeInputs"]
     gate = check_installed_native_inputs(
-        inputs["gameAssemblySha256"], inputs["metadataSha256"]
+        inputs["gameAssemblySha256"], inputs["metadataSha256"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}:native:{gate.status}:{gate.detail}")
@@ -131,6 +177,22 @@ def validate_current_native_contract() -> dict[str, Any]:
         ):
             raise ValueError(f"{LABEL}:nested-usage")
 
+    direct_fields = [
+        (name, declared_type)
+        for name, kind, declared_type in zip(
+            route.member_order, read_kinds, route.member_declared_types, strict=True
+        ) if kind in _NESTED_PROFILE_KINDS
+    ]
+    direct_contexts = source["nestedContexts"][:len(direct_fields)]
+    if len(direct_contexts) != len(direct_fields):
+        raise ValueError(f"{LABEL}:nested-direct-context-count expected={len(direct_fields)} actual={len(direct_contexts)} source={gate.gameassembly}")
+    direct_children = [
+        _checked_direct_context(image, context, name=name,
+                                declared_type=declared_type,
+                                source_path=str(gate.gameassembly))
+        for (name, declared_type), context in zip(direct_fields, direct_contexts, strict=True)
+    ]
+
     return {
         "status": "validated",
         "unionTag": TAG,
@@ -142,6 +204,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         "memberNames": list(route.member_order),
         "readKinds": list(read_kinds),
         "typeName": reviewed["wrappedType"],
+        "directTypedChildren": direct_children,
     }
 
 

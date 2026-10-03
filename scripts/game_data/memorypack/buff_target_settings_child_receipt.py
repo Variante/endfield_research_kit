@@ -20,6 +20,8 @@ recursive ownership, live target selection, or a whole BuffData schema.
 """
 from __future__ import annotations
 
+import hashlib
+from pathlib import Path
 from typing import Any, Callable
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
@@ -90,11 +92,25 @@ def _bindings(tag: int, audit: dict[str, Any]) -> list[dict[str, str]]:
     return [dict(row, parentSchema=schema) for row in bindings]
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None,
+                                     metadata: Path | None = None,
+                                     parent_tags: tuple[int, ...] | None = None) -> dict[str, Any]:
     """Gate the selected target reader, generated plan and four parent joins."""
+    selected_tags = tuple(_PARENTS) if parent_tags is None else tuple(parent_tags)
+    if (not selected_tags
+            or any(type(tag) is not int or tag not in _PARENTS for tag in selected_tags)
+            or len(set(selected_tags)) != len(selected_tags)):
+        raise ValueError(f"{LABEL}.native:invalid-parent-selection actual={selected_tags}")
+    if ((gameassembly is not None or metadata is not None)
+            and selected_tags != (modify.TAG,)):
+        raise ValueError(
+            f"{LABEL}.native:selected-parent-paths-unsupported "
+            f"expected={(modify.TAG,)} actual={selected_tags}"
+        )
     inputs = create._create_buff_contract()["nativeInputs"]
     gate = check_installed_native_inputs(
-        inputs["GameAssembly.dll"], inputs["global-metadata.dat"]
+        inputs["GameAssembly.dll"], inputs["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
@@ -132,8 +148,10 @@ def validate_current_native_contract() -> dict[str, Any]:
         raise ValueError(f"{LABEL}.native:target-setter-order")
     parent_native = {}
     bindings = {}
-    for tag, (validator, _decoder) in _PARENTS.items():
-        audit = validator()
+    for tag in selected_tags:
+        validator, _decoder = _PARENTS[tag]
+        audit = (validator(gameassembly=gate.gameassembly, metadata=gate.metadata)
+                 if tag == modify.TAG else validator())
         if (audit.get("status") != "validated"
                 or audit.get("unionTag") != tag
                 or any(audit.get("nativeInputs", {}).get(name) != inputs[name]
@@ -149,6 +167,54 @@ def validate_current_native_contract() -> dict[str, Any]:
         "parentNative": parent_native, "bindings": bindings,
         "_registry": registry,
     }
+
+
+def decode_target_settings_value(
+    data: bytes, *, source: str, logical_sha256: str, start: int, end: int,
+    native_validation: dict[str, Any],
+) -> dict[str, Any]:
+    """Name one typed parent's bounded TargetSettings value independently.
+
+    The caller must prove the parent field's declared TargetSettings type and
+    exact source span. No parent identity is inferred from matching bytes.
+    """
+    if (native_validation.get("status") != "validated"
+            or native_validation.get("nativeInputs") != create._create_buff_contract()["nativeInputs"]):
+        raise ValueError(f"{LABEL}:native-not-validated")
+    if (not source or not isinstance(data, bytes) or type(start) is not int or type(end) is not int
+            or not 0 <= start < end <= len(data)
+            or not isinstance(logical_sha256, str)
+            or hashlib.sha256(data).hexdigest().upper() != logical_sha256.upper()):
+        raise ValueError(f"{LABEL}:source-range-or-hash")
+    registry = native_validation["_registry"]
+    definition = native_validation["targetDefinition"]
+    plan = registry.plans[definition]
+    if [member.name for member in plan] != native_validation["targetMemberNames"]:
+        raise ValueError(f"{LABEL}:target-plan-drift")
+    reader = ValueReader(data, source, end, registry=registry)
+    reader.pos = start
+    if reader.peek() == 0xFF:
+        reader.take(1, "null-target-settings")
+        members = []
+        status = "exact-null"
+    else:
+        reader.header(len(plan))
+        members = []
+        for member in plan:
+            member_start = reader.pos
+            reader._value_member(member, 1)
+            if reader.pos <= member_start:
+                raise ValueError(f"{LABEL}:target-member-no-progress:{member.name}")
+            members.append({"fieldName": member.name, "kind": member.kind,
+                            "start": member_start, "end": reader.pos,
+                            "nestedBodyStructural": member.kind in ("object", "list", "map", "union", "profile")})
+        status = "named-direct-members-exact-span"
+    if reader.pos != end or (members and members[-1]["end"] != end):
+        raise ValueError(f"{LABEL}:target-end={reader.pos}; expected={end}")
+    return {"start": start, "end": end,
+            "status": status, "memberCount": len(members) if members else None,
+            "namedMembers": members, "wholeStoredSpanExact": True,
+            "recursiveNamedSchemaExact": False}
 
 
 def decode_target_settings_action_child_receipt(
@@ -176,11 +242,6 @@ def decode_target_settings_action_child_receipt(
         or parent.get("wholeActionByteSpanExact") is not True
     ):
         raise ValueError(f"{LABEL}:parent-receipt-drift")
-    registry = native_validation["_registry"]
-    definition = native_validation["targetDefinition"]
-    plan = registry.plans[definition]
-    if [member.name for member in plan] != native_validation["targetMemberNames"]:
-        raise ValueError(f"{LABEL}:target-plan-drift")
     children = []
     seen = set()
     for binding in bindings:
@@ -191,31 +252,10 @@ def decode_target_settings_action_child_receipt(
             raise ValueError(f"{LABEL}:parent-target-field-missing-or-ambiguous")
         seen.add(binding["fieldName"])
         field = fields[0]
-        reader = ValueReader(data, source, field["end"], registry=registry)
-        reader.pos = field["start"]
-        if reader.peek() == 0xFF:
-            reader.take(1, "null-target-settings")
-            members = []
-            status = "exact-null"
-        else:
-            reader.header(len(plan))
-            members = []
-            for member in plan:
-                member_start = reader.pos
-                reader._value_member(member, 1)
-                if reader.pos <= member_start:
-                    raise ValueError(f"{LABEL}:target-member-no-progress:{member.name}")
-                members.append({"fieldName": member.name, "kind": member.kind,
-                                "start": member_start, "end": reader.pos,
-                                "nestedBodyStructural": member.kind in ("object", "list", "map", "union", "profile")})
-            status = "named-direct-members-exact-span"
-        if reader.pos != field["end"] or (members and members[-1]["end"] != field["end"]):
-            raise ValueError(f"{LABEL}:target-end={reader.pos}; expected={field['end']}")
-        children.append({"parentField": binding["fieldName"],
-                         "start": field["start"], "end": field["end"],
-                         "status": status, "memberCount": len(members) if members else None,
-                         "namedMembers": members, "wholeStoredSpanExact": True,
-                         "recursiveNamedSchemaExact": False})
+        child = decode_target_settings_value(
+            data, source=source, logical_sha256=logical_sha256,
+            start=field["start"], end=field["end"], native_validation=native_validation)
+        children.append({"parentField": binding["fieldName"], **child})
     return {
         "schema": SCHEMA, "status": "named-direct-target-members",
         "source": source, "logicalSha256": logical_sha256.upper(),

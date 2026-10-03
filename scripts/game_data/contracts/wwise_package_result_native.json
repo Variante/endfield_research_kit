@@ -1,0 +1,248 @@
+{
+  "schema": "endfield.wwise-package-result-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "providerCompletionDispatch",
+      "entryRva": "0xb8b00",
+      "requiredRoles": [
+        "retainProvider",
+        "retainStatus",
+        "loadRetainedRequest",
+        "loadRequestResult",
+        "storeProviderResult",
+        "passStatus",
+        "passRequest",
+        "passProvider",
+        "callCompletionSlot"
+      ],
+      "windows": [
+        {
+          "rva": "0xb8b00",
+          "bodyLength": 297,
+          "bodySha256": "410bc948d94a21ef8cdb6a5b65440c4f3f5c8d909f4d362e7f28972e6641e407",
+          "unwindRva": "0x2fe864",
+          "unwindInfoHex": "010d06000d3409000d3209e007700660"
+        },
+        {
+          "rva": "0xb8c29",
+          "bodyLength": 206,
+          "bodySha256": "e70ef47d65e656a61ae0a4766b848b1d02f49dabbe0ff8cfc0ed82c54123fe15",
+          "unwindRva": "0x2fe874",
+          "unwindInfoHex": "2105020005540800008b0b00298c0b0064e82f00"
+        },
+        {
+          "rva": "0xb8cf7",
+          "bodyLength": 440,
+          "bodySha256": "0868399abc2473cbad322b2437ca5fb5141b8da555e624bef08a6f93bce5fb8d",
+          "unwindRva": "0x2fe888",
+          "unwindInfoHex": "21000000008b0b00298c0b0064e82f00"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainProvider",
+          "rva": "0xb8b0d",
+          "instructionHex": "488bf1"
+        },
+        {
+          "role": "retainStatus",
+          "rva": "0xb8b10",
+          "instructionHex": "418bf8"
+        },
+        {
+          "role": "loadRetainedRequest",
+          "rva": "0xb8de3",
+          "instructionHex": "488b5620"
+        },
+        {
+          "role": "loadRequestResult",
+          "rva": "0xb8dff",
+          "instructionHex": "488b4228"
+        },
+        {
+          "role": "storeProviderResult",
+          "rva": "0xb8e03",
+          "instructionHex": "48894628"
+        },
+        {
+          "role": "passStatus",
+          "rva": "0xb8e38",
+          "instructionHex": "448bc7"
+        },
+        {
+          "role": "passRequest",
+          "rva": "0xb8e3b",
+          "instructionHex": "488b5620"
+        },
+        {
+          "role": "passProvider",
+          "rva": "0xb8e3f",
+          "instructionHex": "488bce"
+        },
+        {
+          "role": "callCompletionSlot",
+          "rva": "0xb8e42",
+          "instructionHex": "ff5028"
+        }
+      ]
+    },
+    {
+      "key": "providerPackageCompletion",
+      "entryRva": "0xb92d0",
+      "requiredRoles": [
+        "retainProvider",
+        "compareStatus",
+        "loadFlags",
+        "loadProviderResult",
+        "readResultLength"
+      ],
+      "windows": [
+        {
+          "rva": "0xb92d0",
+          "bodyLength": 260,
+          "bodySha256": "9109cfb045761690f7b9d661dc321830ea1d41cff7892725cca1252a08af563f",
+          "unwindRva": "0x2feb40",
+          "unwindInfoHex": "013d04003d74060006320230"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainProvider",
+          "rva": "0xb92d6",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "compareStatus",
+          "rva": "0xb92d9",
+          "instructionHex": "4183f801"
+        },
+        {
+          "role": "loadFlags",
+          "rva": "0xb9304",
+          "instructionHex": "488b420c"
+        },
+        {
+          "role": "loadProviderResult",
+          "rva": "0xb934c",
+          "instructionHex": "488b4b28"
+        },
+        {
+          "role": "readResultLength",
+          "rva": "0xb9357",
+          "instructionHex": "488b11"
+        }
+      ]
+    }
+  ],
+  "providerLayout": {
+    "addressPoint": 0,
+    "retainedRequest": 32,
+    "result": 40
+  },
+  "requestLayout": {
+    "text": 0,
+    "numeric": 8,
+    "flags": 12,
+    "mode": 20,
+    "callback": 24,
+    "provider": 32,
+    "result": 40
+  },
+  "resultLayout": {
+    "byteLength": 0,
+    "blockOffset": 8,
+    "byteOffset": 32,
+    "keyLow": 36,
+    "package": 48,
+    "blockBytes": 56
+  },
+  "externalRowLayout": {
+    "blockBytes": 8,
+    "byteLength": 12,
+    "blockOffset": 16
+  },
+  "packageLayout": {
+    "backingObject": 72
+  },
+  "completionSlot": {
+    "addressPointRva": "0x2932e8",
+    "offset": 40,
+    "targetOwner": "providerPackageCompletion"
+  },
+  "packageWriteWitnesses": [
+    {
+      "role": "loadByteLength",
+      "rva": "0x5a36",
+      "instructionHex": "8b460c"
+    },
+    {
+      "role": "storeByteLength",
+      "rva": "0x5a39",
+      "instructionHex": "488901"
+    },
+    {
+      "role": "loadBlockOffset",
+      "rva": "0x5a3f",
+      "instructionHex": "8b4e10"
+    },
+    {
+      "role": "storeBlockOffset",
+      "rva": "0x5a42",
+      "instructionHex": "48894808"
+    },
+    {
+      "role": "loadBlockBytes",
+      "rva": "0x5a49",
+      "instructionHex": "8b4608"
+    },
+    {
+      "role": "storeBlockBytes",
+      "rva": "0x5a4c",
+      "instructionHex": "894138"
+    },
+    {
+      "role": "storePackage",
+      "rva": "0x5a52",
+      "instructionHex": "48895830"
+    },
+    {
+      "role": "multiplyByteOffset",
+      "rva": "0x5a66",
+      "instructionHex": "0faf4e08"
+    },
+    {
+      "role": "storeByteOffset",
+      "rva": "0x5a6a",
+      "instructionHex": "894820"
+    },
+    {
+      "role": "storeKeyLow",
+      "rva": "0x5a70",
+      "instructionHex": "44896824"
+    },
+    {
+      "role": "loadBackingObject",
+      "rva": "0x5a01",
+      "instructionHex": "488b4b48"
+    }
+  ],
+  "evidenceBoundary": {
+    "direct": "The completion dispatcher stores the request result on the provider and passes provider, retained request and status to its primary completion slot. The external package branch builds a descriptor with length, block geometry and package pointer from the selected row.",
+    "conditional": "A local success-status completion snapshot can compare its request/back-pointer and result pointer and inspect the existing descriptor without pairing entries or reading media bytes.",
+    "unresolved": "This static contract does not establish a returned lookup row, exact live backing-file identity, allocation generation, media-read completion, game-side decoding or audibility."
+  },
+  "storageWriteWitnesses": [
+    {
+      "role": "storeRequestProvider",
+      "rva": "0xb9670",
+      "instructionHex": "48895820"
+    }
+  ]
+}

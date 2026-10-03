@@ -1,8 +1,9 @@
 """Selected-native SkillData DispelAction 0x009F stored-action reader.
 
 The Buff reader's independently reviewed nine-member source order is reused
-here for SkillData. This module does not admit the route into the shared
-SkillData parser or infer runtime dispel behavior from stored values.
+here for SkillData, including native-gated shared admission. The complete
+SkillData family gate owns publication; stored values do not prove runtime
+dispel behavior or selected targets.
 """
 from __future__ import annotations
 
@@ -35,7 +36,8 @@ def _contract() -> dict[str, Any]:
         type(contract.get("unionTag")) is not int
         or not isinstance(names, list)
         or not isinstance(kinds, list)
-        or len(names) != len(kinds) == contract.get("serializedMemberCount")
+        or len(names) != len(kinds)
+        or len(kinds) != contract.get("serializedMemberCount")
         or len(set(names)) != len(names)
         or not all(isinstance(name, str) and name for name in names)
         or not all(kind in {"byte", "scalar32", "target-profile", "query-profile"}

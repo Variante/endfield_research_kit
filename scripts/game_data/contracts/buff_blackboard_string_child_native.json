@@ -1,0 +1,424 @@
+{
+  "schema": "endfield.buff-blackboard-string-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "contextContract": "il2cpp_context_audit_native.json",
+  "contextReadOrder": "selectedBuffTag76ReadOrder",
+  "parentContract": "buff_11f_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "selectedReadOrder": [
+    "blackboardKey",
+    "useBlackboardKey",
+    "value"
+  ],
+  "readKinds": [
+    "byte-payload",
+    "byte",
+    "byte-payload"
+  ],
+  "wrapper": {
+    "typeDefinition": 22413,
+    "typeName": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardStringForMemoryPack",
+    "parentTypeDefinition": 22557,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardParamBase_string_string_ForMemoryPack",
+    "setterMethods": [
+      {
+        "methodIndex": 163735,
+        "methodName": "set___blackboardKey__",
+        "typeIndex": 143273,
+        "typePointerVa": 6664879672,
+        "rawTypeHex": "C78C00000000000000000E0000000000",
+        "typeName": "string"
+      },
+      {
+        "methodIndex": 163736,
+        "methodName": "set___useBlackboardKey__",
+        "typeIndex": 108357,
+        "typePointerVa": 6664809048,
+        "rawTypeHex": "FA8C0000000000000000028000000000",
+        "typeName": "bool"
+      },
+      {
+        "methodIndex": 163737,
+        "methodName": "set___value__",
+        "typeIndex": 143273,
+        "typePointerVa": 6664879672,
+        "rawTypeHex": "C78C00000000000000000E0000000000",
+        "typeName": "string"
+      }
+    ]
+  },
+  "methods": [
+    [
+      162686,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardStringForMemoryPack",
+      "Deserialize",
+      64600912
+    ],
+    [
+      162687,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardStringForMemoryPack+Beyond_Blackboard_BlackboardStringForMemoryPackFormatter",
+      "Deserialize",
+      64600816
+    ],
+    [
+      163735,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardParamBase_string_string_ForMemoryPack",
+      "set___blackboardKey__",
+      52460176
+    ],
+    [
+      163736,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardParamBase_string_string_ForMemoryPack",
+      "set___useBlackboardKey__",
+      52483776
+    ],
+    [
+      163737,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardParamBase_string_string_ForMemoryPack",
+      "set___value__",
+      52469328
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 64600912,
+      "endRva": 64601285,
+      "sha256": "83DB6041548B27BB2CCE4E6DB6AD2803F3CFDDE712B2E07D02CA6D2127BDC05A",
+      "boundary": "selected normal/null reader or generated setter/formatter body"
+    },
+    {
+      "startRva": 64600816,
+      "endRva": 64600909,
+      "sha256": "7C7BF6A31C88EA2D1D2925193F774396233F35465E56AFBAC2DFC756B3C2599D",
+      "boundary": "selected normal/null reader or generated setter/formatter body"
+    },
+    {
+      "startRva": 52460176,
+      "endRva": 52460212,
+      "sha256": "63BE8CEE32AFB2713EEF36C7737BA6D21A47D1104973A2C87C71282C8513DC23",
+      "boundary": "selected normal/null reader or generated setter/formatter body"
+    },
+    {
+      "startRva": 52483776,
+      "endRva": 52483803,
+      "sha256": "6B3F0BBBC04E6C5227842435DAC2B8AFEE90B7E817EE2422D5983A7D4D59952C",
+      "boundary": "selected normal/null reader or generated setter/formatter body"
+    },
+    {
+      "startRva": 52469328,
+      "endRva": 52469364,
+      "sha256": "B4567240B623758B276FFFFC056BC31F273205047C66E4A9CADAA383777B24F5",
+      "boundary": "selected normal/null reader or generated setter/formatter body"
+    }
+  ],
+  "sourceReads": [
+    {
+      "fieldName": "blackboardKey",
+      "readKind": "byte-payload",
+      "sourceCall": {
+        "rva": 64601061,
+        "hex": "E816CBF0FE",
+        "targetRva": 46827264
+      },
+      "sourceResultStore": [
+        64601088,
+        "48894120"
+      ],
+      "setterWrite": [
+        52460189,
+        "48895120"
+      ],
+      "nativeValueOffset": 32
+    },
+    {
+      "fieldName": "useBlackboardKey",
+      "readKind": "byte",
+      "sourceCall": {
+        "rva": 64601107,
+        "hex": "E8A8CCF0FE",
+        "targetRva": 46827712
+      },
+      "sourceResultStore": [
+        64601134,
+        "884110"
+      ],
+      "setterWrite": [
+        52483789,
+        "885010"
+      ],
+      "nativeValueOffset": 16
+    },
+    {
+      "fieldName": "value",
+      "readKind": "byte-payload",
+      "sourceCall": {
+        "rva": 64601143,
+        "hex": "E8C4CAF0FE",
+        "targetRva": 46827264
+      },
+      "sourceResultStore": [
+        64601162,
+        "48894118"
+      ],
+      "setterWrite": [
+        52469341,
+        "48895118"
+      ],
+      "nativeValueOffset": 24
+    }
+  ],
+  "parents": {
+    "checkSkillId": {
+      "unionTag": 118,
+      "wrapperTypeDefinition": 16683,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillId_DataForMemoryPack",
+      "inheritedWrapperTypeDefinition": 14293,
+      "inheritedWrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+      "inheritedSetterMethods": [
+        {
+          "methodIndex": 107646,
+          "methodName": "set___isEnable__",
+          "typeIndex": 108357,
+          "typePointerVa": 6664809048,
+          "rawTypeHex": "FA8C0000000000000000028000000000",
+          "typeName": "bool"
+        },
+        {
+          "methodIndex": 107647,
+          "methodName": "set___priorityLevel__",
+          "typeIndex": 182984,
+          "typePointerVa": 6664026408,
+          "rawTypeHex": "EA230000000000000000118000000000",
+          "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+        },
+        {
+          "methodIndex": 107648,
+          "methodName": "set___priorityOffset__",
+          "typeIndex": 126157,
+          "typePointerVa": 6664879640,
+          "rawTypeHex": "3B8D0000000000000000088000000000",
+          "typeName": "int"
+        },
+        {
+          "methodIndex": 107649,
+          "methodName": "set___serverActionIndex__",
+          "typeIndex": 126157,
+          "typePointerVa": 6664879640,
+          "rawTypeHex": "3B8D0000000000000000088000000000",
+          "typeName": "int"
+        }
+      ],
+      "setterMethods": [
+        {
+          "methodIndex": 124592,
+          "methodName": "set___skillIdList__",
+          "typeIndex": 59428,
+          "typePointerVa": 6647648728,
+          "rawTypeHex": "A834258D010000000000150000000000",
+          "typeName": "System.Collections.Generic.List`1<Beyond.Blackboard+BlackboardString>"
+        }
+      ],
+      "memberNames": [
+        "isEnable",
+        "priorityLevel",
+        "priorityOffset",
+        "serverActionIndex",
+        "skillIdList"
+      ],
+      "readKinds": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "list-blackboard-string"
+      ],
+      "methods": [
+        [
+          124595,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillId_DataForMemoryPack",
+          "Deserialize",
+          66583936
+        ],
+        [
+          124596,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillId_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckSkillId_DataForMemoryPackFormatter",
+          "Deserialize",
+          66583840
+        ],
+        [
+          107646,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+          "set___isEnable__",
+          52483776
+        ],
+        [
+          107647,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+          "set___priorityLevel__",
+          58153824
+        ],
+        [
+          107648,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+          "set___priorityOffset__",
+          58153856
+        ],
+        [
+          107649,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+          "set___serverActionIndex__",
+          58153888
+        ],
+        [
+          124592,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillId_DataForMemoryPack",
+          "set___skillIdList__",
+          66584352
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 66583936,
+          "endRva": 66584267,
+          "sha256": "B2A3C45F7411567ED224B6BE7D69B603A3C13DA01EE4B0979A678AE05640D356",
+          "boundary": "selected member-five normal read through RET across unwind regions"
+        },
+        {
+          "startRva": 66583840,
+          "endRva": 66583933,
+          "sha256": "B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B",
+          "boundary": "formatter forwarding"
+        },
+        {
+          "startRva": 83188133,
+          "endRva": 83188154,
+          "sha256": "0A342CFDE6CBA90777F941E9562F70C8D2F25877C6B7064C279D9FC706915B5E",
+          "boundary": "FF null output and epilogue rejoin"
+        }
+      ],
+      "sourceCalls": [
+        {
+          "rva": 66584080,
+          "hex": "E8AB8AD2FE",
+          "targetRva": 46827712
+        },
+        {
+          "rva": 66584121,
+          "hex": "E87288D2FE",
+          "targetRva": 46827184
+        },
+        {
+          "rva": 66584154,
+          "hex": "E85188D2FE",
+          "targetRva": 46827184
+        },
+        {
+          "rva": 66584187,
+          "hex": "E83088D2FE",
+          "targetRva": 46827184
+        },
+        {
+          "rva": 66584227,
+          "hex": "E848FA89FF",
+          "targetRva": 58849520
+        }
+      ],
+      "setterCalls": [
+        {
+          "rva": 66584103,
+          "hex": "E894D828FF",
+          "targetRva": 52483776
+        },
+        {
+          "rva": 66584143,
+          "hex": "E80C5D7FFF",
+          "targetRva": 58153824
+        },
+        {
+          "rva": 66584176,
+          "hex": "E80B5D7FFF",
+          "targetRva": 58153856
+        },
+        {
+          "rva": 66584209,
+          "hex": "E80A5D7FFF",
+          "targetRva": 58153888
+        },
+        {
+          "rva": 66584246,
+          "hex": "E865000000",
+          "targetRva": 66584352
+        }
+      ],
+      "fieldBinding": {
+        "fieldName": "skillIdList",
+        "memberIndex": 4,
+        "typeName": "System.Collections.Generic.List`1<Beyond.Blackboard+BlackboardString>",
+        "elementTypeName": "Beyond.Blackboard+BlackboardString"
+      }
+    },
+    "raiseTrainLevelEvent": {
+      "unionTag": 287,
+      "wrapperTypeDefinition": 16341,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RaiseTrainLevelEvent_DataForMemoryPack",
+      "setterMethods": [
+        {
+          "methodIndex": 122043,
+          "methodName": "set___eventKey__",
+          "typeIndex": 157506,
+          "typePointerVa": 6663941608,
+          "rawTypeHex": "B1000000000000000000120000000000",
+          "typeName": "Beyond.Blackboard+BlackboardString"
+        },
+        {
+          "methodIndex": 122044,
+          "methodName": "set___numericValue__",
+          "typeIndex": 157499,
+          "typePointerVa": 6663941272,
+          "rawTypeHex": "AD000000000000000000120000000000",
+          "typeName": "Beyond.Blackboard+BlackboardDouble"
+        },
+        {
+          "methodIndex": 122045,
+          "methodName": "set___outputStringValue__",
+          "typeIndex": 108357,
+          "typePointerVa": 6664809048,
+          "rawTypeHex": "FA8C0000000000000000028000000000",
+          "typeName": "bool"
+        },
+        {
+          "methodIndex": 122046,
+          "methodName": "set___stringValue__",
+          "typeIndex": 157506,
+          "typePointerVa": 6663941608,
+          "rawTypeHex": "B1000000000000000000120000000000",
+          "typeName": "Beyond.Blackboard+BlackboardString"
+        }
+      ],
+      "fieldBindings": [
+        {
+          "fieldName": "eventKey",
+          "memberIndex": 4,
+          "contextIndex": 0,
+          "typeName": "Beyond.Blackboard+BlackboardString"
+        },
+        {
+          "fieldName": "stringValue",
+          "memberIndex": 7,
+          "contextIndex": 2,
+          "typeName": "Beyond.Blackboard+BlackboardString"
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native bytes, method/typed-setter identity, inherited wrapper and source-to-named native field stores. Exact bounded wire values preserve raw payload bytes and flag byte.",
+    "conditional": "The typed parents and reviewed generic list/context consumers compose the selected stored grammar under their ordinary formatter route.",
+    "unresolved": "Payload text encoding, formatter/provider replacement, runtime Blackboard evaluation, parent execution and whole BuffData ownership remain outside this child receipt."
+  }
+}

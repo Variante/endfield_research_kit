@@ -1,0 +1,35 @@
+{
+  "schema": "endfield.buff-attribute-modifier-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_root_prefix_native.json",
+    "buff_heal_processor_zero_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "attributeCollectionSetters": [
+    [
+      104308,
+      "set___attributeModifiers__",
+      "<type-index:98997>",
+      52469328
+    ],
+    [
+      104309,
+      "set___isConvertedAttribute__",
+      "System.Boolean",
+      84405996
+    ]
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected installed native inputs authenticate the two-member AttributeModifierData wrapper, its typed reference array, four-member AttributeModifier elements and BlackboardDouble child reader.",
+    "direct": "The collection reads a nullable reference array before the terminal isConvertedAttribute byte; each nonnull element reads three stored enum DWORDs followed by a nullable BlackboardDouble param.",
+    "structuralOnly": "Raw enum bits, flags and BlackboardDouble values are stored data; evaluated attributes and units are not inferred.",
+    "conditional": "Array elements are interpreted under the reviewed root AttributeModifierData and element type contexts. Live formatter selection is not observed.",
+    "unresolved": "Attribute arithmetic, provider cache state and gameplay effects."
+  }
+}

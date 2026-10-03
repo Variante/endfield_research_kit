@@ -1,0 +1,1077 @@
+{
+  "schema": "endfield.wwise-package-transform-native.v4",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "alignedPackageTransform",
+      "entryRva": "0x9020",
+      "requiredRoles": [
+        "retainOffset",
+        "retainAlignment",
+        "wordOffset",
+        "retainLength",
+        "seedWordOffset",
+        "retainBuffer",
+        "alignmentMask",
+        "jumpAligned",
+        "wordSetup",
+        "tailMask",
+        "wordCount",
+        "testWords",
+        "skipWords",
+        "retainSeed",
+        "retainWordCount",
+        "retainCursor",
+        "deriveWord",
+        "advanceWordCursor",
+        "wordShift8",
+        "wordByte1",
+        "wordByte0",
+        "wordXor",
+        "wordMultiply0",
+        "wordXor1",
+        "wordReload2",
+        "wordShift16",
+        "wordByte2",
+        "wordMultiply1",
+        "wordXor2",
+        "wordReload3",
+        "wordShift24",
+        "advanceSeed",
+        "wordMultiply2",
+        "wordXor3",
+        "wordMultiply3",
+        "xorWord",
+        "decrementWords",
+        "loopWords",
+        "testTail",
+        "skipTail",
+        "tailSeed",
+        "tailReload1",
+        "tailShift8",
+        "tailByte1",
+        "tailByte0",
+        "tailXor",
+        "tailMultiply0",
+        "tailXor1",
+        "tailReload2",
+        "tailShift16",
+        "tailByte2",
+        "tailMultiply1",
+        "tailShift24",
+        "tailXor2",
+        "tailMultiply2",
+        "tailCursorDelta",
+        "tailCursor",
+        "tailXor3",
+        "tailMultiply3",
+        "storeTailKey",
+        "testTailAgain",
+        "skipTailAgain",
+        "tailKeyAddress",
+        "retainTailCount",
+        "tailKeyDelta",
+        "loadTailKeyByte",
+        "xorTailByte",
+        "advanceTailCursor",
+        "decrementTail",
+        "loopTail",
+        "epilogue",
+        "return"
+      ],
+      "windows": [
+        {
+          "rva": "0x9020",
+          "bodyLength": 135,
+          "bodySha256": "7c86b9579a2e43e59d3b19894ac7862ba80414b57d70f88a9960b68c3ce073d2",
+          "unwindRva": "0x2f05a8",
+          "unwindInfoHex": "010804000812047003600230"
+        },
+        {
+          "rva": "0x90a7",
+          "bodyLength": 198,
+          "bodySha256": "3f99842b10281b680434f0aa23e4f12c8199aeaf786004c49e689faea5d2eb5e",
+          "unwindRva": "0x2f05b4",
+          "unwindInfoHex": "211d08001df4000016e401000dc408000554060020900000a7900000a8052f00"
+        },
+        {
+          "rva": "0x916d",
+          "bodyLength": 349,
+          "bodySha256": "4caffbff0d6dec9e1df136a078710d7c566ebf000112379c415d1e1cbdae3a6e",
+          "unwindRva": "0x2f05d4",
+          "unwindInfoHex": "2100000020900000a7900000a8052f00"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainOffset",
+          "rva": "0x9028",
+          "instructionHex": "418bd9"
+        },
+        {
+          "role": "retainAlignment",
+          "rva": "0x902b",
+          "instructionHex": "458bd9"
+        },
+        {
+          "role": "wordOffset",
+          "rva": "0x902e",
+          "instructionHex": "c1eb02"
+        },
+        {
+          "role": "retainLength",
+          "rva": "0x9031",
+          "instructionHex": "418bf8"
+        },
+        {
+          "role": "seedWordOffset",
+          "rva": "0x9034",
+          "instructionHex": "03da"
+        },
+        {
+          "role": "retainBuffer",
+          "rva": "0x9036",
+          "instructionHex": "4c8bd1"
+        },
+        {
+          "role": "alignmentMask",
+          "rva": "0x9039",
+          "instructionHex": "4183e303"
+        },
+        {
+          "role": "jumpAligned",
+          "rva": "0x903d",
+          "instructionHex": "0f8498010000"
+        },
+        {
+          "role": "wordSetup",
+          "rva": "0x91db",
+          "instructionHex": "8bf7"
+        },
+        {
+          "role": "tailMask",
+          "rva": "0x91dd",
+          "instructionHex": "83e703"
+        },
+        {
+          "role": "wordCount",
+          "rva": "0x91e0",
+          "instructionHex": "c1ee02"
+        },
+        {
+          "role": "testWords",
+          "rva": "0x91e3",
+          "instructionHex": "85f6"
+        },
+        {
+          "role": "skipWords",
+          "rva": "0x91e5",
+          "instructionHex": "7459"
+        },
+        {
+          "role": "retainSeed",
+          "rva": "0x91e7",
+          "instructionHex": "448bc3"
+        },
+        {
+          "role": "retainWordCount",
+          "rva": "0x91ea",
+          "instructionHex": "448bde"
+        },
+        {
+          "role": "retainCursor",
+          "rva": "0x91ed",
+          "instructionHex": "4d8bca"
+        },
+        {
+          "role": "deriveWord",
+          "rva": "0x91f0",
+          "instructionHex": "418bc0"
+        },
+        {
+          "role": "advanceWordCursor",
+          "rva": "0x91f3",
+          "instructionHex": "4d8d4904"
+        },
+        {
+          "role": "wordShift8",
+          "rva": "0x91f7",
+          "instructionHex": "c1e808"
+        },
+        {
+          "role": "wordByte1",
+          "rva": "0x91fa",
+          "instructionHex": "0fb6d0"
+        },
+        {
+          "role": "wordByte0",
+          "rva": "0x91fd",
+          "instructionHex": "410fb6c0"
+        },
+        {
+          "role": "wordXor",
+          "rva": "0x9201",
+          "instructionHex": "35290b5a9c"
+        },
+        {
+          "role": "wordMultiply0",
+          "rva": "0x9206",
+          "instructionHex": "69c0231ce104"
+        },
+        {
+          "role": "wordXor1",
+          "rva": "0x920c",
+          "instructionHex": "33d0"
+        },
+        {
+          "role": "wordReload2",
+          "rva": "0x920e",
+          "instructionHex": "418bc0"
+        },
+        {
+          "role": "wordShift16",
+          "rva": "0x9211",
+          "instructionHex": "c1e810"
+        },
+        {
+          "role": "wordByte2",
+          "rva": "0x9214",
+          "instructionHex": "0fb6c8"
+        },
+        {
+          "role": "wordMultiply1",
+          "rva": "0x9217",
+          "instructionHex": "69c2231ce104"
+        },
+        {
+          "role": "wordXor2",
+          "rva": "0x921d",
+          "instructionHex": "33c8"
+        },
+        {
+          "role": "wordReload3",
+          "rva": "0x921f",
+          "instructionHex": "418bc0"
+        },
+        {
+          "role": "wordShift24",
+          "rva": "0x9222",
+          "instructionHex": "c1e818"
+        },
+        {
+          "role": "advanceSeed",
+          "rva": "0x9225",
+          "instructionHex": "41ffc0"
+        },
+        {
+          "role": "wordMultiply2",
+          "rva": "0x9228",
+          "instructionHex": "69d1231ce104"
+        },
+        {
+          "role": "wordXor3",
+          "rva": "0x922e",
+          "instructionHex": "33d0"
+        },
+        {
+          "role": "wordMultiply3",
+          "rva": "0x9230",
+          "instructionHex": "69c2231ce104"
+        },
+        {
+          "role": "xorWord",
+          "rva": "0x9236",
+          "instructionHex": "413141fc"
+        },
+        {
+          "role": "decrementWords",
+          "rva": "0x923a",
+          "instructionHex": "4983eb01"
+        },
+        {
+          "role": "loopWords",
+          "rva": "0x923e",
+          "instructionHex": "75b0"
+        },
+        {
+          "role": "testTail",
+          "rva": "0x9240",
+          "instructionHex": "85ff"
+        },
+        {
+          "role": "skipTail",
+          "rva": "0x9242",
+          "instructionHex": "0f847a000000"
+        },
+        {
+          "role": "tailSeed",
+          "rva": "0x9248",
+          "instructionHex": "448d041e"
+        },
+        {
+          "role": "tailReload1",
+          "rva": "0x924c",
+          "instructionHex": "418bc0"
+        },
+        {
+          "role": "tailShift8",
+          "rva": "0x924f",
+          "instructionHex": "c1e808"
+        },
+        {
+          "role": "tailByte1",
+          "rva": "0x9252",
+          "instructionHex": "0fb6d0"
+        },
+        {
+          "role": "tailByte0",
+          "rva": "0x9255",
+          "instructionHex": "410fb6c0"
+        },
+        {
+          "role": "tailXor",
+          "rva": "0x9259",
+          "instructionHex": "35290b5a9c"
+        },
+        {
+          "role": "tailMultiply0",
+          "rva": "0x925e",
+          "instructionHex": "69c0231ce104"
+        },
+        {
+          "role": "tailXor1",
+          "rva": "0x9264",
+          "instructionHex": "33d0"
+        },
+        {
+          "role": "tailReload2",
+          "rva": "0x9266",
+          "instructionHex": "418bc0"
+        },
+        {
+          "role": "tailShift16",
+          "rva": "0x9269",
+          "instructionHex": "c1e810"
+        },
+        {
+          "role": "tailByte2",
+          "rva": "0x926c",
+          "instructionHex": "0fb6c8"
+        },
+        {
+          "role": "tailMultiply1",
+          "rva": "0x926f",
+          "instructionHex": "69c2231ce104"
+        },
+        {
+          "role": "tailShift24",
+          "rva": "0x9275",
+          "instructionHex": "41c1e818"
+        },
+        {
+          "role": "tailXor2",
+          "rva": "0x9279",
+          "instructionHex": "33c8"
+        },
+        {
+          "role": "tailMultiply2",
+          "rva": "0x927b",
+          "instructionHex": "69c1231ce104"
+        },
+        {
+          "role": "tailCursorDelta",
+          "rva": "0x9281",
+          "instructionHex": "8d0cb500000000"
+        },
+        {
+          "role": "tailCursor",
+          "rva": "0x9288",
+          "instructionHex": "4c03d1"
+        },
+        {
+          "role": "tailXor3",
+          "rva": "0x928b",
+          "instructionHex": "4133c0"
+        },
+        {
+          "role": "tailMultiply3",
+          "rva": "0x928e",
+          "instructionHex": "69c0231ce104"
+        },
+        {
+          "role": "storeTailKey",
+          "rva": "0x9294",
+          "instructionHex": "89442438"
+        },
+        {
+          "role": "testTailAgain",
+          "rva": "0x9298",
+          "instructionHex": "85ff"
+        },
+        {
+          "role": "skipTailAgain",
+          "rva": "0x929a",
+          "instructionHex": "7426"
+        },
+        {
+          "role": "tailKeyAddress",
+          "rva": "0x929c",
+          "instructionHex": "488d542438"
+        },
+        {
+          "role": "retainTailCount",
+          "rva": "0x92a1",
+          "instructionHex": "8bcf"
+        },
+        {
+          "role": "tailKeyDelta",
+          "rva": "0x92a3",
+          "instructionHex": "492bd2"
+        },
+        {
+          "role": "loadTailKeyByte",
+          "rva": "0x92b0",
+          "instructionHex": "420fb60412"
+        },
+        {
+          "role": "xorTailByte",
+          "rva": "0x92b5",
+          "instructionHex": "413002"
+        },
+        {
+          "role": "advanceTailCursor",
+          "rva": "0x92b8",
+          "instructionHex": "4d8d5201"
+        },
+        {
+          "role": "decrementTail",
+          "rva": "0x92bc",
+          "instructionHex": "4883e901"
+        },
+        {
+          "role": "loopTail",
+          "rva": "0x92c0",
+          "instructionHex": "75ee"
+        },
+        {
+          "role": "epilogue",
+          "rva": "0x92c2",
+          "instructionHex": "4883c410"
+        },
+        {
+          "role": "return",
+          "rva": "0x92c9",
+          "instructionHex": "c3"
+        }
+      ]
+    },
+    {
+      "key": "transferCompletionDispatcher",
+      "entryRva": "0xbf190",
+      "requiredRoles": [
+        "retainContext",
+        "retainStatus",
+        "loadNext",
+        "passRequest",
+        "loadReceiver",
+        "retainNext",
+        "passStatus",
+        "loadAddressPoint",
+        "callReceiver"
+      ],
+      "windows": [
+        {
+          "rva": "0xbf190",
+          "bodyLength": 278,
+          "bodySha256": "f3097f9887536ef3644a43d114e59e750a28f6057500623e31f72cf766c207cf",
+          "unwindRva": "0x2f2c40",
+          "unwindInfoHex": "0114080014640800145407001434060014321070"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainContext",
+          "rva": "0xbf1a4",
+          "instructionHex": "488b7920"
+        },
+        {
+          "role": "retainStatus",
+          "rva": "0xbf1a8",
+          "instructionHex": "8bf2"
+        },
+        {
+          "role": "loadNext",
+          "rva": "0xbf260",
+          "instructionHex": "488b4318"
+        },
+        {
+          "role": "passRequest",
+          "rva": "0xbf264",
+          "instructionHex": "488bd3"
+        },
+        {
+          "role": "loadReceiver",
+          "rva": "0xbf279",
+          "instructionHex": "488b4a20"
+        },
+        {
+          "role": "retainNext",
+          "rva": "0xbf27d",
+          "instructionHex": "488bd8"
+        },
+        {
+          "role": "passStatus",
+          "rva": "0xbf280",
+          "instructionHex": "448bc6"
+        },
+        {
+          "role": "loadAddressPoint",
+          "rva": "0xbf283",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "callReceiver",
+          "rva": "0xbf286",
+          "instructionHex": "ff5030"
+        }
+      ]
+    },
+    {
+      "key": "deviceTransferProducer",
+      "entryRva": "0xbb970",
+      "requiredRoles": [
+        "retainDevice",
+        "retainOwner",
+        "passOwner",
+        "passDevice",
+        "passPosition",
+        "loadBuffer",
+        "passRequested",
+        "passTransform",
+        "callInitializer"
+      ],
+      "windows": [
+        {
+          "rva": "0xbb970",
+          "bodyLength": 643,
+          "bodySha256": "6f7a979417add0a42851e960e15e44e0b8df9f5783e98a11b2b842dae85f34ba",
+          "unwindRva": "0x2fecc0",
+          "unwindInfoHex": "01190a0019341300199215f013e011d00fc00d700c600b50"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainDevice",
+          "rva": "0xbb993",
+          "instructionHex": "4c8bf1"
+        },
+        {
+          "role": "retainOwner",
+          "rva": "0xbb99c",
+          "instructionHex": "488bf2"
+        },
+        {
+          "role": "passOwner",
+          "rva": "0xbbab2",
+          "instructionHex": "488bd6"
+        },
+        {
+          "role": "passDevice",
+          "rva": "0xbbabd",
+          "instructionHex": "498bce"
+        },
+        {
+          "role": "passPosition",
+          "rva": "0xbbac4",
+          "instructionHex": "4d8bcf"
+        },
+        {
+          "role": "loadBuffer",
+          "rva": "0xbbacb",
+          "instructionHex": "4d8b4008"
+        },
+        {
+          "role": "passRequested",
+          "rva": "0xbbacf",
+          "instructionHex": "89442420"
+        },
+        {
+          "role": "passTransform",
+          "rva": "0xbbac0",
+          "instructionHex": "89442428"
+        },
+        {
+          "role": "callInitializer",
+          "rva": "0xbbad3",
+          "instructionHex": "e808feffff"
+        }
+      ]
+    },
+    {
+      "key": "anonymousReceiverReadQueue",
+      "entryRva": "0xbc870",
+      "requiredRoles": [
+        "retainReceiver",
+        "loadDevice",
+        "passOwner",
+        "passPosition",
+        "passDevice",
+        "passTransform",
+        "passRequested",
+        "callInitializer",
+        "retainBlock",
+        "loadListHead",
+        "storeListHead",
+        "storeNodeNext",
+        "storeReceiver",
+        "loadBufferCarrier",
+        "storeCarrierTransferBlock",
+        "reloadBufferCarrier",
+        "storeNodeBufferCarrier"
+      ],
+      "windows": [
+        {
+          "rva": "0xbc870",
+          "bodyLength": 632,
+          "bodySha256": "974fc247d13c0dab97fe9a0911e2c1390892ae0ca7186ce400ca95e6aad3a281",
+          "unwindRva": "0x2fed58",
+          "unwindInfoHex": "01190a0019341100197215f013e011d00fc00d700c600b50"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainReceiver",
+          "rva": "0xbc889",
+          "instructionHex": "488bf9"
+        },
+        {
+          "role": "loadDevice",
+          "rva": "0xbc8a4",
+          "instructionHex": "488b4f60"
+        },
+        {
+          "role": "passOwner",
+          "rva": "0xbca0e",
+          "instructionHex": "488bd7"
+        },
+        {
+          "role": "passPosition",
+          "rva": "0xbca03",
+          "instructionHex": "4d8bcf"
+        },
+        {
+          "role": "passDevice",
+          "rva": "0xbca15",
+          "instructionHex": "498bce"
+        },
+        {
+          "role": "passTransform",
+          "rva": "0xbca18",
+          "instructionHex": "89742428"
+        },
+        {
+          "role": "passRequested",
+          "rva": "0xbca1c",
+          "instructionHex": "89442420"
+        },
+        {
+          "role": "callInitializer",
+          "rva": "0xbca20",
+          "instructionHex": "e8bbeeffff"
+        },
+        {
+          "role": "retainBlock",
+          "rva": "0xbca2a",
+          "instructionHex": "488be8"
+        },
+        {
+          "role": "loadListHead",
+          "rva": "0xbca48",
+          "instructionHex": "488b4540"
+        },
+        {
+          "role": "storeListHead",
+          "rva": "0xbca51",
+          "instructionHex": "48895d40"
+        },
+        {
+          "role": "storeNodeNext",
+          "rva": "0xbca55",
+          "instructionHex": "48894318"
+        },
+        {
+          "role": "storeReceiver",
+          "rva": "0xbca92",
+          "instructionHex": "48897b20"
+        },
+        {
+          "role": "loadBufferCarrier",
+          "rva": "0xbca25",
+          "instructionHex": "488b4c2438"
+        },
+        {
+          "role": "storeCarrierTransferBlock",
+          "rva": "0xbca2d",
+          "instructionHex": "48894110"
+        },
+        {
+          "role": "reloadBufferCarrier",
+          "rva": "0xbca3c",
+          "instructionHex": "488b4c2438"
+        },
+        {
+          "role": "storeNodeBufferCarrier",
+          "rva": "0xbca41",
+          "instructionHex": "48894b08"
+        }
+      ]
+    },
+    {
+      "key": "primaryProviderTransferCompletion",
+      "entryRva": "0xbcd80",
+      "requiredRoles": [
+        "retainReceiver",
+        "retainDispatchFlag",
+        "retainStatus",
+        "retainRequest",
+        "testRequest",
+        "requireSuccess",
+        "loadRequestState",
+        "stateMask",
+        "blockedState",
+        "currentRequest",
+        "storeRequestState",
+        "wakeTargetDevice"
+      ],
+      "windows": [
+        {
+          "rva": "0xbcd80",
+          "bodyLength": 287,
+          "bodySha256": "ad8f761ee0645358a54cb7d278f1c92dcb06e9e787bb47e71a69227d900fcfdb",
+          "unwindRva": "0x2f9444",
+          "unwindInfoHex": "011c0c001c640c001c540b001c340a001c3218f016e014d012c01070"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainReceiver",
+          "rva": "0xbcd9c",
+          "instructionHex": "488bf9"
+        },
+        {
+          "role": "retainDispatchFlag",
+          "rva": "0xbcd9f",
+          "instructionHex": "450fb6e9"
+        },
+        {
+          "role": "retainStatus",
+          "rva": "0xbcda7",
+          "instructionHex": "458be0"
+        },
+        {
+          "role": "retainRequest",
+          "rva": "0xbcdaa",
+          "instructionHex": "488bf2"
+        },
+        {
+          "role": "testRequest",
+          "rva": "0xbcdb6",
+          "instructionHex": "4885f6"
+        },
+        {
+          "role": "requireSuccess",
+          "rva": "0xbcdbb",
+          "instructionHex": "4183fc01"
+        },
+        {
+          "role": "loadRequestState",
+          "rva": "0xbcdc1",
+          "instructionHex": "8b4e14"
+        },
+        {
+          "role": "stateMask",
+          "rva": "0xbcdc6",
+          "instructionHex": "2407"
+        },
+        {
+          "role": "blockedState",
+          "rva": "0xbcdc8",
+          "instructionHex": "3c02"
+        },
+        {
+          "role": "currentRequest",
+          "rva": "0xbcdd7",
+          "instructionHex": "48397500"
+        },
+        {
+          "role": "storeRequestState",
+          "rva": "0xbcdf1",
+          "instructionHex": "894e14"
+        },
+        {
+          "role": "wakeTargetDevice",
+          "rva": "0xbce6b",
+          "instructionHex": "488b4f60"
+        }
+      ]
+    },
+    {
+      "key": "queuedReceiverConstructor",
+      "entryRva": "0xbb1f0",
+      "requiredRoles": [
+        "retainReceiver",
+        "addressReceiverTable",
+        "storeReceiverTable",
+        "returnReceiver"
+      ],
+      "windows": [
+        {
+          "rva": "0xbb1f0",
+          "bodyLength": 70,
+          "bodySha256": "befff12f9b66fe8db8078c7cf374822b61a98a4d5e0f98bcfc67a06b73314e50",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainReceiver",
+          "rva": "0xbb1f6",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "addressReceiverTable",
+          "rva": "0xbb215",
+          "instructionHex": "488d05cc7e1d00"
+        },
+        {
+          "role": "storeReceiverTable",
+          "rva": "0xbb21c",
+          "instructionHex": "488903"
+        },
+        {
+          "role": "returnReceiver",
+          "rva": "0xbb22d",
+          "instructionHex": "488bc3"
+        }
+      ]
+    },
+    {
+      "key": "queuedReceiverTransferCompletion",
+      "entryRva": "0xbcea0",
+      "requiredRoles": [
+        "retainReceiver",
+        "retainDispatchFlag",
+        "retainStatus",
+        "retainRequest",
+        "testRequest",
+        "requireSuccess",
+        "loadRequestState",
+        "stateMask",
+        "blockedState",
+        "currentRequest",
+        "storeRequestState",
+        "wakeTargetDevice"
+      ],
+      "windows": [
+        {
+          "rva": "0xbcea0",
+          "bodyLength": 287,
+          "bodySha256": "b5cb74e5934bf70d7ab2c5095ea3f740032745f85e7e84990764b40fbffb60c5",
+          "unwindRva": "0x2f9444",
+          "unwindInfoHex": "011c0c001c640c001c540b001c340a001c3218f016e014d012c01070"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainReceiver",
+          "rva": "0xbcebc",
+          "instructionHex": "488bf9"
+        },
+        {
+          "role": "retainDispatchFlag",
+          "rva": "0xbcebf",
+          "instructionHex": "450fb6e9"
+        },
+        {
+          "role": "retainStatus",
+          "rva": "0xbcec7",
+          "instructionHex": "458be0"
+        },
+        {
+          "role": "retainRequest",
+          "rva": "0xbceca",
+          "instructionHex": "488bf2"
+        },
+        {
+          "role": "testRequest",
+          "rva": "0xbced6",
+          "instructionHex": "4885f6"
+        },
+        {
+          "role": "requireSuccess",
+          "rva": "0xbcedb",
+          "instructionHex": "4183fc01"
+        },
+        {
+          "role": "loadRequestState",
+          "rva": "0xbcee1",
+          "instructionHex": "8b4e14"
+        },
+        {
+          "role": "stateMask",
+          "rva": "0xbcee6",
+          "instructionHex": "2407"
+        },
+        {
+          "role": "blockedState",
+          "rva": "0xbcee8",
+          "instructionHex": "3c02"
+        },
+        {
+          "role": "currentRequest",
+          "rva": "0xbcef7",
+          "instructionHex": "48397500"
+        },
+        {
+          "role": "storeRequestState",
+          "rva": "0xbcf11",
+          "instructionHex": "894e14"
+        },
+        {
+          "role": "wakeTargetDevice",
+          "rva": "0xbcf8b",
+          "instructionHex": "488b4f60"
+        }
+      ]
+    }
+  ],
+  "algorithm": {
+    "name": "position-indexed-little-endian-xor",
+    "seedXor": 2623146793,
+    "multiply": 81861667,
+    "wordBytes": 4,
+    "provedOffsetAlignment": 4
+  },
+  "receiverSlotOffset": 48,
+  "evidenceBoundary": {
+    "exact": "Complete selected native transform, callback dispatcher, producer, constructor and completion-handler bodies with unwind framing, the complete bounded initializer leaf, and typed instruction/interface slot witnesses.",
+    "direct": "For entry-relative offsets divisible by four, the transform derives a key for seed + (offset >> 2), XORs each little-endian DWORD, advances the seed, and XORs the final one to three bytes using the next key. The observed transfer callback dispatches status to an anonymous receiver slot. The complete unwindless initializer embeds the transfer, stores the callback and its block back-pointer, and retains its owner argument. Reviewed producer callers carry the owner into it. A conditional primary-provider receiver slot mutates anonymous request state and wakes downstream work. A complete constructor installs another anonymous receiver address point whose queue slot targets the reviewed queue producer and whose completion slot targets its matching state handler.",
+    "conditional": "Offline decrypt_vfs_bytes matches the reviewed aligned word/tail path. Predicted clear words are calculations, not recorded post-transform bytes. The reviewed anonymous read-queue producer stores its receiver on completion nodes. Static layout agreement supplies no sampled user-data, block-owner or node-receiver value in prior recordings. If that constructor-installed interface is retained, the queue producer and completion handler belong to the same static receiver interface family; this does not establish its concrete class name or a live invocation.",
+    "unresolved": "The misaligned leading branch is not promoted to equivalence for short lengths. Callback receiver class, codec instance, post-transform buffer contents, decoded PCM and audibility remain unresolved. The live completion node receiver, its allocation generation, helper meanings and callback-to-codec instance join remain open. The anonymous queued-receiver interface has no authenticated codec role or current sampled instance."
+  },
+  "transferInitializerLeaf": {
+    "entryRva": "0xbb8e0",
+    "bodyLength": 129,
+    "bodySha256": "2c390881cad8a585e5b49fddbc558d88f09cf6242aef5ed371bed8d19409ea24",
+    "bodyHex": "488b81580400004c8bda4885c074234c8b104d85d275074c8991500400004c89915804000048c70000000000ff8948040000488b52284885d2740b418b4b70480faf4a08eb0233c9836050fc4903c9488948088b4c24288948108b4c2430894814488d0d48380000488948204c8940184889402848c74030000000004c895848c3",
+    "instructionWitnesses": [
+      {
+        "role": "loadFreeBlock",
+        "rva": "0xbb8e0",
+        "instructionHex": "488b8158040000"
+      },
+      {
+        "role": "retainOwner",
+        "rva": "0xbb8e7",
+        "instructionHex": "4c8bda"
+      },
+      {
+        "role": "storePosition",
+        "rva": "0xbb92f",
+        "instructionHex": "48894808"
+      },
+      {
+        "role": "loadRequested",
+        "rva": "0xbb933",
+        "instructionHex": "8b4c2428"
+      },
+      {
+        "role": "storeRequested",
+        "rva": "0xbb937",
+        "instructionHex": "894810"
+      },
+      {
+        "role": "loadTransform",
+        "rva": "0xbb93a",
+        "instructionHex": "8b4c2430"
+      },
+      {
+        "role": "storeTransform",
+        "rva": "0xbb93e",
+        "instructionHex": "894814"
+      },
+      {
+        "role": "callbackAddress",
+        "rva": "0xbb941",
+        "instructionHex": "488d0d48380000"
+      },
+      {
+        "role": "storeCallback",
+        "rva": "0xbb948",
+        "instructionHex": "48894820"
+      },
+      {
+        "role": "storeBuffer",
+        "rva": "0xbb94c",
+        "instructionHex": "4c894018"
+      },
+      {
+        "role": "storeUserData",
+        "rva": "0xbb950",
+        "instructionHex": "48894028"
+      },
+      {
+        "role": "clearCookie",
+        "rva": "0xbb954",
+        "instructionHex": "48c7403000000000"
+      },
+      {
+        "role": "storeOwner",
+        "rva": "0xbb95c",
+        "instructionHex": "4c895848"
+      },
+      {
+        "role": "return",
+        "rva": "0xbb960",
+        "instructionHex": "c3"
+      }
+    ]
+  },
+  "transferBlockLayout": {
+    "transferOffset": 8,
+    "userData": 40,
+    "owner": 72,
+    "completionList": 64
+  },
+  "completionNodeLayout": {
+    "next": 24,
+    "receiver": 32,
+    "state": 20,
+    "bufferCarrier": 8
+  },
+  "primaryReceiverSlot": {
+    "addressPointRva": "0x2932e8",
+    "offset": 48,
+    "targetOwner": "primaryProviderTransferCompletion"
+  },
+  "queuedReceiverInterface": {
+    "constructorOwner": "queuedReceiverConstructor",
+    "addressWitness": "addressReceiverTable",
+    "addressPointRva": "0x2930e8",
+    "objectOffset": 0,
+    "queueSlot": 32,
+    "queueTargetOwner": "anonymousReceiverReadQueue",
+    "completionSlot": 48,
+    "completionTargetOwner": "queuedReceiverTransferCompletion"
+  },
+  "bufferCarrierLayout": {
+    "transferBlock": 16
+  }
+}

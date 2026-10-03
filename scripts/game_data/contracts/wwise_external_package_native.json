@@ -1,0 +1,426 @@
+{
+  "schema": "endfield.wwise-external-package-native.v2",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "externalPathHash",
+      "entryRva": "0x3f30",
+      "requiredRoles": [
+        "retainText",
+        "utf8CodePage",
+        "convertSize",
+        "convertText",
+        "asciiUpperBound",
+        "asciiLowerOffset",
+        "seed",
+        "multiplier",
+        "multiply",
+        "xorByte"
+      ],
+      "windows": [
+        {
+          "rva": "0x3f30",
+          "bodyLength": 423,
+          "bodySha256": "3c89d03e2a15031254205e5fce87fb3a2ca99057eea7c44c7f4b86d5e1c8a493",
+          "unwindRva": "0x2efb6c",
+          "unwindInfoHex": "01260b4526e40d001f740c0016640b000f340a000b43067202500000"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainText",
+          "rva": "0x3f4f",
+          "instructionHex": "488bf2"
+        },
+        {
+          "role": "utf8CodePage",
+          "rva": "0x3f46",
+          "instructionHex": "b9e9fd0000"
+        },
+        {
+          "role": "convertSize",
+          "rva": "0x3f79",
+          "instructionHex": "ff15a1702800"
+        },
+        {
+          "role": "convertText",
+          "rva": "0x4049",
+          "instructionHex": "ff15d16f2800"
+        },
+        {
+          "role": "asciiUpperBound",
+          "rva": "0x4076",
+          "instructionHex": "3c19"
+        },
+        {
+          "role": "asciiLowerOffset",
+          "rva": "0x407a",
+          "instructionHex": "80c120"
+        },
+        {
+          "role": "seed",
+          "rva": "0x408a",
+          "instructionHex": "48b825232284e49cf2cb"
+        },
+        {
+          "role": "multiplier",
+          "rva": "0x409c",
+          "instructionHex": "49b8b301000000010000"
+        },
+        {
+          "role": "multiply",
+          "rva": "0x40b6",
+          "instructionHex": "490fafc0"
+        },
+        {
+          "role": "xorByte",
+          "rva": "0x40ba",
+          "instructionHex": "4833c1"
+        }
+      ]
+    },
+    {
+      "key": "externalKeyLookup",
+      "entryRva": "0x3d70",
+      "requiredRoles": [
+        "requireExternalKind",
+        "retainKey",
+        "loadTable",
+        "loadCount",
+        "tableRows",
+        "rowStride",
+        "compareKey",
+        "compareLanguage"
+      ],
+      "windows": [
+        {
+          "rva": "0x3d70",
+          "bodyLength": 42,
+          "bodySha256": "8d4c7eeee9d1e6dd46e94d18be5dd7596aea28c23f3df148822c827ec9cf66f8",
+          "unwindRva": "0x2efb1c",
+          "unwindInfoHex": "0104010004020000"
+        },
+        {
+          "rva": "0x3d9a",
+          "bodyLength": 132,
+          "bodySha256": "ac62c0974c5b172aeb08d058699ddeeb306cd396895dd95c3de01dde50e6ce0f",
+          "unwindRva": "0x2efb24",
+          "unwindInfoHex": "21140600147400000c64030005340200703d00009a3d00001cfb2e00"
+        },
+        {
+          "rva": "0x3e1e",
+          "bodyLength": 7,
+          "bodySha256": "c5c469ceca0e6f5e1f4d60044e1c0d14cbaa80b5d7b2925db0ed601622e1859e",
+          "unwindRva": "0x2efb40",
+          "unwindInfoHex": "21000000703d00009a3d00001cfb2e00"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "requireExternalKind",
+          "rva": "0x3d74",
+          "instructionHex": "41833801"
+        },
+        {
+          "role": "retainKey",
+          "rva": "0x3d78",
+          "instructionHex": "4c8bda"
+        },
+        {
+          "role": "loadTable",
+          "rva": "0x3d81",
+          "instructionHex": "488b4128"
+        },
+        {
+          "role": "loadCount",
+          "rva": "0x3d8e",
+          "instructionHex": "448b08"
+        },
+        {
+          "role": "tableRows",
+          "rva": "0x3da6",
+          "instructionHex": "488d7004"
+        },
+        {
+          "role": "rowStride",
+          "rva": "0x3dd3",
+          "instructionHex": "488d1449"
+        },
+        {
+          "role": "compareKey",
+          "rva": "0x3dd7",
+          "instructionHex": "4c391cd6"
+        },
+        {
+          "role": "compareLanguage",
+          "rva": "0x3dec",
+          "instructionHex": "41394a14"
+        }
+      ]
+    },
+    {
+      "key": "packageDescriptorLookup",
+      "entryRva": "0x5870",
+      "requiredRoles": [
+        "retainDescriptor",
+        "requireMode",
+        "requireFlags",
+        "loadText",
+        "loadFlags",
+        "selectKeyFamily",
+        "hashExternalPath",
+        "passExternalFlags",
+        "passExternalKey",
+        "lookupExternalKey"
+      ],
+      "windows": [
+        {
+          "rva": "0x5870",
+          "bodyLength": 43,
+          "bodySha256": "61c6271453bfe107ff4292ed62db8ce31036074c1372eae045aeb5cc8c7de9e4",
+          "unwindRva": "0x2f040c",
+          "unwindInfoHex": "010d04000db209f007e005c0"
+        },
+        {
+          "rva": "0x589b",
+          "bodyLength": 604,
+          "bodySha256": "05281068e26b063d8c3f9eb1fa64adbcf03a14fb4d2ad72c5c411b36215ebb93",
+          "unwindRva": "0x2f0418",
+          "unwindInfoHex": "215f0a005fd40a005a54120010740b000c64130004341000705800009b5800000c042f00"
+        },
+        {
+          "rva": "0x5af7",
+          "bodyLength": 7,
+          "bodySha256": "0cf8b3a9b04c66065a76113682501f908b263ebc39f8bd29f53117cba7bcbda5",
+          "unwindRva": "0x2f043c",
+          "unwindInfoHex": "21000a0000d40a0000740b00006413000054120000341000705800009b5800000c042f00"
+        },
+        {
+          "rva": "0x5afe",
+          "bodyLength": 16,
+          "bodySha256": "8771800a8ad7ff240a691d1dddd804819eeb21799f349a851aba70a9feab6ef1",
+          "unwindRva": "0x2f0460",
+          "unwindInfoHex": "21000000705800009b5800000c042f00"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainDescriptor",
+          "rva": "0x5884",
+          "instructionHex": "4c8bf2"
+        },
+        {
+          "role": "requireMode",
+          "rva": "0x587d",
+          "instructionHex": "837a1400"
+        },
+        {
+          "role": "requireFlags",
+          "rva": "0x5890",
+          "instructionHex": "48837a0c00"
+        },
+        {
+          "role": "loadText",
+          "rva": "0x58b1",
+          "instructionHex": "498b0e"
+        },
+        {
+          "role": "loadFlags",
+          "rva": "0x5903",
+          "instructionHex": "498b460c"
+        },
+        {
+          "role": "selectKeyFamily",
+          "rva": "0x5907",
+          "instructionHex": "833800"
+        },
+        {
+          "role": "hashExternalPath",
+          "rva": "0x59cf",
+          "instructionHex": "e85ce5ffff"
+        },
+        {
+          "role": "passExternalFlags",
+          "rva": "0x59e6",
+          "instructionHex": "4c8bc6"
+        },
+        {
+          "role": "passExternalKey",
+          "rva": "0x59ed",
+          "instructionHex": "498bd5"
+        },
+        {
+          "role": "lookupExternalKey",
+          "rva": "0x59f0",
+          "instructionHex": "e87be3ffff"
+        }
+      ]
+    },
+    {
+      "key": "defaultIoInitialization",
+      "entryRva": "0x1060",
+      "requiredRoles": [
+        "primaryTable",
+        "storePrimaryTable",
+        "ioTable",
+        "storeIoTable"
+      ],
+      "windows": [
+        {
+          "rva": "0x1060",
+          "bodyLength": 117,
+          "bodySha256": "dcc8463f48b51b3f8287d08166add47d0d3660c86d839348da10f2b433839a1d",
+          "unwindRva": "0x2efa30",
+          "unwindInfoHex": "0104010004420000"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "primaryTable",
+          "rva": "0x1070",
+          "instructionHex": "488d0569af2800"
+        },
+        {
+          "role": "storePrimaryTable",
+          "rva": "0x1081",
+          "instructionHex": "48890568cd3300"
+        },
+        {
+          "role": "ioTable",
+          "rva": "0x108f",
+          "instructionHex": "488d058aaf2800"
+        },
+        {
+          "role": "storeIoTable",
+          "rva": "0x1099",
+          "instructionHex": "48890558cd3300"
+        }
+      ]
+    },
+    {
+      "key": "defaultIoBatchDispatch",
+      "entryRva": "0x5430",
+      "requiredRoles": [
+        "retainRequests",
+        "retainIoContext",
+        "loadRequest",
+        "loadPrimaryTable",
+        "adjustPrimaryContext",
+        "passDescriptor",
+        "lookupSlot",
+        "storeResult",
+        "callbackSlot"
+      ],
+      "windows": [
+        {
+          "rva": "0x5430",
+          "bodyLength": 251,
+          "bodySha256": "4af9e84a6a96a229305d1438bb3533bb0192db0cf990cb53874579a3c3421068",
+          "unwindRva": "0x2f0330",
+          "unwindInfoHex": "01250d2525740d001e640c0017340b0013230e320af008e006d004c002500000"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainRequests",
+          "rva": "0x5447",
+          "instructionHex": "4d8bf0"
+        },
+        {
+          "role": "retainIoContext",
+          "rva": "0x544e",
+          "instructionHex": "4c8be9"
+        },
+        {
+          "role": "loadRequest",
+          "rva": "0x54a0",
+          "instructionHex": "498b3e"
+        },
+        {
+          "role": "loadPrimaryTable",
+          "rva": "0x54a7",
+          "instructionHex": "498b45f8"
+        },
+        {
+          "role": "adjustPrimaryContext",
+          "rva": "0x54ab",
+          "instructionHex": "498d4df8"
+        },
+        {
+          "role": "passDescriptor",
+          "rva": "0x54af",
+          "instructionHex": "488bd7"
+        },
+        {
+          "role": "lookupSlot",
+          "rva": "0x54ba",
+          "instructionHex": "ff5038"
+        },
+        {
+          "role": "storeResult",
+          "rva": "0x54e3",
+          "instructionHex": "48894728"
+        },
+        {
+          "role": "callbackSlot",
+          "rva": "0x54e7",
+          "instructionHex": "ff5718"
+        }
+      ]
+    }
+  ],
+  "hashRules": {
+    "encoding": "utf8",
+    "caseFold": "ascii-A-Z-only",
+    "algorithm": "fnv1-64",
+    "seed": "0xcbf29ce484222325",
+    "multiplier": "0x100000001b3",
+    "stripExtension": false,
+    "normalizeSeparators": false
+  },
+  "lookupLayout": {
+    "tablePointer": 40,
+    "countBytes": 4,
+    "rowsOffset": 4,
+    "rowBytes": 24,
+    "keyOffset": 0,
+    "keyBytes": 8,
+    "languageOffset": 20,
+    "languageBytes": 4,
+    "requiredKind": 1
+  },
+  "conversionImport": {
+    "name": "WideCharToMultiByte",
+    "iatRva": "0x28b020"
+  },
+  "evidenceBoundary": {
+    "exact": "Complete selected hash/lookup, default I/O initialization and batch-dispatch groups, typed instructions and static table targets agree with the installed inputs.",
+    "direct": "The external path helper converts UTF-16 to UTF-8, folds only ASCII capitals and applies 64-bit multiply-before-xor FNV-1 to the complete path. The external lookup compares a 64-bit key in 24-byte rows, with a separate language comparison.",
+    "conditional": "When a local selected I/O address point matches the reviewed default table, its batch slot adjusts to the primary context and dispatches package descriptors through the reviewed primary slot. External lookup requires kind one and searches complete-path 64-bit keys with language selection; entry arguments do not report a selected row.",
+    "unresolved": "The current entry capture does not observe the package descriptor flags, external hash/lookup entries, returned table row, retained provider descriptor, file handle or decoded output. A matching key is not a live media selection."
+  },
+  "ioDispatch": {
+    "primaryAddressPointRva": "0x28bfe0",
+    "ioAddressPointRva": "0x28c020",
+    "primaryContextRva": "0x33ddf0",
+    "ioContextOffset": 8,
+    "slots": [
+      {
+        "addressPoint": "primaryAddressPointRva",
+        "offset": 56,
+        "targetOwner": "packageDescriptorLookup"
+      },
+      {
+        "addressPoint": "ioAddressPointRva",
+        "offset": 40,
+        "targetOwner": "defaultIoBatchDispatch"
+      }
+    ]
+  }
+}

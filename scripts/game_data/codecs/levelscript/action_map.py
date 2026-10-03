@@ -73,7 +73,7 @@ Shapes worth knowing, beyond what the rows state:
   generated default Int32, `ShowUIToast` keeps an Int32-backed alias, and
   several others are signed-int aliases. The width comes from the enum
   alias table in `_Cursor.value`, never from the enum's name.
-* Positive `Param<List<PosRot>>` and `Param<List<GameplayTag>>` elements and
+* Positive `Param<List<GameplayTag>>` elements and
   non-null `CameraControllerBase` constants remain unsupported and fail
   closed (see the contract's `supportedBoundary`).
 """
@@ -91,6 +91,7 @@ from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 from . import params
 from . import send_lua_event
+from .pos_rot import decode_pos_rot_list
 
 
 CONTRACT_PATH = Path(__file__).with_name("action_map_layouts.json")
@@ -1513,10 +1514,34 @@ def _set_fac_mode_native_audit() -> dict[str, Any]:
 
 
 @lru_cache(maxsize=1)
+def _stored_routes_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_route_deserialize_native import validate
+
+    return validate(contract_path=CONTRACTS_DIR / "levelscript_stored_routes_native.json")
+
+
+@lru_cache(maxsize=1)
+def _get_client_map_var_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_route_deserialize_native import validate
+
+    return validate(contract_path=CONTRACTS_DIR / "levelscript_get_client_map_var_native.json")
+
+
+@lru_cache(maxsize=1)
+def _get_squad_in_fight_native_audit() -> dict[str, Any]:
+    from scripts.game_data.levelscript_route_deserialize_native import validate
+
+    return validate(contract_path=CONTRACTS_DIR / "levelscript_get_squad_in_fight_native.json")
+
+
+@lru_cache(maxsize=1)
 def _required_native_gates() -> dict[tuple[str, int], str]:
     """Read selected route identities from their reviewed contracts."""
     required: dict[tuple[str, int], str] = {}
     for filename, schema, gate in (
+        ("levelscript_stored_routes_native.json", "endfield.levelscript-route-deserialize-native.v3", "levelscript_stored_routes_native"),
+        ("levelscript_get_client_map_var_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_get_client_map_var_native"),
+        ("levelscript_get_squad_in_fight_native.json", "endfield.levelscript-route-deserialize-native.v2", "levelscript_get_squad_in_fight_native"),
         ("levelscript_header_native.json", "endfield.levelscript-header-native-contract.v1", "levelscript_header_native"),
         ("levelscript_finish_scene_effect_native.json", "endfield.levelscript-finish-scene-effect-native-contract.v1", "levelscript_finish_scene_effect_native"),
         ("levelscript_getter_int_native.json", "endfield.levelscript-getter-int-native-contract.v1", "levelscript_getter_int_native"),
@@ -1698,6 +1723,26 @@ def _require_selected_native(family: str, tag: int, layout: dict[str, Any]) -> N
             f"actionMap.nativeGate:missing-gate={family}:0x{tag:04x},required={required}"
         )
     if native_gate is None:
+        return
+    route_audits = {
+        "levelscript_stored_routes_native": (_stored_routes_native_audit, "actionMap.storedRoutesNative"),
+        "levelscript_get_client_map_var_native": (_get_client_map_var_native_audit, "actionMap.getClientMapVarNative"),
+        "levelscript_get_squad_in_fight_native": (_get_squad_in_fight_native_audit, "actionMap.getSquadInFightNative"),
+    }
+    if native_gate in route_audits:
+        reader, label = route_audits[native_gate]
+        audit = reader()
+        selected = next((row for row in audit.get("validatedRows", [])
+                         if (row.get("family"), row.get("tag")) == (family, tag)), None)
+        if (audit.get("status") != "validated" or selected is None
+                or selected.get("wrapperName") != reviewed.get("wrapperName")
+                or selected.get("fields") != reviewed.get("fields")
+                or layout.get("wrapperName") != reviewed.get("wrapperName")
+                or layout.get("fields") != reviewed.get("fields")):
+            raise ActionMapCodecError(
+                f"{label}:unavailable={family}:0x{tag:04x},"
+                f"status={audit.get('status')},check={audit.get('failedCheck')},detail={audit.get('detail')}"
+            )
         return
     if native_gate == "levelscript_entity_scanned_native":
         audit = _entity_scanned_native_audit()
@@ -2977,10 +3022,13 @@ class _Cursor:
         data: bytes,
         offset: int,
         declarations: Declarations | None = None,
+        *,
+        game_root: Path | None = None,
     ):
         self.data = data
         self.offset = offset
         self.declarations = declarations
+        self.game_root = game_root
 
     def need(self, size: int, field: str) -> None:
         if self.offset < 0 or size < 0 or self.offset + size > len(self.data):
@@ -3188,7 +3236,15 @@ class _Cursor:
                 self.data, self.offset, enum_values,
             )
             return decoded
-        if kind in ("Param<List<PosRot>>", "Param<List<GameplayTag>>"):
+        if kind == "Param<List<PosRot>>":
+            if self.byte(field + ".memberCount") != 4:
+                raise ActionMapCodecError(f"{field}:unsupported-PosRot-param-member-count")
+            try:
+                value, self.offset = decode_pos_rot_list(self.data, self.offset, game_root=self.game_root)
+            except ValueError as error:
+                raise ActionMapCodecError(f"{field}:{error}") from error
+            return self.param_tail(value, field)
+        if kind == "Param<List<GameplayTag>>":
             marker = self.byte(field + ".memberCount")
             if marker != 4:
                 raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
@@ -3197,12 +3253,8 @@ class _Cursor:
                 return self.param_tail(None, field)
             if count == 0:
                 return self.param_tail([], field)
-            if kind == "Param<List<GameplayTag>>":
-                # This element layout is still unreviewed; only PosRot is read.
-                raise ActionMapCodecError(f"{field}:unsupported-GameplayTag-count={count}")
-            if not 0 < count <= 4096:
-                raise ActionMapCodecError(f"{field}:unsupported-PosRot-count={count}")
-            return self.param_tail(self.pos_rot_list(count, field), field)
+            # This element layout is still unreviewed; no positive elements are read.
+            raise ActionMapCodecError(f"{field}:unsupported-GameplayTag-count={count}")
         if kind == "Param<CameraControllerBase>":
             marker = self.byte(field + ".memberCount")
             value_marker = self.byte(field + ".value.memberCount")
@@ -3213,12 +3265,17 @@ class _Cursor:
             return self.param_tail(None, field)
         if kind == "Param<CameraBlendCurveKey>":
             marker = self.byte(field + ".memberCount")
-            value_marker = self.byte(field + ".value.memberCount")
-            if marker != 4 or value_marker != 1:
+            if marker != 4:
                 raise ActionMapCodecError(
-                    f"{field}:unsupported-curve-key-members={marker}/{value_marker}"
+                    f"{field}:unsupported-curve-key-param-members={marker}"
                 )
-            return self.param_tail({"key": self.string(field + ".value.key")}, field)
+            decoded = params.decode_camera_blend_curve_key(self.data, self.offset)
+            if decoded is None:
+                raise ActionMapCodecError(
+                    f"{field}:unsupported-curve-key-value,offset={self.offset}"
+                )
+            value, self.offset = decoded
+            return self.param_tail(value, field)
         if kind == "Param<CameraControlState>":
             marker = self.byte(field + ".memberCount")
             value_marker = self.byte(field + ".value.memberCount")
@@ -3397,6 +3454,7 @@ class _Cursor:
             "Param<PlayerController.InputActionType>",
             "Param<ScriptEndReason>",
             "Param<Gender>",
+            "Param<RollingStoneController.ManipulateLauncherOp>",
         ):
             kind = "Param<int>"
         # Both AudioBlackScreenBehaviour enums explicitly use Byte as their
@@ -3533,7 +3591,20 @@ class _Cursor:
                 raise ActionMapCodecError(f"{field}:invalid-param-tail,offset={self.offset}")
             detail, self.offset = tail
             return {"value": value, **detail}
-        if kind == "Param<List<NpcProxyOverrideEnvTalk.EnvTalkStruct>>":
+        if kind in (
+            "Param<List<NpcAtmosphericOverrideEnvTalk.EnvTalkStruct>>",
+            "Param<List<NpcOverrideEnvTalk.EnvTalkStruct>>",
+            "Param<List<NpcProxyOverrideEnvTalk.EnvTalkStruct>>",
+        ):
+            from scripts.game_data.levelscript_envtalk_native import validate as validate_envtalk
+
+            audit = validate_envtalk(game_root=self.game_root)
+            if audit["status"] != "validated" or kind not in audit["codecKinds"]:
+                raise ActionMapCodecError(
+                    f"{field}:validator=levelscriptEnvTalkNative,check=default-stored-grammar,"
+                    f"expected=validated {kind},actual={audit['status']}:"
+                    f"{audit.get('detail', '')}"
+                )
             marker = self.byte(field + ".memberCount")
             if marker != 4:
                 raise ActionMapCodecError(f"{field}:unsupported-member-count={marker}")
@@ -3884,42 +3955,6 @@ class _Cursor:
             return self.declared_union(kind, field)
         return self.declared_struct(kind, field, allow_raw=allow_raw)
 
-    def pos_rot_list(self, count: int, field: str) -> list[dict[str, Any]]:
-        """`List<PosRot>` elements, each written by PosRot's own formatter.
-
-        `List<T>` writes every element through T's formatter rather than as raw
-        memory, so each carries its own two-member header before the two
-        `Vector3`s -- twenty-five bytes per element, not twenty-four.
-
-        **The two vectors are written eulerAngles first.** `PosRot` declares
-        `position` then `eulerAngles`, but `Beyond_PosRotForMemoryPack`'s
-        setters are `set___eulerAngles__` then `set___position__`, and the
-        generated formatter follows its own member order. The payload agrees:
-        read this way the second vector is a map02 world position and the first
-        a yaw/pitch/roll, while the declared order gives eulers past 1300
-        degrees. Declaration order is not wire order here, the same lesson
-        `RunePuzzleData` taught.
-        """
-
-        poses: list[dict[str, Any]] = []
-        for index in range(count):
-            item = f"{field}.value[{index}]"
-            members = self.byte(item + ".memberCount")
-            if members != 2:
-                raise ActionMapCodecError(
-                    f"{item}:unsupported-member-count={members}"
-                )
-            self.need(24, item)
-            values = struct.unpack_from("<6f", self.data, self.offset)
-            if not all(math.isfinite(value) for value in values):
-                raise ActionMapCodecError(f"{item}:non-finite")
-            self.offset += 24
-            poses.append({
-                "eulerAngles": {"x": values[0], "y": values[1], "z": values[2]},
-                "position": {"x": values[3], "y": values[4], "z": values[5]},
-            })
-        return poses
-
     def declared_nullable(self, inner: str, field: str) -> Any:
         """`T?` for an unmanaged T, written as its raw memory image.
 
@@ -4130,6 +4165,30 @@ class _Cursor:
             self.offset += 2
         elif tag >= 0xFA:
             raise ActionMapCodecError(f"{field}:unsupported-union-marker=0x{tag:02x}")
+        if family == "ActionHeader":
+            from scripts.game_data.levelscript_on_squad_member_usp_native import (
+                read_on_squad_member_usp_contract,
+            )
+            from .on_squad_member_usp import (
+                SquadUspDecodeError, decode_on_squad_member_usp_header,
+            )
+
+            try:
+                squad_usp_route = read_on_squad_member_usp_contract()["route"]
+                if tag == squad_usp_route["tag"]:
+                    decoded, self.offset = decode_on_squad_member_usp_header(
+                        self.data, start, game_root=self.game_root,
+                    )
+                    return decoded
+            except SquadUspDecodeError as error:
+                refusal = ActionMapCodecError(str(error))
+                refusal.diagnostics = error.diagnostics
+                raise refusal from error
+            except (OSError, KeyError, TypeError, ValueError) as error:
+                raise ActionMapCodecError(
+                    f"{field}:validator=levelscriptOnSquadMemberUspNative,"
+                    f"check=contract-identity,expected=reviewed route identity,actual={str(error)[:240]}"
+                ) from error
         members = self.byte(field + ".memberCount")
         layout = _layouts().get((family, tag))
         if layout is not None:
@@ -4357,6 +4416,6 @@ def decode_reviewed_node(
         )
     if family not in ("ActionBase", "GetterBase", "ActionHeader"):
         raise ActionMapCodecError(f"actionMap:unsupported-family={family}")
-    cursor = _Cursor(data, offset)
+    cursor = _Cursor(data, offset, game_root=game_root)
     result = cursor.node(family, f"actionMap.{family}")
     return result, cursor.offset

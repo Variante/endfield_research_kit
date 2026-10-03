@@ -1,0 +1,2417 @@
+{
+  "schema": "endfield.levelscript-envtalk-native.v1",
+  "status": "exact-default-stored-grammar",
+  "nativeInputs": {
+    "metadata": {
+      "sha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+    },
+    "gameAssembly": {
+      "sha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89"
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "The selected static registration, parent generic contexts, concrete formatter forwarding, child readers and value-conversion ABI prove the default stored Param/list grammar for all three concrete EnvTalk wrappers.",
+    "unresolved": "Runtime provider replacement, cache history, action execution and an executed source cursor are not observed and are not claims of this codec."
+  },
+  "codecKinds": [
+    "Param<List<NpcAtmosphericOverrideEnvTalk.EnvTalkStruct>>",
+    "Param<List<NpcOverrideEnvTalk.EnvTalkStruct>>",
+    "Param<List<NpcProxyOverrideEnvTalk.EnvTalkStruct>>"
+  ],
+  "storedLayout": {
+    "paramMemberCount": 4,
+    "paramFields": [
+      [
+        "constValue",
+        "List<own EnvTalkStruct>"
+      ],
+      [
+        "idRef",
+        "int32"
+      ],
+      [
+        "paramSource",
+        "int32"
+      ],
+      [
+        "path",
+        "string"
+      ]
+    ],
+    "positiveChildMemberCount": 2,
+    "childFields": [
+      [
+        "envTalkId",
+        "string"
+      ],
+      [
+        "odds",
+        "int32"
+      ]
+    ],
+    "nativeChildValueBytes": 16,
+    "boundary": "The native 16-byte hidden return and list element value are distinct from variable-length serialized string/int32 bytes. This reader keeps the reviewed positive-header subset, nullable lists, count bounds and ordinary Param tail."
+  },
+  "methods": [
+    [
+      142946,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack+Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPackFormatter",
+      "Deserialize",
+      155589096
+    ],
+    [
+      142937,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack",
+      "GetValue",
+      155590024
+    ],
+    [
+      142943,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack",
+      ".cctor",
+      75093376
+    ],
+    [
+      142944,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack",
+      "RegisterFormatter",
+      75093392
+    ],
+    [
+      142945,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack",
+      "Deserialize",
+      155589336
+    ],
+    [
+      143109,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack+Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPackFormatter",
+      "Deserialize",
+      155596844
+    ],
+    [
+      143100,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack",
+      "GetValue",
+      155597772
+    ],
+    [
+      143106,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack",
+      ".cctor",
+      75092896
+    ],
+    [
+      143107,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack",
+      "RegisterFormatter",
+      75092912
+    ],
+    [
+      143108,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack",
+      "Deserialize",
+      155597084
+    ],
+    [
+      143207,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack+Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPackFormatter",
+      "Deserialize",
+      155604408
+    ],
+    [
+      143198,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+      "GetValue",
+      155605336
+    ],
+    [
+      143204,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+      ".cctor",
+      75092416
+    ],
+    [
+      143205,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+      "RegisterFormatter",
+      75092432
+    ],
+    [
+      143206,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+      "Deserialize",
+      155604648
+    ],
+    [
+      165841,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack+Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPackFormatter",
+      "Deserialize",
+      158046936
+    ],
+    [
+      165832,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "GetValue",
+      40763056
+    ],
+    [
+      165838,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      ".cctor",
+      158047852
+    ],
+    [
+      165839,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "RegisterFormatter",
+      158047548
+    ],
+    [
+      165840,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "Deserialize",
+      158047164
+    ],
+    [
+      165883,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack+Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPackFormatter",
+      "Deserialize",
+      158047956
+    ],
+    [
+      165874,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "GetValue",
+      40763056
+    ],
+    [
+      165880,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      ".cctor",
+      158048872
+    ],
+    [
+      165881,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "RegisterFormatter",
+      158048568
+    ],
+    [
+      165882,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "Deserialize",
+      158048184
+    ],
+    [
+      165911,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack+Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPackFormatter",
+      "Deserialize",
+      158048976
+    ],
+    [
+      165902,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "GetValue",
+      40763056
+    ],
+    [
+      165908,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      ".cctor",
+      158049892
+    ],
+    [
+      165909,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "RegisterFormatter",
+      158049588
+    ],
+    [
+      165910,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "Deserialize",
+      158049204
+    ],
+    [
+      168254,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack+Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPackFormatter",
+      "Deserialize",
+      158118112
+    ],
+    [
+      168247,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "GetValue",
+      40661360
+    ],
+    [
+      168249,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "set___envTalkId__",
+      84407580
+    ],
+    [
+      168250,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "set___odds__",
+      40660800
+    ],
+    [
+      168251,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      ".cctor",
+      158118736
+    ],
+    [
+      168252,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "RegisterFormatter",
+      158118524
+    ],
+    [
+      168253,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "Deserialize",
+      158118244
+    ],
+    [
+      168266,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack+Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPackFormatter",
+      "Deserialize",
+      158118744
+    ],
+    [
+      168259,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "GetValue",
+      40661360
+    ],
+    [
+      168261,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "set___envTalkId__",
+      84407580
+    ],
+    [
+      168262,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "set___odds__",
+      40660800
+    ],
+    [
+      168263,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      ".cctor",
+      158119368
+    ],
+    [
+      168264,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "RegisterFormatter",
+      158119156
+    ],
+    [
+      168265,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "Deserialize",
+      158118876
+    ],
+    [
+      168278,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack+Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPackFormatter",
+      "Deserialize",
+      158119376
+    ],
+    [
+      168271,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "GetValue",
+      40661360
+    ],
+    [
+      168273,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "set___envTalkId__",
+      84407580
+    ],
+    [
+      168274,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "set___odds__",
+      40660800
+    ],
+    [
+      168275,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      ".cctor",
+      158120000
+    ],
+    [
+      168276,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "RegisterFormatter",
+      158119788
+    ],
+    [
+      168277,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "Deserialize",
+      158119508
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 13472,
+      "endRva": 13497,
+      "sha256": "E96DFACDA57AA7B4A0B951E4191254B1D16982F6BBE75B08B28876160866F8E8",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 19344,
+      "endRva": 19360,
+      "sha256": "342683AD19A232611A14CDD14CA2EFFDB9E9C99B26ECED775BBE98971CAF954E",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 19488,
+      "endRva": 19737,
+      "sha256": "B00C3E00B42569F5737CD5073A1822A9EB6AFAC42C031C07611953E12C69DD1F",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 155744,
+      "endRva": 155792,
+      "sha256": "C24118AEFF88571A0B22E400A39005B49B35BE64340A446181FFEEFDBCE540D4",
+      "boundary": "anonymous-direct-list-helper"
+    },
+    {
+      "startRva": 158528,
+      "endRva": 158608,
+      "sha256": "A9009FB35078FE918BB2FE35A94781F6D90F9838655330C672C9B2610EA91508",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 258816,
+      "endRva": 261332,
+      "sha256": "9A581ADF65E00FD0663ACABBDE5799A6FD462A1774B63B30FAA9748619C4072E",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 266848,
+      "endRva": 266875,
+      "sha256": "DD4C21E4DCAA9ED293D62B4817726DDA64F2BCAFA8C2AFEFFF299EC039CE3F0B",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 1015872,
+      "endRva": 1015892,
+      "sha256": "6FAAAFEA02FCA6BE80BF3AB5DFD579015CCC2E16E4184E44799B89A328054879",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 4144924,
+      "endRva": 4144997,
+      "sha256": "0E5FD7C22D70771BD3915ADA452064442ED98781E275B204EB4473AE6B0227C7",
+      "boundary": "anonymous-direct-list-helper"
+    },
+    {
+      "startRva": 4273716,
+      "endRva": 4273894,
+      "sha256": "BBA433A2B1E973FEF1500FB1910FBB3883ECA08E773FF3CFFEC5E9E37DBF4362",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 11199508,
+      "endRva": 11199535,
+      "sha256": "BF63386C441821FA3FCFA9DEEC2122FC94E7A29BA9CB8E063D3E650E31619297",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 40660800,
+      "endRva": 40660816,
+      "sha256": "AF406E671D5B020F6332AFADC02EDD8E37457415093C66A0E1D7E66DB33E1F4F",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack.set___odds__; Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack.set___odds__; Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack.set___odds__"
+    },
+    {
+      "startRva": 40661360,
+      "endRva": 40661376,
+      "sha256": "B8595657F3F100BC303DD915D3B293B20CEF156321A94C1D871E33D9995111FC",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack.GetValue; Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack.GetValue; Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack.GetValue"
+    },
+    {
+      "startRva": 40763056,
+      "endRva": 40779440,
+      "sha256": "F9124BB3679E04ED32248862AAF58E3B14888105D53CED45DF47F4C6FC4BDF31",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack.GetValue; Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack.GetValue; Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack.GetValue"
+    },
+    {
+      "startRva": 44772938,
+      "endRva": 44773053,
+      "sha256": "6860A833304D53D242CBA6FD123824339F9B0704706C6EFE01F1DE43737C84B7",
+      "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+    },
+    {
+      "startRva": 44773053,
+      "endRva": 44773168,
+      "sha256": "105B646E0F78E1A17B84A4053A9559843E1FDC1978AF4A065583DEDBEB685134",
+      "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+    },
+    {
+      "startRva": 44774046,
+      "endRva": 44774161,
+      "sha256": "09090C44C262C20A6F5BA197D21B003722BADE4F755E459D84C9A9BC92899CE6",
+      "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+    },
+    {
+      "startRva": 44774161,
+      "endRva": 44774276,
+      "sha256": "2C6500DC7CE4C088EC21B3E2D94E38824C2A497AA677C3F455DA3C2E5A14E68B",
+      "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+    },
+    {
+      "startRva": 44775154,
+      "endRva": 44775269,
+      "sha256": "01718600D9B7F022302A5AD924A730D4A2A338E42202FA40E2E72B269290187E",
+      "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+    },
+    {
+      "startRva": 44775269,
+      "endRva": 44775384,
+      "sha256": "0249025F51588380926889CABE3E3783311F45A9351314577417BA334BBD24FF",
+      "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+    },
+    {
+      "startRva": 44792599,
+      "endRva": 44792714,
+      "sha256": "0C271061C9748C94AF073B3A1078AF173FA130B551CCCEF9D1712BEC601B04D0",
+      "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+    },
+    {
+      "startRva": 44792714,
+      "endRva": 44792829,
+      "sha256": "0144981E3976FF11B930B8B1A27EB988478B4BB2EF9E18491DCC8D35E42BA5F1",
+      "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+    },
+    {
+      "startRva": 44792829,
+      "endRva": 44792944,
+      "sha256": "9C716BDDD07CB2DC2AA1E7FBA4F8320212D17B6558FD68F996060C415F0A6359",
+      "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+    },
+    {
+      "startRva": 46827568,
+      "endRva": 46827603,
+      "sha256": "C55E6D7EDD64E2EA482EACCFC3B1A8A00FF0570F4F906ACE2E70C80BCE74C0FB",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 46827616,
+      "endRva": 46827703,
+      "sha256": "CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 46827808,
+      "endRva": 46827924,
+      "sha256": "0BDFCCD262EE8752BA5F219E611DE73367E16B529D76661ADDCBAE92B420AD64",
+      "boundary": "anonymous-direct-list-helper"
+    },
+    {
+      "startRva": 47858272,
+      "endRva": 47859475,
+      "sha256": "BCF62513ABA710E9AB67DBFDA036EFE7CEC127E1CADFB21E16530E168D2EBE02",
+      "boundary": "callee-of-selected-helper"
+    },
+    {
+      "startRva": 75092416,
+      "endRva": 75092432,
+      "sha256": "63DD03799ED9BF5E7B69310D767E063A455475311552DFD822D46C24F2760A66",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack..cctor"
+    },
+    {
+      "startRva": 75092432,
+      "endRva": 75092837,
+      "sha256": "8E1C00E36C3FE10C57D8926C8B43FEBCC66BAF565D1E5C17B13596E319DE935D",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack.RegisterFormatter"
+    },
+    {
+      "startRva": 75092896,
+      "endRva": 75092912,
+      "sha256": "63DD03799ED9BF5E7B69310D767E063A455475311552DFD822D46C24F2760A66",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack..cctor"
+    },
+    {
+      "startRva": 75092912,
+      "endRva": 75093317,
+      "sha256": "CDDF6CC9A65D2AB444091EA58A866374206413A15B93A0157451D1AF8BA327CD",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack.RegisterFormatter"
+    },
+    {
+      "startRva": 75093376,
+      "endRva": 75093392,
+      "sha256": "63DD03799ED9BF5E7B69310D767E063A455475311552DFD822D46C24F2760A66",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack..cctor"
+    },
+    {
+      "startRva": 75093392,
+      "endRva": 75093797,
+      "sha256": "369B4289EDD2DBDF4A6006BDBE65BB2705836E7CBBE451C45E7442BEC12D79FE",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack.RegisterFormatter"
+    },
+    {
+      "startRva": 84407580,
+      "endRva": 84407592,
+      "sha256": "80EB06517C942CE07B3C0E5C186D5D0B634025E1D5332A970ABAE2A81D3B2B16",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack.set___envTalkId__; Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack.set___envTalkId__; Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack.set___envTalkId__"
+    },
+    {
+      "startRva": 124934132,
+      "endRva": 124934348,
+      "sha256": "45F9FE8DE3364BF0180A399BE7ABDA79A4088A759E6212A19AB450970DE052AB",
+      "boundary": "Beyond.MemoryPack.GenericMemoryPackFormatter`2.DeserializeNotNull"
+    },
+    {
+      "startRva": 124939644,
+      "endRva": 124939860,
+      "sha256": "A18B158E7C67B8F03B6EE3B35FFFE1F84DE044CE6E2F369EBF7F3D50558FBC3A",
+      "boundary": "Beyond.MemoryPack.GenericMemoryPackFormatter`2.DeserializeNotNull"
+    },
+    {
+      "startRva": 124940596,
+      "endRva": 124940812,
+      "sha256": "7D12A1EA94CC2DD3D82BDE5BB964EFE2E6154753568B38089085C1D2E4F00BE0",
+      "boundary": "Beyond.MemoryPack.GenericMemoryPackFormatter`2.DeserializeNotNull"
+    },
+    {
+      "startRva": 124963176,
+      "endRva": 124963416,
+      "sha256": "668B559D906AC39E07D03EE7720F1F921D29C2DAD4F5C3F2460F67087727D8F0",
+      "boundary": "Beyond.MemoryPack.GenericMemoryPackFormatter`2<Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk+EnvTalkStruct,object>.Deserialize"
+    },
+    {
+      "startRva": 124967308,
+      "endRva": 124967548,
+      "sha256": "B85F15A2C9124FC644B36914412F6045BE4E77F46BDDFEDE3D1810550040A5A8",
+      "boundary": "Beyond.MemoryPack.GenericMemoryPackFormatter`2<Beyond.Gameplay.Actions.NpcAtmosphericOverrideEnvTalk+EnvTalkStruct,object>.Deserialize"
+    },
+    {
+      "startRva": 124975324,
+      "endRva": 124975564,
+      "sha256": "4507DB039BE99C37EFE92A9F7957B185181AEFF870397EF9AA32BF469411149D",
+      "boundary": "Beyond.MemoryPack.GenericMemoryPackFormatter`2<Beyond.Gameplay.Actions.NpcOverrideEnvTalk+EnvTalkStruct,object>.Deserialize"
+    },
+    {
+      "startRva": 124975564,
+      "endRva": 124975610,
+      "sha256": "3881AB8A1346F4DD268037C8A0F84B5232D21996B2F7A6C8CFC0497A35C78FA5",
+      "boundary": "Beyond.MemoryPack.GenericMemoryPackFormatter`2.ReadIsNull"
+    },
+    {
+      "startRva": 127925264,
+      "endRva": 127925767,
+      "sha256": "C5A405DC1BA4F277488E8D9879D04EA0DE54BA74ED4231A544ED2F88C32023FB",
+      "boundary": "MemoryPack.Formatters.ListFormatter`1<Beyond.Gameplay.Actions.NpcAtmosphericOverrideEnvTalk+EnvTalkStruct>.Deserialize"
+    },
+    {
+      "startRva": 127926708,
+      "endRva": 127927211,
+      "sha256": "AB8A9BA4F7574E4AA14F40EE7B05D69881FEC1D35054257A2DA7CBA5D8A823F4",
+      "boundary": "MemoryPack.Formatters.ListFormatter`1<Beyond.Gameplay.Actions.NpcOverrideEnvTalk+EnvTalkStruct>.Deserialize"
+    },
+    {
+      "startRva": 127927212,
+      "endRva": 127927715,
+      "sha256": "AF9F6454F69CB3E5592193DF48D1960FFF1D4CF58F60B1A28CA3850EDD503A90",
+      "boundary": "MemoryPack.Formatters.ListFormatter`1<Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk+EnvTalkStruct>.Deserialize"
+    },
+    {
+      "startRva": 155589096,
+      "endRva": 155589185,
+      "sha256": "C472D2BCF38852D830375463891C34154AAB77B4BCB8FF8CF6639D9E0D7C718E",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack+Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPackFormatter.Deserialize"
+    },
+    {
+      "startRva": 155589336,
+      "endRva": 155590023,
+      "sha256": "C33E2D7D8136FA9C330F25242F9A9163D73EA5836CE05BC8F37456ECD3D0B24B",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack.Deserialize"
+    },
+    {
+      "startRva": 155590024,
+      "endRva": 155590032,
+      "sha256": "76DDF0B546906BA636C9CEB69C8A8EC15D704BDA4384B6DC67F6CC9009C0760B",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack.GetValue"
+    },
+    {
+      "startRva": 155596844,
+      "endRva": 155596933,
+      "sha256": "37543783EF53162D2EAC576E77454147567CFC5BF289BB00497690FD18FE7F5B",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack+Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPackFormatter.Deserialize"
+    },
+    {
+      "startRva": 155597084,
+      "endRva": 155597771,
+      "sha256": "78E03A77DFA687694F4B1A09E8395CA9DCA3246347B2B11E31EB41CF611C0C31",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack.Deserialize"
+    },
+    {
+      "startRva": 155597772,
+      "endRva": 155597780,
+      "sha256": "76DDF0B546906BA636C9CEB69C8A8EC15D704BDA4384B6DC67F6CC9009C0760B",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack.GetValue"
+    },
+    {
+      "startRva": 155604408,
+      "endRva": 155604497,
+      "sha256": "CE37E1E2699291C156F601A1A501DB6533D2B34989996BF49BDB9C3D4FB83EF0",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack+Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPackFormatter.Deserialize"
+    },
+    {
+      "startRva": 155604648,
+      "endRva": 155605335,
+      "sha256": "51DE399D52B05695756CA44E440EB230743E781FBA6CCF6DECC12EAEAF85C8B8",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack.Deserialize"
+    },
+    {
+      "startRva": 155605336,
+      "endRva": 155605344,
+      "sha256": "76DDF0B546906BA636C9CEB69C8A8EC15D704BDA4384B6DC67F6CC9009C0760B",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack.GetValue"
+    },
+    {
+      "startRva": 158046936,
+      "endRva": 158047025,
+      "sha256": "A735E2B961A6ECDC2E36050960ABF63D9C48B13BD47B4FBA3A6E029B15100ECA",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack+Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPackFormatter.Deserialize"
+    },
+    {
+      "startRva": 158047164,
+      "endRva": 158047546,
+      "sha256": "2EA77D4290B71C352630BC1BCFDC791A40260893770F0676411808DBB93511CB",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack.Deserialize"
+    },
+    {
+      "startRva": 158047548,
+      "endRva": 158047850,
+      "sha256": "ACDA34AF6466ACE872886E30EAD203F19D03B4851516F449290838BE60D9CA24",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack.RegisterFormatter"
+    },
+    {
+      "startRva": 158047852,
+      "endRva": 158047860,
+      "sha256": "52372062C5F542A42ADC46FF548BCD581A8AB7F6DD7457849E10929D7C6D6A08",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack..cctor"
+    },
+    {
+      "startRva": 158047956,
+      "endRva": 158048045,
+      "sha256": "0CE434906EAC9EF03FC46EA3ECDB7D61326BB24DBE2257558E46A4C1B2A30402",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack+Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPackFormatter.Deserialize"
+    },
+    {
+      "startRva": 158048184,
+      "endRva": 158048566,
+      "sha256": "0EF8AF075FFAA9226062CED7E3CD8E734EDF9ECC6A693930D4C25CF955709A05",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack.Deserialize"
+    },
+    {
+      "startRva": 158048568,
+      "endRva": 158048870,
+      "sha256": "92F7D99E0B20B03456B68FC78902E9E315BD58187457DCDE4AEED74D72029ACF",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack.RegisterFormatter"
+    },
+    {
+      "startRva": 158048872,
+      "endRva": 158048880,
+      "sha256": "52372062C5F542A42ADC46FF548BCD581A8AB7F6DD7457849E10929D7C6D6A08",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack..cctor"
+    },
+    {
+      "startRva": 158048976,
+      "endRva": 158049065,
+      "sha256": "A8585FD8446CC0C501FE0C5069E4FDCBF065C9603DCA631D294561907498A1E7",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack+Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPackFormatter.Deserialize"
+    },
+    {
+      "startRva": 158049204,
+      "endRva": 158049586,
+      "sha256": "DEB122471744B6A3719DD97D11C11A09B4BE31D3448D23139DA40F7405B0C1B7",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack.Deserialize"
+    },
+    {
+      "startRva": 158049588,
+      "endRva": 158049890,
+      "sha256": "AE6969ACC3FE999453F7ECC3A8E8A9340AFFD9C5D4FCE6B604CDEBA148D32C56",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack.RegisterFormatter"
+    },
+    {
+      "startRva": 158049892,
+      "endRva": 158049900,
+      "sha256": "52372062C5F542A42ADC46FF548BCD581A8AB7F6DD7457849E10929D7C6D6A08",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack..cctor"
+    },
+    {
+      "startRva": 158118112,
+      "endRva": 158118201,
+      "sha256": "B832FDC2DDB4B04966AA71E5144ACCF76499EB9AAD0ADD499C6C3E3B3F90044A",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack+Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPackFormatter.Deserialize"
+    },
+    {
+      "startRva": 158118244,
+      "endRva": 158118524,
+      "sha256": "E1C5DB5A8E17F371831CCF696DF56AF2D4624A01D1A9003F0DA49B7B1AAFB82F",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack.Deserialize"
+    },
+    {
+      "startRva": 158118524,
+      "endRva": 158118736,
+      "sha256": "F04F9BB5373D21C981FA25AF0B5803039692C8EEB1FE6D02CC5C9B66A2C3D671",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack.RegisterFormatter"
+    },
+    {
+      "startRva": 158118736,
+      "endRva": 158118744,
+      "sha256": "D8EF892524AEA7C176523992273987F04C798C1382035E0130765813EFDCF1F1",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack..cctor"
+    },
+    {
+      "startRva": 158118744,
+      "endRva": 158118833,
+      "sha256": "60757E94C323B355FE1FCF54348633D00D2C18E722D08FC92269549DF3B41F75",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack+Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPackFormatter.Deserialize"
+    },
+    {
+      "startRva": 158118876,
+      "endRva": 158119156,
+      "sha256": "E4CB68FD03D57789BE34663F6679FE100F2FAAD32CA7C692B06A61429D78E79F",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack.Deserialize"
+    },
+    {
+      "startRva": 158119156,
+      "endRva": 158119368,
+      "sha256": "316BA41CE54DA37CF3E263E8C4CD07B95D00D2E96D6306E0CD98754236981723",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack.RegisterFormatter"
+    },
+    {
+      "startRva": 158119368,
+      "endRva": 158119376,
+      "sha256": "D8EF892524AEA7C176523992273987F04C798C1382035E0130765813EFDCF1F1",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack..cctor"
+    },
+    {
+      "startRva": 158119376,
+      "endRva": 158119465,
+      "sha256": "7D08FB0543C354268F57FAD0CD8B4DAA6B6B7F811C4342FE5E65F38FBB0C97BD",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack+Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPackFormatter.Deserialize"
+    },
+    {
+      "startRva": 158119508,
+      "endRva": 158119788,
+      "sha256": "0F3A6A0AB2E40751AD2835637DE0DE8FB9307478E9231CC915BC7F7F0918EFE3",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack.Deserialize"
+    },
+    {
+      "startRva": 158119788,
+      "endRva": 158120000,
+      "sha256": "6B440C75A9E7F61156FDA939E0246FA2EA8836EF585BF6BCE271DD033BA75426",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack.RegisterFormatter"
+    },
+    {
+      "startRva": 158120000,
+      "endRva": 158120008,
+      "sha256": "D8EF892524AEA7C176523992273987F04C798C1382035E0130765813EFDCF1F1",
+      "boundary": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack..cctor"
+    }
+  ],
+  "registrations": [
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcAtmosphericOverrideEnvTalk",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack",
+      "classInstantiation": 39719,
+      "adapterTypeIndex": 206291,
+      "keyTypeIndex": 132981,
+      "constructorMethodSpecIndex": 560968,
+      "constructorMethodSpec": [
+        102200,
+        39719,
+        -1
+      ],
+      "registrationWindow": {
+        "startRva": 44772938,
+        "endRva": 44773053,
+        "sha256": "6860A833304D53D242CBA6FD123824339F9B0704706C6EFE01F1DE43737C84B7",
+        "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+      },
+      "objectStackSlot": "[rsp+0xf270]",
+      "resolvedTypeStackSlot": "[rsp+0xf280]"
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcAtmosphericOverrideEnvTalk+EnvTalkStruct",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "classInstantiation": 41257,
+      "adapterTypeIndex": 207829,
+      "keyTypeIndex": 172434,
+      "constructorMethodSpecIndex": 562506,
+      "constructorMethodSpec": [
+        102200,
+        41257,
+        -1
+      ],
+      "registrationWindow": {
+        "startRva": 44773053,
+        "endRva": 44773168,
+        "sha256": "105B646E0F78E1A17B84A4053A9559843E1FDC1978AF4A065583DEDBEB685134",
+        "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+      },
+      "objectStackSlot": "[rsp+0xf288]",
+      "resolvedTypeStackSlot": "[rsp+0xf298]"
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcOverrideEnvTalk",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack",
+      "classInstantiation": 39737,
+      "adapterTypeIndex": 206309,
+      "keyTypeIndex": 133122,
+      "constructorMethodSpecIndex": 560986,
+      "constructorMethodSpec": [
+        102200,
+        39737,
+        -1
+      ],
+      "registrationWindow": {
+        "startRva": 44774046,
+        "endRva": 44774161,
+        "sha256": "09090C44C262C20A6F5BA197D21B003722BADE4F755E459D84C9A9BC92899CE6",
+        "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+      },
+      "objectStackSlot": "[rsp+0xf350]",
+      "resolvedTypeStackSlot": "[rsp+0xf360]"
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcOverrideEnvTalk+EnvTalkStruct",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "classInstantiation": 41258,
+      "adapterTypeIndex": 207830,
+      "keyTypeIndex": 172530,
+      "constructorMethodSpecIndex": 562507,
+      "constructorMethodSpec": [
+        102200,
+        41258,
+        -1
+      ],
+      "registrationWindow": {
+        "startRva": 44774161,
+        "endRva": 44774276,
+        "sha256": "2C6500DC7CE4C088EC21B3E2D94E38824C2A497AA677C3F455DA3C2E5A14E68B",
+        "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+      },
+      "objectStackSlot": "[rsp+0xf368]",
+      "resolvedTypeStackSlot": "[rsp+0xf378]"
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+      "classInstantiation": 39751,
+      "adapterTypeIndex": 206323,
+      "keyTypeIndex": 133176,
+      "constructorMethodSpecIndex": 561000,
+      "constructorMethodSpec": [
+        102200,
+        39751,
+        -1
+      ],
+      "registrationWindow": {
+        "startRva": 44775154,
+        "endRva": 44775269,
+        "sha256": "01718600D9B7F022302A5AD924A730D4A2A338E42202FA40E2E72B269290187E",
+        "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+      },
+      "objectStackSlot": "[rsp+0xf430]",
+      "resolvedTypeStackSlot": "[rsp+0xf440]"
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk+EnvTalkStruct",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "classInstantiation": 41259,
+      "adapterTypeIndex": 207831,
+      "keyTypeIndex": 172537,
+      "constructorMethodSpecIndex": 562508,
+      "constructorMethodSpec": [
+        102200,
+        41259,
+        -1
+      ],
+      "registrationWindow": {
+        "startRva": 44775269,
+        "endRva": 44775384,
+        "sha256": "0249025F51588380926889CABE3E3783311F45A9351314577417BA334BBD24FF",
+        "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+      },
+      "objectStackSlot": "[rsp+0xf448]",
+      "resolvedTypeStackSlot": "[rsp+0xf458]"
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Actions.NpcAtmosphericOverrideEnvTalk+EnvTalkStruct>>",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "classInstantiation": 37388,
+      "adapterTypeIndex": 203960,
+      "keyTypeIndex": 71747,
+      "constructorMethodSpecIndex": 558637,
+      "constructorMethodSpec": [
+        102200,
+        37388,
+        -1
+      ],
+      "registrationWindow": {
+        "startRva": 44792599,
+        "endRva": 44792714,
+        "sha256": "0C271061C9748C94AF073B3A1078AF173FA130B551CCCEF9D1712BEC601B04D0",
+        "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+      },
+      "objectStackSlot": "[rsp+0x101d8]",
+      "resolvedTypeStackSlot": "[rsp+0x101e8]"
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Actions.NpcOverrideEnvTalk+EnvTalkStruct>>",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "classInstantiation": 37389,
+      "adapterTypeIndex": 203961,
+      "keyTypeIndex": 71750,
+      "constructorMethodSpecIndex": 558638,
+      "constructorMethodSpec": [
+        102200,
+        37389,
+        -1
+      ],
+      "registrationWindow": {
+        "startRva": 44792714,
+        "endRva": 44792829,
+        "sha256": "0144981E3976FF11B930B8B1A27EB988478B4BB2EF9E18491DCC8D35E42BA5F1",
+        "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+      },
+      "objectStackSlot": "[rsp+0x101f0]",
+      "resolvedTypeStackSlot": "[rsp+0x10200]"
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk+EnvTalkStruct>>",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "classInstantiation": 37390,
+      "adapterTypeIndex": 203962,
+      "keyTypeIndex": 71753,
+      "constructorMethodSpecIndex": 558639,
+      "constructorMethodSpec": [
+        102200,
+        37390,
+        -1
+      ],
+      "registrationWindow": {
+        "startRva": 44792829,
+        "endRva": 44792944,
+        "sha256": "9C716BDDD07CB2DC2AA1E7FBA4F8320212D17B6558FD68F996060C415F0A6359",
+        "boundary": "InitEager exact original type key and adapter object to RegisterWrap"
+      },
+      "objectStackSlot": "[rsp+0x10208]",
+      "resolvedTypeStackSlot": "[rsp+0x10218]"
+    }
+  ],
+  "interfaces": [
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcAtmosphericOverrideEnvTalk",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalkForMemoryPack",
+      "wrapperDefinition": 19379,
+      "interfaceTypeIndex": 48353,
+      "interfaceOffset": 7,
+      "getValueMethodIndex": 142937,
+      "formatterDefinition": 19378,
+      "formatterDeserializeMethodIndex": 142946,
+      "nativeValueBytes": null
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcAtmosphericOverrideEnvTalk+EnvTalkStruct",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "wrapperDefinition": 23191,
+      "interfaceTypeIndex": 49893,
+      "interfaceOffset": 4,
+      "getValueMethodIndex": 168247,
+      "formatterDefinition": 23190,
+      "formatterDeserializeMethodIndex": 168254,
+      "nativeValueBytes": 16
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcOverrideEnvTalk",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalkForMemoryPack",
+      "wrapperDefinition": 19403,
+      "interfaceTypeIndex": 48371,
+      "interfaceOffset": 7,
+      "getValueMethodIndex": 143100,
+      "formatterDefinition": 19402,
+      "formatterDeserializeMethodIndex": 143109,
+      "nativeValueBytes": null
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcOverrideEnvTalk+EnvTalkStruct",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "wrapperDefinition": 23193,
+      "interfaceTypeIndex": 49894,
+      "interfaceOffset": 4,
+      "getValueMethodIndex": 168259,
+      "formatterDefinition": 23192,
+      "formatterDeserializeMethodIndex": 168266,
+      "nativeValueBytes": 16
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalkForMemoryPack",
+      "wrapperDefinition": 19417,
+      "interfaceTypeIndex": 48385,
+      "interfaceOffset": 7,
+      "getValueMethodIndex": 143198,
+      "formatterDefinition": 19416,
+      "formatterDeserializeMethodIndex": 143207,
+      "nativeValueBytes": null
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk+EnvTalkStruct",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStructForMemoryPack",
+      "wrapperDefinition": 23195,
+      "interfaceTypeIndex": 49895,
+      "interfaceOffset": 4,
+      "getValueMethodIndex": 168271,
+      "formatterDefinition": 23194,
+      "formatterDeserializeMethodIndex": 168278,
+      "nativeValueBytes": 16
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Actions.NpcAtmosphericOverrideEnvTalk+EnvTalkStruct>>",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcAtmosphericOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "wrapperDefinition": 22851,
+      "interfaceTypeIndex": 46022,
+      "interfaceOffset": 4,
+      "getValueMethodIndex": 165832,
+      "formatterDefinition": 22850,
+      "formatterDeserializeMethodIndex": 165841,
+      "nativeValueBytes": null
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Actions.NpcOverrideEnvTalk+EnvTalkStruct>>",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "wrapperDefinition": 22857,
+      "interfaceTypeIndex": 46023,
+      "interfaceOffset": 4,
+      "getValueMethodIndex": 165874,
+      "formatterDefinition": 22856,
+      "formatterDeserializeMethodIndex": 165883,
+      "nativeValueBytes": null
+    },
+    {
+      "originalType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Actions.NpcProxyOverrideEnvTalk+EnvTalkStruct>>",
+      "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_System_Collections_Generic_List_Beyond_Gameplay_Actions_NpcProxyOverrideEnvTalk_EnvTalkStruct__ForMemoryPack",
+      "wrapperDefinition": 22861,
+      "interfaceTypeIndex": 46024,
+      "interfaceOffset": 4,
+      "getValueMethodIndex": 165902,
+      "formatterDefinition": 22860,
+      "formatterDeserializeMethodIndex": 165911,
+      "nativeValueBytes": null
+    }
+  ],
+  "genericContexts": [
+    {
+      "definition": 54057,
+      "isMethod": false,
+      "token": 33554514,
+      "image": "MemoryPack.dll",
+      "typeName": "MemoryPack.Formatters.ListFormatter`1",
+      "methodName": null,
+      "start": 186,
+      "count": 9,
+      "entries": [
+        {
+          "relativeSlot": 0,
+          "moduleEntryIndex": 186,
+          "entryVa": 6650869232,
+          "rawHex": "02000000000000000C9F328C01000000",
+          "kind": 2,
+          "index": 56616,
+          "type": {
+            "name": "System.Collections.Generic.List`1<VAR[21878]>",
+            "typePointerVa": 6647957352,
+            "rawHex": "288A8C8D010000000000150000000000",
+            "definition": {
+              "name": "System.Collections.Generic.List`1",
+              "typePointerVa": 6663206968,
+              "rawHex": "91920000000000000000120000000000"
+            },
+            "classInstantiationIndex": 19219,
+            "classArguments": [
+              {
+                "name": "VAR[21878]",
+                "typePointerVa": 6663703032,
+                "rawHex": "76550000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 21878,
+                  "parameterOffset": 42909972,
+                  "parameterRawHex": "7D200000522400000000000000000000",
+                  "containerIndex": 8317,
+                  "containerOffset": 43099824,
+                  "containerRawHex": "29D30000010000000000000076550000",
+                  "typeIndex": 54057,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "MemoryPack.Formatters.ListFormatter`1"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "relativeSlot": 1,
+          "moduleEntryIndex": 187,
+          "entryVa": 6650869248,
+          "rawHex": "030000000000000050A4328C01000000",
+          "kind": 3,
+          "index": 217926,
+          "methodSpec": [
+            286540,
+            19219,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.List`1",
+          "methodName": ".ctor",
+          "classArguments": [
+            {
+              "name": "VAR[21878]",
+              "typePointerVa": 6663703032,
+              "rawHex": "76550000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 21878,
+                "parameterOffset": 42909972,
+                "parameterRawHex": "7D200000522400000000000000000000",
+                "containerIndex": 8317,
+                "containerOffset": 43099824,
+                "containerRawHex": "29D30000010000000000000076550000",
+                "typeIndex": 54057,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "MemoryPack.Formatters.ListFormatter`1"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 2,
+          "moduleEntryIndex": 188,
+          "entryVa": 6650869264,
+          "rawHex": "03000000000000009CA6328C01000000",
+          "kind": 3,
+          "index": 217928,
+          "methodSpec": [
+            286563,
+            19219,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.List`1",
+          "methodName": "Clear",
+          "classArguments": [
+            {
+              "name": "VAR[21878]",
+              "typePointerVa": 6663703032,
+              "rawHex": "76550000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 21878,
+                "parameterOffset": 42909972,
+                "parameterRawHex": "7D200000522400000000000000000000",
+                "containerIndex": 8317,
+                "containerOffset": 43099824,
+                "containerRawHex": "29D30000010000000000000076550000",
+                "typeIndex": 54057,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "MemoryPack.Formatters.ListFormatter`1"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 3,
+          "moduleEntryIndex": 189,
+          "entryVa": 6650869280,
+          "rawHex": "03000000000000000C9C328C01000000",
+          "kind": 3,
+          "index": 516773,
+          "methodSpec": [
+            428394,
+            -1,
+            19219
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatterProvider",
+          "methodName": "GetFormatter",
+          "classArguments": [],
+          "methodArguments": [
+            {
+              "name": "VAR[21878]",
+              "typePointerVa": 6663703032,
+              "rawHex": "76550000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 21878,
+                "parameterOffset": 42909972,
+                "parameterRawHex": "7D200000522400000000000000000000",
+                "containerIndex": 8317,
+                "containerOffset": 43099824,
+                "containerRawHex": "29D30000010000000000000076550000",
+                "typeIndex": 54057,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "MemoryPack.Formatters.ListFormatter`1"
+              }
+            }
+          ]
+        },
+        {
+          "relativeSlot": 4,
+          "moduleEntryIndex": 190,
+          "entryVa": 6650869296,
+          "rawHex": "02000000000000002098328C01000000",
+          "kind": 2,
+          "index": 211971,
+          "type": {
+            "name": "MemoryPack.MemoryPackFormatter`1<VAR[21878]>",
+            "typePointerVa": 6648165368,
+            "rawHex": "3879928D010000000000150000000000",
+            "definition": {
+              "name": "MemoryPack.MemoryPackFormatter`1",
+              "typePointerVa": 6663129624,
+              "rawHex": "F5D20000000000000000120000000000"
+            },
+            "classInstantiationIndex": 19219,
+            "classArguments": [
+              {
+                "name": "VAR[21878]",
+                "typePointerVa": 6663703032,
+                "rawHex": "76550000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 21878,
+                  "parameterOffset": 42909972,
+                  "parameterRawHex": "7D200000522400000000000000000000",
+                  "containerIndex": 8317,
+                  "containerOffset": 43099824,
+                  "containerRawHex": "29D30000010000000000000076550000",
+                  "typeIndex": 54057,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "MemoryPack.Formatters.ListFormatter`1"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "relativeSlot": 5,
+          "moduleEntryIndex": 191,
+          "entryVa": 6650869312,
+          "rawHex": "0300000000000000B499328C01000000",
+          "kind": 3,
+          "index": 280202,
+          "methodSpec": [
+            428408,
+            19219,
+            -1
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatter`1",
+          "methodName": "Deserialize",
+          "classArguments": [
+            {
+              "name": "VAR[21878]",
+              "typePointerVa": 6663703032,
+              "rawHex": "76550000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 21878,
+                "parameterOffset": 42909972,
+                "parameterRawHex": "7D200000522400000000000000000000",
+                "containerIndex": 8317,
+                "containerOffset": 43099824,
+                "containerRawHex": "29D30000010000000000000076550000",
+                "typeIndex": 54057,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "MemoryPack.Formatters.ListFormatter`1"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 6,
+          "moduleEntryIndex": 192,
+          "entryVa": 6650869328,
+          "rawHex": "030000000000000034A9328C01000000",
+          "kind": 3,
+          "index": 217927,
+          "methodSpec": [
+            286555,
+            19219,
+            -1
+          ],
+          "typeName": "System.Collections.Generic.List`1",
+          "methodName": "Add",
+          "classArguments": [
+            {
+              "name": "VAR[21878]",
+              "typePointerVa": 6663703032,
+              "rawHex": "76550000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 21878,
+                "parameterOffset": 42909972,
+                "parameterRawHex": "7D200000522400000000000000000000",
+                "containerIndex": 8317,
+                "containerOffset": 43099824,
+                "containerRawHex": "29D30000010000000000000076550000",
+                "typeIndex": 54057,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "MemoryPack.Formatters.ListFormatter`1"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 7,
+          "moduleEntryIndex": 193,
+          "entryVa": 6650869344,
+          "rawHex": "03000000000000004499328C01000000",
+          "kind": 3,
+          "index": 280277,
+          "methodSpec": [
+            428410,
+            20909,
+            -1
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatter`1",
+          "methodName": ".ctor",
+          "classArguments": [
+            {
+              "name": "System.Collections.Generic.List`1<VAR[21878]>",
+              "typePointerVa": 6647957352,
+              "rawHex": "288A8C8D010000000000150000000000",
+              "definition": {
+                "name": "System.Collections.Generic.List`1",
+                "typePointerVa": 6663206968,
+                "rawHex": "91920000000000000000120000000000"
+              },
+              "classInstantiationIndex": 19219,
+              "classArguments": [
+                {
+                  "name": "VAR[21878]",
+                  "typePointerVa": 6663703032,
+                  "rawHex": "76550000000000000000130000000000",
+                  "parameterOwner": {
+                    "parameterIndex": 21878,
+                    "parameterOffset": 42909972,
+                    "parameterRawHex": "7D200000522400000000000000000000",
+                    "containerIndex": 8317,
+                    "containerOffset": 43099824,
+                    "containerRawHex": "29D30000010000000000000076550000",
+                    "typeIndex": 54057,
+                    "ordinal": 0,
+                    "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                    "typeName": "MemoryPack.Formatters.ListFormatter`1"
+                  }
+                }
+              ]
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 8,
+          "moduleEntryIndex": 194,
+          "entryVa": 6650869360,
+          "rawHex": "0200000000000000A898328C01000000",
+          "kind": 2,
+          "index": 60658,
+          "type": {
+            "name": "MemoryPack.MemoryPackFormatter`1<System.Collections.Generic.List`1<VAR[21878]>>",
+            "typePointerVa": 6647422152,
+            "rawHex": "F8DA248D010000000000150000000000",
+            "definition": {
+              "name": "MemoryPack.MemoryPackFormatter`1",
+              "typePointerVa": 6663129624,
+              "rawHex": "F5D20000000000000000120000000000"
+            },
+            "classInstantiationIndex": 20909,
+            "classArguments": [
+              {
+                "name": "System.Collections.Generic.List`1<VAR[21878]>",
+                "typePointerVa": 6647957352,
+                "rawHex": "288A8C8D010000000000150000000000",
+                "definition": {
+                  "name": "System.Collections.Generic.List`1",
+                  "typePointerVa": 6663206968,
+                  "rawHex": "91920000000000000000120000000000"
+                },
+                "classInstantiationIndex": 19219,
+                "classArguments": [
+                  {
+                    "name": "VAR[21878]",
+                    "typePointerVa": 6663703032,
+                    "rawHex": "76550000000000000000130000000000",
+                    "parameterOwner": {
+                      "parameterIndex": 21878,
+                      "parameterOffset": 42909972,
+                      "parameterRawHex": "7D200000522400000000000000000000",
+                      "containerIndex": 8317,
+                      "containerOffset": 43099824,
+                      "containerRawHex": "29D30000010000000000000076550000",
+                      "typeIndex": 54057,
+                      "ordinal": 0,
+                      "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                      "typeName": "MemoryPack.Formatters.ListFormatter`1"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "definition": 13633,
+      "isMethod": false,
+      "token": 33554443,
+      "image": "MemoryPack.Beyond.dll",
+      "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+      "methodName": null,
+      "start": 4,
+      "count": 13,
+      "entries": [
+        {
+          "relativeSlot": 0,
+          "moduleEntryIndex": 4,
+          "entryVa": 6650862960,
+          "rawHex": "0300000000000000902C318C01000000",
+          "kind": 3,
+          "index": 165081,
+          "methodSpec": [
+            102196,
+            36656,
+            -1
+          ],
+          "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+          "methodName": "ReadIsNull",
+          "classArguments": [
+            {
+              "name": "VAR[754]",
+              "typePointerVa": 6661710024,
+              "rawHex": "F2020000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 754,
+                "parameterOffset": 42571988,
+                "parameterRawHex": "84020000057B59000000000000000000",
+                "containerIndex": 644,
+                "containerOffset": 42977056,
+                "containerRawHex": "413500000200000000000000F2020000",
+                "typeIndex": 13633,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+              }
+            },
+            {
+              "name": "VAR[755]",
+              "typePointerVa": 6664215528,
+              "rawHex": "F3020000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 755,
+                "parameterOffset": 42572004,
+                "parameterRawHex": "840200000F7B5900CE01020001000400",
+                "containerIndex": 644,
+                "containerOffset": 42977056,
+                "containerRawHex": "413500000200000000000000F2020000",
+                "typeIndex": 13633,
+                "ordinal": 1,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 1,
+          "moduleEntryIndex": 5,
+          "entryVa": 6650862976,
+          "rawHex": "02000000000000008C2C318C01000000",
+          "kind": 2,
+          "index": 203228,
+          "type": {
+            "name": "Beyond.MemoryPack.GenericMemoryPackFormatter`2<VAR[754],VAR[755]>",
+            "typePointerVa": 6648286184,
+            "rawHex": "F81D948D010000000000150000000000",
+            "definition": {
+              "name": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+              "typePointerVa": 6663736216,
+              "rawHex": "41350000000000000000120000000000"
+            },
+            "classInstantiationIndex": 36656,
+            "classArguments": [
+              {
+                "name": "VAR[754]",
+                "typePointerVa": 6661710024,
+                "rawHex": "F2020000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 754,
+                  "parameterOffset": 42571988,
+                  "parameterRawHex": "84020000057B59000000000000000000",
+                  "containerIndex": 644,
+                  "containerOffset": 42977056,
+                  "containerRawHex": "413500000200000000000000F2020000",
+                  "typeIndex": 13633,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                }
+              },
+              {
+                "name": "VAR[755]",
+                "typePointerVa": 6664215528,
+                "rawHex": "F3020000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 755,
+                  "parameterOffset": 42572004,
+                  "parameterRawHex": "840200000F7B5900CE01020001000400",
+                  "containerIndex": 644,
+                  "containerOffset": 42977056,
+                  "containerRawHex": "413500000200000000000000F2020000",
+                  "typeIndex": 13633,
+                  "ordinal": 1,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "relativeSlot": 2,
+          "moduleEntryIndex": 6,
+          "entryVa": 6650862992,
+          "rawHex": "0200000000000000F497328C01000000",
+          "kind": 2,
+          "index": 60627,
+          "type": {
+            "name": "MemoryPack.MemoryPackFormatter`1<VAR[754]>",
+            "typePointerVa": 6647424584,
+            "rawHex": "38E0248D010000000000150000000000",
+            "definition": {
+              "name": "MemoryPack.MemoryPackFormatter`1",
+              "typePointerVa": 6663129624,
+              "rawHex": "F5D20000000000000000120000000000"
+            },
+            "classInstantiationIndex": 12827,
+            "classArguments": [
+              {
+                "name": "VAR[754]",
+                "typePointerVa": 6661710024,
+                "rawHex": "F2020000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 754,
+                  "parameterOffset": 42571988,
+                  "parameterRawHex": "84020000057B59000000000000000000",
+                  "containerIndex": 644,
+                  "containerOffset": 42977056,
+                  "containerRawHex": "413500000200000000000000F2020000",
+                  "typeIndex": 13633,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "relativeSlot": 3,
+          "moduleEntryIndex": 7,
+          "entryVa": 6650863008,
+          "rawHex": "0300000000000000942C318C01000000",
+          "kind": 3,
+          "index": 165080,
+          "methodSpec": [
+            102198,
+            36656,
+            -1
+          ],
+          "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+          "methodName": "DeserializeNotNull",
+          "classArguments": [
+            {
+              "name": "VAR[754]",
+              "typePointerVa": 6661710024,
+              "rawHex": "F2020000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 754,
+                "parameterOffset": 42571988,
+                "parameterRawHex": "84020000057B59000000000000000000",
+                "containerIndex": 644,
+                "containerOffset": 42977056,
+                "containerRawHex": "413500000200000000000000F2020000",
+                "typeIndex": 13633,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+              }
+            },
+            {
+              "name": "VAR[755]",
+              "typePointerVa": 6664215528,
+              "rawHex": "F3020000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 755,
+                "parameterOffset": 42572004,
+                "parameterRawHex": "840200000F7B5900CE01020001000400",
+                "containerIndex": 644,
+                "containerOffset": 42977056,
+                "containerRawHex": "413500000200000000000000F2020000",
+                "typeIndex": 13633,
+                "ordinal": 1,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 4,
+          "moduleEntryIndex": 8,
+          "entryVa": 6650863024,
+          "rawHex": "0300000000000000449C328C01000000",
+          "kind": 3,
+          "index": 516791,
+          "methodSpec": [
+            428394,
+            -1,
+            41937
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatterProvider",
+          "methodName": "GetFormatter",
+          "classArguments": [],
+          "methodArguments": [
+            {
+              "name": "VAR[755]",
+              "typePointerVa": 6664215528,
+              "rawHex": "F3020000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 755,
+                "parameterOffset": 42572004,
+                "parameterRawHex": "840200000F7B5900CE01020001000400",
+                "containerIndex": 644,
+                "containerOffset": 42977056,
+                "containerRawHex": "413500000200000000000000F2020000",
+                "typeIndex": 13633,
+                "ordinal": 1,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+              }
+            }
+          ]
+        },
+        {
+          "relativeSlot": 5,
+          "moduleEntryIndex": 9,
+          "entryVa": 6650863040,
+          "rawHex": "0200000000000000D097328C01000000",
+          "kind": 2,
+          "index": 211984,
+          "type": {
+            "name": "MemoryPack.MemoryPackFormatter`1<VAR[755]>",
+            "typePointerVa": 6648165336,
+            "rawHex": "4877928D010000000000150000000000",
+            "definition": {
+              "name": "MemoryPack.MemoryPackFormatter`1",
+              "typePointerVa": 6663129624,
+              "rawHex": "F5D20000000000000000120000000000"
+            },
+            "classInstantiationIndex": 41937,
+            "classArguments": [
+              {
+                "name": "VAR[755]",
+                "typePointerVa": 6664215528,
+                "rawHex": "F3020000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 755,
+                  "parameterOffset": 42572004,
+                  "parameterRawHex": "840200000F7B5900CE01020001000400",
+                  "containerIndex": 644,
+                  "containerOffset": 42977056,
+                  "containerRawHex": "413500000200000000000000F2020000",
+                  "typeIndex": 13633,
+                  "ordinal": 1,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "relativeSlot": 6,
+          "moduleEntryIndex": 10,
+          "entryVa": 6650863056,
+          "rawHex": "0300000000000000D499328C01000000",
+          "kind": 3,
+          "index": 280221,
+          "methodSpec": [
+            428408,
+            41937,
+            -1
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatter`1",
+          "methodName": "Deserialize",
+          "classArguments": [
+            {
+              "name": "VAR[755]",
+              "typePointerVa": 6664215528,
+              "rawHex": "F3020000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 755,
+                "parameterOffset": 42572004,
+                "parameterRawHex": "840200000F7B5900CE01020001000400",
+                "containerIndex": 644,
+                "containerOffset": 42977056,
+                "containerRawHex": "413500000200000000000000F2020000",
+                "typeIndex": 13633,
+                "ordinal": 1,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 7,
+          "moduleEntryIndex": 11,
+          "entryVa": 6650863072,
+          "rawHex": "0200000000000000C056328C01000000",
+          "kind": 2,
+          "index": 10486,
+          "type": {
+            "name": "VAR[755]",
+            "typePointerVa": 6664215528,
+            "rawHex": "F3020000000000000000130000000000",
+            "parameterOwner": {
+              "parameterIndex": 755,
+              "parameterOffset": 42572004,
+              "parameterRawHex": "840200000F7B5900CE01020001000400",
+              "containerIndex": 644,
+              "containerOffset": 42977056,
+              "containerRawHex": "413500000200000000000000F2020000",
+              "typeIndex": 13633,
+              "ordinal": 1,
+              "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+              "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+            }
+          }
+        },
+        {
+          "relativeSlot": 8,
+          "moduleEntryIndex": 12,
+          "entryVa": 6650863088,
+          "rawHex": "020000000000000004B6328C01000000",
+          "kind": 2,
+          "index": 45287,
+          "type": {
+            "name": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1<VAR[754]>",
+            "typePointerVa": 6648387240,
+            "rawHex": "38928D8D010000000000150000000000",
+            "definition": {
+              "name": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1",
+              "typePointerVa": 6663513480,
+              "rawHex": "AD7D0000000000000000120000000000"
+            },
+            "classInstantiationIndex": 12827,
+            "classArguments": [
+              {
+                "name": "VAR[754]",
+                "typePointerVa": 6661710024,
+                "rawHex": "F2020000000000000000130000000000",
+                "parameterOwner": {
+                  "parameterIndex": 754,
+                  "parameterOffset": 42571988,
+                  "parameterRawHex": "84020000057B59000000000000000000",
+                  "containerIndex": 644,
+                  "containerOffset": 42977056,
+                  "containerRawHex": "413500000200000000000000F2020000",
+                  "typeIndex": 13633,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "relativeSlot": 9,
+          "moduleEntryIndex": 13,
+          "entryVa": 6650863104,
+          "rawHex": "030000000000000008B6328C01000000",
+          "kind": 3,
+          "index": 173212,
+          "methodSpec": [
+            249850,
+            12827,
+            -1
+          ],
+          "typeName": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1",
+          "methodName": "GetValue",
+          "classArguments": [
+            {
+              "name": "VAR[754]",
+              "typePointerVa": 6661710024,
+              "rawHex": "F2020000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 754,
+                "parameterOffset": 42571988,
+                "parameterRawHex": "84020000057B59000000000000000000",
+                "containerIndex": 644,
+                "containerOffset": 42977056,
+                "containerRawHex": "413500000200000000000000F2020000",
+                "typeIndex": 13633,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+              }
+            }
+          ],
+          "methodArguments": []
+        },
+        {
+          "relativeSlot": 10,
+          "moduleEntryIndex": 14,
+          "entryVa": 6650863120,
+          "rawHex": "0100000000000000C056328C01000000",
+          "kind": 1,
+          "index": 10486,
+          "type": {
+            "name": "VAR[755]",
+            "typePointerVa": 6664215528,
+            "rawHex": "F3020000000000000000130000000000",
+            "parameterOwner": {
+              "parameterIndex": 755,
+              "parameterOffset": 42572004,
+              "parameterRawHex": "840200000F7B5900CE01020001000400",
+              "containerIndex": 644,
+              "containerOffset": 42977056,
+              "containerRawHex": "413500000200000000000000F2020000",
+              "typeIndex": 13633,
+              "ordinal": 1,
+              "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+              "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+            }
+          }
+        },
+        {
+          "relativeSlot": 11,
+          "moduleEntryIndex": 15,
+          "entryVa": 6650863136,
+          "rawHex": "0300000000000000C470318C01000000",
+          "kind": 3,
+          "index": 459380,
+          "methodSpec": [
+            277939,
+            -1,
+            41937
+          ],
+          "typeName": "System.Activator",
+          "methodName": "CreateInstance",
+          "classArguments": [],
+          "methodArguments": [
+            {
+              "name": "VAR[755]",
+              "typePointerVa": 6664215528,
+              "rawHex": "F3020000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 755,
+                "parameterOffset": 42572004,
+                "parameterRawHex": "840200000F7B5900CE01020001000400",
+                "containerIndex": 644,
+                "containerOffset": 42977056,
+                "containerRawHex": "413500000200000000000000F2020000",
+                "typeIndex": 13633,
+                "ordinal": 1,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+              }
+            }
+          ]
+        },
+        {
+          "relativeSlot": 12,
+          "moduleEntryIndex": 16,
+          "entryVa": 6650863152,
+          "rawHex": "0300000000000000F09A328C01000000",
+          "kind": 3,
+          "index": 280194,
+          "methodSpec": [
+            428410,
+            12827,
+            -1
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatter`1",
+          "methodName": ".ctor",
+          "classArguments": [
+            {
+              "name": "VAR[754]",
+              "typePointerVa": 6661710024,
+              "rawHex": "F2020000000000000000130000000000",
+              "parameterOwner": {
+                "parameterIndex": 754,
+                "parameterOffset": 42571988,
+                "parameterRawHex": "84020000057B59000000000000000000",
+                "containerIndex": 644,
+                "containerOffset": 42977056,
+                "containerRawHex": "413500000200000000000000F2020000",
+                "typeIndex": 13633,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2"
+              }
+            }
+          ],
+          "methodArguments": []
+        }
+      ]
+    },
+    {
+      "definition": 428461,
+      "isMethod": true,
+      "token": 100663410,
+      "image": "MemoryPack.dll",
+      "typeName": "MemoryPack.MemoryPackReader",
+      "methodName": "ReadPackable",
+      "start": 35,
+      "count": 1,
+      "entries": [
+        {
+          "relativeSlot": 0,
+          "moduleEntryIndex": 35,
+          "entryVa": 6650866816,
+          "rawHex": "03000000000000001497328C01000000",
+          "kind": 3,
+          "index": 517703,
+          "methodSpec": [
+            428463,
+            -1,
+            55058
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadValue",
+          "classArguments": [],
+          "methodArguments": [
+            {
+              "name": "MVAR[21110]",
+              "typePointerVa": 6664960856,
+              "rawHex": "765200000000000000001E0000000000",
+              "parameterOwner": {
+                "parameterIndex": 21110,
+                "parameterOffset": 42897684,
+                "parameterRawHex": "F51F0000522400000000000000000000",
+                "containerIndex": 8181,
+                "containerOffset": 43097648,
+                "containerRawHex": "AD890600010000000100000076520000",
+                "methodIndex": 428461,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "MemoryPack.MemoryPackReader",
+                "methodName": "ReadPackable"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "definition": 428462,
+      "isMethod": true,
+      "token": 100663411,
+      "image": "MemoryPack.dll",
+      "typeName": "MemoryPack.MemoryPackReader",
+      "methodName": "ReadPackable",
+      "start": 36,
+      "count": 1,
+      "entries": [
+        {
+          "relativeSlot": 0,
+          "moduleEntryIndex": 36,
+          "entryVa": 6650866832,
+          "rawHex": "03000000000000001897328C01000000",
+          "kind": 3,
+          "index": 517554,
+          "methodSpec": [
+            428464,
+            -1,
+            54984
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadValue",
+          "classArguments": [],
+          "methodArguments": [
+            {
+              "name": "MVAR[21111]",
+              "typePointerVa": 6664963336,
+              "rawHex": "775200000000000000001E0000000000",
+              "parameterOwner": {
+                "parameterIndex": 21111,
+                "parameterOffset": 42897700,
+                "parameterRawHex": "F61F0000522400000000000000000000",
+                "containerIndex": 8182,
+                "containerOffset": 43097664,
+                "containerRawHex": "AE890600010000000100000077520000",
+                "methodIndex": 428462,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "MemoryPack.MemoryPackReader",
+                "methodName": "ReadPackable"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "definition": 428464,
+      "isMethod": true,
+      "token": 100663413,
+      "image": "MemoryPack.dll",
+      "typeName": "MemoryPack.MemoryPackReader",
+      "methodName": "ReadValue",
+      "start": 40,
+      "count": 3,
+      "entries": [
+        {
+          "relativeSlot": 0,
+          "moduleEntryIndex": 40,
+          "entryVa": 6650866896,
+          "rawHex": "0300000000000000389C328C01000000",
+          "kind": 3,
+          "index": 516756,
+          "methodSpec": [
+            428394,
+            -1,
+            41928
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatterProvider",
+          "methodName": "GetFormatter",
+          "classArguments": [],
+          "methodArguments": [
+            {
+              "name": "MVAR[21113]",
+              "typePointerVa": 6664052152,
+              "rawHex": "795200000000000000001E0000000000",
+              "parameterOwner": {
+                "parameterIndex": 21113,
+                "parameterOffset": 42897732,
+                "parameterRawHex": "F81F0000522400000000000000000000",
+                "containerIndex": 8184,
+                "containerOffset": 43097696,
+                "containerRawHex": "B0890600010000000100000079520000",
+                "methodIndex": 428464,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "MemoryPack.MemoryPackReader",
+                "methodName": "ReadValue"
+              }
+            }
+          ]
+        },
+        {
+          "relativeSlot": 1,
+          "moduleEntryIndex": 41,
+          "entryVa": 6650866912,
+          "rawHex": "02000000000000003C98328C01000000",
+          "kind": 2,
+          "index": 211958,
+          "type": {
+            "name": "MemoryPack.MemoryPackFormatter`1<MVAR[21113]>",
+            "typePointerVa": 6648165560,
+            "rawHex": "587B928D010000000000150000000000",
+            "definition": {
+              "name": "MemoryPack.MemoryPackFormatter`1",
+              "typePointerVa": 6663129624,
+              "rawHex": "F5D20000000000000000120000000000"
+            },
+            "classInstantiationIndex": 41928,
+            "classArguments": [
+              {
+                "name": "MVAR[21113]",
+                "typePointerVa": 6664052152,
+                "rawHex": "795200000000000000001E0000000000",
+                "parameterOwner": {
+                  "parameterIndex": 21113,
+                  "parameterOffset": 42897732,
+                  "parameterRawHex": "F81F0000522400000000000000000000",
+                  "containerIndex": 8184,
+                  "containerOffset": 43097696,
+                  "containerRawHex": "B0890600010000000100000079520000",
+                  "methodIndex": 428464,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "MemoryPack.MemoryPackReader",
+                  "methodName": "ReadValue"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "relativeSlot": 2,
+          "moduleEntryIndex": 42,
+          "entryVa": 6650866928,
+          "rawHex": "03000000000000009499328C01000000",
+          "kind": 3,
+          "index": 280173,
+          "methodSpec": [
+            428408,
+            41928,
+            -1
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatter`1",
+          "methodName": "Deserialize",
+          "classArguments": [
+            {
+              "name": "MVAR[21113]",
+              "typePointerVa": 6664052152,
+              "rawHex": "795200000000000000001E0000000000",
+              "parameterOwner": {
+                "parameterIndex": 21113,
+                "parameterOffset": 42897732,
+                "parameterRawHex": "F81F0000522400000000000000000000",
+                "containerIndex": 8184,
+                "containerOffset": 43097696,
+                "containerRawHex": "B0890600010000000100000079520000",
+                "methodIndex": 428464,
+                "ordinal": 0,
+                "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                "typeName": "MemoryPack.MemoryPackReader",
+                "methodName": "ReadValue"
+              }
+            }
+          ],
+          "methodArguments": []
+        }
+      ]
+    },
+    {
+      "definition": 428394,
+      "isMethod": true,
+      "token": 100663343,
+      "image": "MemoryPack.dll",
+      "typeName": "MemoryPack.MemoryPackFormatterProvider",
+      "methodName": "GetFormatter",
+      "start": 13,
+      "count": 2,
+      "entries": [
+        {
+          "relativeSlot": 0,
+          "moduleEntryIndex": 13,
+          "entryVa": 6650866464,
+          "rawHex": "01000000000000002448328C01000000",
+          "kind": 1,
+          "index": 2190,
+          "type": {
+            "name": "MVAR[21100]",
+            "typePointerVa": 6663425096,
+            "rawHex": "6C5200000000000000001E0000000000",
+            "parameterOwner": {
+              "parameterIndex": 21100,
+              "parameterOffset": 42897524,
+              "parameterRawHex": "EB1F0000522400000000000000000000",
+              "containerIndex": 8171,
+              "containerOffset": 43097488,
+              "containerRawHex": "6A89060001000000010000006C520000",
+              "methodIndex": 428394,
+              "ordinal": 0,
+              "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+              "typeName": "MemoryPack.MemoryPackFormatterProvider",
+              "methodName": "GetFormatter"
+            }
+          }
+        },
+        {
+          "relativeSlot": 1,
+          "moduleEntryIndex": 14,
+          "entryVa": 6650866480,
+          "rawHex": "0200000000000000F098328C01000000",
+          "kind": 2,
+          "index": 60616,
+          "type": {
+            "name": "MemoryPack.MemoryPackFormatter`1<MVAR[21100]>",
+            "typePointerVa": 6647424840,
+            "rawHex": "08358C8D010000000000150000000000",
+            "definition": {
+              "name": "MemoryPack.MemoryPackFormatter`1",
+              "typePointerVa": 6663129624,
+              "rawHex": "F5D20000000000000000120000000000"
+            },
+            "classInstantiationIndex": 20869,
+            "classArguments": [
+              {
+                "name": "MVAR[21100]",
+                "typePointerVa": 6663425096,
+                "rawHex": "6C5200000000000000001E0000000000",
+                "parameterOwner": {
+                  "parameterIndex": 21100,
+                  "parameterOffset": 42897524,
+                  "parameterRawHex": "EB1F0000522400000000000000000000",
+                  "containerIndex": 8171,
+                  "containerOffset": 43097488,
+                  "containerRawHex": "6A89060001000000010000006C520000",
+                  "methodIndex": 428394,
+                  "ordinal": 0,
+                  "boundary": "Exact reciprocal identity only; constraints and names remain uninterpreted.",
+                  "typeName": "MemoryPack.MemoryPackFormatterProvider",
+                  "methodName": "GetFormatter"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "valueAbi": [
+    {
+      "rva": 124940596,
+      "length": 216,
+      "sha256": "7D12A1EA94CC2DD3D82BDE5BB964EFE2E6154753568B38089085C1D2E4F00BE0",
+      "windows": [
+        {
+          "role": "retainReaderOutputCompanion",
+          "rva": 124940623,
+          "hex": "498BF1488BDA488BF9"
+        },
+        {
+          "role": "wrapperProviderSlot4",
+          "rva": 124940674,
+          "hex": "488B88C0000000488B4920"
+        },
+        {
+          "role": "readerToWrapperDispatch",
+          "rva": 124940701,
+          "hex": "B9050000004C8D4C24504C8BC7488BD0"
+        },
+        {
+          "role": "nullWrapperZero16",
+          "rva": 124940732,
+          "hex": "0F57C00F1103"
+        },
+        {
+          "role": "conversionInterfaceSlot8",
+          "rva": 124940749,
+          "hex": "488B88C0000000488B4940"
+        },
+        {
+          "role": "conversionArguments",
+          "rva": 124940765,
+          "hex": "4C8BCF488D4C24204C8BC0"
+        },
+        {
+          "role": "copyConverted16",
+          "rva": 124940781,
+          "hex": "488BCB0F1000F30F7F03"
+        }
+      ]
+    },
+    {
+      "rva": 124939644,
+      "length": 216,
+      "sha256": "A18B158E7C67B8F03B6EE3B35FFFE1F84DE044CE6E2F369EBF7F3D50558FBC3A",
+      "windows": [
+        {
+          "role": "retainReaderOutputCompanion",
+          "rva": 124939671,
+          "hex": "498BF1488BDA488BF9"
+        },
+        {
+          "role": "wrapperProviderSlot4",
+          "rva": 124939722,
+          "hex": "488B88C0000000488B4920"
+        },
+        {
+          "role": "readerToWrapperDispatch",
+          "rva": 124939749,
+          "hex": "B9050000004C8D4C24504C8BC7488BD0"
+        },
+        {
+          "role": "nullWrapperZero16",
+          "rva": 124939780,
+          "hex": "0F57C00F1103"
+        },
+        {
+          "role": "conversionInterfaceSlot8",
+          "rva": 124939797,
+          "hex": "488B88C0000000488B4940"
+        },
+        {
+          "role": "conversionArguments",
+          "rva": 124939813,
+          "hex": "4C8BCF488D4C24204C8BC0"
+        },
+        {
+          "role": "copyConverted16",
+          "rva": 124939829,
+          "hex": "488BCB0F1000F30F7F03"
+        }
+      ]
+    },
+    {
+      "rva": 124934132,
+      "length": 216,
+      "sha256": "45F9FE8DE3364BF0180A399BE7ABDA79A4088A759E6212A19AB450970DE052AB",
+      "windows": [
+        {
+          "role": "retainReaderOutputCompanion",
+          "rva": 124934159,
+          "hex": "498BF1488BDA488BF9"
+        },
+        {
+          "role": "wrapperProviderSlot4",
+          "rva": 124934210,
+          "hex": "488B88C0000000488B4920"
+        },
+        {
+          "role": "readerToWrapperDispatch",
+          "rva": 124934237,
+          "hex": "B9050000004C8D4C24504C8BC7488BD0"
+        },
+        {
+          "role": "nullWrapperZero16",
+          "rva": 124934268,
+          "hex": "0F57C00F1103"
+        },
+        {
+          "role": "conversionInterfaceSlot8",
+          "rva": 124934285,
+          "hex": "488B88C0000000488B4940"
+        },
+        {
+          "role": "conversionArguments",
+          "rva": 124934301,
+          "hex": "4C8BCF488D4C24204C8BC0"
+        },
+        {
+          "role": "copyConverted16",
+          "rva": 124934317,
+          "hex": "488BCB0F1000F30F7F03"
+        }
+      ]
+    }
+  ]
+}

@@ -12,8 +12,9 @@ This is the only route that makes a whole BuffData root a named schema. It
 admits a unique outer-frame cohort (``is_no_positive_candidate``,
 ``is_positive_damage_candidate``) whose child layouts are independently
 validated (``CHILD_VALIDATORS``): the null/empty recursive-list branch, a
-positive ``blackboard`` DataPair list (``buff_datapair_native``) plus
-``globalModifier`` list, and one positive ``damageModifier`` whose sole
+positive ``blackboard`` DataPair lists (``buff_datapair_native``), the
+shared nullable ``AttributeModifierData`` array and its independently named
+elements, the reviewed ``globalModifier`` list branch, and one positive ``damageModifier`` whose sole
 nested blocker is that list. The damage branch composes the
 ``buff_damage_modifier_receipt`` item partition with the selected condition
 receipts (``buff_damage_*_condition_receipt``) and processor receipts
@@ -30,13 +31,14 @@ replays the exported bytes against the entire receipt before classifying a
 row as schema decoded.
 
 Refused: nonzero condition actions or processors without a selected receipt,
-positive heal, event action and attribute lists outside their selected sources,
+positive heal and event action lists outside their selected sources,
 ``stackEffects`` and timeline interiors -- each keeps its own named-ownership
 blocker. Evidence tier:
 ``exact`` stored layout for the selected rows; live formatter-provider
 choice and gameplay behavior stay open.
 """
 from __future__ import annotations
+from scripts.game_data.memorypack import buff_event_maps
 
 import hashlib
 import struct
@@ -45,6 +47,7 @@ from typing import Any
 
 from scripts.game_data.memorypack import (
     buff_adding_cooldown,
+    buff_attribute_modifier,
     buff_break_passing_selected,
     buff_damage_check_decorate_mask_condition_receipt,
     buff_damage_check_type_condition_receipt,
@@ -57,6 +60,7 @@ from scripts.game_data.memorypack import (
     buff_damage_origin_or_condition_receipt,
     buff_damage_known_compound_condition_receipt,
     buff_damage_gradual_condition_receipt,
+    buff_damage_sword_selected,
     buff_damage_if_else_condition_receipt,
     buff_damage_not_next_main_condition_receipt,
     buff_damage_two_direction_angle_condition_receipt,
@@ -95,6 +99,7 @@ from scripts.game_data.memorypack.buff_root_no_positive_native import (
 
 CHILD_VALIDATORS = {
     "addingCooldown": buff_adding_cooldown.validate_current_native_contract,
+    "attributeModifier": buff_attribute_modifier.validate_current_native_contract,
     "dispelConfig": buff_dispel_config.validate_current_native_contract,
     "iconConfig": buff_icon_config.validate_current_native_contract,
     "stackingSettings": buff_stacking_compact_native.validate_current_native_contract,
@@ -105,6 +110,18 @@ CHILD_VALIDATORS = {
 
 
 def is_no_positive_candidate(framed: dict[str, Any], *, length: int) -> bool:
+    return _is_ordinary_root_candidate(framed, length=length, allow_event_maps=False)
+
+
+def is_shared_event_candidate(framed: dict[str, Any], *, length: int) -> bool:
+    """Candidate selection only; every recursive action still needs its receipt."""
+    if framed.get("wholeSchemaExact") is True:
+        return False
+    return _is_ordinary_root_candidate(framed, length=length, allow_event_maps=True)
+
+
+def _is_ordinary_root_candidate(framed: dict[str, Any], *, length: int,
+                                allow_event_maps: bool) -> bool:
     """Select only the legacy first-stop cohort the forward reader can prove."""
     if (framed.get("coverageStatus") != "unique"
             or framed.get("candidateCount") != 1
@@ -119,14 +136,18 @@ def is_no_positive_candidate(framed: dict[str, Any], *, length: int) -> bool:
     legacy = candidate.get("namedSchemaReceipt") or {}
     fields = legacy.get("forwardNamedFields") or []
     if (legacy.get("physicalEof") != length
-            or legacy.get("actionUnionCount") != 0
+            or (not allow_event_maps and legacy.get("actionUnionCount") != 0)
             or legacy.get("hasConservativeSuffixFrontier") is not False
             or legacy.get("composedOpaqueBytes") != 0
-            or not _allowed_blockers(legacy.get("blockers"))
+            or not (_event_blockers_allowed(legacy.get("blockers"), fields)
+                    if allow_event_maps else _allowed_blockers(legacy.get("blockers")))
             or len(fields) != 15
             or [field.get("index") for field in fields] != list(range(15))):
         return False
-    lengths = {0: 4, 3: 6, 5: 4, 6: 4, 13: 4}
+    lengths = {6: 4, 13: 4} if allow_event_maps else {0: 4, 5: 4, 6: 4, 13: 4}
+    if allow_event_maps and not any(fields[index].get("end", -1) - fields[index].get("start", 0) > 4
+                                    for index in (0, 5)):
+        return False
     if any(fields[index].get("end", -1) - fields[index].get("start", 0) != size
            for index, size in lengths.items()):
         return False
@@ -145,10 +166,6 @@ def is_no_positive_candidate(framed: dict[str, Any], *, length: int) -> bool:
         and timeline.get("count") in (-1, 0)
         and _field4_exact(blackboard)
         and _field10_exact(global_modifier)
-        # The reviewed promotion is the nine-row globalModifier cohort. A
-        # positive blackboard list alone remains a partial root frontier.
-        and ((blackboard.get("nestedProfile") or {}).get("count", 0) <= 0
-             or global_modifier.get("count") == 1)
     )
 
 
@@ -215,6 +232,28 @@ def is_positive_damage_candidate(framed: dict[str, Any], *, length: int) -> bool
     )
 
 
+def _event_blockers_allowed(blockers: Any, fields: list[dict[str, Any]]) -> bool:
+    if not isinstance(blockers, list) or len(fields) != 15:
+        return False
+    remaining = []
+    seen = set()
+    by_name = {fields[index].get("name"): fields[index] for index in (0, 5)}
+    for blocker in blockers:
+        if not isinstance(blocker, dict):
+            return False
+        if blocker.get("category") == "anonymous-action-interior":
+            name = blocker.get("field")
+            field = by_name.get(name)
+            if (field is None or name in seen
+                    or [blocker.get("start"), blocker.get("end")]
+                    != [field.get("start"), field.get("end")]):
+                return False
+            seen.add(name)
+        else:
+            remaining.append(blocker)
+    return _allowed_blockers(remaining)
+
+
 def _allowed_blockers(blockers: Any) -> bool:
     if not isinstance(blockers, list):
         return False
@@ -240,7 +279,13 @@ def _field4_exact(field: dict[str, Any]) -> bool:
         and child.get("wholeListExact") is True
         and child.get("startOffset") == field.get("start")
         and child.get("consumedEnd") == field.get("end")
-        and child.get("count") in (-1, 0, 1)
+        # DataPair's native root List<T> context and independent child reader
+        # prove every bounded item, regardless of whether globalModifier is
+        # populated. That old co-occurrence was a historical cohort selector,
+        # not a native presence condition. The forward root reader still
+        # reparses every item and requires all other fields and physical EOF.
+        and type(child.get("count")) is int
+        and -1 <= child["count"] <= 256
     )
 
 
@@ -559,6 +604,24 @@ def decode_selected_empty_condition_tag_ten_buff(
     return result
 
 
+def decode_selected_sword_damage_buff(
+    data: bytes, *, source: str, expected_sha256: str,
+    native_validation: dict[str, Any],
+    sword_validation: dict[str, Any],
+    outer_row: dict[str, Any],
+) -> dict[str, Any]:
+    """Compose one recursive sword condition into the sole thirty-field reader."""
+    result = _decode_buff(
+        data, source=source, expected_sha256=expected_sha256,
+        native_validation=native_validation, positive_damage_validation=None,
+        sword_validation=sword_validation, outer_row=outer_row,
+    )
+    result["schema"] = "endfield.buff-root-selected-sword-damage-receipt.v1"
+    result["selectedOnly"] = True
+    result["publicationEligible"] = False
+    return result
+
+
 def _decode_buff(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
@@ -566,6 +629,8 @@ def _decode_buff(
     positive_heal_validation: dict[str, Any] | None = None,
     break_passing_validation: dict[str, Any] | None = None,
     empty_tag_ten_validation: dict[str, Any] | None = None,
+    sword_validation: dict[str, Any] | None = None,
+    event_maps_validation: dict[str, Any] | None = None,
     outer_row: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Walk the original logical bytes through all thirty named root fields."""
@@ -573,7 +638,8 @@ def _decode_buff(
     positive_heal = positive_heal_validation is not None
     break_passing = break_passing_validation is not None
     empty_tag_ten = empty_tag_ten_validation is not None
-    if sum((positive_damage, positive_heal, break_passing, empty_tag_ten)) > 1:
+    sword_damage = sword_validation is not None
+    if sum((positive_damage, positive_heal, break_passing, empty_tag_ten, sword_damage)) > 1:
         raise ValueError("buffRootSelected:conflicting-positive-branches")
     if native_validation.get("status") != "validated":
         raise ValueError("buffRootNoPositive.native:unvalidated")
@@ -595,6 +661,12 @@ def _decode_buff(
         or not isinstance(outer_row, dict)
     ):
         raise ValueError("buffRootEmptyTagTen.native-or-outer:unvalidated")
+    if sword_damage and (
+        sword_validation.get("status") != "validated"
+        or sword_validation.get("nativeInputs") != native_validation.get("nativeInputs")
+        or not isinstance(outer_row, dict)
+    ):
+        raise ValueError("buffRootSwordDamage.native-or-outer:unvalidated")
     if positive_damage and (
         positive_damage_validation.get("status") != "validated"
         or positive_damage_validation.get("root") != native_validation
@@ -630,7 +702,7 @@ def _decode_buff(
         raise ValueError("buffRootNoPositive.source:invalid-path")
     contract = _native_contract()
     contract_fields = contract["fields"]
-    if positive_damage and contract_fields[6]["name"] != "damageModifier":
+    if (positive_damage or sword_damage) and contract_fields[6]["name"] != "damageModifier":
         raise ValueError("buffRootPositiveDamage.contract:member-six")
     if data[0] != contract["rootMemberCount"]:
         raise ValueError(f"buffRootNoPositive.header:expected=30 actual={data[0]}")
@@ -657,12 +729,22 @@ def _decode_buff(
             representation="null" if count == -1 else "empty")
         return start + 4
 
-    first = event_prefix(data, source=source, limit=len(data))
-    if first["status"] != "supported-prefix" or len(first["namedFields"]) != 1:
-        raise ValueError(f"buffRootNoPositive.abilityEventAction:{first['diagnostic']}")
-    if first["consumedEnd"] != 5 or struct.unpack_from("<i", data, 1)[0] != 0:
-        raise ValueError("buffRootNoPositive.abilityEventAction:not-empty")
-    add(0, 1, first["consumedEnd"], count=0, representation="empty")
+    if event_maps_validation is not None:
+        if (event_maps_validation.get("status") != "validated"
+                or event_maps_validation.get("nativeInputs") != native_validation.get("nativeInputs")):
+            raise ValueError("buffRootEventMaps.native:unvalidated-or-build-drift")
+        child = buff_event_maps.decode_event_map_list(
+            data, source=source, logical_sha256=actual_sha256, start=1, end=len(data),
+            family="ability", native_validation=event_maps_validation, require_end=False)
+        add(0, 1, child["end"], count=child["count"], child=child)
+        first = {"consumedEnd": child["end"]}
+    else:
+        first = event_prefix(data, source=source, limit=len(data))
+        if first["status"] != "supported-prefix" or len(first["namedFields"]) != 1:
+            raise ValueError(f"buffRootNoPositive.abilityEventAction:{first['diagnostic']}")
+        if first["consumedEnd"] != 5 or struct.unpack_from("<i", data, 1)[0] != 0:
+            raise ValueError("buffRootNoPositive.abilityEventAction:not-empty")
+        add(0, 1, first["consumedEnd"], count=0, representation="empty")
     continuation_reader = residual_root_continuation if break_passing else root_continuation
     continuation = continuation_reader(
         data, source=source, start=first["consumedEnd"], limit=len(data),
@@ -710,13 +792,28 @@ def _decode_buff(
                 add(index, start, end, count=1, child=attribute)
                 continue
             if end - start != 6 or data[start] != 2:
-                raise ValueError("buffRootNoPositive.attributeModifier:not-empty")
+                child = buff_attribute_modifier.decode_attribute_modifier(
+                    data, start, end, source=source,
+                    native_validation=native_validation["children"].get("attributeModifier") or {},
+                )
+                if child.get("wholeValueExact") is not True or child.get("consumedEnd") != end:
+                    raise ValueError("buffRootNoPositive.attributeModifier:child-incomplete")
+                add(index, start, end, child=child)
+                continue
             count = struct.unpack_from("<i", data, start + 1)[0]
             if count not in (-1, 0):
                 raise ValueError("buffRootNoPositive.attributeModifier:positive")
             add(index, start, end, memberCount=2, arrayCount=count,
                 terminalRaw=data[end - 1])
         else:
+            if index == 5 and event_maps_validation is not None:
+                child = buff_event_maps.decode_event_map_list(
+                    data, source=source, logical_sha256=actual_sha256, start=start, end=end,
+                    family="buff", native_validation=event_maps_validation)
+                if child.get("wholeStoredSchemaExact") is not True:
+                    raise ValueError("buffRootEventMaps.field[5]:child-incomplete")
+                add(index, start, end, count=child["count"], child=child)
+                continue
             if index == 5 and break_passing:
                 selected = break_passing_validation["selectedSource"]
                 if (source != selected["path"] or actual_sha256 != selected["sha256"]
@@ -1272,6 +1369,25 @@ def _decode_buff(
             ),
         }
         add(6, start, cursor, count=1, child=composed)
+    elif sword_damage:
+        start = cursor
+        selected = sword_validation["selectedSource"]
+        if (source != selected["path"] or actual_sha256 != selected["sha256"]
+                or start != selected["damageModifier"][0]):
+            raise ValueError("buffRootSwordDamage.field[6]:source-or-start")
+        child = buff_damage_sword_selected.decode_selected_source(
+            data, source=source, native_validation=sword_validation, outer_row=outer_row,
+        )
+        damage = child.get("damageModifier") or {}
+        cursor = selected["damageModifier"][1]
+        if (child.get("status") != "exact-selected-sword-damage-child"
+                or damage.get("wholeListExact") is not True
+                or damage.get("wholeNamedSchemaExact") is not True
+                or damage.get("recursiveNamedSchemaExact") is not True
+                or damage.get("count") != 1
+                or [damage.get("startOffset"), damage.get("consumedEnd")] != [start, cursor]):
+            raise ValueError("buffRootSwordDamage.field[6]:child-incomplete")
+        add(6, start, cursor, count=1, child=child)
     elif empty_tag_ten:
         start = cursor
         selected = empty_tag_ten_validation["selectedSource"]
@@ -1446,12 +1562,34 @@ def _decode_buff(
             "Selected native source/read/store order and child layouts, supplied "
             "SHA256 checked against logical bytes, "
             + ("single positive damage child and otherwise exact recursive-list branches, "
-               if positive_damage else
+               if positive_damage or sword_damage else
                "one selected positive heal child and otherwise exact recursive-list branches, "
-               if positive_heal else "null/empty recursive-list branches, ")
+               if positive_heal else
+               "one selected event action child and otherwise exact recursive-list branches, "
+               if break_passing else
+               "selected attribute and damage children and otherwise exact recursive-list branches, "
+               if empty_tag_ten else "null/empty recursive-list branches, ")
             +
             "30 contiguous field spans, id equality, and physical EOF. "
             "The caller owns independent source authentication; live formatter-provider "
             "selection and gameplay meaning are unresolved."
         ),
     }
+
+
+def decode_shared_event_root(data: bytes, *, source: str, expected_sha256: str,
+                             native_validation: dict[str, Any],
+                             event_maps_validation: dict[str, Any]) -> dict[str, Any]:
+    """Prove both event fields and all remaining original root bytes."""
+    result = _decode_buff(data, source=source, expected_sha256=expected_sha256,
+                          native_validation=native_validation, positive_damage_validation=None,
+                          event_maps_validation=event_maps_validation)
+    result["schema"] = "endfield.buff-root-shared-event-receipt.v1"
+    result["evidenceBoundary"] = (
+        "Selected native root read/store order and distinct typed event maps compose named "
+        "SequenceActionData and recursively proved action children; all thirty original fields "
+        "are contiguous, stored id matches the source stem, and the cursor reaches physical EOF. "
+        "The caller owns independent source authentication. Live formatter/provider selection, "
+        "event execution, evaluated blackboard values and gameplay effects remain unresolved."
+    )
+    return result

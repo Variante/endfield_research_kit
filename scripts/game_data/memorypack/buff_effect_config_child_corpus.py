@@ -20,8 +20,8 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import ROOT, canonical_json_sha256, sha256_file_upper
-from scripts.game_data.memorypack.buff_action_receipt_corpus import (
-    _selected_candidate, _union_records,
+from scripts.game_data.memorypack.buff_action_receipts import (
+    selected_candidate, certified_action_spans,
 )
 from scripts.game_data.memorypack.buff_effect_action_receipt import (
     TAG, decode_effect_action_receipt, validate_current_native_contract as validate_parent,
@@ -137,9 +137,9 @@ def build_report(
             continue
         if action_file.get("logicalSha256") != source_sha:
             _fail("action-source-hash", source=source)
-        candidate = _selected_candidate(file, source)
+        candidate = selected_candidate(file, source)
         certified = {(row["tag"], row["start"], row["end"])
-                     for row in _union_records(candidate, source, len(data))}
+                     for row in certified_action_spans(candidate, source=source, length=len(data))}
         seen: set[tuple[int, int, int]] = set()
         local = 0
         for action_row in action_file.get("actions", []):

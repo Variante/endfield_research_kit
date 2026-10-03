@@ -61,7 +61,7 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None, metadata: Path | None = None) -> dict[str, Any]:
     """Check selected dispatcher, formatter/source bytes, and both enums."""
     contract = _contract()
     catalog = json.loads(
@@ -104,7 +104,8 @@ def validate_current_native_contract() -> dict[str, Any]:
     ):
         raise ValueError(f"{LABEL}.contract:route-or-source")
     gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         return {"status": gate.status, "detail": gate.detail}
@@ -113,7 +114,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         return {"status": "missing", "detail": str(unity)}
     if hashlib.sha256(unity.read_bytes()).hexdigest().upper() != expected["UnityPlayer.dll"]:
         return {"status": "mismatched", "detail": "UnityPlayer.dll hash differs"}
-    sequence_native = sequence.validate_current_native_contract()
+    sequence_native = sequence.validate_current_native_contract(gameassembly=gate.gameassembly, metadata=gate.metadata)
     if sequence_native.get("status") != "validated":
         return {"status": sequence_native.get("status", "failed"),
                 "sequence": sequence_native}

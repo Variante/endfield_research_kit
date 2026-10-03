@@ -1,0 +1,489 @@
+{
+  "schema": "endfield.wwise-source-provider-dispatch-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "anonymousSourceProviderPreparation",
+      "entryRva": "0x195220",
+      "requiredRoles": [
+        "loadRequestSource",
+        "retainRequest",
+        "retainOutputContext",
+        "loadSourceFlags",
+        "maskSourceKind",
+        "compareAlternateKind",
+        "branchOrdinaryKind",
+        "loadAlternateData",
+        "loadAlternateSingleton",
+        "loadAlternateWord",
+        "passAlternateOutput",
+        "loadAlternateTable",
+        "callAlternateSlot",
+        "loadOrdinaryFlags",
+        "loadArgumentHighWord",
+        "storeArgumentHighWord",
+        "testDirectDataBit",
+        "loadSourceWord",
+        "storeDirectDataFlag",
+        "addressAuxiliary",
+        "shiftPointerBit",
+        "storeAuxiliaryPointer",
+        "testPointerBit",
+        "branchNumericDescriptor",
+        "loadSourceData",
+        "storeDescriptorPointer",
+        "jumpOrdinaryCall",
+        "storeDescriptorWord",
+        "loadOrdinarySingleton",
+        "addressOptions",
+        "addressDescriptor",
+        "loadOrdinaryTable",
+        "loadOrdinarySlot",
+        "passOrdinaryOutput",
+        "callOrdinarySlot",
+        "testFactoryStatus"
+      ],
+      "windows": [
+        {
+          "rva": "0x195220",
+          "bodyLength": 470,
+          "bodySha256": "c9ba63469ac316d93df40873c6708e216ea8ae97fd74899b436a7002022f6946",
+          "unwindRva": "0x31038c",
+          "unwindInfoHex": "011707001774170017341600170114000b500000"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadRequestSource",
+          "rva": "0x195237",
+          "instructionHex": "4c8b02"
+        },
+        {
+          "role": "retainRequest",
+          "rva": "0x19523a",
+          "instructionHex": "488bfa"
+        },
+        {
+          "role": "retainOutputContext",
+          "rva": "0x19523d",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "loadSourceFlags",
+          "rva": "0x1952a1",
+          "instructionHex": "418b480c"
+        },
+        {
+          "role": "maskSourceKind",
+          "rva": "0x1952a9",
+          "instructionHex": "83e17c"
+        },
+        {
+          "role": "compareAlternateKind",
+          "rva": "0x1952b6",
+          "instructionHex": "83f90c"
+        },
+        {
+          "role": "branchOrdinaryKind",
+          "rva": "0x1952b9",
+          "instructionHex": "7532"
+        },
+        {
+          "role": "loadAlternateData",
+          "rva": "0x1952bb",
+          "instructionHex": "488b5710"
+        },
+        {
+          "role": "loadAlternateSingleton",
+          "rva": "0x1952ce",
+          "instructionHex": "488b0d1bf61a00"
+        },
+        {
+          "role": "loadAlternateWord",
+          "rva": "0x1952d9",
+          "instructionHex": "448b4718"
+        },
+        {
+          "role": "passAlternateOutput",
+          "rva": "0x1952dd",
+          "instructionHex": "48895c2420"
+        },
+        {
+          "role": "loadAlternateTable",
+          "rva": "0x1952e2",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "callAlternateSlot",
+          "rva": "0x1952e5",
+          "instructionHex": "ff5020"
+        },
+        {
+          "role": "loadOrdinaryFlags",
+          "rva": "0x1952ed",
+          "instructionHex": "418b480c"
+        },
+        {
+          "role": "loadArgumentHighWord",
+          "rva": "0x19530c",
+          "instructionHex": "410fb7401a"
+        },
+        {
+          "role": "storeArgumentHighWord",
+          "rva": "0x195317",
+          "instructionHex": "894533"
+        },
+        {
+          "role": "testDirectDataBit",
+          "rva": "0x195322",
+          "instructionHex": "0fbae108"
+        },
+        {
+          "role": "loadSourceWord",
+          "rva": "0x195334",
+          "instructionHex": "418b4004"
+        },
+        {
+          "role": "storeDirectDataFlag",
+          "rva": "0x195338",
+          "instructionHex": "89552f"
+        },
+        {
+          "role": "addressAuxiliary",
+          "rva": "0x19533b",
+          "instructionHex": "488d552f"
+        },
+        {
+          "role": "shiftPointerBit",
+          "rva": "0x19533f",
+          "instructionHex": "c1e909"
+        },
+        {
+          "role": "storeAuxiliaryPointer",
+          "rva": "0x195342",
+          "instructionHex": "48895523"
+        },
+        {
+          "role": "testPointerBit",
+          "rva": "0x19534d",
+          "instructionHex": "4184c9"
+        },
+        {
+          "role": "branchNumericDescriptor",
+          "rva": "0x195350",
+          "instructionHex": "740a"
+        },
+        {
+          "role": "loadSourceData",
+          "rva": "0x195352",
+          "instructionHex": "498b4010"
+        },
+        {
+          "role": "storeDescriptorPointer",
+          "rva": "0x195356",
+          "instructionHex": "48894517"
+        },
+        {
+          "role": "jumpOrdinaryCall",
+          "rva": "0x19535a",
+          "instructionHex": "eb03"
+        },
+        {
+          "role": "storeDescriptorWord",
+          "rva": "0x19535c",
+          "instructionHex": "89451f"
+        },
+        {
+          "role": "loadOrdinarySingleton",
+          "rva": "0x19535f",
+          "instructionHex": "488b0d8af51a00"
+        },
+        {
+          "role": "addressOptions",
+          "rva": "0x19536f",
+          "instructionHex": "4c8d4507"
+        },
+        {
+          "role": "addressDescriptor",
+          "rva": "0x195373",
+          "instructionHex": "488d5517"
+        },
+        {
+          "role": "loadOrdinaryTable",
+          "rva": "0x195377",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "loadOrdinarySlot",
+          "rva": "0x19537a",
+          "instructionHex": "4c8b5028"
+        },
+        {
+          "role": "passOrdinaryOutput",
+          "rva": "0x195389",
+          "instructionHex": "48895c2420"
+        },
+        {
+          "role": "callOrdinarySlot",
+          "rva": "0x19538e",
+          "instructionHex": "41ffd2"
+        },
+        {
+          "role": "testFactoryStatus",
+          "rva": "0x195393",
+          "instructionHex": "83f801"
+        }
+      ]
+    },
+    {
+      "key": "anonymousProviderStorageOpen",
+      "entryRva": "0xb9480",
+      "requiredRoles": [
+        "callDescriptorStorage",
+        "testStorageStatus"
+      ],
+      "windows": [
+        {
+          "rva": "0xb9480",
+          "bodyLength": 162,
+          "bodySha256": "6a623263fffd3525db026d7ce856ed5329809327c5f255b38221c13c94a31d69",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "callDescriptorStorage",
+          "rva": "0xb949a",
+          "instructionHex": "e891000000"
+        },
+        {
+          "role": "testStorageStatus",
+          "rva": "0xb94a1",
+          "instructionHex": "83f801"
+        }
+      ]
+    }
+  ],
+  "layouts": {
+    "request": {
+      "sourcePointer": 0,
+      "alternateDataPointer": 16,
+      "alternateDataWord": 24
+    },
+    "source": {
+      "flagsWord": 12,
+      "storedWord": 4,
+      "dataPointer": 16,
+      "argumentHighWord": 26
+    },
+    "frame": {
+      "descriptorPointer": 23,
+      "descriptorWord": 31,
+      "auxiliaryPointer": 35,
+      "directDataFlag": 47,
+      "argumentHighWord": 51,
+      "options": 7
+    },
+    "providerVtable": {
+      "alternateSlot": 32,
+      "ordinarySlot": 40
+    }
+  },
+  "fieldBindings": [
+    {
+      "witness": "loadRequestSource",
+      "layout": "request",
+      "field": "sourcePointer",
+      "prefixHex": "4c8b02",
+      "displacementBytes": 0
+    },
+    {
+      "witness": "loadAlternateData",
+      "layout": "request",
+      "field": "alternateDataPointer",
+      "prefixHex": "488b57",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadAlternateWord",
+      "layout": "request",
+      "field": "alternateDataWord",
+      "prefixHex": "448b47",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadSourceFlags",
+      "layout": "source",
+      "field": "flagsWord",
+      "prefixHex": "418b48",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadSourceWord",
+      "layout": "source",
+      "field": "storedWord",
+      "prefixHex": "418b40",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadSourceData",
+      "layout": "source",
+      "field": "dataPointer",
+      "prefixHex": "498b40",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadArgumentHighWord",
+      "layout": "source",
+      "field": "argumentHighWord",
+      "prefixHex": "410fb740",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "addressDescriptor",
+      "layout": "frame",
+      "field": "descriptorPointer",
+      "prefixHex": "488d55",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeDescriptorPointer",
+      "layout": "frame",
+      "field": "descriptorPointer",
+      "prefixHex": "488945",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeDescriptorWord",
+      "layout": "frame",
+      "field": "descriptorWord",
+      "prefixHex": "8945",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeAuxiliaryPointer",
+      "layout": "frame",
+      "field": "auxiliaryPointer",
+      "prefixHex": "488955",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "addressAuxiliary",
+      "layout": "frame",
+      "field": "directDataFlag",
+      "prefixHex": "488d55",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeDirectDataFlag",
+      "layout": "frame",
+      "field": "directDataFlag",
+      "prefixHex": "8955",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeArgumentHighWord",
+      "layout": "frame",
+      "field": "argumentHighWord",
+      "prefixHex": "8945",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "addressOptions",
+      "layout": "frame",
+      "field": "options",
+      "prefixHex": "4c8d45",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "callAlternateSlot",
+      "layout": "providerVtable",
+      "field": "alternateSlot",
+      "prefixHex": "ff50",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadOrdinarySlot",
+      "layout": "providerVtable",
+      "field": "ordinarySlot",
+      "prefixHex": "4c8b50",
+      "displacementBytes": 1
+    }
+  ],
+  "constantBindings": [
+    {
+      "witness": "maskSourceKind",
+      "constant": "sourceKindMask",
+      "prefixHex": "83e1"
+    },
+    {
+      "witness": "compareAlternateKind",
+      "constant": "alternateKind",
+      "prefixHex": "83f9"
+    },
+    {
+      "witness": "testDirectDataBit",
+      "constant": "directDataBit",
+      "prefixHex": "0fbae1"
+    },
+    {
+      "witness": "shiftPointerBit",
+      "constant": "pointerDescriptorBit",
+      "prefixHex": "c1e9"
+    }
+  ],
+  "constants": {
+    "sourceKindMask": 124,
+    "alternateKind": 12,
+    "directDataBit": 8,
+    "pointerDescriptorBit": 9
+  },
+  "branchBindings": [
+    {
+      "witness": "branchOrdinaryKind",
+      "targetWitness": "loadOrdinaryFlags",
+      "opcodeHex": "75"
+    },
+    {
+      "witness": "branchNumericDescriptor",
+      "targetWitness": "storeDescriptorWord",
+      "opcodeHex": "74"
+    },
+    {
+      "witness": "jumpOrdinaryCall",
+      "targetWitness": "loadOrdinarySingleton",
+      "opcodeHex": "eb"
+    }
+  ],
+  "singletonBindings": [
+    {
+      "witness": "loadOrdinarySingleton",
+      "prefixHex": "488b0d",
+      "targetRva": "0x3448f0"
+    },
+    {
+      "witness": "loadAlternateSingleton",
+      "prefixHex": "488b0d",
+      "targetRva": "0x3448f0"
+    }
+  ],
+  "callBindings": [
+    {
+      "owner": "anonymousProviderStorageOpen",
+      "witness": "callDescriptorStorage",
+      "targetOwner": "providerDescriptorStorage"
+    }
+  ],
+  "evidenceBoundary": {
+    "direct": "A separate source-based setup reads the source pointer from its RDX request, then source flags, stored pointer/word and argument halfword. Its ordinary and alternate calls have distinct observed return sites. A second storage wrapper directly calls descriptor storage.",
+    "conditional": "The source-kind branch selects the alternate singleton slot or an ordinary pointer-versus-word descriptor. Both dispatch slots and the singleton agree with the independently reviewed provider storage/preparation contracts. The fifth stack argument points at the retained output context; its post-call contents are not observed.",
+    "unresolved": "The setup request and output context are not independently captured. No live source/request ownership, stack-output completion, pointer generation, operating-system file open, codec family or decoded/audible output is established."
+  }
+}

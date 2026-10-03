@@ -4,18 +4,21 @@ Physical Buff dispatcher tag ``0x0050`` selects the seven-member
 ``CompareFloat.Data`` wrapper. The adapter checks both blackboard-value
 member types against the selected source's two direct call contexts, then
 names the reached wrapper fields and closes the exact action span. The
-blackboard values stay structural; no comparison is evaluated.
+blackboard values stay structural here; ``buff_compare_float_blackboard_children``
+composes the independent named child proof. No comparison is evaluated.
 """
 from __future__ import annotations
 
 import hashlib
 import json
 import struct
+from pathlib import Path
 from functools import lru_cache
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.il2cpp.context import method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.memorypack.action_dispatcher import load_action_routes
 from scripts.game_data.memorypack.buff_actions import Reader
@@ -47,12 +50,53 @@ def _contracts() -> tuple[dict[str, Any], dict[str, Any]]:
     return source, catalog
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def _checked_scalar_context(image: Any, context: dict[str, Any], *,
+                            name: str, source_path: str) -> dict[str, Any]:
+    """Authenticate one reviewed ReadValue<BlackboardDouble> static companion."""
+    cell, usage = image.nested_usage_cell(context, label=LABEL)
+    index = method_spec_usage_index(
+        usage, image.registration["methodSpecsCount"],
+        source=source_path, offset=cell,
+    )
+    actual_spec = list(struct.unpack("<iii", image.pe.bytes_at_va(
+        int(image.registration["methodSpecs"], 16) + index * 12, 12
+    )))
+    if index != context["methodSpecIndex"] or actual_spec != context["methodSpec"]:
+        raise ValueError(
+            f"{LABEL}:nested-method-spec field={name} source={source_path} "
+            f"expected={context['methodSpecIndex']}:{context['methodSpec']} "
+            f"actual={index}:{actual_spec}"
+        )
+    method = image.metadata.methods[actual_spec[0]]
+    arguments = image.instantiations.resolve(actual_spec[2]).arguments
+    if (
+        image.type_name(method.declaring_type) != "MemoryPack.MemoryPackReader"
+        or image.metadata.string(method.name_index) != "ReadValue"
+        or actual_spec[1] != -1 or len(arguments) != 1
+        or arguments[0].raw_type_record_hex.upper()
+        != context["argumentRawHex"].upper()
+        or int.from_bytes(bytes.fromhex(arguments[0].raw_type_record_hex)[:8], "little")
+        != context["typeDefinition"]
+        or bytes.fromhex(arguments[0].raw_type_record_hex)[10] != 0x12
+        or image.type_name(context["typeDefinition"]) != context["typeName"]
+    ):
+        raise ValueError(
+            f"{LABEL}:nested-type-argument field={name} source={source_path} "
+            f"expected={context['typeName']}:{context['argumentRawHex']} "
+            f"actualArgs={[row.raw_type_record_hex for row in arguments[:4]]}"
+        )
+    return {"fieldName": name, "typeName": context["typeName"],
+            "methodSpecIndex": index, "instructionRva": context["instructionRva"]}
+
+
+def validate_current_native_contract(*, gameassembly: Path | None = None,
+                                    metadata: Path | None = None) -> dict[str, Any]:
     """Recheck the selected route, source windows and two scalar-value calls."""
     source, catalog = _contracts()
     inputs = catalog["nativeInputs"]
     gate = check_installed_native_inputs(
-        inputs["gameAssemblySha256"], inputs["metadataSha256"]
+        inputs["gameAssemblySha256"], inputs["metadataSha256"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}:native:{gate.status}:{gate.detail}")
@@ -98,24 +142,14 @@ def validate_current_native_contract() -> dict[str, Any]:
     for method in source["methods"]:
         image.validate_method_row(method, label=LABEL)
     image.check_windows(source["codeWindows"], label=LABEL)
-    for context in source["nestedContexts"]:
-        instruction = image.pe.bytes_at_va(image.pe.image_base + context["instructionRva"], 7)
-        if (
-            instruction.hex().upper() != context["instructionHex"].upper()
-            or instruction[:2] != b"\x48\x8b"
-            or instruction[2] not in (0x15, 0x35)
-        ):
-            raise ValueError(f"{LABEL}:nested-instruction")
-        cell = (
-            image.pe.image_base + context["instructionRva"] + 7
-            + struct.unpack_from("<i", instruction, 3)[0]
-        )
-        if (
-            cell != context["cellVa"]
-            or image.pe.bytes_at_va(cell, 8).hex().upper()
-            != context["usageRawHex"].upper()
-        ):
-            raise ValueError(f"{LABEL}:nested-usage")
+    scalar_fields = [name for name, kind in zip(
+        route.member_order, kinds, strict=True
+    ) if kind == "scalar-payload"]
+    scalar_children = []
+    for name, context in zip(scalar_fields, source["nestedContexts"], strict=True):
+        scalar_children.append(_checked_scalar_context(
+            image, context, name=name, source_path=str(gate.gameassembly),
+        ))
 
     return {
         "status": "validated", "unionTag": TAG,
@@ -127,6 +161,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         "memberNames": list(route.member_order),
         "readKinds": list(kinds),
         "typeName": reviewed["wrappedType"],
+        "scalarChildren": scalar_children,
     }
 
 

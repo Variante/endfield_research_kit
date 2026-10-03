@@ -1,0 +1,4789 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v2",
+  "status": "reviewed",
+  "hooks": [
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "StartQuest",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "isNewQuest",
+          "type": "bool"
+        }
+      ],
+      "name": "mission.StartQuest",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "isNewQuest",
+          "argument": "isNewQuest",
+          "type": "bool",
+          "role": "state"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "SucceedQuest",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        }
+      ],
+      "name": "mission.SucceedQuest",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "FailQuest",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        }
+      ],
+      "name": "mission.FailQuest",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "AvailableMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        },
+        {
+          "name": "isNewAvailable",
+          "type": "bool"
+        }
+      ],
+      "name": "mission.AvailableMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "isNewAvailable",
+          "argument": "isNewAvailable",
+          "type": "bool",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "StartMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        },
+        {
+          "name": "stateChanged",
+          "type": "bool"
+        },
+        {
+          "name": "prevState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState"
+        }
+      ],
+      "name": "mission.StartMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "stateChanged",
+          "argument": "stateChanged",
+          "type": "bool",
+          "role": "state"
+        },
+        {
+          "label": "prevState",
+          "argument": "prevState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "role": "state"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "CompleteMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        },
+        {
+          "name": "succeedId",
+          "type": "int"
+        }
+      ],
+      "name": "mission.CompleteMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "succeedId",
+          "argument": "succeedId",
+          "type": "int",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "FailMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        }
+      ],
+      "name": "mission.FailMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "RaiseMissionStateChangeEvent",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "missionId",
+          "type": "string"
+        },
+        {
+          "name": "oldState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState"
+        },
+        {
+          "name": "newState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState"
+        },
+        {
+          "name": "succeedId",
+          "type": "int"
+        }
+      ],
+      "name": "mission.RaiseMissionStateChangeEvent",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "missionId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "oldState",
+          "argument": "oldState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "role": "state"
+        },
+        {
+          "label": "newState",
+          "argument": "newState",
+          "type": "Beyond.Gameplay.MissionSystem+MissionState",
+          "role": "state"
+        },
+        {
+          "label": "succeedId",
+          "argument": "succeedId",
+          "type": "int",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "RunQuestAction",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "action",
+          "type": "Beyond.Gameplay.QuestAction"
+        }
+      ],
+      "name": "mission.RunQuestAction",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "action",
+          "argument": "action",
+          "type": "Beyond.Gameplay.QuestAction",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.SNSSystem",
+      "method": "_StartForceSNS",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "chatId",
+          "type": "string"
+        },
+        {
+          "name": "dialogId",
+          "type": "string"
+        }
+      ],
+      "name": "sns._StartForceSNS",
+      "fields": [
+        {
+          "label": "chatId",
+          "argument": "chatId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "dialogId",
+          "argument": "dialogId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.SNSSystem",
+      "method": "ReadDialog",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "dialogId",
+          "type": "string"
+        }
+      ],
+      "name": "sns.ReadDialog",
+      "fields": [
+        {
+          "label": "dialogId",
+          "argument": "dialogId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.SNSSystem",
+      "method": "ModifyDialogCurContent",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "chatId",
+          "type": "string"
+        },
+        {
+          "name": "dialogId",
+          "type": "string"
+        },
+        {
+          "name": "nextContentId",
+          "type": "int"
+        }
+      ],
+      "name": "sns.ModifyDialogCurContent",
+      "fields": [
+        {
+          "label": "chatId",
+          "argument": "chatId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "dialogId",
+          "argument": "dialogId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "nextContentId",
+          "argument": "nextContentId",
+          "type": "int",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.SNSSystem",
+      "method": "SelectDialogOption",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "chatId",
+          "type": "string"
+        },
+        {
+          "name": "dialogId",
+          "type": "string"
+        },
+        {
+          "name": "nextContentId",
+          "type": "int"
+        },
+        {
+          "name": "optionId",
+          "type": "string"
+        }
+      ],
+      "name": "sns.SelectDialogOption",
+      "fields": [
+        {
+          "label": "chatId",
+          "argument": "chatId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "dialogId",
+          "argument": "dialogId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "nextContentId",
+          "argument": "nextContentId",
+          "type": "int",
+          "role": "identity"
+        },
+        {
+          "label": "optionId",
+          "argument": "optionId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.SNSSystem",
+      "method": "OnForceSNSCinematicFinish",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "chatId",
+          "type": "string"
+        },
+        {
+          "name": "dialogId",
+          "type": "string"
+        }
+      ],
+      "name": "sns.OnForceSNSCinematicFinish",
+      "fields": [
+        {
+          "label": "chatId",
+          "argument": "chatId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "dialogId",
+          "argument": "dialogId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain",
+      "method": "_StartSNSUI",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "snsConsumer._StartSNSUI",
+      "fields": [
+        {
+          "label": "chatId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::m_chatId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "dialogId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::m_dialogId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "snsState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain+ForceSNSState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::m_snsState",
+              "type": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain+ForceSNSState"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "showToast",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::m_showToast",
+              "type": "bool"
+            }
+          ],
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain",
+      "method": "EndForceSNS",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "interrupt",
+          "type": "bool"
+        }
+      ],
+      "name": "snsConsumer.EndForceSNS",
+      "fields": [
+        {
+          "label": "chatId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::m_chatId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "dialogId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::m_dialogId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "snsState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain+ForceSNSState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::m_snsState",
+              "type": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain+ForceSNSState"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "showToast",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.GameMech.MainCharForceSNSBrain::m_showToast",
+              "type": "bool"
+            }
+          ],
+          "role": "observation"
+        },
+        {
+          "label": "interrupt",
+          "argument": "interrupt",
+          "type": "bool",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "FinishDialog",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "tDialogId",
+          "type": "string"
+        },
+        {
+          "name": "finishId",
+          "type": "int"
+        },
+        {
+          "name": "finishType",
+          "type": "Beyond.Gameplay.DialogEnums+DialogFinishType"
+        }
+      ],
+      "name": "dialog.FinishDialog",
+      "fields": [
+        {
+          "label": "tDialogId",
+          "argument": "tDialogId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "finishId",
+          "argument": "finishId",
+          "type": "int",
+          "role": "identity"
+        },
+        {
+          "label": "finishType",
+          "argument": "finishType",
+          "type": "Beyond.Gameplay.DialogEnums+DialogFinishType",
+          "role": "state"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "_DoExitDialogCallback",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "curDialogId",
+          "type": "string"
+        }
+      ],
+      "name": "dialog._DoExitDialogCallback",
+      "fields": [
+        {
+          "label": "curDialogId",
+          "argument": "curDialogId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "_DoPlayDialog",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "dialog._DoPlayDialog",
+      "fields": [],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "_PlayDialogInternal",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "jsonId",
+          "type": "string"
+        },
+        {
+          "name": "dialogBriefInfo",
+          "type": "Beyond.Gameplay.DialogIdTable+DialogBriefInfo"
+        },
+        {
+          "name": "targetPos",
+          "type": "System.Nullable`1<UnityEngine.Vector3>"
+        },
+        {
+          "name": "targetRot",
+          "type": "System.Nullable`1<UnityEngine.Vector3>"
+        }
+      ],
+      "name": "dialog._PlayDialogInternal",
+      "fields": [
+        {
+          "label": "jsonId",
+          "argument": "jsonId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "AddTrunkId",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "playedTrunkId",
+          "type": "string"
+        }
+      ],
+      "name": "dialog.AddTrunkId",
+      "fields": [
+        {
+          "label": "playedTrunkId",
+          "argument": "playedTrunkId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "UpdateTimelineTrunkId",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "playedTrunkId",
+          "type": "string"
+        },
+        {
+          "name": "duration",
+          "type": "float"
+        }
+      ],
+      "name": "dialog.UpdateTimelineTrunkId",
+      "fields": [
+        {
+          "label": "playedTrunkId",
+          "argument": "playedTrunkId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "AddSelectionSelected",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "normalOptionData",
+          "type": "Beyond.Gameplay.NormalOptionData"
+        }
+      ],
+      "name": "dialog.AddSelectionSelected",
+      "fields": [
+        {
+          "label": "optionId",
+          "argument": "normalOptionData",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.NormalOptionData::_optionId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "dialogId",
+          "argument": "normalOptionData",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.DialogTreeOptionBase::dialogId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "trunkId",
+          "argument": "normalOptionData",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.DialogTreeOptionBase::trunkId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "index",
+          "argument": "normalOptionData",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.NormalOptionData::index",
+              "type": "int"
+            }
+          ],
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "_TryDoSingleOptionSelectedCallback",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "optionId",
+          "type": "string"
+        }
+      ],
+      "name": "dialog._TryDoSingleOptionSelectedCallback",
+      "fields": [
+        {
+          "label": "optionId",
+          "argument": "optionId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "SelectIndex",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "index",
+          "type": "int"
+        }
+      ],
+      "name": "dialog.SelectIndex",
+      "fields": [
+        {
+          "label": "index",
+          "argument": "index",
+          "type": "int",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "BeginInteractNpcDialog",
+      "returnType": "void",
+      "static": true,
+      "parameters": [
+        {
+          "name": "npcId",
+          "type": "string"
+        },
+        {
+          "name": "dialogId",
+          "type": "string"
+        },
+        {
+          "name": "extraData",
+          "type": "Beyond.Gameplay.DialogExtraData"
+        }
+      ],
+      "name": "playback.BeginInteractNpcDialog",
+      "fields": [
+        {
+          "label": "npcId",
+          "argument": "npcId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "dialogId",
+          "argument": "dialogId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "StartDialog",
+      "returnType": "bool",
+      "static": true,
+      "parameters": [
+        {
+          "name": "dialogId",
+          "type": "string"
+        },
+        {
+          "name": "pos",
+          "type": "System.Nullable`1<UnityEngine.Vector3>"
+        },
+        {
+          "name": "rot",
+          "type": "System.Nullable`1<UnityEngine.Vector3>"
+        },
+        {
+          "name": "playParam",
+          "type": "Beyond.Gameplay.Core.CinematicPlayParam"
+        },
+        {
+          "name": "playImmediately",
+          "type": "bool"
+        }
+      ],
+      "name": "playback.StartDialog",
+      "fields": [
+        {
+          "label": "dialogId",
+          "argument": "dialogId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "playImmediately",
+          "argument": "playImmediately",
+          "type": "bool",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "StartForceSNS",
+      "returnType": "bool",
+      "static": true,
+      "parameters": [
+        {
+          "name": "chatId",
+          "type": "string"
+        },
+        {
+          "name": "dialogId",
+          "type": "string"
+        },
+        {
+          "name": "showToast",
+          "type": "bool"
+        },
+        {
+          "name": "callback",
+          "type": "System.Action"
+        }
+      ],
+      "name": "playback.StartForceSNS",
+      "fields": [
+        {
+          "label": "chatId",
+          "argument": "chatId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "dialogId",
+          "argument": "dialogId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "showToast",
+          "argument": "showToast",
+          "type": "bool",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "DoPlayCutscene",
+      "returnType": "bool",
+      "static": true,
+      "parameters": [
+        {
+          "name": "cutsceneId",
+          "type": "string"
+        },
+        {
+          "name": "callback",
+          "type": "System.Action"
+        },
+        {
+          "name": "existingEntities",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>"
+        },
+        {
+          "name": "existingEnemies",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>"
+        },
+        {
+          "name": "existingSceneObjects",
+          "type": "System.Collections.Generic.List`1<ulong>"
+        }
+      ],
+      "name": "playback.DoPlayCutscene",
+      "fields": [
+        {
+          "label": "cutsceneId",
+          "argument": "cutsceneId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "PlayFmv",
+      "returnType": "bool",
+      "static": true,
+      "parameters": [
+        {
+          "name": "videoName",
+          "type": "string"
+        },
+        {
+          "name": "callback",
+          "type": "System.Action"
+        },
+        {
+          "name": "beforeMaskData",
+          "type": "Beyond.Gameplay.CommonMaskBlendData"
+        },
+        {
+          "name": "playParam",
+          "type": "Beyond.Gameplay.Core.CinematicPlayParam"
+        }
+      ],
+      "name": "playback.PlayFmv",
+      "fields": [
+        {
+          "label": "videoName",
+          "argument": "videoName",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "PlayRadio",
+      "returnType": "void",
+      "static": true,
+      "parameters": [
+        {
+          "name": "radioId",
+          "type": "string"
+        },
+        {
+          "name": "fromBegin",
+          "type": "bool"
+        },
+        {
+          "name": "index",
+          "type": "int"
+        },
+        {
+          "name": "noFlushAfterLoading",
+          "type": "bool"
+        }
+      ],
+      "name": "playback.PlayRadio",
+      "fields": [
+        {
+          "label": "radioId",
+          "argument": "radioId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "fromBegin",
+          "argument": "fromBegin",
+          "type": "bool",
+          "role": "observation"
+        },
+        {
+          "label": "index",
+          "argument": "index",
+          "type": "int",
+          "role": "observation"
+        },
+        {
+          "label": "noFlushAfterLoading",
+          "argument": "noFlushAfterLoading",
+          "type": "bool",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "StartRemoteComm",
+      "returnType": "bool",
+      "static": true,
+      "parameters": [
+        {
+          "name": "remoteCommId",
+          "type": "string"
+        },
+        {
+          "name": "beforeData",
+          "type": "Beyond.Gameplay.UICommonMaskData"
+        },
+        {
+          "name": "afterData",
+          "type": "Beyond.Gameplay.UICommonMaskData"
+        },
+        {
+          "name": "callback",
+          "type": "System.Action`1<string>"
+        }
+      ],
+      "name": "playback.StartRemoteComm",
+      "fields": [
+        {
+          "label": "remoteCommId",
+          "argument": "remoteCommId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "method": "OnScriptStageChanged",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "oldValue",
+          "type": "int"
+        },
+        {
+          "name": "newValue",
+          "type": "int"
+        }
+      ],
+      "name": "script.OnScriptStageChanged",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<scriptPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "levelId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<levelId>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "runtimeState",
+          "argument": "this",
+          "type": "Beyond.GEnums.LevelScriptState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::m_state",
+              "type": "Beyond.GEnums.LevelScriptState"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "sourcePathHash",
+          "argument": "this",
+          "type": "long",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::dataPath",
+              "type": "Beyond.Resource.StringPathHash",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Resource.StringPathHash::hash",
+              "type": "long"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "parentScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::parentLevelScriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<originActionMapAsset>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "oldValue",
+          "argument": "oldValue",
+          "type": "int",
+          "role": "observation"
+        },
+        {
+          "label": "newValue",
+          "argument": "newValue",
+          "type": "int",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "method": "OnScriptStart",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "script.OnScriptStart",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<scriptPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "levelId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<levelId>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "runtimeState",
+          "argument": "this",
+          "type": "Beyond.GEnums.LevelScriptState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::m_state",
+              "type": "Beyond.GEnums.LevelScriptState"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "sourcePathHash",
+          "argument": "this",
+          "type": "long",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::dataPath",
+              "type": "Beyond.Resource.StringPathHash",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Resource.StringPathHash::hash",
+              "type": "long"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "parentScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::parentLevelScriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<originActionMapAsset>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "method": "OnScriptEnd",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "script.OnScriptEnd",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<scriptPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "levelId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<levelId>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "runtimeState",
+          "argument": "this",
+          "type": "Beyond.GEnums.LevelScriptState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::m_state",
+              "type": "Beyond.GEnums.LevelScriptState"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "sourcePathHash",
+          "argument": "this",
+          "type": "long",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::dataPath",
+              "type": "Beyond.Resource.StringPathHash",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Resource.StringPathHash::hash",
+              "type": "long"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "parentScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::parentLevelScriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<originActionMapAsset>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "method": "_RaiseOnScriptEvent",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "eventName",
+          "type": "Beyond.Gameplay.Core.GameScriptEvent"
+        }
+      ],
+      "name": "script._RaiseOnScriptEvent",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<scriptPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "levelId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<levelId>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "runtimeState",
+          "argument": "this",
+          "type": "Beyond.GEnums.LevelScriptState",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::m_state",
+              "type": "Beyond.GEnums.LevelScriptState"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "sourcePathHash",
+          "argument": "this",
+          "type": "long",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::dataPath",
+              "type": "Beyond.Resource.StringPathHash",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Resource.StringPathHash::hash",
+              "type": "long"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "parentScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::parentLevelScriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<originActionMapAsset>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "eventName",
+          "argument": "eventName",
+          "type": "Beyond.Gameplay.Core.GameScriptEvent",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.ActionHeader",
+      "method": "Process",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "eventContext",
+          "type": "Beyond.Gameplay.ParamBlackboard"
+        }
+      ],
+      "name": "actionHeader.Process",
+      "fields": [
+        {
+          "label": "nodeId",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.NodeBase::_ID",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "nodeUid",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.NodeBase::_uid",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.NodeBase::<owner>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.ActionHeader",
+      "method": "DoProcess",
+      "returnType": "Beyond.Gameplay.Actions.HeaderProcessResult",
+      "static": false,
+      "parameters": [
+        {
+          "name": "executorParams",
+          "type": "Beyond.Gameplay.Core.EventParams"
+        },
+        {
+          "name": "ignoreBreakPoint",
+          "type": "bool"
+        }
+      ],
+      "name": "actionHeader.DoProcess",
+      "fields": [
+        {
+          "label": "nodeId",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.NodeBase::_ID",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "nodeUid",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.NodeBase::_uid",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.NodeBase::<owner>k__BackingField",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "ignoreBreakPoint",
+          "argument": "ignoreBreakPoint",
+          "type": "bool",
+          "role": "observation"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+      "method": "RunAction",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "startNodeID",
+          "type": "int"
+        },
+        {
+          "name": "onFinishCallback",
+          "type": "System.Action"
+        }
+      ],
+      "name": "actionMap.RunAction",
+      "fields": [
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "startNodeID",
+          "argument": "startNodeID",
+          "type": "int",
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+      "method": "_OnConditionResultChanged",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "newResult",
+          "type": "bool"
+        }
+      ],
+      "name": "taskCondition._OnConditionResultChanged",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelScriptPtr",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "sceneNumId",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelNum",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "taskId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::taskKey",
+              "type": "Beyond.Gameplay.Core.ScriptTaskPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.ScriptTaskPtr::key",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::conditionId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "entryIsCompleted",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::isCompleted",
+              "type": "bool"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "progressKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::progressKey",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "maxProgressKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::maxProgressKey",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "newResult",
+          "argument": "newResult",
+          "type": "bool",
+          "role": "state"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+      "method": "OnTaskStateCompleted",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "taskCondition.OnTaskStateCompleted",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelScriptPtr",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "sceneNumId",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelNum",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "taskId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::taskKey",
+              "type": "Beyond.Gameplay.Core.ScriptTaskPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.ScriptTaskPtr::key",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::conditionId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "entryIsCompleted",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::isCompleted",
+              "type": "bool"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "progressKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::progressKey",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "maxProgressKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::maxProgressKey",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "SendLevelScriptUpdateTaskProgress",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "scriptId",
+          "type": "ulong"
+        },
+        {
+          "name": "sceneNumId",
+          "type": "int"
+        },
+        {
+          "name": "taskKey",
+          "type": "string"
+        },
+        {
+          "name": "conditionId",
+          "type": "string"
+        },
+        {
+          "name": "progress",
+          "type": "int"
+        }
+      ],
+      "name": "network.SendLevelScriptUpdateTaskProgress",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "scriptId",
+          "type": "ulong",
+          "role": "identity"
+        },
+        {
+          "label": "sceneNumId",
+          "argument": "sceneNumId",
+          "type": "int",
+          "role": "identity"
+        },
+        {
+          "label": "taskKey",
+          "argument": "taskKey",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "conditionId",
+          "argument": "conditionId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "progress",
+          "argument": "progress",
+          "type": "int",
+          "role": "progress"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_SceneLevelScriptStateNotify",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SCENE_LEVEL_SCRIPT_SET_DONE"
+        }
+      ],
+      "name": "network._Handle_SceneLevelScriptStateNotify",
+      "fields": [
+        {
+          "label": "sceneNumId",
+          "argument": "msg",
+          "type": "int",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_SET_DONE::sceneNumId_",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "scriptId",
+          "argument": "msg",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_SET_DONE::scriptId_",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_LevelScriptTaskStateUpdate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE"
+        }
+      ],
+      "name": "network._Handle_LevelScriptTaskStateUpdate",
+      "fields": [
+        {
+          "label": "sceneNumId",
+          "argument": "msg",
+          "type": "int",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE::sceneNumId_",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "scriptId",
+          "argument": "msg",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE::scriptId_",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "taskId",
+          "argument": "msg",
+          "type": "string",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE::taskId_",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "taskState",
+          "argument": "msg",
+          "type": "int",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_STATE_UPDATE::taskState_",
+              "type": "int"
+            }
+          ],
+          "role": "state"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_LevelScriptTaskProgressUpdate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE"
+        }
+      ],
+      "name": "network._Handle_LevelScriptTaskProgressUpdate",
+      "fields": [
+        {
+          "label": "sceneNumId",
+          "argument": "msg",
+          "type": "int",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE::sceneNumId_",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "scriptId",
+          "argument": "msg",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE::scriptId_",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "taskId",
+          "argument": "msg",
+          "type": "string",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_PROGRESS_UPDATE::taskId_",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_LevelScriptTaskStartFinish",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH"
+        }
+      ],
+      "name": "network._Handle_LevelScriptTaskStartFinish",
+      "fields": [
+        {
+          "label": "sceneNumId",
+          "argument": "msg",
+          "type": "int",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH::sceneNumId_",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "scriptId",
+          "argument": "msg",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH::scriptId_",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "taskId",
+          "argument": "msg",
+          "type": "string",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_LEVEL_SCRIPT_TASK_START_FINISH::taskId_",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Bounded arguments and named stored fields observed at native method entry on the selected build.",
+        "unresolved": "Entry is not a return/success receipt; timestamps and nearby entries do not establish asynchronous ownership or unvisited branch order."
+      },
+      "semanticRole": "named entry observation"
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_QuestStateUpdate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_QUEST_STATE_UPDATE"
+        }
+      ],
+      "name": "missionNotify.Handle_QuestStateUpdate",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_STATE_UPDATE::questId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "questState",
+          "argument": "msg",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_STATE_UPDATE::questState_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "bRollback",
+          "argument": "msg",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_STATE_UPDATE::bRollback_",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry is the client handler boundary, not proof that its default native body was selected or succeeded. Repeated/map fields and server criteria are not sampled; wire int states retain their declared primitive type."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_MissionStateUpdate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_MISSION_STATE_UPDATE"
+        }
+      ],
+      "name": "missionNotify.Handle_MissionStateUpdate",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::missionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "missionState",
+          "argument": "msg",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::missionState_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "succeedId",
+          "argument": "msg",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::succeedId_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "externalSystemType",
+          "argument": "msg",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::externalSystemType_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "externalSystemId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::externalSystemId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "acceptTime",
+          "argument": "msg",
+          "type": "long",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_STATE_UPDATE::acceptTime_",
+              "type": "long"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry is the client handler boundary, not proof that its default native body was selected or succeeded. Repeated/map fields and server criteria are not sampled; wire int states retain their declared primitive type."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_QuestObjectiveUpdate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_QUEST_OBJECTIVES_UPDATE"
+        }
+      ],
+      "name": "missionNotify.Handle_QuestObjectiveUpdate",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_OBJECTIVES_UPDATE::questId_",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry is the client handler boundary, not proof that its default native body was selected or succeeded. Repeated/map fields and server criteria are not sampled; wire int states retain their declared primitive type."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_SyncAllMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SYNC_ALL_MISSION"
+        }
+      ],
+      "name": "missionNotify.Handle_SyncAllMission",
+      "fields": [
+        {
+          "label": "trackMissionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SYNC_ALL_MISSION::trackMissionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "dailyMissionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SYNC_ALL_MISSION::dailyMissionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "curMainMissionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SYNC_ALL_MISSION::curMainMissionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "earlyAcceptMissionChapters",
+          "argument": "msg",
+          "type": "ulong",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_SYNC_ALL_MISSION::earlyAcceptMissionChapters_",
+              "type": "ulong"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry is the client handler boundary, not proof that its default native body was selected or succeeded. Repeated/map fields and server criteria are not sampled; wire int states retain their declared primitive type."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_QuestFailed",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_QUEST_FAILED"
+        }
+      ],
+      "name": "missionNotify.Handle_QuestFailed",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_FAILED::questId_",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry is the client handler boundary, not proof that its default native body was selected or succeeded. Repeated/map fields and server criteria are not sampled; wire int states retain their declared primitive type."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_MissionFailed",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_MISSION_FAILED"
+        }
+      ],
+      "name": "missionNotify.Handle_MissionFailed",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_MISSION_FAILED::missionId_",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry is the client handler boundary, not proof that its default native body was selected or succeeded. Repeated/map fields and server criteria are not sampled; wire int states retain their declared primitive type."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_UpdateQuestPauseState",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_UPDATE_QUEST_PAUSE_STATE"
+        }
+      ],
+      "name": "missionNotify.Handle_UpdateQuestPauseState",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_UPDATE_QUEST_PAUSE_STATE::questId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "isPaused",
+          "argument": "msg",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_UPDATE_QUEST_PAUSE_STATE::isPaused_",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry is the client handler boundary, not proof that its default native body was selected or succeeded. Repeated/map fields and server criteria are not sampled; wire int states retain their declared primitive type."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_UpdateMissionPauseState",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_UPDATE_MISSION_PAUSE_STATE"
+        }
+      ],
+      "name": "missionNotify.Handle_UpdateMissionPauseState",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_UPDATE_MISSION_PAUSE_STATE::missionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "isPaused",
+          "argument": "msg",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_UPDATE_MISSION_PAUSE_STATE::isPaused_",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry is the client handler boundary, not proof that its default native body was selected or succeeded. Repeated/map fields and server criteria are not sampled; wire int states retain their declared primitive type."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "Handle_ObjectiveDescIndexChange",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_QUEST_DESCRIPTION_INDEX_UPDATE"
+        }
+      ],
+      "name": "missionNotify.Handle_ObjectiveDescIndexChange",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "msg",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_DESCRIPTION_INDEX_UPDATE::questId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "msg",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_DESCRIPTION_INDEX_UPDATE::objectiveIndex_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "descriptionIndex",
+          "argument": "msg",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_QUEST_DESCRIPTION_INDEX_UPDATE::descriptionIndex_",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming mission/quest notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry is the client handler boundary, not proof that its default native body was selected or succeeded. Repeated/map fields and server criteria are not sampled; wire int states retain their declared primitive type."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "RefreshObjectiveProgress",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "objectiveIdx",
+          "type": "int"
+        }
+      ],
+      "name": "mission.RefreshObjectiveProgress",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "objectiveIdx",
+          "argument": "objectiveIdx",
+          "type": "int",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "quest objective progress refresh request",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "questId/objectiveIdx identify this refresh request; the entry does not expose the subsequent values-map reads or resulting condition progress."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem+ObjectiveData",
+      "method": "Copy",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "src",
+          "type": "Proto.QUEST_OBJECTIVE"
+        }
+      ],
+      "name": "objective.Copy",
+      "fields": [
+        {
+          "label": "incomingConditionId",
+          "argument": "src",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.QUEST_OBJECTIVE::conditionId_",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "incomingIsComplete",
+          "argument": "src",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.QUEST_OBJECTIVE::isComplete_",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "incomingDescriptionIndex",
+          "argument": "src",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.QUEST_OBJECTIVE::descriptionIndex_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryConditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionSystem+ObjectiveData::conditionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryIsCompleted",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionSystem+ObjectiveData::isCompleted",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "per-object incoming objective copy",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Incoming src and receiver identity are explicit raw arguments. Receiver fields are before Copy. Parent quest/index, numeric values-map members, extraDetails and later writes are not observed at this entry."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.GameCondition",
+      "method": "Activate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "conditionSource",
+          "type": "string"
+        }
+      ],
+      "name": "condition.Activate",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "progressToCompare",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progressToCompare>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "conditionSource",
+          "argument": "conditionSource",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "condition lifecycle and pre-entry identity/progress",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry snapshots can precede initialization/deactivation and can describe non-mission conditions. A non-null parentQuestId is explicit stored context, not proof of a completion callback. Progress/result setters and polling getters are omitted."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.GameCondition",
+      "method": "Deactivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "condition.Deactivate",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "progressToCompare",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progressToCompare>k__BackingField",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "condition lifecycle and pre-entry identity/progress",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry snapshots can precede initialization/deactivation and can describe non-mission conditions. A non-null parentQuestId is explicit stored context, not proof of a completion callback. Progress/result setters and polling getters are omitted."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionRuntimeAsset",
+      "method": "RunQuestAction",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "questAction",
+          "type": "Beyond.Gameplay.QuestAction"
+        }
+      ],
+      "name": "missionAsset.RunQuestAction",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionRuntimeAsset::missionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "questAction",
+          "argument": "questAction",
+          "type": "Beyond.Gameplay.QuestAction",
+          "role": "state"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionRuntimeAsset::actionMap",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "mission asset quest-action entry",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry does not prove returned success, subsequent writes, server acceptance, asynchronous ownership, or an unobserved branch."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionRuntimeAsset",
+      "method": "_RunActionInMission",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "startNodeID",
+          "type": "int"
+        }
+      ],
+      "name": "missionAsset._RunActionInMission",
+      "fields": [
+        {
+          "label": "missionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionRuntimeAsset::missionId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "startNodeID",
+          "argument": "startNodeID",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "actionMapKey",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.MissionRuntimeAsset::actionMap",
+              "type": "Beyond.Gameplay.Actions.ActionMapAsset",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Actions.ActionMapAsset::<key>k__BackingField",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "mission asset start-node entry",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry does not prove returned success, subsequent writes, server acceptance, asynchronous ownership, or an unobserved branch."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "SetFinishId",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "finishId",
+          "type": "int"
+        }
+      ],
+      "name": "dialog.SetFinishId",
+      "fields": [
+        {
+          "label": "finishId",
+          "argument": "finishId",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "entryCachedFinishId",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DialogManager::m_finishId",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.DialogEnums+DialogState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DialogManager::m_state",
+              "type": "Beyond.Gameplay.DialogEnums+DialogState"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "dialog finish cache write request",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Supplied finishId and before-entry cached finishId are distinct. optionIds list contents, submitter payload, transport completion and server acceptance are not sampled."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "_SendServer",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "curDialogId",
+          "type": "string"
+        },
+        {
+          "name": "finishId",
+          "type": "int"
+        },
+        {
+          "name": "optionIds",
+          "type": "System.Collections.Generic.List`1<string>"
+        }
+      ],
+      "name": "dialog._SendServer",
+      "fields": [
+        {
+          "label": "curDialogId",
+          "argument": "curDialogId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "finishId",
+          "argument": "finishId",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "entryCachedFinishId",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DialogManager::m_finishId",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.DialogEnums+DialogState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.DialogManager::m_state",
+              "type": "Beyond.Gameplay.DialogEnums+DialogState"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "dialog outgoing finish request",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Supplied finishId and before-entry cached finishId are distinct. optionIds list contents, submitter payload, transport completion and server acceptance are not sampled."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.CinematicSystem",
+      "method": "SendFinishDialog",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "dialogId",
+          "type": "string"
+        },
+        {
+          "name": "finishId",
+          "type": "int"
+        },
+        {
+          "name": "optionIds",
+          "type": "System.Collections.Generic.List`1<string>"
+        },
+        {
+          "name": "submitter",
+          "type": "Beyond.Gameplay.InventoryItemSubmitter"
+        }
+      ],
+      "name": "cinematic.SendFinishDialog",
+      "fields": [
+        {
+          "label": "dialogId",
+          "argument": "dialogId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "finishId",
+          "argument": "finishId",
+          "type": "int",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "authored dialog finish outbound conversion boundary",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Authored dialogId and finishId are explicit; optionIds/submitter contents and generated wire payload are not sampled. Entry is not a network-delivery receipt."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.CinematicSystem",
+      "method": "_Handle_FinishDialog",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_FINISH_DIALOG"
+        }
+      ],
+      "name": "cinematic._Handle_FinishDialog",
+      "fields": [
+        {
+          "label": "wireDialogId",
+          "argument": "msg",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_FINISH_DIALOG::dialogId_",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming typed dialog-finish notification",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "The wire integer dialog identity is retained without guessing an authored-string mapping. Repeated finish/option wire ID members, history mutation result and server provenance are not sampled."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.CinematicSystem",
+      "method": "_Handle_SyncAllDialog",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SYNC_ALL_DIALOG"
+        }
+      ],
+      "name": "cinematic._Handle_SyncAllDialog",
+      "fields": [],
+      "semanticRole": "incoming typed dialog-history synchronization",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "The typed handler and raw msg identity are observed; the initial dialogList members and resulting history are not sampled."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+      "method": "OnActivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "dialogCondition.OnActivate",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedDialogId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_dialogId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedFinishId",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_finishNum",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "dialog-finish condition activation entry",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Cached operands and prior result are sampled before each entry. Cache values can be null/old; entry order alone does not establish activation, event ownership or operand resolution. History lookup, result write, successful deactivation and live IFix selection are not observed."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+      "method": "Check",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "dialogCondition.Check",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedDialogId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_dialogId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedFinishId",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_finishNum",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "dialog-finish condition check entry",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Cached operands and prior result are sampled before each entry. Cache values can be null/old; entry order alone does not establish activation, event ownership or operand resolution. History lookup, result write, successful deactivation and live IFix selection are not observed."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+      "method": "OnDeactivate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "dialogCondition.OnDeactivate",
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedDialogId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_dialogId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryCachedFinishId",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckTalkOptionFinish::m_finishNum",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "dialog-finish condition deactivation entry",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Cached operands and prior result are sampled before each entry. Cache values can be null/old; entry order alone does not establish activation, event ownership or operand resolution. History lookup, result write, successful deactivation and live IFix selection are not observed."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "method": "UpdateTaskState",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "taskKey",
+          "type": "Beyond.Gameplay.Core.ScriptTaskPtr"
+        },
+        {
+          "name": "newState",
+          "type": "Beyond.GEnums.ScriptTaskState"
+        }
+      ],
+      "name": "script.UpdateTaskState",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<scriptPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "levelId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<levelId>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "sourcePathHash",
+          "argument": "this",
+          "type": "long",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::dataPath",
+              "type": "Beyond.Resource.StringPathHash",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Resource.StringPathHash::hash",
+              "type": "long"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "parentScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::parentLevelScriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "taskId",
+          "argument": "taskKey",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.ScriptTaskPtr::key",
+              "type": "string"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "inlineValue",
+            "bytes": 8
+          }
+        },
+        {
+          "label": "newState",
+          "argument": "newState",
+          "type": "Beyond.GEnums.ScriptTaskState",
+          "role": "state"
+        },
+        {
+          "label": "entryIsDone",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::m_isDone",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "level script task/done entry boundary",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Source/script identity is stored and exact where readable; input requested state and before-entry m_isDone are distinct. Entry does not prove parent-container completion, mission ownership or later state propagation."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "method": "UpdateIsDone",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "value",
+          "type": "bool"
+        }
+      ],
+      "name": "script.UpdateIsDone",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<scriptPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "levelId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<levelId>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "sourcePathHash",
+          "argument": "this",
+          "type": "long",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::dataPath",
+              "type": "Beyond.Resource.StringPathHash",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Resource.StringPathHash::hash",
+              "type": "long"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "parentScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::parentLevelScriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "requestedIsDone",
+          "argument": "value",
+          "type": "bool",
+          "role": "state"
+        },
+        {
+          "label": "entryIsDone",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::m_isDone",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "level script task/done entry boundary",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Source/script identity is stored and exact where readable; input requested state and before-entry m_isDone are distinct. Entry does not prove parent-container completion, mission ownership or later state propagation."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "method": "OnScriptIsDoneChanged",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "script.OnScriptIsDoneChanged",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<scriptPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "levelId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<levelId>k__BackingField",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "sourcePathHash",
+          "argument": "this",
+          "type": "long",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::dataPath",
+              "type": "Beyond.Resource.StringPathHash",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Resource.StringPathHash::hash",
+              "type": "long"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "parentScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField",
+              "type": "Beyond.Gameplay.LevelScriptBriefData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.LevelScriptBriefData::parentLevelScriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "entryIsDone",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::m_isDone",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "level script task/done entry boundary",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Source/script identity is stored and exact where readable; input requested state and before-entry m_isDone are distinct. Entry does not prove parent-container completion, mission ownership or later state propagation."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime+ScriptTaskRuntime",
+      "method": "UpdateTaskState",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "newState",
+          "type": "Beyond.GEnums.ScriptTaskState"
+        }
+      ],
+      "name": "taskRuntime.UpdateTaskState",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+ScriptTaskRuntime::scriptPtr",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "taskId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+ScriptTaskRuntime::taskKey",
+              "type": "Beyond.Gameplay.Core.ScriptTaskPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.ScriptTaskPtr::key",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryTaskState",
+          "argument": "this",
+          "type": "Beyond.GEnums.ScriptTaskState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+ScriptTaskRuntime::m_state",
+              "type": "Beyond.GEnums.ScriptTaskState"
+            }
+          ]
+        },
+        {
+          "label": "newState",
+          "argument": "newState",
+          "type": "Beyond.GEnums.ScriptTaskState",
+          "role": "state"
+        },
+        {
+          "label": "entryMainObjectiveAllCompleted",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+ScriptTaskRuntime::mainObjectiveAllCompleted",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "per-task state transition request",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry does not prove returned success, subsequent writes, server acceptance, asynchronous ownership, or an unobserved branch."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition",
+      "method": "OnTaskStateProcessing",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "name": "taskCondition.OnTaskStateProcessing",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelScriptPtr",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "sceneNumId",
+          "argument": "this",
+          "type": "int",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::levelNum",
+              "type": "int"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "taskId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::taskKey",
+              "type": "Beyond.Gameplay.Core.ScriptTaskPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.ScriptTaskPtr::key",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::conditionId",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "entryIsCompleted",
+          "argument": "this",
+          "type": "bool",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::isCompleted",
+              "type": "bool"
+            }
+          ],
+          "role": "state"
+        },
+        {
+          "label": "progressKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::progressKey",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        },
+        {
+          "label": "maxProgressKey",
+          "argument": "this",
+          "type": "string",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime+TaskCondition::maxProgressKey",
+              "type": "string"
+            }
+          ],
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "per-task condition processing activation",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry does not prove returned success, subsequent writes, server acceptance, asynchronous ownership, or an unobserved branch."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptManager",
+      "method": "UpdateLevelScriptTaskState",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "scriptPtr",
+          "type": "Beyond.Gameplay.Core.LevelScriptPtr"
+        },
+        {
+          "name": "taskKey",
+          "type": "Beyond.Gameplay.Core.ScriptTaskPtr"
+        },
+        {
+          "name": "taskState",
+          "type": "Beyond.GEnums.ScriptTaskState"
+        }
+      ],
+      "name": "scriptManager.UpdateLevelScriptTaskState",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "scriptPtr",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16
+          }
+        },
+        {
+          "label": "levelIdNum",
+          "argument": "scriptPtr",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::<levelId>k__BackingField",
+              "type": "int"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16
+          }
+        },
+        {
+          "label": "taskId",
+          "argument": "taskKey",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.ScriptTaskPtr::key",
+              "type": "string"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "inlineValue",
+            "bytes": 8
+          }
+        },
+        {
+          "label": "taskState",
+          "argument": "taskState",
+          "type": "Beyond.GEnums.ScriptTaskState",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "level-script manager task-state entry",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry does not prove returned success, subsequent writes, server acceptance, asynchronous ownership, or an unobserved branch."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptManager",
+      "method": "UpdateLevelScriptTaskStartFinish",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "scriptPtr",
+          "type": "Beyond.Gameplay.Core.LevelScriptPtr"
+        },
+        {
+          "name": "taskKey",
+          "type": "Beyond.Gameplay.Core.ScriptTaskPtr"
+        }
+      ],
+      "name": "scriptManager.UpdateLevelScriptTaskStartFinish",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "scriptPtr",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16
+          }
+        },
+        {
+          "label": "levelIdNum",
+          "argument": "scriptPtr",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::<levelId>k__BackingField",
+              "type": "int"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16
+          }
+        },
+        {
+          "label": "taskId",
+          "argument": "taskKey",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.ScriptTaskPtr::key",
+              "type": "string"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "inlineValue",
+            "bytes": 8
+          }
+        }
+      ],
+      "semanticRole": "level-script manager task start/finish entry",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry does not prove returned success, subsequent writes, server acceptance, asynchronous ownership, or an unobserved branch."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptManager",
+      "method": "ServerSyncLevelScriptIsDone",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "scriptPtr",
+          "type": "Beyond.Gameplay.Core.LevelScriptPtr"
+        },
+        {
+          "name": "sceneId",
+          "type": "string"
+        },
+        {
+          "name": "isDone",
+          "type": "bool"
+        }
+      ],
+      "name": "scriptManager.ServerSyncLevelScriptIsDone",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "scriptPtr",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16
+          }
+        },
+        {
+          "label": "levelIdNum",
+          "argument": "scriptPtr",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::<levelId>k__BackingField",
+              "type": "int"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16
+          }
+        },
+        {
+          "label": "sceneId",
+          "argument": "sceneId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "isDone",
+          "argument": "isDone",
+          "type": "bool",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "level-script manager server-sync done entry",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "Entry does not prove returned success, subsequent writes, server acceptance, asynchronous ownership, or an unobserved branch."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.Core.LevelScriptTaskTrackingManager",
+      "method": "UpdateTrackingObjectiveCompleted",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "levelScriptPtr",
+          "type": "Beyond.Gameplay.Core.LevelScriptPtr"
+        },
+        {
+          "name": "taskKey",
+          "type": "Beyond.Gameplay.Core.ScriptTaskPtr"
+        },
+        {
+          "name": "objectiveIndex",
+          "type": "int"
+        },
+        {
+          "name": "isCompleted",
+          "type": "bool"
+        }
+      ],
+      "name": "taskTracking.UpdateTrackingObjectiveCompleted",
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "levelScriptPtr",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16
+          }
+        },
+        {
+          "label": "levelIdNum",
+          "argument": "levelScriptPtr",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::<levelId>k__BackingField",
+              "type": "int"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 16
+          }
+        },
+        {
+          "label": "taskId",
+          "argument": "taskKey",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.ScriptTaskPtr::key",
+              "type": "string"
+            }
+          ],
+          "argumentRepresentation": {
+            "mode": "inlineValue",
+            "bytes": 8
+          }
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "objectiveIndex",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "isCompleted",
+          "argument": "isCompleted",
+          "type": "bool",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "typed task/objective completion tracking entry",
+      "evidenceBoundary": {
+        "direct": "Bounded typed entry arguments and pre-entry receiver/carrier fields on the selected build; raw receiver identities are retained.",
+        "unresolved": "objectiveIndex is retained as its declared raw int. The separately reviewed current native caller passes TaskCondition.objectiveEnum after a changed completion store; this relationship is not proved by capture preparation or portable role labels. No conditionId is present, so the full incoming conditionCompletedMap and a unique condition-key join remain unresolved. Tracking filters and later delegate execution are not observed."
+      }
+    },
+    {
+      "type": "Beyond.Gameplay.MissionSystem",
+      "method": "OnSubConditionProgressChanged",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        { "name": "questId", "type": "string" },
+        { "name": "subCondition", "type": "Beyond.Gameplay.GameCondition" },
+        { "name": "progress", "type": "int" }
+      ],
+      "name": "mission.OnSubConditionProgressChanged",
+      "fields": [
+        {
+          "label": "questId",
+          "argument": "questId",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "conditionId",
+          "argument": "subCondition",
+          "type": "string",
+          "role": "identity",
+          "path": [{ "field": "Beyond.Gameplay.GameCondition::uniqueId", "type": "string" }]
+        },
+        {
+          "label": "suppliedProgress",
+          "argument": "progress",
+          "type": "int",
+          "role": "progress",
+          "observation": "Supplied entry argument; no completed update or server acceptance is observed."
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "subCondition",
+          "type": "string",
+          "role": "identity",
+          "path": [{ "field": "Beyond.Gameplay.GameCondition::parentQuestId", "type": "string" }],
+          "observation": "Stored condition context at entry; null or unequal context is retained without inferred ownership."
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "subCondition",
+          "type": "int",
+          "role": "identity",
+          "path": [{ "field": "Beyond.Gameplay.GameCondition::objectiveIndex", "type": "int" }]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "subCondition",
+          "type": "int",
+          "role": "progress",
+          "path": [{ "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField", "type": "int" }],
+          "observation": "Pre-entry base-storage snapshot; distinct from suppliedProgress."
+        },
+        {
+          "label": "entryAdvancedProgress",
+          "argument": "subCondition",
+          "type": "int",
+          "role": "progress",
+          "path": [{ "field": "Beyond.Gameplay.GameCondition::m_advancedProgress", "type": "int" }],
+          "observation": "Pre-entry advanced-progress cache; not a computed result."
+        },
+        {
+          "label": "entryAdvancedMaxProgress",
+          "argument": "subCondition",
+          "type": "int",
+          "role": "progress",
+          "path": [{ "field": "Beyond.Gameplay.GameCondition::m_advancedMaxProgress", "type": "int" }],
+          "observation": "Pre-entry advanced-progress maximum cache; not a computed result."
+        }
+      ],
+      "semanticRole": "named per-condition numeric progress request entry",
+      "evidenceBoundary": {
+        "direct": "Supplied quest/condition identities and signed numeric entry argument, with separate typed pre-entry condition cache fields on the selected build.",
+        "unresolved": "Entry does not prove the invocation source, live IFix selection, successful request construction/send, server acceptance, numeric incoming objective-map contents, result evaluation or the condition's actual runtime subtype. The separately reviewed current default-body request construction is not proved by capture preparation or carried across builds by this role label."
+      }
+    }
+  ],
+  "evidenceBoundary": {
+    "direct": "Mission and quest transition entries, SNS read/content/option entries, dialog trunk/option/finish entries, script and task identities, source path hashes and authored ActionMap node identifiers. Every signature and typed field path must resolve independently on the selected installed build.",
+    "structuralOnly": "Captured raw pointers, anonymous carrier state and 64-bit path hashes require separately authenticated static source joins.",
+    "conditional": "A complete observed route requires prelaunch installation of all hooks, no event/read loss, bounded nontruncated strings, clean stop, and native/source authentication; focusMission labels the run and never filters nearby context.",
+    "unresolved": "Method entry does not prove success/return, UI display, dialogue audio playback, cross-thread or asynchronous causal ownership, missed pre-capture actions, or order of unvisited branches. No lists/dictionaries, game methods, getters or runtime state mutation are used. Preparation authenticates entry identities, signatures, typed storage and enum definitions; it does not prove selected body control flow. Default-body relationships are separately reviewed/evaluated by mission_shared_native and must not be carried across builds from these role labels."
+  },
+  "coverageGaps": [
+    "Entry-only observers do not capture return values, float-register argument values, IFix path selection, server acceptance or asynchronous ownership.",
+    "Maps/repeated collections are not traversed: initial mission/dialog dictionaries, incoming mission objective numeric values/extraDetails, dialog option/finish wire lists, and the full LevelScript conditionCompletedMap remain unsampled.",
+    "Typed task tracking retains the supplied objectiveIndex/completionBool. Its current reviewed caller supplies objectiveEnum; preparation does not prove that control flow on another build. No unique conditionId or unchanged incoming map member is retained.",
+    "Global condition polling getters and result/progress setters are omitted to avoid unproved volume. GameCondition.set_progress also lacks a bounded current .pdata body; condition lifecycle snapshots do not replace per-change numeric progress events.",
+    "A stored parentQuestId is explicit receiver context; null values remain a coverage gap and timestamp proximity never supplies missing ownership.",
+    "Base-typed condition storage and observed declared method families do not authenticate the receiver's actual runtime subtype. Named numeric progress requests do not replace incoming objective-map delivery or a successful send/acknowledgment."
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.levelscript-camera-look-at.v1",
+  "schema": "endfield.levelscript-camera-look-at.v2",
   "evidenceBoundary": "exact",
   "nativeInputs": {
     "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
@@ -286,12 +286,122 @@
       "sha256": "051ff605ed1d070193472a538eb5c4fd9798b6af78eef68344629bb0cea4c165",
       "evidenceBoundary": "direct",
       "boundary": "Param reads mc4 then the typed CameraBlendCurveKey wrapper and ordinary idRef/source/path tail; key wrapper reads mc1 then one nullable UTF8 string."
+    },
+    {
+      "name": "CameraBlendCurveKey.set___key__ terminal leaf",
+      "va": "0x18507f51c",
+      "length": 12,
+      "sha256": "80eb06517c942ce07b3c0e5c186d5d0b634025e1d5332a970abae2a81d3b2b16",
+      "evidenceBoundary": "direct",
+      "boundary": "first terminal direct JMP; adjacent next method excluded"
     }
   ],
   "interpretation": "Sequential serialized data only; no runtime camera activation or execution-order claim.",
   "curveKey": {
     "managedType": "Beyond.CameraBlendCurveKey",
     "wire": "mc4 Param, mc1 string-key wrapper, nullable UTF8 key, ordinary Param tail",
-    "evidenceBoundary": "direct"
-  }
+    "evidenceBoundary": "direct",
+    "typedReadValue": {
+      "instructionRva": 157933273,
+      "instructionHex": "488b1570a14904",
+      "callRva": 157933286,
+      "callHex": "e8e93635fd",
+      "methodSpec": {
+        "index": 517645,
+        "va": 6633313356,
+        "rawHex": "B0890600FFFFFFFFF32F0000",
+        "definition": 428464,
+        "classInstantiationIndex": -1,
+        "methodInstantiationIndex": 12275,
+        "usageVa": 6672318544,
+        "usageRawHex": "1BCC0FC000000000"
+      },
+      "declaringType": "MemoryPack.MemoryPackReader",
+      "methodName": "ReadValue",
+      "methodArguments": [
+        "Beyond.CameraBlendCurveKey"
+      ],
+      "genericCandidates": [
+        {
+          "row": {
+            "tableIndex": 488667,
+            "va": 6646489360,
+            "methodSpecIndex": 517645,
+            "rawHex": "0DE607002873070047FC0000FFFFFFFF",
+            "indices": [
+              488232,
+              64583,
+              -1
+            ]
+          },
+          "rva": 111089108
+        }
+      ],
+      "evidenceBoundary": "direct",
+      "boundary": "Authenticated usage cell and MethodSpec identify ReadValue<CameraBlendCurveKey>; its one registered candidate is the direct call target in the selected Param formatter. Static serialized reader identity only."
+    },
+    "keySetterTerminal": {
+      "rva": 84407580,
+      "hex": "4883c110488911e91876fafa",
+      "boundary": "first terminal direct JMP; adjacent next method excluded",
+      "evidenceBoundary": "direct"
+    }
+  },
+  "status": "exact-current-build",
+  "methods": [
+    [
+      164938,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_CameraBlendCurveKey_ForMemoryPack",
+      "set___constValue__",
+      153010088
+    ],
+    [
+      164939,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_CameraBlendCurveKey_ForMemoryPack",
+      "set___idRef__",
+      84403760
+    ],
+    [
+      164940,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_CameraBlendCurveKey_ForMemoryPack",
+      "set___paramSource__",
+      84403284
+    ],
+    [
+      164941,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_CameraBlendCurveKey_ForMemoryPack",
+      "set___path__",
+      153010124
+    ],
+    [
+      164944,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_CameraBlendCurveKey_ForMemoryPack",
+      "Deserialize",
+      157933100
+    ],
+    [
+      164945,
+      "Beyond.MemoryPack.Beyond_Gameplay_Actions_Param_Beyond_CameraBlendCurveKey_ForMemoryPack+Beyond_Gameplay_Actions_Param_Beyond_CameraBlendCurveKey_ForMemoryPackFormatter",
+      "Deserialize",
+      157932872
+    ],
+    [
+      164952,
+      "Beyond.MemoryPack.Beyond_CameraBlendCurveKeyForMemoryPack",
+      "set___key__",
+      84407580
+    ],
+    [
+      164955,
+      "Beyond.MemoryPack.Beyond_CameraBlendCurveKeyForMemoryPack",
+      "Deserialize",
+      157926180
+    ],
+    [
+      164956,
+      "Beyond.MemoryPack.Beyond_CameraBlendCurveKeyForMemoryPack+Beyond_CameraBlendCurveKeyForMemoryPackFormatter",
+      "Deserialize",
+      157926048
+    ]
+  ]
 }

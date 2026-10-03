@@ -1,0 +1,31 @@
+{
+  "schema": "endfield.endminf-early-coat-portrait-capture.v1",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "provenance": {
+    "session": "20261002T073442Z",
+    "clothFrame": 135,
+    "portraitFrame": 135,
+    "drawSecondsAfterAuthenticatedPlay": 0.5024906,
+    "boundary": "Frame 135 is the largest remaining proven frame in the partial cadence rerank. Retain its early cloth texture/mip/sampler/material inputs and the portrait fragment inputs; material naming remains subject to the complete byte join."
+  },
+  "selection": {
+    "minimumPlaySeconds": 0.5,
+    "maximumPlaySeconds": 0.65,
+    "drawCount": 2
+  },
+  "shaderPairs": [
+    {
+      "role": "cloth",
+      "vertexSha256": "bb0f73f04f0878aa1b144a54d5c595d47ad5af23c5eb8d7a0da0b5a8b7011c9f",
+      "pixelSha256": "7dca145631dd688efdbbf608faeb3c72a1a2048365ec0f9dbecf5716c4c8dc3b"
+    },
+    {
+      "role": "portrait",
+      "vertexSha256": "53c8f40436bbc9411b7d6ffdd92b266f291e3e34e7dea77e248c4479bfd61705",
+      "pixelSha256": "a2f7f95d1813f05445054b2a26cfacacd84855bd9791bd8d680c705f96e3a591"
+    }
+  ]
+}

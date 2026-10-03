@@ -1,0 +1,381 @@
+{
+  "schema": "endfield.wwise-package-read-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "defaultIoReadBatch",
+      "entryRva": "0x24270",
+      "requiredRoles": [
+        "retainBatch",
+        "retainIo",
+        "completionCallback",
+        "adjustPrimaryIo",
+        "retainCount",
+        "batchHead",
+        "batchTransfer",
+        "cookieIo",
+        "cookieDescriptor",
+        "storeCookie",
+        "storeTransfer",
+        "loadPositionLow",
+        "loadPositionHigh",
+        "shiftPositionHigh",
+        "storePositionLow",
+        "storePositionHigh",
+        "loadRequestedBytes",
+        "loadBuffer",
+        "loadFileHandle",
+        "passCallback",
+        "callReadFileEx",
+        "nextBatch"
+      ],
+      "windows": [
+        {
+          "rva": "0x24270",
+          "bodyLength": 17,
+          "bodySha256": "5df4c2b2699193683a717cccf7811335a5fc55288008504d7410ccc80cfdd3e2",
+          "unwindRva": "0x2f2f28",
+          "unwindInfoHex": "0111030011e20d700c500000"
+        },
+        {
+          "rva": "0x24281",
+          "bodyLength": 337,
+          "bodySha256": "badabf1c483c223bc96971c760b88d79002578c2d8bffc06b85cb213f43d9fc9",
+          "unwindRva": "0x2f2f34",
+          "unwindInfoHex": "212f0c002f34120027f40c001ce40d0012d40e000bc41400046413007042020081420200282f2f00"
+        },
+        {
+          "rva": "0x243d2",
+          "bodyLength": 1,
+          "bodySha256": "ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e",
+          "unwindRva": "0x2f2f5c",
+          "unwindInfoHex": "210000007042020081420200282f2f00"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainBatch",
+          "rva": "0x24285",
+          "instructionHex": "498be8"
+        },
+        {
+          "role": "retainIo",
+          "rva": "0x2428c",
+          "instructionHex": "488bf9"
+        },
+        {
+          "role": "completionCallback",
+          "rva": "0x2429d",
+          "instructionHex": "4c8d2d0c030000"
+        },
+        {
+          "role": "adjustPrimaryIo",
+          "rva": "0x242a8",
+          "instructionHex": "4c8d79f8"
+        },
+        {
+          "role": "retainCount",
+          "rva": "0x242b0",
+          "instructionHex": "448bf2"
+        },
+        {
+          "role": "batchHead",
+          "rva": "0x242c0",
+          "instructionHex": "0f104500"
+        },
+        {
+          "role": "batchTransfer",
+          "rva": "0x242d3",
+          "instructionHex": "f20f104510"
+        },
+        {
+          "role": "cookieIo",
+          "rva": "0x242ed",
+          "instructionHex": "4c8938"
+        },
+        {
+          "role": "cookieDescriptor",
+          "rva": "0x242f0",
+          "instructionHex": "4c895008"
+        },
+        {
+          "role": "storeCookie",
+          "rva": "0x242f4",
+          "instructionHex": "48894628"
+        },
+        {
+          "role": "storeTransfer",
+          "rva": "0x2431c",
+          "instructionHex": "48897318"
+        },
+        {
+          "role": "loadPositionLow",
+          "rva": "0x24323",
+          "instructionHex": "8b06"
+        },
+        {
+          "role": "loadPositionHigh",
+          "rva": "0x24328",
+          "instructionHex": "488b06"
+        },
+        {
+          "role": "shiftPositionHigh",
+          "rva": "0x2432b",
+          "instructionHex": "48c1e820"
+        },
+        {
+          "role": "storePositionLow",
+          "rva": "0x24325",
+          "instructionHex": "894310"
+        },
+        {
+          "role": "storePositionHigh",
+          "rva": "0x2432f",
+          "instructionHex": "894314"
+        },
+        {
+          "role": "loadRequestedBytes",
+          "rva": "0x24332",
+          "instructionHex": "448b4608"
+        },
+        {
+          "role": "loadBuffer",
+          "rva": "0x24336",
+          "instructionHex": "488b5610"
+        },
+        {
+          "role": "loadFileHandle",
+          "rva": "0x2433a",
+          "instructionHex": "498b4a10"
+        },
+        {
+          "role": "passCallback",
+          "rva": "0x2433e",
+          "instructionHex": "4c896c2420"
+        },
+        {
+          "role": "callReadFileEx",
+          "rva": "0x24343",
+          "instructionHex": "ff15e76d2600"
+        },
+        {
+          "role": "nextBatch",
+          "rva": "0x24397",
+          "instructionHex": "4883c518"
+        }
+      ]
+    },
+    {
+      "key": "defaultIoReadCompletion",
+      "entryRva": "0x245b0",
+      "requiredRoles": [
+        "loadTransfer",
+        "retainError",
+        "loadCookie",
+        "loadCookieIo",
+        "testError",
+        "rejectError",
+        "loadDescriptor",
+        "passTransfer",
+        "successStatus",
+        "callTransform",
+        "passStatus",
+        "passCompletionTransfer",
+        "loadTransferCallback",
+        "tailTransferCallback"
+      ],
+      "windows": [
+        {
+          "rva": "0x245b0",
+          "bodyLength": 118,
+          "bodySha256": "ba5ca2062e6380739970d1b1ac655c7c2f38fb71ea630385f4601dfcde40819b",
+          "unwindRva": "0x2f2fe0",
+          "unwindInfoHex": "010a04000a3406000a320670"
+        }
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadTransfer",
+          "rva": "0x245ba",
+          "instructionHex": "498b5818"
+        },
+        {
+          "role": "retainError",
+          "rva": "0x245be",
+          "instructionHex": "448bd1"
+        },
+        {
+          "role": "loadCookie",
+          "rva": "0x245c1",
+          "instructionHex": "488b4b28"
+        },
+        {
+          "role": "loadCookieIo",
+          "rva": "0x245c5",
+          "instructionHex": "488b11"
+        },
+        {
+          "role": "testError",
+          "rva": "0x245fa",
+          "instructionHex": "4585d2"
+        },
+        {
+          "role": "rejectError",
+          "rva": "0x245fd",
+          "instructionHex": "7511"
+        },
+        {
+          "role": "loadDescriptor",
+          "rva": "0x245ff",
+          "instructionHex": "488b4908"
+        },
+        {
+          "role": "passTransfer",
+          "rva": "0x24603",
+          "instructionHex": "488bd3"
+        },
+        {
+          "role": "successStatus",
+          "rva": "0x24606",
+          "instructionHex": "bf01000000"
+        },
+        {
+          "role": "callTransform",
+          "rva": "0x2460b",
+          "instructionHex": "e8c04cfeff"
+        },
+        {
+          "role": "passStatus",
+          "rva": "0x24610",
+          "instructionHex": "8bd7"
+        },
+        {
+          "role": "passCompletionTransfer",
+          "rva": "0x24612",
+          "instructionHex": "488bcb"
+        },
+        {
+          "role": "loadTransferCallback",
+          "rva": "0x24615",
+          "instructionHex": "488b4318"
+        },
+        {
+          "role": "tailTransferCallback",
+          "rva": "0x24623",
+          "instructionHex": "48ffe0"
+        }
+      ]
+    }
+  ],
+  "readSlot": {
+    "addressPointRva": "0x28c020",
+    "offset": 48,
+    "targetOwner": "defaultIoReadBatch"
+  },
+  "batchLayout": {
+    "stride": 24,
+    "descriptor": 0,
+    "transfer": 16
+  },
+  "transferLayout": {
+    "filePosition": 0,
+    "requestedBytes": 8,
+    "transformBytes": 12,
+    "buffer": 16,
+    "callback": 24,
+    "cookie": 40
+  },
+  "overlappedLayout": {
+    "positionLow": 16,
+    "positionHigh": 20,
+    "transfer": 24
+  },
+  "cookieLayout": {
+    "primaryIo": 0,
+    "descriptor": 8
+  },
+  "descriptorLayout": {
+    "byteLength": 0,
+    "blockOffset": 8,
+    "byteOffset": 32,
+    "keyLow": 36,
+    "package": 48,
+    "blockBytes": 56
+  },
+  "readImport": {
+    "iatRva": "0x28b130",
+    "name": "ReadFileEx"
+  },
+  "transformLeaf": {
+    "entryRva": "0x92d0",
+    "bodyLength": 33,
+    "bodySha256": "e656793c2ef42437a6f451498dd52d7ee7d0f294bd9c79665a636aae160cf5c9",
+    "bodyHex": "80792800488bc27417448b0a448b420c442b49208b5124488b4810e930fdffffc3",
+    "targetRva": "0x9020",
+    "encryptionFlagOffset": 40,
+    "instructionWitnesses": [
+      {
+        "role": "testFlag",
+        "rva": "0x92d0",
+        "instructionHex": "80792800"
+      },
+      {
+        "role": "retainTransfer",
+        "rva": "0x92d4",
+        "instructionHex": "488bc2"
+      },
+      {
+        "role": "skipTransform",
+        "rva": "0x92d7",
+        "instructionHex": "7417"
+      },
+      {
+        "role": "loadPositionLow",
+        "rva": "0x92d9",
+        "instructionHex": "448b0a"
+      },
+      {
+        "role": "loadTransformBytes",
+        "rva": "0x92dc",
+        "instructionHex": "448b420c"
+      },
+      {
+        "role": "subtractDescriptorOffset",
+        "rva": "0x92e0",
+        "instructionHex": "442b4920"
+      },
+      {
+        "role": "loadKeyLow",
+        "rva": "0x92e4",
+        "instructionHex": "8b5124"
+      },
+      {
+        "role": "loadBuffer",
+        "rva": "0x92e7",
+        "instructionHex": "488b4810"
+      },
+      {
+        "role": "tailTransform",
+        "rva": "0x92eb",
+        "instructionHex": "e930fdffff"
+      },
+      {
+        "role": "return",
+        "rva": "0x92f0",
+        "instructionHex": "c3"
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "direct": "The default I/O read batch issues ReadFileEx with the retained descriptor handle, transfer buffer, requested byte count and OVERLAPPED position. The completion entry receives platform error and transferred bytes. Only the zero-error branch calls the bounded descriptor/transfer transform leaf before transfer callback dispatch.",
+    "conditional": "Entry-only reads can compare the transfer cookie descriptor with the transform descriptor argument and inspect descriptor geometry and a bounded pre-transform buffer word. No returned hook is required.",
+    "unresolved": "The contract alone does not establish live read/completion/transform observations. File naming, allocation generation, exact full payload coverage, game codec instance, decoded PCM and audibility remain unresolved."
+  },
+  "descriptorHandleOffset": 16
+}

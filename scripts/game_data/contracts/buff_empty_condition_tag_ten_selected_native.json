@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.buff-empty-condition-tag-ten-selected-native-contract.v2",
+  "schema": "endfield.buff-empty-condition-tag-ten-selected-native-contract.v3",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -10,6 +10,7 @@
     "buff_root_no_positive_native.json",
     "buff_root_prefix_native.json",
     "buff_heal_processor_zero_native.json",
+    "buff_attribute_modifier_native.json",
     "buff_damage_modifier_child_native.json",
     "buff_damage_sequence_action_condition_native.json",
     "buff_damage_modify_calc_result_processor_child_native.json"
@@ -29,10 +30,6 @@
     "processorTen": [123, 158],
     "enableSide": [158, 162]
   },
-  "attributeCollectionSetters": [
-    [104308, "set___attributeModifiers__", "<type-index:98997>", 52469328],
-    [104309, "set___isConvertedAttribute__", "System.Boolean", 84405996]
-  ],
   "evidenceBoundary": {
     "exact": "Selected original source SHA256 and fields three/six cursors, independently current-native-gated AttributeModifierData, DamageModifier, zero-action SequenceActionData and tag-ten ModifyCalcResult/BlackboardDouble children.",
     "direct": "One attribute modifier stores one named AttributeModifier element and a terminal boolean. One damage modifier stores an empty condition, one tag-ten processor and enableSide; the tag-ten processor's three named fields are provided by its reviewed native contract.",

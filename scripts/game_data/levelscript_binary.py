@@ -31,6 +31,7 @@ ownership; UID-shaped bytes found by scanning never establish a cursor.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import struct
 from collections import Counter, defaultdict
@@ -2102,3 +2103,54 @@ def decode_levelscript_binary_file(path: Path, script_id: int | str) -> dict[str
     except OSError:
         return {}
     return decode_levelscript_binary_summary(data, numeric_script_id)
+
+
+class LevelScriptNamedFramingError(LevelScriptTopLevelFramingError):
+    """Every maintained exact/bounded owner lane refused the stored source."""
+
+    def __init__(self, refusals: list[dict[str, Any]]) -> None:
+        self.diagnostics = refusals
+        first = refusals[0]
+        super().__init__(
+            f"{first['validator']}: {first['source']}: {first['actual']} "
+            f"({len(refusals)} maintained profiles refused)"
+        )
+
+
+def frame_levelscript_named(data: bytes, *, source: str = "<payload>") -> dict[str, Any]:
+    """Return the first maintained exact or bounded LevelScript owner frame.
+
+    This is the shared route order used by the JsonData registry and Data page.
+    It changes no reader profile: only a reader's own ``named_exact`` result
+    closes the stored schema; a unique suffix or partial map stays bounded.
+    Failed exact lanes accompany a bounded result as actionable diagnostics,
+    including the source identity and its first unsupported stored shape.
+    No cursor or authored field establishes runtime execution or ownership.
+    """
+    refusals: list[dict[str, Any]] = []
+    source_hash = hashlib.sha256(data).hexdigest().upper()
+    for reader in (
+        frame_levelscript_empty_action_map_sequential,
+        frame_levelscript_null_action_map_sequential,
+        frame_levelscript_single_call_server_leader_enter,
+        frame_levelscript_current_action_sequence_leader_enter,
+        frame_levelscript_terminal_suffix,
+        frame_levelscript_empty_action_map_top_level,
+        frame_levelscript_action_map_named_prefix,
+        frame_levelscript_empty_action_map_prefix,
+    ):
+        try:
+            result = reader(data)
+        except (LevelScriptTopLevelFramingError, ValueError) as exc:
+            refusals.append({
+                "validator": reader.__name__, "check": "stored-profile",
+                "source": source, "sourceSha256": source_hash,
+                "expected": "maintained stored owner profile",
+                "actual": str(exc)[:500],
+            })
+            continue
+        framed = {**result, "reader": f"scripts.game_data.levelscript_binary.{reader.__name__}"}
+        if framed.get("schemaStatus") != "named_exact" and refusals:
+            framed["readerRefusals"] = refusals
+        return framed
+    raise LevelScriptNamedFramingError(refusals)

@@ -1,0 +1,269 @@
+{
+  "schema": "endfield.buff-shared-event-maps-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_root_no_positive_native.json",
+    "buff_ad_native.json",
+    "buff_root_sixth_native.json",
+    "skill_timeline_physics_cast_native.json",
+    "buff_break_passing_selected_native.json"
+  ],
+  "maps": {
+    "ability": {
+      "wrapperTypeDefinition": 13883,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityActionMapForMemoryPack",
+      "setterMethods": [
+        [
+          104441,
+          "set___abilityEvent__",
+          "Beyond.Gameplay.Core.AbilitySystem+Event",
+          84403284
+        ],
+        [
+          104442,
+          "set___actions__",
+          "<type-index:98518>",
+          52469328
+        ]
+      ],
+      "dependency": "buff_ad_native.json",
+      "methodRows": [
+        2,
+        3
+      ],
+      "codeWindowRows": [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "contextRows": [
+        2,
+        3
+      ],
+      "serializedMemberCount": 2,
+      "readOrder": [
+        "abilityEvent",
+        "actions"
+      ],
+      "runtimeType": {
+        "typeDefinition": 10056,
+        "typeName": "Beyond.Gameplay.Core.AbilityActionMap",
+        "fieldOffsets": {
+          "abilityEvent": 16,
+          "actions": 24
+        }
+      },
+      "parameterTypes": [
+        {
+          "setterMethodIndex": 104441,
+          "parameterTypeIndex": 151081,
+          "rawHex": "8D230000000000000000118000000000",
+          "typeName": "Beyond.Gameplay.Core.AbilitySystem+Event"
+        },
+        {
+          "setterMethodIndex": 104442,
+          "parameterTypeIndex": 98518,
+          "rawHex": "F8A0348D0100000000001D0000000000",
+          "typeName": "Beyond.Gameplay.Core.SequenceActionData[]"
+        }
+      ],
+      "sourceAndDestinationInstructions": [
+        [
+          63974284,
+          "E81F5BFAFE",
+          "abilityEvent source call"
+        ],
+        [
+          63974311,
+          "894110",
+          "abilityEvent destination"
+        ],
+        [
+          63974327,
+          "E834C0DFFF",
+          "actions source call"
+        ],
+        [
+          63974346,
+          "48894118",
+          "actions destination"
+        ]
+      ]
+    },
+    "buff": {
+      "wrapperTypeDefinition": 13889,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffActionMapForMemoryPack",
+      "dependency": "buff_root_sixth_native.json",
+      "methodRows": [
+        0,
+        1
+      ],
+      "codeWindowRows": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "contextRows": [
+        1
+      ],
+      "serializedMemberCount": 2,
+      "readOrder": [
+        "actions",
+        "buffEvent"
+      ],
+      "runtimeType": {
+        "typeDefinition": 10055,
+        "typeName": "Beyond.Gameplay.Core.BuffActionMap",
+        "fieldOffsets": {
+          "buffEvent": 16,
+          "actions": 24
+        }
+      },
+      "parameterTypes": [
+        {
+          "setterMethodIndex": 104475,
+          "parameterTypeIndex": 98518,
+          "rawHex": "F8A0348D0100000000001D0000000000",
+          "typeName": "Beyond.Gameplay.Core.SequenceActionData[]"
+        },
+        {
+          "setterMethodIndex": 104476,
+          "parameterTypeIndex": 157651,
+          "rawHex": "30270000000000000000118000000000",
+          "typeName": "Beyond.Gameplay.Core.Buff+Event"
+        }
+      ],
+      "sourceAndDestinationInstructions": [
+        [
+          63974700,
+          "E8BFBEDFFF",
+          "actions source call"
+        ],
+        [
+          63974727,
+          "48894118",
+          "actions destination"
+        ],
+        [
+          63974757,
+          "8B28",
+          "buffEvent source read"
+        ],
+        [
+          63974801,
+          "896810",
+          "buffEvent destination"
+        ]
+      ],
+      "setterMethodsReference": {
+        "path": "buff_break_passing_selected_native.json",
+        "section": "mapSetters"
+      }
+    }
+  },
+  "sequence": {
+    "dependency": "skill_timeline_physics_cast_native.json",
+    "section": "sequenceSource",
+    "runtimeType": {
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "fieldOffsets": {
+        "actionData": 16,
+        "onlyExecuteWhenSourceIsMainChar": 24,
+        "onlyExecuteWhenSourceIsGuard": 25
+      }
+    },
+    "parameterTypes": [
+      {
+        "setterMethodIndex": 104341,
+        "parameterTypeIndex": 98972,
+        "rawHex": "B8D6338D0100000000001D0000000000",
+        "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData[]"
+      },
+      {
+        "setterMethodIndex": 104342,
+        "parameterTypeIndex": 108357,
+        "rawHex": "FA8C0000000000000000028000000000",
+        "typeName": "bool"
+      },
+      {
+        "setterMethodIndex": 104343,
+        "parameterTypeIndex": 108357,
+        "rawHex": "FA8C0000000000000000028000000000",
+        "typeName": "bool"
+      }
+    ],
+    "sourceAndDestinationInstructions": [
+      [
+        60582908,
+        "8B28",
+        "actionData signed count source"
+      ],
+      [
+        60583347,
+        "41FF9290010000",
+        "actionData element provider call"
+      ],
+      [
+        60583354,
+        "FFC63BF57CB0",
+        "actionData count-controlled loop"
+      ],
+      [
+        60583485,
+        "49894010",
+        "actionData destination"
+      ],
+      [
+        60583659,
+        "884119",
+        "onlyExecuteWhenSourceIsGuard destination"
+      ],
+      [
+        60583772,
+        "884118",
+        "onlyExecuteWhenSourceIsMainChar destination"
+      ]
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native inputs, independent root typed joins, distinct two-member map order and generated setters, full three-member SequenceActionData reader, named runtime field destinations and parameter array types.",
+    "conditional": "Reference list/array elements use the selected static formatter family; positive unions require an independently authenticated recursive action receipt.",
+    "unresolved": "Live formatter selection, event execution, action execution, and whole-root completeness until an enclosing original-byte forward receipt reaches EOF."
+  },
+  "recursiveChildContracts": [
+    "skill_timeline_create_buff_native.json",
+    "buff_create_icon_duration_child_native.json",
+    "buff_create_input_child_native.json",
+    "buff_a2_native.json",
+    "buff_effect_config_child_native.json",
+    "buff_effect_vector_child_native.json",
+    "buff_selector_finder_character_team_native.json",
+    "buff_ec_native.json",
+    "buff_adding_cooldown_ownership_native.json",
+    "levelscript_union_tags.json",
+    "buff_finish_buff_advanced_action_receipt_native.json",
+    "buff_find_settings_child_native.json",
+    "buff_super_armor_blackboard_child_native.json",
+    "buff_159_native.json",
+    "buff_direct_target_actions_native.json",
+    "buff_selector_finder_owner_spawned_native.json",
+    "buff_selector_validator_zero_native.json",
+    "buff_selector_validator_tag_query_native.json",
+    "buff_if_else_action_receipt_native.json",
+    "buff_50_native.json",
+    "buff_damage_check_buff_stack_condition_native.json",
+    "buff_id_actions_native.json",
+    "buff_blackboard_string_child_native.json",
+    "buff_selector_geometry_native.json"
+  ]
+}

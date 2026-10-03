@@ -1,0 +1,179 @@
+{
+  "schema": "endfield.endminf-amber-trail-capture.v5",
+  "status": "source-joined-candidate-selection",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "material": {
+    "name": "M_fx_endminm_gfx_46",
+    "pathId": 6738817725110009220,
+    "keywords": [
+      "_SAMPLE_TEX0",
+      "_SAMPLE_TEX1"
+    ],
+    "sourceRoot": "export_full/game/Unity.sqlite (selected native build)",
+    "sourceFile": "CAB-7b448c424ed5d6e42212fe6ecf508f87"
+  },
+  "shaderPairs": [
+    {
+      "vertexSha256": "738dacf3114d7157cd72b74d96de02254709def72b1d3f5ac973f4593ec7d84a",
+      "pixelSha256": "45d624f766b6afede37230e7bf84ceafc0ebb6c86c801fba0e92f7e091c6cbcd",
+      "keywords": [
+        "HG_ENABLE_MV",
+        "_SAMPLE_TEX0",
+        "_SAMPLE_TEX1"
+      ],
+      "sourceVertexProgram": "0036_endfield_dxbc_0.dxbc",
+      "sourcePixelProgram": "0037_endfield_dxbc_1.dxbc"
+    },
+    {
+      "vertexSha256": "6ba2eae7bd4b8ed6be0efe4166faa9b1a9ca0c0e40d85064c2ea4eba0768dcfc",
+      "pixelSha256": "45d624f766b6afede37230e7bf84ceafc0ebb6c86c801fba0e92f7e091c6cbcd",
+      "keywords": [
+        "HG_ENABLE_MV",
+        "_SAMPLE_TEX0",
+        "_SAMPLE_TEX1",
+        "_USE_TRAIL"
+      ],
+      "sourceVertexProgram": "0540_endfield_dxbc_0.dxbc",
+      "sourcePixelProgram": "0541_endfield_dxbc_1.dxbc"
+    },
+    {
+      "vertexSha256": "ce755059deddc2e005111633763b9f7f9f7263ccd80321e70eeb9164096f6093",
+      "pixelSha256": "f86bf8ba0a581d998ca4a71e18d9f120914fcf2e5f5c324a5a8429b1c211094a",
+      "keywords": [
+        "HG_ENABLE_MV",
+        "SRP_INSTANCING_ON",
+        "_SAMPLE_TEX0",
+        "_SAMPLE_TEX1"
+      ],
+      "sourceVertexProgram": "4182_endfield_dxbc_0.dxbc",
+      "sourcePixelProgram": "4183_endfield_dxbc_1.dxbc"
+    },
+    {
+      "vertexSha256": "8eab2d8d8855737d2996065b8d5c05a02282b254a897883d00748cd2659c1f3a",
+      "pixelSha256": "f86bf8ba0a581d998ca4a71e18d9f120914fcf2e5f5c324a5a8429b1c211094a",
+      "keywords": [
+        "HG_ENABLE_MV",
+        "SRP_INSTANCING_ON",
+        "_SAMPLE_TEX0",
+        "_SAMPLE_TEX1",
+        "_USE_TRAIL"
+      ],
+      "sourceVertexProgram": "4686_endfield_dxbc_0.dxbc",
+      "sourcePixelProgram": "4687_endfield_dxbc_1.dxbc"
+    }
+  ],
+  "textures": [
+    {
+      "slot": 0,
+      "name": "T_fx_trail_gfx_04",
+      "width": 256,
+      "height": 256,
+      "viewFormat": 99,
+      "topMipSha256": "7c50405ee28c34e2895f10b47ff86be5058cded75a4485a74267d22dc7c19299",
+      "materialProperty": "_MainTex",
+      "referencedPathId": -2017692610046869736
+    },
+    {
+      "slot": 1,
+      "name": "T_fx_flow_01_M",
+      "width": 128,
+      "height": 128,
+      "viewFormat": 99,
+      "topMipSha256": "13ac99b0c7f28ea34b84e5ea86aecb07f23d4abbd0de942ca3e4f1f526a5b17b",
+      "materialProperty": "_SampleTex0",
+      "referencedPathId": -1647025128171678556
+    },
+    {
+      "slot": 2,
+      "name": "T_fx_color_207_C_D",
+      "width": 32,
+      "height": 16,
+      "viewFormat": 99,
+      "topMipSha256": "36f2a179f8f470114558843ebfa533d8cc4072398cd6b7f70ba3b53d1a83500e",
+      "materialProperty": "_SampleTex1",
+      "referencedPathId": -7896745964532314291,
+      "materialAlias": "_BlendTex"
+    }
+  ],
+  "materialParameters": [
+    {
+      "name": "_BlendMode",
+      "byteOffset": 4,
+      "values": [
+        0.0
+      ]
+    },
+    {
+      "name": "_TintColorIntensity",
+      "byteOffset": 24,
+      "values": [
+        2.5
+      ]
+    },
+    {
+      "name": "_TintColorAlpha",
+      "byteOffset": 28,
+      "values": [
+        1.0
+      ]
+    },
+    {
+      "name": "_IgnorePostExposure",
+      "byteOffset": 48,
+      "values": [
+        1.0
+      ]
+    },
+    {
+      "name": "_SampleTex1UseWeight4",
+      "byteOffset": 300,
+      "values": [
+        1.0
+      ]
+    },
+    {
+      "name": "_BlendTint.a",
+      "byteOffset": 508,
+      "values": [
+        1.0
+      ]
+    },
+    {
+      "name": "_TintColor",
+      "byteOffset": 64,
+      "values": [
+        0.5840784276699447,
+        0.3132357222850221,
+        0.00030352794117647063,
+        0.7490196
+      ]
+    }
+  ],
+  "selection": {
+    "drawCount": 3,
+    "minimumPlaySeconds": 0.5,
+    "maximumPlaySeconds": 0.9,
+    "candidateCapacity": 6,
+    "physicalPlanBudgetBytes": 1073741824,
+    "retention": "input-layout-consumed IA slots, full bound constants, VS t0, PS t0..2, draw-local color before/after and depth-stencil before every candidate",
+    "maxResourceRecords": 128,
+    "minVertices": 4,
+    "maxVertices": 12288,
+    "drawInvocation": "DrawInstanced",
+    "topology": 5
+  },
+  "evidenceBoundary": "Four exact source shader pairs, bounded non-indexed DrawInstanced triangle strips and the three sampled texture descriptors admit candidates. The descriptor census directly observed this invocation between inactive indexed quads. The _USE_TRAIL keyword does not establish Unity renderer identity. Full shader/texture/material byte joins prove inputs; acceptance also requires at least three changed draws with positive referenced vertex alpha. Renderer contribution requires retail replay. The bounded census supplies no byte ownership.",
+  "shaderSource": {
+    "name": "HGRP/Effect/VFXBaseV2",
+    "pathId": -1430105248647086886,
+    "source": "D:\\Program Files\\Endfield Game\\Endfield_Data\\Persistent\\VFS\\0CE8FA57\\F047E09F2560D0C7BD5C8862CE3F8D3C.chk",
+    "bundleOffset": 151345152,
+    "sourceSha256": "b1efc3824f2afb5eeb8908281949f2844635a3499543ac9ba22a4e1b881f2a16",
+    "assetHash": "9f7f0d58be86669",
+    "selection": "current Persistent AssetMap exact source/offset/pathID; ForwardOnly HG_ENABLE_MV + SAMPLE_TEX0/1, both SRP and USE_TRAIL selections",
+    "materialLayoutBoundary": "PS b3 fields are joined to the non-SRP parameter layout and SRP disassembly reads. Offset 508 is _BlendTint alpha, not _UseBlend. _TintColor RGB values are Unity linear-space uploads, with alpha unchanged; stored material JSON RGB is sRGB. Observed inactive billboard draws use six indices and zero referenced RGBA. Their shape does not constrain unretained trail geometry."
+  }
+}

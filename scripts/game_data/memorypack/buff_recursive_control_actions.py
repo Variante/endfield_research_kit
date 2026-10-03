@@ -1,0 +1,112 @@
+"""Recursive control actions composed through independently proved typed children."""
+import hashlib
+from scripts.game_data.memorypack.buff_actions import Reader,SEQUENCE_RECURSION_LIMIT
+from scripts.game_data.memorypack import buff_if_else_action_receipt as conditional
+from scripts.game_data.memorypack import buff_compare_float_blackboard_children as compare
+from scripts.game_data.memorypack import buff_modify_dynamic_blackboard_action_receipt as modify
+from scripts.game_data.memorypack import buff_blackboard_double_child_receipt as double
+from scripts.game_data.memorypack import buff_damage_check_buff_stack_condition_receipt as stack
+from scripts.game_data.memorypack import buff_id_actions as ids
+from scripts.game_data.memorypack import buff_string_actions as strings
+
+SUPPORTED_TAGS={conditional.TAG,compare.parent.TAG,modify.TAG,stack._contract()["unionTag"]}|ids.supported_tags()|strings.supported_tags()
+
+
+def read_sequence(data,source,digest,start,end,native,depth):
+    from scripts.game_data.memorypack import buff_recursive_actions as base
+    if depth>SEQUENCE_RECURSION_LIMIT:raise ValueError('buffRecursiveControlActions.sequence:depth-limit')
+    reader=Reader(data,source,end);reader.pos=start;reader.header(3)
+    count=reader.count(1,reserve=2,nullable=True);elements=[]
+    for _ in range(max(0,count)):
+        begin=reader.pos;lead=reader.peek()
+        if lead==255:
+            reader.take(1,'null-action');elements.append({'start':begin,'end':reader.pos,'status':'exact-null'});continue
+        tag=int.from_bytes(data[begin+1:begin+3],'little') if lead==250 else lead
+        reader.action(depth+1)
+        child=base.decode_action(data,source=source,digest=digest,start=begin,end=reader.pos,tag=tag,native_validation=native,depth=depth+1)
+        if child.get('recursiveStoredSchemaExact') is not True or [child.get('start'),child.get('end')]!=[begin,reader.pos]:
+            raise ValueError('buffRecursiveControlActions.sequence:incomplete-child')
+        elements.append(child)
+    flags=[]
+    for name in ('onlyExecuteWhenSourceIsGuard','onlyExecuteWhenSourceIsMainChar'):
+        a=reader.pos;raw=reader.take(1,name)[0];flags.append({'name':name,'start':a,'end':reader.pos,'rawByte':raw})
+    if reader.pos!=end:raise ValueError('buffRecursiveControlActions.sequence:end')
+    return {'start':start,'end':end,'count':count,'actions':elements,'flags':flags,'recursiveStoredSchemaExact':True}
+
+
+def decode_ifelse(data,source,digest,start,end,native,depth):
+    # Parent certification requires actual cursor-closed nested records, never
+    # caller-invented ranges or an arbitrary leap to the known parent endpoint.
+    reader=Reader(data,source,end);reader.pos=start;reader.action(depth)
+    if reader.pos!=end:raise ValueError('buffRecursiveControlActions.ifElse:framed-action-end')
+    spans=[{k:r[k] for k in ('start','end','tag')} for r in reader.records if r['kind']=='union']
+    parent=conditional.decode_if_else_action_receipt(data,source=source,logical_sha256=digest,start=start,end=end,
+        native_validation=native['children']['ifElse'],certified_action_spans=spans)
+    sequences={}
+    for field in parent['namedFields']:
+        if field['kind']=='SequenceActionData':
+            sequences[field['fieldName']]=read_sequence(data,source,digest,field['start'],field['end'],native,depth+1)
+    if len(sequences)!=3:raise ValueError('buffRecursiveControlActions.ifElse:three-typed-sequences')
+    return {'parent':parent,'sequences':sequences,'recursiveStoredSchemaExact':True}
+
+
+def decode_modify(data,source,digest,start,end,native):
+    from scripts.game_data.memorypack import buff_recursive_actions as base
+    children=native['children'];proof=children['modify']
+    parent=modify.decode_modify_dynamic_blackboard_action_receipt(data,source=source,logical_sha256=digest,
+        start=start,end=end,native_validation=proof)
+    targets=[r for r in proof['directTypedChildren'] if r['typeName']=='Beyond.Gameplay.Core.TargetSettings']
+    if len(targets)!=1:raise ValueError('buffRecursiveControlActions.modify:typed-target-cardinality')
+    fields={r['fieldName']:r for r in parent['namedFields']};field=fields[targets[0]['fieldName']]
+    if field['kind']!='member13':raise ValueError('buffRecursiveControlActions.modify:typed-target-kind')
+    target=base.recursive_target(data,source,digest,field,children)
+    scalar=double.decode_blackboard_double_action_child_receipt(data,source=source,logical_sha256=digest,
+        start=start,end=end,tag=modify.TAG,native_validation=children['blackboard'])
+    if scalar['wholeProviderByteSpanExact'] is not True:raise ValueError('buffRecursiveControlActions.modify:scalar')
+    return {'parent':parent,'target':target,'blackboard':scalar,'recursiveStoredSchemaExact':True}
+
+
+def decode_stack(data,source,digest,start,end,native):
+    from scripts.game_data.memorypack import buff_recursive_actions as base
+    children=native['children'];proof=children['checkStack'];contract=stack._contract()
+    if (proof.get('status')!='validated' or proof.get('nativeInputs')!=contract['nativeInputs']
+        or proof.get('unionTag')!=contract['unionTag'] or proof.get('actionMemberPlan')!=contract['actionMemberPlan']
+        or any(children[name].get('status')!='validated' or children[name].get('nativeInputs')!=proof['nativeInputs']
+               for name in ('findSettings','target'))
+        or hashlib.sha256(data).hexdigest().upper()!=digest.upper()):
+        raise ValueError('buffRecursiveControlActions.stack:current-native-child-join-or-source')
+    reader=Reader(data,source,end);reader.pos=start
+    reader.nested_union_tag((contract['unionTag'],),'condition-action');reader.header(len(contract['actionMemberPlan']))
+    fields=[]
+    for member in contract['actionMemberPlan']:
+        a=reader.pos;kind=member['kind'];value={}
+        if kind in ('bool-byte','enum32','int32'):value['rawHex']=reader.take(member['width'],member['name']).hex().upper()
+        elif kind=='buff-find-settings':
+            reader.finder_profile()
+            value['child']=base.find.decode_find_settings_child_receipt(data,source=source,logical_sha256=digest,
+                    start=a,end=reader.pos,native_validation=children['findSettings'])
+        elif kind=='target-settings':
+            reader.target_profile()
+            value['child']=base.recursive_target(data,source,digest,{'start':a,'end':reader.pos},children)
+        elif kind=='blackboard-double':
+            reader.scalar_payload()
+            value['child']=stack.blackboard.decode_adding_cooldown(data,a,reader.pos,native_validation=proof['blackboardNative'])
+            if value['child'].get('wholeValueExact') is not True:raise ValueError('buffRecursiveControlActions.stack:blackboard-child')
+        else:raise ValueError('buffRecursiveControlActions.stack:unsupported-member')
+        fields.append({'name':member['name'],'declaredType':member['declaredType'],'kind':kind,'start':a,'end':reader.pos,**value})
+    if reader.pos!=end:raise ValueError('buffRecursiveControlActions.stack:action-end')
+    return {'namedFields':fields,'recursiveStoredSchemaExact':True}
+
+
+def decode_action(data,*,source,digest,start,end,tag,native_validation,depth=0):
+    if depth>SEQUENCE_RECURSION_LIMIT:raise ValueError('buffRecursiveControlActions.action:depth-limit')
+    if tag==conditional.TAG:result=decode_ifelse(data,source,digest,start,end,native_validation,depth)
+    elif tag==compare.parent.TAG:
+        result={'operands':compare.decode_compare_float_blackboard_children(data,source=source,logical_sha256=digest,
+                    start=start,end=end,native_validation=native_validation['children']['compare']), 'recursiveStoredSchemaExact':True}
+    elif tag==modify.TAG:result=decode_modify(data,source,digest,start,end,native_validation)
+    elif tag==stack._contract()['unionTag']:result=decode_stack(data,source,digest,start,end,native_validation)
+    elif tag in ids.supported_tags():result=ids.decode_action(data,source=source,digest=digest,start=start,end=end,tag=tag,native_validation=native_validation)
+    elif tag in strings.supported_tags():result=strings.decode_action(data,source=source,digest=digest,start=start,end=end,tag=tag,native_validation=native_validation)
+    else:raise ValueError(f'buffRecursiveControlActions:unsupported-action={tag}')
+    return {'schema':'endfield.buff-recursive-action-receipt.v1','tag':tag,'start':start,'end':end,**result}

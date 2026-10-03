@@ -1,0 +1,2189 @@
+{
+  "schema": "endfield.wwise-source-queue-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "managedClaims": {
+    "adapterExternalSourcePostEvent": {
+      "type": "Beyond.Audio.AudioAdapter",
+      "method": "_PostEventWithExternalSource",
+      "parametersPrefix": [
+        "System.UInt32",
+        "System.UInt64",
+        "System.String",
+        "System.UInt32"
+      ],
+      "claims": [
+        {
+          "passesArgumentToCall": {
+            "fromParameter": "externalSourceKey",
+            "call": "AkExternalSourceInfo.set_szFile",
+            "toParameter": "value"
+          }
+        },
+        {
+          "passesArgumentToCall": {
+            "fromParameter": "externalCookie",
+            "call": "AkExternalSourceInfo.set_iExternalSrcCookie",
+            "toParameter": "value"
+          }
+        },
+        {
+          "calls": [
+            "AkExternalSourceInfo.set_iExternalSrcCookie",
+            "AkExternalSourceInfo.set_szFile",
+            "AkExternalSourceInfo.set_idCodec",
+            "AkSoundEngine.PostEvent"
+          ],
+          "ordered": true
+        }
+      ]
+    }
+  },
+  "managedWindows": [
+    {
+      "startRva": 66735536,
+      "endRva": 66735588,
+      "sha256": "f506f01dac604e8cc33d87d5c50f8bff59ee3a4a31cabf0018f838cbcfee01bc",
+      "extentBoundary": "exact exception-directory extent"
+    },
+    {
+      "startRva": 66735872,
+      "endRva": 66735963,
+      "sha256": "68f3f70e7ae03144150ea6c9395912666528145c7b272f32240d49c18a55be44",
+      "extentBoundary": "exact exception-directory extent"
+    },
+    {
+      "startRva": 66736144,
+      "endRva": 66736239,
+      "sha256": "54ec918aa66e77825d9a8fc093b47e2a8a04527573826f3698cc874b43b890b2",
+      "extentBoundary": "exact exception-directory extent"
+    },
+    {
+      "startRva": 66736240,
+      "endRva": 66736306,
+      "sha256": "88f5424b67f94db3d3e468cdcc0eb1eb37dd197abca0c004dfde7dc981c41ada",
+      "extentBoundary": "exact exception-directory extent"
+    },
+    {
+      "startRva": 66736320,
+      "endRva": 66736417,
+      "sha256": "1c944eecfae959012ad6ad7a78099e60fcffc817bb58f67dee3d51a40f54eaf9",
+      "extentBoundary": "exact exception-directory extent"
+    },
+    {
+      "startRva": 66736432,
+      "endRva": 66736501,
+      "sha256": "b17763fd5ef6058f9781ea23b7171e54f3032f0e5cd4613e07346f170bccbf6e",
+      "extentBoundary": "exact exception-directory extent"
+    },
+    {
+      "startRva": 707472,
+      "endRva": 707562,
+      "sha256": "ca7374679d71beb4e0afcaebfda39dfae918116520a6028ecb86584de8f077c0",
+      "extentBoundary": "exact exception-directory extent"
+    },
+    {
+      "startRva": 707280,
+      "endRva": 707370,
+      "sha256": "b60af2c802c40e7dc021879905a72cfc5c2dc912eadee6bb2751fdafa077ae91",
+      "extentBoundary": "exact exception-directory extent"
+    },
+    {
+      "startRva": 707376,
+      "endRva": 707459,
+      "sha256": "5cbca3740db2784d6a013612b4ddd439a2c7c929a31db3be7d633302113cd9d2",
+      "extentBoundary": "exact exception-directory extent"
+    }
+  ],
+  "nativeGroups": [
+    {
+      "key": "externalDescriptorCopy",
+      "entryRva": "0xc08d0",
+      "windows": [
+        {
+          "rva": "0xc08d0",
+          "bodyLength": 87,
+          "bodySha256": "6cf9bcabd6684d6914f41a6d02e2ece43c282db96969b4243231e1558b82845a",
+          "unwindRva": "0x2ffe64",
+          "unwindInfoHex": "011007001001120009f007e005c0037002500000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xc0927",
+          "bodyLength": 312,
+          "bodySha256": "e4e3d5e03cc2450ee6a2a82a9ddcc9fd670f46a1941742ed94290976daf2da2c",
+          "unwindRva": "0x2ffe78",
+          "unwindInfoHex": "211a06001ad410001064110008341900d0080c0027090c0064fe2f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xc0a5f",
+          "bodyLength": 103,
+          "bodySha256": "baa4823f2163615223176225e48aba7ba0d9222b0494a707a87ceaa954b6018a",
+          "unwindRva": "0x2ffe94",
+          "unwindInfoHex": "2100060000d410000064110000341900d0080c0027090c0064fe2f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "retainInputDescriptors",
+        "retainExternalCount",
+        "descriptorAllocationRowScale",
+        "descriptorAllocationHeaderSize",
+        "writeOwnedAllocation",
+        "initializeAllocationRefcount",
+        "storeAllocationCount",
+        "copyFirstRowHalf",
+        "copySecondRowHalf",
+        "pathCopyByteCount",
+        "retainCopiedUtf16Path",
+        "copyUtf16PathBytes",
+        "advanceDescriptorRow"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainInputDescriptors",
+          "rva": "0xc08e0",
+          "instructionHex": "488bfa"
+        },
+        {
+          "role": "retainExternalCount",
+          "rva": "0xc08e3",
+          "instructionHex": "448bf1"
+        },
+        {
+          "role": "descriptorAllocationRowScale",
+          "rva": "0xc08eb",
+          "instructionHex": "c1e205"
+        },
+        {
+          "role": "descriptorAllocationHeaderSize",
+          "rva": "0xc08f0",
+          "instructionHex": "83c228"
+        },
+        {
+          "role": "writeOwnedAllocation",
+          "rva": "0xc0901",
+          "instructionHex": "498907"
+        },
+        {
+          "role": "initializeAllocationRefcount",
+          "rva": "0xc091e",
+          "instructionHex": "c70001000000"
+        },
+        {
+          "role": "storeAllocationCount",
+          "rva": "0xc0941",
+          "instructionHex": "44897004"
+        },
+        {
+          "role": "copyFirstRowHalf",
+          "rva": "0xc096b",
+          "instructionHex": "0f114708"
+        },
+        {
+          "role": "copySecondRowHalf",
+          "rva": "0xc0973",
+          "instructionHex": "0f114f18"
+        },
+        {
+          "role": "pathCopyByteCount",
+          "rva": "0xc0986",
+          "instructionHex": "8d044502000000"
+        },
+        {
+          "role": "retainCopiedUtf16Path",
+          "rva": "0xc0996",
+          "instructionHex": "48894710"
+        },
+        {
+          "role": "copyUtf16PathBytes",
+          "rva": "0xc09ac",
+          "instructionHex": "e85f8b1c00"
+        },
+        {
+          "role": "advanceDescriptorRow",
+          "rva": "0xc0a25",
+          "instructionHex": "4883c320"
+        }
+      ]
+    },
+    {
+      "key": "externalPost",
+      "entryRva": "0xc38b0",
+      "windows": [
+        {
+          "rva": "0xc38b0",
+          "bodyLength": 215,
+          "bodySha256": "b0f8653b4fa71fab1584c5890b16facf1e0a9b3c2f86a619736b1b13890fa586",
+          "unwindRva": "0x2ff560",
+          "unwindInfoHex": "01190a0019e4130019641200195411001934100019d215f0",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readExternalDescriptorArray",
+        "readExternalCount",
+        "passAllocationOutSlot",
+        "callDescriptorCopy",
+        "requireCopySuccess",
+        "loadCopiedAllocation",
+        "addressOwnedPayload",
+        "retainOwnedPayloadFirstWord",
+        "forwardOwnedPayload",
+        "callQueuedPost"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readExternalDescriptorArray",
+          "rva": "0xc38e2",
+          "instructionHex": "488b9424b0000000"
+        },
+        {
+          "role": "readExternalCount",
+          "rva": "0xc38ee",
+          "instructionHex": "8b8c24a8000000"
+        },
+        {
+          "role": "passAllocationOutSlot",
+          "rva": "0xc38f5",
+          "instructionHex": "4c8d40d0"
+        },
+        {
+          "role": "callDescriptorCopy",
+          "rva": "0xc3901",
+          "instructionHex": "e8cacfffff"
+        },
+        {
+          "role": "requireCopySuccess",
+          "rva": "0xc3906",
+          "instructionHex": "83f801"
+        },
+        {
+          "role": "loadCopiedAllocation",
+          "rva": "0xc390b",
+          "instructionHex": "488b5c2448"
+        },
+        {
+          "role": "addressOwnedPayload",
+          "rva": "0xc3910",
+          "instructionHex": "4c8d542450"
+        },
+        {
+          "role": "retainOwnedPayloadFirstWord",
+          "rva": "0xc3915",
+          "instructionHex": "48895c2450"
+        },
+        {
+          "role": "forwardOwnedPayload",
+          "rva": "0xc3941",
+          "instructionHex": "4c89542428"
+        },
+        {
+          "role": "callQueuedPost",
+          "rva": "0xc394e",
+          "instructionHex": "e83d000000"
+        }
+      ]
+    },
+    {
+      "key": "queuedPost",
+      "entryRva": "0xc3990",
+      "windows": [
+        {
+          "rva": "0xc3990",
+          "bodyLength": 237,
+          "bodySha256": "39799b0e6c8e99cf90d51b1311490c69c131973e5159cbe6704911cf2daa156f",
+          "unwindRva": "0x2ff2b4",
+          "unwindInfoHex": "01160a0016540e0016340d00165212f010d00ec00c700b60",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xc3a7d",
+          "bodyLength": 77,
+          "bodySha256": "f53a0a4dae5df496e01defb8c916175c74ce6be351a9a0d37f7371378f6aa4d3",
+          "unwindRva": "0x2ff2cc",
+          "unwindInfoHex": "2105020005e40c0090390c007d3a0c00b4f22f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xc3aca",
+          "bodyLength": 29,
+          "bodySha256": "ba1af18fe3ba1223d69455f318326962735c4ed73307b2d0ab07abc41623f4e0",
+          "unwindRva": "0x2ff2e0",
+          "unwindInfoHex": "2100000090390c007d3a0c00b4f22f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xc3ae7",
+          "bodyLength": 89,
+          "bodySha256": "e1e2f7533d5ce39e8319ec7d66551da1022634ff661e4740f683b42d3db3aed1",
+          "unwindRva": "0x2ff2f0",
+          "unwindInfoHex": "2100020000e40c0090390c007d3a0c00b4f22f00",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xc3b40",
+          "bodyLength": 78,
+          "bodySha256": "91a7eca00b79902ad96f5b1eaedc95fb6c461836c72a3a646ecbb370478b320b",
+          "unwindRva": "0x2ff2e0",
+          "unwindInfoHex": "2100000090390c007d3a0c00b4f22f00",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "recordSizeHelper",
+        "selectPostTag",
+        "passRecordSize",
+        "allocateQueueRecord",
+        "retainQueueRecord",
+        "readOwnedPayload",
+        "copyQueuePayloadPrefix",
+        "copyQueuePayloadTail",
+        "allocatePostSerial",
+        "storePostSerial",
+        "registerPostCallback",
+        "publishQueueRecord"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "recordSizeHelper",
+          "rva": "0xc3a82",
+          "instructionHex": "e829610200"
+        },
+        {
+          "role": "selectPostTag",
+          "rva": "0xc3a94",
+          "instructionHex": "418bd6"
+        },
+        {
+          "role": "passRecordSize",
+          "rva": "0xc3a97",
+          "instructionHex": "440fb7c0"
+        },
+        {
+          "role": "allocateQueueRecord",
+          "rva": "0xc3a9b",
+          "instructionHex": "e840590200"
+        },
+        {
+          "role": "retainQueueRecord",
+          "rva": "0xc3aa0",
+          "instructionHex": "488bd8"
+        },
+        {
+          "role": "readOwnedPayload",
+          "rva": "0xc3aae",
+          "instructionHex": "488b842488000000"
+        },
+        {
+          "role": "copyQueuePayloadPrefix",
+          "rva": "0xc3abe",
+          "instructionHex": "0f114314"
+        },
+        {
+          "role": "copyQueuePayloadTail",
+          "rva": "0xc3ac5",
+          "instructionHex": "894324"
+        },
+        {
+          "role": "allocatePostSerial",
+          "rva": "0xc3af2",
+          "instructionHex": "f0440fc1358d0e2800"
+        },
+        {
+          "role": "storePostSerial",
+          "rva": "0xc3b07",
+          "instructionHex": "89430c"
+        },
+        {
+          "role": "registerPostCallback",
+          "rva": "0xc3b31",
+          "instructionHex": "e8aad70100"
+        },
+        {
+          "role": "publishQueueRecord",
+          "rva": "0xc3b6c",
+          "instructionHex": "f0ff89b4000000"
+        }
+      ]
+    },
+    {
+      "key": "queueRecordAllocator",
+      "entryRva": "0xe93e0",
+      "windows": [
+        {
+          "rva": "0xe93e0",
+          "bodyLength": 496,
+          "bodySha256": "ea7855408ca4dddddeff201297ee95305ace785f1a711037d059d8254770966b",
+          "unwindRva": "0x30264c",
+          "unwindInfoHex": "0115080015340c00155211f00fe00d700c600b50",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "retainRecordTag",
+        "retainQueue",
+        "retainQueueWriter",
+        "reserveQueuePosition",
+        "storeRecordTag",
+        "returnRecordPointer",
+        "storeRecordSize"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainRecordTag",
+          "rva": "0xe93f5",
+          "instructionHex": "440fb7f2"
+        },
+        {
+          "role": "retainQueue",
+          "rva": "0xe93f9",
+          "instructionHex": "488bf9"
+        },
+        {
+          "role": "retainQueueWriter",
+          "rva": "0xe943a",
+          "instructionHex": "f0ff4500"
+        },
+        {
+          "role": "reserveQueuePosition",
+          "rva": "0xe9470",
+          "instructionHex": "f0480fb14f18"
+        },
+        {
+          "role": "storeRecordTag",
+          "rva": "0xe9595",
+          "instructionHex": "6644897302"
+        },
+        {
+          "role": "returnRecordPointer",
+          "rva": "0xe959a",
+          "instructionHex": "488bc3"
+        },
+        {
+          "role": "storeRecordSize",
+          "rva": "0xe959d",
+          "instructionHex": "668933"
+        }
+      ]
+    },
+    {
+      "key": "eventQueueDrain",
+      "entryRva": "0xe66c0",
+      "windows": [
+        {
+          "rva": "0xe66c0",
+          "bodyLength": 129,
+          "bodySha256": "00f8817cae0800c7bb964187fa49e1505ea3bdeb46733c3ca35ee50c370392b3",
+          "unwindRva": "0x302aa8",
+          "unwindInfoHex": "012105002101380012c010300f500000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xe6741",
+          "bodyLength": 8907,
+          "bodySha256": "7152955181c26f75288cafafd74060979349e1abc2acd4144cef29f85b24fa87",
+          "unwindRva": "0x302ab8",
+          "unwindInfoHex": "212d0a002df4330020e4340018d435001074360008643700c0660e0041670e00a82a3000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xe8a0c",
+          "bodyLength": 288,
+          "bodySha256": "6d6265357aa8d6c2f9b621fbb234f4b783b17861606c9099cb13d3987a703178",
+          "unwindRva": "0x302adc",
+          "unwindInfoHex": "21000000c0660e0041670e00a82a3000",
+          "windowKind": "dispatchTableDataWithinExceptionGroup"
+        }
+      ],
+      "requiredRoles": [
+        "retainQueueOwner",
+        "loadQueueReadHead",
+        "retainCurrentRecord",
+        "loadCurrentRecordTag",
+        "boundedTagDispatch",
+        "loadDispatchTarget",
+        "dispatchTag",
+        "readRecordAuxPointer",
+        "storeActionAuxPointer",
+        "readRecordAuxFlags",
+        "storeActionAuxFlags",
+        "readRecordOwnedAllocation",
+        "retainRecordAllocation",
+        "storeActionOwnedAllocation",
+        "passActionArgument",
+        "callActionScheduler"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainQueueOwner",
+          "rva": "0xe66eb",
+          "instructionHex": "4c8be1"
+        },
+        {
+          "role": "loadQueueReadHead",
+          "rva": "0xe67a0",
+          "instructionHex": "498b4c2410"
+        },
+        {
+          "role": "retainCurrentRecord",
+          "rva": "0xe67b2",
+          "instructionHex": "4c0f45e9"
+        },
+        {
+          "role": "loadCurrentRecordTag",
+          "rva": "0xe67d0",
+          "instructionHex": "410fb74502"
+        },
+        {
+          "role": "boundedTagDispatch",
+          "rva": "0xe67d5",
+          "instructionHex": "83f840"
+        },
+        {
+          "role": "loadDispatchTarget",
+          "rva": "0xe67de",
+          "instructionHex": "418b8c830c8a0e00"
+        },
+        {
+          "role": "dispatchTag",
+          "rva": "0xe67e9",
+          "instructionHex": "ffe1"
+        },
+        {
+          "role": "readRecordAuxPointer",
+          "rva": "0xe6923",
+          "instructionHex": "498b451c"
+        },
+        {
+          "role": "storeActionAuxPointer",
+          "rva": "0xe6927",
+          "instructionHex": "48894724"
+        },
+        {
+          "role": "readRecordAuxFlags",
+          "rva": "0xe692b",
+          "instructionHex": "418b4524"
+        },
+        {
+          "role": "storeActionAuxFlags",
+          "rva": "0xe692f",
+          "instructionHex": "89472c"
+        },
+        {
+          "role": "readRecordOwnedAllocation",
+          "rva": "0xe6932",
+          "instructionHex": "4d8b7514"
+        },
+        {
+          "role": "retainRecordAllocation",
+          "rva": "0xe6945",
+          "instructionHex": "41ff06"
+        },
+        {
+          "role": "storeActionOwnedAllocation",
+          "rva": "0xe6948",
+          "instructionHex": "4c89771c"
+        },
+        {
+          "role": "passActionArgument",
+          "rva": "0xe6959",
+          "instructionHex": "488bd7"
+        },
+        {
+          "role": "callActionScheduler",
+          "rva": "0xe695c",
+          "instructionHex": "e84fd7ffff"
+        }
+      ]
+    },
+    {
+      "key": "actionScheduler",
+      "entryRva": "0xe40b0",
+      "windows": [
+        {
+          "rva": "0xe40b0",
+          "bodyLength": 376,
+          "bodySha256": "75ec187b99e77c0284e07904980edcbba853db18fb328b4da1f99ff0b3468e8b",
+          "unwindRva": "0x3028fc",
+          "unwindInfoHex": "011106001134120011d20d700c600b50",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "retainActionArgument",
+        "passImmediateAction",
+        "dispatchImmediateAction"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainActionArgument",
+          "rva": "0xe40c1",
+          "instructionHex": "488bfa"
+        },
+        {
+          "role": "passImmediateAction",
+          "rva": "0xe415d",
+          "instructionHex": "488bd7"
+        },
+        {
+          "role": "dispatchImmediateAction",
+          "rva": "0xe4172",
+          "instructionHex": "e9e9180000"
+        }
+      ]
+    },
+    {
+      "key": "actionDispatcher",
+      "entryRva": "0xe5a60",
+      "windows": [
+        {
+          "rva": "0xe5a60",
+          "bodyLength": 89,
+          "bodySha256": "4f29122c152d979e2d9ecacb9bc4cf0df5bbffbdf72dd24899802ba86d3048c2",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadActionType",
+        "retainActionArgument",
+        "loadActionAddressPoint",
+        "dispatchActionExecute"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadActionType",
+          "rva": "0xe5a66",
+          "instructionHex": "488b4a08"
+        },
+        {
+          "role": "retainActionArgument",
+          "rva": "0xe5a6a",
+          "instructionHex": "488bda"
+        },
+        {
+          "role": "loadActionAddressPoint",
+          "rva": "0xe5a6d",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "dispatchActionExecute",
+          "rva": "0xe5a70",
+          "instructionHex": "ff5038"
+        }
+      ]
+    },
+    {
+      "key": "normalActionConstructor",
+      "entryRva": "0x16b060",
+      "windows": [
+        {
+          "rva": "0x16b060",
+          "bodyLength": 88,
+          "bodySha256": "8c671f48a2d06c496959eda5d2c0d98437c8e890213349a4b07405f17a0581a1",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readActionTypeArgument",
+        "passActionTypeToBase",
+        "callActionBaseConstructor",
+        "loadNormalActionAddressPoint",
+        "storeNormalActionAddressPoint"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readActionTypeArgument",
+          "rva": "0x16b06a",
+          "instructionHex": "8bf9"
+        },
+        {
+          "role": "passActionTypeToBase",
+          "rva": "0x16b083",
+          "instructionHex": "8bd7"
+        },
+        {
+          "role": "callActionBaseConstructor",
+          "rva": "0x16b088",
+          "instructionHex": "e813a0faff"
+        },
+        {
+          "role": "loadNormalActionAddressPoint",
+          "rva": "0x16b08d",
+          "instructionHex": "488d057cfb1200"
+        },
+        {
+          "role": "storeNormalActionAddressPoint",
+          "rva": "0x16b09c",
+          "instructionHex": "488903"
+        }
+      ]
+    },
+    {
+      "key": "normalActionExecute",
+      "entryRva": "0x16b0c0",
+      "windows": [
+        {
+          "rva": "0x16b0c0",
+          "bodyLength": 74,
+          "bodySha256": "d72ff1817e818f5dab2de2fa3d400ff2d0a060ff14af0aabe7b05608533939ab",
+          "unwindRva": "0x30d028",
+          "unwindInfoHex": "011606001601670007f005e003300250",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x16b10a",
+          "bodyLength": 365,
+          "bodySha256": "2d149e781e6c03cad081d0470b64d79ad89e0606085107205f203feeb9870700",
+          "unwindRva": "0x30d038",
+          "unwindInfoHex": "2124040024646d0008746600c0b016000ab1160028d03000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x16b277",
+          "bodyLength": 126,
+          "bodySha256": "15d1927d92b4051fa67639eb175d309c7125e08b6b54585b8a3954281d47f5ef",
+          "unwindRva": "0x30d050",
+          "unwindInfoHex": "21000000c0b016000ab1160028d03000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x16b2f5",
+          "bodyLength": 75,
+          "bodySha256": "04cf605f046baf832500d58ab875c46f6bf0c91d116c96847c3c599785bbe281",
+          "unwindRva": "0x30d060",
+          "unwindInfoHex": "210004000074660000646d00c0b016000ab1160028d03000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x16b340",
+          "bodyLength": 36,
+          "bodySha256": "615eb77628cb3c560ce3afaa692493049993999fcdfa9b5334d6ef8a3f666b59",
+          "unwindRva": "0x30d078",
+          "unwindInfoHex": "2100020000746600c0b016000ab1160028d03000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "retainActionArgument",
+        "loadActionSerial",
+        "loadOwnedExternalAllocation",
+        "storePlayBlobSerial",
+        "loadExternalContext",
+        "storePlayBlobExternalContext",
+        "loadExternalFlags",
+        "storePlayBlobExternalFlags",
+        "retainExternalAllocation",
+        "storePlayBlobAllocation",
+        "passPlayBlobToPreparation",
+        "callNodePreparation",
+        "passPlayBlobToNode",
+        "dispatchSelectedNodePlay"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainActionArgument",
+          "rva": "0x16b0dd",
+          "instructionHex": "4c8bf2"
+        },
+        {
+          "role": "loadActionSerial",
+          "rva": "0x16b150",
+          "instructionHex": "418b4630"
+        },
+        {
+          "role": "loadOwnedExternalAllocation",
+          "rva": "0x16b15d",
+          "instructionHex": "498b5e1c"
+        },
+        {
+          "role": "storePlayBlobSerial",
+          "rva": "0x16b161",
+          "instructionHex": "89442464"
+        },
+        {
+          "role": "loadExternalContext",
+          "rva": "0x16b165",
+          "instructionHex": "498b4624"
+        },
+        {
+          "role": "storePlayBlobExternalContext",
+          "rva": "0x16b169",
+          "instructionHex": "4889442458"
+        },
+        {
+          "role": "loadExternalFlags",
+          "rva": "0x16b16e",
+          "instructionHex": "418b462c"
+        },
+        {
+          "role": "storePlayBlobExternalFlags",
+          "rva": "0x16b172",
+          "instructionHex": "89442460"
+        },
+        {
+          "role": "retainExternalAllocation",
+          "rva": "0x16b18f",
+          "instructionHex": "ff03"
+        },
+        {
+          "role": "storePlayBlobAllocation",
+          "rva": "0x16b1a3",
+          "instructionHex": "48895c2450"
+        },
+        {
+          "role": "passPlayBlobToPreparation",
+          "rva": "0x16b255",
+          "instructionHex": "488d542430"
+        },
+        {
+          "role": "callNodePreparation",
+          "rva": "0x16b25d",
+          "instructionHex": "e8de38f9ff"
+        },
+        {
+          "role": "passPlayBlobToNode",
+          "rva": "0x16b2fd",
+          "instructionHex": "488d542430"
+        },
+        {
+          "role": "dispatchSelectedNodePlay",
+          "rva": "0x16b305",
+          "instructionHex": "ff9068020000"
+        }
+      ]
+    },
+    {
+      "key": "anonymousSourceSelector",
+      "entryRva": "0xdff40",
+      "windows": [
+        {
+          "rva": "0xdff40",
+          "bodyLength": 40,
+          "bodySha256": "512f86986748f35a23f1962f09d1d14f2a736954f524f7b0a04861d5c1c10055",
+          "unwindRva": "0x30202c",
+          "unwindInfoHex": "01210b00213429002101200016f014e012d010c00e700d600c500000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xdff68",
+          "bodyLength": 491,
+          "bodySha256": "c678af79e9abfa73fb742bc2b2cc63dae03d52716fbcd76fc3caadb3be6f5395",
+          "unwindRva": "0x302048",
+          "unwindInfoHex": "210c04000c780e0004680f0040ff0d0068ff0d002c203000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xe0153",
+          "bodyLength": 265,
+          "bodySha256": "6b560c6746cf1b7d52bac1f455fc3e616645b31a4797afae41b4301c18631bdc",
+          "unwindRva": "0x302060",
+          "unwindInfoHex": "2109020009880d0068ff0d0053010e0048203000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xe025c",
+          "bodyLength": 26,
+          "bodySha256": "994744a3c647d6ef991a4a9ff641dde8c2e8c143aa9bdd1df6d37a6cc864511a",
+          "unwindRva": "0x302074",
+          "unwindInfoHex": "2100020000880d0068ff0d0053010e0048203000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xe0276",
+          "bodyLength": 47,
+          "bodySha256": "d1db338ad76d8cd2627765b671f9a886b3a9ba3e77e6cc9c49847e9c92998340",
+          "unwindRva": "0x302088",
+          "unwindInfoHex": "2100000068ff0d0053010e0048203000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0xe02a5",
+          "bodyLength": 1304,
+          "bodySha256": "d5fc1bd0b40bad52df2ddfaea4d9275b0c0343493af6661f52cc28d834bf93d3",
+          "unwindRva": "0x302098",
+          "unwindInfoHex": "2100000040ff0d0068ff0d002c203000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadPlaybackConfigInterface",
+        "retainOriginalSource",
+        "retainPlaybackBlob",
+        "readOriginalSourceArgumentWord24",
+        "loadExternalDescriptorAllocation",
+        "cloneOriginalSource",
+        "retainSelectedSource",
+        "loadDescriptorCount",
+        "addressFirst32ByteDescriptor",
+        "readSelectedSourceWord4",
+        "compareDescriptorWord0",
+        "readDescriptorWord4",
+        "readDescriptorWord28",
+        "readDescriptorPointer8",
+        "readDescriptorWord24",
+        "readDescriptorPointer16",
+        "advanceDescriptor32",
+        "destroyUnmatchedClone",
+        "callMemorySourceSetter",
+        "passDescriptorPointer8WideText",
+        "callWideTextSourceSetterPointerBranch",
+        "passDescriptorPointer8Word28Branch",
+        "callWideTextSourceSetterWord28Branch",
+        "loadPlaybackConfigInterfaceForFactory",
+        "passPlaybackBlobToFactoryDispatch",
+        "passSelectedSourceToFactoryDispatch",
+        "callConfigInterfaceSlot32",
+        "retainPrimaryOwnerResult",
+        "addressEmbeddedOwner24",
+        "loadEmbeddedOwnerAddressPoint",
+        "addressEmbeddedOwnerForConsumer",
+        "callEmbeddedOwnerSlot80",
+        "maskSelectionHighWord",
+        "compareSelectionHighWord",
+        "branchWithoutExternalSelection",
+        "retainNodeArgument"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadPlaybackConfigInterface",
+          "rva": "0xdff61",
+          "instructionHex": "498b5808"
+        },
+        {
+          "role": "retainOriginalSource",
+          "rva": "0xdff65",
+          "instructionHex": "4c8be2"
+        },
+        {
+          "role": "retainPlaybackBlob",
+          "rva": "0xdff81",
+          "instructionHex": "4d8be8"
+        },
+        {
+          "role": "readOriginalSourceArgumentWord24",
+          "rva": "0xe027e",
+          "instructionHex": "418b442418"
+        },
+        {
+          "role": "loadExternalDescriptorAllocation",
+          "rva": "0xe02a5",
+          "instructionHex": "498b5d20"
+        },
+        {
+          "role": "cloneOriginalSource",
+          "rva": "0xe02b8",
+          "instructionHex": "e8c3400200"
+        },
+        {
+          "role": "retainSelectedSource",
+          "rva": "0xe02bd",
+          "instructionHex": "4c8be0"
+        },
+        {
+          "role": "loadDescriptorCount",
+          "rva": "0xe02cc",
+          "instructionHex": "448b5304"
+        },
+        {
+          "role": "addressFirst32ByteDescriptor",
+          "rva": "0xe02d0",
+          "instructionHex": "4c8d4b08"
+        },
+        {
+          "role": "readSelectedSourceWord4",
+          "rva": "0xe02dd",
+          "instructionHex": "458b5c2404"
+        },
+        {
+          "role": "compareDescriptorWord0",
+          "rva": "0xe02e2",
+          "instructionHex": "453b19"
+        },
+        {
+          "role": "readDescriptorWord4",
+          "rva": "0xe02e7",
+          "instructionHex": "418b4904"
+        },
+        {
+          "role": "readDescriptorWord28",
+          "rva": "0xe02eb",
+          "instructionHex": "418b511c"
+        },
+        {
+          "role": "readDescriptorPointer8",
+          "rva": "0xe02fc",
+          "instructionHex": "498b5108"
+        },
+        {
+          "role": "readDescriptorWord24",
+          "rva": "0xe0309",
+          "instructionHex": "418b5118"
+        },
+        {
+          "role": "readDescriptorPointer16",
+          "rva": "0xe0311",
+          "instructionHex": "4d8b4110"
+        },
+        {
+          "role": "advanceDescriptor32",
+          "rva": "0xe031a",
+          "instructionHex": "4983c120"
+        },
+        {
+          "role": "destroyUnmatchedClone",
+          "rva": "0xe0325",
+          "instructionHex": "498bcc"
+        },
+        {
+          "role": "callMemorySourceSetter",
+          "rva": "0xe037e",
+          "instructionHex": "e8ad420200"
+        },
+        {
+          "role": "passDescriptorPointer8WideText",
+          "rva": "0xe038a",
+          "instructionHex": "4c8bca"
+        },
+        {
+          "role": "callWideTextSourceSetterPointerBranch",
+          "rva": "0xe03a8",
+          "instructionHex": "e843410200"
+        },
+        {
+          "role": "passDescriptorPointer8Word28Branch",
+          "rva": "0xe03af",
+          "instructionHex": "4d8b4908"
+        },
+        {
+          "role": "callWideTextSourceSetterWord28Branch",
+          "rva": "0xe03cf",
+          "instructionHex": "e81c410200"
+        },
+        {
+          "role": "loadPlaybackConfigInterfaceForFactory",
+          "rva": "0xe03dc",
+          "instructionHex": "498b4d08"
+        },
+        {
+          "role": "passPlaybackBlobToFactoryDispatch",
+          "rva": "0xe03ea",
+          "instructionHex": "4d8bcd"
+        },
+        {
+          "role": "passSelectedSourceToFactoryDispatch",
+          "rva": "0xe03f1",
+          "instructionHex": "4d8bc4"
+        },
+        {
+          "role": "callConfigInterfaceSlot32",
+          "rva": "0xe03f7",
+          "instructionHex": "ff5020"
+        },
+        {
+          "role": "retainPrimaryOwnerResult",
+          "rva": "0xe03fa",
+          "instructionHex": "4c8bf0"
+        },
+        {
+          "role": "addressEmbeddedOwner24",
+          "rva": "0xe0421",
+          "instructionHex": "498d4e18"
+        },
+        {
+          "role": "loadEmbeddedOwnerAddressPoint",
+          "rva": "0xe051b",
+          "instructionHex": "498b4618"
+        },
+        {
+          "role": "addressEmbeddedOwnerForConsumer",
+          "rva": "0xe051f",
+          "instructionHex": "498d4e18"
+        },
+        {
+          "role": "callEmbeddedOwnerSlot80",
+          "rva": "0xe0523",
+          "instructionHex": "ff5050"
+        },
+        {
+          "role": "maskSelectionHighWord",
+          "rva": "0xe028d",
+          "instructionHex": "250000ffff"
+        },
+        {
+          "role": "compareSelectionHighWord",
+          "rva": "0xe029a",
+          "instructionHex": "3d00000800"
+        },
+        {
+          "role": "branchWithoutExternalSelection",
+          "rva": "0xe029f",
+          "instructionHex": "0f8534010000"
+        },
+        {
+          "role": "retainNodeArgument",
+          "rva": "0xdff84",
+          "instructionHex": "488bf9"
+        }
+      ]
+    },
+    {
+      "key": "anonymousSourceClone40",
+      "entryRva": "0x104380",
+      "windows": [
+        {
+          "rva": "0x104380",
+          "bodyLength": 98,
+          "bodySha256": "77e6efb0a06cec98e06402105242f5dde95e3d31da3c0fb7ab99ac295609de81",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "copyCloneBytes0to15",
+        "copyCloneBytes16to31",
+        "copyCloneBytes32to39",
+        "retainCloneSourceArgument",
+        "allocateClone40Bytes",
+        "storeCloneBytes0to15",
+        "storeCloneBytes16to31",
+        "storeCloneBytes32to39"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "copyCloneBytes0to15",
+          "rva": "0x1043be",
+          "instructionHex": "0f1003"
+        },
+        {
+          "role": "copyCloneBytes16to31",
+          "rva": "0x1043c4",
+          "instructionHex": "0f104b10"
+        },
+        {
+          "role": "copyCloneBytes32to39",
+          "rva": "0x1043cc",
+          "instructionHex": "f20f104320"
+        },
+        {
+          "role": "retainCloneSourceArgument",
+          "rva": "0x104386",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "allocateClone40Bytes",
+          "rva": "0x104389",
+          "instructionHex": "ba28000000"
+        },
+        {
+          "role": "storeCloneBytes0to15",
+          "rva": "0x1043c1",
+          "instructionHex": "0f1100"
+        },
+        {
+          "role": "storeCloneBytes16to31",
+          "rva": "0x1043c8",
+          "instructionHex": "0f114810"
+        },
+        {
+          "role": "storeCloneBytes32to39",
+          "rva": "0x1043d1",
+          "instructionHex": "f20f114020"
+        }
+      ]
+    },
+    {
+      "key": "anonymousWideTextSourceSetter",
+      "entryRva": "0x1044f0",
+      "windows": [
+        {
+          "rva": "0x1044f0",
+          "bodyLength": 182,
+          "bodySha256": "f066e4bab472a068be5902a3bec1eb94f756af1c5acf36d70aac8e509220f5dd",
+          "unwindRva": "0x3050e8",
+          "unwindInfoHex": "01180a0018640b0018540a0018340900183214e012c01070",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x1045a6",
+          "bodyLength": 102,
+          "bodySha256": "b3d797aac733be4c8e71676c0d808a86b5f7390dbbf56606b3cdd315e21dc22c",
+          "unwindRva": "0x305100",
+          "unwindInfoHex": "2105020005f40800f0441000a6451000e8503000",
+          "windowKind": "fullExceptionExtent"
+        },
+        {
+          "rva": "0x10460c",
+          "bodyLength": 25,
+          "bodySha256": "c0cb4378a4c55cfde4c30e4ad5cc8acdafacb8c54cbfd34337666fb76f7f6947",
+          "unwindRva": "0x305114",
+          "unwindInfoHex": "21000000f0441000a6451000e8503000",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "retainWideTextInput",
+        "allocateDoubleUnitCount",
+        "storeOwnedWideTextPointer16",
+        "copyWordString",
+        "terminateWordString",
+        "setOwnedWideTextFlag1024",
+        "retainWideSetterSourceArgument",
+        "retainWideSetterLookupArgument",
+        "retainWideSetterWord24Argument",
+        "storeLookupWord",
+        "storeArgumentWord24"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainWideTextInput",
+          "rva": "0x10450b",
+          "instructionHex": "498be9"
+        },
+        {
+          "role": "allocateDoubleUnitCount",
+          "rva": "0x1045bd",
+          "instructionHex": "e8dec8faff"
+        },
+        {
+          "role": "storeOwnedWideTextPointer16",
+          "rva": "0x1045c2",
+          "instructionHex": "48894310"
+        },
+        {
+          "role": "copyWordString",
+          "rva": "0x1045f6",
+          "instructionHex": "e80df21500"
+        },
+        {
+          "role": "terminateWordString",
+          "rva": "0x1045fb",
+          "instructionHex": "6645892476"
+        },
+        {
+          "role": "setOwnedWideTextFlag1024",
+          "rva": "0x104600",
+          "instructionHex": "814b0c00040000"
+        },
+        {
+          "role": "retainWideSetterSourceArgument",
+          "rva": "0x10451a",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "retainWideSetterLookupArgument",
+          "rva": "0x104518",
+          "instructionHex": "8bf2"
+        },
+        {
+          "role": "retainWideSetterWord24Argument",
+          "rva": "0x104515",
+          "instructionHex": "458bf0"
+        },
+        {
+          "role": "storeLookupWord",
+          "rva": "0x10458a",
+          "instructionHex": "8933"
+        },
+        {
+          "role": "storeArgumentWord24",
+          "rva": "0x104579",
+          "instructionHex": "44897318"
+        }
+      ]
+    },
+    {
+      "key": "wordStringCopyHelper",
+      "entryRva": "0x263808",
+      "windows": [
+        {
+          "rva": "0x263808",
+          "bodyLength": 252,
+          "bodySha256": "56c9d52483149bc380f241de90ced84230444c51f0d3f33d53da174d7f771b2c",
+          "unwindRva": "0x2f0384",
+          "unwindInfoHex": "010f06000f6407000f3406000f320b70",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "readWordStringUnit",
+        "copyWordStringUnit",
+        "testWordTerminator"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "readWordStringUnit",
+          "rva": "0x2638a0",
+          "instructionHex": "0fb70413"
+        },
+        {
+          "role": "copyWordStringUnit",
+          "rva": "0x2638a7",
+          "instructionHex": "668902"
+        },
+        {
+          "role": "testWordTerminator",
+          "rva": "0x2638ae",
+          "instructionHex": "6685c0"
+        }
+      ]
+    },
+    {
+      "key": "anonymousOwnerFactoryDispatch",
+      "entryRva": "0x13b8b0",
+      "windows": [
+        {
+          "rva": "0x13b8b0",
+          "bodyLength": 115,
+          "bodySha256": "d848ba200f12c2e94a7572892ae454fcb0220c0ba68fb5f1da3709e089b5b2f3",
+          "unwindRva": "0x2f5150",
+          "unwindInfoHex": "010f06000f6409000f3408000f520b70",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "testPlaybackBlobWord0",
+        "retainSelectedSourceForAlternativeBranch",
+        "tailFactoryCurrentOwner"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "testPlaybackBlobWord0",
+          "rva": "0x13b8bf",
+          "instructionHex": "41833901"
+        },
+        {
+          "role": "retainSelectedSourceForAlternativeBranch",
+          "rva": "0x13b8c6",
+          "instructionHex": "498bf8"
+        },
+        {
+          "role": "tailFactoryCurrentOwner",
+          "rva": "0x13b91e",
+          "instructionHex": "e9bd10fcff"
+        }
+      ]
+    },
+    {
+      "key": "anonymousConfigCreation",
+      "entryRva": "0x13b6d0",
+      "windows": [
+        {
+          "rva": "0x13b6d0",
+          "bodyLength": 472,
+          "bodySha256": "2520f1f09308477f83567d756b11943d1baa739580cbe5bcd1fffd28f4c22cb0",
+          "unwindRva": "0x2f0384",
+          "unwindInfoHex": "010f06000f6407000f3406000f320b70",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadConfigAddressPoint",
+        "storeConfigAddressPointAt16"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadConfigAddressPoint",
+          "rva": "0x13b73d",
+          "instructionHex": "488d0514d01500"
+        },
+        {
+          "role": "storeConfigAddressPointAt16",
+          "rva": "0x13b744",
+          "instructionHex": "48894310"
+        }
+      ]
+    },
+    {
+      "key": "anonymousNodePlayDispatch",
+      "entryRva": "0x1510f0",
+      "windows": [
+        {
+          "rva": "0x1510f0",
+          "bodyLength": 55,
+          "bodySha256": "8d4f0b65e28a3d430039e10c4f468696db16a17f3726bc6227363db728a226a1",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "deriveNodeSource224",
+        "passBlobToSelector",
+        "callSourceSelector"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "deriveNodeSource224",
+          "rva": "0x15110a",
+          "instructionHex": "488d93e0000000"
+        },
+        {
+          "role": "passBlobToSelector",
+          "rva": "0x151111",
+          "instructionHex": "4c8bc7"
+        },
+        {
+          "role": "callSourceSelector",
+          "rva": "0x151117",
+          "instructionHex": "e824eef8ff"
+        }
+      ]
+    },
+    {
+      "key": "anonymousNodeCreation",
+      "entryRva": "0x150c50",
+      "windows": [
+        {
+          "rva": "0x150c50",
+          "bodyLength": 159,
+          "bodySha256": "ee9a359ac569e141cb052e2ffcfe8b19ffe72fe4034f3a92cc5beab411bbe8f4",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230",
+          "windowKind": "fullExceptionExtent"
+        }
+      ],
+      "requiredRoles": [
+        "loadNodeAddressPoint",
+        "storeNodeAddressPoint"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadNodeAddressPoint",
+          "rva": "0x150c75",
+          "instructionHex": "488d051c881400"
+        },
+        {
+          "role": "storeNodeAddressPoint",
+          "rva": "0x150c7c",
+          "instructionHex": "488903"
+        }
+      ]
+    }
+  ],
+  "dispatchTable": {
+    "rva": "0xe8a0c",
+    "entryCount": 65,
+    "selectedTag": 1,
+    "targetRva": "0xe6836",
+    "ownerGroup": "eventQueueDrain",
+    "sha256": "bf4a9e5886a18b18865623452e03be7ba41f8740967171f2b969056c3877a1b8"
+  },
+  "dataWindows": [
+    {
+      "rva": "0xa832728",
+      "bytes": 28,
+      "sha256": "da8e97fe59348aec855384adcf4b5e17b5bf30c2331d4e3f36bcfad21ee5ba7f",
+      "module": "gameAssembly",
+      "key": "pinvokeLiteral",
+      "literal": "AkSoundEngine"
+    },
+    {
+      "rva": "0xa83c120",
+      "bytes": 37,
+      "sha256": "f35ef678050e36e0aba0dd3d688c0ff5ab483db066115c0fde457be4875ac224",
+      "module": "gameAssembly",
+      "key": "pinvokeLiteral",
+      "literal": "CSharp_b533bd82e4996d0c1d5686812d0f2"
+    },
+    {
+      "rva": "0xa83c0f8",
+      "bytes": 38,
+      "sha256": "54419104d213251e93aab7f98405e09e6c38cb28ec1e93a13ccc9a175219bfd7",
+      "module": "gameAssembly",
+      "key": "pinvokeLiteral",
+      "literal": "CSharp_a67b8daf2a34973d307232a7872005"
+    },
+    {
+      "rva": "0xa83c0d0",
+      "bytes": 37,
+      "sha256": "b9283645aa157ce6ebce379ce241c1c2d33a5e94b04c96474e771abe5741e48a",
+      "module": "gameAssembly",
+      "key": "pinvokeLiteral",
+      "literal": "CSharp_b2532e6f05f2139a85debcda361d6"
+    },
+    {
+      "key": "normalActionAddressPoint",
+      "rva": "0x29ac10",
+      "bytes": 64,
+      "sha256": "4cd918c85c0442d954252dfa46f234cead5c90e9d97a18b5128465e149b4ac83",
+      "entrySlot": 56,
+      "targetGroup": "normalActionExecute",
+      "module": "akSoundEngine"
+    },
+    {
+      "key": "anonymousOwnerFactoryDispatchAddressPoint",
+      "module": "akSoundEngine",
+      "rva": "0x298758",
+      "bytes": 40,
+      "sha256": "b3250c362f4e16679b59d3fb3b83919a987fdc5f6be797702ba77a579c608a65",
+      "entrySlot": 32,
+      "targetGroup": "anonymousOwnerFactoryDispatch"
+    },
+    {
+      "key": "anonymousNodePlayDispatchAddressPoint",
+      "module": "akSoundEngine",
+      "rva": "0x299498",
+      "bytes": 624,
+      "sha256": "db18336396bbafd66beb2037ace3a0e954d57b3a356120c4d1c78ba7b55cbe0e",
+      "entrySlot": 616,
+      "targetGroup": "anonymousNodePlayDispatch"
+    },
+    {
+      "key": "anonymousDirectOwnerFactoryAddressPoint",
+      "module": "akSoundEngine",
+      "rva": "0x299718",
+      "bytes": 40,
+      "sha256": "54a45a83d6bd61a8c02203e36da0dbe40948e20090e786cde61e3400ad8b8407",
+      "entrySlot": 32,
+      "targetGroup": "ownerFactory"
+    }
+  ],
+  "representations": {
+    "externalDescriptor": "Counted allocation: refcount/count header and copied fixed-size descriptors; a non-null UTF-16 path is separately copied.",
+    "postQueueRecord": "Tag1 post record retains copied allocation and auxiliary payload, with a post serial.",
+    "pendingAction": "Queue tag1 retains copied allocation into an action argument; action execution retains it into its node-play parameter blob."
+  },
+  "evidenceBoundary": {
+    "exact": "Selected explicit GameAssembly.dll/global-metadata.dat/AkSoundEngine.dll inputs, named default-body claims, complete chained exception extents, per-window hashes, unwind identities, transport instruction bytes and tag1 dispatch-table bytes.",
+    "direct": "The selected native external-post path copies descriptors/path storage, forwards the owned allocation through a tagged event queue record, and the tag1 drain retains it into an action argument. The reviewed normal action address point calls an execution body which retains the allocation into its node-play parameter blob. A checked node address point carries that same parameter blob to a selector which conditionally clones a40-byte source, matches its stored word against descriptor rows, applies a reviewed source setter, forwards the selected pointer through a checked config address point to the existing source-owner factory, then addresses the embedded consumer interface.",
+    "conditional": "Managed argument transport applies to the reviewed default body when its IFix replacement branch is not selected. The action-to-node argument edge requires selection of the reviewed action address point and successful preparation branch. The source-selection branch requires the original source argument high word, a matching descriptor, successful allocation/setter preparation, the reviewed node/config address points and the existing owner-factory branch. These are static conditional routes, not observations of a selected runtime instance.",
+    "structuralOnly": "Native descriptor, queue and action fields have only their observed copy/retention roles; no complete SDK class layout is claimed.",
+    "unresolved": "Actual selected node/source/provider identity, live managed request-to-source ownership, allocation lifetime/address reuse, backing file identity, codec choice, lookup/open/decode success and audibility. The classic and source-consumer observer recipes remain unchanged; the optional source-bridge recipe does not admit runtime queue ownership."
+  },
+  "sourceBridgeObserver": {
+    "maxDescriptorRows": 1,
+    "bridgeLayouts": {
+      "playbackBlob": {
+        "configInterfacePointer": 8,
+        "externalAllocationPointer": 32,
+        "contextPointer": 40,
+        "flagsWord": 48,
+        "serialWord": 52
+      },
+      "externalAllocation": {
+        "count": 4,
+        "firstDescriptor": 8,
+        "descriptorStride": 32
+      },
+      "descriptor": {
+        "matchWord": 0,
+        "argumentWord": 4,
+        "wideTextPointer": 8,
+        "memoryPointer": 16,
+        "byteCountWord": 24,
+        "selectionWord": 28
+      },
+      "source": {
+        "matchWord": 4,
+        "dataPointer": 16,
+        "selectionArgumentWord": 24,
+        "cloneBytes": 40
+      }
+    },
+    "functionRoles": {
+      "sourceSelector": {
+        "groupKey": "anonymousSourceSelector",
+        "args": {
+          "anonymousNodePointer": {
+            "index": 0,
+            "kind": "pointer"
+          },
+          "originalSourcePointer": {
+            "index": 1,
+            "kind": "pointer"
+          },
+          "playbackBlobPointer": {
+            "index": 2,
+            "kind": "pointer"
+          }
+        },
+        "memory": [
+          {
+            "name": "originalSourceLookupWord",
+            "argIndex": 1,
+            "offset": 0,
+            "kind": "u32"
+          },
+          {
+            "name": "originalSourceStoredWord4",
+            "argIndex": 1,
+            "offset": 4,
+            "kind": "u32"
+          },
+          {
+            "name": "originalSourceStoredWord8",
+            "argIndex": 1,
+            "offset": 8,
+            "kind": "u32"
+          },
+          {
+            "name": "originalSourceFlagsWord",
+            "argIndex": 1,
+            "offset": 12,
+            "kind": "u32"
+          },
+          {
+            "name": "originalSourceDataPointer",
+            "argIndex": 1,
+            "offset": 16,
+            "kind": "pointer"
+          },
+          {
+            "name": "originalSourceArgumentWord24",
+            "argIndex": 1,
+            "offset": 24,
+            "kind": "u32"
+          },
+          {
+            "name": "playbackConfigInterfacePointer",
+            "argIndex": 2,
+            "offset": 8,
+            "kind": "pointer"
+          },
+          {
+            "name": "descriptorAllocationPointer",
+            "argIndex": 2,
+            "offset": 32,
+            "kind": "pointer"
+          },
+          {
+            "name": "descriptorAllocationCount",
+            "argIndex": 2,
+            "pointerOffsets": [
+              32
+            ],
+            "offset": 4,
+            "kind": "u32"
+          },
+          {
+            "name": "playbackContextPointer",
+            "argIndex": 2,
+            "offset": 40,
+            "kind": "pointer"
+          },
+          {
+            "name": "playbackFlagsWord",
+            "argIndex": 2,
+            "offset": 48,
+            "kind": "u32"
+          },
+          {
+            "name": "playbackSerialWord",
+            "argIndex": 2,
+            "offset": 52,
+            "kind": "u32"
+          },
+          {
+            "name": "firstDescriptorMatchWord",
+            "argIndex": 2,
+            "pointerOffsets": [
+              32
+            ],
+            "offset": 8,
+            "kind": "u32"
+          },
+          {
+            "name": "firstDescriptorArgumentWord",
+            "argIndex": 2,
+            "pointerOffsets": [
+              32
+            ],
+            "offset": 12,
+            "kind": "u32"
+          },
+          {
+            "name": "firstDescriptorWideTextPointer",
+            "argIndex": 2,
+            "pointerOffsets": [
+              32
+            ],
+            "offset": 16,
+            "kind": "pointer"
+          },
+          {
+            "name": "firstDescriptorMemoryPointer",
+            "argIndex": 2,
+            "pointerOffsets": [
+              32
+            ],
+            "offset": 24,
+            "kind": "pointer"
+          },
+          {
+            "name": "firstDescriptorByteCountWord",
+            "argIndex": 2,
+            "pointerOffsets": [
+              32
+            ],
+            "offset": 32,
+            "kind": "u32"
+          },
+          {
+            "name": "firstDescriptorSelectionWord",
+            "argIndex": 2,
+            "pointerOffsets": [
+              32
+            ],
+            "offset": 36,
+            "kind": "u32"
+          },
+          {
+            "name": "firstDescriptorWideText",
+            "argIndex": 2,
+            "pointerOffsets": [
+              32,
+              16
+            ],
+            "offset": 0,
+            "kind": "utf16Direct"
+          }
+        ],
+        "returnKind": "void",
+        "argumentScope": "firstThreeRegisterArguments"
+      },
+      "sourceClone": {
+        "groupKey": "anonymousSourceClone40",
+        "args": {
+          "originalSourcePointer": {
+            "index": 0,
+            "kind": "pointer"
+          }
+        },
+        "memory": [
+          {
+            "name": "originalSourceLookupWord",
+            "argIndex": 0,
+            "offset": 0,
+            "kind": "u32"
+          },
+          {
+            "name": "originalSourceStoredWord4",
+            "argIndex": 0,
+            "offset": 4,
+            "kind": "u32"
+          },
+          {
+            "name": "originalSourceStoredWord8",
+            "argIndex": 0,
+            "offset": 8,
+            "kind": "u32"
+          },
+          {
+            "name": "originalSourceFlagsWord",
+            "argIndex": 0,
+            "offset": 12,
+            "kind": "u32"
+          },
+          {
+            "name": "originalSourceDataPointer",
+            "argIndex": 0,
+            "offset": 16,
+            "kind": "pointer"
+          },
+          {
+            "name": "originalSourceArgumentWord24",
+            "argIndex": 0,
+            "offset": 24,
+            "kind": "u32"
+          }
+        ],
+        "returnKind": "pointer",
+        "argumentScope": "firstRegisterArgument"
+      },
+      "sourceSetWideText": {
+        "groupKey": "anonymousWideTextSourceSetter",
+        "args": {
+          "sourceThisPointer": {
+            "index": 0,
+            "kind": "pointer"
+          },
+          "sourceLookupWord": {
+            "index": 1,
+            "kind": "u32"
+          },
+          "sourceArgumentWord24": {
+            "index": 2,
+            "kind": "u32"
+          },
+          "descriptorWideTextPointer": {
+            "index": 3,
+            "kind": "pointer",
+            "allowNull": true
+          }
+        },
+        "memory": [
+          {
+            "name": "selectedSourceLookupWord",
+            "argIndex": 0,
+            "offset": 0,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceStoredWord4",
+            "argIndex": 0,
+            "offset": 4,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceStoredWord8",
+            "argIndex": 0,
+            "offset": 8,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceFlagsWord",
+            "argIndex": 0,
+            "offset": 12,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceDataPointer",
+            "argIndex": 0,
+            "offset": 16,
+            "kind": "pointer"
+          },
+          {
+            "name": "selectedSourceArgumentWord24",
+            "argIndex": 0,
+            "offset": 24,
+            "kind": "u32"
+          },
+          {
+            "name": "descriptorWideText",
+            "argIndex": 3,
+            "offset": 0,
+            "kind": "utf16Direct"
+          }
+        ],
+        "returnKind": "void",
+        "argumentScope": "firstFourRegisterArgumentsOnly",
+        "additionalStackInputs": true
+      },
+      "ownerFactory": {
+        "sourceContractRole": "factory",
+        "args": {
+          "sourceThisPointer": {
+            "index": 2,
+            "kind": "pointer"
+          }
+        },
+        "memory": [
+          {
+            "name": "selectedSourceLookupWord",
+            "argIndex": 2,
+            "offset": 0,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceStoredWord4",
+            "argIndex": 2,
+            "offset": 4,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceStoredWord8",
+            "argIndex": 2,
+            "offset": 8,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceFlagsWord",
+            "argIndex": 2,
+            "offset": 12,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceDataPointer",
+            "argIndex": 2,
+            "offset": 16,
+            "kind": "pointer"
+          },
+          {
+            "name": "selectedSourceArgumentWord24",
+            "argIndex": 2,
+            "offset": 24,
+            "kind": "u32"
+          }
+        ],
+        "returnKind": "pointer"
+      },
+      "ownerConstructor": {
+        "sourceContractRole": "constructor",
+        "args": {
+          "anonymousPrimaryOwnerPointer": {
+            "index": 0,
+            "kind": "pointer"
+          },
+          "sourceThisPointer": {
+            "index": 3,
+            "kind": "pointer"
+          }
+        },
+        "memory": [
+          {
+            "name": "selectedSourceLookupWord",
+            "argIndex": 3,
+            "offset": 0,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceStoredWord4",
+            "argIndex": 3,
+            "offset": 4,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceStoredWord8",
+            "argIndex": 3,
+            "offset": 8,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceFlagsWord",
+            "argIndex": 3,
+            "offset": 12,
+            "kind": "u32"
+          },
+          {
+            "name": "selectedSourceDataPointer",
+            "argIndex": 3,
+            "offset": 16,
+            "kind": "pointer"
+          },
+          {
+            "name": "selectedSourceArgumentWord24",
+            "argIndex": 3,
+            "offset": 24,
+            "kind": "u32"
+          },
+          {
+            "name": "primaryStoredSourcePointer",
+            "argIndex": 0,
+            "offset": 648,
+            "kind": "pointer",
+            "samplePhase": "result"
+          }
+        ],
+        "returnKind": "pointer"
+      }
+    },
+    "abiWitnesses": [
+      {
+        "functionRole": "sourceSelector",
+        "argument": "originalSourcePointer",
+        "retainedRegister": "r12",
+        "witnessRole": "retainOriginalSource"
+      },
+      {
+        "functionRole": "sourceSelector",
+        "argument": "playbackBlobPointer",
+        "retainedRegister": "r13",
+        "witnessRole": "retainPlaybackBlob"
+      },
+      {
+        "functionRole": "sourceClone",
+        "argument": "originalSourcePointer",
+        "retainedRegister": "rbx",
+        "witnessRole": "retainCloneSourceArgument"
+      },
+      {
+        "functionRole": "sourceSetWideText",
+        "argument": "sourceThisPointer",
+        "retainedRegister": "rbx",
+        "witnessRole": "retainWideSetterSourceArgument"
+      },
+      {
+        "functionRole": "sourceSetWideText",
+        "argument": "descriptorWideTextPointer",
+        "retainedRegister": "rbp",
+        "witnessRole": "retainWideTextInput"
+      },
+      {
+        "functionRole": "sourceSelector",
+        "argument": "anonymousNodePointer",
+        "retainedRegister": "rdi",
+        "witnessRole": "retainNodeArgument"
+      },
+      {
+        "functionRole": "sourceSetWideText",
+        "argument": "sourceLookupWord",
+        "retainedRegister": "rsi",
+        "witnessRole": "retainWideSetterLookupArgument"
+      },
+      {
+        "functionRole": "sourceSetWideText",
+        "argument": "sourceArgumentWord24",
+        "retainedRegister": "r14",
+        "witnessRole": "retainWideSetterWord24Argument"
+      }
+    ],
+    "layoutWitnesses": [
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "loadPlaybackConfigInterface",
+        "prefixHex": "498b58",
+        "layout": "playbackBlob",
+        "field": "configInterfacePointer",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "loadExternalDescriptorAllocation",
+        "prefixHex": "498b5d",
+        "layout": "playbackBlob",
+        "field": "externalAllocationPointer",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "loadDescriptorCount",
+        "prefixHex": "448b53",
+        "layout": "externalAllocation",
+        "field": "count",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "addressFirst32ByteDescriptor",
+        "prefixHex": "4c8d4b",
+        "layout": "externalAllocation",
+        "field": "firstDescriptor",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "advanceDescriptor32",
+        "prefixHex": "4983c1",
+        "layout": "externalAllocation",
+        "field": "descriptorStride",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "readSelectedSourceWord4",
+        "prefixHex": "458b5c24",
+        "layout": "source",
+        "field": "matchWord",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "readDescriptorWord4",
+        "prefixHex": "418b49",
+        "layout": "descriptor",
+        "field": "argumentWord",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "readDescriptorWord28",
+        "prefixHex": "418b51",
+        "layout": "descriptor",
+        "field": "selectionWord",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "readDescriptorPointer8",
+        "prefixHex": "498b51",
+        "layout": "descriptor",
+        "field": "wideTextPointer",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "readDescriptorWord24",
+        "prefixHex": "418b51",
+        "layout": "descriptor",
+        "field": "byteCountWord",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "readDescriptorPointer16",
+        "prefixHex": "4d8b41",
+        "layout": "descriptor",
+        "field": "memoryPointer",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousWideTextSourceSetter",
+        "witnessRole": "storeOwnedWideTextPointer16",
+        "prefixHex": "488943",
+        "layout": "source",
+        "field": "dataPointer",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "anonymousWideTextSourceSetter",
+        "witnessRole": "storeArgumentWord24",
+        "prefixHex": "448973",
+        "layout": "source",
+        "field": "selectionArgumentWord",
+        "displacementBytes": 1
+      },
+      {
+        "groupKey": "normalActionExecute",
+        "witnessRole": "storePlayBlobExternalContext",
+        "prefixHex": "48894424",
+        "layout": "playbackBlob",
+        "field": "contextPointer",
+        "displacementBytes": 1,
+        "baseOffset": 48
+      },
+      {
+        "groupKey": "normalActionExecute",
+        "witnessRole": "storePlayBlobExternalFlags",
+        "prefixHex": "894424",
+        "layout": "playbackBlob",
+        "field": "flagsWord",
+        "displacementBytes": 1,
+        "baseOffset": 48
+      },
+      {
+        "groupKey": "normalActionExecute",
+        "witnessRole": "storePlayBlobSerial",
+        "prefixHex": "894424",
+        "layout": "playbackBlob",
+        "field": "serialWord",
+        "displacementBytes": 1,
+        "baseOffset": 48
+      },
+      {
+        "groupKey": "anonymousSourceSelector",
+        "witnessRole": "compareDescriptorWord0",
+        "prefixHex": "453b19",
+        "layout": "descriptor",
+        "field": "matchWord",
+        "displacementBytes": 0,
+        "baseOffset": 0
+      },
+      {
+        "groupKey": "anonymousSourceClone40",
+        "witnessRole": "allocateClone40Bytes",
+        "prefixHex": "ba",
+        "layout": "source",
+        "field": "cloneBytes",
+        "displacementBytes": 4,
+        "baseOffset": 0
+      }
+    ],
+    "evidenceBoundary": {
+      "direct": "A synchronous selector invocation can expose the carried allocation, original/clone pointers, selected descriptor row and wide-text argument before the admitted factory/constructor/consumer chain.",
+      "conditional": "Only the first descriptor is sampled. Count1 is required for one-row choice closure; multi-row selection remains outside this recipe. The wide setter has four additional stack inputs; only its first four register arguments and bounded source fields are captured.",
+      "unresolved": "Allocation creation/generation and reuse across asynchronous queuing, runtime selected node/config address point, complete descriptor choice outside count1, backing file identity, codec choice, decoded content and audibility."
+    }
+  }
+}

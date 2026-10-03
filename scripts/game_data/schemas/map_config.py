@@ -112,8 +112,16 @@ def _condition(
 
 
 def decode_map_config(data: bytes, *, source: str = "<bytes>") -> dict[str, Any]:
+    def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in result:
+                _fail(source + ".jsonKey", "unique object key", key)
+            result[key] = value
+        return result
+
     try:
-        root = json.loads(data.decode("utf-8"))
+        root = json.loads(data.decode("utf-8"), object_pairs_hook=unique_object)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
         raise MapConfigDecodeError(f"{source}: invalid UTF-8 JSON: {exc}") from exc
     keys = tuple(root) if isinstance(root, dict) else ()
@@ -182,6 +190,7 @@ def decode_map_config(data: bytes, *, source: str = "<bytes>") -> dict[str, Any]
         "status": "named_exact",
         "schemaStatus": "named_exact",
         "fieldOrder": list(root),
+        "fields": root,
         "levelCount": len(root["levelIds"]),
         "sceneStateCount": len(scene_states),
         "conditionCount": len(state_rows),

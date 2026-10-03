@@ -1,0 +1,669 @@
+{
+  "schema": "endfield.wwise-decoder-provider-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "anonymousDecoderProviderPreparation",
+      "entryRva": "0x1af7a0",
+      "windows": [
+        {
+          "rva": "0x1af7a0",
+          "bodyLength": 437,
+          "bodySha256": "1e2952a9db65104dd31013ef680c1bfb35ecc5ea7c6fd29d78b93d5ea9ac8f64",
+          "unwindRva": "0x2fd0f0",
+          "unwindInfoHex": "010d05000d3414000d01120006700000"
+        }
+      ],
+      "requiredRoles": [
+        "loadDecoderOwner",
+        "retainSecondArgument",
+        "retainDecoder",
+        "loadStoredSource",
+        "loadSourceFlags",
+        "maskSourceKind",
+        "compareAlternateKind",
+        "branchOrdinaryKind",
+        "loadAlternatePointer",
+        "testAlternatePointer",
+        "branchAlternatePointer",
+        "missingAlternateStatus",
+        "loadAlternateProvider",
+        "addressAlternateOutput",
+        "loadAlternateWord",
+        "storeAlternateOutput",
+        "addressAlternateOptions",
+        "loadAlternateVtable",
+        "callAlternateSlot",
+        "loadOrdinaryFlags",
+        "clearDescriptorPointer",
+        "initializeDescriptorWord",
+        "loadArgumentHighWord",
+        "storeArgumentHighWord",
+        "testDirectDataBit",
+        "setDirectDataFlag",
+        "shiftPointerBit",
+        "addressFlagsDescriptor",
+        "storeDirectDataFlag",
+        "storeFlagsDescriptorPointer",
+        "testPointerBit",
+        "branchNumericDescriptor",
+        "loadSourceDataPointer",
+        "storeDescriptorPointer",
+        "jumpProviderCall",
+        "loadSourceWord",
+        "storeDescriptorWord",
+        "loadOrdinaryProvider",
+        "addressOrdinaryOutput",
+        "addressOrdinaryOptions",
+        "forwardSecondArgument",
+        "loadOrdinaryVtable",
+        "loadOrdinarySlot",
+        "storeOrdinaryOutput",
+        "addressOrdinaryDescriptor",
+        "callOrdinarySlot"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadDecoderOwner",
+          "rva": "0x1af7ad",
+          "instructionHex": "4c8b5918"
+        },
+        {
+          "role": "retainSecondArgument",
+          "rva": "0x1af7b1",
+          "instructionHex": "488bfa"
+        },
+        {
+          "role": "retainDecoder",
+          "rva": "0x1af7b4",
+          "instructionHex": "4c8bd1"
+        },
+        {
+          "role": "loadStoredSource",
+          "rva": "0x1af7bc",
+          "instructionHex": "4d8b8b88020000"
+        },
+        {
+          "role": "loadSourceFlags",
+          "rva": "0x1af819",
+          "instructionHex": "418b490c"
+        },
+        {
+          "role": "maskSourceKind",
+          "rva": "0x1af822",
+          "instructionHex": "83e17c"
+        },
+        {
+          "role": "compareAlternateKind",
+          "rva": "0x1af830",
+          "instructionHex": "83f90c"
+        },
+        {
+          "role": "branchOrdinaryKind",
+          "rva": "0x1af833",
+          "instructionHex": "7555"
+        },
+        {
+          "role": "loadAlternatePointer",
+          "rva": "0x1af835",
+          "instructionHex": "498b9338030000"
+        },
+        {
+          "role": "testAlternatePointer",
+          "rva": "0x1af83c",
+          "instructionHex": "4885d2"
+        },
+        {
+          "role": "branchAlternatePointer",
+          "rva": "0x1af83f",
+          "instructionHex": "7516"
+        },
+        {
+          "role": "missingAlternateStatus",
+          "rva": "0x1af841",
+          "instructionHex": "b82e000000"
+        },
+        {
+          "role": "loadAlternateProvider",
+          "rva": "0x1af857",
+          "instructionHex": "488b0d92501900"
+        },
+        {
+          "role": "addressAlternateOutput",
+          "rva": "0x1af85e",
+          "instructionHex": "4d8d4a58"
+        },
+        {
+          "role": "loadAlternateWord",
+          "rva": "0x1af862",
+          "instructionHex": "458b8340030000"
+        },
+        {
+          "role": "storeAlternateOutput",
+          "rva": "0x1af869",
+          "instructionHex": "4c894c2420"
+        },
+        {
+          "role": "addressAlternateOptions",
+          "rva": "0x1af86e",
+          "instructionHex": "4c8d4c2440"
+        },
+        {
+          "role": "loadAlternateVtable",
+          "rva": "0x1af873",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "callAlternateSlot",
+          "rva": "0x1af876",
+          "instructionHex": "ff5020"
+        },
+        {
+          "role": "loadOrdinaryFlags",
+          "rva": "0x1af88a",
+          "instructionHex": "418b490c"
+        },
+        {
+          "role": "clearDescriptorPointer",
+          "rva": "0x1af88e",
+          "instructionHex": "4889542450"
+        },
+        {
+          "role": "initializeDescriptorWord",
+          "rva": "0x1af893",
+          "instructionHex": "895c2458"
+        },
+        {
+          "role": "loadArgumentHighWord",
+          "rva": "0x1af8ab",
+          "instructionHex": "410fb7411a"
+        },
+        {
+          "role": "storeArgumentHighWord",
+          "rva": "0x1af8b0",
+          "instructionHex": "8944246c"
+        },
+        {
+          "role": "testDirectDataBit",
+          "rva": "0x1af8bd",
+          "instructionHex": "0fbae108"
+        },
+        {
+          "role": "setDirectDataFlag",
+          "rva": "0x1af8da",
+          "instructionHex": "0f42d0"
+        },
+        {
+          "role": "shiftPointerBit",
+          "rva": "0x1af8dd",
+          "instructionHex": "c1e909"
+        },
+        {
+          "role": "addressFlagsDescriptor",
+          "rva": "0x1af8e0",
+          "instructionHex": "488d442468"
+        },
+        {
+          "role": "storeDirectDataFlag",
+          "rva": "0x1af8ec",
+          "instructionHex": "89542468"
+        },
+        {
+          "role": "storeFlagsDescriptorPointer",
+          "rva": "0x1af8f0",
+          "instructionHex": "488944245c"
+        },
+        {
+          "role": "testPointerBit",
+          "rva": "0x1af8f5",
+          "instructionHex": "f6c101"
+        },
+        {
+          "role": "branchNumericDescriptor",
+          "rva": "0x1af8f8",
+          "instructionHex": "740b"
+        },
+        {
+          "role": "loadSourceDataPointer",
+          "rva": "0x1af8fa",
+          "instructionHex": "498b4110"
+        },
+        {
+          "role": "storeDescriptorPointer",
+          "rva": "0x1af8fe",
+          "instructionHex": "4889442450"
+        },
+        {
+          "role": "jumpProviderCall",
+          "rva": "0x1af903",
+          "instructionHex": "eb08"
+        },
+        {
+          "role": "loadSourceWord",
+          "rva": "0x1af905",
+          "instructionHex": "418b4104"
+        },
+        {
+          "role": "storeDescriptorWord",
+          "rva": "0x1af909",
+          "instructionHex": "89442458"
+        },
+        {
+          "role": "loadOrdinaryProvider",
+          "rva": "0x1af90d",
+          "instructionHex": "488b0ddc4f1900"
+        },
+        {
+          "role": "addressOrdinaryOutput",
+          "rva": "0x1af914",
+          "instructionHex": "498d5258"
+        },
+        {
+          "role": "addressOrdinaryOptions",
+          "rva": "0x1af91d",
+          "instructionHex": "4c8d442440"
+        },
+        {
+          "role": "forwardSecondArgument",
+          "rva": "0x1af922",
+          "instructionHex": "4c8bcf"
+        },
+        {
+          "role": "loadOrdinaryVtable",
+          "rva": "0x1af925",
+          "instructionHex": "488b01"
+        },
+        {
+          "role": "loadOrdinarySlot",
+          "rva": "0x1af928",
+          "instructionHex": "4c8b5028"
+        },
+        {
+          "role": "storeOrdinaryOutput",
+          "rva": "0x1af937",
+          "instructionHex": "4889542420"
+        },
+        {
+          "role": "addressOrdinaryDescriptor",
+          "rva": "0x1af93c",
+          "instructionHex": "488d542450"
+        },
+        {
+          "role": "callOrdinarySlot",
+          "rva": "0x1af941",
+          "instructionHex": "41ffd2"
+        }
+      ]
+    },
+    {
+      "key": "anonymousDecoderPrepareCaller",
+      "entryRva": "0x1b0380",
+      "windows": [
+        {
+          "rva": "0x1b0380",
+          "bodyLength": 74,
+          "bodySha256": "252520cbcbda4ad2a49caff431f7f543add3978b9a6d92f62abe1b2b14185ce3",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230"
+        },
+        {
+          "rva": "0x1b03ca",
+          "bodyLength": 211,
+          "bodySha256": "39438f49f8e97813a3b36f5ee614e8e27ef4a9f5aa571b19654690a212929ac0",
+          "unwindRva": "0x3119b8",
+          "unwindInfoHex": "210a04000a7407000564060080031b00ca031b00bcfa2e00"
+        },
+        {
+          "rva": "0x1b049d",
+          "bodyLength": 6,
+          "bodySha256": "b13c2122a4910ad1c7f40207d9561e5a2d3418bf2bc40c490e3f913641fd2989",
+          "unwindRva": "0x3119d0",
+          "unwindInfoHex": "2100000080031b00ca031b00bcfa2e00"
+        }
+      ],
+      "requiredRoles": [
+        "clearCallerFlag",
+        "callPreparation"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "clearCallerFlag",
+          "rva": "0x1b03b5",
+          "instructionHex": "4533c0"
+        },
+        {
+          "role": "callPreparation",
+          "rva": "0x1b03b8",
+          "instructionHex": "e8e3f3ffff"
+        }
+      ]
+    },
+    {
+      "key": "anonymousDecoderRetryCaller",
+      "entryRva": "0x1c56b0",
+      "windows": [
+        {
+          "rva": "0x1c56b0",
+          "bodyLength": 334,
+          "bodySha256": "65463042b2b7c40fcd885eccb2c554ef79818dd84930fbd14ffe33b94c721f37",
+          "unwindRva": "0x312e1c",
+          "unwindInfoHex": "017d06007d6408000a3409000a520670"
+        }
+      ],
+      "requiredRoles": [
+        "clearCallerFlag",
+        "addressCallerDescriptor",
+        "callPreparation"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "clearCallerFlag",
+          "rva": "0x1c573a",
+          "instructionHex": "4533c0"
+        },
+        {
+          "role": "addressCallerDescriptor",
+          "rva": "0x1c5741",
+          "instructionHex": "488d542420"
+        },
+        {
+          "role": "callPreparation",
+          "rva": "0x1c5746",
+          "instructionHex": "e855a0feff"
+        }
+      ]
+    }
+  ],
+  "layouts": {
+    "decoder": {
+      "primaryOwnerPointer": 24,
+      "providerOutputPointer": 88
+    },
+    "primaryOwner": {
+      "sourcePointer": 648,
+      "alternatePointer": 824,
+      "alternateWord": 832
+    },
+    "source": {
+      "flagsWord": 12,
+      "dataPointer": 16,
+      "storedWord": 4,
+      "argumentHighWord": 26
+    },
+    "frame": {
+      "descriptorPointer": 80,
+      "descriptorWord": 88,
+      "flagsDescriptorPointer": 92,
+      "directDataFlag": 104,
+      "argumentHighWord": 108,
+      "flagsDescriptor": 104,
+      "options": 64,
+      "outputArgument": 32
+    },
+    "providerVtable": {
+      "alternateSlot": 32,
+      "ordinarySlot": 40
+    }
+  },
+  "fieldBindings": [
+    {
+      "witness": "loadDecoderOwner",
+      "layout": "decoder",
+      "field": "primaryOwnerPointer",
+      "prefixHex": "4c8b59",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadStoredSource",
+      "layout": "primaryOwner",
+      "field": "sourcePointer",
+      "prefixHex": "4d8b8b",
+      "displacementBytes": 4
+    },
+    {
+      "witness": "loadSourceFlags",
+      "layout": "source",
+      "field": "flagsWord",
+      "prefixHex": "418b49",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadOrdinaryFlags",
+      "layout": "source",
+      "field": "flagsWord",
+      "prefixHex": "418b49",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadAlternatePointer",
+      "layout": "primaryOwner",
+      "field": "alternatePointer",
+      "prefixHex": "498b93",
+      "displacementBytes": 4
+    },
+    {
+      "witness": "loadAlternateWord",
+      "layout": "primaryOwner",
+      "field": "alternateWord",
+      "prefixHex": "458b83",
+      "displacementBytes": 4
+    },
+    {
+      "witness": "loadArgumentHighWord",
+      "layout": "source",
+      "field": "argumentHighWord",
+      "prefixHex": "410fb741",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeArgumentHighWord",
+      "layout": "frame",
+      "field": "argumentHighWord",
+      "prefixHex": "894424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadSourceDataPointer",
+      "layout": "source",
+      "field": "dataPointer",
+      "prefixHex": "498b41",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeDescriptorPointer",
+      "layout": "frame",
+      "field": "descriptorPointer",
+      "prefixHex": "48894424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "clearDescriptorPointer",
+      "layout": "frame",
+      "field": "descriptorPointer",
+      "prefixHex": "48895424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "initializeDescriptorWord",
+      "layout": "frame",
+      "field": "descriptorWord",
+      "prefixHex": "895c24",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadSourceWord",
+      "layout": "source",
+      "field": "storedWord",
+      "prefixHex": "418b41",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeDescriptorWord",
+      "layout": "frame",
+      "field": "descriptorWord",
+      "prefixHex": "894424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "addressFlagsDescriptor",
+      "layout": "frame",
+      "field": "flagsDescriptor",
+      "prefixHex": "488d4424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeFlagsDescriptorPointer",
+      "layout": "frame",
+      "field": "flagsDescriptorPointer",
+      "prefixHex": "48894424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeDirectDataFlag",
+      "layout": "frame",
+      "field": "directDataFlag",
+      "prefixHex": "895424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "addressOrdinaryDescriptor",
+      "layout": "frame",
+      "field": "descriptorPointer",
+      "prefixHex": "488d5424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "addressOrdinaryOutput",
+      "layout": "decoder",
+      "field": "providerOutputPointer",
+      "prefixHex": "498d52",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "addressAlternateOutput",
+      "layout": "decoder",
+      "field": "providerOutputPointer",
+      "prefixHex": "4d8d4a",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "addressOrdinaryOptions",
+      "layout": "frame",
+      "field": "options",
+      "prefixHex": "4c8d4424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "addressAlternateOptions",
+      "layout": "frame",
+      "field": "options",
+      "prefixHex": "4c8d4c24",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeOrdinaryOutput",
+      "layout": "frame",
+      "field": "outputArgument",
+      "prefixHex": "48895424",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "storeAlternateOutput",
+      "layout": "frame",
+      "field": "outputArgument",
+      "prefixHex": "4c894c24",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "callAlternateSlot",
+      "layout": "providerVtable",
+      "field": "alternateSlot",
+      "prefixHex": "ff50",
+      "displacementBytes": 1
+    },
+    {
+      "witness": "loadOrdinarySlot",
+      "layout": "providerVtable",
+      "field": "ordinarySlot",
+      "prefixHex": "4c8b50",
+      "displacementBytes": 1
+    }
+  ],
+  "constants": {
+    "sourceKindMask": 124,
+    "alternateKind": 12,
+    "directDataBit": 8,
+    "pointerDescriptorBit": 9
+  },
+  "constantBindings": [
+    {
+      "witness": "maskSourceKind",
+      "constant": "sourceKindMask",
+      "prefixHex": "83e1"
+    },
+    {
+      "witness": "compareAlternateKind",
+      "constant": "alternateKind",
+      "prefixHex": "83f9"
+    },
+    {
+      "witness": "testDirectDataBit",
+      "constant": "directDataBit",
+      "prefixHex": "0fbae1"
+    },
+    {
+      "witness": "shiftPointerBit",
+      "constant": "pointerDescriptorBit",
+      "prefixHex": "c1e9"
+    }
+  ],
+  "branchBindings": [
+    {
+      "witness": "branchOrdinaryKind",
+      "opcodeHex": "75",
+      "targetWitness": "loadOrdinaryFlags"
+    },
+    {
+      "witness": "branchAlternatePointer",
+      "opcodeHex": "75",
+      "targetWitness": "loadAlternateProvider"
+    },
+    {
+      "witness": "branchNumericDescriptor",
+      "opcodeHex": "74",
+      "targetWitness": "loadSourceWord"
+    },
+    {
+      "witness": "jumpProviderCall",
+      "opcodeHex": "eb",
+      "targetWitness": "loadOrdinaryProvider"
+    }
+  ],
+  "globalBindings": [
+    {
+      "witness": "loadAlternateProvider",
+      "prefixHex": "488b0d",
+      "targetRva": "0x3448f0"
+    },
+    {
+      "witness": "loadOrdinaryProvider",
+      "prefixHex": "488b0d",
+      "targetRva": "0x3448f0"
+    }
+  ],
+  "callerGroups": [
+    "anonymousDecoderPrepareCaller",
+    "anonymousDecoderRetryCaller"
+  ],
+  "evidenceBoundary": {
+    "direct": "The preparation helper reads decoder -> primary owner -> stored source, transports the upper halfword of the source argument into a separate flags descriptor, and passes the address of the decoder provider output field to a singleton virtual call.",
+    "conditional": "Outside the alternate source-kind branch, source flag bit 9 selects the stored data pointer versus stored numeric word in a temporary descriptor; source flag bit 8 supplies a separate Boolean field. The alternate branch instead passes an owner-held pointer and word to another singleton slot.",
+    "unresolved": "Indirect slot implementation and concrete provider identity, file opening, codec meaning of the argument halfword, decoder allocation generation, live selector-to-provider continuity and audible output are not established by this contract."
+  }
+}

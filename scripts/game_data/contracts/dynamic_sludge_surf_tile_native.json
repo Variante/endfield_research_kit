@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.dynamic-sludge-surf-tile-native-contract.v1",
+  "schema": "endfield.dynamic-sludge-surf-tile-native-contract.v2",
   "status": "validated",
   "nativeInputs": {
     "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -26,15 +26,662 @@
     "parameters": [],
     "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
     "rva": 53020528,
-    "windowLength": 160,
-    "windowSha256": "ED9713B21A13AC6DC0E8305401476931B2FE34026D0E4B053F31925D9A6DB900",
+    "windowLength": 123,
+    "windowSha256": "EDB0EB2CBE13357D5DC9C93111039D3E0ADEF5B6F2658AF81DE2FF6CC8A640BB",
     "offsetInstructionRva": 53020595,
     "offsetInstructionHex": "81C2E0000000",
-    "windowBoundary": "selected generated getter fast path through first return; alternate branch lies outside this window"
+    "windowBoundary": "Selected generated getter fast path through its first return; patch branch and adjacent method are outside.",
+    "carrierCallOffset": 87
   },
   "evidenceBoundary": {
-    "direct": "The selected generated SurfTileIDs getter fast path takes the inline DataGroup from SludgeComp byte offset 224. The selected main, RootComp, and ResourceComp contracts independently establish record and DataGroup widths, primitive vector identity, and competing visible-group spans.",
-    "structuralOnly": "A current authenticated main corpus audit can compare SurfTileIDs spans with the primitive integers left outside RootComp and ResourceGroup visibility groups.",
-    "unresolved": "The getter's alternate native branch, the stored tile IDs' runtime consumer, tile activation, and physical or rendering behavior are not established by this fast-path window."
+    "direct": "The SurfTileIDs getter and collector use the same inline DataGroup and ByteBuffer carrier. Checked group Index/Num getters feed a bounded grid-local PrimitiveIntList loop. The unregistered indexer clone agrees with the registered generated accessor on vtable slot, vector helper, four-byte stride and selected little-endian Int32 read. Only positive Int32 values are widened to UInt64 and forwarded with the supplied List<UInt64>.Add MethodSpec context to an inline insertion helper. Its checked size/qword insertion and resize target agree with the separately registered generic candidate. The selected _AreSurfTilesLoaded path passes each retained ID to NavMeshChunkManager.IsSurfaceLoaded and returns false on its first false result. _TryApplyNavMeshState calls _ApplyNavAndMaybeUnbind only on the selected empty-list or load-check-true branch.",
+    "structuralOnly": "The authenticated stored corpus can compare these SurfTileIDs spans with RootComp and ResourceGroup visibility spans; stored ownership does not establish any active component.",
+    "conditional": "Consumer claims describe selected unpatched paths, present primitive vectors and the selected little-endian primitive read. Generic MethodSpec/code identity is static, not a live MethodInfo or executed insertion. The List.Add resize helper is outside the selected insertion proof.",
+    "unresolved": "Live grid/Sludge selection, patch routes, deferred callback behavior, actual navmesh state changes and physical/rendering behavior remain open."
+  },
+  "consumer": {
+    "methods": {
+      "collect": {
+        "index": 88439,
+        "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSludgeSystem",
+        "method": "_GetSludgeSurfTileIDs",
+        "parameters": [
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+          "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSludgeComp",
+          "System.Collections.Generic.List`1<ulong>"
+        ],
+        "returnType": "void",
+        "rva": 53020032
+      },
+      "loaded": {
+        "index": 88440,
+        "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSludgeSystem",
+        "method": "_AreSurfTilesLoaded",
+        "parameters": [
+          "System.Collections.Generic.List`1<ulong>"
+        ],
+        "returnType": "bool",
+        "rva": 56818512
+      },
+      "tryApply": {
+        "index": 88438,
+        "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSludgeSystem",
+        "method": "_TryApplyNavMeshState",
+        "parameters": [
+          "ulong",
+          "int"
+        ],
+        "returnType": "void",
+        "rva": 53015792
+      },
+      "apply": {
+        "index": 88437,
+        "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSludgeSystem",
+        "method": "_ApplyNavAndMaybeUnbind",
+        "parameters": [
+          "ulong",
+          "int"
+        ],
+        "returnType": "void",
+        "rva": 105071724
+      },
+      "surfaceLoaded": {
+        "index": 14150,
+        "type": "Beyond.Gameplay.NavMeshChunkManager",
+        "method": "IsSurfaceLoaded",
+        "parameters": [
+          "ulong"
+        ],
+        "returnType": "bool",
+        "rva": 47049072
+      },
+      "primitive": {
+        "index": 89790,
+        "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+        "method": "PrimitiveIntList",
+        "parameters": [
+          "int"
+        ],
+        "returnType": "int",
+        "rva": 105328280
+      },
+      "primitiveLength": {
+        "index": 89791,
+        "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+        "method": "get_PrimitiveIntListLength",
+        "parameters": [],
+        "returnType": "int",
+        "rva": 53020448
+      },
+      "groupIndex": {
+        "index": 89251,
+        "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+        "method": "get_Index",
+        "parameters": [],
+        "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex",
+        "rva": 48534560
+      },
+      "groupNum": {
+        "index": 89252,
+        "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+        "method": "get_Num",
+        "parameters": [],
+        "returnType": "int",
+        "rva": 48533328
+      },
+      "dataIndex": {
+        "index": 89245,
+        "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataIndex",
+        "method": "get_Index",
+        "parameters": [],
+        "returnType": "int",
+        "rva": 48537616
+      }
+    },
+    "windows": {
+      "collect": {
+        "rva": 53020032,
+        "length": 408,
+        "sha256": "62813155C7AB606130875959AE17D7DDE635C458F8F81578A3C109B819043A3A",
+        "boundary": "Selected collector body through its fast-path return and initialization fragments; patch target is outside."
+      },
+      "loaded": {
+        "rva": 56818512,
+        "length": 530,
+        "sha256": "801CAD60367680565A8515A84036DFB954167CB942855A97DA0A23BD2DE5357E",
+        "boundary": "Selected load-check body includes iteration, false/true returns and its separate patch route; the patch implementation is not proved."
+      },
+      "tryApply": {
+        "rva": 53015792,
+        "length": 3584,
+        "sha256": "3298420908047D37C855CF2925BFD2F032438AB59932E45CFC3DF3F225CDD623",
+        "boundary": "Selected caller prefix through the empty/loaded-true apply blocks; deferred-state path remains outside these claims."
+      },
+      "primitive": {
+        "rva": 105328280,
+        "length": 132,
+        "sha256": "A6DD73E2689E9E422AB28C33F6B2C748E4C3F9258F94E583B695EE7F51C88CBE",
+        "boundary": "Registered primitive indexed accessor through its return."
+      },
+      "primitiveLength": {
+        "rva": 53020448,
+        "length": 71,
+        "sha256": "FBBAAAB66F4B0E61FD636F3294B8284387BD2FBFD01B29F9A0B6F2EB6200522D",
+        "boundary": "Registered primitive vector length getter fast path; patch implementation is outside."
+      },
+      "indexerClone": {
+        "rva": 48533952,
+        "length": 598,
+        "sha256": "CC4BB1443BB4C5711FB3EC690FA8AB053AFBB755A2B353F2F2F0A29E0552319F",
+        "boundary": "Unregistered indexed accessor clone with selected vector/Int32 little-endian return and initialization fragments; external error/default/byte-swap paths remain outside."
+      },
+      "readInt": {
+        "rva": 48572688,
+        "length": 544,
+        "sha256": "AAD6964EC12EB9D95F0E5B2BD88647A4D09CE6085FAC82FB301127A577A6BDF1",
+        "boundary": "Selected Int32 helper body with byte-width/range witnesses and little-endian return; external error/byte-swap paths are outside."
+      },
+      "carrier": {
+        "rva": 99757840,
+        "length": 59,
+        "sha256": "D3453A196EEC6481193A7B57C17E29FFB167714E1B2643135314E2DB3DB43925",
+        "boundary": "Complete selected 32-byte FlatBuffer struct wrapper carrier constructor, distinct from the serialized 24-byte DataGroup extent."
+      },
+      "listAdd": {
+        "rva": 49635040,
+        "length": 160,
+        "sha256": "07E4CA55CB29DCBB23B25F639F636D4C10F427AB1E337671EC88F83F8D589665",
+        "boundary": "Selected List.Add body including direct qword insertion and resize tail call; resize helper implementation is outside."
+      },
+      "listAddRegistered": {
+        "rva": 131306928,
+        "length": 160,
+        "sha256": "7BFB66BFF5B9D8B96D3687DFE3F51C2CE002CF28E1BA11F02FD825199FF27F56",
+        "boundary": "Selected registered List<UInt64>.Add static candidate through both insertion/resize routes and return; live MethodInfo selection remains open."
+      }
+    },
+    "witnesses": {
+      "collectorArguments": {
+        "window": "collect",
+        "rva": 53020072,
+        "hex": "498BF1498BD8488BFA4C8BF1",
+        "role": "R9 output list to RSI, R8 Sludge wrapper to RBX, RDX grid wrapper to RDI."
+      },
+      "clearOutput": {
+        "window": "collect",
+        "rva": 53020119,
+        "hex": "FF461CC7461800000000",
+        "role": "Increment output list version and clear its size."
+      },
+      "groupCarrierInputs": {
+        "window": "collect",
+        "rva": 53020149,
+        "hex": "F20F104B184C8D45EF8B13488D4D0F0F57C0F20F114DFF0F11450F",
+        "role": "Copy Sludge ByteBuffer tail, select source position and carrier/output stack slots."
+      },
+      "groupOffset": {
+        "window": "collect",
+        "rva": 53020176,
+        "hex": "81C2E0000000",
+        "role": "Add the proved SurfTileIDs inline offset to source position."
+      },
+      "groupCarrierBuffer": {
+        "window": "collect",
+        "rva": 53020186,
+        "hex": "0F1043080F2945EF",
+        "role": "Copy the same source ByteBuffer head for the carrier constructor."
+      },
+      "groupCarrierOutput": {
+        "window": "collect",
+        "rva": 53020199,
+        "hex": "0F105D0F0F10651F33D2488D4DEF0F115DEF0F1165FF",
+        "role": "Use the returned DataGroup wrapper for subsequent Num/Index reads."
+      },
+      "carrierPosition": {
+        "window": "carrier",
+        "rva": 99757840,
+        "hex": "4883EC28F2410F1050100F57C00F1104248914240F11442410410F28000F114424080F104C24100F100424",
+        "role": "Build wrapper position EDX plus unchanged supplied ByteBuffer bytes."
+      },
+      "carrierOutput": {
+        "window": "carrier",
+        "rva": 99757883,
+        "hex": "660F14CA0F11010F1149104883C428C3",
+        "role": "Return both 16-byte wrapper halves in the caller output slot."
+      },
+      "groupIndexOutput": {
+        "window": "collect",
+        "rva": 53020234,
+        "hex": "4533C0488D55EF488D4D2FE8C68DBBFF33D2488D4D0F0F10000F1048100F11450F0F114D1F",
+        "role": "Pass group wrapper to get_Index and copy its returned DataIndex wrapper."
+      },
+      "startAndGroup": {
+        "window": "collect",
+        "rva": 53020276,
+        "hex": "33D2488D4DEF448BF0",
+        "role": "Retain DataIndex.Index as loop start and same group receiver."
+      },
+      "negativeGuard": {
+        "window": "collect",
+        "rva": 53020297,
+        "hex": "85DB782E",
+        "role": "Skip negative vector indices."
+      },
+      "upperGuard": {
+        "window": "collect",
+        "rva": 53020311,
+        "hex": "3BD87D20",
+        "role": "Skip indices at or above the generated vector length."
+      },
+      "primitiveArguments": {
+        "window": "collect",
+        "rva": 53020315,
+        "hex": "8BD3488BCF",
+        "role": "Pass bounded EBX index and original grid to cloned indexed accessor."
+      },
+      "positiveGuard": {
+        "window": "collect",
+        "rva": 53020325,
+        "hex": "85C07E12",
+        "role": "Skip zero or negative Int32 values before conversion."
+      },
+      "conversion": {
+        "window": "collect",
+        "rva": 53020336,
+        "hex": "488BCE4863D0",
+        "role": "Pass original output list and sign-extend positive Int32 result to 64 bits."
+      },
+      "iterationSkip": {
+        "window": "collect",
+        "rva": 53020347,
+        "hex": "33D2",
+        "role": "Loop continuation target for all bounds/value exclusions."
+      },
+      "loopBound": {
+        "window": "collect",
+        "rva": 53020349,
+        "hex": "488D4DEFFFC3E88888BBFF8BCB412BCE3BC87CB8",
+        "role": "Increment Int32 index; continue while index minus group start is below group Num."
+      },
+      "originalSlot": {
+        "window": "primitive",
+        "rva": 105328323,
+        "hex": "BA0A000000",
+        "role": "Select the established primitive vtable slot."
+      },
+      "cloneSlot": {
+        "window": "indexerClone",
+        "rva": 48533980,
+        "hex": "BA0A000000",
+        "role": "Select the same primitive vtable slot."
+      },
+      "lengthSlot": {
+        "window": "primitiveLength",
+        "rva": 53020477,
+        "hex": "BA0A000000",
+        "role": "Select the same primitive vtable slot for vector length."
+      },
+      "originalStride": {
+        "window": "primitive",
+        "rva": 105328384,
+        "hex": "8D14BB",
+        "role": "Compute primitive base plus supplied index times four."
+      },
+      "cloneStride": {
+        "window": "indexerClone",
+        "rva": 48534049,
+        "hex": "8D3CBB",
+        "role": "Compute the same primitive base plus supplied index times four."
+      },
+      "cloneAddress": {
+        "window": "indexerClone",
+        "rva": 48534186,
+        "hex": "4863F74803F0",
+        "role": "Sign-extend byte offset and add source ByteBuffer pointer."
+      },
+      "cloneWidth": {
+        "window": "indexerClone",
+        "rva": 48534249,
+        "hex": "83FB04",
+        "role": "Require at least four remaining bytes."
+      },
+      "cloneRead": {
+        "window": "indexerClone",
+        "rva": 48534279,
+        "hex": "8B1E",
+        "role": "Load Int32 word from the computed ByteBuffer address."
+      },
+      "cloneReturn": {
+        "window": "indexerClone",
+        "rva": 48534315,
+        "hex": "8BC3",
+        "role": "Return loaded Int32 word in EAX on selected little-endian path."
+      },
+      "helperWidth": {
+        "window": "readInt",
+        "rva": 48572890,
+        "hex": "83FF04",
+        "role": "Require at least four remaining bytes in original Int32 helper."
+      },
+      "helperRead": {
+        "window": "readInt",
+        "rva": 48572924,
+        "hex": "418B1E",
+        "role": "Load Int32 word from helper computed address."
+      },
+      "helperReturn": {
+        "window": "readInt",
+        "rva": 48572961,
+        "hex": "8BC3",
+        "role": "Return loaded word in EAX on selected little-endian path."
+      },
+      "listStore": {
+        "window": "listAdd",
+        "rva": 49635086,
+        "hex": "8D4801894B18413B4118735E498954C120",
+        "role": "Increment supplied list size and store RDX as one eight-byte value."
+      },
+      "loadedElement": {
+        "window": "loaded",
+        "rva": 56818783,
+        "hex": "488B54CA20",
+        "role": "Pass current list qword as IsSurfaceLoaded UInt64 argument."
+      },
+      "loadedResult": {
+        "window": "loaded",
+        "rva": 56818837,
+        "hex": "84C07588",
+        "role": "Continue iteration only when IsSurfaceLoaded returned true."
+      },
+      "loadedFalse": {
+        "window": "loaded",
+        "rva": 56818841,
+        "hex": "32C0488B5C2470488B7424784883C4605FC3",
+        "role": "Return false immediately on an unloaded surface result."
+      },
+      "loadedTrue": {
+        "window": "loaded",
+        "rva": 56818928,
+        "hex": "B001488B5C2470488B7424784883C4605FC3",
+        "role": "Return true for null/empty/exhausted selected list path."
+      },
+      "applyArguments": {
+        "window": "tryApply",
+        "rva": 53016297,
+        "hex": "4C8B4C24304C8D442460488D9424E0000000498BCC",
+        "role": "Pass same local output list, Sludge wrapper and grid wrapper to collector."
+      },
+      "applyList": {
+        "window": "tryApply",
+        "rva": 53016323,
+        "hex": "488B542430",
+        "role": "Pass collector output list to load check."
+      },
+      "applyResult": {
+        "window": "tryApply",
+        "rva": 53016358,
+        "hex": "84C00F85800B0000",
+        "role": "Apply branch only when load check returned true."
+      },
+      "emptyApply": {
+        "window": "tryApply",
+        "rva": 53016340,
+        "hex": "44396A180F84B10B0000",
+        "role": "Empty list bypasses load check to its separate apply block."
+      },
+      "trueApplyArguments": {
+        "window": "tryApply",
+        "rva": 53019310,
+        "hex": "4533C9458BC7498BD6498BCC",
+        "role": "Pass original global ID, state and receiver to apply helper."
+      },
+      "emptyApplyArguments": {
+        "window": "tryApply",
+        "rva": 53019343,
+        "hex": "4533C9458BC7498BD6",
+        "role": "Pass original global ID and state; receiver retained from empty-list comparison path."
+      },
+      "registeredListStore": {
+        "window": "listAddRegistered",
+        "rva": 131307047,
+        "hex": "418D4101894118453B4A187206E8978E2DF8CC4B8974CA20",
+        "role": "Registered candidate increments the same size field and stores the same supplied qword at stride eight."
+      },
+      "registeredListArguments": {
+        "window": "listAddRegistered",
+        "rva": 131306943,
+        "hex": "FF411C498BF84C8B5110488BF24C634918488BD9",
+        "role": "Retain original context/value, items array and current Int32 list size."
+      },
+      "countGuardInitial": {
+        "window": "collect",
+        "rva": 53020226,
+        "hex": "85C00F8E87000000",
+        "role": "Exit without iteration when group Num is nonpositive."
+      },
+      "countGuardLoop": {
+        "window": "collect",
+        "rva": 53020290,
+        "hex": "85C07E4B",
+        "role": "Exit without iteration when group Num is nonpositive."
+      },
+      "collectExit": {
+        "window": "collect",
+        "rva": 53020369,
+        "hex": "4C8D9C2490000000",
+        "role": "Selected collector return epilogue."
+      },
+      "loadedIteration": {
+        "window": "loaded",
+        "rva": 56818721,
+        "hex": "4C8B051009A109",
+        "role": "Repeat the selected list iteration."
+      },
+      "cloneBuffer": {
+        "window": "indexerClone",
+        "rva": 48534001,
+        "hex": "0F1043088BD0488BCB0F11442420E89C8A0000",
+        "role": "Preserve source ByteBuffer head and vector byte offset."
+      },
+      "originalBuffer": {
+        "window": "primitive",
+        "rva": 105328340,
+        "hex": "0F1043088BD0488BCBF20F104B180F11442420F20F114C2430E8AEED9DFC",
+        "role": "Preserve same source ByteBuffer carrier and vector byte offset."
+      },
+      "cloneEndian": {
+        "window": "indexerClone",
+        "rva": 48534294,
+        "hex": "488B80B80000008038000F840FE2E201",
+        "role": "Selected Int32 return is conditional on the same little-endian flag."
+      },
+      "helperEndian": {
+        "window": "readInt",
+        "rva": 48572940,
+        "hex": "488B80B80000008038000F849496CA014C8B742430",
+        "role": "Selected original Int32 helper return is conditional on the little-endian flag."
+      },
+      "cloneEndianSource": {
+        "window": "indexerClone",
+        "rva": 48534272,
+        "hex": "488B05A1A1250A",
+        "role": "Read the shared static owner of the selected little-endian flag."
+      },
+      "helperEndianSource": {
+        "window": "readInt",
+        "rva": 48572917,
+        "hex": "488B05AC0A250A",
+        "role": "Read the shared static owner of the selected little-endian flag."
+      },
+      "callerInputs": {
+        "window": "tryApply",
+        "rva": 53015831,
+        "hex": "458BF84C8BF24C8BE1",
+        "role": "Retain incoming state, global ID and receiver in callee-saved registers."
+      },
+      "callerZero": {
+        "window": "tryApply",
+        "rva": 53016226,
+        "hex": "4533ED",
+        "role": "Initialize R13d to zero before the selected empty-list comparison."
+      }
+    },
+    "calls": [
+      {
+        "name": "carrier",
+        "window": "collect",
+        "rva": 53020194,
+        "target": "carrier"
+      },
+      {
+        "name": "numInitial",
+        "window": "collect",
+        "rva": 53020221,
+        "target": "groupNum"
+      },
+      {
+        "name": "groupIndex",
+        "window": "collect",
+        "rva": 53020245,
+        "target": "groupIndex"
+      },
+      {
+        "name": "dataIndex",
+        "window": "collect",
+        "rva": 53020271,
+        "target": "dataIndex"
+      },
+      {
+        "name": "numLoop",
+        "window": "collect",
+        "rva": 53020285,
+        "target": "groupNum"
+      },
+      {
+        "name": "length",
+        "window": "collect",
+        "rva": 53020306,
+        "target": "primitiveLength"
+      },
+      {
+        "name": "indexedClone",
+        "window": "collect",
+        "rva": 53020320,
+        "target": "indexerClone"
+      },
+      {
+        "name": "append",
+        "window": "collect",
+        "rva": 53020342,
+        "target": "listAdd"
+      },
+      {
+        "name": "numNext",
+        "window": "collect",
+        "rva": 53020355,
+        "target": "groupNum"
+      },
+      {
+        "name": "intRead",
+        "window": "primitive",
+        "rva": 105328392,
+        "target": "readInt"
+      },
+      {
+        "name": "surfaceLoaded",
+        "window": "loaded",
+        "rva": 56818832,
+        "target": "surfaceLoaded"
+      },
+      {
+        "name": "collect",
+        "window": "tryApply",
+        "rva": 53016318,
+        "target": "collect"
+      },
+      {
+        "name": "loaded",
+        "window": "tryApply",
+        "rva": 53016353,
+        "target": "loaded"
+      },
+      {
+        "name": "applyTrue",
+        "window": "tryApply",
+        "rva": 53019322,
+        "target": "apply"
+      },
+      {
+        "name": "applyEmpty",
+        "window": "tryApply",
+        "rva": 53019352,
+        "target": "apply"
+      }
+    ],
+    "sharedTargets": [
+      {
+        "role": "tableOffset",
+        "calls": [
+          {
+            "window": "primitive",
+            "rva": 105328331
+          },
+          {
+            "window": "indexerClone",
+            "rva": 48533988
+          },
+          {
+            "window": "primitiveLength",
+            "rva": 53020485
+          }
+        ]
+      },
+      {
+        "role": "vectorBody",
+        "calls": [
+          {
+            "window": "primitive",
+            "rva": 105328365
+          },
+          {
+            "window": "indexerClone",
+            "rva": 48534015
+          }
+        ]
+      },
+      {
+        "role": "listResize",
+        "calls": [
+          {
+            "window": "listAdd",
+            "rva": 49635181
+          },
+          {
+            "window": "listAddRegistered",
+            "rva": 131307040
+          }
+        ]
+      }
+    ],
+    "listAddContext": {
+      "usage": {
+        "instructionRva": 53020329,
+        "instructionHex": "4C8B05A018DD09",
+        "cellRva": 218505040,
+        "usageRawHex": "C7A807C000000000"
+      },
+      "methodSpecIndex": 250979,
+      "methodSpecRawHex": "5B5F040085030000FFFFFFFF",
+      "methodDefinitionIndex": 286555,
+      "type": "System.Collections.Generic.List`1",
+      "method": "Add",
+      "classInstantiationIndex": 901,
+      "classArguments": [
+        "ulong"
+      ],
+      "methodInstantiationIndex": -1,
+      "targetWindow": "listAddRegistered"
+    },
+    "boundary": "Direct conditional native control/data flow in the selected unpatched paths and selected little-endian primitive read. No live Sludge selection, successful Add resize, patch implementation or active navmesh state is certified."
   }
 }

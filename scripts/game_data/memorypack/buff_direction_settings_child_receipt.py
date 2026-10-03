@@ -16,7 +16,9 @@ body, and no runtime direction selection is claimed.
 """
 from __future__ import annotations
 
+import hashlib
 import struct
+from pathlib import Path
 from typing import Any
 
 from scripts.game_data.il2cpp.context import method_spec_usage_index
@@ -43,10 +45,14 @@ def _setter_name(row: list[Any] | tuple[Any, ...]) -> str:
 
 def validate_current_native_contract(
     *, target_native: dict[str, Any] | None = None,
+    gameassembly: Path | None = None, metadata: Path | None = None,
+    parent_tags: tuple[int, ...] | None = None,
 ) -> dict[str, Any]:
     """Check target ownership, Direction reader, MethodSpec and setter order."""
     if target_native is None:
-        target_native = target.validate_current_native_contract()
+        target_native = target.validate_current_native_contract(
+            gameassembly=gameassembly, metadata=metadata, parent_tags=parent_tags,
+        )
     if target_native.get("status") != "validated":
         raise ValueError(f"{LABEL}.native:target-not-validated")
     registry = target_native["_registry"]
@@ -65,7 +71,8 @@ def validate_current_native_contract(
         raise ValueError(f"{LABEL}.native:direction-target-refs")
     expected = target_native["nativeInputs"]
     gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != "validated":
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
@@ -129,6 +136,56 @@ def validate_current_native_contract(
     }
 
 
+def decode_direction_settings_value(
+    data: bytes, *, source: str, logical_sha256: str, start: int, end: int,
+    native_validation: dict[str, Any],
+) -> dict[str, Any]:
+    """Read one source-bound typed value; its caller proves field ownership."""
+    if native_validation.get("status") != "validated":
+        raise ValueError(f"{LABEL}:native-not-validated")
+    if (not isinstance(data, bytes) or not isinstance(logical_sha256, str)
+            or hashlib.sha256(data).hexdigest().upper() != logical_sha256.upper()):
+        raise ValueError(f"{LABEL}:logical-sha256-mismatch source={source}")
+    if type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data):
+        raise ValueError(f"{LABEL}:invalid-value-range source={source} range=[{start},{end})")
+    registry = native_validation["_registry"]
+    definition = native_validation["directionDefinition"]
+    plan = registry.plans[definition]
+    if [member.name for member in plan] != native_validation["directMemberNames"]:
+        raise ValueError(f"{LABEL}:direction-plan-drift")
+    reader = ValueReader(data, source, end, registry=registry)
+    reader.pos = start
+    if reader.peek() == 0xFF:
+        reader.take(1, "null-direction-settings")
+        members = []
+        status = "exact-null"
+    else:
+        reader.header(len(plan))
+        members = []
+        for member in plan:
+            member_start = reader.pos
+            value = reader._value_member(member, 1)
+            if reader.pos <= member_start:
+                raise ValueError(f"{LABEL}:direction-member-no-progress:{member.name}")
+            members.append({
+                "fieldName": member.name, "kind": member.kind,
+                "start": member_start, "end": reader.pos,
+                "nestedTargetStatus": (
+                    "exact-null" if member.kind == "object" and value is None
+                    else "structural-only" if member.kind == "object" else None
+                ),
+            })
+        status = "named-direct-members-exact-span"
+    if reader.pos != end:
+        raise ValueError(f"{LABEL}:direction-end={reader.pos}; expected={end}")
+    return {
+    "start": start, "end": end,
+    "status": status, "namedMembers": members,
+    "wholeStoredSpanExact": True,
+    "recursiveNamedSchemaExact": False,
+}
+
+
 def decode_direction_settings_action_child_receipt(
     data: bytes, *, source: str, logical_sha256: str, start: int, end: int,
     tag: int, native_validation: dict[str, Any],
@@ -145,11 +202,6 @@ def decode_direction_settings_action_child_receipt(
             or parent.get("wholeActionRecursiveSchemaExact") is not False
             or parent.get("wholeBuffDataExact") is not False):
         raise ValueError(f"{LABEL}:target-parent-drift")
-    registry = native_validation["_registry"]
-    definition = native_validation["directionDefinition"]
-    plan = registry.plans[definition]
-    if [member.name for member in plan] != native_validation["directMemberNames"]:
-        raise ValueError(f"{LABEL}:direction-plan-drift")
     directions = []
     for target_child in parent["targetChildren"]:
         if target_child["status"] != "named-direct-members-exact-span":
@@ -159,37 +211,13 @@ def decode_direction_settings_action_child_receipt(
         if len(fields) != 1:
             raise ValueError(f"{LABEL}:direction-field-missing-or-ambiguous")
         field = fields[0]
-        reader = ValueReader(data, source, field["end"], registry=registry)
-        reader.pos = field["start"]
-        if reader.peek() == 0xFF:
-            reader.take(1, "null-direction-settings")
-            members = []
-            status = "exact-null"
-        else:
-            reader.header(len(plan))
-            members = []
-            for member in plan:
-                member_start = reader.pos
-                value = reader._value_member(member, 1)
-                if reader.pos <= member_start:
-                    raise ValueError(f"{LABEL}:direction-member-no-progress:{member.name}")
-                members.append({
-                    "fieldName": member.name, "kind": member.kind,
-                    "start": member_start, "end": reader.pos,
-                    "nestedTargetStatus": (
-                        "exact-null" if member.kind == "object" and value is None
-                        else "structural-only" if member.kind == "object" else None
-                    ),
-                })
-            status = "named-direct-members-exact-span"
-        if reader.pos != field["end"]:
-            raise ValueError(f"{LABEL}:direction-end={reader.pos}; expected={field['end']}")
         directions.append({
             "targetParentField": target_child["parentField"],
-            "start": field["start"], "end": field["end"],
-            "status": status, "namedMembers": members,
-            "wholeStoredSpanExact": True,
-            "recursiveNamedSchemaExact": False,
+            **decode_direction_settings_value(
+                data, source=source, logical_sha256=logical_sha256,
+                start=field["start"], end=field["end"],
+                native_validation=native_validation,
+            ),
         })
     return {
         "schema": SCHEMA, "status": "named-direct-direction-members",

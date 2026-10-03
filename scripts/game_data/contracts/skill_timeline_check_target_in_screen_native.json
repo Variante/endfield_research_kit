@@ -1,0 +1,142 @@
+{
+  "schema": "endfield.skill-timeline-check-target-in-screen-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 5,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "catalogContract": "levelscript_union_tags.json",
+  "primitiveReadContract": "skill_timeline_check_hit_collider_options_native.json",
+  "dispatcher": {
+    "unionTag": 127,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82211477,
+    "routeWindow": {
+      "startRva": 82211477,
+      "endRva": 82211525,
+      "sha256": "F99C46C541EED5301DAB38BACD2AF0E95F1159A4C0FE123117CB3EC27BDE9E46",
+      "boundary": "selected registered wrapper route"
+    },
+    "usageCellRva": 218369248,
+    "usageRawHex": "2940032000000000",
+    "registeredTypeIndex": 106516,
+    "wrapperTypeDefinition": 16703,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTargetInScreen_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      124730,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTargetInScreen_DataForMemoryPack",
+      "Deserialize",
+      153960664
+    ],
+    [
+      124731,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTargetInScreen_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckTargetInScreen_DataForMemoryPackFormatter",
+      "Deserialize",
+      153960424
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153960664,
+      "endRva": 153961112,
+      "sha256": "EFFB2D603E49651768D069896BD67BFA48183972EF92A5B513400A1852690766",
+      "boundary": "complete selected source reader hot body"
+    },
+    {
+      "startRva": 153960424,
+      "endRva": 153960513,
+      "sha256": "2C8A154D7BC1129780293F4D1E201F83DF51732A9367FDF7FDAE6706BAEB3A3E",
+      "boundary": "complete generated formatter forwarding body"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 153960853,
+    "hex": "807C243805"
+  },
+  "setterMethods": [
+    [
+      124727,
+      "set___targetSettings__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ]
+  ],
+  "setterCallsite": {
+    "memberIndex": 4,
+    "methodIndex": 124727,
+    "callsiteRva": 153961023,
+    "callHex": "E8F0010000",
+    "targetRva": 153961524
+  },
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153960870,
+      "sourceCallHex": "E815479DF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153960910,
+      "sourceCallHex": "E8DD449DF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153960939,
+      "sourceCallHex": "E8C0449DF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153960968,
+      "sourceCallHex": "E8A3449DF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "targetSettings",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 153961004,
+      "sourceCallHex": "E85F1AADF9",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected dispatcher, wrapper, five-member header, all source fragments and ordered source calls match the selected native inputs.",
+    "direct": "The generated setter order and source calls independently identify four inherited stored members and the concrete final stored member.",
+    "structuralOnly": "Finite source decoding proves stored framing only, not runtime action behavior or provider selection.",
+    "unresolved": "Live formatter/provider selection, allocation/refill/error parity and enclosing SkillData EOF remain separate evidence."
+  },
+  "nestedContext": {
+    "memberIndex": 4,
+    "instructionRva": 153960991,
+    "instructionHex": "488B15E2D4D803",
+    "cellRva": 218502920,
+    "usageRawHex": "93EB12C000000000",
+    "methodSpecIndex": 619977,
+    "methodSpec": [
+      428464,
+      -1,
+      16792
+    ],
+    "argumentRawHex": "28280000000000000000120000000000",
+    "typeKind": 18,
+    "typeDefinition": 10280,
+    "typeName": "Beyond.Gameplay.Core.TargetSettings"
+  },
+  "targetProfileContract": "buff_ec_native.json"
+}

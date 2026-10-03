@@ -84,7 +84,8 @@ def _validated_b2_audit(report: dict[str, Any], contract: dict[str, Any]) -> dic
         raise ValueError(f"{LABEL}.audit:{exc}") from exc
 
 
-def validate_current_native_contract(audit_report_path: Path) -> dict[str, Any]:
+def validate_current_native_contract(audit_report_path: Path, *,
+                                    gameassembly: Path | None = None, metadata: Path | None = None) -> dict[str, Any]:
     """Require the current native gate and the selected Buff B2 audit receipt."""
     contract = _contract()
     expected = contract["nativeInputs"]
@@ -102,7 +103,7 @@ def validate_current_native_contract(audit_report_path: Path) -> dict[str, Any]:
         raise ValueError(f"{LABEL}.contract:dependency-drift")
     # The existing mask validator gates all three installed binaries and its
     # dispatcher, source reads, enum contexts and enclosing sequence reader.
-    selected_mask = mask.validate_current_native_contract()
+    selected_mask = mask.validate_current_native_contract(gameassembly=gameassembly, metadata=metadata)
     if selected_mask.get("status") != "validated":
         return {"status": selected_mask.get("status", "failed"),
                 "detail": selected_mask.get("detail", "mask native gate failed")}

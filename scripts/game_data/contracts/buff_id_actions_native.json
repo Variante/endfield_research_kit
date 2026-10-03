@@ -1,0 +1,108 @@
+{
+  "schema": "endfield.buff-buff-id-actions-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "catalogContract": "levelscript_union_tags.json",
+  "routes": [
+    {
+      "unionTag": 2,
+      "sourceContract": "buff_02_native.json",
+      "sourceReadOrder": "member12",
+      "wrappedType": "Beyond.Gameplay.Core.AbilityActions.FinishBuffAction+Data",
+      "contextMemberIndices": [
+        4,
+        5,
+        6,
+        8,
+        9
+      ],
+      "contextFieldNames": [
+        "buffIds",
+        "buffOwner",
+        "buffSource",
+        "finishLayerCnt",
+        "finishSource"
+      ],
+      "contextTypeNames": [
+        "System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffId>",
+        "Beyond.Gameplay.Core.TargetSettings",
+        "Beyond.Gameplay.Core.TargetSettings",
+        "Beyond.Blackboard+BlackboardDouble",
+        "Beyond.Gameplay.Core.TargetSettings"
+      ]
+    },
+    {
+      "unionTag": 86,
+      "sourceContract": "buff_56_native.json",
+      "sourceReadOrder": "member8",
+      "wrappedType": "Beyond.Gameplay.Core.Conditions.CheckBuffIdInContext+Data",
+      "contextMemberIndices": [
+        5,
+        7
+      ],
+      "contextFieldNames": [
+        "buffIdList",
+        "query"
+      ],
+      "contextTypeNames": [
+        "System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffId>",
+        "Beyond.Gameplay.Core.GameplayTagQuery"
+      ]
+    }
+  ],
+  "child": {
+    "sourceContract": "buff_56_native.json",
+    "sourceReadOrder": "member1",
+    "typeName": "Beyond.Gameplay.Core.BuffId",
+    "wrapperTypeDefinition": 13873,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIdForMemoryPack",
+    "readerMethod": [
+      104381,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIdForMemoryPack",
+      "Deserialize",
+      67207792
+    ],
+    "setterMethod": [
+      104378,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIdForMemoryPack",
+      "set___buffId__",
+      84407580
+    ],
+    "setterParameterType": "System.String",
+    "memberName": "buffId",
+    "serializedMemberCount": 1,
+    "setterWindow": {
+      "startRva": 84407580,
+      "endRva": 84407592,
+      "sha256": "80EB06517C942CE07B3C0E5C186D5D0B634025E1D5332A970ABAE2A81D3B2B16",
+      "boundary": "complete setter through write-barrier tail jump; adjacent getter excluded"
+    },
+    "sourceInstructions": [
+      [
+        67207890,
+        "4080FE01"
+      ],
+      [
+        67207906,
+        "E81904C9FE"
+      ],
+      [
+        67207916,
+        "488D4F10"
+      ],
+      [
+        67207920,
+        "488901"
+      ]
+    ],
+    "destinationOffset": 16
+  },
+  "evidenceBoundary": {
+    "exact": "Selected source readers, generated member declarations, native typed source arguments and the BuffId one-payload source result/store matched to its sole generated buffId string setter.",
+    "conditional": "The reviewed shared nullable list count/element loop frames each BuffId wrapper; bytes remain raw and do not establish live provider choice or string decoding.",
+    "unresolved": "Runtime conditions, finishing behavior, string interpretation and enclosing root EOF until original-byte composition."
+  }
+}

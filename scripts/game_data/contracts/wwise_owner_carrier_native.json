@@ -1,0 +1,993 @@
+{
+  "schema": "endfield.wwise-owner-carrier-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "anonymousOwnerCommandEnqueue",
+      "entryRva": "0x14d000",
+      "windows": [
+        {
+          "rva": "0x14d000",
+          "bodyLength": 207,
+          "bodySha256": "602fe73972966402b09b5eb0a3eb69409d7b556db6abec3702048780c2b3b5c2",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670"
+        }
+      ],
+      "requiredRoles": [
+        "loadFreeNode",
+        "retainPrimaryOwner",
+        "retainCommand",
+        "allocationNodeBytes",
+        "allocateQueueNode",
+        "loadQueueTail",
+        "storeQueueHead",
+        "storeQueueTail",
+        "loadNodeNext",
+        "clearNodeNext",
+        "loadWrittenQueueTail",
+        "addressNodePayload",
+        "storePayloadOwner",
+        "loadBatchSerialWord",
+        "storePayloadCommand",
+        "clearPayloadReadyBit",
+        "storePayloadSerial",
+        "allocationFailureStatus",
+        "enqueueSuccessStatus"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadFreeNode",
+          "rva": "0x14d00a",
+          "instructionHex": "4c8b0d9f871f00"
+        },
+        {
+          "role": "retainPrimaryOwner",
+          "rva": "0x14d011",
+          "instructionHex": "488bfa"
+        },
+        {
+          "role": "retainCommand",
+          "rva": "0x14d014",
+          "instructionHex": "8bd9"
+        },
+        {
+          "role": "allocationNodeBytes",
+          "rva": "0x14d01b",
+          "instructionHex": "ba18000000"
+        },
+        {
+          "role": "allocateQueueNode",
+          "rva": "0x14d025",
+          "instructionHex": "e8763ef6ff"
+        },
+        {
+          "role": "loadQueueTail",
+          "rva": "0x14d043",
+          "instructionHex": "488b055e871f00"
+        },
+        {
+          "role": "storeQueueHead",
+          "rva": "0x14d04f",
+          "instructionHex": "4c890d4a871f00"
+        },
+        {
+          "role": "storeQueueTail",
+          "rva": "0x14d062",
+          "instructionHex": "4c890d3f871f00"
+        },
+        {
+          "role": "loadNodeNext",
+          "rva": "0x14d069",
+          "instructionHex": "498b01"
+        },
+        {
+          "role": "clearNodeNext",
+          "rva": "0x14d073",
+          "instructionHex": "49c70100000000"
+        },
+        {
+          "role": "loadWrittenQueueTail",
+          "rva": "0x14d080",
+          "instructionHex": "488b0d21871f00"
+        },
+        {
+          "role": "addressNodePayload",
+          "rva": "0x14d087",
+          "instructionHex": "4883c108"
+        },
+        {
+          "role": "storePayloadOwner",
+          "rva": "0x14d09d",
+          "instructionHex": "488939"
+        },
+        {
+          "role": "loadBatchSerialWord",
+          "rva": "0x14d0a0",
+          "instructionHex": "8b05e2861f00"
+        },
+        {
+          "role": "storePayloadCommand",
+          "rva": "0x14d0a6",
+          "instructionHex": "88590c"
+        },
+        {
+          "role": "clearPayloadReadyBit",
+          "rva": "0x14d0a9",
+          "instructionHex": "81610cfffeffff"
+        },
+        {
+          "role": "storePayloadSerial",
+          "rva": "0x14d0b0",
+          "instructionHex": "894108"
+        },
+        {
+          "role": "allocationFailureStatus",
+          "rva": "0x14d08d",
+          "instructionHex": "b802000000"
+        },
+        {
+          "role": "enqueueSuccessStatus",
+          "rva": "0x14d0c4",
+          "instructionHex": "b801000000"
+        }
+      ]
+    },
+    {
+      "key": "anonymousOwnerCommandDrain",
+      "entryRva": "0x14d580",
+      "windows": [
+        {
+          "rva": "0x14d580",
+          "bodyLength": 916,
+          "bodySha256": "fe7ebb842b7536ae78e4a7c611a8f00e8a04609d7b598f9b52f5d6d5735e2024",
+          "unwindRva": "0x30a664",
+          "unwindInfoHex": "011e0c001e7413001e6412001e5411001e3410001eb21af018e016c0"
+        }
+      ],
+      "requiredRoles": [
+        "loadQueueHead",
+        "loadNodeSerial",
+        "compareNodeBatchSerial",
+        "loadNodeCommandStatus",
+        "testReadyBit",
+        "addressNodePayload",
+        "callCarrierLookup",
+        "retainLookupCarrier",
+        "loadQueuedPrimaryOwner",
+        "loadStoredOwnerCarrier",
+        "loadDispatchCommandStatus",
+        "testDispatchReadyBit",
+        "readCommandByte",
+        "boundCommandTag",
+        "loadCommandDispatchTable",
+        "addModuleBaseToTarget",
+        "dispatchSelectedCommand",
+        "loadCommand4PrimaryOwner",
+        "moveCommand4CarrierArgument",
+        "callCarrierCommand4Control",
+        "advanceQueueHead",
+        "updateQueueTail",
+        "recycleNodeNext",
+        "recycleNodeToFreeList",
+        "freeOverflowNode",
+        "decrementQueueCount"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadQueueHead",
+          "rva": "0x14d5b0",
+          "instructionHex": "488b1de9811f00"
+        },
+        {
+          "role": "loadNodeSerial",
+          "rva": "0x14d5d9",
+          "instructionHex": "8b6b10"
+        },
+        {
+          "role": "compareNodeBatchSerial",
+          "rva": "0x14d5f0",
+          "instructionHex": "3b6f10"
+        },
+        {
+          "role": "loadNodeCommandStatus",
+          "rva": "0x14d5f5",
+          "instructionHex": "8b4714"
+        },
+        {
+          "role": "testReadyBit",
+          "rva": "0x14d5f8",
+          "instructionHex": "0fbae008"
+        },
+        {
+          "role": "addressNodePayload",
+          "rva": "0x14d6b6",
+          "instructionHex": "488d4b08"
+        },
+        {
+          "role": "callCarrierLookup",
+          "rva": "0x14d6ba",
+          "instructionHex": "e811abfeff"
+        },
+        {
+          "role": "retainLookupCarrier",
+          "rva": "0x14d6bf",
+          "instructionHex": "488bf8"
+        },
+        {
+          "role": "loadQueuedPrimaryOwner",
+          "rva": "0x14d74e",
+          "instructionHex": "488b4308"
+        },
+        {
+          "role": "loadStoredOwnerCarrier",
+          "rva": "0x14d752",
+          "instructionHex": "488bb890020000"
+        },
+        {
+          "role": "loadDispatchCommandStatus",
+          "rva": "0x14d759",
+          "instructionHex": "8b4314"
+        },
+        {
+          "role": "testDispatchReadyBit",
+          "rva": "0x14d75c",
+          "instructionHex": "0fbae008"
+        },
+        {
+          "role": "readCommandByte",
+          "rva": "0x14d766",
+          "instructionHex": "0fb6c0"
+        },
+        {
+          "role": "boundCommandTag",
+          "rva": "0x14d769",
+          "instructionHex": "83f805"
+        },
+        {
+          "role": "loadCommandDispatchTable",
+          "rva": "0x14d76e",
+          "instructionHex": "418b8c84fcd81400"
+        },
+        {
+          "role": "addModuleBaseToTarget",
+          "rva": "0x14d776",
+          "instructionHex": "4903cc"
+        },
+        {
+          "role": "dispatchSelectedCommand",
+          "rva": "0x14d779",
+          "instructionHex": "ffe1"
+        },
+        {
+          "role": "loadCommand4PrimaryOwner",
+          "rva": "0x14d7a1",
+          "instructionHex": "488b5308"
+        },
+        {
+          "role": "moveCommand4CarrierArgument",
+          "rva": "0x14d7a5",
+          "instructionHex": "488bcf"
+        },
+        {
+          "role": "callCarrierCommand4Control",
+          "rva": "0x14d7a8",
+          "instructionHex": "e8337bffff"
+        },
+        {
+          "role": "advanceQueueHead",
+          "rva": "0x14d7cd",
+          "instructionHex": "488905cc7f1f00"
+        },
+        {
+          "role": "updateQueueTail",
+          "rva": "0x14d7e2",
+          "instructionHex": "488935bf7f1f00"
+        },
+        {
+          "role": "recycleNodeNext",
+          "rva": "0x14d80f",
+          "instructionHex": "488903"
+        },
+        {
+          "role": "recycleNodeToFreeList",
+          "rva": "0x14d812",
+          "instructionHex": "48891d977f1f00"
+        },
+        {
+          "role": "freeOverflowNode",
+          "rva": "0x14d823",
+          "instructionHex": "e88835f6ff"
+        },
+        {
+          "role": "decrementQueueCount",
+          "rva": "0x14d82d",
+          "instructionHex": "ff0d917f1f00"
+        }
+      ]
+    },
+    {
+      "key": "anonymousCarrierCommand4Control",
+      "entryRva": "0x1452e0",
+      "windows": [
+        {
+          "rva": "0x1452e0",
+          "bodyLength": 113,
+          "bodySha256": "d78ea3a052fe2998de2c2ccf7bec223210d03a515a07549f3262112784bae711",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230"
+        },
+        {
+          "rva": "0x145351",
+          "bodyLength": 59,
+          "bodySha256": "73eaf8a10ece39a0002c71313ea802c70cc5164676ae53208271737e21accdba",
+          "unwindRva": "0x309808",
+          "unwindInfoHex": "2105020005740600e052140051531400bcfa2e00"
+        },
+        {
+          "rva": "0x14538c",
+          "bodyLength": 6,
+          "bodySha256": "b13c2122a4910ad1c7f40207d9561e5a2d3418bf2bc40c490e3f913641fd2989",
+          "unwindRva": "0x30981c",
+          "unwindInfoHex": "21000000e052140051531400bcfa2e00"
+        }
+      ],
+      "requiredRoles": [
+        "retainCarrier",
+        "loadCurrentDecoder",
+        "compareCurrentDecoderPrimaryOwner",
+        "branchUnmatchedCurrentOwner",
+        "testCurrentDecoderFlags",
+        "callCurrentDecoderSlot136",
+        "testCurrentDecoderBeforeCleanup",
+        "cleanupCurrentDecoder",
+        "setCarrierControlState",
+        "setCarrierControlReason",
+        "loadPendingDecoder",
+        "comparePendingDecoderPrimaryOwner",
+        "branchUnmatchedPendingOwner",
+        "callPendingDecoderSlot88",
+        "callPendingDecoderSlot0",
+        "freePendingDecoder",
+        "clearPendingDecoder"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainCarrier",
+          "rva": "0x1452e6",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "loadCurrentDecoder",
+          "rva": "0x1452e9",
+          "instructionHex": "488b89d8000000"
+        },
+        {
+          "role": "compareCurrentDecoderPrimaryOwner",
+          "rva": "0x1452f5",
+          "instructionHex": "483b5118"
+        },
+        {
+          "role": "branchUnmatchedCurrentOwner",
+          "rva": "0x1452f9",
+          "instructionHex": "753f"
+        },
+        {
+          "role": "testCurrentDecoderFlags",
+          "rva": "0x1452fb",
+          "instructionHex": "f6412001"
+        },
+        {
+          "role": "callCurrentDecoderSlot136",
+          "rva": "0x145304",
+          "instructionHex": "ff9088000000"
+        },
+        {
+          "role": "testCurrentDecoderBeforeCleanup",
+          "rva": "0x145316",
+          "instructionHex": "4885c9"
+        },
+        {
+          "role": "cleanupCurrentDecoder",
+          "rva": "0x14531b",
+          "instructionHex": "e8e03c0400"
+        },
+        {
+          "role": "setCarrierControlState",
+          "rva": "0x145320",
+          "instructionHex": "c783f000000002000000"
+        },
+        {
+          "role": "setCarrierControlReason",
+          "rva": "0x14532a",
+          "instructionHex": "c7832401000011000000"
+        },
+        {
+          "role": "loadPendingDecoder",
+          "rva": "0x14533a",
+          "instructionHex": "488b8be0000000"
+        },
+        {
+          "role": "comparePendingDecoderPrimaryOwner",
+          "rva": "0x145346",
+          "instructionHex": "483b5118"
+        },
+        {
+          "role": "branchUnmatchedPendingOwner",
+          "rva": "0x14534a",
+          "instructionHex": "7540"
+        },
+        {
+          "role": "callPendingDecoderSlot88",
+          "rva": "0x145356",
+          "instructionHex": "ff5058"
+        },
+        {
+          "role": "callPendingDecoderSlot0",
+          "rva": "0x14536d",
+          "instructionHex": "ff10"
+        },
+        {
+          "role": "freePendingDecoder",
+          "rva": "0x145377",
+          "instructionHex": "e834baf6ff"
+        },
+        {
+          "role": "clearPendingDecoder",
+          "rva": "0x145381",
+          "instructionHex": "48c783e000000000000000"
+        }
+      ]
+    }
+  ],
+  "leafWindows": [
+    {
+      "key": "anonymousPrimaryOwnerCommand4",
+      "entryRva": "0xd3ae0",
+      "bodyLength": 22,
+      "bodySha256": "751428d155ccae0c0da79d695089b1cccecffaece498daf52723e5aa7db09480",
+      "boundaryRva": "0xd3af6",
+      "boundaryHex": "cccccc",
+      "requiredRoles": [
+        "markOwnerCommand4",
+        "passOwnerAsArgument1",
+        "selectCommand4",
+        "tailCommandEnqueue"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "markOwnerCommand4",
+          "rva": "0xd3ae0",
+          "instructionHex": "66c781f80200000100"
+        },
+        {
+          "role": "passOwnerAsArgument1",
+          "rva": "0xd3ae9",
+          "instructionHex": "488bd1"
+        },
+        {
+          "role": "selectCommand4",
+          "rva": "0xd3aec",
+          "instructionHex": "b904000000"
+        },
+        {
+          "role": "tailCommandEnqueue",
+          "rva": "0xd3af1",
+          "instructionHex": "e90a950700"
+        }
+      ]
+    },
+    {
+      "key": "anonymousOwnerCarrierLookup",
+      "entryRva": "0x1381d0",
+      "bodyLength": 157,
+      "bodySha256": "bc162433e5d42bee5861b29efffcdc0eefdf92711311d932394b5914c3c6666b",
+      "boundaryRva": "0x13826d",
+      "boundaryHex": "cccccc",
+      "requiredRoles": [
+        "retainPayloadPointer",
+        "loadPayloadPrimaryOwner",
+        "loadCandidateCurrentDecoder",
+        "compareCandidateCurrentOwner",
+        "readPayloadCommand",
+        "loadCandidatePendingDecoder",
+        "compareCandidatePendingOwner",
+        "loadStoredOwnerCarrier",
+        "loadStoredCarrierCurrentDecoder",
+        "compareStoredCarrierCurrentOwner",
+        "setPayloadReadyBit",
+        "returnMatchedCandidate",
+        "conditionalCommand4Fallback"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainPayloadPointer",
+          "rva": "0x1381d7",
+          "instructionHex": "4c8bc9"
+        },
+        {
+          "role": "loadPayloadPrimaryOwner",
+          "rva": "0x1381e0",
+          "instructionHex": "4c8b01"
+        },
+        {
+          "role": "loadCandidateCurrentDecoder",
+          "rva": "0x1381f3",
+          "instructionHex": "488b8ad8000000"
+        },
+        {
+          "role": "compareCandidateCurrentOwner",
+          "rva": "0x1381ff",
+          "instructionHex": "4c394118"
+        },
+        {
+          "role": "readPayloadCommand",
+          "rva": "0x138205",
+          "instructionHex": "4180790c04"
+        },
+        {
+          "role": "loadCandidatePendingDecoder",
+          "rva": "0x13820c",
+          "instructionHex": "488b8ae0000000"
+        },
+        {
+          "role": "compareCandidatePendingOwner",
+          "rva": "0x138218",
+          "instructionHex": "4c394118"
+        },
+        {
+          "role": "loadStoredOwnerCarrier",
+          "rva": "0x138227",
+          "instructionHex": "498b8890020000"
+        },
+        {
+          "role": "loadStoredCarrierCurrentDecoder",
+          "rva": "0x138233",
+          "instructionHex": "488b81d8000000"
+        },
+        {
+          "role": "compareStoredCarrierCurrentOwner",
+          "rva": "0x13823f",
+          "instructionHex": "4c394018"
+        },
+        {
+          "role": "setPayloadReadyBit",
+          "rva": "0x138252",
+          "instructionHex": "4181490c00010000"
+        },
+        {
+          "role": "returnMatchedCandidate",
+          "rva": "0x13825a",
+          "instructionHex": "488bc2"
+        },
+        {
+          "role": "conditionalCommand4Fallback",
+          "rva": "0x138260",
+          "instructionHex": "4180790c04"
+        }
+      ]
+    }
+  ],
+  "dispatchTable": {
+    "rva": "0x14d8fc",
+    "entryCount": 6,
+    "sha256": "bbbc69f502ac2a08330cd58d30bd6b6df131dc3732acaf2fe7287a7f729fe7a5",
+    "selectedTag": 4,
+    "targetRva": "0x14d7a1",
+    "ownerGroup": "anonymousOwnerCommandDrain"
+  },
+  "addressPoint": {
+    "rva": "0x2939c0",
+    "bytes": 48,
+    "sha256": "f24b7758e49369de621d1fbd26791b9d1804caaac8dc3e97c6f335f731ed78ba",
+    "entrySlot": 40,
+    "targetLeaf": "anonymousPrimaryOwnerCommand4"
+  },
+  "sourceOwnerDependency": {
+    "sourceContractRole": "constructor",
+    "instructionWitnesses": [
+      {
+        "role": "loadPrimaryAddressPoint",
+        "rva": "0xd1ff3",
+        "instructionHex": "488d05c6191c00"
+      },
+      {
+        "role": "storePrimaryAddressPoint",
+        "rva": "0xd1ffa",
+        "instructionHex": "488907"
+      }
+    ]
+  },
+  "layouts": {
+    "primaryOwner": {
+      "addressPoint": {
+        "offset": 0,
+        "kind": "pointer"
+      },
+      "carrierPointer": {
+        "offset": 656,
+        "kind": "pointer"
+      },
+      "command4StateWord": {
+        "offset": 760,
+        "kind": "u16"
+      }
+    },
+    "queueNode": {
+      "nextPointer": {
+        "offset": 0,
+        "kind": "pointer"
+      },
+      "primaryOwnerPointer": {
+        "offset": 8,
+        "kind": "pointer"
+      },
+      "batchSerialWord": {
+        "offset": 16,
+        "kind": "u32"
+      },
+      "commandStatusWord": {
+        "offset": 20,
+        "kind": "u32"
+      }
+    },
+    "commandPayload": {
+      "primaryOwnerPointer": {
+        "offset": 0,
+        "kind": "pointer"
+      },
+      "batchSerialWord": {
+        "offset": 8,
+        "kind": "u32"
+      },
+      "commandStatusWord": {
+        "offset": 12,
+        "kind": "u32"
+      }
+    },
+    "carrier": {
+      "currentDecoderPointer": {
+        "offset": 216,
+        "kind": "pointer"
+      },
+      "pendingDecoderPointer": {
+        "offset": 224,
+        "kind": "pointer"
+      },
+      "controlStateWord": {
+        "offset": 240,
+        "kind": "u32"
+      },
+      "controlReasonWord": {
+        "offset": 292,
+        "kind": "u32"
+      }
+    },
+    "decoder": {
+      "primaryOwnerPointer": {
+        "offset": 24,
+        "kind": "pointer"
+      },
+      "flagsByte": {
+        "offset": 32,
+        "kind": "u8"
+      }
+    }
+  },
+  "constants": {
+    "queueNodeBytes": 24,
+    "payloadOffset": 8,
+    "selectedCommand": 4,
+    "readyBit": 256,
+    "enqueueSuccessStatus": 1,
+    "allocationFailureStatus": 2
+  },
+  "functionRoles": {
+    "ownerCommand4": {
+      "leafKey": "anonymousPrimaryOwnerCommand4",
+      "args": {
+        "primaryOwnerPointer": {
+          "index": 0,
+          "kind": "pointer"
+        }
+      },
+      "returnKind": "u32"
+    },
+    "ownerCommandEnqueue": {
+      "groupKey": "anonymousOwnerCommandEnqueue",
+      "args": {
+        "commandWord": {
+          "index": 0,
+          "kind": "u32"
+        },
+        "primaryOwnerPointer": {
+          "index": 1,
+          "kind": "pointer"
+        }
+      },
+      "returnKind": "u32"
+    },
+    "ownerCarrierLookup": {
+      "leafKey": "anonymousOwnerCarrierLookup",
+      "args": {
+        "commandPayloadPointer": {
+          "index": 0,
+          "kind": "pointer"
+        }
+      },
+      "returnKind": "pointer"
+    },
+    "carrierCommand4": {
+      "groupKey": "anonymousCarrierCommand4Control",
+      "args": {
+        "carrierPointer": {
+          "index": 0,
+          "kind": "pointer"
+        },
+        "primaryOwnerPointer": {
+          "index": 1,
+          "kind": "pointer"
+        }
+      },
+      "returnKind": "void"
+    }
+  },
+  "abiBindings": [
+    {
+      "functionRole": "ownerCommand4",
+      "argument": "primaryOwnerPointer",
+      "witnessRole": "passOwnerAsArgument1",
+      "retainedRegister": "rdx"
+    },
+    {
+      "functionRole": "ownerCommandEnqueue",
+      "argument": "primaryOwnerPointer",
+      "witnessRole": "retainPrimaryOwner",
+      "retainedRegister": "rdi"
+    },
+    {
+      "functionRole": "ownerCommandEnqueue",
+      "argument": "commandWord",
+      "witnessRole": "retainCommand",
+      "retainedRegister": "rbx"
+    },
+    {
+      "functionRole": "ownerCarrierLookup",
+      "argument": "commandPayloadPointer",
+      "witnessRole": "retainPayloadPointer",
+      "retainedRegister": "r9"
+    },
+    {
+      "functionRole": "carrierCommand4",
+      "argument": "carrierPointer",
+      "witnessRole": "retainCarrier",
+      "retainedRegister": "rbx"
+    },
+    {
+      "functionRole": "carrierCommand4",
+      "argument": "primaryOwnerPointer",
+      "witnessRole": "compareCurrentDecoderPrimaryOwner",
+      "bindingKind": "comparePointerField",
+      "layout": "decoder",
+      "field": "primaryOwnerPointer",
+      "baseRegister": "rcx"
+    }
+  ],
+  "layoutBindings": [
+    {
+      "layout": "primaryOwner",
+      "field": "addressPoint",
+      "ownerKey": "sourceConstructor",
+      "witnessRole": "storePrimaryAddressPoint",
+      "prefixHex": "488907",
+      "displacementBytes": 0
+    },
+    {
+      "layout": "primaryOwner",
+      "field": "carrierPointer",
+      "ownerKey": "anonymousOwnerCarrierLookup",
+      "witnessRole": "loadStoredOwnerCarrier",
+      "prefixHex": "498b88",
+      "displacementBytes": 4
+    },
+    {
+      "layout": "primaryOwner",
+      "field": "command4StateWord",
+      "ownerKey": "anonymousPrimaryOwnerCommand4",
+      "witnessRole": "markOwnerCommand4",
+      "prefixHex": "66c781",
+      "displacementBytes": 4,
+      "suffixHex": "0100"
+    },
+    {
+      "layout": "queueNode",
+      "field": "nextPointer",
+      "ownerKey": "anonymousOwnerCommandEnqueue",
+      "witnessRole": "loadNodeNext",
+      "prefixHex": "498b01",
+      "displacementBytes": 0
+    },
+    {
+      "layout": "queueNode",
+      "field": "primaryOwnerPointer",
+      "ownerKey": "anonymousOwnerCommandDrain",
+      "witnessRole": "loadQueuedPrimaryOwner",
+      "prefixHex": "488b43",
+      "displacementBytes": 1
+    },
+    {
+      "layout": "queueNode",
+      "field": "batchSerialWord",
+      "ownerKey": "anonymousOwnerCommandDrain",
+      "witnessRole": "loadNodeSerial",
+      "prefixHex": "8b6b",
+      "displacementBytes": 1
+    },
+    {
+      "layout": "queueNode",
+      "field": "commandStatusWord",
+      "ownerKey": "anonymousOwnerCommandDrain",
+      "witnessRole": "loadNodeCommandStatus",
+      "prefixHex": "8b47",
+      "displacementBytes": 1
+    },
+    {
+      "layout": "commandPayload",
+      "field": "primaryOwnerPointer",
+      "ownerKey": "anonymousOwnerCarrierLookup",
+      "witnessRole": "loadPayloadPrimaryOwner",
+      "prefixHex": "4c8b01",
+      "displacementBytes": 0
+    },
+    {
+      "layout": "commandPayload",
+      "field": "batchSerialWord",
+      "ownerKey": "anonymousOwnerCommandEnqueue",
+      "witnessRole": "storePayloadSerial",
+      "prefixHex": "8941",
+      "displacementBytes": 1
+    },
+    {
+      "layout": "commandPayload",
+      "field": "commandStatusWord",
+      "ownerKey": "anonymousOwnerCommandEnqueue",
+      "witnessRole": "storePayloadCommand",
+      "prefixHex": "8859",
+      "displacementBytes": 1
+    },
+    {
+      "layout": "carrier",
+      "field": "currentDecoderPointer",
+      "ownerKey": "anonymousCarrierCommand4Control",
+      "witnessRole": "loadCurrentDecoder",
+      "prefixHex": "488b89",
+      "displacementBytes": 4
+    },
+    {
+      "layout": "carrier",
+      "field": "pendingDecoderPointer",
+      "ownerKey": "anonymousCarrierCommand4Control",
+      "witnessRole": "loadPendingDecoder",
+      "prefixHex": "488b8b",
+      "displacementBytes": 4
+    },
+    {
+      "layout": "carrier",
+      "field": "controlStateWord",
+      "ownerKey": "anonymousCarrierCommand4Control",
+      "witnessRole": "setCarrierControlState",
+      "prefixHex": "c783",
+      "displacementBytes": 4,
+      "suffixHex": "02000000"
+    },
+    {
+      "layout": "carrier",
+      "field": "controlReasonWord",
+      "ownerKey": "anonymousCarrierCommand4Control",
+      "witnessRole": "setCarrierControlReason",
+      "prefixHex": "c783",
+      "displacementBytes": 4,
+      "suffixHex": "11000000"
+    },
+    {
+      "layout": "decoder",
+      "field": "primaryOwnerPointer",
+      "ownerKey": "anonymousCarrierCommand4Control",
+      "witnessRole": "compareCurrentDecoderPrimaryOwner",
+      "prefixHex": "483b51",
+      "displacementBytes": 1
+    },
+    {
+      "layout": "decoder",
+      "field": "flagsByte",
+      "ownerKey": "anonymousCarrierCommand4Control",
+      "witnessRole": "testCurrentDecoderFlags",
+      "prefixHex": "f641",
+      "displacementBytes": 1,
+      "suffixHex": "01"
+    }
+  ],
+  "constantBindings": [
+    {
+      "constant": "queueNodeBytes",
+      "ownerKey": "anonymousOwnerCommandEnqueue",
+      "witnessRole": "allocationNodeBytes",
+      "prefixHex": "ba",
+      "immediateBytes": 4,
+      "transform": "identity"
+    },
+    {
+      "constant": "payloadOffset",
+      "ownerKey": "anonymousOwnerCommandDrain",
+      "witnessRole": "addressNodePayload",
+      "prefixHex": "488d4b",
+      "immediateBytes": 1,
+      "transform": "identity"
+    },
+    {
+      "constant": "selectedCommand",
+      "ownerKey": "anonymousPrimaryOwnerCommand4",
+      "witnessRole": "selectCommand4",
+      "prefixHex": "b9",
+      "immediateBytes": 4,
+      "transform": "identity"
+    },
+    {
+      "constant": "readyBit",
+      "ownerKey": "anonymousOwnerCommandEnqueue",
+      "witnessRole": "clearPayloadReadyBit",
+      "prefixHex": "81610c",
+      "immediateBytes": 4,
+      "transform": "complement32"
+    },
+    {
+      "constant": "enqueueSuccessStatus",
+      "ownerKey": "anonymousOwnerCommandEnqueue",
+      "witnessRole": "enqueueSuccessStatus",
+      "prefixHex": "b8",
+      "immediateBytes": 4,
+      "transform": "identity"
+    },
+    {
+      "constant": "allocationFailureStatus",
+      "ownerKey": "anonymousOwnerCommandEnqueue",
+      "witnessRole": "allocationFailureStatus",
+      "prefixHex": "b8",
+      "immediateBytes": 4,
+      "transform": "identity"
+    }
+  ],
+  "callBindings": [
+    {
+      "ownerKey": "anonymousPrimaryOwnerCommand4",
+      "witnessRole": "tailCommandEnqueue",
+      "targetRole": "ownerCommandEnqueue",
+      "opcodeHex": "e9"
+    },
+    {
+      "ownerKey": "anonymousOwnerCommandDrain",
+      "witnessRole": "callCarrierLookup",
+      "targetRole": "ownerCarrierLookup",
+      "opcodeHex": "e8"
+    },
+    {
+      "ownerKey": "anonymousOwnerCommandDrain",
+      "witnessRole": "callCarrierCommand4Control",
+      "targetRole": "carrierCommand4",
+      "opcodeHex": "e8"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected complete code/unwind groups, leaf extents, owner address point and command dispatch table are authenticated against explicit native inputs.",
+    "direct": "The primary-owner command-4 leaf queues that owner. The drain passes payload owner plus selected carrier into command-4 control; control compares current or pending decoder owner before cleanup/state calls.",
+    "conditional": "Carrier lookup can return a matched current/pending decoder carrier or the owner-stored carrier; command-4 control acts only on the branch whose decoder owner compares equal.",
+    "structuralOnly": "Queue serial is a batching value and queue nodes are recycled. No uniqueness or object generation is admitted.",
+    "unresolved": "No live enqueue/drain observation, queue retention or owner lifetime is admitted. A later pointer match cannot establish the managed request, selected source, decoder generation, provider/codec, media bytes or audibility."
+  }
+}

@@ -2,30 +2,19 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
-import json
 import math
 from pathlib import Path
 import struct
 from typing import Any
 
-from scripts.common import check_installed_native_inputs
+from scripts.game_data.levelscript_camera_look_at_native import (
+    load_camera_look_at_contract, read_camera_look_at_contract,
+)
 from . import params
-
-
-CONTRACT_PATH = Path(__file__).with_name("camera_look_at_layout.json")
 
 
 class CameraLookAtDecodeError(ValueError):
     """The selected camera field has no authenticated exact boundary."""
-
-
-@lru_cache(maxsize=1)
-def _contract() -> dict[str, Any]:
-    result = json.loads(CONTRACT_PATH.read_bytes())
-    if result.get("schema") != "endfield.levelscript-camera-look-at.v1":
-        raise CameraLookAtDecodeError("LevelCameraLookAt.contract_schema: unsupported")
-    return result
 
 
 def _initial_param(data: bytes, offset: int) -> tuple[dict[str, Any], int] | None:
@@ -35,7 +24,7 @@ def _initial_param(data: bytes, offset: int) -> tuple[dict[str, Any], int] | Non
         return None
     raw = data[offset + 1:offset + 25]
     value: dict[str, Any] = {}
-    for name, kind, at in _contract()["initialParam"]["fields"]:
+    for name, kind, at in read_camera_look_at_contract()["initialParam"]["fields"]:
         if kind == "bool":
             if raw[at] not in (0, 1):
                 return None
@@ -76,44 +65,15 @@ def _float_param(data: bytes, offset: int) -> tuple[dict[str, Any], int] | None:
     return {"value": value, **binding}, end
 
 
-def _curve_key_param(data: bytes, offset: int) -> tuple[dict[str, Any], int] | None:
-    if offset < 0 or offset + 6 > len(data) or data[offset:offset + 2] != b"\x04\x01":
-        return None
-    size = struct.unpack_from("<i", data, offset + 2)[0]
-    cursor = offset + 6
-    if size == -1:
-        key = None
-    elif 0 <= size <= 1 << 20 and cursor + size <= len(data):
-        try:
-            key = data[cursor:cursor + size].decode("utf-8")
-        except UnicodeDecodeError:
-            return None
-        cursor += size
-    else:
-        return None
-    tail = params.decode_param_tail(data, cursor)
-    if tail is None:
-        return None
-    binding, end = tail
-    return {"value": {"key": key}, **binding}, end
-
-
 def decode_fields(
     data: bytes, offset: int, *, game_root: Path | None = None,
 ) -> tuple[dict[str, Any], int]:
     """Read all 31 fields; reject native drift and unknown nested values."""
-    contract = _contract()
-    inputs = contract["nativeInputs"]
-    native = check_installed_native_inputs(
-        inputs["GameAssembly.dll"], inputs["global-metadata.dat"],
-        gameassembly=game_root.parent / "GameAssembly.dll" if game_root is not None else None,
-        metadata=(game_root / "il2cpp_data/Metadata/global-metadata.dat")
-        if game_root is not None else None,
-    )
-    if native.status != "validated":
+    contract, native = load_camera_look_at_contract(game_root=game_root)
+    if native["status"] != "validated":
         raise CameraLookAtDecodeError(
-            f"LevelCameraLookAt.installed_native_inputs: expected=validated, "
-            f"actual={native.status}, detail={native.detail}"
+            f"LevelCameraLookAt.{native['failedCheck']}: expected=validated, "
+            f"actual={native['status']}, detail={native['detail']}"
         )
     start = offset
     result: dict[str, Any] = {}
@@ -124,7 +84,7 @@ def decode_fields(
         "Param<string>": params.decode_string_param,
         "Param<EntityPtr>": params.decode_constant_entity_ptr_param,
         "Param<CameraControlStateInitialParam>": _initial_param,
-        "Param<CameraBlendCurveKey>": _curve_key_param,
+        "Param<CameraBlendCurveKey>": params.decode_camera_blend_curve_key_param,
         "Param<CinemachineBlendDefinition.Style>": params.decode_i32_param,
         "Param<NodeLookAtType>": params.decode_i32_param,
         "Param<MountPoint>": params.decode_i32_param,

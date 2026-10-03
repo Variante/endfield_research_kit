@@ -17,6 +17,7 @@ import hashlib
 import json
 import struct
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
@@ -111,12 +112,14 @@ def _check_context(image: Any, context: dict[str, Any], declared: str, kind: str
         raise ValueError(f"{LABEL}.native:source-field-type={name}!={expected}")
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None,
+                                     metadata: Path | None = None) -> dict[str, Any]:
     """Authenticate all selected root reads and direct stores, or fail closed."""
     contract = _contract()
     inputs = contract["nativeInputs"]
     gate = check_installed_native_inputs(
         inputs["GameAssembly.dll"], inputs["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != "validated":
         return {"status": gate.status, "detail": gate.detail,

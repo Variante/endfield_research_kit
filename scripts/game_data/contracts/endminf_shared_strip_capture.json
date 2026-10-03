@@ -1,0 +1,47 @@
+{
+  "schema": "endfield.endminf-shared-strip-capture.v1",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "material": {
+    "name": "M_UI_charChoose_12",
+    "pathId": 4388811075012960551,
+    "sourceFile": "CAB-45edfbd38d2a68534810c905ce39aff4",
+    "shader": "HGRP/Effect/VFXRefract",
+    "keywords": ["_USE_RBOFFSET"]
+  },
+  "shaderPair": {
+    "vertexSha256": "297e7323cb0a7c42f4e80ad4d5fbacc89ac2c278e549b0fa0e69af190736eccf",
+    "pixelSha256": "76db04f0bc22dd3e8b297e213f44bd0331fc699522adaaab8f0d082e7e0d1d0e"
+  },
+  "mask": {
+    "slot": 0,
+    "name": "T_fx_mask_01_M",
+    "pathId": -7046954404783675798,
+    "width": 256,
+    "height": 256,
+    "viewFormat": 99,
+    "mipLevels": 9,
+    "topMipSha256": "d25b9741808a5d8cbd9264d899091ac6af623a3f30d98bf2522a304130a8045f"
+  },
+  "selection": {
+    "drawCount": 2,
+    "topology": 4,
+    "minIndices": 6,
+    "maxIndices": 30000,
+    "indexMultiple": 6,
+    "windows": [
+      {"label": "early", "minimumPlaySeconds": 0.15, "maximumPlaySeconds": 0.3},
+      {"label": "residual", "minimumPlaySeconds": 0.5, "maximumPlaySeconds": 0.65}
+    ]
+  },
+  "provenance": {
+    "shaderArchiveSession": "20261002T153955Z",
+    "previousReplaySession": "20260904T235947Z",
+    "residualMovieSession": "20261002T073442Z",
+    "residualMovieFrame": 135,
+    "residualDrawSecondsAfterPlay": 0.5024906,
+    "boundary": "Two bounded draw-local packets from one authenticated root Play. Full IA, shaders, constants, mask and scene SRVs, samplers, MRT/depth and before/after color support replay. Root clock observations do not assign a child particle age. Material naming remains subject to its constant-buffer byte join."
+  }
+}

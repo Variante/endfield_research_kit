@@ -53,7 +53,8 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None, metadata: Path | None = None,
+                                    target_parent_tags: tuple[int, ...] | None = None) -> dict[str, Any]:
     """Compose the selected wrapper, simple target, and BlackboardDouble gates."""
     contract = _contract()
     source, catalog, target_contract, blackboard_contract = [
@@ -77,10 +78,11 @@ def validate_current_native_contract() -> dict[str, Any]:
         != ["blackboardKey", "useBlackboardKey", "value"]
     ):
         raise ValueError(f"{LABEL}.contract:dependency-drift")
+    paths = {key: value for key, value in (("gameassembly", gameassembly), ("metadata", metadata)) if value is not None}
     selected = {
-        "action": action.validate_current_native_contract(),
-        "target": target.validate_current_native_contract(),
-        "blackboard": blackboard.validate_current_native_contract(),
+        "action": action.validate_current_native_contract(**paths),
+        "target": target.validate_current_native_contract(target_parent_tags=target_parent_tags, **paths),
+        "blackboard": blackboard.validate_current_native_contract(**paths),
     }
     if any(row.get("status") != "validated" for row in selected.values()):
         failed = next(row for row in selected.values()

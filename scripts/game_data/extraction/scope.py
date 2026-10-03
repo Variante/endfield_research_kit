@@ -20,8 +20,9 @@ exporter use, and :data:`EVERYTHING` is the debug export.
 
 Decoded blocks publish into ``game/``. The blocks no reader decodes into the
 export (``RAW_BLOCKS``: Streaming, DynamicStreaming, IV, ExtendData, IFixPatch
-and the bundle manifest) publish byte-for-byte into ``raw/``, where only the
-Data page shows them, as binary. Bundles and audio packages are never dumped:
+and the bundle manifest) publish byte-for-byte into ``raw/``. The Data page
+shows their bytes and may publish native/source-authenticated component views
+through maintained readers. Bundles and audio packages are never dumped:
 AnimeStudio decodes their contents into Unity objects and decoded audio.
 """
 from __future__ import annotations

@@ -6,7 +6,8 @@ reports stored byte spans and raw values. It cannot show that a hit occurred,
 that a server action ran, or that this authored branch executed.
 
 The CLI reads only a source whose bytes match a current sparse SkillData
-report. It leaves the family corpus and its parser provenance untouched.
+report. Shared SkillData admission independently runs the same native gate;
+the complete family gate still owns whole-source publication.
 """
 
 from __future__ import annotations
@@ -23,10 +24,12 @@ from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 from scripts.game_data.memorypack.derived_schema import resolve_routes
-from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
-from scripts.game_data.memorypack.corpus_gate import _fingerprint, _guard_partial_output
+from scripts.game_data.memorypack.corpus_gate import (
+    _fingerprint, _guard_partial_output, verify_current_report_inputs,
+)
 
 
 LABEL = "skillTimelineCheckSkillHasHit"
@@ -154,6 +157,18 @@ def decode_action(data: bytes, offset: int, *, validation: Mapping[str, Any]) ->
     return {"status": "exact-stored-action-span", "start": offset,
             "end": cursor, "tag": tag, "typeName": contract["dispatcher"]["wrapperName"],
             "fields": fields, "evidenceBoundary": "stored framing only"}
+
+
+def decode_shared_action(reader: Reader, depth: int, tag: int, width: int) -> None:
+    """Consume the nonnull stored action after the composite native gate."""
+    del depth
+    contract = _contract()
+    if tag != contract["dispatcher"]["unionTag"] or width != 1 or reader.peek() != tag:
+        raise ValueError(f"{LABEL}.source:tag-or-width")
+    reader.take(width, "union-tag")
+    reader.header(contract["serializedMemberCount"])
+    for row in contract["orderedSourceReads"]:
+        reader.take(1 if row["readKind"] == "bool-byte" else 4, row["fieldName"])
 
 
 def inspect_source(source: Path, report_path: Path, virtual_path: str) -> dict[str, Any]:

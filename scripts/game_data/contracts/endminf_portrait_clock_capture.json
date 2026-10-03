@@ -1,0 +1,141 @@
+{
+  "schema": "endfield.endminf-portrait-clock-capture.v1",
+  "status": "reviewed-native-observer-contract",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "methods": {
+    "PlayInAnimation": {
+      "type": "Beyond.UI.UIAnimationWrapper",
+      "method": "PlayInAnimation",
+      "rva": 46648480,
+      "byteCount": 556,
+      "bodySha256": "76e89c5adcb8d7eaa97f87166180a4163f51c5d25d85a5d13903c62184f9c4f0",
+      "prologue": [
+        72,
+        137,
+        92,
+        36,
+        8,
+        72,
+        137,
+        108,
+        36,
+        16,
+        72,
+        137,
+        116,
+        36,
+        24,
+        87
+      ],
+      "returnType": "void",
+      "instance": true,
+      "parameters": [
+        {
+          "name": "callback",
+          "type": "DG.Tweening.TweenCallback"
+        },
+        {
+          "name": "autoPlayLoop",
+          "type": "bool"
+        },
+        {
+          "name": "speed",
+          "type": "float"
+        }
+      ],
+      "abi": "Windows-x64-IL2CPP-instance-hidden-MethodInfo-last"
+    },
+    "SampleClip": {
+      "type": "Beyond.UI.UIAnimationWrapper",
+      "method": "SampleClip",
+      "rva": 54124592,
+      "byteCount": 1676,
+      "bodySha256": "2773f0c107dd733b02cf32a24c99b7e5524e2305b40712d501debec42e5eacf1",
+      "prologue": [
+        72,
+        137,
+        92,
+        36,
+        8,
+        72,
+        137,
+        108,
+        36,
+        16,
+        72,
+        137,
+        116,
+        36,
+        24,
+        87
+      ],
+      "returnType": "void",
+      "instance": true,
+      "parameters": [
+        {
+          "name": "clipName",
+          "type": "string"
+        },
+        {
+          "name": "position",
+          "type": "float"
+        },
+        {
+          "name": "clearTween",
+          "type": "bool"
+        }
+      ],
+      "abi": "Windows-x64-IL2CPP-instance-hidden-MethodInfo-last"
+    },
+    "GetUnscaledTime": {
+      "type": "UnityEngine.Time",
+      "method": "get_unscaledTime",
+      "rva": 48282560,
+      "byteCount": 53,
+      "bodySha256": "21645c828bf21a1627e0e418f81f8510f28334bee7ffa173cc6cbda952d824f2",
+      "prologue": [
+        72,
+        131,
+        236,
+        40,
+        72,
+        139,
+        5,
+        221,
+        50,
+        10,
+        11,
+        72,
+        133,
+        192,
+        116,
+        7
+      ],
+      "returnType": "float",
+      "instance": false,
+      "parameters": [],
+      "abi": "Windows-x64-IL2CPP-static-hidden-MethodInfo-last"
+    }
+  },
+  "fields": {
+    "animationInOffset": 24,
+    "animEaseOffset": 72,
+    "il2cppStringLengthOffset": 16,
+    "il2cppStringCharactersOffset": 20,
+    "lastPlayStartTimeOffset": 148
+  },
+  "selection": {
+    "clipName": "charinfobgdeco_in",
+    "maximumRecords": 2048
+  },
+  "source": {
+    "wrapper": "MonoBehaviour_p4C620BBCB6AF0466.json",
+    "clip": "charinfobgdeco_in_pEAA7202B0EF95518.anim",
+    "durationSeconds": 3.5,
+    "animEase": 6
+  },
+  "boundary": "PlayIn entry and actual SampleClip arguments; direct UI time only. No fitted lead, no proof that IFix is absent. Join to visible portrait vertices independently."
+}

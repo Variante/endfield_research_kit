@@ -65,7 +65,8 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract(audit_report_path: Path) -> dict[str, Any]:
+def validate_current_native_contract(audit_report_path: Path, *,
+                                    gameassembly: Path | None = None, metadata: Path | None = None) -> dict[str, Any]:
     """Validate the selected formatter audit and generated named member plans."""
     contract = _contract()
     expected = contract["nativeInputs"]
@@ -90,6 +91,7 @@ def validate_current_native_contract(audit_report_path: Path) -> dict[str, Any]:
         raise ValueError(f"{LABEL}.contract:dependency-drift")
     gate = check_installed_native_inputs(
         expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         return {"status": gate.status, "detail": gate.detail}

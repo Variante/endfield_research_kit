@@ -17,10 +17,12 @@ was neither a lower bound nor exact. ``dynamic_streaming`` therefore keeps a
 one-byte lower bound until this contract validates.
 
 Extent (exact). Every current main payload is rejoined to the VFS ledger by
-path, length and FileDataMd5, and every grid vector count word and body is
-bounded without overlap under the selected widths. This is exact vector
-extent, not whole-file closure: grid tables, string bodies, padding and
-nested record fields need their own ownership checks.
+path, length and FileDataMd5. Root/grid table objects, shared vtables, both
+root vectors, every grid vector count/body and complete UTF-8 string
+allocations are bounded without overlap. The audit records every remaining
+byte range, including physical tails, as residual even when zero-filled.
+That is allocation extent, not nested field meaning or proved padding.
+Positive table-reference vector targets also need their own reader.
 
 DataMask (eliminated reading). The raw ``UInt64`` stays unnamed. The audit
 retests the proposal that its bits mark present or nonempty vector fields,
@@ -219,6 +221,11 @@ def audit_current_main(
     field_totals: dict[int, Counter[str]] = {index: Counter() for index in widths}
     file_rows: list[dict[str, Any]] = []
     totals: Counter[str] = Counter()
+    allocation_totals: Counter[str] = Counter()
+    allocation_kinds: Counter[str] = Counter()
+    residual_lengths: Counter[str] = Counter()
+    shared_allocations: Counter[str] = Counter()
+    largest_residual = 0
     mask_nonempty_matches: Counter[str] = Counter()
     mask_present_matches: Counter[str] = Counter()
     mask_checked = 0
@@ -241,6 +248,15 @@ def audit_current_main(
         except (ValueError, OverflowError) as exc:
             raise DynamicMainNativeError(f"{path}: selected vector framing failed: {exc}") from exc
         frame = parsed["ProvidedWidthGridVectorFraming"]
+        allocations = parsed["ProvidedWidthMainAllocationFraming"]
+        allocation_totals.update({key: allocations[key] for key in (
+            "ownedBytes", "allocationCount", "residualBytes", "zeroFilledResidualBytes",
+            "otherResidualBytes", "residualSpanCount",
+        )})
+        allocation_kinds.update(allocations["ownedBytesByKind"])
+        residual_lengths.update(allocations["residualLengthCounts"])
+        shared_allocations.update(allocations["sharedAllocationReferences"])
+        largest_residual = max(largest_residual, allocations["maxResidualBytes"])
         mask = frame["dataMaskCandidate"]
         mask_checked += mask["checkedGrids"]
         mask_nonempty_matches.update(mask["nonemptyMatchCounts"])
@@ -270,6 +286,7 @@ def audit_current_main(
             "nonemptyVectors": frame["nonemptyVectorCount"],
             "vectorBodyBytes": frame["bodyBytes"],
             "status": frame["status"],
+            "allocationFraming": allocations,
         })
     if len(file_rows) != len(current_files):
         raise DynamicMainNativeError("main file census differs from current VFS ledger")
@@ -287,7 +304,7 @@ def audit_current_main(
         else "inconclusive"
     )
     return {
-        "format": "endfield.dynamic-main-vector-native-audit.v1",
+        "format": "endfield.dynamic-main-vector-native-audit.v2",
         "status": "validated",
         "inputSetSha256": outer["inputSetSha256"],
         "outer": {
@@ -298,6 +315,15 @@ def audit_current_main(
             "gameBuildFingerprintCount": len(provenance["gameBuildFingerprints"]),
         },
         "corpus": dict(totals),
+        "allocationFraming": {
+            "status": "bounded_nonoverlapping",
+            **allocation_totals,
+            "ownedBytesByKind": dict(allocation_kinds),
+            "sharedAllocationReferences": dict(shared_allocations),
+            "residualLengthCounts": dict(residual_lengths),
+            "maxResidualBytes": largest_residual,
+            "evidenceBoundary": "Allocation extents only; zero-filled residuals are not proved padding, and nested record fields and positive table-reference targets remain undecoded.",
+        },
         "oldFourByteAssumption": {
             "undercountedNonemptyVectors": sum(row["nonemptyVectorCount"] for row in field_rows if row["elementWidth"] > 4),
             "overcountedNonemptyVectors": sum(row["nonemptyVectorCount"] for row in field_rows if row["elementWidth"] < 4),
@@ -311,13 +337,14 @@ def audit_current_main(
         },
         "fields": field_rows,
         "files": file_rows,
-        "evidenceBoundary": "Selected-build generated builders and indexers close each grid vector body. This does not close all FlatBuffer object/string ranges or decode nested struct fields, DataMask, or live grid behavior.",
+        "evidenceBoundary": "Selected-build generated widths bound the root/grid/vector/string allocations without overlap and retain every residual range. Allocation extent does not prove padding, nested struct fields, positive table-reference targets, DataMask, or live grid behavior.",
     }
 
 
 def _markdown(report: dict[str, Any]) -> str:
     corpus = report["corpus"]
     fields = report["fields"]
+    allocations = report["allocationFraming"]
     rows = "\n".join(
         f"| {row['fieldIndex']} | `{row['name']}` | {row['elementWidth']} | {row['elementAlignment']} | "
         f"{row['nonemptyVectorCount']} | {row['elementCount']} |"
@@ -330,7 +357,9 @@ def _markdown(report: dict[str, Any]) -> str:
         f"- Bounded vector body bytes: {corpus['vectorBodyBytes']:,}; the selected spans do not overlap.",
         f"- Old four-byte assumption undercounted {report['oldFourByteAssumption']['undercountedNonemptyVectors']:,} nonempty vectors and overcounted {report['oldFourByteAssumption']['overcountedNonemptyVectors']:,} byte vectors.",
         f"- Simple DataMask vector-presence candidate: `{report['dataMaskPresenceCandidate']['status']}` across {report['dataMaskPresenceCandidate']['checkedGrids']:,} grids.",
-        "- Nested struct fields, table targets, DataMask, and whole-file closure remain separate.",
+        f"- Allocation spans own {allocations['ownedBytes']:,} bytes; {allocations['zeroFilledResidualBytes']:,} zero-filled residual bytes and {allocations['otherResidualBytes']:,} other residual bytes remain explicitly recorded.",
+        f"- Residual ranges: {allocations['residualSpanCount']:,}; largest: {allocations['maxResidualBytes']} bytes. Zero-filled ranges are not proved padding.",
+        "- Nested struct fields, positive table targets, DataMask, and live behavior remain separate.",
         "", "## Selected-build vector fields", "",
         "| Field | Accessor | Width | Alignment | Nonempty vectors | Elements |",
         "|---:|---|---:|---:|---:|---:|", rows, "",

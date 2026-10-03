@@ -1,8 +1,9 @@
 """Selected SkillData five-member action readers with exact native sources.
 
-The two routes share inherited action fields but have different final members:
-SetAbilityEntityToMainChar stores a string and LookAtAction stores TargetSettings.
-Their stored values do not establish either action's runtime behavior.
+These routes share four inherited action fields. Their final member is a
+TargetSettings object, string, byte, or float. The selected native bodies and
+generated setter order prove each stored shape; they do not establish runtime
+behavior.
 """
 from __future__ import annotations
 
@@ -10,6 +11,7 @@ import hashlib
 import json
 import struct
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
@@ -33,7 +35,7 @@ ROUTES = {
         "planKind": "string",
         "header": b"\x40\x80\xFE\x05",
         "width": 3,
-        "sourceWindowCount": 7,
+        "setterType": "System.String",
     },
     0x00E6: {
         "contract": "skill_timeline_look_at_native.json",
@@ -45,12 +47,46 @@ ROUTES = {
         "planKind": "object",
         "header": b"\x80\x7C\x24\x38\x05",
         "width": 1,
-        "sourceWindowCount": 1,
+        "setterType": "Beyond.Gameplay.Core.TargetSettings",
     },
 }
 
+# Format declarations carry no selected-build addresses or hashes. Those are
+# reviewed in each route's contract and rechecked against the selected image.
+for _tag, _stem, _type, _field, _kind, _setter_type, _header in (
+    (0x007F, "check_target_in_screen", "Conditions.CheckTargetInScreen+Data",
+     "targetSettings", "target-profile", "Beyond.Gameplay.Core.TargetSettings", b"\x80\x7C\x24\x38\x05"),
+    (0x008D, "convert_weakness_to_interruptible", "ConvertWeaknessToInterruptible+Data",
+     "converter", "target-profile", "Beyond.Gameplay.Core.TargetSettings", b"\x40\x80\xFE\x05"),
+    (0x010B, "patrol_refresh_check_point", "PatrolRefreshCheckPoint+Data",
+     "dis", "float32-bits", "System.Single", b"\x40\x80\xFE\x05"),
+    (0x0117, "play_normal_dash_anim", "PlayNormalDashAnimAction+Data",
+     "isDashBack", "bool-byte", "System.Boolean", b"\x40\x80\xFE\x05"),
+    (0x018F, "typhoea_clear_missile", "TyphoeaArcheryClearMissileAction+Data",
+     "skipDieDisplay", "bool-byte", "System.Boolean", b"\x80\x7C\x24\x38\x05"),
+    (0x0190, "typhoea_get_phantom_pos", "TyphoeaArcheryGetPhantomPosAction+Data",
+     "targetGroupKey", "byte-payload", "System.String", b"\x80\x7C\x24\x38\x05"),
+):
+    _plan_kind, _plan_width, _plan_scalar = {
+        "target-profile": ("object", None, None),
+        "byte-payload": ("string", None, None),
+        "bool-byte": ("fixed", 1, "bool"),
+        "float32-bits": ("fixed", 4, "float32"),
+    }[_kind]
+    ROUTES[_tag] = {
+        "contract": f"skill_timeline_{_stem}_native.json",
+        "schema": f"endfield.skill-timeline-{_stem.replace('_', '-')}-native-contract.v1",
+        "type": "Beyond.Gameplay.Core." + _type,
+        "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_" + _type.replace(".", "_").replace("+", "_") + "ForMemoryPack",
+        "fields": ("isEnable", "priorityLevel", "priorityOffset", "serverActionIndex", _field),
+        "kinds": ("bool-byte", "scalar32", "scalar32", "scalar32", _kind),
+        "planKind": _plan_kind, "planWidth": _plan_width, "planScalar": _plan_scalar,
+        "setterType": _setter_type, "header": _header,
+        "width": 3 if _tag >= 0xFA else 1, "setterCall": True,
+    }
 
-@lru_cache(maxsize=2)
+
+@lru_cache(maxsize=16)
 def _contract(tag: int) -> tuple[dict[str, Any], dict[str, Any]]:
     route = ROUTES.get(tag)
     if route is None:
@@ -75,7 +111,7 @@ def _contract(tag: int) -> tuple[dict[str, Any], dict[str, Any]]:
         or [row.get("memberIndex") for row in reads] != list(range(5))
         or tuple(row.get("fieldName") for row in reads) != route["fields"]
         or tuple(row.get("readKind") for row in reads) != route["kinds"]
-        or not isinstance(windows, list) or len(windows) != route["sourceWindowCount"] + 1
+        or not isinstance(windows, list) or len(windows) < 2
         or not isinstance(contract.get("methods"), list) or len(contract["methods"]) != 2
         or [row[2] for row in contract["methods"]] != ["Deserialize", "Deserialize"]
         or contract["methods"][0][1] != route["wrapper"]
@@ -84,7 +120,7 @@ def _contract(tag: int) -> tuple[dict[str, Any], dict[str, Any]]:
         or len(contract["setterMethods"]) != 1
         or contract["setterMethods"][0][1] != "set___" + route["fields"][-1] + "__"
         or contract["setterMethods"][0][2]
-        != ("System.String" if tag == 0x0148 else "Beyond.Gameplay.Core.TargetSettings")
+        != route["setterType"]
         or catalog.get("schema") != "endfield.levelscript-union-tags.v1"
         or not isinstance(selected, dict) or selected.get("tag") != tag
         or selected.get("memberCount") != 5
@@ -95,7 +131,7 @@ def _contract(tag: int) -> tuple[dict[str, Any], dict[str, Any]]:
         != "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack"
     ):
         raise ValueError(f"{LABEL}.contract:source-shape={tag:#x}")
-    if tag == 0x00E6:
+    if route["planKind"] == "object":
         child = contract.get("nestedContext")
         if (
             not isinstance(child, dict) or child.get("memberIndex") != 4
@@ -106,10 +142,28 @@ def _contract(tag: int) -> tuple[dict[str, Any], dict[str, Any]]:
             raise ValueError(f"{LABEL}.contract:target-child")
     elif "nestedContext" in contract or "targetProfileContract" in contract:
         raise ValueError(f"{LABEL}.contract:unexpected-child")
+    if route.get("setterCall"):
+        setter = contract.get("setterCallsite", {})
+        if (setter.get("memberIndex") != 4
+                or setter.get("methodIndex") != contract["setterMethods"][0][0]
+                or contract.get("primitiveReadContract")
+                != "skill_timeline_check_hit_collider_options_native.json"):
+            raise ValueError(f"{LABEL}.contract:setter-source={tag:#x}")
     return contract, catalog
 
 
-def validate_current_native_contract(tag: int) -> dict[str, Any]:
+@lru_cache(maxsize=4)
+def _body_index(
+    gameassembly: Path, metadata: Path, gameassembly_sha256: str, metadata_sha256: str,
+) -> BodyIndex:
+    """Reuse one native method index only for the same selected build bytes."""
+    del gameassembly_sha256, metadata_sha256
+    return BodyIndex(open_native_image(gameassembly, metadata))
+
+
+def validate_current_native_contract(
+    tag: int, *, gameassembly: Path | None = None, metadata: Path | None = None,
+) -> dict[str, Any]:
     """Reprove the selected route, whole source and ordered child reads."""
     contract, catalog = _contract(tag)
     route = ROUTES[tag]
@@ -119,7 +173,10 @@ def validate_current_native_contract(tag: int) -> dict[str, Any]:
         or expected["global-metadata.dat"] != catalog["nativeInputs"]["metadataSha256"]
     ):
         raise ValueError(f"{LABEL}.native:catalog-inputs={tag:#x}")
-    gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
+    gate = check_installed_native_inputs(
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
+    )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
     unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
@@ -138,6 +195,17 @@ def validate_current_native_contract(tag: int) -> dict[str, Any]:
     image.validate_dispatcher(dispatcher, label=LABEL)
     methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
     image.check_windows(contract["codeWindows"], label=LABEL)
+    if contract.get("primitiveReadContract"):
+        primitive, _ = read_reviewed_contract(
+            CONTRACTS_DIR / contract["primitiveReadContract"],
+            schema="endfield.skill-timeline-check-hit-collider-options-native-contract.v1",
+            status="exact-current-build", label=LABEL,
+        )
+        if (primitive.get("nativeInputs") != expected
+                or [row["sourceTargetRva"] for row in contract["orderedSourceReads"][:4]]
+                != [row["sourceTargetRva"] for row in primitive["orderedSourceReads"][:4]]):
+            raise ValueError(f"{LABEL}.native:primitive-source-join={tag:#x}")
+        image.check_windows(primitive["codeWindows"], label=LABEL)
     image.check_instruction_windows([
         [contract["memberCountInstruction"]["rva"], contract["memberCountInstruction"]["hex"]]
     ], label=LABEL)
@@ -153,7 +221,9 @@ def validate_current_native_contract(tag: int) -> dict[str, Any]:
         or formatter_window["endRva"] != extents.get(formatter_ptr, 0) - image.pe.image_base
     ):
         raise ValueError(f"{LABEL}.native:method-extents={tag:#x}")
-    fragments = BodyIndex(image).chained_fragments.get(source_ptr, ())
+    fragments = _body_index(
+        gate.gameassembly, gate.metadata, gate.gameassembly_sha256, gate.metadata_sha256,
+    ).chained_fragments.get(source_ptr, ())
     observed_fragments = [
         (start - image.pe.image_base, start + size - image.pe.image_base)
         for start, size in fragments
@@ -186,7 +256,18 @@ def validate_current_native_contract(tag: int) -> dict[str, Any]:
         or reads[4]["sourceTargetRva"] == reads[1]["sourceTargetRva"]
     ):
         raise ValueError(f"{LABEL}.native:read-helper-shape={tag:#x}")
-    if tag == 0x00E6:
+    if route.get("setterCall"):
+        setter = contract["setterCallsite"]
+        rva = setter["callsiteRva"]
+        pointer = image.method_pointer_va(image.metadata.methods[setter["methodIndex"]])
+        raw = image.pe.bytes_at_va(image.pe.image_base + rva, 5)
+        if (not any(start <= rva < end - 4 for start, end in source_ranges)
+                or rva <= reads[4]["sourceCallsiteRva"]
+                or raw[0] != 0xE8 or raw.hex().upper() != setter["callHex"]
+                or rva + 5 + struct.unpack_from("<i", raw, 1)[0] != setter["targetRva"]
+                or pointer - image.pe.image_base != setter["targetRva"]):
+            raise ValueError(f"{LABEL}.native:setter-call={tag:#x}")
+    if route["planKind"] == "object":
         context = contract["nestedContext"]
         cell, usage = image.nested_usage_cell(context, label=LABEL)
         index = method_spec_usage_index(
@@ -228,7 +309,7 @@ def validate_current_native_contract(tag: int) -> dict[str, Any]:
         ("priorityLevel", "fixed", 4, "scalar32"),
         ("priorityOffset", "fixed", 4, "scalar32"),
         ("serverActionIndex", "fixed", 4, "scalar32"),
-        (route["fields"][-1], route["planKind"], None, None),
+        (route["fields"][-1], route["planKind"], route.get("planWidth"), route.get("planScalar")),
     )
     child = (
         resolver.wrappers.get(plan[-1].ref)
@@ -241,7 +322,7 @@ def validate_current_native_contract(tag: int) -> dict[str, Any]:
         or selected.get("wrapperName") != route["wrapper"]
         or wrapper is None or wrapper.wrapped_type != route["type"]
         or tuple((m.name, m.kind, m.width, m.scalar) for m in plan or ()) != expected_plan
-        or (tag == 0x00E6 and (child is None or child.wrapped_type != "Beyond.Gameplay.Core.TargetSettings"))
+        or (route["planKind"] == "object" and (child is None or child.wrapped_type != "Beyond.Gameplay.Core.TargetSettings"))
     ):
         raise ValueError(f"{LABEL}.native:derived-plan={tag:#x}")
     return {
@@ -266,7 +347,10 @@ def decode_five_member_action(reader: Reader, depth: int, tag: int, width: int) 
     reader.take(1, "anonymous-bool-byte")
     for _ in range(3):
         reader.take(4, "anonymous-scalar32")
-    if tag == 0x0148:
+    final_kind = route["kinds"][-1]
+    if final_kind == "byte-payload":
         reader.byte_payload()
-    else:
+    elif final_kind == "target-profile":
         reader.target_profile()
+    else:
+        reader.take(1 if final_kind == "bool-byte" else 4, final_kind)

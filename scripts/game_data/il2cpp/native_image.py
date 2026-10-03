@@ -42,6 +42,27 @@ METADATA_HELPER_PATH = REPO_ROOT / "tools/endfield-il2cpp/catalog_option_flow_me
 RIP_RELATIVE_LOAD_PREFIXES = (b"\x48\x8b\x15", b"\x4c\x8b\x05")
 
 
+def pe_mapped_image_size(path: Path) -> int:
+    """Read PE32+ SizeOfImage, distinct from the on-disk file length."""
+    with path.open("rb") as stream:
+        dos = stream.read(64)
+        if len(dos) != 64 or dos[:2] != b"MZ":
+            raise ValueError(f"{path.name}: invalid DOS header")
+        pe_offset = struct.unpack_from("<I", dos, 0x3c)[0]
+        if not 64 <= pe_offset <= path.stat().st_size - 88:
+            raise ValueError(f"{path.name}: PE header is outside file")
+        stream.seek(pe_offset)
+        header = stream.read(88)
+    if (header[:4] != b"PE\0\0" or struct.unpack_from("<H", header, 4)[0] != 0x8664
+            or struct.unpack_from("<H", header, 20)[0] < 64
+            or struct.unpack_from("<H", header, 24)[0] != 0x20b):
+        raise ValueError(f"{path.name}: expected AMD64 PE32+ header")
+    size = struct.unpack_from("<I", header, 80)[0]
+    if size <= 0 or size % 4096:
+        raise ValueError(f"{path.name}: invalid mapped SizeOfImage")
+    return size
+
+
 def read_reviewed_contract(
     path: Path,
     *,

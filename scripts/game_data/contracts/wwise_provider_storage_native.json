@@ -1,0 +1,1088 @@
+{
+  "schema": "endfield.wwise-provider-storage-native.v1",
+  "status": "reviewedCurrentBuild",
+  "nativeInputs": {
+    "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "globalMetadataSha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "akSoundEngineSha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6",
+    "akSoundEngineFileSize": 3586536
+  },
+  "nativeGroups": [
+    {
+      "key": "singletonInitializer",
+      "entryRva": "0xb5db0",
+      "windows": [
+        {
+          "rva": "0xb5db0",
+          "bodyLength": 32,
+          "bodySha256": "2ba3ba398c3b8d4b6d3484035ea00582dda3ae43fc7b886987a7ae9840ff139d",
+          "unwindRva": "0x2efa30",
+          "unwindInfoHex": "0104010004420000"
+        },
+        {
+          "rva": "0xb5dd0",
+          "bodyLength": 69,
+          "bodySha256": "fe7f88ba1e29bf91317030846c8afb7940057462c0387981c252b4e44e208bbd",
+          "unwindRva": "0x2fe3f4",
+          "unwindInfoHex": "2105020005340400b05d0b00d05d0b0030fa2e00"
+        },
+        {
+          "rva": "0xb5e15",
+          "bodyLength": 12,
+          "bodySha256": "afadd351767733a7d0533b05c3e3be26e411ed8147219e7c95b5f18113e3e9a9",
+          "unwindRva": "0x2fe408",
+          "unwindInfoHex": "2100020000340400b05d0b00d05d0b0030fa2e00"
+        },
+        {
+          "rva": "0xb5e21",
+          "bodyLength": 5,
+          "bodySha256": "3297a0e4175e5d032a2be5212c1a1980cd3df21251db492413a47fcb4b6187ac",
+          "unwindRva": "0x2fe41c",
+          "unwindInfoHex": "21000000b05d0b00d05d0b0030fa2e00"
+        }
+      ],
+      "requiredRoles": [
+        "loadSingleton",
+        "requestSingletonBytes",
+        "addressFactoryTable",
+        "storeFactoryTable",
+        "storeSingleton"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadSingleton",
+          "rva": "0xb5dc4",
+          "instructionHex": "488b0525eb2800"
+        },
+        {
+          "role": "requestSingletonBytes",
+          "rva": "0xb5dd5",
+          "instructionHex": "ba18000000"
+        },
+        {
+          "role": "addressFactoryTable",
+          "rva": "0xb5df6",
+          "instructionHex": "488d0dc3cc1d00"
+        },
+        {
+          "role": "storeFactoryTable",
+          "rva": "0xb5e06",
+          "instructionHex": "488908"
+        },
+        {
+          "role": "storeSingleton",
+          "rva": "0xb5e09",
+          "instructionHex": "488905e0ea2800"
+        }
+      ]
+    },
+    {
+      "key": "ordinaryProviderFactory",
+      "entryRva": "0xb5e30",
+      "windows": [
+        {
+          "rva": "0xb5e30",
+          "bodyLength": 195,
+          "bodySha256": "132d82f169dee1a3ff48763c69b967094c993c882d6fc3471c7fd99b2a1c1cd1",
+          "unwindRva": "0x2f2c54",
+          "unwindInfoHex": "011a0a001a7409001a6408001a5407001a3406001a3216e0"
+        }
+      ],
+      "requiredRoles": [
+        "loadOutputArgument",
+        "retainDescriptor",
+        "requestProviderBytes",
+        "clearOutput",
+        "callConstructor",
+        "retainProvider",
+        "forwardDescriptor",
+        "loadPrimaryTable",
+        "callPrimaryOpenSlot",
+        "addressSecondaryInterface",
+        "testOpenStatus",
+        "branchSuccessfulOpen",
+        "storeOutputInterface"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadOutputArgument",
+          "rva": "0xb5e4a",
+          "instructionHex": "488b742450"
+        },
+        {
+          "role": "retainDescriptor",
+          "rva": "0xb5e4f",
+          "instructionHex": "4c8bf2"
+        },
+        {
+          "role": "requestProviderBytes",
+          "rva": "0xb5e52",
+          "instructionHex": "ba10010000"
+        },
+        {
+          "role": "clearOutput",
+          "rva": "0xb5e62",
+          "instructionHex": "48c70600000000"
+        },
+        {
+          "role": "callConstructor",
+          "rva": "0xb5e76",
+          "instructionHex": "e8e5520000"
+        },
+        {
+          "role": "retainProvider",
+          "rva": "0xb5e7b",
+          "instructionHex": "488bd8"
+        },
+        {
+          "role": "forwardDescriptor",
+          "rva": "0xb5ea5",
+          "instructionHex": "498bd6"
+        },
+        {
+          "role": "loadPrimaryTable",
+          "rva": "0xb5e9f",
+          "instructionHex": "488b03"
+        },
+        {
+          "role": "callPrimaryOpenSlot",
+          "rva": "0xb5eab",
+          "instructionHex": "ff5008"
+        },
+        {
+          "role": "addressSecondaryInterface",
+          "rva": "0xb5eae",
+          "instructionHex": "4881c390000000"
+        },
+        {
+          "role": "testOpenStatus",
+          "rva": "0xb5eb7",
+          "instructionHex": "83f801"
+        },
+        {
+          "role": "branchSuccessfulOpen",
+          "rva": "0xb5eba",
+          "instructionHex": "740d"
+        },
+        {
+          "role": "storeOutputInterface",
+          "rva": "0xb5ec9",
+          "instructionHex": "48891e"
+        }
+      ]
+    },
+    {
+      "key": "ordinaryProviderConstructor",
+      "entryRva": "0xbb160",
+      "windows": [
+        {
+          "rva": "0xbb160",
+          "bodyLength": 70,
+          "bodySha256": "5b080b9ee613244ddaad43458fb571ccda4726c770f4276bb893607f99dc8b59",
+          "unwindRva": "0x2efabc",
+          "unwindInfoHex": "0106020006320230"
+        }
+      ],
+      "requiredRoles": [
+        "retainAllocation",
+        "addressPrimaryTable",
+        "storePrimaryTable",
+        "addressSecondaryTable",
+        "storeSecondaryTable",
+        "returnAllocation"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainAllocation",
+          "rva": "0xbb166",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "addressPrimaryTable",
+          "rva": "0xbb185",
+          "instructionHex": "488d055c811d00"
+        },
+        {
+          "role": "storePrimaryTable",
+          "rva": "0xbb18c",
+          "instructionHex": "488903"
+        },
+        {
+          "role": "addressSecondaryTable",
+          "rva": "0xbb18f",
+          "instructionHex": "488d05ca801d00"
+        },
+        {
+          "role": "storeSecondaryTable",
+          "rva": "0xbb196",
+          "instructionHex": "48898390000000"
+        },
+        {
+          "role": "returnAllocation",
+          "rva": "0xbb19d",
+          "instructionHex": "488bc3"
+        }
+      ]
+    },
+    {
+      "key": "providerDescriptorStorage",
+      "entryRva": "0xb9530",
+      "windows": [
+        {
+          "rva": "0xb9530",
+          "bodyLength": 214,
+          "bodySha256": "a0d43a388ab5f9ae37a447d6020311ca4d9df49576f92e10284ba31296d66aaf",
+          "unwindRva": "0x2fe818",
+          "unwindInfoHex": "0112080012540e0012340d0012720ee00c700b60"
+        },
+        {
+          "rva": "0xb9606",
+          "bodyLength": 65,
+          "bodySha256": "f29a1563d5535f210b97f9b75172e977408759cd82e0fcbd64193c5606961d00",
+          "unwindRva": "0x2fe82c",
+          "unwindInfoHex": "2105020005f40c0030950b0006960b0018e82f00"
+        },
+        {
+          "rva": "0xb9647",
+          "bodyLength": 381,
+          "bodySha256": "ed9dedfc1553889e958f09e7c2361cca6327766abe9267fb44d70051167e7af1",
+          "unwindRva": "0x2fe840",
+          "unwindInfoHex": "2100020000f40c0030950b0006960b0018e82f00"
+        },
+        {
+          "rva": "0xb97c4",
+          "bodyLength": 28,
+          "bodySha256": "91c8bbd16e684bcc346976c9841673c5e835ae174e1c714f30e092d1725bec8d",
+          "unwindRva": "0x2fe854",
+          "unwindInfoHex": "2100000030950b0006960b0018e82f00"
+        }
+      ],
+      "requiredRoles": [
+        "retainInputDescriptor",
+        "retainProvider",
+        "requestDescriptorBytes",
+        "storeDescriptorAllocation",
+        "loadInputMode",
+        "storeMode",
+        "addressOwnedAuxiliary",
+        "storeOwnedAuxiliary",
+        "loadInputAuxiliary",
+        "copyAuxiliaryFirst",
+        "storeAuxiliaryFirst",
+        "copyAuxiliarySecond",
+        "storeAuxiliarySecond",
+        "copyAuxiliaryTail",
+        "storeAuxiliaryTail",
+        "loadInputWord",
+        "storeWord",
+        "testInputText",
+        "branchNoText",
+        "loadInputTextForLength",
+        "callTextLength",
+        "includeTerminator",
+        "scaleWideBytes",
+        "requestTextStorage",
+        "storeOwnedText",
+        "branchTextAllocated",
+        "loadInputTextForCopy",
+        "forwardTextCapacity",
+        "forwardTextDestination",
+        "callTextCopy",
+        "continueAfterText"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainInputDescriptor",
+          "rva": "0xb9542",
+          "instructionHex": "4c8bf2"
+        },
+        {
+          "role": "retainProvider",
+          "rva": "0xb9545",
+          "instructionHex": "488bd9"
+        },
+        {
+          "role": "requestDescriptorBytes",
+          "rva": "0xb9548",
+          "instructionHex": "ba70000000"
+        },
+        {
+          "role": "storeDescriptorAllocation",
+          "rva": "0xb95a8",
+          "instructionHex": "48894320"
+        },
+        {
+          "role": "loadInputMode",
+          "rva": "0xb95ac",
+          "instructionHex": "418b4614"
+        },
+        {
+          "role": "storeMode",
+          "rva": "0xb95b0",
+          "instructionHex": "894714"
+        },
+        {
+          "role": "addressOwnedAuxiliary",
+          "rva": "0xb95b3",
+          "instructionHex": "488d4740"
+        },
+        {
+          "role": "storeOwnedAuxiliary",
+          "rva": "0xb95b7",
+          "instructionHex": "4889470c"
+        },
+        {
+          "role": "loadInputAuxiliary",
+          "rva": "0xb95c2",
+          "instructionHex": "498b4e0c"
+        },
+        {
+          "role": "copyAuxiliaryFirst",
+          "rva": "0xb95cb",
+          "instructionHex": "0f1001"
+        },
+        {
+          "role": "storeAuxiliaryFirst",
+          "rva": "0xb95ce",
+          "instructionHex": "0f1100"
+        },
+        {
+          "role": "copyAuxiliarySecond",
+          "rva": "0xb95d1",
+          "instructionHex": "0f104910"
+        },
+        {
+          "role": "storeAuxiliarySecond",
+          "rva": "0xb95d5",
+          "instructionHex": "0f114810"
+        },
+        {
+          "role": "copyAuxiliaryTail",
+          "rva": "0xb95d9",
+          "instructionHex": "f20f104120"
+        },
+        {
+          "role": "storeAuxiliaryTail",
+          "rva": "0xb95de",
+          "instructionHex": "f20f114020"
+        },
+        {
+          "role": "loadInputWord",
+          "rva": "0xb95e3",
+          "instructionHex": "418b4608"
+        },
+        {
+          "role": "storeWord",
+          "rva": "0xb95ed",
+          "instructionHex": "894708"
+        },
+        {
+          "role": "testInputText",
+          "rva": "0xb960b",
+          "instructionHex": "493936"
+        },
+        {
+          "role": "branchNoText",
+          "rva": "0xb960e",
+          "instructionHex": "7445"
+        },
+        {
+          "role": "loadInputTextForLength",
+          "rva": "0xb9616",
+          "instructionHex": "498b0e"
+        },
+        {
+          "role": "callTextLength",
+          "rva": "0xb9619",
+          "instructionHex": "e8da211b00"
+        },
+        {
+          "role": "includeTerminator",
+          "rva": "0xb9623",
+          "instructionHex": "4c8d7801"
+        },
+        {
+          "role": "scaleWideBytes",
+          "rva": "0xb9627",
+          "instructionHex": "4b8d143f"
+        },
+        {
+          "role": "requestTextStorage",
+          "rva": "0xb962b",
+          "instructionHex": "e87078ffff"
+        },
+        {
+          "role": "storeOwnedText",
+          "rva": "0xb9630",
+          "instructionHex": "488907"
+        },
+        {
+          "role": "branchTextAllocated",
+          "rva": "0xb9636",
+          "instructionHex": "750f"
+        },
+        {
+          "role": "loadInputTextForCopy",
+          "rva": "0xb9647",
+          "instructionHex": "498b16"
+        },
+        {
+          "role": "forwardTextCapacity",
+          "rva": "0xb964a",
+          "instructionHex": "4d8bc7"
+        },
+        {
+          "role": "forwardTextDestination",
+          "rva": "0xb964d",
+          "instructionHex": "488bc8"
+        },
+        {
+          "role": "callTextCopy",
+          "rva": "0xb9650",
+          "instructionHex": "e85ba4f4ff"
+        },
+        {
+          "role": "continueAfterText",
+          "rva": "0xb9655",
+          "instructionHex": "488b4320"
+        }
+      ]
+    },
+    {
+      "key": "wideTextCopy",
+      "entryRva": "0x3ab0",
+      "windows": [
+        {
+          "rva": "0x3ab0",
+          "bodyLength": 108,
+          "bodySha256": "f6003d93df2f9ff723e5117e95d032536bb954a6b5fb4cf0f8b29847cad97d73",
+          "unwindRva": "0x2efac4",
+          "unwindInfoHex": "010a04000a3406000a320670"
+        }
+      ],
+      "requiredRoles": [
+        "retainCapacity",
+        "excludeTerminatorCapacity",
+        "retainDestination",
+        "testFirstTerminator",
+        "testSecondTerminator",
+        "forwardCopySource",
+        "forwardCopyCount",
+        "forwardCopyCapacity",
+        "callSecureWideCopy",
+        "clearTerminatorValue",
+        "storeTerminator"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainCapacity",
+          "rva": "0x3aba",
+          "instructionHex": "4d8bd0"
+        },
+        {
+          "role": "excludeTerminatorCapacity",
+          "rva": "0x3abd",
+          "instructionHex": "498d58ff"
+        },
+        {
+          "role": "retainDestination",
+          "rva": "0x3ac1",
+          "instructionHex": "488bf9"
+        },
+        {
+          "role": "testFirstTerminator",
+          "rva": "0x3ad3",
+          "instructionHex": "66833c4200"
+        },
+        {
+          "role": "testSecondTerminator",
+          "rva": "0x3af3",
+          "instructionHex": "66833c5a00"
+        },
+        {
+          "role": "forwardCopySource",
+          "rva": "0x3afd",
+          "instructionHex": "4c8bc2"
+        },
+        {
+          "role": "forwardCopyCount",
+          "rva": "0x3b00",
+          "instructionHex": "4c8bcb"
+        },
+        {
+          "role": "forwardCopyCapacity",
+          "rva": "0x3b03",
+          "instructionHex": "498bd2"
+        },
+        {
+          "role": "callSecureWideCopy",
+          "rva": "0x3b06",
+          "instructionHex": "e8fdfc2500"
+        },
+        {
+          "role": "clearTerminatorValue",
+          "rva": "0x3b0b",
+          "instructionHex": "33c0"
+        },
+        {
+          "role": "storeTerminator",
+          "rva": "0x3b0d",
+          "instructionHex": "6689045f"
+        }
+      ]
+    },
+    {
+      "key": "secureWideTextCopy",
+      "entryRva": "0x263808",
+      "windows": [
+        {
+          "rva": "0x263808",
+          "bodyLength": 252,
+          "bodySha256": "56c9d52483149bc380f241de90ced84230444c51f0d3f33d53da174d7f771b2c",
+          "unwindRva": "0x2f0384",
+          "unwindInfoHex": "010f06000f6407000f3406000f320b70"
+        }
+      ],
+      "requiredRoles": [
+        "sourceDifference",
+        "loadWideCharacter",
+        "storeWideCharacter",
+        "advanceWideDestination",
+        "testWideTerminator",
+        "decrementCapacity",
+        "decrementCopyCount"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "sourceDifference",
+          "rva": "0x263876",
+          "instructionHex": "482bd9"
+        },
+        {
+          "role": "loadWideCharacter",
+          "rva": "0x2638a0",
+          "instructionHex": "0fb70413"
+        },
+        {
+          "role": "storeWideCharacter",
+          "rva": "0x2638a7",
+          "instructionHex": "668902"
+        },
+        {
+          "role": "advanceWideDestination",
+          "rva": "0x2638aa",
+          "instructionHex": "488d5202"
+        },
+        {
+          "role": "testWideTerminator",
+          "rva": "0x2638ae",
+          "instructionHex": "6685c0"
+        },
+        {
+          "role": "decrementCapacity",
+          "rva": "0x2638b3",
+          "instructionHex": "4983e801"
+        },
+        {
+          "role": "decrementCopyCount",
+          "rva": "0x2638b9",
+          "instructionHex": "4883ef01"
+        }
+      ]
+    },
+    {
+      "key": "alternateProviderFactory",
+      "entryRva": "0xb5f00",
+      "windows": [
+        {
+          "rva": "0xb5f00",
+          "bodyLength": 187,
+          "bodySha256": "d6dc5b530706e6658ec2b940b18d8999378ef14165c895aa1598377f1f348bde",
+          "unwindRva": "0x2f0384",
+          "unwindInfoHex": "010f06000f6407000f3406000f320b70"
+        }
+      ],
+      "requiredRoles": [
+        "retainOptions",
+        "retainDataWord",
+        "retainData",
+        "requestProviderBytes",
+        "forwardDataWord",
+        "forwardData",
+        "callConstructor",
+        "retainProvider",
+        "loadOutputArgument",
+        "storeOutputBase"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainOptions",
+          "rva": "0xb5f12",
+          "instructionHex": "498bf1"
+        },
+        {
+          "role": "retainDataWord",
+          "rva": "0xb5f19",
+          "instructionHex": "498bd8"
+        },
+        {
+          "role": "retainData",
+          "rva": "0xb5f1c",
+          "instructionHex": "488bfa"
+        },
+        {
+          "role": "requestProviderBytes",
+          "rva": "0xb5f2c",
+          "instructionHex": "ba48000000"
+        },
+        {
+          "role": "forwardDataWord",
+          "rva": "0xb5f40",
+          "instructionHex": "4c8bc3"
+        },
+        {
+          "role": "forwardData",
+          "rva": "0xb5f43",
+          "instructionHex": "488bd7"
+        },
+        {
+          "role": "callConstructor",
+          "rva": "0xb5f49",
+          "instructionHex": "e892130000"
+        },
+        {
+          "role": "retainProvider",
+          "rva": "0xb5f4e",
+          "instructionHex": "488bd8"
+        },
+        {
+          "role": "loadOutputArgument",
+          "rva": "0xb5f6b",
+          "instructionHex": "488b4c2450"
+        },
+        {
+          "role": "storeOutputBase",
+          "rva": "0xb5f72",
+          "instructionHex": "488919"
+        }
+      ]
+    }
+  ],
+  "leafWindows": [
+    {
+      "key": "ordinaryProviderOpen",
+      "entryRva": "0xb9460",
+      "bodyLength": 26,
+      "bodySha256": "c4cb84b846a635b472436ccfab47882ac2a3c9cb20812fe665015d150d5b4f32",
+      "boundaryRva": "0xb947a",
+      "boundaryHex": "cccccccccccc",
+      "requiredRoles": [
+        "loadInputAuxiliary",
+        "tailDescriptorStorage"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "loadInputAuxiliary",
+          "rva": "0xb9460",
+          "instructionHex": "488b420c"
+        },
+        {
+          "role": "tailDescriptorStorage",
+          "rva": "0xb9475",
+          "instructionHex": "e9b6000000"
+        }
+      ]
+    },
+    {
+      "key": "alternateProviderConstructor",
+      "entryRva": "0xb72e0",
+      "bodyLength": 43,
+      "bodySha256": "0c66e2a510115f1dd01aede7cbba2ef16fa27ab69256610ec33cc26213b3f80f",
+      "boundaryRva": "0xb730b",
+      "boundaryHex": "cccccccccc",
+      "requiredRoles": [
+        "addressAlternateTable",
+        "storeAlternateTable",
+        "returnAllocation",
+        "storeData",
+        "storeDataWord"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "addressAlternateTable",
+          "rva": "0xb72e0",
+          "instructionHex": "488d05d9bb1d00"
+        },
+        {
+          "role": "storeAlternateTable",
+          "rva": "0xb72ee",
+          "instructionHex": "488901"
+        },
+        {
+          "role": "returnAllocation",
+          "rva": "0xb72ff",
+          "instructionHex": "488bc1"
+        },
+        {
+          "role": "storeData",
+          "rva": "0xb7302",
+          "instructionHex": "48895120"
+        },
+        {
+          "role": "storeDataWord",
+          "rva": "0xb7306",
+          "instructionHex": "4c894128"
+        }
+      ]
+    },
+    {
+      "key": "wideTextLength",
+      "entryRva": "0x26b7f8",
+      "bodyLength": 297,
+      "bodySha256": "89e8bf3f6c56af4a9631f83751bb3e1cb3d3ace253074298040ef3b6b7bfa514",
+      "boundaryRva": "0x26b921",
+      "boundaryHex": "cccccc",
+      "requiredRoles": [
+        "retainTextBase",
+        "retainTextCursor",
+        "scalarTerminator",
+        "advanceScalarCursor",
+        "subtractTextBase",
+        "countWideCharacters",
+        "returnWideLength",
+        "avxCompareWords",
+        "sseCompareWords"
+      ],
+      "instructionWitnesses": [
+        {
+          "role": "retainTextBase",
+          "rva": "0x26b7fe",
+          "instructionHex": "4c8bc1"
+        },
+        {
+          "role": "retainTextCursor",
+          "rva": "0x26b801",
+          "instructionHex": "488bd1"
+        },
+        {
+          "role": "scalarTerminator",
+          "rva": "0x26b90c",
+          "instructionHex": "66390a"
+        },
+        {
+          "role": "advanceScalarCursor",
+          "rva": "0x26b911",
+          "instructionHex": "4883c202"
+        },
+        {
+          "role": "subtractTextBase",
+          "rva": "0x26b917",
+          "instructionHex": "492bd0"
+        },
+        {
+          "role": "countWideCharacters",
+          "rva": "0x26b91a",
+          "instructionHex": "48d1fa"
+        },
+        {
+          "role": "returnWideLength",
+          "rva": "0x26b91d",
+          "instructionHex": "488bc2"
+        },
+        {
+          "role": "avxCompareWords",
+          "rva": "0x26b86b",
+          "instructionHex": "c5ed750a"
+        },
+        {
+          "role": "sseCompareWords",
+          "rva": "0x26b8ed",
+          "instructionHex": "660f7502"
+        }
+      ]
+    }
+  ],
+  "layouts": {
+    "factory": {
+      "ordinarySlot": 40,
+      "alternateSlot": 32
+    },
+    "provider": {
+      "primaryTable": 0,
+      "secondaryTable": 144,
+      "descriptorAllocation": 32,
+      "openSlot": 8
+    },
+    "descriptor": {
+      "textPointer": 0,
+      "numericWord": 8,
+      "auxiliaryPointer": 12,
+      "modeWord": 20,
+      "ownedAuxiliary": 64
+    },
+    "alternateProvider": {
+      "dataPointer": 32,
+      "dataWord": 40
+    }
+  },
+  "fieldBindings": [
+    {
+      "owner": "ordinaryProviderFactory",
+      "witness": "addressSecondaryInterface",
+      "layout": "provider",
+      "field": "secondaryTable",
+      "prefixHex": "4881c3",
+      "displacementBytes": 4
+    },
+    {
+      "owner": "ordinaryProviderConstructor",
+      "witness": "storePrimaryTable",
+      "layout": "provider",
+      "field": "primaryTable",
+      "prefixHex": "488903",
+      "displacementBytes": 0
+    },
+    {
+      "owner": "ordinaryProviderConstructor",
+      "witness": "storeSecondaryTable",
+      "layout": "provider",
+      "field": "secondaryTable",
+      "prefixHex": "488983",
+      "displacementBytes": 4
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "storeDescriptorAllocation",
+      "layout": "provider",
+      "field": "descriptorAllocation",
+      "prefixHex": "488943",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "loadInputMode",
+      "layout": "descriptor",
+      "field": "modeWord",
+      "prefixHex": "418b46",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "storeMode",
+      "layout": "descriptor",
+      "field": "modeWord",
+      "prefixHex": "8947",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "addressOwnedAuxiliary",
+      "layout": "descriptor",
+      "field": "ownedAuxiliary",
+      "prefixHex": "488d47",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "storeOwnedAuxiliary",
+      "layout": "descriptor",
+      "field": "auxiliaryPointer",
+      "prefixHex": "488947",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "loadInputAuxiliary",
+      "layout": "descriptor",
+      "field": "auxiliaryPointer",
+      "prefixHex": "498b4e",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "loadInputWord",
+      "layout": "descriptor",
+      "field": "numericWord",
+      "prefixHex": "418b46",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "storeWord",
+      "layout": "descriptor",
+      "field": "numericWord",
+      "prefixHex": "8947",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "storeOwnedText",
+      "layout": "descriptor",
+      "field": "textPointer",
+      "prefixHex": "488907",
+      "displacementBytes": 0
+    },
+    {
+      "owner": "alternateProviderConstructor",
+      "witness": "storeData",
+      "layout": "alternateProvider",
+      "field": "dataPointer",
+      "prefixHex": "488951",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "alternateProviderConstructor",
+      "witness": "storeDataWord",
+      "layout": "alternateProvider",
+      "field": "dataWord",
+      "prefixHex": "4c8941",
+      "displacementBytes": 1
+    },
+    {
+      "owner": "ordinaryProviderFactory",
+      "witness": "callPrimaryOpenSlot",
+      "layout": "provider",
+      "field": "openSlot",
+      "prefixHex": "ff50",
+      "displacementBytes": 1
+    }
+  ],
+  "callBindings": [
+    {
+      "owner": "ordinaryProviderFactory",
+      "witness": "callConstructor",
+      "targetOwner": "ordinaryProviderConstructor",
+      "opcodeHex": "e8"
+    },
+    {
+      "owner": "ordinaryProviderOpen",
+      "witness": "tailDescriptorStorage",
+      "targetOwner": "providerDescriptorStorage",
+      "opcodeHex": "e9"
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "callTextLength",
+      "targetOwner": "wideTextLength",
+      "opcodeHex": "e8"
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "callTextCopy",
+      "targetOwner": "wideTextCopy",
+      "opcodeHex": "e8"
+    },
+    {
+      "owner": "wideTextCopy",
+      "witness": "callSecureWideCopy",
+      "targetOwner": "secureWideTextCopy",
+      "opcodeHex": "e8"
+    },
+    {
+      "owner": "alternateProviderFactory",
+      "witness": "callConstructor",
+      "targetOwner": "alternateProviderConstructor",
+      "opcodeHex": "e8"
+    }
+  ],
+  "tableSlots": [
+    {
+      "key": "factoryOrdinarySlot",
+      "addressPointRva": "0x292ac0",
+      "slot": 40,
+      "targetOwner": "ordinaryProviderFactory",
+      "sha256": "15753a6baa14bb3af49828457853aa4f0d169f024a5a3c81b8d3473fbc44746d"
+    },
+    {
+      "key": "factoryAlternateSlot",
+      "addressPointRva": "0x292ac0",
+      "slot": 32,
+      "targetOwner": "alternateProviderFactory",
+      "sha256": "7a6377529c6c4b4201ce99d0cccf285501a0cfc439ce7f18793806bf14ad7640"
+    },
+    {
+      "key": "providerOpenSlot",
+      "addressPointRva": "0x2932e8",
+      "slot": 8,
+      "targetOwner": "ordinaryProviderOpen",
+      "sha256": "983170e08fe11ac220c78cb1e2c717aefe2e80e82b1ee41f96f79cf3b0dbf348"
+    }
+  ],
+  "addressPointBindings": [
+    {
+      "owner": "singletonInitializer",
+      "witness": "addressFactoryTable",
+      "prefixHex": "488d0d",
+      "targetRva": "0x292ac0"
+    },
+    {
+      "owner": "ordinaryProviderConstructor",
+      "witness": "addressPrimaryTable",
+      "prefixHex": "488d05",
+      "targetRva": "0x2932e8"
+    },
+    {
+      "owner": "ordinaryProviderConstructor",
+      "witness": "addressSecondaryTable",
+      "prefixHex": "488d05",
+      "targetRva": "0x293260"
+    },
+    {
+      "owner": "alternateProviderConstructor",
+      "witness": "addressAlternateTable",
+      "prefixHex": "488d05",
+      "targetRva": "0x292ec0"
+    }
+  ],
+  "singletonBindings": [
+    {
+      "owner": "singletonInitializer",
+      "witness": "loadSingleton",
+      "prefixHex": "488b05",
+      "targetRva": "0x3448f0"
+    },
+    {
+      "owner": "singletonInitializer",
+      "witness": "storeSingleton",
+      "prefixHex": "488905",
+      "targetRva": "0x3448f0"
+    }
+  ],
+  "allocationBytes": {
+    "singleton": 24,
+    "ordinaryProvider": 272,
+    "descriptor": 112,
+    "alternateProvider": 72
+  },
+  "allocationBindings": [
+    {
+      "owner": "singletonInitializer",
+      "witness": "requestSingletonBytes",
+      "allocation": "singleton",
+      "prefixHex": "ba"
+    },
+    {
+      "owner": "ordinaryProviderFactory",
+      "witness": "requestProviderBytes",
+      "allocation": "ordinaryProvider",
+      "prefixHex": "ba"
+    },
+    {
+      "owner": "providerDescriptorStorage",
+      "witness": "requestDescriptorBytes",
+      "allocation": "descriptor",
+      "prefixHex": "ba"
+    },
+    {
+      "owner": "alternateProviderFactory",
+      "witness": "requestProviderBytes",
+      "allocation": "alternateProvider",
+      "prefixHex": "ba"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Complete selected native unwind groups, complete bounded unwindless leaves, selected table slots and typed fields/calls agree with reviewed bytes.",
+    "conditional": "When the preparation singleton retains the reviewed initialized factory address point, its ordinary slot requests and constructs a provider, copies a non-null UTF-16 descriptor text into owned NUL-terminated storage and returns a secondary interface on the reviewed success-status branch. Its alternate slot constructs a different provider retaining the incoming data pointer and word, and returns the allocation base.",
+    "unresolved": "Singleton replacement or indirect aliasing, live invocation, external voice family choice, file handle/read identity, codec meaning of the argument halfword, allocation generation and audibility remain unresolved."
+  }
+}

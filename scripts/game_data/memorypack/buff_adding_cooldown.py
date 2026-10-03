@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import json
 import struct
+from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
@@ -104,12 +105,14 @@ def _check_wrapper_declarations(contract: dict[str, Any]) -> dict[str, str]:
     return {"status": "validated", "detail": f"{assembly_path} setters match the selected build"}
 
 
-def validate_current_native_contract() -> dict[str, Any]:
+def validate_current_native_contract(*, gameassembly: Path | None = None,
+                                     metadata: Path | None = None) -> dict[str, Any]:
     """Validate only the new source-result-to-field join, reusing owning contracts."""
     contract = _contract()
     expected = contract["nativeInputs"]
     gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != "validated":
         return {"status": gate.status, "nativeStatus": gate.status,

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.wwise-effect-parameters-native.v2",
+  "schema": "endfield.wwise-effect-parameters-native.v3",
   "status": "reviewedCurrentBuild",
   "nativeInputs": {
     "gameAssemblySha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
@@ -11,7 +11,7 @@
     "version": "Wwise 2023.1.17.8841",
     "variant": "SDK/x64_vc170/Release/lib"
   },
-  "evidenceBoundary": "Reviewed public SetParamsBlock method bodies match named SDK COFF methods outside relocation bytes. Direct selected AkSoundEngine registration records, parameter factories, constructed vtables and slot controls join two proprietary class IDs to their SetParamsBlock bodies. Their contiguous input read spans are structuralOnly: authored field names, values and runtime roles remain opaque. Selected native hashes and code windows gate every claim.",
+  "evidenceBoundary": "Reviewed public SetParamsBlock method bodies match named SDK COFF methods outside relocation bytes. Direct selected AkSoundEngine registration records, parameter factories, constructed vtables and slot controls join two proprietary class IDs to their SetParamsBlock bodies. Their exact anonymous input read partitions are structuralOnly: offsets, widths, load kinds and raw representation views establish no public control name, unit, transformed value or runtime DSP role. Selected native hashes and code windows gate every claim.",
   "parameterSchemas": {
     "0x00690003": {
       "schema": "wwiseParametricEqFxParamsV1",
@@ -636,7 +636,7 @@
   },
   "structuralSchemas": {
     "0x007f0003": {
-      "schema": "wwiseConvolutionReverbFxParamsStructuralV1",
+      "schema": "wwiseConvolutionReverbFxParamsStructuralV2",
       "status": "structuralOnly",
       "setParamsBlock": {
         "rva": "0x00258340",
@@ -645,10 +645,126 @@
       },
       "contiguousInputReadBytes": 57,
       "shippedInputLengthStatus": "notProvedByThisNativeContract",
-      "evidenceBoundary": "Direct native reads cover the 57-byte input span; method does not check the supplied length. Names and runtime roles are unresolved."
+      "evidenceBoundary": "structuralOnly",
+      "inputBaseWitnesses": [
+        {
+          "bodyOffset": 12,
+          "instructionHex": "488d5a08",
+          "inputBaseOffset": 8,
+          "register": "rbx"
+        }
+      ],
+      "inputReads": [
+        {
+          "serializedOffset": 0,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 10,
+          "instructionHex": "8b02"
+        },
+        {
+          "serializedOffset": 4,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 22,
+          "instructionHex": "8b4204"
+        },
+        {
+          "serializedOffset": 8,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 28,
+          "instructionHex": "f30f1003"
+        },
+        {
+          "serializedOffset": 12,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 53,
+          "instructionHex": "f30f104b04"
+        },
+        {
+          "serializedOffset": 16,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 88,
+          "instructionHex": "f30f104b08"
+        },
+        {
+          "serializedOffset": 20,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 110,
+          "instructionHex": "f30f104b0c"
+        },
+        {
+          "serializedOffset": 24,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 120,
+          "instructionHex": "f30f104b10"
+        },
+        {
+          "serializedOffset": 28,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 142,
+          "instructionHex": "f30f104b14"
+        },
+        {
+          "serializedOffset": 32,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 164,
+          "instructionHex": "f30f104b18"
+        },
+        {
+          "serializedOffset": 36,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 186,
+          "instructionHex": "f30f104b1c"
+        },
+        {
+          "serializedOffset": 40,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 208,
+          "instructionHex": "f30f104b20"
+        },
+        {
+          "serializedOffset": 44,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 230,
+          "instructionHex": "f30f104b24"
+        },
+        {
+          "serializedOffset": 48,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 252,
+          "instructionHex": "8b4328"
+        },
+        {
+          "serializedOffset": 52,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 258,
+          "instructionHex": "f30f104b2c"
+        },
+        {
+          "serializedOffset": 56,
+          "byteWidth": 1,
+          "readKind": "byteZeroExtend",
+          "bodyOffset": 287,
+          "instructionHex": "0fb64330"
+        }
+      ],
+      "meaningBoundary": "Exact anonymous native input loads and byte zero tests. A scalar32 load permits a float32 representation view, not a named control, unit, processed value or runtime DSP role. The method does not check the supplied length."
     },
     "0x00ba0003": {
-      "schema": "wwiseMasteringSuiteFxParamsStructuralV1",
+      "schema": "wwiseMasteringSuiteFxParamsStructuralV2",
       "status": "structuralOnly",
       "setParamsBlock": {
         "rva": "0x00249fd0",
@@ -657,7 +773,634 @@
       },
       "contiguousInputReadBytes": 304,
       "shippedInputLengthStatus": "notProvedByThisNativeContract",
-      "evidenceBoundary": "Direct native reads cover the 304-byte input span; method does not check the supplied length. Authored names and runtime roles remain unresolved."
+      "evidenceBoundary": "structuralOnly",
+      "inputBaseWitnesses": [
+        {
+          "bodyOffset": 18,
+          "instructionHex": "4c8d4a02",
+          "inputBaseOffset": 2,
+          "register": "r9"
+        }
+      ],
+      "inputReads": [
+        {
+          "serializedOffset": 0,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 34,
+          "instructionHex": "381a"
+        },
+        {
+          "serializedOffset": 1,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 57,
+          "instructionHex": "385a01"
+        },
+        {
+          "serializedOffset": 2,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 77,
+          "instructionHex": "413819"
+        },
+        {
+          "serializedOffset": 3,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 96,
+          "instructionHex": "41385901"
+        },
+        {
+          "serializedOffset": 4,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 111,
+          "instructionHex": "418b4102"
+        },
+        {
+          "serializedOffset": 8,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 121,
+          "instructionHex": "41385906"
+        },
+        {
+          "serializedOffset": 9,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 149,
+          "instructionHex": "41385907"
+        },
+        {
+          "serializedOffset": 10,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 171,
+          "instructionHex": "41385908"
+        },
+        {
+          "serializedOffset": 11,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 193,
+          "instructionHex": "41385909"
+        },
+        {
+          "serializedOffset": 12,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 215,
+          "instructionHex": "4138590a"
+        },
+        {
+          "serializedOffset": 13,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 235,
+          "instructionHex": "4138590b"
+        },
+        {
+          "serializedOffset": 14,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 255,
+          "instructionHex": "418b490c"
+        },
+        {
+          "serializedOffset": 18,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 265,
+          "instructionHex": "f3410f104110"
+        },
+        {
+          "serializedOffset": 22,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 276,
+          "instructionHex": "f3410f104914"
+        },
+        {
+          "serializedOffset": 26,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 287,
+          "instructionHex": "418b4118"
+        },
+        {
+          "serializedOffset": 30,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 306,
+          "instructionHex": "418b491c"
+        },
+        {
+          "serializedOffset": 34,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 319,
+          "instructionHex": "f3410f104120"
+        },
+        {
+          "serializedOffset": 38,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 333,
+          "instructionHex": "f3410f104924"
+        },
+        {
+          "serializedOffset": 42,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 344,
+          "instructionHex": "418b4128"
+        },
+        {
+          "serializedOffset": 46,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 354,
+          "instructionHex": "418b492c"
+        },
+        {
+          "serializedOffset": 50,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 367,
+          "instructionHex": "f3410f104130"
+        },
+        {
+          "serializedOffset": 54,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 381,
+          "instructionHex": "f3410f104934"
+        },
+        {
+          "serializedOffset": 58,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 392,
+          "instructionHex": "418b4138"
+        },
+        {
+          "serializedOffset": 62,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 402,
+          "instructionHex": "418b493c"
+        },
+        {
+          "serializedOffset": 66,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 415,
+          "instructionHex": "f3410f104140"
+        },
+        {
+          "serializedOffset": 70,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 429,
+          "instructionHex": "f3410f104944"
+        },
+        {
+          "serializedOffset": 74,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 440,
+          "instructionHex": "418b4148"
+        },
+        {
+          "serializedOffset": 78,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 450,
+          "instructionHex": "418b494c"
+        },
+        {
+          "serializedOffset": 82,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 463,
+          "instructionHex": "f3410f104150"
+        },
+        {
+          "serializedOffset": 86,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 477,
+          "instructionHex": "f3410f104954"
+        },
+        {
+          "serializedOffset": 90,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 488,
+          "instructionHex": "418b4158"
+        },
+        {
+          "serializedOffset": 94,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 498,
+          "instructionHex": "418b495c"
+        },
+        {
+          "serializedOffset": 98,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 511,
+          "instructionHex": "f3410f104160"
+        },
+        {
+          "serializedOffset": 102,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 522,
+          "instructionHex": "f3410f104964"
+        },
+        {
+          "serializedOffset": 106,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 533,
+          "instructionHex": "418b4168"
+        },
+        {
+          "serializedOffset": 110,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 543,
+          "instructionHex": "418b416c"
+        },
+        {
+          "serializedOffset": 114,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 553,
+          "instructionHex": "418b4170"
+        },
+        {
+          "serializedOffset": 118,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 565,
+          "instructionHex": "f3410f104174"
+        },
+        {
+          "serializedOffset": 122,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 579,
+          "instructionHex": "41385978"
+        },
+        {
+          "serializedOffset": 123,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 600,
+          "instructionHex": "41385979"
+        },
+        {
+          "serializedOffset": 124,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 613,
+          "instructionHex": "4138597a"
+        },
+        {
+          "serializedOffset": 125,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 631,
+          "instructionHex": "4138597b"
+        },
+        {
+          "serializedOffset": 126,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 649,
+          "instructionHex": "4138597c"
+        },
+        {
+          "serializedOffset": 127,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 674,
+          "instructionHex": "418b417d"
+        },
+        {
+          "serializedOffset": 131,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 684,
+          "instructionHex": "418b8181000000"
+        },
+        {
+          "serializedOffset": 135,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 697,
+          "instructionHex": "418b8185000000"
+        },
+        {
+          "serializedOffset": 139,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 710,
+          "instructionHex": "418b8189000000"
+        },
+        {
+          "serializedOffset": 143,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 723,
+          "instructionHex": "f3410f10818d000000"
+        },
+        {
+          "serializedOffset": 147,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 740,
+          "instructionHex": "f3410f108991000000"
+        },
+        {
+          "serializedOffset": 151,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 757,
+          "instructionHex": "f3410f108195000000"
+        },
+        {
+          "serializedOffset": 155,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 774,
+          "instructionHex": "f3410f108999000000"
+        },
+        {
+          "serializedOffset": 159,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 791,
+          "instructionHex": "f3410f10819d000000"
+        },
+        {
+          "serializedOffset": 163,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 808,
+          "instructionHex": "f3410f1089a1000000"
+        },
+        {
+          "serializedOffset": 167,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 825,
+          "instructionHex": "f3410f1081a5000000"
+        },
+        {
+          "serializedOffset": 171,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 842,
+          "instructionHex": "f3410f1089a9000000"
+        },
+        {
+          "serializedOffset": 175,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 859,
+          "instructionHex": "f3410f1081ad000000"
+        },
+        {
+          "serializedOffset": 179,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 876,
+          "instructionHex": "f3410f1089b1000000"
+        },
+        {
+          "serializedOffset": 183,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 893,
+          "instructionHex": "f3410f1081b5000000"
+        },
+        {
+          "serializedOffset": 187,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 910,
+          "instructionHex": "f3410f1089b9000000"
+        },
+        {
+          "serializedOffset": 191,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 927,
+          "instructionHex": "f3410f1081bd000000"
+        },
+        {
+          "serializedOffset": 195,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 944,
+          "instructionHex": "f3410f1089c1000000"
+        },
+        {
+          "serializedOffset": 199,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 961,
+          "instructionHex": "f3410f1081c5000000"
+        },
+        {
+          "serializedOffset": 203,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 978,
+          "instructionHex": "f3410f1089c9000000"
+        },
+        {
+          "serializedOffset": 207,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 995,
+          "instructionHex": "f3410f1081cd000000"
+        },
+        {
+          "serializedOffset": 211,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 1012,
+          "instructionHex": "f3410f1089d1000000"
+        },
+        {
+          "serializedOffset": 215,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 1029,
+          "instructionHex": "f3410f1081d5000000"
+        },
+        {
+          "serializedOffset": 219,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 1046,
+          "instructionHex": "f3410f1089d9000000"
+        },
+        {
+          "serializedOffset": 223,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 1063,
+          "instructionHex": "f3410f1081dd000000"
+        },
+        {
+          "serializedOffset": 227,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 1080,
+          "instructionHex": "f3410f1089e1000000"
+        },
+        {
+          "serializedOffset": 231,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1097,
+          "instructionHex": "418b81e5000000"
+        },
+        {
+          "serializedOffset": 235,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1110,
+          "instructionHex": "418b81e9000000"
+        },
+        {
+          "serializedOffset": 239,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1123,
+          "instructionHex": "418b81ed000000"
+        },
+        {
+          "serializedOffset": 243,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1136,
+          "instructionHex": "418b81f1000000"
+        },
+        {
+          "serializedOffset": 247,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1149,
+          "instructionHex": "418b81f5000000"
+        },
+        {
+          "serializedOffset": 251,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1162,
+          "instructionHex": "418b81f9000000"
+        },
+        {
+          "serializedOffset": 255,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1175,
+          "instructionHex": "418b81fd000000"
+        },
+        {
+          "serializedOffset": 259,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1188,
+          "instructionHex": "418b8101010000"
+        },
+        {
+          "serializedOffset": 263,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1201,
+          "instructionHex": "418b8105010000"
+        },
+        {
+          "serializedOffset": 267,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1214,
+          "instructionHex": "418b8109010000"
+        },
+        {
+          "serializedOffset": 271,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1227,
+          "instructionHex": "418b810d010000"
+        },
+        {
+          "serializedOffset": 275,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1240,
+          "instructionHex": "418b8111010000"
+        },
+        {
+          "serializedOffset": 279,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1253,
+          "instructionHex": "418b8115010000"
+        },
+        {
+          "serializedOffset": 283,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1278,
+          "instructionHex": "418b8119010000"
+        },
+        {
+          "serializedOffset": 287,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 1291,
+          "instructionHex": "f3410f10811d010000"
+        },
+        {
+          "serializedOffset": 291,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 1308,
+          "instructionHex": "f3410f108921010000"
+        },
+        {
+          "serializedOffset": 295,
+          "byteWidth": 4,
+          "readKind": "scalar32Load",
+          "bodyOffset": 1325,
+          "instructionHex": "f3410f108125010000"
+        },
+        {
+          "serializedOffset": 299,
+          "byteWidth": 4,
+          "readKind": "word32Copy",
+          "bodyOffset": 1342,
+          "instructionHex": "418b8129010000"
+        },
+        {
+          "serializedOffset": 303,
+          "byteWidth": 1,
+          "readKind": "byteZeroTest",
+          "bodyOffset": 1360,
+          "instructionHex": "4138992d010000"
+        }
+      ],
+      "meaningBoundary": "Exact anonymous native input loads and byte zero tests. A scalar32 load permits a float32 representation view, not a named control, unit, processed value or runtime DSP role. The method does not check the supplied length."
     }
   },
   "unreviewedClassIds": [

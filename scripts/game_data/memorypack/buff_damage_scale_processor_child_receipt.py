@@ -72,7 +72,9 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract(*, modifier_native: dict[str, Any]) -> dict[str, Any]:
+def validate_current_native_contract(*, modifier_native: dict[str, Any],
+                                     gameassembly: Path | None = None,
+                                     metadata: Path | None = None) -> dict[str, Any]:
     """Prove the selected tag-five source and three assigned member slots."""
     if modifier_native.get("status") != "validated":
         return {"status": modifier_native.get("status", "missing"),
@@ -99,7 +101,8 @@ def validate_current_native_contract(*, modifier_native: dict[str, Any]) -> dict
             or f"processor{contract['unionTag']}" not in base.get("anonymousReadOrder", {})):
         raise ValueError(f"{LABEL}.contract:base-or-parent")
     gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
+        expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gameassembly, metadata=metadata,
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         return {"status": gate.status, "detail": gate.detail}
@@ -191,7 +194,9 @@ def validate_current_native_contract(*, modifier_native: dict[str, Any]) -> dict
             and calls[2]["instructionRva"] < contract["nestedContexts"][1]["instructionRva"]
             < calls[3]["instructionRva"]):
         raise ValueError(f"{LABEL}.contract:context-source-order")
-    blackboard_native = blackboard_double.validate_current_native_contract()
+    blackboard_native = blackboard_double.validate_current_native_contract(
+        gameassembly=gate.gameassembly, metadata=gate.metadata,
+    )
     if (blackboard_native.get("status") != "validated"
             or blackboard_native.get("selectedReadOrder") != contract["blackboardChildReadOrder"]):
         raise ValueError(f"{LABEL}.native:blackboard-child-{blackboard_native.get('status')}")

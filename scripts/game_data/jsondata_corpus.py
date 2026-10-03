@@ -21,7 +21,8 @@ Terminal states (one per file, never merged):
   MemoryPack reader at physical EOF);
 - ``format_framed``: a named outer frame whose nested bodies stay opaque (for
   BuffData, ``namedOuterFrameStatus`` exact frame or full);
-- ``format_framed_anonymous``: an exact frame whose members are not named;
+- ``format_framed_anonymous``: an exact frame with unproved recursive member
+  names; already proved field names remain available;
 - ``bounded_partial``: a named prefix with an opaque remainder;
 - ``bounded_partial_ambiguous``: SkillData rows whose terminal boundary has
   more than one supported candidate;
@@ -36,14 +37,24 @@ the LevelScript sequential owner) that own formatter, cursor, native-input and
 semantic claims.  Their reports are read here only after their own provenance
 checks, and every BuffData row promoted to ``schema_decoded`` is replayed from
 the current exported bytes against the family's recorded root receipt
-(no-positive, positive-damage, or sole-CreateBuffAction root) under the
-selected native validation; a differing canonical digest fails the audit.
+(no-positive, positive-damage, sole-CreateBuffAction, or one of four
+source-bound positive-heal, BreakPassingSmallSceneObject event-map,
+attribute-plus-empty-condition/tag-ten and recursive sword damage roots) under the selected native
+validation; a differing canonical digest fails the audit. Selected diagnostic
+receipts remain nonpublishable by themselves; only a complete family report
+with authenticated helper/contract/audit/native input pins supplies admission.
+Those selected pins are rechecked after exported-byte replay.
 The Buff and Skill joins also check each report's format and identity-set
 digest, require a one-to-one path set with the current ledger, and recheck
 every row's length, logical MD5 and logical SHA-256 against the exported
 bytes.  Exact closure of a child record never promotes its parent: a SkillData
 row whose first action group is exact but whose later top-level continuation
-stops stays partial.  The SkillData adapter consumes the exact passive
+stops stays partial. SkillData's legacy family ``wholeSchemaExact`` proves
+top-level framing and EOF, not recursively named child schemas. The registry
+retains it as ``familyWholeSchemaExact``, separates valid ``storedFrameExact``
+evidence, and keeps ``namedSchemaStatus=unproved`` until an owning reader
+supplies a complete recursively named receipt. Known fields and boundaries
+are retained. The SkillData adapter consumes the exact passive
 shared-list and multi-record CreateBuff profiles through separate structural
 predicates; a malformed profile claim raises ``SkillEvidenceContractError``
 naming the failed predicate, path and bounded row state rather than a
@@ -108,15 +119,9 @@ from scripts.game_data.leveldata_binary import (
 from scripts.game_data.levelconfig_binary import LevelConfigDecodeError, decode_level_config
 from scripts.game_data.levelscript_binary import (
     LevelScriptTopLevelFramingError,
-    frame_levelscript_action_map_named_prefix,
-    frame_levelscript_current_action_sequence_leader_enter,
-    frame_levelscript_single_call_server_leader_enter,
-    frame_levelscript_empty_action_map_sequential,
-    frame_levelscript_null_action_map_sequential,
-    frame_levelscript_empty_action_map_prefix,
-    frame_levelscript_empty_action_map_top_level,
-    frame_levelscript_terminal_suffix,
+    frame_levelscript_named,
 )
+from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs
 from scripts.game_data.levelscript_template_binary import (
     LevelScriptTemplateFramingError,
     frame_levelscript_template,
@@ -184,9 +189,14 @@ from scripts.game_data.memorypack.corpus_gate import (
     CensusGateError,
     _guard_output_path,
     _read_outer_and_ledger,
+    _fingerprint,
+    _snapshot_pinned_files,
+    verify_current_report_inputs,
 )
 from scripts.game_data.memorypack import buff_root_no_positive
+from scripts.game_data.memorypack import buff_event_maps
 from scripts.game_data.memorypack import buff_create_action_root_receipt
+from scripts.game_data.memorypack import buff_selected_roots
 from scripts.game_data.memorypack.lipsync import (
     LipSyncDecodeError,
     decode_lipsync_memorypack,
@@ -306,6 +316,79 @@ class SkillEvidenceContractError(ValueError):
         )
 
 
+
+class BuffEvidenceContractError(ValueError):
+    """A current Buff receipt failed a named registry admission predicate."""
+
+    def __init__(self, diagnostic: dict[str, Any]) -> None:
+        self.diagnostic = diagnostic
+        super().__init__(
+            f"{diagnostic['validator']}: {diagnostic['source']}; "
+            f"failedPredicate={diagnostic['failedPredicate']}; "
+            f"expected={diagnostic['expected']!r}, actual={diagnostic['actual']!r}"
+        )
+
+
+def _require_buff_checks(checks: list[tuple[str, Any, Any]], *, source: str,
+                         source_sha256: str, report_path: Path | None = None) -> None:
+    failures = [{"predicate": name, "expected": expected, "actual": actual}
+                for name, expected, actual in checks if expected != actual]
+    if not failures:
+        return
+    first = failures[0]
+    raise BuffEvidenceContractError({
+        "validator": "jsondata_corpus", "check": "buff-positive-damage-receipt",
+        "family": "BuffData", "source": source, "virtualPath": source,
+        "sourceSha256": source_sha256,
+        "sourceReport": report_path.as_posix() if report_path else None,
+        "failedPredicate": first["predicate"], "expected": first["expected"],
+        "actual": first["actual"], "failures": failures[:20],
+    })
+
+
+def _require_gradual_condition(condition: dict[str, Any], native: dict[str, Any], *,
+                                source: str, source_sha256: str, report_path: Path) -> None:
+    """Consume the family's native-gated four-action receipt, without decoding bytes.
+
+    The complete family gate and canonical source replay remain the proof owners.
+    This adapter admits only the recorded named condition, selected native action
+    order/field plans and recursive exact spans; it infers no action execution.
+    """
+    gradual = native.get("gradualCondition") or {}
+    actions = condition.get("actions") or []
+    tags = gradual.get("selectedActionTags") or []
+    plans = {key: [field.get("name") for field in plan]
+             for key, plan in (gradual.get("actionMemberPlans") or {}).items()}
+    decorate = gradual.get("decorateNative") or {}
+    dynamic = gradual.get("dynamicNative") or {}
+    plans[str(decorate.get("unionTag"))] = [field.get("name") for field in decorate.get("actionMemberPlan") or []]
+    plans[str(dynamic.get("unionTag"))] = dynamic.get("selectedFieldNames") or []
+    actual_plans = [[field.get("name") for field in action.get("namedFields") or []]
+                    for action in actions]
+    expected_plans = [plans.get(str(tag)) for tag in tags]
+    spans_tile = (len(actions) == 4 and type(condition.get("start")) is int
+                  and type(condition.get("end")) is int
+                  and actions[0].get("start") == condition["start"] + 5
+                  and all(left.get("end") == right.get("start") for left, right in zip(actions, actions[1:]))
+                  and actions[-1].get("end") == condition["end"] - 2)
+    _require_buff_checks([
+        ("gradual.nativeStatus", "validated", gradual.get("status")),
+        ("gradual.nativeInputs", native.get("nativeInputs"), gradual.get("nativeInputs")),
+        ("gradual.source", source, condition.get("source")),
+        ("gradual.sourceSha256", source_sha256, condition.get("logicalSha256")),
+        ("gradual.status", "exact-four-action-sequence", condition.get("status")),
+        ("gradual.wholeStoredSpanExact", True, condition.get("wholeStoredSpanExact")),
+        ("gradual.recursiveNamedSchemaExact", True, condition.get("recursiveNamedSchemaExact")),
+        ("gradual.actionCount", 4, condition.get("actionCount")),
+        ("gradual.actionTags", tags, [action.get("tag") for action in actions]),
+        ("gradual.nativePlanPresent", True, len(expected_plans) == 4 and all(expected_plans)),
+        ("gradual.actionFieldPlans", expected_plans, actual_plans),
+        ("gradual.recursiveChildren", [True] * 4, [action.get("recursiveNamedSchemaExact") for action in actions]),
+        ("gradual.childSpans", True, spans_tile),
+        ("gradual.terminalBytes", gradual.get("selectedTerminalRawHex"), condition.get("terminalRawHex")),
+    ], source=source, source_sha256=source_sha256, report_path=report_path)
+
+
 def _exact_create_buff_later_records(profile: dict[str, Any], first_record: dict[str, Any]) -> bool:
     """Check the additional exact records in the shared CreateBuff list route."""
     if profile.get("status") != "verified-exact-timeline-create-buff-shared-sequence-records":
@@ -418,122 +501,238 @@ def _skill_capture_target_reference(report: dict[str, Any], source_path: Path) -
     }
 
 
+def _skill_target_set_failure(predicate: str, *, source_path: Path,
+                              verification_path: Path | None = None,
+                              reference: Any = None, row: dict[str, Any] | None = None,
+                              expected: Any = None, actual: Any = None) -> None:
+    """Keep receipt failures actionable in both CLI and companion diagnostics."""
+    def bounded(value: Any, depth: int = 0) -> Any:
+        if isinstance(value, str):
+            return value[:500]
+        if isinstance(value, dict):
+            if depth >= 3:
+                return {"keys": list(value)[:12]}
+            return {str(key): bounded(item, depth + 1) for key, item in list(value.items())[:12]}
+        if isinstance(value, (list, tuple)):
+            if depth >= 3:
+                return {"count": len(value)}
+            return [bounded(item, depth + 1) for item in value[:8]]
+        return value
+    logical_path = (row or {}).get("virtualPath")
+    raise SkillEvidenceContractError({
+        "validator": "jsondata_corpus._skill_capture_target_set_reference",
+        "gate": "skill-capture-target-set-receipt",
+        "source": logical_path or str(verification_path or source_path),
+        "virtualPath": logical_path or str(verification_path or source_path),
+        "sourceSha256": (row or {}).get("logicalSha256"),
+        "sourceReport": source_path.resolve().as_posix(),
+        "verificationPath": verification_path.resolve().as_posix() if verification_path else None,
+        "verificationSha256": reference.get("sha256") if isinstance(reference, dict) else None,
+        "failedPredicate": predicate, "expected": bounded(expected), "actual": bounded(actual),
+    })
+
+
+_SKILL_TARGET_SET_ROW_FIELDS = (
+    "virtualPath", "length", "logicalSha256", "boundaryClass", "coverageStatus",
+    "wholeSchemaExact", "framing", "candidateCoverage", "boundaryContext",
+    "terminalSelection", "byteRanges", "opaqueByteRanges", "parserCursor",
+    "emptyActionGroupProfile", "timelineSharedSequenceProfile", "passiveSharedSequenceProfile",
+)
+
+
+def _skill_target_set_validation_view(row: dict[str, Any]) -> dict[str, Any]:
+    """Restore only overlay state in a small view; never alter the accepted row.
+
+    Named ranges and members are read-only inputs. The authoritative overlay
+    mutates only the copied candidate dictionaries, coverage records, boundary
+    context and profile dictionaries, so no whole-report deep copy is needed.
+    """
+    view = {key: row[key] for key in _SKILL_TARGET_SET_ROW_FIELDS if key in row}
+    framing = row.get("framing")
+    if isinstance(framing, dict):
+        view["framing"] = {**framing, "candidates": [dict(item) if isinstance(item, dict) else item
+                                                    for item in framing.get("candidates", [])]}
+    coverage = row.get("candidateCoverage")
+    if isinstance(coverage, list):
+        view["candidateCoverage"] = [dict(item) if isinstance(item, dict) else item for item in coverage]
+    if isinstance(row.get("boundaryContext"), dict):
+        view["boundaryContext"] = dict(row["boundaryContext"])
+    for key in ("emptyActionGroupProfile", "timelineSharedSequenceProfile", "passiveSharedSequenceProfile"):
+        profile = row.get(key)
+        if not isinstance(profile, dict):
+            continue
+        view[key] = dict(profile)
+        continuation = profile.get("topLevelContinuation")
+        if isinstance(continuation, dict):
+            view[key]["topLevelContinuation"] = dict(continuation)
+            if continuation.get("status") == "verified-exact-through-field-42":
+                view[key]["topLevelContinuation"]["status"] = "exact-through-field-42"
+    if row.get("coverageStatus") == "verified-whole-schema-exact-capture-target-set":
+        view.update(boundaryClass="ambiguous", coverageStatus="ambiguous-disjoint-independent-ranges",
+                    wholeSchemaExact=False)
+    return view
+
+
 def _skill_capture_target_set_reference(
     report: dict[str, Any], source_path: Path,
 ) -> tuple[dict[str, Any], dict[str, dict[str, Any]]] | None:
-    """Check the strict v3 receipt reference and index its exact source targets."""
+    """Replay the same original or rebind receipt used by the full Skill gate.
+
+    A rebind's current corpus pin is its exact sparse target basis, not the full
+    family's identity set. The unchanged proof owner joins every target to this
+    full report by path, length and logical SHA and validates native/cursor/source
+    provenance anew, including the historical control and original capture.
+    """
+    from scripts.game_data.memorypack import skill_cursor_target_set_overlay as overlay
     provenance = report.get("provenance")
     reference = provenance.get("captureTargetSetVerification") if isinstance(provenance, dict) else None
     if reference is None:
         return None
+    verification_path: Path | None = None
+    def fail(predicate: str, expected: Any, actual: Any, row: dict[str, Any] | None = None) -> None:
+        _skill_target_set_failure(predicate, source_path=source_path,
+                                  verification_path=verification_path, reference=reference,
+                                  row=row, expected=expected, actual=actual)
     if not isinstance(reference, dict):
-        raise ValueError(f"SkillData target-set provenance is malformed: {source_path}")
+        fail("referenceObject", "recorded verification object", type(reference).__name__)
     recorded_path = reference.get("path")
     if not isinstance(recorded_path, str) or not Path(recorded_path).is_absolute():
-        raise ValueError(f"SkillData target-set verification path is invalid: {source_path}")
+        fail("verificationPath", "absolute verification path", recorded_path)
     verification_path = Path(recorded_path).resolve()
-    if not verification_path.is_file():
-        raise ValueError(f"SkillData target-set verification is missing: {verification_path}")
-    if (reference.get("length") != verification_path.stat().st_size
-            or reference.get("sha256") != _sha256_path(verification_path)):
-        raise ValueError(f"SkillData target-set verification bytes differ: {verification_path}")
     try:
+        _snapshot_pinned_files([reference], label="Skill target-set verification before admission")
         verification = json.loads(verification_path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
-        raise ValueError(f"SkillData target-set verification cannot be read: {verification_path}: {exc}") from exc
-    if not isinstance(verification, dict):
-        raise ValueError(f"SkillData target-set verification is not an object: {verification_path}")
-    summary = verification.get("summary")
-    targets = verification.get("targets")
-    verified_provenance = verification.get("provenance")
-    if (
-        verification.get("schema") != "endfield.skillDataCursorTargetSetVerification.v1"
-        or verification.get("status") != "validated"
-        or verification.get("coverageStatus") != "complete"
-        or verification.get("inputSetSha256") != report.get("inputSetSha256")
-        or not isinstance(summary, dict)
-        or summary.get("globalFailureReasons") != []
-        or summary.get("unresolvedExactClosed") != summary.get("unresolvedTargets")
-        or summary.get("positiveControlsExactClosed") != summary.get("positiveControls")
-        or not isinstance(targets, list)
-        or summary.get("observationCount") != len(targets)
-        or not isinstance(verified_provenance, dict)
-        or not isinstance(verified_provenance.get("corpusReport"), dict)
-        or verified_provenance["corpusReport"].get("identitySetSha256")
-        != report.get("identitySetSha256")
-    ):
-        raise ValueError(f"SkillData target-set verification contract differs: {verification_path}")
-    input_names = ("receipt", "corpusReport", "nativeContext", "verifier",
-                   "captureTargetSetContract", "captureTargetSetVerifier")
-    expected_inputs = []
-    for name in input_names:
-        source = verified_provenance.get(name)
-        if not isinstance(source, dict):
-            raise ValueError(f"SkillData target-set verification lacks {name}: {verification_path}")
-        expected_inputs.append({key: source.get(key) for key in ("path", "length", "sha256")})
-    if (reference.get("inputs") != expected_inputs
-            or reference.get("targets") != len(targets)
-            or reference.get("promoted") != summary.get("unresolvedTargets")
-            or reference.get("retainedPositiveControls") != summary.get("positiveControls")):
-        raise ValueError(f"SkillData target-set input provenance differs: {verification_path}")
+        if not isinstance(verification, dict):
+            fail("verificationObject", "JSON object", type(verification).__name__)
+        targets = verification.get("targets")
+        if not isinstance(targets, list) or not targets:
+            fail("targetList", "nonempty target list", type(targets).__name__)
+        rows = report.get("files")
+        if not isinstance(rows, list):
+            fail("currentRows", "complete current row list", type(rows).__name__)
+        target_paths = {target.get("virtualPath") for target in targets
+                        if isinstance(target, dict) and isinstance(target.get("virtualPath"), str)}
+        if len(target_paths) != len(targets):
+            fail("targetPaths", "unique named target paths", len(target_paths))
+        selected_rows = [row for row in rows if isinstance(row, dict) and row.get("virtualPath") in target_paths]
+        views = [_skill_target_set_validation_view(row) for row in selected_rows]
+        verify_current_report_inputs(report)
+        replayed_reference = overlay.apply_verified_capture_target_set(
+            views, verification_path=verification_path,
+            expected_input_set_sha256=report.get("inputSetSha256"),
+            identity_set_sha256=report.get("identitySetSha256"),
+            build_fingerprints=provenance.get("buildFingerprints"),
+        )
+        expected_reference = dict(reference)
+        # Original v3 references predate the additive promoted-control counter.
+        # Rebind references must carry its full original promotion accounting.
+        if verification.get("schema") == "endfield.skillDataCursorTargetSetVerification.v1":
+            expected_reference.setdefault("promotedPositiveControls", 0)
+        if replayed_reference != expected_reference:
+            fail("overlayReference", expected_reference, replayed_reference)
+        _snapshot_pinned_files([reference, *replayed_reference["inputs"]],
+                               label="Skill target-set verification after admission")
+        verify_current_report_inputs(report)
+    except SkillEvidenceContractError:
+        raise
+    except CensusGateError as exc:
+        fail(exc.diagnostic["code"], exc.diagnostic.get("expected"),
+             {"source": exc.diagnostic.get("source"), "offset": exc.diagnostic.get("offset"),
+              "value": exc.diagnostic.get("actual")},
+             next((row for row in selected_rows if row.get("virtualPath") == exc.diagnostic.get("source")), None)
+             if "selected_rows" in locals() else None)
+    except (OSError, UnicodeError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        fail("verificationReplay", "complete authenticated original/rebind replay", str(exc))
+    canonical_by_path = {row["virtualPath"]: row for row in views}
     targets_by_path: dict[str, dict[str, Any]] = {}
+    for row in selected_rows:
+        canonical = canonical_by_path[row["virtualPath"]]
+        for key in _SKILL_TARGET_SET_ROW_FIELDS:
+            if row.get(key) != canonical.get(key):
+                def value_summary(value: Any) -> Any:
+                    return ({"canonicalSha256": canonical_json_sha256(value),
+                             "type": type(value).__name__}
+                            if isinstance(value, (dict, list)) else value)
+                fail("canonicalRow." + key, value_summary(canonical.get(key)),
+                     value_summary(row.get(key)), row)
     for target in targets:
-        if (not isinstance(target, dict) or not isinstance(target.get("virtualPath"), str)
-                or target["virtualPath"] in targets_by_path
-                or target.get("status") != "observed-exact-closed"
-                or target.get("captureHealth") != "clean"):
-            raise ValueError(f"SkillData target-set target is malformed: {verification_path}")
-        targets_by_path[target["virtualPath"]] = target
+        canonical = canonical_by_path[target["virtualPath"]]
+        targets_by_path[target["virtualPath"]] = {**target, "_canonicalRow": canonical}
     return ({"path": verification_path.as_posix(), "sha256": reference["sha256"],
-             "targets": len(targets)}, targets_by_path)
+             "schema": verification["schema"], "targets": len(targets)}, targets_by_path)
 
 
 def _skill_capture_target_set_row_exact(row: dict[str, Any], target: dict[str, Any] | None) -> bool:
-    """Keep the consumer's exact tier tied to one captured source and static join."""
-    if not isinstance(target, dict) or target.get("role") != "unresolved":
+    """Admit only the canonical forward-overlay row already authenticated above."""
+    if not isinstance(target, dict) or target.get("role") not in ("unresolved", "positiveControl"):
         return False
-    runtime = target.get("runtimeFieldRanges")
-    terminal = target.get("selectedTerminal")
-    if (target.get("virtualPath") != row.get("virtualPath")
-            or target.get("sourceLength") != row.get("length")
-            or target.get("logicalSha256") != row.get("logicalSha256")
-            or not isinstance(runtime, list) or len(runtime) != 48
-            or not isinstance(terminal, dict)):
+    canonical = target.get("_canonicalRow")
+    if not isinstance(canonical, dict) or canonical.get("coverageStatus") != "verified-whole-schema-exact-capture-target-set":
         return False
-    cursor = 1
-    for index, field in enumerate(runtime):
-        if (not isinstance(field, dict) or field.get("fieldIndex") != index
-                or type(field.get("start")) is not int or type(field.get("end")) is not int
-                or field["start"] != cursor or field["end"] <= cursor):
-            return False
-        cursor = field["end"]
-    if (cursor != row.get("length")
-            or terminal != {"start": runtime[43]["start"], "end": cursor,
-                            "encoding": "one-member-wrapper", "framerCandidateCount": 2}):
-        return False
-    profile = row.get("timelineSharedSequenceProfile")
-    if (not isinstance(profile, dict) or profile.get("wholeActionGroupDataExact") is not True
-            or profile.get("status") != "exact-first-timeline-shared-sequence-record"):
-        profile = row.get("passiveSharedSequenceProfile")
-        if (not isinstance(profile, dict) or profile.get("wholeActionGroupDataExact") is not True
-                or profile.get("status") != "exact-passive-shared-sequence-list"):
-            return False
-    continuation = profile.get("topLevelContinuation")
-    static = continuation.get("namedFields") if isinstance(continuation, dict) else None
-    if (profile.get("parserCursor") != runtime[0]["end"]
-            or not isinstance(continuation, dict)
-            or continuation.get("status") != "verified-exact-through-field-42"
-            or continuation.get("parserCursor") != runtime[43]["start"]
-            or not isinstance(static, list) or len(static) != 43):
-        return False
-    return all(
-        isinstance(field, dict)
-        and field.get("fieldIndex") == index
-        and field.get("fieldName") == runtime[index].get("fieldName")
-        and field.get("start") == runtime[index]["start"]
-        and field.get("end") == runtime[index]["end"]
-        for index, field in enumerate(static)
-    )
+    return all(row.get(key) == canonical.get(key) for key in _SKILL_TARGET_SET_ROW_FIELDS)
+
+
+def _skill_stored_schema_boundary(row: dict[str, Any], *, stored_frame_exact: bool) -> dict[str, Any]:
+    """Separate already authenticated frame admission from recursive naming.
+
+    The current family report has no complete recursively named root receipt.
+    Its legacy wholeSchemaExact flag authenticates top-level fields and EOF;
+    nested readers may retain anonymous ranges or omit child receipts. Call
+    only after the existing family/input/source and profile predicates pass.
+    A future named root needs its owning reader and reviewed admission rule.
+    """
+    if type(stored_frame_exact) is not bool:
+        raise ValueError("SkillData schema boundary: invalid stored-frame proof")
+    if stored_frame_exact and row.get("wholeSchemaExact") is not True:
+        raise ValueError("SkillData schema boundary: missing whole-frame proof")
+    selected = {
+        "empty-action-group": "emptyActionGroupProfile",
+        "timeline-play-animation": "timelinePlayAnimationProfile",
+        "timeline-play-animation-step": "timelinePlayAnimationStepProfile",
+        "timeline-create-buff": "timelineCreateBuffProfile",
+        "timeline-find-target": "timelineFindTargetProfile",
+        "timeline-continuous-find-target": "timelineContinuousFindTargetProfile",
+        "timeline-shared-sequence": "timelineSharedSequenceProfile",
+        "passive-shared-sequence": "passiveSharedSequenceProfile",
+    }
+    key = next((value for name, value in selected.items() if row.get("coverageStatus")
+                == f"verified-whole-schema-exact-{name}-profile"), None)
+    keys = [key] if key else sorted(name for name in row if name.endswith("Profile"))
+    examples: list[dict[str, Any]] = []
+
+    def visit(value: Any, path: str) -> None:
+        if len(examples) >= 3:
+            return
+        if isinstance(value, dict):
+            kind = value.get("kind")
+            if isinstance(kind, str) and kind.startswith("anonymous"):
+                examples.append({"path": path[:256], "kind": kind[:128],
+                                 "start": value.get("start"), "end": value.get("end")})
+            for name, child in value.items():
+                if isinstance(child, (dict, list)):
+                    visit(child, path + "/" + str(name))
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                visit(child, path + "/" + str(index))
+
+    for key in keys:
+        visit(row.get(key), key)
+    return {
+        "familyWholeSchemaExact": row.get("wholeSchemaExact") is True,
+        "storedFrameExact": stored_frame_exact,
+        "wholeSchemaExact": False,
+        "namedSchemaStatus": "unproved",
+        "namedSchemaGap": {
+            "reason": "anonymous-nested-ranges" if examples else "recursive-named-receipt-absent",
+            "profileKeys": [key for key in keys if isinstance(row.get(key), dict)],
+            "examples": examples,
+        },
+        "schemaEvidenceBoundary": (
+            "The family wholeSchemaExact flag is a legacy top-level framing and EOF claim. "
+            "Known names and stored frame evidence remain available; complete recursive "
+            "field naming is unproved. Stored structure does not establish runtime behavior."
+        ),
+    }
 
 
 def _safe_export_path(export_root: Path, virtual_path: str) -> tuple[Path, str, str]:
@@ -596,25 +795,75 @@ def _classify_json(data: bytes) -> tuple[bool, str | None]:
     return True, "object" if isinstance(decoded, dict) else "array" if isinstance(decoded, list) else "scalar"
 
 
+def _load_family_report(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Read one pinned family-report snapshot, without copying its file rows."""
+    pin = _fingerprint(path)
+    with path.open("r", encoding="utf-8") as handle:
+        report = json.load(handle)
+    if not isinstance(report, dict):
+        raise ValueError(f"family evidence report is not a JSON object: {path}")
+    _snapshot_pinned_files([pin], label="family report before/after preload")
+    return report, pin
+
+
+def _validate_family_report_contract(
+    report: dict[str, Any], report_pin: dict[str, Any], *, family: str,
+    expected_input_set_sha256: str,
+) -> None:
+    """Report each failed family-header gate before reading its large row set."""
+    contract = FAMILY_REPORTS[family]
+    checks = [
+        ("format", contract["format"], report.get("format"), report.get("format") == contract["format"]),
+        ("schemaVersion", 1, report.get("schemaVersion"), report.get("schemaVersion") == 1),
+        ("status", "complete", report.get("status"), report.get("status") == "complete"),
+        ("publicationEligible", True, report.get("publicationEligible"), report.get("publicationEligible") is True),
+        ("inputSetSha256", expected_input_set_sha256, report.get("inputSetSha256"),
+         report.get("inputSetSha256") == expected_input_set_sha256),
+        ("wholeSchemaExact", False, report.get("wholeSchemaExact"), report.get("wholeSchemaExact") is False),
+    ]
+
+    def bounded(value: Any) -> Any:
+        if isinstance(value, str):
+            return value if len(value) <= 256 else value[:253] + "..."
+        if value is None or isinstance(value, (bool, int, float)):
+            return value
+        return {"type": type(value).__name__, "length": len(value)}
+
+    failures = [{"check": f"family-report-{name}", "field": name,
+                 "expected": bounded(expected), "actual": bounded(actual)}
+                for name, expected, actual, passed in checks if not passed]
+    if not failures:
+        return
+    first = failures[0]
+    error = CensusGateError(first["check"], source=report_pin["path"],
+                            expected=first["expected"], actual=first["actual"])
+    error.diagnostic.update({
+        "validator": "jsondata_corpus._load_family_evidence", "check": first["check"],
+        "family": family, "sourceSha256": report_pin.get("sha256"),
+        "sourceLength": report_pin.get("length"), "validationFailures": failures,
+    })
+    # Keep the CLI summary and structured failure companion equally actionable.
+    error.args = (json.dumps(error.diagnostic, ensure_ascii=False, sort_keys=True),)
+    raise error
+
+
 def _load_family_evidence(
     path: Path,
     *,
     family: str,
     expected_input_set_sha256: str,
     expected_paths: set[str],
+    loaded_report: tuple[dict[str, Any], dict[str, Any]] | None = None,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
-    contract = FAMILY_REPORTS[family]
-    with path.open("r", encoding="utf-8") as handle:
-        report = json.load(handle)
-    if (
-        report.get("format") != contract["format"]
-        or report.get("schemaVersion") != 1
-        or report.get("status") != "complete"
-        or report.get("publicationEligible") is not True
-        or report.get("inputSetSha256") != expected_input_set_sha256
-        or report.get("wholeSchemaExact") is not False
-    ):
-        raise ValueError(f"{family} evidence report is incomplete, stale, or has an unsupported contract")
+    report, report_pin = loaded_report if loaded_report is not None else _load_family_report(path)
+    if report_pin.get("path") != path.resolve().as_posix():
+        raise CensusGateError("family-report-preload-path-differs", source=str(path),
+                              expected=path.resolve().as_posix(), actual=report_pin.get("path"))
+    _snapshot_pinned_files([report_pin], label=f"{family} family report before admission")
+    buff_report_pin = report_pin if family == "BuffData" else None
+    skill_report_pin = report_pin if family == "SkillData" else None
+    _validate_family_report_contract(report, report_pin, family=family,
+                                     expected_input_set_sha256=expected_input_set_sha256)
     rows = report.get("files")
     if not isinstance(rows, list):
         raise ValueError(f"{family} evidence report has no file rows")
@@ -642,6 +891,10 @@ def _load_family_evidence(
         _skill_capture_target_set_reference(report, path) if family == "SkillData" else None
     )
 
+    selected_root_provenance = None
+    if family == "BuffData" and any(row.get("rootSelectedSourceReceipt") is not None
+                                    or row.get("rootSelectedSourceCandidate") is True for row in rows):
+        selected_root_provenance = buff_selected_roots.verify_saved_provenance(report.get("provenance") or {})
     evidence: dict[str, dict[str, Any]] = {}
     for row in rows:
         identity = row.get("identity") if family == "BuffData" else row
@@ -664,7 +917,9 @@ def _load_family_evidence(
                     and row.get("namedOuterFrameStatus") == "named_exact_full"
                     and (row.get("rootNoPositiveCandidate") is True
                          or row.get("rootPositiveDamageCandidate") is True
-                         or row.get("rootSingleCreateActionCandidate") is True)
+                         or row.get("rootSingleCreateActionCandidate") is True
+                         or row.get("rootSharedEventCandidate") is True
+                         or row.get("rootSelectedSourceCandidate") is True)
                 )
                 and not (
                     family == "SkillData"
@@ -697,6 +952,8 @@ def _load_family_evidence(
             root_receipt = row.get("rootNoPositiveReceipt")
             positive_receipt = row.get("rootPositiveDamageReceipt")
             create_receipt = row.get("rootSingleCreateActionReceipt")
+            event_receipt = row.get("rootSharedEventReceipt")
+            selected_receipt = row.get("rootSelectedSourceReceipt")
             positive_condition_status = None
             if isinstance(positive_receipt, dict):
                 positive_fields = positive_receipt.get("fields") or []
@@ -705,20 +962,31 @@ def _load_family_evidence(
                         ((positive_fields[6] or {}).get("child") or {})
                         .get("conditionChild", {}).get("status")
                     )
-            if buff_exact_claim:
+            selected_claim = selected_receipt is not None or row.get("rootSelectedSourceCandidate") is True
+            if buff_exact_claim and selected_claim:
+                if event_receipt is not None or row.get("rootSharedEventCandidate") is True:
+                    raise ValueError(f"BuffData selected root has duplicate shared event receipt: {virtual_path!r}")
+                buff_selected_roots.validate_recorded_row(
+                    row, root_validation=(report.get("provenance") or {}).get("buffRootNoPositiveNativeValidation") or {},
+                    selected_validations=selected_root_provenance["validations"],
+                )
+            if buff_exact_claim and not selected_claim:
                 positive = row.get("rootPositiveDamageCandidate") is True
                 create_action = row.get("rootSingleCreateActionCandidate") is True
                 no_positive = row.get("rootNoPositiveCandidate") is True
-                if sum((positive, create_action, no_positive)) != 1:
+                shared_event = row.get("rootSharedEventCandidate") is True
+                if sum((positive, create_action, no_positive, shared_event)) != 1:
                     raise ValueError(f"BuffData exact root branch is ambiguous: {virtual_path!r}")
                 native_key = (
-                    "buffSingleCreateActionNativeValidation" if create_action
+                    "buffSharedEventNativeValidation" if shared_event
+                    else "buffSingleCreateActionNativeValidation" if create_action
                     else "buffPositiveDamageNativeValidation" if positive
                     else "buffRootNoPositiveNativeValidation"
                 )
                 native = (report.get("provenance") or {}).get(native_key) or {}
-                root_native = native.get("root") if positive else native
-                chosen_receipt = (create_receipt if create_action else
+                root_native = ((report.get("provenance") or {}).get("buffRootNoPositiveNativeValidation") if shared_event
+                               else native.get("root") if positive else native)
+                chosen_receipt = (event_receipt if shared_event else create_receipt if create_action else
                                   positive_receipt if positive else root_receipt)
                 fields = chosen_receipt.get("fields") if isinstance(chosen_receipt, dict) else None
                 if (
@@ -733,7 +1001,8 @@ def _load_family_evidence(
                     ))
                     or not isinstance(chosen_receipt, dict)
                     or chosen_receipt.get("schema") != (
-                        "endfield.buff-root-single-create-action-receipt.v1" if create_action
+                        "endfield.buff-root-shared-event-receipt.v1" if shared_event
+                        else "endfield.buff-root-single-create-action-receipt.v1" if create_action
                         else "endfield.buff-root-positive-damage-receipt.v12" if positive
                         else "endfield.buff-root-no-positive-receipt.v1"
                     )
@@ -758,6 +1027,15 @@ def _load_family_evidence(
                     or fields[-1].get("end") != identity.get("length")
                     or fields[15].get("name") != "id"
                     or fields[15].get("value") != Path(virtual_path).stem
+                    or (not create_action
+                        and fields[3].get("end", 0) - fields[3].get("start", 0) != 6
+                        and (
+                            ((root_native or {}).get("children") or {}).get("attributeModifier", {}).get("status") != "validated"
+                            or (fields[3].get("child") or {}).get("status") not in ("exact", "exact-null")
+                            or (fields[3].get("child") or {}).get("wholeValueExact") is not True
+                            or (fields[3].get("child") or {}).get("startOffset") != fields[3].get("start")
+                            or (fields[3].get("child") or {}).get("consumedEnd") != fields[3].get("end")
+                        ))
                     or (fields[4].get("child") or {}).get("status") != "exact-datapair-list"
                     or (fields[4].get("child") or {}).get("consumedEnd") != fields[4].get("end")
                     or (
@@ -769,6 +1047,13 @@ def _load_family_evidence(
                     )
                 ):
                     raise ValueError(f"BuffData exact root receipt is incomplete: {virtual_path!r}")
+                if shared_event:
+                    if root_receipt is not None or positive_receipt is not None or create_receipt is not None:
+                        raise ValueError(f"BuffData shared event root has duplicate receipt: {virtual_path!r}")
+                    buff_event_maps.validate_recorded_event_children(chosen_receipt,
+                        native_validation=native, root_native=root_native or {})
+                elif event_receipt is not None:
+                    raise ValueError(f"BuffData other exact root carries shared event receipt: {virtual_path!r}")
                 if positive:
                     damage = (fields[6].get("child") or {})
                     condition = (damage.get("conditionChild") or {})
@@ -1041,6 +1326,12 @@ def _load_family_evidence(
                                     for action in actions
                                 )
                             )
+                    if condition.get("status") == "exact-four-action-sequence":
+                        _require_gradual_condition(
+                            condition, native, source=virtual_path,
+                            source_sha256=row.get("logicalSha256"), report_path=path,
+                        )
+                        condition_exact = True
                     processor_child = damage.get("processorChild") or {}
                     processor_tag = processor_child.get("unionTag")
                     scalar_route = next(
@@ -1215,9 +1506,7 @@ def _load_family_evidence(
                                           and action_tags == (native.get("notNextMainCondition") or {})
                                           .get("selectedActionTags")))))
                     )
-                    if (root_receipt is not None
-                            or any((native.get(name) or {}).get("status") != "validated"
-                                   for name in ("damageModifier", "processor",
+                    required_children = ("damageModifier", "processor",
                                                 "processorModifyCalc", "processorScalar",
                                                 "processorText", "twoActionCondition",
                                                 "condition",
@@ -1233,19 +1522,27 @@ def _load_family_evidence(
                                                 "ifElseCondition",
                                                 "notNextMainCondition",
                                                 "twoDirectionAngleCondition",
-                                                "processorInstantModifyAttribute"))
-                            or fields[6].get("name") != "damageModifier"
-                            or fields[6].get("count") != 1
-                            or damage.get("status") != "exact-composed-damage-list"
-                            or damage.get("wholeListExact") is not True
-                            or damage.get("startOffset") != fields[6].get("start")
-                            or damage.get("consumedEnd") != fields[6].get("end")
-                            or len(parent_fields) != 3
-                            or condition.get("start") != parent_fields[0].get("start")
-                            or condition.get("end") != parent_fields[0].get("end")
-                            or not condition_exact
-                            or not processor_exact):
-                        raise ValueError(f"BuffData positive damage root receipt is incomplete: {virtual_path!r}")
+                                                "processorInstantModifyAttribute")
+                    failed_native = [[name, (native.get(name) or {}).get("status")]
+                                     for name in required_children
+                                     if (native.get(name) or {}).get("status") != "validated"]
+                    gradual_processor_ok = (
+                        condition.get("status") != "exact-four-action-sequence"
+                        or (len(processor_children) == 1
+                            and processor_tag == (native.get("gradualCondition") or {}).get("selectedProcessorTag"))
+                    )
+                    _require_buff_checks([
+                        ("exclusivePositiveReceipt", False, root_receipt is not None),
+                        ("nativeChildGates", [], failed_native),
+                        ("damageField", ["damageModifier", 1], [fields[6].get("name"), fields[6].get("count")]),
+                        ("damageList", ["exact-composed-damage-list", True], [damage.get("status"), damage.get("wholeListExact")]),
+                        ("damageListSpan", [fields[6].get("start"), fields[6].get("end")], [damage.get("startOffset"), damage.get("consumedEnd")]),
+                        ("parentFieldCount", 3, len(parent_fields)),
+                        ("conditionParentSpan", [parent_fields[0].get("start"), parent_fields[0].get("end")] if parent_fields else [], [condition.get("start"), condition.get("end")]),
+                        ("conditionProfile", True, condition_exact),
+                        ("processorProfile", True, processor_exact),
+                        ("gradualProcessorSelection", True, gradual_processor_ok),
+                    ], source=virtual_path, source_sha256=row.get("logicalSha256"), report_path=path)
                 elif create_action:
                     action = fields[0].get("action") or {}
                     if (root_receipt is not None or positive_receipt is not None
@@ -1258,7 +1555,9 @@ def _load_family_evidence(
                         raise ValueError(f"BuffData single CreateBuff root receipt is incomplete: {virtual_path!r}")
                 elif positive_receipt is not None or create_receipt is not None:
                     raise ValueError(f"BuffData exact root branch has duplicate receipt: {virtual_path!r}")
-            elif (root_receipt is not None or positive_receipt is not None or create_receipt is not None
+            elif not buff_exact_claim and (root_receipt is not None or positive_receipt is not None or create_receipt is not None
+                  or event_receipt is not None or row.get("rootSharedEventCandidate") is True
+                  or selected_receipt is not None or row.get("rootSelectedSourceCandidate") is True
                   or row.get("rootNoPositiveCandidate") is True and row.get("namedOuterFrameStatus") == "named_exact_full"
                   or row.get("rootPositiveDamageCandidate") is True
                   or row.get("rootSingleCreateActionCandidate") is True):
@@ -1274,6 +1573,11 @@ def _load_family_evidence(
                 "rootPositiveDamageReceiptStatus": (positive_receipt or {}).get("status"),
                 "rootPositiveDamageConditionStatus": positive_condition_status,
                 "rootSingleCreateActionReceiptStatus": (create_receipt or {}).get("status"),
+                "rootSharedEventReceiptStatus": (event_receipt or {}).get("status"),
+                "rootSharedEventRefusal": row.get("rootSharedEventRefusal"),
+                "rootSelectedSourceBranch": row.get("rootSelectedSourceBranch"),
+                "rootSelectedSourceReceiptStatus": (selected_receipt or {}).get("status"),
+                "rootSelectedSourceDiagnostic": row.get("rootSelectedSourceDiagnostic"),
             }
         else:
             prefix_ok = bool(row.get("commonPrefixFraming", {}).get("provenPrefixByteLength"))
@@ -1825,6 +2129,20 @@ def _load_family_evidence(
                     passive_shared_sequence if exact_passive_shared_sequence else None
                 ),
             }
+            detail.update(_skill_stored_schema_boundary(
+                row, stored_frame_exact=bool(
+                    exact_empty or exact_capture_target or exact_capture_target_set
+                    or exact_timeline or exact_timeline_play_animation_step
+                    or exact_timeline_create_buff or exact_timeline_shared_sequence
+                    or exact_passive_shared_sequence
+                ),
+            ))
+            if isinstance(detail.get("terminalSelection"), dict):
+                detail["terminalSelection"] = {
+                    **detail["terminalSelection"],
+                    "familyWholeSchemaExact": detail["terminalSelection"].get("wholeSchemaExact") is True,
+                    "wholeSchemaExact": False,
+                }
             if exact_capture_target:
                 detail["captureTargetVerification"] = capture_target_reference
             if exact_capture_target_set:
@@ -1837,6 +2155,9 @@ def _load_family_evidence(
             "rootNoPositiveReceipt": root_receipt if family == "BuffData" else None,
             "rootPositiveDamageReceipt": positive_receipt if family == "BuffData" else None,
             "rootSingleCreateActionReceipt": create_receipt if family == "BuffData" else None,
+            "rootSharedEventReceipt": event_receipt if family == "BuffData" else None,
+            "rootSelectedSourceReceipt": selected_receipt if family == "BuffData" else None,
+            "rootSelectedSourceOuterRow": (row if family == "BuffData" and selected_receipt is not None else None),
         }
 
     if set(evidence) != expected_paths:
@@ -1849,6 +2170,10 @@ def _load_family_evidence(
     summary = report.get("summary", {})
     if summary.get("filesSelected") != len(expected_paths) or summary.get("filesSucceeded") != len(expected_paths):
         raise ValueError(f"{family} evidence summary does not match its file rows")
+    if buff_report_pin is not None:
+        _snapshot_pinned_files([buff_report_pin], label="Buff family report before/after admission")
+    if skill_report_pin is not None:
+        _snapshot_pinned_files([skill_report_pin], label="Skill family report before/after admission")
     metadata = {
         "path": path.resolve().as_posix(),
         "length": path.stat().st_size,
@@ -1856,6 +2181,9 @@ def _load_family_evidence(
         "format": report["format"],
         "identitySetSha256": report.get("identitySetSha256"),
     }
+    if selected_root_provenance is not None:
+        metadata["selectedRootSources"] = selected_root_provenance["sources"]
+        metadata["selectedRootNativeAudit"] = selected_root_provenance["audit"]
     return evidence, metadata
 
 
@@ -2054,35 +2382,18 @@ def _classify_binary(relative: str, family: str, data: bytes) -> dict[str, Any]:
             "diagnostic": diagnostic,
         }
     if family == "LevelScriptData":
-        for reader in (
-            frame_levelscript_empty_action_map_sequential,
-            frame_levelscript_null_action_map_sequential,
-            frame_levelscript_single_call_server_leader_enter,
-            frame_levelscript_current_action_sequence_leader_enter,
-            frame_levelscript_terminal_suffix,
-            frame_levelscript_empty_action_map_top_level,
-            frame_levelscript_action_map_named_prefix,
-            frame_levelscript_empty_action_map_prefix,
-        ):
-            ok, detail, diagnostic = _run_reader(
-                reader, data, (LevelScriptTopLevelFramingError, ValueError)
-            )
-            if ok:
-                return {
-                    "status": (
-                        "schema_decoded"
-                        if detail and detail.get("schemaStatus") == "named_exact"
-                        else "bounded_partial"
-                    ),
-                    "reader": f"scripts.game_data.levelscript_binary.{reader.__name__}",
-                    "detail": detail,
-                    "diagnostic": None,
-                }
+        try:
+            detail = frame_levelscript_named(data, source=relative)
+        except (LevelScriptTopLevelFramingError, ValueError) as exc:
+            return {
+                "status": "unclassified_binary", "reader": None,
+                "detail": None, "diagnostic": str(exc),
+                "diagnostics": getattr(exc, "diagnostics", []),
+            }
         return {
-            "status": "unclassified_binary",
-            "reader": None,
-            "detail": None,
-            "diagnostic": diagnostic,
+            "status": "schema_decoded" if detail.get("schemaStatus") == "named_exact" else "bounded_partial",
+            "reader": detail["reader"], "detail": detail,
+            "diagnostic": None,
         }
     if family == "LevelData":
         ok, detail, diagnostic = _run_reader(
@@ -2377,7 +2688,9 @@ def build_report(
     expected_input_set_sha256: str,
     buff_report_path: Path = DEFAULT_BUFF_REPORT,
     skill_report_path: Path = DEFAULT_SKILL_REPORT,
+    loaded_family_reports: dict[str, tuple[dict[str, Any], dict[str, Any]]] | None = None,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    levelscript_inputs_before = snapshot_complete_reader_inputs()
     expected = expected_input_set_sha256.upper()
     export_root = export_root.resolve()
     game_root, json_folder = _json_game_folder(export_root)
@@ -2418,6 +2731,7 @@ def build_report(
             family=family,
             expected_input_set_sha256=expected,
             expected_paths=ledger_family_paths[family],
+            loaded_report=(loaded_family_reports or {}).get(family),
         )
         family_evidence[family] = evidence
         family_report_provenance[family] = metadata
@@ -2425,6 +2739,8 @@ def build_report(
     buff_native_validation = None
     buff_positive_damage_validation = None
     buff_single_create_validation = None
+    buff_shared_event_validation = None
+    buff_selected_root_context = None
     if any(item["detail"].get("wholeSchemaExact") is True
            for item in family_evidence["BuffData"].values()):
         buff_native_validation = buff_root_no_positive.validate_current_native_contract()
@@ -2442,6 +2758,23 @@ def build_report(
         buff_single_create_validation = buff_create_action_root_receipt.validate_current_native_contract()
         if buff_single_create_validation.get("status") != "validated":
             raise ValueError("BuffData single CreateBuff native validation is not current")
+
+    if any(item.get("rootSharedEventReceipt") is not None
+           for item in family_evidence["BuffData"].values()):
+        buff_shared_event_validation = buff_event_maps.validate_current_native_contract()
+        if buff_shared_event_validation.get("status") != "validated":
+            raise ValueError("BuffData shared event native validation is not current")
+
+    if any(item.get("rootSelectedSourceReceipt") is not None
+           for item in family_evidence["BuffData"].values()):
+        selected_metadata = family_report_provenance["BuffData"]
+        buff_selected_root_context = buff_selected_roots.prepare_native_context(
+            audit_path=Path(selected_metadata["selectedRootNativeAudit"]["path"]),
+            root_validation=buff_native_validation,
+        )
+        if buff_selected_roots.recheck_sources(buff_selected_root_context) != selected_metadata["selectedRootSources"]:
+            raise CensusGateError("buff-selected-root-source-provenance-differs", source=str(buff_report_path),
+                                  expected="the family report's current selected input pins", actual="pins differ")
 
     seen_paths: set[str] = set()
     results: list[dict[str, Any]] = []
@@ -2626,7 +2959,20 @@ def build_report(
             ):
                 raise ValueError(f"{family} evidence differs from current export bytes: {virtual_path!r}")
             if family == "BuffData" and evidence["detail"].get("wholeSchemaExact") is True:
-                if evidence["rootSingleCreateActionReceipt"] is not None:
+                if evidence["rootSelectedSourceReceipt"] is not None:
+                    replay = buff_selected_roots.replay_recorded_source(
+                        data, outer_row=evidence["rootSelectedSourceOuterRow"],
+                        root_validation=buff_native_validation, context=buff_selected_root_context,
+                    )
+                    recorded = evidence["rootSelectedSourceReceipt"]
+                elif evidence["rootSharedEventReceipt"] is not None:
+                    replay = buff_root_no_positive.decode_shared_event_root(
+                        data, source=virtual_path, expected_sha256=logical_sha256,
+                        native_validation=buff_native_validation,
+                        event_maps_validation=buff_shared_event_validation,
+                    )
+                    recorded = evidence["rootSharedEventReceipt"]
+                elif evidence["rootSingleCreateActionReceipt"] is not None:
                     replay = buff_create_action_root_receipt.decode_single_create_action_root(
                         data, source=virtual_path, expected_sha256=logical_sha256,
                         native_validation=buff_single_create_validation,
@@ -2653,7 +2999,9 @@ def build_report(
             contract = FAMILY_REPORTS[family]
             classification = {
                 "status": (
-                    "schema_decoded"
+                    "format_framed_anonymous"
+                    if family == "SkillData" and evidence["detail"].get("storedFrameExact") is True
+                    else "schema_decoded"
                     if family in ("SkillData", "BuffData")
                     and evidence["detail"].get("wholeSchemaExact") is True
                     else "format_framed"
@@ -2678,6 +3026,10 @@ def build_report(
             "firstByte": data[:1].hex().upper(),
             **classification,
         })
+
+    if buff_selected_root_context is not None:
+        buff_selected_roots.recheck_sources(buff_selected_root_context)
+        _snapshot_pinned_files([family_report_provenance["BuffData"]], label="Buff report after selected root replay")
 
     actual_files = _json_export_files(game_root, json_folder)
     extras = sorted(actual_files - seen_paths)
@@ -2711,6 +3063,9 @@ def build_report(
                 "sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest().upper(),
             },
             "familyReports": family_report_provenance,
+            "levelscriptReaderInputs": levelscript_inputs_before,
+            **({"buffSelectedRootReplayInputs": buff_selected_roots.recheck_sources(buff_selected_root_context)}
+               if buff_selected_root_context is not None else {}),
         },
         "summary": {
             "filesSelected": len(selected),
@@ -2728,6 +3083,9 @@ def build_report(
             "filename extension, or leading member count never supplies a schema."
         ),
     }
+    if snapshot_complete_reader_inputs() != levelscript_inputs_before:
+        raise CensusGateError("levelscript-reader-inputs-drift", source="complete LevelScript reader scope",
+                              expected="identical complete start/end source path sets and bytes", actual="reader inputs changed during canonical decode")
     return report, results
 
 
@@ -2770,6 +3128,40 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _recorded_input_paths(value: Any) -> list[Path]:
+    """Protect recorded disk paths, without treating logical VFS names as files.
+
+    This is an output guard, not a new provenance validator or fingerprint scope.
+    Absolute paths anywhere in provenance include asset roots and BLC lists; a
+    logical name such as Data/Json/BuffData/... is deliberately excluded.
+    """
+    paths: dict[str, Path] = {}
+    pending = [value]
+    while pending:
+        item = pending.pop()
+        if isinstance(item, dict):
+            pending.extend(item.values())
+        elif isinstance(item, (list, tuple)):
+            pending.extend(item)
+        elif isinstance(item, str) and item and Path(item).is_absolute():
+            path = Path(item)
+            paths.setdefault(os.path.normcase(str(path.resolve())), path)
+    return list(paths.values())
+
+
+def _guard_publication_outputs(outputs: list[Path], protected_paths: list[Path]) -> None:
+    """Guard each output by index, including equal names and the companion."""
+    resolved = [path.resolve() for path in outputs]
+    for index, output in enumerate(outputs):
+        other_outputs = [other for other_index, other in enumerate(outputs) if other_index != index]
+        _guard_output_path(output, [*protected_paths, *other_outputs])
+        # All four outputs are files, even before they exist on disk.
+        for other_index, other in enumerate(resolved):
+            if other_index != index and resolved[index].is_relative_to(other):
+                raise CensusGateError("output-nested-under-output", source=str(resolved[index]),
+                                      expected="independent output files", actual=str(other))
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--outer-summary", type=Path, default=DEFAULT_OUTER)
@@ -2786,14 +3178,29 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-md", type=Path, default=DEFAULT_MD)
     parser.add_argument("--output-files", type=Path, default=DEFAULT_FILES)
     args = parser.parse_args(argv)
+    validation_path = args.output_json.with_suffix(".validation.json")
+    outputs = [args.output_json, args.output_md, args.output_files, validation_path]
+    protected_paths = [args.outer_summary, args.outer_ledger, args.export_root,
+                       args.buff_report, args.skill_report, Path(__file__)]
+    validation_safe = False
     try:
-        outputs = [args.output_json, args.output_md, args.output_files]
-        for output in outputs:
-            _guard_output_path(
-                output,
-                [args.outer_summary, args.outer_ledger, args.export_root, args.buff_report, args.skill_report]
-                + [other for other in outputs if other != output],
-            )
+        located = locate_game_folder(args.export_root)
+        if located is not None:
+            protected_paths.append(ExportLayout(located[0]).game_file_store_path)
+        _guard_publication_outputs(outputs, protected_paths)
+        # Guard the transitive recorded inputs before an error companion can
+        # write. Read each large family report once and reuse the same object
+        # for admission; none of these paths adds a new evidence fingerprint.
+        with args.outer_summary.open("r", encoding="utf-8") as handle:
+            protected_paths.extend(_recorded_input_paths(json.load(handle)))
+        loaded_family_reports = {
+            "BuffData": _load_family_report(args.buff_report),
+            "SkillData": _load_family_report(args.skill_report),
+        }
+        for family_report, _pin in loaded_family_reports.values():
+            protected_paths.extend(_recorded_input_paths(family_report.get("provenance")))
+        _guard_publication_outputs(outputs, protected_paths)
+        validation_safe = True
         report, rows = build_report(
             outer_path=args.outer_summary,
             ledger_path=args.outer_ledger,
@@ -2801,7 +3208,12 @@ def main(argv: list[str] | None = None) -> int:
             expected_input_set_sha256=args.expected_input_set_sha256,
             buff_report_path=args.buff_report,
             skill_report_path=args.skill_report,
+            loaded_family_reports=loaded_family_reports,
         )
+        validation_safe = False
+        protected_paths.extend(_recorded_input_paths(report.get("provenance")))
+        _guard_publication_outputs(outputs, protected_paths)
+        validation_safe = True
         lines = b"".join(
             (json.dumps(row, ensure_ascii=False, separators=(",", ":")) + "\n").encode("utf-8")
             for row in rows
@@ -2817,15 +3229,14 @@ def main(argv: list[str] | None = None) -> int:
         _atomic_write(args.output_md, md_bytes)
         _atomic_write(args.output_files, files_bytes)
     except (CensusGateError, OSError, ValueError, KeyError, TypeError) as exc:
-        if isinstance(exc, SkillEvidenceContractError):
-            print(json.dumps({
-                "status": "failed",
-                "summary": str(exc),
-                "diagnostic": exc.diagnostic,
-            }, ensure_ascii=False))
-        else:
-            print(json.dumps({"status": "failed", "diagnostic": str(exc)}, ensure_ascii=False))
+        diagnostic = getattr(exc, "diagnostic", {"validator": "jsondata_corpus", "check": "corpus-run", "expected": "complete authenticated current corpus", "actual": str(exc)[:500]})
+        if validation_safe:
+            _atomic_write(validation_path,
+                          (json.dumps({"schema": "endfield.jsondata-corpus-validation.v1", "status": "failed", "diagnostic": diagnostic}, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
+        print(json.dumps({"status": "failed", "summary": str(exc), "diagnostic": diagnostic}, ensure_ascii=False))
         return 1
+    _atomic_write(validation_path,
+                  (json.dumps({"schema": "endfield.jsondata-corpus-validation.v1", "status": "validated", "inputSetSha256": args.expected_input_set_sha256, "diagnostic": None}, ensure_ascii=False, indent=2) + "\n").encode("utf-8"))
     print(json.dumps({"status": report["status"], "summary": report["summary"]}, ensure_ascii=False))
     return 0
 

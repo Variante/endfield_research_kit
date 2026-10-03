@@ -18,9 +18,12 @@ disjoint from the RootComp and ResourceGroup visibility spans, and the three
 families tile ``PrimitiveIntList`` exactly (structural). The selected values
 are nonzero stored tile IDs, not padding.
 
-The getter window has an alternate native branch outside its checked fast
-path. No selected consumer of the IDs is known: when SludgeComp is active and
-how a tile affects navigation or rendering remain open.
+The reviewed collector returns positive, bounded grid-local primitive IDs to
+a supplied UInt64 list. A selected load-check path passes those IDs to
+NavMeshChunkManager.IsSurfaceLoaded; its Boolean result gates the selected
+navmesh-apply call. Accessor, carrier, list insertion and caller joins are
+authenticated independently. These are conditional native consumers: live
+Sludge/grid selection, patch routes and actual navmesh state remain open.
 
 Run ``python -m scripts.game_data.dynamic_sludge_surf_tile_native
 --gameassembly PATH --metadata PATH --input-root DUMP_ROOT
@@ -63,17 +66,251 @@ from scripts.game_data.dynamic_streaming import (
     parse_dynamic_file,
 )
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.il2cpp.context import (
+    generic_method_candidates, relative_branch_target, rip_qword_load_target, usage_method_spec,
+)
+from scripts.game_data.il2cpp.protocol import runtime_type_name
 from scripts.repo_paths import REPO_ROOT
 
 
 CONTRACT = CONTRACTS_DIR / "dynamic_sludge_surf_tile_native.json"
-SCHEMA = "endfield.dynamic-sludge-surf-tile-native-contract.v1"
+SCHEMA = "endfield.dynamic-sludge-surf-tile-native-contract.v2"
 DEFAULT_JSON = REPO_ROOT / "reports/animestudio/dynamic_sludge_surf_tile_native_latest.json"
 DEFAULT_MARKDOWN = REPO_ROOT / "reports/animestudio/dynamic_sludge_surf_tile_native_latest.md"
 
 
 class DynamicSludgeSurfTileError(ValueError):
     """The selected getter, authenticated corpus, or stored spans differ."""
+
+
+def _consumer_type_name(image: Any, index: int) -> str:
+    if not 0 <= index < image.registration["typesCount"]:
+        raise DynamicSludgeSurfTileError(f"consumer:signature:type-index={index}")
+    pointer = image.pe.u64_at_va(int(image.registration["types"], 16) + index * 8)
+    return runtime_type_name(image.pe, image.metadata, pointer)
+
+
+def _checked_consumer_window(image: Any, name: str, window: dict[str, Any]) -> bytes:
+    rva, length = int(window["rva"]), int(window["length"])
+    if rva < 0 or not 0 < length <= 4096:
+        raise DynamicSludgeSurfTileError(f"consumer:{name}:invalid-window={rva}:{length}")
+    raw = image.pe.bytes_at_va(image.pe.image_base + rva, length)
+    actual = hashlib.sha256(raw).hexdigest().upper()
+    if actual != window["sha256"]:
+        raise DynamicSludgeSurfTileError(
+            f"consumer:{name}:code-window expected={window['sha256']} actual={actual} "
+            f"source={getattr(image, 'gameassembly', '<selected native image>')} rva={rva:#x}")
+    return raw
+
+
+def _consumer_range(block: dict[str, Any], raw: dict[str, bytes], row: dict[str, Any],
+                    size: int, label: str) -> bytes:
+    owner = row["window"]
+    offset = int(row["rva"]) - int(block["windows"][owner]["rva"])
+    if not 0 <= offset <= len(raw[owner]) - size:
+        raise DynamicSludgeSurfTileError(f"consumer:{label}:outside-window={owner}")
+    return raw[owner][offset:offset + size]
+
+
+def _checked_consumer_branch(raw: bytes, rva: int, prefix: bytes, target: int, label: str) -> None:
+    if not raw.startswith(prefix) or len(raw) != len(prefix) + (1 if len(prefix) == 1 else 4):
+        raise DynamicSludgeSurfTileError(f"consumer:{label}:branch-shape={raw.hex().upper()}")
+    displacement = struct.unpack_from("<b" if len(prefix) == 1 else "<i", raw, len(prefix))[0]
+    actual = rva + len(raw) + displacement
+    if actual != target:
+        raise DynamicSludgeSurfTileError(
+            f"consumer:{label}:branch-target expected={target:#x} actual={actual:#x}")
+
+
+def _validate_list_add_context(image: Any, block: dict[str, Any]) -> dict[str, Any]:
+    """Join the supplied static Add companion independently of inline code."""
+    pins = block["listAddContext"]
+    cell, usage = image.nested_usage_cell(pins["usage"], label="dynamic_sludge_surf_tile")
+    reg, pe, md = image.registration, image.pe, image.metadata
+    records_va = int(reg["methodSpecs"], 16)
+    selected = usage_method_spec(
+        usage, pe.bytes_at_va(records_va, reg["methodSpecsCount"] * 12),
+        len(md.methods), reg["genericInstsCount"], source=str(image.gameassembly),
+        usage_offset=cell, records_offset=records_va,
+    )
+    for actual_key, pin_key in (("index", "methodSpecIndex"), ("rawHex", "methodSpecRawHex"),
+                               ("definition", "methodDefinitionIndex"),
+                               ("classInstantiationIndex", "classInstantiationIndex"),
+                               ("methodInstantiationIndex", "methodInstantiationIndex")):
+        if selected[actual_key] != pins[pin_key]:
+            raise DynamicSludgeSurfTileError(
+                f"consumer:listAdd:{actual_key}-differs expected={pins[pin_key]} actual={selected[actual_key]}")
+    method = md.methods[selected["definition"]]
+    if (image.type_name(method.declaring_type) != pins["type"]
+            or md.string(method.name_index) != pins["method"]
+            or method.parameter_count != 1
+            or _consumer_type_name(image, method.return_type) != "void"):
+        raise DynamicSludgeSurfTileError("consumer:listAdd:method-identity-or-signature-differs")
+    instance = image.instantiations.resolve(selected["classInstantiationIndex"])
+    arguments = [runtime_type_name(pe, md, row.type_pointer_va) for row in instance.arguments]
+    if arguments != pins["classArguments"] or arguments != ["ulong"]:
+        raise DynamicSludgeSurfTileError(
+            f"consumer:listAdd:class-arguments expected={pins['classArguments']} actual={arguments[:8]} count={len(arguments)}")
+    code = image.mapper.code_registration_summary(pe, image.code_registration)
+    table_va = int(reg["genericMethodTable"], 16)
+    candidates = generic_method_candidates(
+        pe.bytes_at_va(table_va, reg["genericMethodTableCount"] * 16),
+        reg["genericMethodTableCount"], reg["methodSpecsCount"], {selected["index"]},
+        code["genericMethodPointersCount"], code["invokerPointersCount"],
+        source=str(image.gameassembly), offset=table_va,
+    )
+    targets = [pe.u64_at_va(int(code["genericMethodPointers"], 16) + row["indices"][0] * 8)
+               - pe.image_base for row in candidates]
+    expected = int(block["windows"][pins["targetWindow"]]["rva"])
+    if len(candidates) != 1 or targets != [expected]:
+        raise DynamicSludgeSurfTileError(
+            f"consumer:listAdd:static-code-candidates expected={[expected]} actual={targets[:8]}")
+    return {"methodSpecIndex": selected["index"], "methodDefinitionIndex": selected["definition"],
+            "classArguments": arguments, "staticCandidateRva": expected,
+            "boundary": "Static List<UInt64>.Add companion/candidate identity; the collector calls a separately checked inline insertion helper."}
+
+
+def _validate_consumer(image: Any, block: dict[str, Any], layout: dict[str, Any],
+                       root: dict[str, Any], primitive: dict[str, Any]) -> dict[str, Any]:
+    """Check reviewed control/data witnesses; never infer live execution."""
+    methods = block["methods"]
+    required_methods = {"collect", "loaded", "tryApply", "apply", "surfaceLoaded",
+                        "primitive", "primitiveLength", "groupIndex", "groupNum", "dataIndex"}
+    if set(methods) != required_methods:
+        raise DynamicSludgeSurfTileError("consumer:method-roster-differs")
+    for name, row in methods.items():
+        image.validate_method_row([int(row["index"]), row["type"], row["method"], int(row["rva"])],
+                                  label="dynamic_sludge_surf_tile.consumer." + name)
+        method = image.metadata.methods[int(row["index"])]
+        parameters = [_consumer_type_name(image, item.type_index)
+                      for item in image.metadata.parameters_for(method)]
+        result = _consumer_type_name(image, method.return_type)
+        if parameters != row["parameters"] or result != row["returnType"]:
+            raise DynamicSludgeSurfTileError(
+                f"consumer:{name}:signature expected={row['parameters']}->{row['returnType']} actual={parameters}->{result}")
+    if (int(methods["primitive"]["index"]) != int(primitive["accessorMethodIndex"])
+            or int(methods["groupIndex"]["index"]) != int(root["groupIndexGetterMethodIndex"])
+            or int(methods["groupNum"]["index"]) != int(root["groupNumGetterMethodIndex"])
+            or methods["collect"]["parameters"] != [layout["gridType"], layout["recordType"],
+                                                    "System.Collections.Generic.List`1<ulong>"]
+            or methods["loaded"]["parameters"] != ["System.Collections.Generic.List`1<ulong>"]
+            or methods["surfaceLoaded"]["parameters"] != ["ulong"]):
+        raise DynamicSludgeSurfTileError("consumer:shared-layout-or-list-binding-differs")
+    raw = {name: _checked_consumer_window(image, name, row)
+           for name, row in block["windows"].items()}
+    for name in set(raw) & set(methods):
+        if int(block["windows"][name]["rva"]) != int(methods[name]["rva"]):
+            raise DynamicSludgeSurfTileError(f"consumer:{name}:window-method-binding-differs")
+    witnesses = block["witnesses"]
+    required = {"collectorArguments", "clearOutput", "groupCarrierInputs", "groupOffset",
+                "groupCarrierBuffer", "groupCarrierOutput", "carrierPosition", "carrierOutput",
+                "groupIndexOutput", "startAndGroup", "negativeGuard", "upperGuard",
+                "primitiveArguments", "positiveGuard", "conversion", "iterationSkip", "loopBound",
+                "originalSlot", "cloneSlot", "lengthSlot", "originalStride", "cloneStride",
+                "cloneAddress", "cloneWidth", "cloneRead", "cloneReturn", "helperWidth",
+                "helperRead", "helperReturn", "listStore", "loadedElement", "loadedResult",
+                "loadedFalse", "loadedTrue", "applyArguments", "applyList", "applyResult",
+                "emptyApply", "trueApplyArguments", "emptyApplyArguments", "registeredListStore",
+                "registeredListArguments", "countGuardInitial", "countGuardLoop", "collectExit",
+                "loadedIteration", "cloneBuffer", "originalBuffer", "cloneEndian", "helperEndian",
+                "cloneEndianSource", "helperEndianSource", "callerInputs", "callerZero"}
+    if set(witnesses) != required:
+        raise DynamicSludgeSurfTileError("consumer:witness-roster-differs")
+    checked = {}
+    for name, row in witnesses.items():
+        expected = bytes.fromhex(row["hex"])
+        if not expected:
+            raise DynamicSludgeSurfTileError(f"consumer:{name}:empty-witness")
+        actual = _consumer_range(block, raw, row, len(expected), name)
+        if actual != expected:
+            raise DynamicSludgeSurfTileError(
+                f"consumer:{name}:instruction-window-differs expected={expected[:48].hex().upper()} "
+                f"actual={actual[:48].hex().upper()} bytes={len(expected)} rva={int(row['rva']):#x}")
+        checked[name] = actual
+    offset = checked["groupOffset"]
+    if len(offset) != 6 or offset[:2] != b"\x81\xc2" or struct.unpack_from("<I", offset, 2)[0] != int(layout["groupOffset"]):
+        raise DynamicSludgeSurfTileError("consumer:groupOffset:shared-layout-binding-differs")
+    for name in ("originalSlot", "cloneSlot", "lengthSlot"):
+        value = checked[name]
+        if len(value) != 5 or value[0] != 0xBA or struct.unpack_from("<I", value, 1)[0] != int(primitive["vtableSlot"]):
+            raise DynamicSludgeSurfTileError(f"consumer:{name}:primitive-slot-binding-differs")
+    for name in ("originalStride", "cloneStride"):
+        value = checked[name]
+        if len(value) != 3 or value[0] != 0x8D or 1 << (value[2] >> 6) != int(primitive["elementWidth"]):
+            raise DynamicSludgeSurfTileError(f"consumer:{name}:primitive-stride-binding-differs")
+    for name in ("cloneWidth", "helperWidth"):
+        value = checked[name]
+        if len(value) != 3 or value[:1] != b"\x83" or value[2] != int(primitive["elementWidth"]):
+            raise DynamicSludgeSurfTileError(f"consumer:{name}:primitive-read-width-differs")
+    endian_sources = [rip_qword_load_target(checked[name], int(witnesses[name]["rva"]),
+                                           source="dynamic_sludge_surf_tile")
+                      for name in ("cloneEndianSource", "helperEndianSource")]
+    if len(set(endian_sources)) != 1:
+        raise DynamicSludgeSurfTileError("consumer:primitive-endian-source-differs")
+    if checked["callerInputs"] != bytes.fromhex("458BF84C8BF24C8BE1") or checked["callerZero"] != bytes.fromhex("4533ED"):
+        raise DynamicSludgeSurfTileError("consumer:caller:original-input-or-empty-list-zero-differs")
+    if checked["conversion"] != bytes.fromhex("488BCE4863D0"):
+        raise DynamicSludgeSurfTileError("consumer:conversion:positive-int32-to-uint64-shape-differs")
+    condition_heads = {
+        "negativeGuard": "85DB", "upperGuard": "3BD8", "positiveGuard": "85C0",
+        "countGuardInitial": "85C0", "countGuardLoop": "85C0", "loadedResult": "84C0",
+        "applyResult": "84C0", "emptyApply": "44396A18",
+    }
+    for name, prefix in condition_heads.items():
+        if not checked[name].startswith(bytes.fromhex(prefix)):
+            raise DynamicSludgeSurfTileError(f"consumer:{name}:value-condition-shape-differs")
+    for name in ("listStore", "registeredListStore"):
+        store = checked[name][-5:]
+        if len(store) != 5 or store[0] & 0xF8 != 0x48 or store[1] != 0x89 or store[3] >> 6 != 3:
+            raise DynamicSludgeSurfTileError(f"consumer:{name}:qword-insertion-stride-differs")
+    branches = (
+        ("negativeGuard", 2, b"\x78", "iterationSkip"),
+        ("upperGuard", 2, b"\x7d", "iterationSkip"),
+        ("positiveGuard", 2, b"\x7e", "iterationSkip"),
+        ("countGuardInitial", 2, b"\x0f\x8e", "collectExit"),
+        ("countGuardLoop", 2, b"\x7e", "collectExit"),
+        ("loadedResult", 2, b"\x75", "loadedIteration"),
+        ("applyResult", 2, b"\x0f\x85", "trueApplyArguments"),
+        ("emptyApply", 4, b"\x0f\x84", "emptyApplyArguments"),
+        ("loopBound", 18, b"\x7c", "negativeGuard"),
+    )
+    for name, at, prefix, target in branches:
+        _checked_consumer_branch(checked[name][at:], int(witnesses[name]["rva"]) + at,
+                                 prefix, int(witnesses[target]["rva"]), name)
+    targets = {name: int(row["rva"]) for name, row in block["windows"].items()}
+    targets.update({name: int(row["rva"]) for name, row in methods.items()})
+    call_targets = {"carrier": "carrier", "numInitial": "groupNum", "groupIndex": "groupIndex",
+                    "dataIndex": "dataIndex", "numLoop": "groupNum", "length": "primitiveLength",
+                    "indexedClone": "indexerClone", "append": "listAdd", "numNext": "groupNum",
+                    "intRead": "readInt", "surfaceLoaded": "surfaceLoaded", "collect": "collect",
+                    "loaded": "loaded", "applyTrue": "apply", "applyEmpty": "apply"}
+    if ({row["name"]: row["target"] for row in block["calls"]} != call_targets
+            or len(block["calls"]) != len(call_targets)):
+        raise DynamicSludgeSurfTileError("consumer:call-roster-or-target-binding-differs")
+    for row in block["calls"]:
+        instruction = _consumer_range(block, raw, row, 5, row["name"])
+        if instruction[:1] != b"\xe8":
+            raise DynamicSludgeSurfTileError(f"consumer:{row['name']}:call-shape-differs")
+        actual = relative_branch_target(instruction, int(row["rva"]), source="dynamic_sludge_surf_tile")
+        if actual != targets[row["target"]]:
+            raise DynamicSludgeSurfTileError(
+                f"consumer:{row['name']}:call-target expected={targets[row['target']]:#x} actual={actual:#x}")
+    if ({row["role"]: len(row["calls"]) for row in block["sharedTargets"]}
+            != {"tableOffset": 3, "vectorBody": 2, "listResize": 2}
+            or len(block["sharedTargets"]) != 3):
+        raise DynamicSludgeSurfTileError("consumer:shared-target-roster-differs")
+    for group in block["sharedTargets"]:
+        actual = [relative_branch_target(_consumer_range(block, raw, row, 5, group["role"]),
+                                         int(row["rva"]), source="dynamic_sludge_surf_tile")
+                  for row in group["calls"]]
+        if len(actual) < 2 or len(set(actual)) != 1:
+            raise DynamicSludgeSurfTileError(f"consumer:{group['role']}:shared-targets-differ={actual}")
+    add = _validate_list_add_context(image, block)
+    return {"status": "validated", "methods": {name: row["type"] + "." + row["method"]
+                                               for name, row in methods.items()},
+            "retainedInt32Range": {"minimum": 1, "maximum": (1 << 31) - 1},
+            "listAddContext": add, "windowCount": len(raw), "witnessCount": len(checked),
+            "boundary": block["boundary"]}
 
 
 def validate_native_layout(gameassembly: Path, metadata: Path) -> tuple[
@@ -142,8 +379,23 @@ def validate_native_layout(gameassembly: Path, metadata: Path) -> tuple[
             or instruction[:2] != b"\x81\xc2"
             or struct.unpack_from("<I", instruction, 2)[0] != int(layout["groupOffset"])):
         raise DynamicSludgeSurfTileError("SurfTileIDs getter DataGroup offset differs")
+    carrier_offset = int(getter["carrierCallOffset"])
+    if not 0 <= carrier_offset <= len(body) - 5 or body[carrier_offset] != 0xE8:
+        raise DynamicSludgeSurfTileError("SurfTileIDs getter carrier call outside checked body or shape differs")
+    carrier_target = relative_branch_target(body[carrier_offset:carrier_offset + 5],
+                                           int(getter["rva"]) + carrier_offset,
+                                           source="dynamic_sludge_surf_tile")
+    if carrier_target != int(contract["consumer"]["windows"]["carrier"]["rva"]):
+        raise DynamicSludgeSurfTileError("SurfTileIDs getter and collector carrier targets differ")
+    try:
+        consumer = _validate_consumer(image, contract["consumer"], layout, root, target)
+    except ValueError as error:
+        raise DynamicSludgeSurfTileError(
+            f"{error}; source={Path(gameassembly)}; metadata={Path(metadata)}; contract={CONTRACT}") from error
     provenance = {
         "contractSha256": digest,
+        "consumerEvidence": consumer,
+        "evidenceBoundary": contract["evidenceBoundary"],
         "resourceContractSha256": resource_provenance["contractSha256"],
         "rootContractSha256": resource_provenance["rootContractSha256"],
         "nativeInputs": inputs,
@@ -258,7 +510,7 @@ def audit_current_main(
             totals["unownedPrimitiveInts"] += primitive_count - visible - surf
             totals["gridsWithSurfTileIds"] += surf > 0
     return {
-        "format": "endfield.dynamic-sludge-surf-tile-native-audit.v1",
+        "format": "endfield.dynamic-sludge-surf-tile-native-audit.v2",
         "status": "validated",
         "primitiveOwnershipComplete": totals["unownedPrimitiveInts"] == 0,
         "inputSetSha256": outer["inputSetSha256"],
@@ -270,7 +522,7 @@ def audit_current_main(
         "evidenceBoundary": {
             "direct": "The selected native getter returns SludgeComp.SurfTileIDs as an inline DataGroup at its checked offset.",
             "structuralOnly": "Current authenticated main files have disjoint RootComp visibility, ResourceGroup visibility and SurfTileIDs spans into each grid's PrimitiveIntList. The corpus counts show whether these spans tile each vector.",
-            "unresolved": "The runtime consumer and behavior of SurfTileIDs, and activation of any stored grid, remain open.",
+            "unresolved": "Live Sludge/grid selection, patch paths and actual navmesh or rendering behavior remain open.",
         },
     }
 
@@ -284,7 +536,8 @@ def _markdown(report: dict[str, Any]) -> str:
         f"- SludgeComp records: {c['sludgeRecords']:,}; valid SurfTileIDs groups: {c['validSurfTileGroups']:,}; invalid groups: {c.get('invalidSurfTileGroups', 0):,}.",
         f"- PrimitiveIntList entries: {c['primitiveInts']:,}; visible-group entries: {c['visiblePrimitiveInts']:,}; SurfTileIDs entries: {c['surfTileIds']:,}; still unowned: {c['unownedPrimitiveInts']:,}.",
         f"- Stored primitive ownership complete: {str(report['primitiveOwnershipComplete']).lower()}.",
-        "- These are stored DataGroup spans. Runtime tile use and grid activation remain open.", "",
+        "- Conditional native consumer: positive bounded primitive IDs feed the UInt64 list and IsSurfaceLoaded result gates the selected navmesh-apply call.",
+        "- Stored DataGroup ownership and selected native control flow do not establish active Sludge/grid state or live navigation effects.", "",
     ])
 
 

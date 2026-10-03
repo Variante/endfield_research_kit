@@ -19,6 +19,7 @@ before classifying the row as schema decoded. Assignment execution, decoded
 string parity, duration selection and gameplay effects remain unobserved.
 """
 from __future__ import annotations
+from scripts.game_data.memorypack import buff_recursive_actions
 
 import hashlib
 import struct
@@ -96,108 +97,12 @@ def _decode_single_create_action(
     data: bytes, source: str, digest: str, start: int, end: int,
     native: dict[str, Any],
 ) -> dict[str, Any]:
-    children = native["children"]
-    parent = create.decode_create_buff_action_receipt(
-        data, source=source, logical_sha256=digest, start=start, end=end,
-        native_validation=children["create"],
-    )
-    if (parent.get("wholeActionByteSpanExact") is not True
-            or [field["fieldName"] for field in parent["namedFields"]]
-            != ["isEnable", "priorityLevel", "priorityOffset", "serverActionIndex",
-                "asChildBuff", "autoFinishByAction", "buffIconDurationSource",
-                "buffs", "buffSource", "contextKey", "count",
-                "finishWithNextSkillIfNotInherited", "inheritSkillIdList",
-                "inheritSourceSkillCastId", "inheritSourceSkillCastInfo", "isExtra",
-                "overrideBuffIconDuration", "passTargetGroupsToBuff", "targetSettings"]):
-        raise ValueError(f"{LABEL}.action:parent-field-order")
-    fields = {field["fieldName"]: field for field in parent["namedFields"]}
-    icon_field = fields["buffIconDurationSource"]
-    icon = icon_duration.decode_icon_duration_child(
-        data, source=source, logical_sha256=digest,
-        start=icon_field["start"], end=icon_field["end"],
-        native_validation=children["iconDuration"],
-    )
-    input_field = fields["buffs"]
-    inputs = create_input.decode_create_buff_input_list(
-        data, source=source, logical_sha256=digest,
-        start=input_field["start"], end=input_field["end"],
-        native_validation=children["createInput"],
-    )
+    action = buff_recursive_actions.decode_create_action(data, source, digest, start, end, native)
+    inputs = action["inputList"]
     if (inputs.get("count") != 1 or len(inputs.get("inputs") or []) != 1
             or inputs["inputs"][0].get("status") != "named-five-member-exact-span"):
         raise ValueError(f"{LABEL}.action:input-list-not-single-exact")
-    if (fields["inheritSkillIdList"]["end"] - fields["inheritSkillIdList"]["start"] != 4
-            or struct.unpack_from("<i", data, fields["inheritSkillIdList"]["start"])[0] != 0):
-        raise ValueError(f"{LABEL}.action:inherit-list-not-empty")
-    blackboard_child = blackboard.decode_blackboard_double_action_child_receipt(
-        data, source=source, logical_sha256=digest, start=start, end=end,
-        tag=create.TAG, native_validation=children["blackboard"],
-    )
-    target_child = target.decode_target_settings_action_child_receipt(
-        data, source=source, logical_sha256=digest, start=start, end=end,
-        tag=create.TAG, native_validation=children["target"],
-    )
-    direction_child = direction.decode_direction_settings_action_child_receipt(
-        data, source=source, logical_sha256=digest, start=start, end=end,
-        tag=create.TAG, native_validation=children["direction"],
-    )
-    selector_child = selector.decode_selector_data_action_child_receipt(
-        data, source=source, logical_sha256=digest, start=start, end=end,
-        tag=create.TAG, native_validation=children["selector"],
-    )
-    if (blackboard_child.get("parentField") != "count"
-            or blackboard_child.get("wholeProviderByteSpanExact") is not True
-            or len(target_child.get("targetChildren") or []) != 1
-            or len(direction_child.get("directionChildren") or []) != 1
-            or len(selector_child.get("selectorChildren") or []) != 1):
-        raise ValueError(f"{LABEL}.action:shared-child-cardinality")
-    target_row = target_child["targetChildren"][0]
-    direction_row = direction_child["directionChildren"][0]
-    selector_row = selector_child["selectorChildren"][0]
-    if (target_row.get("start") != fields["targetSettings"]["start"]
-            or target_row.get("end") != fields["targetSettings"]["end"]
-            or target_row.get("status") != "named-direct-members-exact-span"
-            or direction_row.get("status") != "named-direct-members-exact-span"
-            or selector_row.get("status") != "named-direct-members-exact-span"):
-        raise ValueError(f"{LABEL}.action:target-child-span")
-    target_members = {member["fieldName"]: member
-                      for member in target_row["namedMembers"]}
-    if (len(target_members) != 13
-            or [direction_row["start"], direction_row["end"]]
-            != [target_members["advancedDirection"]["start"],
-                target_members["advancedDirection"]["end"]]
-            or [selector_row["start"], selector_row["end"]]
-            != [target_members["selectorData"]["start"],
-                target_members["selectorData"]["end"]]
-            or any(member.get("nestedTargetStatus") != "exact-null"
-                   for member in direction_row["namedMembers"]
-                   if member.get("kind") == "object")):
-        raise ValueError(f"{LABEL}.action:direction-or-selector-join")
-    selector_members = selector_row["namedMembers"]
-    if ([row["fieldName"] for row in selector_members]
-            != ["finderData", "postProcessorData", "validatorData"]
-            or selector_members[1].get("count") != 0
-            or selector_members[2].get("count") != 0):
-        raise ValueError(f"{LABEL}.action:selector-collections-not-empty")
-    finder = selector_members[0]
-    finder_child = None
-    if finder.get("unionTag") is None:
-        if finder["end"] - finder["start"] != 1 or data[finder["start"]] != 0xFF:
-            raise ValueError(f"{LABEL}.action:finder-not-null")
-    elif finder.get("unionTag") == character_team.TAG:
-        finder_child = character_team.decode_character_team_finder_span(
-            data, source=source, logical_sha256=digest,
-            start=finder["start"], end=finder["end"],
-            native_validation=children["characterTeamFinder"],
-        )
-        if finder_child.get("status") != "named-zero-member-finder-exact-span":
-            raise ValueError(f"{LABEL}.action:finder-child")
-    else:
-        raise ValueError(f"{LABEL}.action:unsupported-finder={finder.get('unionTag')}")
-    return {"parent": parent, "iconDuration": icon, "inputList": inputs,
-            "blackboard": blackboard_child, "target": target_child,
-            "direction": direction_child, "selector": selector_child,
-            "finder": finder_child, "recursiveStoredSchemaExact": True}
+    return action
 
 
 def decode_single_create_action_root(

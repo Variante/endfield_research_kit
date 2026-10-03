@@ -68,7 +68,8 @@ def _contract() -> dict[str, Any]:
     return contract
 
 
-def validate_current_native_contract(audit_report_path: Path) -> dict[str, Any]:
+def validate_current_native_contract(audit_report_path: Path, *,
+                                    gameassembly: Path | None = None, metadata: Path | None = None) -> dict[str, Any]:
     """Compose only native gates for the selected six child actions."""
     contract = _contract()
     expected = contract["nativeInputs"]
@@ -88,15 +89,16 @@ def validate_current_native_contract(audit_report_path: Path) -> dict[str, Any]:
         or dependencies[3].get("terminalByteCount") != selected["terminalByteCount"]
     ):
         raise ValueError(f"{LABEL}.contract:dependency-drift")
-    selected_prefix = prefix.validate_current_native_contract(audit_report_path)
+    paths = {key: value for key, value in (("gameassembly", gameassembly), ("metadata", metadata)) if value is not None}
+    selected_prefix = prefix.validate_current_native_contract(audit_report_path, **paths)
     if selected_prefix.get("status") != "validated":
         return {"status": selected_prefix.get("status", "failed"),
                 "detail": selected_prefix.get("detail", "prefix native gate failed")}
-    selected_entity = entity.validate_current_native_contract(audit_report_path)
+    selected_entity = entity.validate_current_native_contract(audit_report_path, **paths)
     if selected_entity.get("status") != "validated":
         return {"status": selected_entity.get("status", "failed"),
                 "detail": selected_entity.get("detail", "entity native gate failed")}
-    selected_if_else = if_else.validate_current_native_contract()
+    selected_if_else = if_else.validate_current_native_contract(**paths)
     nested = selected_if_else.get("children")
     if (
         any(row.get("nativeInputs") != expected for row in

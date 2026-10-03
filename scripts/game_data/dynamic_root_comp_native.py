@@ -1319,6 +1319,110 @@ def _require_template_signatures(
             )
 
 
+def _grid_root_components(
+    data: bytes, *, root_body: int, root_count: int, directory_body: int,
+    ordinal: int, unique_id: int, layout: dict[str, Any], index_layout: dict[str, Any],
+    enum_by_id: dict[int, str], entity_enum: dict[int, str], name_to_field: dict[str, int], source: str,
+) -> list[dict[str, Any]]:
+    """Read associations after the directory bounds and RootComp span checks."""
+    fields = {row["name"]: row for row in index_layout["fields"]}
+    references: list[dict[str, Any]] = []
+    for root_ordinal in range(root_count):
+        root_start = root_body + root_ordinal * int(layout["rootCompWidth"])
+        entity_type = struct.unpack_from("<i", data, root_start + int(layout["rootCompTypeOffset"]))[0]
+        group = root_start + int(layout["compsOffset"])
+        first = struct.unpack_from(
+            FIELD_FORMATS[fields["Index"]["type"]], data,
+            group + int(layout["groupIndexOffset"]) + int(fields["Index"]["offset"]),
+        )[0]
+        count = struct.unpack_from("<i", data, group + int(layout["groupNumOffset"]))[0]
+        for directory_ordinal in range(first, first + count):
+            start = directory_body + directory_ordinal * int(layout["dataIndexWidth"])
+            values = {
+                name: struct.unpack_from(FIELD_FORMATS[field["type"]], data, start + int(field["offset"]))[0]
+                for name, field in fields.items()
+            }
+            if values["IsInvalid"]:
+                raise DynamicRootCompError(
+                    f"{source}: grid[{ordinal}] RootComp[{root_ordinal}] directory "
+                    f"DataIndex[{directory_ordinal}] IsInvalid={values['IsInvalid']} has no component instance"
+                )
+            name = enum_by_id[values["Type"]]
+            references.append({
+                "gridOrdinal": ordinal, "gridUniqueId": unique_id,
+                "fieldIndex": name_to_field[name], "component": name,
+                "componentOrdinal": values["Index"], "directoryOrdinal": directory_ordinal,
+                "authoredOwner": {
+                    "rootCompOrdinal": root_ordinal,
+                    "entityType": entity_type, "entityTypeName": entity_enum[entity_type],
+                },
+            })
+    return references
+
+
+def decode_authenticated_root_components(
+    data: bytes, *, layout: dict[str, Any], index_layout: dict[str, Any],
+    main_layout: dict[str, Any], enum_by_id: dict[int, str], entity_enum: dict[int, str],
+    templates: dict[int, tuple[int, ...]], source: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Return authored RootComp owners for bounded directory references.
+
+    Layouts and enums must come from ``validate_native_layout``; templates
+    must come from ``load_current_template_asset`` and the source receipt
+    from the current authenticated VFS roster. This proves the stored
+    RootComp -> directory -> grid-local instance association. It does not
+    attach indirectly grouped children or observe runtime entities.
+    """
+    path = source["path"]
+    md5 = hashlib.md5(data).hexdigest().upper()
+    if len(data) != int(source["declaredBytes"]) or md5 != source["fileDataMd5"].upper():
+        raise DynamicRootCompError(
+            f"{path}: authenticated byte join failed length={len(data)}/{source['declaredBytes']} "
+            f"md5={md5}/{source['fileDataMd5']}"
+        )
+    widths = {int(row["fieldIndex"]): int(row["elementWidth"]) for row in main_layout["vectors"]}
+    name_to_field = {row["name"]: int(row["fieldIndex"]) for row in main_layout["vectors"]}
+    if len(widths) != len(name_to_field):
+        raise DynamicRootCompError("duplicate selected SingleGrid vector name")
+    try:
+        indexed_grids, _ = data_index_payload_grids(
+            data, widths=widths, layout=index_layout, enum_by_id=enum_by_id,
+            name_to_field=name_to_field, source=path,
+        )
+        root = _root_layout(data)
+        grid_body, grid_count, _ = _bounded_vector(data, root, 3, 4)
+        if grid_count != len(indexed_grids):
+            raise DynamicRootCompError("grid count differs within parser")
+        references: list[dict[str, Any]] = []
+        for ordinal, indexed in enumerate(indexed_grids):
+            slot = grid_body + ordinal * 4
+            grid = _table_layout(data, slot + struct.unpack_from("<I", data, slot)[0])
+            root_body, root_count, _ = _bounded_vector(
+                data, grid, int(layout["rootCompFieldIndex"]), int(layout["rootCompWidth"]),
+            )
+            directory_body, directory_count, _ = _bounded_vector(
+                data, grid, int(layout["dataIndexFieldIndex"]), int(layout["dataIndexWidth"]),
+            )
+            _, _, _, signatures = _grid_groups(
+                data, source=path, ordinal=ordinal, unique_id=indexed["uniqueId"],
+                root_body=root_body, root_count=root_count,
+                directory_body=directory_body, directory_count=directory_count,
+                layout=layout, index_layout=index_layout, entity_enum=entity_enum,
+            )
+            _require_template_signatures(
+                {type_id: (signature, f"{path}: grid[{ordinal}]") for type_id, signature in signatures.items()},
+                templates, entity_enum,
+            )
+            references.extend(_grid_root_components(
+                data, root_body=root_body, root_count=root_count, directory_body=directory_body,
+                ordinal=ordinal, unique_id=indexed["uniqueId"], layout=layout, index_layout=index_layout,
+                enum_by_id=enum_by_id, entity_enum=entity_enum, name_to_field=name_to_field, source=path,
+            ))
+        return references
+    except (ValueError, KeyError, IndexError, RuntimeError, struct.error) as exc:
+        raise DynamicRootCompError(f"{path}: sourceMd5={md5}: {exc}") from exc
+
+
 def audit_current_main(
     layout: dict[str, Any], index_layout: dict[str, Any], main_layout: dict[str, Any],
     enum_by_id: dict[int, str], entity_enum: dict[int, str], *, outer_path: Path, ledger_path: Path, cli_path: Path,
@@ -1342,6 +1446,8 @@ def audit_current_main(
     }
     entity_types: Counter[int] = Counter()
     signatures: dict[int, tuple[tuple[int, ...], str]] = {}
+    component_types: Counter[str] = Counter()
+    association_samples: list[dict[str, Any]] = []
     id_type = int(layout["idCompPath"]["dataTypeValue"])
     file_rows: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -1391,6 +1497,17 @@ def audit_current_main(
                     directory_body=directory_body, directory_count=directory_count,
                     layout=layout, index_layout=index_layout, entity_enum=entity_enum,
                 )
+                references = _grid_root_components(
+                    data, root_body=root_body, root_count=root_count, directory_body=directory_body,
+                    ordinal=ordinal, unique_id=uid, layout=layout, index_layout=index_layout,
+                    enum_by_id=enum_by_id, entity_enum=entity_enum, name_to_field=name_to_field, source=path,
+                )
+                if len(references) != covered:
+                    raise DynamicRootCompError(f"{path}: grid[{ordinal}] authored reference count differs from directory coverage")
+                component_types.update(row["component"] for row in references)
+                for reference in references:
+                    if len(association_samples) < 8:
+                        association_samples.append({"source": path, "sourceMd5": md5, **reference})
                 primitive_field = int(layout["visibleDesc"]["vectorFieldIndex"])
                 primitive_body, primitive_count, _ = _bounded_vector(data, grid, primitive_field, 4)
                 if primitive_count != indexed_grids[ordinal]["vectorCounts"][primitive_field]:
@@ -1421,7 +1538,8 @@ def audit_current_main(
             totals.update({"files": 1, "bytes": len(data), "groups": file_groups, "coveredDirectoryEntries": file_entries})
             visible_counts.update(file_visible)
             file_rows.append({
-                "path": path, "fileDataMd5": md5, "grids": grid_count,
+                "path": path, "declaredBytes": len(data), "fileDataMd5": md5,
+                "sha256": hashlib.sha256(data).hexdigest().upper(), "grids": grid_count,
                 "groups": file_groups, "coveredDirectoryEntries": file_entries,
                 "visibleStateNonempty": file_visible["visibleStateNonempty"],
                 "visibleAreaNonempty": file_visible["visibleAreaNonempty"],
@@ -1446,7 +1564,7 @@ def audit_current_main(
             f"signature={id_signature_entries} directory={totals['idCompRecords']}"
         )
     return {
-        "format": "endfield.dynamic-root-comp-native-audit.v7",
+        "format": "endfield.dynamic-root-comp-native-audit.v8",
         "status": "validated",
         "inputSetSha256": outer["inputSetSha256"],
         "outer": {
@@ -1455,6 +1573,12 @@ def audit_current_main(
             "ledgerFileRowCount": provenance["ledgerFileRowCount"],
         },
         "corpus": dict(totals),
+        "authoredComponentAssociations": {
+            "references": sum(component_types.values()),
+            "components": dict(sorted(component_types.items())),
+            "samples": association_samples,
+            "boundary": "RootComp.Comps partitions checked directory rows which address bounded grid-local instances; indirectly grouped children and live entities are not assigned.",
+        },
         "visibleDesc": {
             "vectorFieldIndex": int(layout["visibleDesc"]["vectorFieldIndex"]),
             "vectorName": layout["visibleDesc"]["vectorName"],
@@ -1513,6 +1637,7 @@ def _markdown(report: dict[str, Any]) -> str:
         f"- Status: `{report['status']}`; input set: `{report['inputSetSha256']}`.",
         f"- Authenticated main files: {corpus['files']:,}; grids: {corpus['grids']:,}; RootComp groups: {corpus['groups']:,}.",
         f"- Group spans cover {corpus['coveredDirectoryEntries']:,} DataIndex directory entries exactly.",
+        f"- Authored owner associations: {report['authoredComponentAssociations']['references']:,} bounded directory-to-instance references; indirect group children and live entities remain unassigned.",
         f"- RootComp.Type is consumed as an EDynamicSceneEntityType template map key; all {len(report['entityTypes']):,} observed types match the current DynamicSceneTemplates asset in component order.",
         f"- Template rows: {report['template']['templateRows']:,}; rows not observed in current main grids: {len(report['template']['templateOnlyTypes']):,}.",
         f"- IdComp detour: {report['idCompPath']['directoryEntries']:,} authored rows read IdComp.UniqueId before the common route on the selected unpatched path.",

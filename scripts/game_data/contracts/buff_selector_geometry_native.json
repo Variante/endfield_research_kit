@@ -1,0 +1,878 @@
+{
+  "schema": "endfield.buff-selector-geometry-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceContract": "buff_b2_native.json",
+  "switchContract": "skill_selector_finder_typhoea_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "vectorChildContract": "buff_effect_vector_child_native.json",
+  "layouts": {
+    "findTargetAction": {
+      "wrappedType": "Beyond.Gameplay.Core.FindTargetAction+FindTargetActionData",
+      "wrapperTypeDefinition": 16111,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FindTargetAction_FindTargetActionDataForMemoryPack",
+      "inheritedMemberCount": 4,
+      "serializedMemberCount": 18,
+      "sourceReadOrder": "actionMember18",
+      "readerMethod": [
+        120217,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_FindTargetAction_FindTargetActionDataForMemoryPack",
+        "Deserialize",
+        58152624
+      ],
+      "fields": [
+        {
+          "name": "isEnable",
+          "methodIndex": 107646,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 52483776,
+          "readKind": "byte",
+          "sourceStore": [
+            58152826,
+            "884110"
+          ],
+          "setterStore": [
+            52483789,
+            "885010"
+          ]
+        },
+        {
+          "name": "priorityLevel",
+          "methodIndex": 107647,
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 58153824,
+          "readKind": "scalar32",
+          "sourceStore": [
+            58152899,
+            "44897014"
+          ],
+          "setterStore": [
+            58153837,
+            "895014"
+          ]
+        },
+        {
+          "name": "priorityOffset",
+          "methodIndex": 107648,
+          "declaredType": "int",
+          "kind": "scalar32",
+          "width": 4,
+          "setterRva": 58153856,
+          "readKind": "scalar32",
+          "sourceStore": [
+            58152936,
+            "894118"
+          ],
+          "setterStore": [
+            58153869,
+            "895018"
+          ]
+        },
+        {
+          "name": "serverActionIndex",
+          "methodIndex": 107649,
+          "declaredType": "int",
+          "kind": "scalar32",
+          "width": 4,
+          "setterRva": 58153888,
+          "readKind": "scalar32",
+          "sourceStore": [
+            58152972,
+            "89411C"
+          ],
+          "setterStore": [
+            58153901,
+            "89501C"
+          ]
+        },
+        {
+          "name": "advancedSelectorDirection",
+          "methodIndex": 120201,
+          "declaredType": "Beyond.Gameplay.Core.DirectionSettings",
+          "kind": "object",
+          "width": null,
+          "setterRva": 58153920,
+          "readKind": "direction-profile",
+          "setterCall": [
+            58153011,
+            "E888030000"
+          ]
+        },
+        {
+          "name": "center",
+          "methodIndex": 120202,
+          "declaredType": "Beyond.Gameplay.ActionTargetType",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 58154096,
+          "readKind": "scalar32",
+          "setterCall": [
+            58153082,
+            "E8F1030000"
+          ]
+        },
+        {
+          "name": "centerContextKey",
+          "methodIndex": 120203,
+          "declaredType": "string",
+          "kind": "string",
+          "width": null,
+          "setterRva": 58154256,
+          "readKind": "byte-payload",
+          "setterCall": [
+            58153116,
+            "E86F040000"
+          ]
+        },
+        {
+          "name": "centerMountPoint",
+          "methodIndex": 120204,
+          "declaredType": "Beyond.Gameplay.MountPoint",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 58154432,
+          "readKind": "scalar32",
+          "setterCall": [
+            58153187,
+            "E8D8040000"
+          ]
+        },
+        {
+          "name": "centerToGround",
+          "methodIndex": 120205,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 58154592,
+          "readKind": "byte",
+          "setterCall": [
+            58153221,
+            "E856050000"
+          ]
+        },
+        {
+          "name": "contextKey",
+          "methodIndex": 120206,
+          "declaredType": "string",
+          "kind": "string",
+          "width": null,
+          "setterRva": 58154752,
+          "readKind": "byte-payload",
+          "setterCall": [
+            58153255,
+            "E8D4050000"
+          ]
+        },
+        {
+          "name": "selectorData",
+          "methodIndex": 120207,
+          "declaredType": "Beyond.Gameplay.Core.Selector+SelectorData",
+          "kind": "object",
+          "width": null,
+          "setterRva": 58154928,
+          "readKind": "selector-profile",
+          "setterCall": [
+            58153296,
+            "E85B060000"
+          ]
+        },
+        {
+          "name": "selectorDirection",
+          "methodIndex": 120208,
+          "declaredType": "Beyond.Gameplay.DirectionType",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 58155104,
+          "readKind": "scalar32",
+          "setterCall": [
+            58153367,
+            "E8C4060000"
+          ]
+        },
+        {
+          "name": "selectorOwner",
+          "methodIndex": 120209,
+          "declaredType": "Beyond.Gameplay.ActionTargetType",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 58155264,
+          "readKind": "scalar32",
+          "setterCall": [
+            58153438,
+            "E81D070000"
+          ]
+        },
+        {
+          "name": "selectorOwnerContextKey",
+          "methodIndex": 120210,
+          "declaredType": "string",
+          "kind": "string",
+          "width": null,
+          "setterRva": 58155424,
+          "readKind": "byte-payload",
+          "setterCall": [
+            58153472,
+            "E89B070000"
+          ]
+        },
+        {
+          "name": "target",
+          "methodIndex": 120211,
+          "declaredType": "Beyond.Gameplay.ActionTargetType",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 58155600,
+          "readKind": "scalar32",
+          "setterCall": [
+            58153543,
+            "E804080000"
+          ]
+        },
+        {
+          "name": "targetGroupKey",
+          "methodIndex": 120212,
+          "declaredType": "string",
+          "kind": "string",
+          "width": null,
+          "setterRva": 58155760,
+          "readKind": "byte-payload",
+          "setterCall": [
+            58153577,
+            "E882080000"
+          ]
+        },
+        {
+          "name": "useAdvancedDirectionSetting",
+          "methodIndex": 120213,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 58155936,
+          "readKind": "byte",
+          "setterCall": [
+            58153611,
+            "E810090000"
+          ]
+        },
+        {
+          "name": "useCenterEntityMountPoint",
+          "methodIndex": 120214,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 58156096,
+          "readKind": "byte",
+          "setterCall": [
+            58153645,
+            "E88E090000"
+          ]
+        }
+      ],
+      "typedChildren": [
+        {
+          "memberIndex": 4,
+          "fieldName": "advancedSelectorDirection",
+          "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+          "sourceContextRva": 58152978
+        },
+        {
+          "memberIndex": 10,
+          "fieldName": "selectorData",
+          "typeName": "Beyond.Gameplay.Core.Selector+SelectorData",
+          "sourceContextRva": 58153260
+        }
+      ],
+      "family": "AbilityActionData",
+      "unionTag": 178
+    },
+    "hitBoxFinder": {
+      "wrappedType": "Beyond.Gameplay.Core.Selector+HitBoxFinder+Data",
+      "wrapperTypeDefinition": 23039,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_DataForMemoryPack",
+      "inheritedMemberCount": 5,
+      "serializedMemberCount": 8,
+      "sourceReadOrder": "finder7Member8",
+      "readerMethod": [
+        167110,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_DataForMemoryPack",
+        "Deserialize",
+        61215312
+      ],
+      "fields": [
+        {
+          "name": "autoSetTargetFaction",
+          "methodIndex": 166998,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 61216240,
+          "readKind": "byte",
+          "sourceStore": [
+            61215518,
+            "40886811"
+          ],
+          "setterStore": [
+            61216261,
+            "885811"
+          ]
+        },
+        {
+          "name": "checkAlive",
+          "methodIndex": 166999,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 61216288,
+          "readKind": "byte",
+          "sourceStore": [
+            61215564,
+            "40886810"
+          ],
+          "setterStore": [
+            61216309,
+            "885810"
+          ]
+        },
+        {
+          "name": "containsUnMarkable",
+          "methodIndex": 167000,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 61216336,
+          "readKind": "byte",
+          "sourceStore": [
+            61215610,
+            "40886812"
+          ],
+          "setterStore": [
+            61216357,
+            "885812"
+          ]
+        },
+        {
+          "name": "factionTarget",
+          "methodIndex": 167001,
+          "declaredType": "Beyond.Gameplay.Core.FactionTarget",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 61216384,
+          "readKind": "scalar32",
+          "sourceStore": [
+            61215662,
+            "896814"
+          ],
+          "setterStore": [
+            61216404,
+            "895814"
+          ]
+        },
+        {
+          "name": "targetFactionType",
+          "methodIndex": 167002,
+          "declaredType": "Beyond.Gameplay.Core.FactionType",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 61216432,
+          "readKind": "scalar32",
+          "sourceStore": [
+            61215713,
+            "896818"
+          ],
+          "setterStore": [
+            61216452,
+            "895818"
+          ]
+        },
+        {
+          "name": "checkIntUnSelectableTag",
+          "methodIndex": 167105,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 61216016,
+          "readKind": "byte",
+          "sourceStore": [
+            61215758,
+            "40886824"
+          ],
+          "setterStore": [
+            61216037,
+            "885824"
+          ]
+        },
+        {
+          "name": "shapeList",
+          "methodIndex": 167106,
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Selector+HitBoxFinder+ShapeData>",
+          "kind": "list",
+          "width": null,
+          "setterRva": 61216064,
+          "readKind": "counted-shape-profiles",
+          "sourceStore": [
+            61215815,
+            "48896828"
+          ],
+          "setterStore": [
+            61216089,
+            "48895828"
+          ]
+        },
+        {
+          "name": "targetObjectType",
+          "methodIndex": 167107,
+          "declaredType": "Beyond.Gameplay.Core.Selector+HitBoxFinder+TargetObjectType",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 61216112,
+          "readKind": "scalar32",
+          "sourceStore": [
+            61215872,
+            "895820"
+          ],
+          "setterStore": [
+            61216132,
+            "895820"
+          ]
+        }
+      ],
+      "typedChildren": [
+        {
+          "memberIndex": 6,
+          "fieldName": "shapeList",
+          "typeName": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Selector+HitBoxFinder+ShapeData>",
+          "sourceContextRva": 61215765
+        }
+      ],
+      "family": "SelectorFinder",
+      "dispatcher": {
+        "unionTag": 7,
+        "switchTargetRva": 59819642,
+        "routeWindow": {
+          "startRva": 59819642,
+          "endRva": 59819716,
+          "sha256": "D861A7CC27DED2DAB49278FBC6611C1093A6BB9E172CFA286CFD9E5AC4384D54",
+          "boundary": "selected switch branch to next switch target"
+        },
+        "usageCellRva": 217990320,
+        "usageRawHex": "4744032000000000",
+        "registeredTypeIndex": 107043,
+        "wrapperTypeDefinition": 23039,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_DataForMemoryPack"
+      },
+      "unionTag": 7
+    },
+    "shapeData": {
+      "wrappedType": "Beyond.Gameplay.Core.Selector+HitBoxFinder+ShapeData",
+      "wrapperTypeDefinition": 23125,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_ShapeDataForMemoryPack",
+      "inheritedMemberCount": 0,
+      "serializedMemberCount": 18,
+      "sourceReadOrder": "shapeMember18",
+      "readerMethod": [
+        167778,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_ShapeDataForMemoryPack",
+        "Deserialize",
+        53282800
+      ],
+      "fields": [
+        {
+          "name": "angle",
+          "methodIndex": 167758,
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "kind": "object",
+          "width": null,
+          "setterRva": 52476512,
+          "readKind": "scalar-payload",
+          "sourceStore": [
+            53282951,
+            "48894158"
+          ],
+          "setterStore": [
+            52476525,
+            "48895158"
+          ]
+        },
+        {
+          "name": "castDirection",
+          "methodIndex": 167759,
+          "declaredType": "Beyond.Gameplay.Core.Selector+HitBoxFinder+CastDirection",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 84407804,
+          "readKind": "scalar32",
+          "sourceStore": [
+            53283004,
+            "894174"
+          ],
+          "setterStore": [
+            84407823,
+            "895074"
+          ]
+        },
+        {
+          "name": "centerOffset",
+          "methodIndex": 167760,
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "kind": "object",
+          "width": null,
+          "setterRva": 52472848,
+          "readKind": "vector-payload",
+          "sourceStore": [
+            53283047,
+            "48894128"
+          ],
+          "setterStore": [
+            52472861,
+            "48895128"
+          ]
+        },
+        {
+          "name": "directionRef",
+          "methodIndex": 167761,
+          "declaredType": "Beyond.Gameplay.Core.Selector+HitBoxFinder+DirectionRef",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 84401892,
+          "readKind": "scalar32",
+          "sourceStore": [
+            53283100,
+            "89411C"
+          ],
+          "setterStore": [
+            84401911,
+            "89501C"
+          ]
+        },
+        {
+          "name": "dirRefMountPoint",
+          "methodIndex": 167762,
+          "declaredType": "Beyond.Gameplay.MountPoint",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 84402984,
+          "readKind": "scalar32",
+          "sourceStore": [
+            53283143,
+            "894120"
+          ],
+          "setterStore": [
+            84403003,
+            "895020"
+          ]
+        },
+        {
+          "name": "enablePreview",
+          "methodIndex": 167763,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 84402304,
+          "readKind": "byte",
+          "sourceStore": [
+            53283179,
+            "884178"
+          ],
+          "setterStore": [
+            84402323,
+            "885078"
+          ]
+        },
+        {
+          "name": "eulerAngle",
+          "methodIndex": 167764,
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "kind": "object",
+          "width": null,
+          "setterRva": 52480496,
+          "readKind": "vector-payload",
+          "sourceStore": [
+            53283222,
+            "48894130"
+          ],
+          "setterStore": [
+            52480509,
+            "48895130"
+          ]
+        },
+        {
+          "name": "height",
+          "methodIndex": 167765,
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "kind": "object",
+          "width": null,
+          "setterRva": 52476416,
+          "readKind": "scalar-payload",
+          "sourceStore": [
+            53283275,
+            "48894148"
+          ],
+          "setterStore": [
+            52476429,
+            "48895148"
+          ]
+        },
+        {
+          "name": "hitEffectTowardsType",
+          "methodIndex": 167766,
+          "declaredType": "Beyond.Gameplay.Core.Selector+HitBoxFinder+HitEffectTowardsType",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 84402212,
+          "readKind": "scalar32",
+          "sourceStore": [
+            53283328,
+            "89417C"
+          ],
+          "setterStore": [
+            84402231,
+            "89507C"
+          ]
+        },
+        {
+          "name": "limitAngle",
+          "methodIndex": 167767,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 84406256,
+          "readKind": "byte",
+          "sourceStore": [
+            53283364,
+            "884150"
+          ],
+          "setterStore": [
+            84406275,
+            "885050"
+          ]
+        },
+        {
+          "name": "limitHeight",
+          "methodIndex": 167768,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 84403704,
+          "readKind": "byte",
+          "sourceStore": [
+            53283400,
+            "884160"
+          ],
+          "setterStore": [
+            84403723,
+            "885060"
+          ]
+        },
+        {
+          "name": "maxHeight",
+          "methodIndex": 167769,
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "kind": "object",
+          "width": null,
+          "setterRva": 52480256,
+          "readKind": "scalar-payload",
+          "sourceStore": [
+            53283443,
+            "48894168"
+          ],
+          "setterStore": [
+            52480269,
+            "48895168"
+          ]
+        },
+        {
+          "name": "positionRef",
+          "methodIndex": 167770,
+          "declaredType": "Beyond.Gameplay.Core.Selector+HitBoxFinder+PositionRef",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 84406024,
+          "readKind": "scalar32",
+          "sourceStore": [
+            53283496,
+            "894114"
+          ],
+          "setterStore": [
+            84406043,
+            "895014"
+          ]
+        },
+        {
+          "name": "posRefMP",
+          "methodIndex": 167771,
+          "declaredType": "Beyond.Gameplay.MountPoint",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 84401920,
+          "readKind": "scalar32",
+          "sourceStore": [
+            53283539,
+            "894118"
+          ],
+          "setterStore": [
+            84401939,
+            "895018"
+          ]
+        },
+        {
+          "name": "radius",
+          "methodIndex": 167772,
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "kind": "object",
+          "width": null,
+          "setterRva": 52469232,
+          "readKind": "scalar-payload",
+          "sourceStore": [
+            53283582,
+            "48894140"
+          ],
+          "setterStore": [
+            52469245,
+            "48895140"
+          ]
+        },
+        {
+          "name": "shapeType",
+          "methodIndex": 167773,
+          "declaredType": "Beyond.Gameplay.Core.Selector+HitBoxFinder+ShapeType",
+          "kind": "enum",
+          "width": 4,
+          "setterRva": 84403284,
+          "readKind": "scalar32",
+          "sourceStore": [
+            53283635,
+            "894110"
+          ],
+          "setterStore": [
+            84403303,
+            "895010"
+          ]
+        },
+        {
+          "name": "size",
+          "methodIndex": 167774,
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "kind": "object",
+          "width": null,
+          "setterRva": 52468352,
+          "readKind": "vector-payload",
+          "sourceStore": [
+            53283678,
+            "48894138"
+          ],
+          "setterStore": [
+            52468365,
+            "48895138"
+          ]
+        },
+        {
+          "name": "useDirection",
+          "methodIndex": 167775,
+          "declaredType": "bool",
+          "kind": "bool",
+          "width": 1,
+          "setterRva": 84403524,
+          "readKind": "byte",
+          "sourceStore": [
+            53283724,
+            "884170"
+          ],
+          "setterStore": [
+            84403543,
+            "885070"
+          ]
+        }
+      ],
+      "typedChildren": [
+        {
+          "memberIndex": 0,
+          "fieldName": "angle",
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "sourceContextRva": 53282911
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "centerOffset",
+          "typeName": "Beyond.Blackboard+BlackboardVector3",
+          "sourceContextRva": 53283010
+        },
+        {
+          "memberIndex": 6,
+          "fieldName": "eulerAngle",
+          "typeName": "Beyond.Blackboard+BlackboardVector3",
+          "sourceContextRva": 53283185
+        },
+        {
+          "memberIndex": 7,
+          "fieldName": "height",
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "sourceContextRva": 53283235
+        },
+        {
+          "memberIndex": 11,
+          "fieldName": "maxHeight",
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "sourceContextRva": 53283406
+        },
+        {
+          "memberIndex": 14,
+          "fieldName": "radius",
+          "typeName": "Beyond.Blackboard+BlackboardDouble",
+          "sourceContextRva": 53283545
+        },
+        {
+          "memberIndex": 16,
+          "fieldName": "size",
+          "typeName": "Beyond.Blackboard+BlackboardVector3",
+          "sourceContextRva": 53283641
+        }
+      ]
+    },
+    "inFightFinder": {
+      "wrappedType": "Beyond.Gameplay.Core.Selector+InFightEnemyFinder+Data",
+      "wrapperTypeDefinition": 23041,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+      "inheritedMemberCount": 0,
+      "serializedMemberCount": 0,
+      "sourceReadOrder": "finder8Member0",
+      "readerMethod": [
+        167121,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+        "Deserialize",
+        68533040
+      ],
+      "fields": [],
+      "typedChildren": [],
+      "family": "SelectorFinder",
+      "dispatcher": {
+        "unionTag": 8,
+        "switchTargetRva": 59820091,
+        "routeWindow": {
+          "startRva": 59820091,
+          "endRva": 59820138,
+          "sha256": "0B62ECAE4CE0C01DFB70C8142D4B33336237F23D4D701504D240CF22BC3108FE",
+          "boundary": "selected switch branch to next switch target"
+        },
+        "usageCellRva": 217990336,
+        "usageRawHex": "4D44032000000000",
+        "registeredTypeIndex": 107046,
+        "wrapperTypeDefinition": 23041,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack"
+      },
+      "unionTag": 8
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected parent/finder dispatch, ordinary source windows, native generic child types and generated setter destinations/calls name each stored field. HitBox shape list elements and ShapeData scalar/vector children have independent source readers.",
+    "conditional": "Exact stored values compose under the selected ordinary formatter route. Every enclosing list, action and root still requires its own original-byte endpoint and child receipt.",
+    "unresolved": "Runtime target selection, shape evaluation, blackboard providers and gameplay execution are not inferred from stored fields."
+  }
+}

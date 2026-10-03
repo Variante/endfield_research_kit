@@ -1,0 +1,64 @@
+{
+  "schema": "endfield.buff-direct-target-actions-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "catalogContract": "levelscript_union_tags.json",
+  "routes": [
+    {
+      "unionTag": 352,
+      "wrappedType": "Beyond.Gameplay.Core.ShowHideActorAction+ShowHideActorData",
+      "sourceContract": "buff_160_native.json",
+      "sourceReadOrder": "member10",
+      "targetFieldName": "targetSettings",
+      "targetFieldIndex": 9,
+      "sourceContextIndices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "contextMemberIndices": [
+        1,
+        6,
+        8,
+        9
+      ]
+    },
+    {
+      "unionTag": 281,
+      "wrappedType": "Beyond.Gameplay.Core.PlaySoundAction+PlaySoundActionData",
+      "sourceContract": "buff_119_native.json",
+      "sourceReadOrder": "member22",
+      "targetFieldName": "targetSettings",
+      "targetFieldIndex": 13,
+      "sourceContextIndices": [
+        0
+      ],
+      "contextMemberIndices": [
+        13
+      ]
+    },
+    {
+      "unionTag": 182,
+      "wrappedType": "Beyond.Gameplay.Core.FinishOwnerAction+Data",
+      "sourceContract": "buff_b6_native.json",
+      "sourceReadOrder": "member6",
+      "targetFieldName": "owner",
+      "targetFieldIndex": 4,
+      "sourceContextIndices": [
+        0
+      ],
+      "contextMemberIndices": [
+        4
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Each reviewed source contract proves its own primitive/string/TargetSettings read order. The selected dispatcher, generated ordered member types, complete source windows and stated generic MethodSpec contexts independently join each parent target field to the shared TargetSettings child.",
+    "conditional": "String fields are retained as signed-length bytes; text decoding/provider parity is not promoted.",
+    "unresolved": "Live formatter choice, playback/visibility/owner-finish execution, evaluated target selection, and enclosing whole-root completeness until independent original-byte EOF replay."
+  }
+}

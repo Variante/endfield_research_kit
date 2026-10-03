@@ -231,9 +231,13 @@ class UnityObjectStore:
         self._local = threading.local()
         self._connections: list[sqlite3.Connection] = []
         self._connections_lock = threading.Lock()
-        schema = self._connection().execute("SELECT value FROM meta WHERE key='schema'").fetchone()
-        if not schema or schema[0] != self.schema:
-            raise UnityStoreError(f"{self.path} declares schema {schema[0] if schema else None!r}; expected {self.schema!r}")
+        try:
+            schema = self._connection().execute("SELECT value FROM meta WHERE key='schema'").fetchone()
+            if not schema or schema[0] != self.schema:
+                raise UnityStoreError(f"{self.path} declares schema {schema[0] if schema else None!r}; expected {self.schema!r}")
+        except (sqlite3.Error, UnityStoreError):
+            self.close()
+            raise
 
     @classmethod
     def for_export(cls, export_root: Path | None = None) -> "UnityObjectStore":

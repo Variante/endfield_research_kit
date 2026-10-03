@@ -1,0 +1,54 @@
+{
+  "schema": "endfield.buff-damage-sword-selected-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_root_no_positive_native.json",
+    "buff_damage_modifier_child_native.json",
+    "buff_damage_sword_condition_storage_native.json",
+    "buff_damage_sequence_action_condition_native.json",
+    "buff_damage_scale_processor_child_native.json"
+  ],
+  "selectedSource": {
+    "path": "Data/Json/BuffData/buff_wpn_sword_0010_real.json",
+    "sha256": "58E52FBD1E90992D6E13E63184EC1DFC19A37418B938F9545BB67DC78963709B",
+    "length": 1089,
+    "damageModifier": [160, 909],
+    "item": [164, 909],
+    "processors": [856, 905],
+    "processor": [860, 905],
+    "enableSide": [905, 909]
+  },
+  "parentTypedChildren": [
+    {
+      "fieldName": "damageProcessors",
+      "sourceRole": "damageProcessors source context",
+      "methodOwner": "MemoryPack.MemoryPackReader",
+      "methodName": "ReadPackable",
+      "methodSpecIndex": 610703,
+      "methodSpec": [428462, -1, 62521],
+      "argumentRawHex": "38CB258D010000000000150000000000",
+      "typeName": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageProcessorBase>"
+    },
+    {
+      "fieldName": "enableSide",
+      "sourceRole": "enableSide source context",
+      "methodOwner": "MemoryPack.MemoryPackReader",
+      "methodName": "ReadUnmanaged",
+      "methodSpecIndex": 619595,
+      "methodSpec": [428448, -1, 42558],
+      "argumentRawHex": "63270000000000000000118000000000",
+      "typeName": "Beyond.Gameplay.Core.DamageModifier+Data+EnableSide"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected source identity and parent list/item endpoints join the independently revalidated recursive six-action condition, tag-five DamageScaleProcessor and four-byte enableSide. The two additional MethodSpec arguments equal the actual runtime setter parameter and destination field types on the pinned native build.",
+    "direct": "The stored DamageModifier.Data reads condition, damageProcessors and enableSide in the separately owned parent order. The root reader may compose this source-bound child at field six after proving the other twenty-nine fields, ID and physical EOF.",
+    "conditional": "This selected child is diagnostic until the canonical Buff and combined registry gates deliberately admit and replay its entire thirty-field root.",
+    "unresolved": "Evaluated condition results, branch decisions, damage arithmetic, zone selection and live formatter/provider selection. A complete stored root must not be presented as observed runtime behavior."
+  }
+}

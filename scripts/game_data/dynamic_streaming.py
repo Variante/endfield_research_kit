@@ -171,9 +171,10 @@ def _vector(data: bytes, layout: dict[str, Any], index: int) -> tuple[int, int]:
     return _bounded_vector(data, layout, index, 4)[:2]
 
 
-def _validate_string_vector(data: bytes, vector: int, count: int) -> None:
-    """Validate every FlatBuffer string target, UTF-8 body, and terminator."""
+def _validate_string_vector(data: bytes, vector: int, count: int) -> list[tuple[int, int, str]]:
+    """Validate strings and return their complete count/body/NUL allocations."""
 
+    spans: list[tuple[int, int, str]] = []
     for index in range(count):
         slot = vector + index * 4
         relative = _u32(data, slot)
@@ -195,6 +196,81 @@ def _validate_string_vector(data: bytes, vector: int, count: int) -> None:
             data[start:end].decode("utf-8", errors="strict")
         except UnicodeDecodeError as exc:
             raise ValueError(f"TotalStr[{index}] is not strict UTF-8") from exc
+        spans.append((target, end + 1, f"TotalStr[{index}]"))
+    return spans
+
+
+def _main_allocation_framing(
+    data: bytes, tables: list[tuple[dict[str, Any], str]],
+    vectors: list[tuple[int, int, str]], strings: list[tuple[int, int, str]],
+) -> dict[str, Any]:
+    """Bound main allocations without calling zero-filled gaps padding.
+
+    Tables own their stored object extents, not the meaning of their fields.
+    Shared vtables and strings may repeat one exact allocation; partial overlap
+    or a reference into a different allocation remains an error. Gaps remain
+    residuals even when all their bytes are zero.
+    """
+
+    spans: list[tuple[int, int, str, str]] = [(0, 4, "rootOffset", "root offset")]
+    for table, label in tables:
+        start = int(table["tableOffset"])
+        spans.append((start, start + int(table["objectSize"]), "table", label))
+        start = int(table["vtableOffset"])
+        spans.append((start, start + int(table["vtableSize"]), "vtable", label + " vtable"))
+    spans.extend((start, end, "vector", label) for start, end, label in vectors)
+    spans.extend((start, end, "string", label) for start, end, label in strings)
+    allocations: dict[tuple[int, int], tuple[str, str]] = {}
+    shared: Counter[str] = Counter()
+    for start, end, kind, label in spans:
+        if not 0 <= start < end <= len(data):
+            raise ValueError(f"main allocation outside payload: {label} at {start}:{end}/{len(data)}")
+        previous = allocations.get((start, end))
+        if previous is not None:
+            if kind != previous[0] or kind not in ("vtable", "string"):
+                raise ValueError(
+                    f"main allocations alias: {label} and {previous[1]} at {start}:{end}"
+                )
+            shared[kind] += 1
+        else:
+            allocations[start, end] = kind, label
+    cursor = 0
+    preceding = "payload start"
+    owned: Counter[str] = Counter()
+    gaps: list[dict[str, Any]] = []
+    for (start, end), (kind, label) in sorted(allocations.items()):
+        if start < cursor:
+            raise ValueError(
+                f"main allocations overlap: {preceding} ends {cursor}, {label} begins {start}"
+            )
+        if start > cursor:
+            gap = data[cursor:start]
+            gaps.append({
+                "startOffset": cursor, "endOffset": start, "bytes": len(gap),
+                "allZero": not any(gap), "before": label,
+            })
+        owned[kind] += end - start
+        cursor, preceding = end, label
+    if cursor < len(data):
+        gap = data[cursor:]
+        gaps.append({
+            "startOffset": cursor, "endOffset": len(data), "bytes": len(gap),
+            "allZero": not any(gap), "before": "physical EOF",
+        })
+    zero_bytes = sum(row["bytes"] for row in gaps if row["allZero"])
+    other_bytes = sum(row["bytes"] for row in gaps if not row["allZero"])
+    return {
+        "status": "bounded_nonoverlapping",
+        "ownedBytes": sum(owned.values()), "ownedBytesByKind": dict(owned),
+        "allocationCount": len(allocations), "sharedAllocationReferences": dict(shared),
+        "residualBytes": zero_bytes + other_bytes,
+        "zeroFilledResidualBytes": zero_bytes, "otherResidualBytes": other_bytes,
+        "residualSpanCount": len(gaps),
+        "residualLengthCounts": dict(Counter(str(row["bytes"]) for row in gaps)),
+        "maxResidualBytes": max((row["bytes"] for row in gaps), default=0),
+        "residuals": gaps,
+        "evidenceBoundary": "Allocation extents only; zero-filled residuals are not proved padding, and nested record fields remain undecoded.",
+    }
 
 
 def parse_dynamic_chunk_framing(
@@ -242,6 +318,7 @@ def parse_dynamic_chunk_framing(
     vector_elements: Counter[int] = Counter()
     nonempty_vectors: Counter[int] = Counter()
     vector_spans: list[tuple[int, int, int, int]] = []
+    allocation_tables = [(root, "root")]
     vector_body_bytes = 0
     data_mask_checked = 0
     data_mask_nonempty_matches: Counter[int] = Counter()
@@ -255,6 +332,7 @@ def parse_dynamic_chunk_framing(
         if table <= slot:
             raise ValueError(f"dynamic SingleGrid {index} table target is not forward")
         layout = _table_layout(data, table)
+        allocation_tables.append((layout, f"SingleGrid[{index}]"))
         if layout["fieldCount"] != SINGLE_GRID_FIELD_COUNT:
             raise ValueError(
                 f"dynamic SingleGrid {index} has {layout['fieldCount']} fields, "
@@ -307,7 +385,7 @@ def parse_dynamic_chunk_framing(
                 )
 
     strings_vector, strings_count = _vector(data, root, 4)
-    _validate_string_vector(data, strings_vector, strings_count)
+    string_spans = _validate_string_vector(data, strings_vector, strings_count)
     result = {
         **scalars,
         "GridsLength": grid_count,
@@ -319,6 +397,15 @@ def parse_dynamic_chunk_framing(
         ],
     }
     if vector_widths is not None:
+        allocation_vectors = [
+            (grid_vector - 4, grid_vector + grid_count * 4, "Grids"),
+            (strings_vector - 4, strings_vector + strings_count * 4, "TotalStr"),
+            *((start, end, f"SingleGrid[{grid}] field {field}")
+              for start, end, grid, field in vector_spans),
+        ]
+        result["ProvidedWidthMainAllocationFraming"] = _main_allocation_framing(
+            data, allocation_tables, allocation_vectors, string_spans,
+        )
         result["ProvidedWidthGridVectorFraming"] = {
             "status": "bounded_nonoverlapping",
             "countWordAndBodySpanCount": len(vector_spans),
