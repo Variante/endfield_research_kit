@@ -273,6 +273,31 @@ def _assign_pair(reader: Reader, names: list[str]) -> dict[str, Any]:
             "status": "named-six-member-exact-span", "namedFields": fields}
 
 
+def decode_assignment_list(
+    data: bytes, *, source: str, logical_sha256: str, start: int, end: int,
+    native_validation: dict[str, Any],
+) -> dict[str, Any]:
+    """Compose AssignPair elements after an independently typed parent join."""
+    contract = _contract()
+    if (native_validation.get("status") != "validated"
+            or native_validation.get("nativeInputs") != contract["nativeInputs"]
+            or native_validation.get("assignPairReadOrder") != contract["assignPairWrapper"]["readOrder"]):
+        raise ValueError(f"{LABEL}:assignment-native-not-validated")
+    if (not isinstance(data, bytes) or not source or not isinstance(logical_sha256, str)
+            or hashlib.sha256(data).hexdigest().upper() != logical_sha256.upper()
+            or type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data)):
+        raise ValueError(f"{LABEL}:assignment-source-range-or-hash")
+    reader = Reader(data, source, end); reader.pos = start
+    count = reader.count(1, nullable=True)
+    elements = [_assign_pair(reader, contract["assignPairWrapper"]["readOrder"])
+                for _ in range(max(0, count))]
+    if reader.pos != end:
+        raise ValueError(f"{LABEL}:assignment-list-end={reader.pos}; expected={end}")
+    return {"source": source, "logicalSha256": logical_sha256.upper(),
+            "start": start, "end": end, "count": count, "elements": elements,
+            "recursiveStoredSchemaExact": True, "runtimeAssignmentKnown": False}
+
+
 def decode_create_buff_input_list(
     data: bytes, *, source: str, logical_sha256: str, start: int, end: int,
     native_validation: dict[str, Any],

@@ -30,10 +30,15 @@ from scripts.game_data.memorypack import buff_selector_shared_children as select
 from scripts.game_data.memorypack import buff_recursive_control_actions as control
 from scripts.game_data.memorypack import buff_selector_geometry as geometry
 from scripts.game_data.memorypack import buff_find_target_action as find_target
+from scripts.game_data.memorypack import buff_damage_action as damage
+from scripts.game_data.memorypack import buff_aura_heal_actions as aura_heal
+from scripts.game_data.memorypack import buff_skill_stack_interrupt_actions as skill_stack_interrupt
+from scripts.game_data.memorypack import buff_vitals_actions as vitals
+from scripts.game_data.memorypack import buff_data_transfer_actions as data_transfer
 from scripts.game_data.memorypack.buff_actions import SEQUENCE_RECURSION_LIMIT
 
 LABEL = "buffRecursiveActions"
-SUPPORTED_TAGS = frozenset((create.TAG, effect.TAG, armor.TAG, finish.TAG)) | direct_target_actions.supported_tags() | control.SUPPORTED_TAGS | find_target.supported_tags()
+SUPPORTED_TAGS = frozenset((create.TAG, effect.TAG, armor.TAG, finish.TAG, damage.TAG)) | direct_target_actions.supported_tags() | control.SUPPORTED_TAGS | find_target.supported_tags() | aura_heal.supported_tags() | skill_stack_interrupt.supported_tags() | vitals.supported_tags() | data_transfer.supported_tags()
 
 def validate_current_native_contract() -> dict[str, Any]:
     children = {"create": create.validate_current_native_contract(),
@@ -61,8 +66,17 @@ def validate_current_native_contract() -> dict[str, Any]:
     children["checkStack"] = control.stack.validate_current_native_contract()
     children["buffIdActions"] = control.ids.validate_current_native_contract()
     children["blackboardString"] = control.strings.child.validate_current_native_contract()
+    children["decorateMask"] = control.decorate.validate_current_native_contract()
+    children["advancedBuffIds"] = control.advanced_ids.validate_current_native_contract(
+        string_native=children["blackboardString"])
     children["selectorGeometry"] = geometry.validate_current_native_contract(
         selector_native=children["selector"], vector_native=children["effectVectors"])
+    children["damage"] = damage.validate_current_native_contract(
+        vector_native=children["effectVectors"], target_native=children["target"])
+    children["auraHeal"] = aura_heal.validate_current_native_contract(children=children)
+    children["skillStackInterrupt"] = skill_stack_interrupt.validate_current_native_contract(children=children)
+    children["vitals"] = vitals.parent.validate_current_native_contract()
+    children["dataTransfer"] = data_transfer.validate_current_native_contract(children=children)
     armor_target_binding(children["armor"], children["target"])
     finish_settings_binding(children["finish"], children["findSettings"])
     expected = children["create"]["nativeInputs"]
@@ -285,6 +299,21 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
         return decode_direct_target_action(data, source, digest, start, end, tag, native_validation)
     if tag in find_target.supported_tags():
         return find_target.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag, native_validation=native_validation)
+    if tag == damage.TAG:
+        return damage.decode_action(data, source=source, digest=digest, start=start, end=end,
+                                    native_validation=native_validation, target_decoder=recursive_target)
+    if tag in aura_heal.supported_tags():
+        return aura_heal.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target, depth=depth)
+    if tag in skill_stack_interrupt.supported_tags():
+        return skill_stack_interrupt.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in vitals.supported_tags():
+        return vitals.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in data_transfer.supported_tags():
+        return data_transfer.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
     if tag not in decoders:
         return control.decode_action(data, source=source, digest=digest, start=start, end=end,
                                      tag=tag, native_validation=native_validation, depth=depth)

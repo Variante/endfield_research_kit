@@ -33,10 +33,12 @@ can select an alternate complete Buff or Skill receipt through `--buff-report`
 or `--skill-report`, but still checks its input set, source bytes and live
 helper/native provenance. Admission failures identify the validator, failed
 predicate, source identity and bounded expected/actual values. Buff's selected
-root provenance currently includes every reviewed contract; a contract change
-in another lane can therefore require one fresh complete Buff receipt without
-indicating changed Buff data. Do not repair that mismatch by editing receipt
-pins or repeating a capture.
+root provenance follows its parser import closure, contributing dispatcher
+declarations and transitive contract references. A contributing change requires
+a fresh complete receipt; an unrelated contract change does not. Newly relevant
+or conflicting dispatcher declarations still change or fail the dependency set.
+Do not repair a provenance mismatch by editing receipt pins or repeating a
+capture.
 
 ## JSON-schema and compact-table families
 
@@ -154,6 +156,13 @@ frontiers. Keep changing rankings and selected-source inventories in reports.
 Stored action, event, getter and task-condition inputs establish no execution,
 resolved target, property value or mission order.
 
+The full JsonData gate compares the complete raw-format reader scope before
+and after decoding, including added Python sources and contract JSON. Prepare
+capture-profile and other raw-format edits before starting that sweep, then
+keep those inputs fixed until publication. A drift refusal preserves the
+previous publication and reports a bounded, sorted list of added, removed or
+modified files with their expected and actual lengths and hashes.
+
 The reusable `levelscript_route_deserialize_native.py` validator now admits
 typed route contracts as well as the earlier read/setter-window contracts.
 Typed admission joins the native union switch and registered wrapper to the
@@ -162,7 +171,31 @@ read/setter calls, exact generic `ReadValue` context and authenticated logical
 source spans. The reviewed `contracts/levelscript_stored_routes_native.json`
 uses that path for simple UI, factory-highlight, water-gun-response,
 enemy-signal and decoration-animator actions with already established primitive
-Params. This improves the canonical stored owner and Data inspector; it adds
+Params. It also authenticates `ParamOutput<T>` separately from `Param<T>`:
+the selected generic reader must name the exact output type, while the existing
+two-member output codec reads only its source selector and path. This covers
+scripted-patrol event outputs and camera-effect save IDs without treating those
+stored destinations as observed values. Header enums additionally require
+their native `value__` field to be signed Int32; a four-byte wrapper shape alone
+cannot distinguish signed and unsigned backing types. The shared validator
+refuses missing or different generic contexts and enum declarations.
+The same admission now covers `EntityEvent_OnIntTryUnlock`,
+`LevelEvent_OnTravelPoleBegin`, `OnHitByLaser`, `GetterString`,
+`GetSpawnerGroupKeyOfEntity` and `ToggleGeneralAbilityLoneClick`. The unlock
+header retains separate target entity, entity-list and output operands; its
+`EntityEventHeader.TriggerTarget` requires its own signed-Int32 declaration.
+The travel-pole and laser-hit headers retain typed output destinations, while
+the getters retain authored string/entity inputs. None proves the output value,
+resolved spawner group, target selection, unlocked state or event firing.
+`LevelEvent_OnEntityTakeDamage` now retains its damage/entity outputs and typed
+entity and boolean filters. `ListGetValueInt` and `ListGetLengthInt` compose
+the shared integer-list grammar. `MainCharMoveToDirection` and
+`MainCharStopNavMove` retain their direction, gait and navigation identifiers;
+the gait requires its own native signed-Int32 backing proof. Their selected
+`ParamOutput<float>`, `Param<List<int>>` and gait readers must resolve the exact
+typed generic contexts. Stored routes do not prove damage, getter results,
+actor movement or navigation completion; later owner blockers remain partial.
+This improves the canonical stored owner and Data inspector; it adds
 no Story playback, mission trigger/order or runtime property claims. Source-span
 replay still requires the complete current JsonData gate before whole-owner
 EOF or corpus counts are published.
@@ -251,26 +284,15 @@ EOF or corpus counts are published.
   Whole-owner publication still requires the corpus gate after these nested
   structures advance the sequential owner.
 
-- The historical `scripts/game_data/levelscript_provider_capture.py` stages a bounded Usp
-  observer after authenticating the selected native inputs, complete JsonData
-  receipt, compressed ledger and physical logical source. Its default invocation
-  only writes a plan and observer under `reports/game_data/`. Its Frida live
-  path is unavailable in the current EndfieldCapture-only workflow. This
-  observer is no longer needed to admit the statically proved default stored
-  grammar; a future runtime investigation would need an admitted port before
-  asking the user to record. The plan
-  scopes shared-reader entry to the parent
-  callsites and captures the actual MethodInfo, direct provider return, formatter
-  object, raw bounded class/context snapshots, candidate child entry/registers
-  and before/after cursor. Snapshot pointer offsets alone establish no typed slot
-  or inflated companion identity. Every accepted
-  observation needs its own copied-source SHA match. Segmented/refilled or
-  oversized source states are refused, and teardown records quiescence separately
-  from observation success. No live observation has yet been collected, and the
-  tool never promotes a parent or claims gameplay execution, cache behavior for
-  other contexts or whole-owner EOF. A useful capture must reach the named Usp
-  source while that source is loaded; scene/name association is only a trigger
-  hint until the copied bytes authenticate it.
+- The removed live LevelScript provider probe supplied no admitted observation
+  and is unnecessary for the statically proved default stored grammar. Runtime
+  provider selection remains unresolved: a useful witness would bind copied
+  source bytes, the actual MethodInfo, returned formatter, typed class/context
+  identity, child entry/registers and before/after cursor in one admitted source
+  scope. Snapshot pointer offsets alone establish no typed slot or inflated
+  companion identity; scene/name associations do not authenticate copied bytes.
+  This gap cannot promote gameplay execution, other contexts' cache behavior,
+  or whole-owner EOF.
 
 ## BuffData
 
@@ -400,6 +422,83 @@ selected filename's authority. Its complete root receipt must traverse all
 thirty fields, match the source ID and reach physical EOF before either corpus
 gate can admit it.
 
+The complete family sweep now admits the shared event-map composition and
+AttributeModifier root compositions beyond the earlier selected fixtures.
+Older corpus receipts that predate those shared readers understate their
+coverage. Use the current authenticated per-file root receipts and canonical
+registry to select residual work; do not repeat already passing source probes
+unless a related child, parent, contract or source finding requires it.
+
+DamageAction's supported DamageUnit and calculation children compose through [the named reader](../../scripts/game_data/memorypack/buff_damage_action.py); unproved variants still refuse the root.
+AuraAction and HealAction compose independently typed input, filter, shape and tag children through [their named reader](../../scripts/game_data/memorypack/buff_aura_heal_actions.py); unsupported recursive children still refuse the root.
+CheckSkillType, CheckBuffStackNum and InterruptAction compose independently typed lists, BuffId values, blackboards and targets through [their named reader](../../scripts/game_data/memorypack/buff_skill_stack_interrupt_actions.py); live provider selection and gameplay evaluation remain unresolved.
+
+CheckHp and CheckPoiseValue compose through
+[`buff_vitals_actions.py`](../../scripts/game_data/memorypack/buff_vitals_actions.py).
+The selected-condition contract still owns their named parent fields; the shared
+reader removes the former single-action restriction and independently closes
+each target and BlackboardDouble on the original span. A condition's stored
+comparison operands do not establish which live entity or value it evaluates.
+
+ReadSkillSettingData and SendBattleSignalToLevel compose through
+[`buff_data_transfer_actions.py`](../../scripts/game_data/memorypack/buff_data_transfer_actions.py)
+and its reviewed native contract. ReadData keeps `column`, `dataKey`,
+`enhanceAttributeSource` and `storeKey` separate. Its nullable list, null elements,
+targets and blackboards have independent boundaries; absent and empty lists
+are distinct. The signal's `doubleValue` and `signalId` also have distinct typed
+children. Formatter-to-setter transfers prove stored fields, rather than field
+names alone proving wire order. Key payloads retain their original bytes while
+encoding is unresolved. Live skill lookup, output-key writes, signal delivery
+and ownership remain separate consumer joins.
+
+[`buff_action_consumers_native.py`](../../scripts/game_data/buff_action_consumers_native.py)
+re-proves narrow method-call claims from
+[`buff_action_consumers_native.json`](../../scripts/game_data/contracts/buff_action_consumers_native.json)
+on the selected build. CheckHp and CheckPoiseValue contain target-selection and
+blackboard-evaluation calls; CheckPoiseValue also calls `get_hasPoise`.
+ReadSkillSettingData contains attribute lookup and dynamic blackboard assignment.
+SendBattleSignalToLevel contains event allocation, sender/parameter assignment
+and level-event raising. These are direct static call observations, conditional
+on execution reaching those compiled paths. They do not join individual stored
+fields to call arguments or establish IFix selection, values, delivery or mission
+ownership. A failed method claim empties its group and marks it `pendingReview`;
+native-input drift during evaluation empties all groups. This consumer audit is
+independent of the stored-format coverage gates.
+
+The same claims contract follows the root consumers. `Buff.Reset` contains
+action, ignite, shield and modifier loading calls. `_LoadActions` reaches
+sequence construction/reassignment, action-container registration and timeline
+loading; `_ExecuteBuffAction` contains both ordinary and instant sequence
+execution calls, while `OnStart` reaches dispatch and triggering. These joins
+establish compiled consumer stages, not the active Buff instance, selected
+stored list, event, target or branch. `BuffData.ConvertToServer` and
+`_ConvertAction` provide a separate client-side projection through action and
+modifier converters into `BUFF_RES`. That projection does not establish
+transport, server processing or parity with client execution. The loader uses
+unique method names for these generic signatures; its claims do not declare
+their argument ABI.
+
+The independent Buff profile in
+[`buff_runtime_trace_capture.json`](../../scripts/game_data/contracts/buff_runtime_trace_capture.json)
+targets the missing stored-definition-to-instance-to-action join. Native
+preparation proves the selected methods, field types and read programs before
+recording. Buff lifecycle entries retain supplied definition IDs separately
+from stored IDs and instance carriers. Action assignment and selected consumer
+entries retain their environment reference identities. Closed generic ancestry
+can establish access to a nongeneric base field without establishing a closed
+generic field layout or value ABI. Reference identity observations read pointer
+bits only; they do not enumerate collections or invoke getters.
+
+This profile is prepared and offline validated, with live observations still
+required. Same-process receiver and environment equality must be joined through
+assignment, reset and finish events because pooled pointers can recur. Reset
+entry caches precede reassignment; temporal proximity does not establish
+ownership. Per-frame triggering, action returns, target/provider values, dynamic
+blackboard writes, IFix selection, server acceptance and final attribute writes
+remain outside this observer. Archived BuffData bytes do not authenticate a
+schema or native receipt by themselves. Format residuals remain independent
+offline work even after a runtime sample is collected.
+
 `buff_target_settings_child_receipt.decode_target_settings_value` is the bounded
 value owner shared by typed action parents. Factoring this existing member loop
 preserves earlier CreateBuff and Effect receipts; a new parent must independently
@@ -410,7 +509,8 @@ field to the exact child reader, including positive ID lists and GameplayTagQuer
 arrays, and independently owns each target and BlackboardDouble field.
 
 `buff_direct_target_actions.py` and `buff_direct_target_actions_native.json`
-share an adapter across ShowHideActor, PlaySound and FinishOwner while retaining
+share an adapter across ShowHideActor, PlaySound, FinishOwner and
+CheckMainCharacterCondition while retaining
 a separate reviewed read order, member count and TargetSettings field for each
 type. Every selected source context must belong to that parent's reader and
 match the generated member type; a context belonging to a nested finder is not
@@ -432,6 +532,10 @@ anonymous children still refuse the root. `buff_id_actions.py` distinguishes
 the one-member BuffId wrapper from BuffFindSettings' raw string-list elements.
 Their different parent field types and native source contexts prevent treating
 the two wire shapes as interchangeable.
+CheckDamageDecorateMask also composes as a standalone event-map action through
+its existing reviewed condition member plan. The original mask's eight stored
+bytes stay intact; this broader parent composition does not add a predicate
+evaluation claim.
 
 `buff_blackboard_string_child_receipt.py` names the stored blackboard key,
 use-key flag and value through matching native source stores and generated
@@ -440,6 +544,19 @@ children independently join this grammar through their typed source calls.
 Payload encoding and runtime interpretation remain unresolved: receipts retain
 raw payload and flag bytes. Child contract reads observe current file bytes,
 including after an earlier successful decode in the same process.
+
+`buff_check_buff_id_context_advanced.py` independently joins the advanced
+condition's list to BlackboardBuffId. That type inherits BlackboardString's
+three members, but its own reader and typed list context still need proof:
+the selected source calls invoke the same byte-payload, byte and byte-payload
+helpers, then pass each result to the matching inherited setter in order.
+Only after that join does the shared BlackboardString value decoder name each
+list element. Null lists, empty lists and null elements remain distinct, and
+the GameplayTagQuery field composes its own named child. This three-member
+subtype is separate from the one-member BuffId wrapper. Neither inherited
+layout nor child EOF proves condition execution, provider selection or whole
+BuffData completeness; event-map admission still requires all original root
+fields, source-ID equality and physical EOF.
 
 `buff_selector_geometry.py` and `buff_find_target_action.py` compose the
 FindTarget parent with independently typed DirectionSettings and SelectorData.
@@ -466,6 +583,27 @@ changing the wire grammar. Every promoted root still needs all thirty fields,
 source-ID equality and EOF. `memorypack/buff_residual_census.py` excludes exact
 roots before ranking unresolved child obligations and counts unique sources;
 overlapping completed-action cohorts do not predict complete root closures.
+It counts authenticated per-file exact flags and cross-checks total, exact and
+residual counts against the canonical registry. A family summary may omit the
+aggregate exact counter; when present it must agree with the per-file count.
+
+The census's `--replay-shared-events` mode distinguishes that recorded baseline
+from the newer shared event-map reader. It rereads only unresolved eligible
+roots, rejoins their logical bytes, and authenticates current root/event native
+inputs and the contributing reader/contract closure before and after the run.
+Already exact roots remain excluded. A receipt must still cover thirty
+contiguous fields, the source-ID join and physical EOF; this diagnostic never
+publishes coverage. The ordinary null-event candidate filter cannot assess
+event-bearing residuals, and event-map eligibility alone does not close them.
+Composing proved children can close additional roots; residual refusals still
+reach unsupported action dispatch and nested finder/selector interiors. Those
+are typed child obligations, not a reason to loosen the parent or infer action
+behavior.
+Its first-stop cohorts normalize byte positions while retaining union tags and
+raw per-source diagnostics. They rank unique sources sharing the first reached
+gap, not all future gaps or predicted closures. Generated counts and examples
+belong in the census report; complete-family admission and canonical original-
+byte replay remain the publication boundary.
 
 `memorypack/buff_selected_roots.py` owns their complete-family admission and
 canonical export replay. It requires the exact reviewed logical path, length
@@ -789,21 +927,26 @@ The ordered queue across families is in
 [`../game_data_recovery.md`](../game_data_recovery.md); these are the open
 items this topic owns.
 
+- **BuffData.** Recover shared event-action children and compose already proved
+  root fields before adding source-specific exceptions. Other positive
+  `attributeModifier` and `healModifier` processor interiors; remaining action
+  parents, selector finders and nested direction targets; timeline and
+  `stackEffects` interiors; string encoding remain open. Rank distinct residual
+  sources after excluding complete roots. Separate recursive child refusals
+  from a missing whole-root receipt; overlapping child reach does not predict
+  complete-root admission. Every composition still needs all root fields,
+  source-ID equality, physical EOF and the complete family/registry gates.
 - **LevelScript.** The gate rerun, first-stop leaders and route integration
-  order are item 1 of the queue;
+  follow Buff in the queue;
   [`levelscript_first_stop_census.py`](../../scripts/game_data/levelscript_first_stop_census.py)
   reruns the owner over the JsonData receipt's partial files and ranks first
   stops by whole files. Unsupported values: positive
   `GameplayTag`/`BuffPtr`
   list elements, non-null `CameraControllerBase` and target-script values,
   non-constant patrol `EntityPtr`, positive dynamic AI blackboards, camera
-  configurations and curve keys; `SendLuaEvent2` is unobserved; partial templates stop
+  configurations and curve keys without reviewed parent routes;
+  `SendLuaEvent2` is unobserved; partial templates stop
   at unreviewed unions.
-- **BuffData.** Other positive `attributeModifier` and `healModifier`
-  processor interiors; remaining action parents, selector finders and nested
-  direction targets; timeline and `stackEffects` interiors; string encoding.
-  Rank these by distinct residual sources after excluding complete roots;
-  overlapping child reach is not a prediction of complete-root admission.
 - **SkillData.** Remaining framing failures involve unreviewed action parents
   or typed children, positive `EffectActionCfg` arrays and a remaining selector
   postprocessor. Use the current family report's first refusal to select the

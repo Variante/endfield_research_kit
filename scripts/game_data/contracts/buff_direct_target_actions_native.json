@@ -8,6 +8,16 @@
   "catalogContract": "levelscript_union_tags.json",
   "routes": [
     {
+      "unionTag": 104,
+      "wrappedType": "Beyond.Gameplay.Core.Conditions.CheckMainCharacterCondition+Data",
+      "sourceContract": "buff_68_native.json",
+      "sourceReadOrder": "member5",
+      "targetFieldName": "checkTarget",
+      "targetFieldIndex": 4,
+      "sourceContextIndices": [0],
+      "contextMemberIndices": [4]
+    },
+    {
       "unionTag": 352,
       "wrappedType": "Beyond.Gameplay.Core.ShowHideActorAction+ShowHideActorData",
       "sourceContract": "buff_160_native.json",

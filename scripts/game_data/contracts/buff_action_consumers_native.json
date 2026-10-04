@@ -1,0 +1,216 @@
+{
+  "schema": "endfield.buff-action-consumer-claims.v1",
+  "status": "reviewed",
+  "evidenceBoundary": {
+    "direct": "Named calls present in the selected native action bodies, independently re-proved by method identity.",
+    "conditional": "These calls describe compiled paths. Branch selection, IFix execution and actual delivery require separate evidence.",
+    "unresolved": "Live target selection, evaluated values, keys, writes, server acceptance and whole Buff behavior. Call presence does not prove that a particular stored field supplies a call argument."
+  },
+  "groups": {
+    "vitals": {
+      "methods": {
+        "CheckHp.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckHp",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body calls target selection and blackboard evaluation; this claim does not establish selected entity, attribute identity or comparison result.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue"
+              ]
+            }
+          ]
+        },
+        "CheckPoiseValue.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body contains target selection, hasPoise and blackboard evaluation calls; the live branch and result remain open.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilitySystem.get_hasPoise",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "skillSetting": {
+      "methods": {
+        "ReadSkillSettingData.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.ReadSkillSettingData",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body contains blackboard evaluation, target and attribute lookup, dynamic blackboard assignment and a gameplay-network getter. Their arguments and selected branches are separate joins.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.Attributes.GetValue",
+                "Beyond.Blackboard.AssignDynamic",
+                "Beyond.Gameplay.GameInstance.get_gameplayNetwork"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "signal": {
+      "methods": {
+        "SendBattleSignalToLevel.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.SendBattleSignalToLevel",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body contains event allocation, sender assignment, blackboard evaluation, parameter assignment and level-event raising. Delivery, exact keys and mission ownership are not proved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.EventParams.Allocate",
+                "Beyond.Gameplay.Core.EventParams.SetSender",
+                "Beyond.Gameplay.Core.AbilityAction.get_owner",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.ParamBlackboard.SetValue",
+                "Beyond.Gameplay.Core.LevelEventManager.RaiseLevelEvent"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "rootLifecycle": {
+      "methods": {
+        "Buff.Reset": {
+          "type": "Beyond.Gameplay.Core.Buff",
+          "method": "Reset",
+          "contract": "The unique named Reset body contains the action and modifier loading calls. These claims do not prove argument ownership, selected branch or the active Buff instance.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.Buff._LoadActions",
+                "Beyond.Gameplay.Core.Buff._LoadIgniteActions",
+                "Beyond.Gameplay.Core.Buff._LoadDamageModifier",
+                "Beyond.Gameplay.Core.Buff._LoadHealModifier",
+                "Beyond.Gameplay.Core.Buff._LoadPoiseModifier",
+                "Beyond.Gameplay.Core.Buff._LoadShieldInsts",
+                "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.LoadAttributesModifier"
+              ]
+            }
+          ]
+        },
+        "Buff._LoadActions": {
+          "type": "Beyond.Gameplay.Core.Buff",
+          "method": "_LoadActions",
+          "contract": "The unique named loader contains sequence construction/reassignment, registration and timeline loading. The selected stored list and live event mapping remain separate joins.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.CreateSequenceAction",
+                "Beyond.Gameplay.Core.SequenceAction.ReAssign",
+                "Beyond.Gameplay.Core.AbilitySystem+ActionContainer.RegisterAction",
+                "Beyond.Gameplay.Core.TimelineActionProcessor.Load"
+              ]
+            }
+          ]
+        },
+        "Buff._LoadIgniteActions": {
+          "type": "Beyond.Gameplay.Core.Buff",
+          "method": "_LoadIgniteActions",
+          "contract": "Ignite loading has sequence construction and reassignment calls; no stored ignite selector or executing event is inferred.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.CreateSequenceAction",
+                "Beyond.Gameplay.Core.SequenceAction.ReAssign"
+              ]
+            }
+          ],
+          "parameters": []
+        },
+        "Buff._ExecuteBuffAction": {
+          "type": "Beyond.Gameplay.Core.Buff",
+          "method": "_ExecuteBuffAction",
+          "contract": "The unique named dispatcher contains both sequence execution routes. Which event, target and route execute requires separate evidence.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.SequenceAction.Execute",
+                "Beyond.Gameplay.Core.SequenceAction.ExecuteInstant"
+              ]
+            }
+          ]
+        },
+        "Buff.OnStart": {
+          "type": "Beyond.Gameplay.Core.Buff",
+          "method": "OnStart",
+          "contract": "The ordinary start body contains dispatch and trigger calls; this does not establish one unconditional execution order.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.Buff._ExecuteBuffAction",
+                "Beyond.Gameplay.Core.Buff._TriggerInternal"
+              ]
+            }
+          ],
+          "parameters": []
+        }
+      }
+    },
+    "serverProjection": {
+      "methods": {
+        "BuffData.ConvertToServer": {
+          "type": "Beyond.Gameplay.Core.BuffData",
+          "method": "ConvertToServer",
+          "contract": "The compiled projection calls action, shield and modifier converters. A client projection does not prove transport, server processing or equality with client execution.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.BuffData._ConvertAction",
+                "Beyond.Gameplay.Core.BuffData._ConvertShield",
+                "Beyond.Gameplay.AttributeModifierData.ConvertToServer",
+                "Beyond.Gameplay.Core.BuffStackingSettings.ConvertToServer",
+                "Beyond.Gameplay.Core.DamageModifier+Data.ConvertToServer",
+                "Beyond.Gameplay.Core.HealModifier+Data.ConvertToServer"
+              ]
+            }
+          ],
+          "parameters": []
+        },
+        "BuffData._ConvertAction": {
+          "type": "Beyond.Gameplay.Core.BuffData",
+          "method": "_ConvertAction",
+          "contract": "The typed BUFF_RES path contains conversion and merge calls for the action families. Selected input lists, output content and server acceptance remain open.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.BuffActionMap.ConvertToServer",
+                "Beyond.Gameplay.Core.AbilityActionMap.ConvertToServer",
+                "Beyond.Gameplay.Core.IgniteActionMap.ConvertToServer",
+                "Beyond.Gameplay.Core.SequenceActionData.ConvertToServer",
+                "Beyond.Gameplay.Core.BattleServerDataConverter.MergeTo"
+              ]
+            }
+          ],
+          "parameters": [
+            "Proto.BUFF_RES"
+          ]
+        }
+      }
+    }
+  }
+}

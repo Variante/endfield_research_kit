@@ -745,9 +745,10 @@ def dialog_id_table_row_start(data: bytes, offset: int) -> str | None:
     return key
 
 
-def parse_dialog_id_table_int_string_map(data: bytes, offset: int, field_name: str, *, max_count: int = 20_000) -> tuple[dict[str, Any], int]:
+def parse_dialog_id_table_int_string_map(data: bytes, offset: int, field_name: str, *, max_count: int = 20_000, retain_rows: bool = False) -> tuple[dict[str, Any], int]:
     count, offset = read_memorypack_u32_count(data, offset, field_name, max_count=max_count)
     rows: list[dict[str, Any]] = []
+    retained: list[dict[str, Any]] = []
     key_min: int | None = None
     key_max: int | None = None
     for row_index in range(count):
@@ -763,19 +764,24 @@ def parse_dialog_id_table_int_string_map(data: bytes, offset: int, field_name: s
             key_min = value
         if key_max is None or value > key_max:
             key_max = value
+        row = {"index": row_index, "offset": format_offset(row_offset), "key": value, "value": text}
         if len(rows) < 8 or row_index >= count - 3:
-            rows.append({"index": row_index, "offset": format_offset(row_offset), "key": value, "value": text})
+            rows.append(row)
+        if retain_rows:
+            retained.append(row)
     return {
         "count": count,
         "keyMin": key_min,
         "keyMax": key_max,
         "sampleRows": rows[:16],
+        **({"rows": retained} if retain_rows else {}),
     }, offset
 
 
-def parse_dialog_id_table_string_int_map(data: bytes, offset: int, field_name: str, *, max_count: int = 20_000) -> tuple[dict[str, Any], int]:
+def parse_dialog_id_table_string_int_map(data: bytes, offset: int, field_name: str, *, max_count: int = 20_000, retain_rows: bool = False) -> tuple[dict[str, Any], int]:
     count, offset = read_memorypack_u32_count(data, offset, field_name, max_count=max_count)
     rows: list[dict[str, Any]] = []
+    retained: list[dict[str, Any]] = []
     value_counts: Counter[int] = Counter()
     key_prefix_counts: Counter[str] = Counter()
     for row_index in range(count):
@@ -790,14 +796,18 @@ def parse_dialog_id_table_string_int_map(data: bytes, offset: int, field_name: s
         value_counts[value] += 1
         prefix = "option" if key.startswith("option_dlg_") else key.split("_", 1)[0]
         key_prefix_counts[prefix] += 1
+        row = {"index": row_index, "offset": format_offset(row_offset), "key": key, "value": value}
         if len(rows) < 8 or row_index >= count - 3:
-            rows.append({"index": row_index, "offset": format_offset(row_offset), "key": key, "value": value})
+            rows.append(row)
+        if retain_rows:
+            retained.append(row)
     return {
         "count": count,
         "valueMin": min(value_counts) if value_counts else None,
         "valueMax": max(value_counts) if value_counts else None,
         "keyPrefixCounts": dict(key_prefix_counts.most_common(12)),
         "sampleRows": rows[:16],
+        **({"rows": retained} if retain_rows else {}),
     }, offset
 
 

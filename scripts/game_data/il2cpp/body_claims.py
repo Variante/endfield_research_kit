@@ -46,6 +46,12 @@ by type and method, and evaluates them against whichever build is installed:
 ``dispatchesVirtualMethod`` an instance-data field and property blackboard
                       reach the selected native virtual slot, whose base and
                       named overrides all declare the same method
+``comparesVirtualEnumResult`` a bounded IL2CPP getter helper receives the
+                      selected method slot and its immediate result is compared
+                      with a selected enum member; branch meaning stays reviewed
+``callsVirtualGetter`` a bounded IL2CPP getter helper receives the selected
+                      no-argument virtual method slot; receiver ownership and
+                      subsequent use of the return value remain separate claims
 ``comparesWithArguments`` compares one value with each named argument register
                       (through register moves), and with zero when ``zero`` is set
 
@@ -548,6 +554,27 @@ def _virtual_slot_helper(index: BodyIndex, pointer: int) -> bool:
     return first >= 0 and second >= 0 and third >= 0
 
 
+def _virtual_getter_helper(index: BodyIndex, pointer: int) -> bool:
+    """Recognize bounded slot/receiver lookup and no-argument getter dispatch."""
+    try:
+        size = index._extent(pointer)
+        if not 0 < size <= MAX_FOLLOWED_BYTES:
+            return False
+        data = index.pe.bytes_at_va(pointer, size)
+    except (ClaimError, KeyError, ValueError):
+        return False
+    # r14 retains the incoming rdx receiver; ebx receives the ecx slot.
+    # Il2CppClass vtable entries are 16 bytes from +0x140. The generic
+    # continuation invokes r8 with rcx=receiver and rdx=MethodInfo.
+    receiver_slot = bytes.fromhex("4c 8b f2 0f b7 d9 48 8b 0a")
+    lookup = bytes.fromhex("48 8d 43 14 48 c1 e0 04 49 03 06 4c 8b 00 48 8b 50 08")
+    invoke = bytes.fromhex("49 8b ce 41 ff d0")
+    first = data.find(receiver_slot)
+    second = data.find(lookup, first + len(receiver_slot)) if first >= 0 else -1
+    third = data.find(invoke, second + len(lookup)) if second >= 0 else -1
+    return first >= 0 and second >= 0 and third >= 0
+
+
 def _rsp_delta(rows: list[dict[str, Any]], position: int) -> int:
     """Bytes by which the current RSP is below entry RSP before one row."""
     delta = 0
@@ -632,6 +659,60 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
     """Return a bounded failure reason, or ``None`` when the claim holds."""
     rows = body.all_rows
     texts = _texts(rows)
+    if "callsVirtualGetter" in claim:
+        symbol = claim["callsVirtualGetter"]
+        slot = _virtual_method_slot(index, symbol)
+        type_name, _, method_name = symbol.rpartition(".")
+        method = next(method for method in index.metadata.methods_for(index.types[type_name])
+                      if index.metadata.string(method.name_index) == method_name)
+        if method.parameter_count != 0:
+            return f"{symbol} is not a no-argument virtual getter"
+        for position, row in enumerate(rows):
+            call = _CALL.fullmatch(str(row.get("text") or ""))
+            if not call or call.group(1) != "call":
+                continue
+            start = position
+            while start > 0:
+                left, right = rows[start - 1], rows[start]
+                try:
+                    if (int(str(left["va"]), 0) + len(bytes.fromhex(left["bytes"]))
+                            != int(str(right["va"]), 0)):
+                        break
+                except (KeyError, TypeError, ValueError):
+                    break
+                start -= 1
+            if (_constant_before_call(rows[start:position + 1], position - start, "ecx") == slot
+                    and _virtual_getter_helper(index, int(call.group(2), 16))):
+                return None
+        return f"{symbol} slot {slot} has no bounded no-argument getter dispatch"
+    if "comparesVirtualEnumResult" in claim:
+        spec = claim["comparesVirtualEnumResult"]
+        slot = _virtual_method_slot(index, spec["method"])
+        member = index.enum_member_id(spec["enumType"], spec["member"])
+        for position, row in enumerate(rows[:-1]):
+            call = _CALL.fullmatch(str(row.get("text") or ""))
+            if not call or call.group(1) != "call":
+                continue
+            def adjacent(left: dict[str, Any], right: dict[str, Any]) -> bool:
+                try:
+                    return (int(str(left["va"]), 0) + len(bytes.fromhex(left["bytes"]))
+                            == int(str(right["va"]), 0))
+                except (KeyError, TypeError, ValueError):
+                    return False
+            if not adjacent(row, rows[position + 1]):
+                continue
+            start = position
+            while start > 0 and adjacent(rows[start - 1], rows[start]):
+                start -= 1
+            if _constant_before_call(rows[start:position + 1], position - start, "ecx") != slot:
+                continue
+            if not _virtual_getter_helper(index, int(call.group(2), 16)):
+                continue
+            compared = str(rows[position + 1].get("text") or "")
+            if compared in {f"cmp eax, 0x{member:x}", f"cmp eax, {member}"}:
+                return None
+        return (f"{spec['method']} slot {slot} has no bounded getter dispatch immediately "
+                f"compared with {spec['enumType']}.{spec['member']} ({member})")
     if "callsAnonymousHelper" in claim:
         spec = claim["callsAnonymousHelper"]
         expected_calls = set(spec.get("helperCalls") or [])

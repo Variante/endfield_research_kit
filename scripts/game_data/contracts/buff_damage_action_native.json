@@ -1,0 +1,1247 @@
+{
+  "schema": "endfield.buff-damage-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "unionTag": 154,
+  "sourceContract": "buff_9a_native.json",
+  "dependencies": {
+    "effectConfig": "buff_effect_config_child_native.json",
+    "effectVectors": "buff_effect_vector_child_native.json",
+    "scalar": "buff_adding_cooldown_ownership_native.json"
+  },
+  "evidenceBoundary": {
+    "direct": "Ordered source reads are joined to named runtime destinations or generated setters under the selected native inputs.",
+    "conditional": "Stored list/object composition uses the selected closed generic field types and reviewed normal/null child readers; live formatter selection is unresolved.",
+    "unresolved": "Positive unit cost/processor/tag collections, unsupported calculation tags, positive terrain-effect arrays and gameplay execution."
+  },
+  "records": {
+    "action": {
+      "wrapperTypeDefinition": 16063,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageActionDataForMemoryPack",
+      "runtimeTypeDefinition": 9396,
+      "runtimeTypeName": "Beyond.Gameplay.Core.DamageAction+DamageActionData",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member11",
+      "readerMethod": [
+        119845,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageActionDataForMemoryPack",
+        "Deserialize",
+        58161136
+      ],
+      "readerWindowStart": 58161136,
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58161306,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161333,
+            "rawHex": "884110",
+            "fieldOffset": 16,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9195
+          },
+          "sourceToDestinationHex": "4885F60F8496020000488B4E104885C90F8489020000"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58161349,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161376,
+            "rawHex": "894114",
+            "fieldOffset": 20,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9195
+          },
+          "sourceToDestinationHex": "4885F60F846B020000488B4E104885C90F845E020000"
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58161385,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161412,
+            "rawHex": "894118",
+            "fieldOffset": 24,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9195
+          },
+          "sourceToDestinationHex": "4885F60F8447020000488B4E104885C90F843A020000"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58161421,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161448,
+            "rawHex": "89411C",
+            "fieldOffset": 28,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9195
+          },
+          "sourceToDestinationHex": "4885F60F8423020000488B4E104885C90F8416020000"
+        },
+        {
+          "fieldName": "alwaysNext",
+          "declaredType": "bool",
+          "setterMethodIndex": 119836,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58161457,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161493,
+            "rawHex": "40886820",
+            "fieldOffset": 32,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 9396
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F84FC01000033D2488BCEE8540300004885C00F84E9010000"
+        },
+        {
+          "fieldName": "attacker",
+          "declaredType": "Beyond.Gameplay.ActionTargetType",
+          "setterMethodIndex": 119837,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58161510,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161545,
+            "rawHex": "896824",
+            "fieldOffset": 36,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 9396
+          },
+          "sourceToDestinationHex": "8BE84885F60F84C801000033D2488BCEE8200300004885C00F84B5010000"
+        },
+        {
+          "fieldName": "damageUnits",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageAction+DamageUnit>",
+          "setterMethodIndex": 119838,
+          "kind": "counted-member33",
+          "sourceCall": {
+            "rva": 58161561,
+            "targetRva": 58849520
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161601,
+            "rawHex": "48896838",
+            "fieldOffset": 56,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 9396
+          },
+          "sourceToDestinationHex": "488BE84885F60F849401000033D2488BCEE8EC0200004885C00F8481010000488D4838",
+          "sourceContextInstructionRva": 58161551
+        },
+        {
+          "fieldName": "effectSource",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 119839,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 58161623,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161663,
+            "rawHex": "48896830",
+            "fieldOffset": 48,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 9396
+          },
+          "sourceToDestinationHex": "488BE84885F60F845601000033D2488BCEE8AE0200004885C00F8443010000488D4830",
+          "sourceContextInstructionRva": 58161610
+        },
+        {
+          "fieldName": "hitEnvData",
+          "declaredType": "Beyond.Gameplay.Core.DamageAction+HitEnvData",
+          "setterMethodIndex": 119840,
+          "kind": "member4",
+          "sourceCall": {
+            "rva": 58161685,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161725,
+            "rawHex": "48896848",
+            "fieldOffset": 72,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 9396
+          },
+          "sourceToDestinationHex": "488BE84885F60F841801000033D2488BCEE8700200004885C00F8405010000488D4848",
+          "sourceContextInstructionRva": 58161672
+        },
+        {
+          "fieldName": "hitEnvironment",
+          "declaredType": "bool",
+          "setterMethodIndex": 119841,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58161740,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161776,
+            "rawHex": "40886840",
+            "fieldOffset": 64,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 9396
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F84E100000033D2488BCEE8390200004885C00F84CE000000"
+        },
+        {
+          "fieldName": "targetSettings",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 119842,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 58161793,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58161829,
+            "rawHex": "48895828",
+            "fieldOffset": 40,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 9396
+          },
+          "sourceToDestinationHex": "488BD84885FF0F84AC00000033D2488BCFE8040200004885C00F8499000000",
+          "sourceContextInstructionRva": 58161783
+        }
+      ]
+    },
+    "unit": {
+      "wrapperTypeDefinition": 22435,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageUnitForMemoryPack",
+      "runtimeTypeDefinition": 9394,
+      "runtimeTypeName": "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "member33",
+      "readerMethod": [
+        162905,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageUnitForMemoryPack",
+        "Deserialize",
+        58584912
+      ],
+      "readerWindowStart": 58584912,
+      "members": [
+        {
+          "fieldName": "alwaysEndCoalition",
+          "declaredType": "bool",
+          "setterMethodIndex": 162870,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58585029,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585056,
+            "rawHex": "884131",
+            "fieldOffset": 49,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F843F060000488B4E104885C90F8432060000"
+        },
+        {
+          "fieldName": "alwaysStartNewCoalition",
+          "declaredType": "bool",
+          "setterMethodIndex": 162871,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58585065,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585092,
+            "rawHex": "884130",
+            "fieldOffset": 48,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F841B060000488B4E104885C90F840E060000"
+        },
+        {
+          "fieldName": "atkCalculation",
+          "declaredType": "Beyond.Gameplay.Core.CalculationBase",
+          "setterMethodIndex": 162872,
+          "kind": "calculation",
+          "sourceCall": {
+            "rva": 58585108,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585135,
+            "rawHex": "48894158",
+            "fieldOffset": 88,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84F0050000488B4E104885C90F84E3050000",
+          "sourceContextInstructionRva": 58585098
+        },
+        {
+          "fieldName": "atkScale",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 162873,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 58585161,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585188,
+            "rawHex": "48894150",
+            "fieldOffset": 80,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84BB050000488B4E104885C90F84AE050000",
+          "sourceContextInstructionRva": 58585148
+        },
+        {
+          "fieldName": "controlEffectRoll",
+          "declaredType": "bool",
+          "setterMethodIndex": 162874,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58585207,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585234,
+            "rawHex": "888190000000",
+            "fieldOffset": 144,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F848D050000488B4E104885C90F8480050000"
+        },
+        {
+          "fieldName": "costDataList",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.CastData+CostData>",
+          "setterMethodIndex": 162875,
+          "kind": "empty-list",
+          "sourceCall": {
+            "rva": 58585253,
+            "targetRva": 58849520
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585280,
+            "rawHex": "488981A8000000",
+            "fieldOffset": 168,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F845F050000488B4E104885C90F8452050000",
+          "sourceContextInstructionRva": 58585243
+        },
+        {
+          "fieldName": "damageAttributeType",
+          "declaredType": "Beyond.Gameplay.DamageAttributeType",
+          "setterMethodIndex": 162876,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58585312,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585339,
+            "rawHex": "894114",
+            "fieldOffset": 20,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8424050000488B4E104885C90F8417050000"
+        },
+        {
+          "fieldName": "damageDecorateMask",
+          "declaredType": "long",
+          "setterMethodIndex": 162877,
+          "kind": "scalar64",
+          "sourceCall": {
+            "rva": 58585348,
+            "targetRva": 53265792
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585375,
+            "rawHex": "48894138",
+            "fieldOffset": 56,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8400050000488B4E104885C90F84F3040000"
+        },
+        {
+          "fieldName": "damageProcessors",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageProcessorBase>",
+          "setterMethodIndex": 162878,
+          "kind": "empty-list",
+          "sourceCall": {
+            "rva": 58585392,
+            "targetRva": 58849520
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585419,
+            "rawHex": "48894168",
+            "fieldOffset": 104,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84D4040000488B4E104885C90F84C7040000",
+          "sourceContextInstructionRva": 58585382
+        },
+        {
+          "fieldName": "damageTags",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.GameplayTag>",
+          "setterMethodIndex": 162879,
+          "kind": "empty-list",
+          "sourceCall": {
+            "rva": 58585445,
+            "targetRva": 58849520
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585472,
+            "rawHex": "48894140",
+            "fieldOffset": 64,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F849F040000488B4E104885C90F8492040000",
+          "sourceContextInstructionRva": 58585432
+        },
+        {
+          "fieldName": "damageType",
+          "declaredType": "Beyond.GEnums.DamageType",
+          "setterMethodIndex": 162880,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58585498,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585525,
+            "rawHex": "894110",
+            "fieldOffset": 16,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F846A040000488B4E104885C90F845D040000"
+        },
+        {
+          "fieldName": "damageVisualCoalitionGroupKey",
+          "declaredType": "string",
+          "setterMethodIndex": 162881,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 58585534,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585561,
+            "rawHex": "48894128",
+            "fieldOffset": 40,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8446040000488B4E104885C90F8439040000"
+        },
+        {
+          "fieldName": "damageVisualImportance",
+          "declaredType": "Beyond.Gameplay.Core.AbilitySystem+Modifier+DamageVisualImportance",
+          "setterMethodIndex": 162882,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58585587,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585614,
+            "rawHex": "89411C",
+            "fieldOffset": 28,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8411040000488B4E104885C90F8404040000"
+        },
+        {
+          "fieldName": "effectData",
+          "declaredType": "Beyond.Gameplay.EffectActionCfg",
+          "setterMethodIndex": 162883,
+          "kind": "member85",
+          "sourceCall": {
+            "rva": 58585630,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585657,
+            "rawHex": "48898188000000",
+            "fieldOffset": 136,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84E6030000488B4E104885C90F84D9030000",
+          "sourceContextInstructionRva": 58585620
+        },
+        {
+          "fieldName": "enableDamageVisualCoalition",
+          "declaredType": "bool",
+          "setterMethodIndex": 162884,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58585682,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585709,
+            "rawHex": "884120",
+            "fieldOffset": 32,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84B2030000488B4E104885C90F84A5030000"
+        },
+        {
+          "fieldName": "enablePoiseBreakTimeDilation",
+          "declaredType": "bool",
+          "setterMethodIndex": 162885,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58585718,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585745,
+            "rawHex": "884133",
+            "fieldOffset": 51,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F848E030000488B4E104885C90F8481030000"
+        },
+        {
+          "fieldName": "gainCost",
+          "declaredType": "bool",
+          "setterMethodIndex": 162886,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58585754,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585781,
+            "rawHex": "8881A0000000",
+            "fieldOffset": 160,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F846A030000488B4E104885C90F845D030000"
+        },
+        {
+          "fieldName": "hideMainCharHpScreenEffect",
+          "declaredType": "bool",
+          "setterMethodIndex": 162887,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58585793,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585820,
+            "rawHex": "884135",
+            "fieldOffset": 53,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8443030000488B4E104885C90F8436030000"
+        },
+        {
+          "fieldName": "hidePoiseUIEffect",
+          "declaredType": "bool",
+          "setterMethodIndex": 162888,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58585829,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585856,
+            "rawHex": "884134",
+            "fieldOffset": 52,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F841F030000488B4E104885C90F8412030000"
+        },
+        {
+          "fieldName": "hitSoundData",
+          "declaredType": "Beyond.Gameplay.Core.DamageAction+DamageUnit+HitSoundData",
+          "setterMethodIndex": 162889,
+          "kind": "member1",
+          "sourceCall": {
+            "rva": 58585872,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585899,
+            "rawHex": "48898198000000",
+            "fieldOffset": 152,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84F4020000488B4E104885C90F84E7020000",
+          "sourceContextInstructionRva": 58585862
+        },
+        {
+          "fieldName": "ignoreDamageImmuneLevel",
+          "declaredType": "Beyond.Gameplay.DamageDecorateType",
+          "setterMethodIndex": 162890,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58585931,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585958,
+            "rawHex": "894148",
+            "fieldOffset": 72,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84B9020000488B4E104885C90F84AC020000"
+        },
+        {
+          "fieldName": "ignorePoiseImmune",
+          "declaredType": "bool",
+          "setterMethodIndex": 162891,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58585967,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58585994,
+            "rawHex": "884178",
+            "fieldOffset": 120,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8495020000488B4E104885C90F8488020000"
+        },
+        {
+          "fieldName": "onlyEnableForMainChar",
+          "declaredType": "bool",
+          "setterMethodIndex": 162892,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58586003,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586030,
+            "rawHex": "884118",
+            "fieldOffset": 24,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8471020000488B4E104885C90F8464020000"
+        },
+        {
+          "fieldName": "playDefaultHitEffect",
+          "declaredType": "bool",
+          "setterMethodIndex": 162893,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58586039,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586066,
+            "rawHex": "888181000000",
+            "fieldOffset": 129,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F844D020000488B4E104885C90F8440020000"
+        },
+        {
+          "fieldName": "playHitEffect",
+          "declaredType": "bool",
+          "setterMethodIndex": 162894,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58586078,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586105,
+            "rawHex": "888180000000",
+            "fieldOffset": 128,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8426020000488B4E104885C90F8419020000"
+        },
+        {
+          "fieldName": "playHitFlashEffect",
+          "declaredType": "bool",
+          "setterMethodIndex": 162895,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58586117,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586144,
+            "rawHex": "888191000000",
+            "fieldOffset": 145,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84FF010000488B4E104885C90F84F2010000"
+        },
+        {
+          "fieldName": "playHitSound",
+          "declaredType": "bool",
+          "setterMethodIndex": 162896,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58586156,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586183,
+            "rawHex": "888192000000",
+            "fieldOffset": 146,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84D8010000488B4E104885C90F84CB010000"
+        },
+        {
+          "fieldName": "poiseCalculation",
+          "declaredType": "Beyond.Gameplay.Core.CalculationBase",
+          "setterMethodIndex": 162897,
+          "kind": "calculation",
+          "sourceCall": {
+            "rva": 58586202,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586229,
+            "rawHex": "48894170",
+            "fieldOffset": 112,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F84AA010000488B4E104885C90F849D010000",
+          "sourceContextInstructionRva": 58586192
+        },
+        {
+          "fieldName": "reduceDamageForGuard",
+          "declaredType": "bool",
+          "setterMethodIndex": 162898,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58586248,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586275,
+            "rawHex": "884179",
+            "fieldOffset": 121,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F847C010000488B4E104885C90F846F010000"
+        },
+        {
+          "fieldName": "reduceDamageForGuardRatio",
+          "declaredType": "float",
+          "setterMethodIndex": 162899,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58586284,
+            "targetRva": 46828464
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586317,
+            "rawHex": "F30F11407C",
+            "fieldOffset": 124,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8458010000488B46104885C00F844B010000488B37488BCB"
+        },
+        {
+          "fieldName": "simpleCalculation",
+          "declaredType": "bool",
+          "setterMethodIndex": 162900,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58586322,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586349,
+            "rawHex": "88414C",
+            "fieldOffset": 76,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F8432010000488B4E104885C90F8425010000"
+        },
+        {
+          "fieldName": "takeAtkSnapshot",
+          "declaredType": "bool",
+          "setterMethodIndex": 162901,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58586358,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586385,
+            "rawHex": "884160",
+            "fieldOffset": 96,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885F60F840E010000488B4E104885C90F8401010000"
+        },
+        {
+          "fieldName": "updatePositionOnCoalition",
+          "declaredType": "bool",
+          "setterMethodIndex": 162902,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58586394,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58586421,
+            "rawHex": "884132",
+            "fieldOffset": 50,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9394
+          },
+          "sourceToDestinationHex": "4885FF0F84EA000000488B4F104885C90F84DD000000"
+        }
+      ]
+    },
+    "environment": {
+      "wrapperTypeDefinition": 22437,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_HitEnvDataForMemoryPack",
+      "runtimeTypeDefinition": 9395,
+      "runtimeTypeName": "Beyond.Gameplay.Core.DamageAction+HitEnvData",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "member4",
+      "readerMethod": [
+        162919,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_HitEnvDataForMemoryPack",
+        "Deserialize",
+        58584448
+      ],
+      "readerWindowStart": 58584448,
+      "members": [
+        {
+          "fieldName": "damageDecorateMask",
+          "declaredType": "long",
+          "setterMethodIndex": 162913,
+          "kind": "scalar64",
+          "sourceCall": {
+            "rva": 58584565,
+            "targetRva": 53265792
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58584592,
+            "rawHex": "48894120",
+            "fieldOffset": 32,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9395
+          },
+          "sourceToDestinationHex": "4885F60F84E2000000488B4E104885C90F84D5000000"
+        },
+        {
+          "fieldName": "dontHitImportInteractive",
+          "declaredType": "bool",
+          "setterMethodIndex": 162914,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58584602,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58584629,
+            "rawHex": "884128",
+            "fieldOffset": 40,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9395
+          },
+          "sourceToDestinationHex": "4885F60F84BD000000488B4E104885C90F84B0000000"
+        },
+        {
+          "fieldName": "inheritFirstDamageMask",
+          "declaredType": "bool",
+          "setterMethodIndex": 162915,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58584638,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58584665,
+            "rawHex": "884118",
+            "fieldOffset": 24,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9395
+          },
+          "sourceToDestinationHex": "4885F60F8499000000488B4E104885C90F848C000000"
+        },
+        {
+          "fieldName": "valueCalculation",
+          "declaredType": "Beyond.Gameplay.Core.CalculationBase",
+          "setterMethodIndex": 162916,
+          "kind": "calculation",
+          "sourceCall": {
+            "rva": 58584681,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58584700,
+            "rawHex": "48894110",
+            "fieldOffset": 16,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9395
+          },
+          "sourceToDestinationHex": "4885FF7472488B4F104885C97469",
+          "sourceContextInstructionRva": 58584671
+        }
+      ]
+    },
+    "sound": {
+      "wrapperTypeDefinition": 22973,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageUnit_HitSoundDataForMemoryPack",
+      "runtimeTypeDefinition": 9393,
+      "runtimeTypeName": "Beyond.Gameplay.Core.DamageAction+DamageUnit+HitSoundData",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "member1",
+      "readerMethod": [
+        166679,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageUnit_HitSoundDataForMemoryPack",
+        "Deserialize",
+        65436192
+      ],
+      "readerWindowStart": 65436192,
+      "members": [
+        {
+          "fieldName": "soundEvent",
+          "declaredType": "string",
+          "setterMethodIndex": 166676,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 65436306,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 65436325,
+            "rawHex": "48894110",
+            "fieldOffset": 16,
+            "baseRegister": 1,
+            "fieldOwnerTypeDefinition": 9393
+          },
+          "sourceToDestinationHex": "4885FF7467488B4F104885C9745E"
+        }
+      ]
+    },
+    "calculation0": {
+      "wrapperTypeDefinition": 16767,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AtkScaleCalculationForMemoryPack",
+      "runtimeTypeDefinition": 10072,
+      "runtimeTypeName": "Beyond.Gameplay.Core.AtkScaleCalculation",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "calculation0",
+      "readerMethod": [
+        125166,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AtkScaleCalculationForMemoryPack",
+        "Deserialize",
+        68652448
+      ],
+      "readerWindowStart": 68652448,
+      "members": [
+        {
+          "fieldName": "atkScale",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 125163,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 68652599,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 68652618,
+            "targetRva": 68652720,
+            "methodIndex": 125163
+          },
+          "sourceToDestinationHex": "4885DB745A4533C0488BD0488BCB",
+          "sourceContextInstructionRva": 68652586
+        }
+      ]
+    },
+    "calculation2": {
+      "wrapperTypeDefinition": 16771,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DefiniteValueCalculationForMemoryPack",
+      "runtimeTypeDefinition": 10102,
+      "runtimeTypeName": "Beyond.Gameplay.Core.DefiniteValueCalculation",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "calculation2",
+      "readerMethod": [
+        125193,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_DefiniteValueCalculationForMemoryPack",
+        "Deserialize",
+        58162976
+      ],
+      "readerWindowStart": 58162976,
+      "members": [
+        {
+          "fieldName": "applyScale",
+          "declaredType": "bool",
+          "setterMethodIndex": 125188,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58163146,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58163182,
+            "rawHex": "40886818",
+            "fieldOffset": 24,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 10102
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F84E700000033D2488BCEE87B0100004885C00F84D4000000"
+        },
+        {
+          "fieldName": "value",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 125189,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 58163199,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58163239,
+            "rawHex": "48896810",
+            "fieldOffset": 16,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 10102
+          },
+          "sourceToDestinationHex": "488BE84885F60F84B200000033D2488BCEE8460100004885C00F849F000000488D4810",
+          "sourceContextInstructionRva": 58163189
+        },
+        {
+          "fieldName": "valueScale",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 125190,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 58163261,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58163289,
+            "rawHex": "48895820",
+            "fieldOffset": 32,
+            "baseRegister": 0,
+            "fieldOwnerTypeDefinition": 10102
+          },
+          "sourceToDestinationHex": "488BD84885FF747833D2488BCFE80C0100004885C07469",
+          "sourceContextInstructionRva": 58163248
+        }
+      ]
+    },
+    "calculation3": {
+      "wrapperTypeDefinition": 16773,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MultiplyAttributeCalculationForMemoryPack",
+      "runtimeTypeDefinition": 10122,
+      "runtimeTypeName": "Beyond.Gameplay.Core.MultiplyAttributeCalculation",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "calculation3",
+      "readerMethod": [
+        125208,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_MultiplyAttributeCalculationForMemoryPack",
+        "Deserialize",
+        64372544
+      ],
+      "readerWindowStart": 64372544,
+      "members": [
+        {
+          "fieldName": "addition",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 125202,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 64372695,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64372718,
+            "targetRva": 64373488,
+            "methodIndex": 125202
+          },
+          "sourceToDestinationHex": "4885FF0F84E70000004533C0488BD0488BCF",
+          "sourceContextInstructionRva": 64372682
+        },
+        {
+          "fieldName": "attributeType",
+          "declaredType": "Beyond.GEnums.AttributeType",
+          "setterMethodIndex": 125203,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64372736,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64372758,
+            "targetRva": 64373536,
+            "methodIndex": 125203
+          },
+          "sourceToDestinationHex": "4885FF0F84BE0000004533C08BD0488BCF"
+        },
+        {
+          "fieldName": "multiplier",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 125204,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 64372776,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64372799,
+            "targetRva": 64373584,
+            "methodIndex": 125204
+          },
+          "sourceToDestinationHex": "4885FF0F84960000004533C0488BD0488BCF",
+          "sourceContextInstructionRva": 64372763
+        },
+        {
+          "fieldName": "valueSource",
+          "declaredType": "Beyond.Gameplay.Core.ValueSource",
+          "setterMethodIndex": 125205,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64372817,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64372835,
+            "targetRva": 64373632,
+            "methodIndex": 125205
+          },
+          "sourceToDestinationHex": "4885DB74714533C08BD0488BCB"
+        }
+      ]
+    }
+  },
+  "calculationDispatch": {
+    "0": {
+      "sourceContextInstructionRva": 59819073,
+      "record": "calculation0"
+    },
+    "2": {
+      "sourceContextInstructionRva": 59818879,
+      "record": "calculation2"
+    },
+    "3": {
+      "sourceContextInstructionRva": 59818978,
+      "record": "calculation3"
+    }
+  }
+}

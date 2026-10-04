@@ -1,0 +1,86 @@
+{
+  "schema": "endfield.buff-check-buff-id-context-advanced-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "skill_timeline_check_buff_id_context_advanced_native.json",
+  "sourceContract": "buff_57_native.json",
+  "childContract": "buff_blackboard_string_child_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "childWrapper": {
+    "typeDefinition": 22487,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_BlackboardBuffIdForMemoryPack",
+    "parentTypeDefinition": 22413,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardStringForMemoryPack"
+  },
+  "childTypeName": "Beyond.Gameplay.Core.Conditions.BlackboardBuffId",
+  "listTypeName": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.Conditions.BlackboardBuffId>",
+  "serializedMemberCount": 3,
+  "sourceReads": [
+    {
+      "fieldName": "blackboardKey",
+      "readKind": "byte-payload",
+      "sourceCall": {
+        "rva": 64600650,
+        "hex": "E8B1CCF0FE",
+        "targetRva": 46827264
+      },
+      "setterCall": {
+        "rva": 64600673,
+        "hex": "E82AC046FF",
+        "targetRva": 52460176
+      },
+      "setterMethodIndex": 163735,
+      "sourceResultArgument": [
+        64600667,
+        "488BD0"
+      ]
+    },
+    {
+      "fieldName": "useBlackboardKey",
+      "readKind": "byte",
+      "sourceCall": {
+        "rva": 64600684,
+        "hex": "E84FCEF0FE",
+        "targetRva": 46827712
+      },
+      "setterCall": {
+        "rva": 64600703,
+        "hex": "E83C1C47FF",
+        "targetRva": 52483776
+      },
+      "setterMethodIndex": 163736,
+      "sourceResultArgument": [
+        64600697,
+        "0FB6D0"
+      ]
+    },
+    {
+      "fieldName": "value",
+      "readKind": "byte-payload",
+      "sourceCall": {
+        "rva": 64600714,
+        "hex": "E871CCF0FE",
+        "targetRva": 46827264
+      },
+      "setterCall": {
+        "rva": 64600733,
+        "hex": "E8AEE346FF",
+        "targetRva": 52469328
+      },
+      "setterMethodIndex": 163737,
+      "sourceResultArgument": [
+        64600727,
+        "488BD0"
+      ]
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected parent source list context resolves BlackboardBuffId. Its member-three reader invokes the same byte-payload/byte/byte-payload source helpers and inherited BlackboardString setters in matching order, through the pinned normal/null source windows. The shared child reader names blackboardKey, useBlackboardKey and value.",
+    "conditional": "Signed-length byte payloads and original flag bytes are retained; string decoding and runtime Blackboard provider selection remain unproved.",
+    "unresolved": "Condition evaluation, actual execution, getter results, and whole-root completeness until independent original-byte root replay through EOF."
+  }
+}

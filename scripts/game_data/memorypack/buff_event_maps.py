@@ -181,7 +181,9 @@ def recorded_native_validation(native: dict[str, Any]) -> dict[str, Any]:
 def contract_source_paths() -> list[Path]:
     """Follow reviewed JSON dependency names; outputs and source payloads are excluded."""
     seen = set()
-    pending = [CONTRACT_PATH]
+    pending = [CONTRACT_PATH, actions.damage.CONTRACT_PATH, actions.aura_heal.CONTRACT_PATH,
+               actions.skill_stack_interrupt.CONTRACT_PATH, actions.vitals.CONTRACT_PATH,
+               actions.data_transfer.CONTRACT_PATH]
     def references(value: Any):
         if isinstance(value, dict):
             for child in value.values():
@@ -209,7 +211,8 @@ def validate_recorded_event_children(receipt: dict[str, Any], *, native_validati
                 "effectVectors", "direction", "selector", "characterTeamFinder",
                 "finish", "findSettings", "armor", "armorValues", "directTargetActions",
                 "ownerSpawnedFinder", "zeroValidators", "tagQueryValidator", "ifElse",
-                "compare", "modify", "checkStack", "buffIdActions", "blackboardString", "selectorGeometry")
+                "compare", "modify", "checkStack", "buffIdActions", "blackboardString", "selectorGeometry",
+                "damage", "auraHeal", "skillStackInterrupt", "vitals", "dataTransfer")
     children = native_validation.get("recursiveActions", {}).get("children", {})
     expected_inputs = root_native.get("nativeInputs") or {}
     failed_children = [key for key in required

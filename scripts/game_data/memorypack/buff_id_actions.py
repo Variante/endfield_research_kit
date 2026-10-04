@@ -1,4 +1,11 @@
-"""Native-gated BuffId lists composed into exact typed action fields."""
+"""Native-gated one-member BuffId values and lists in typed action fields.
+
+The selected source and setter join names the stored string. A single value
+has its own nullable member-one header; a list adds a separate signed count.
+Neither format is the three-member BlackboardBuffId. Callers independently
+prove the parent type before composing the original child span. Runtime ID
+lookup and live formatter selection remain unresolved.
+"""
 import hashlib,json
 from pathlib import Path
 from scripts.common import check_installed_native_inputs
@@ -88,22 +95,43 @@ def validate_current_native_contract():
             'memberName':child['memberName'],'serializedMemberCount':child['serializedMemberCount']}}
 
 
-def decode_id_list(data,source,digest,start,end,native):
+def _id_reader(data,source,digest,start,end,native,kind):
     child=_contract()['child']
     if (native.get('status')!='validated' or native.get('nativeInputs')!=_contract()['nativeInputs']
         or native.get('memberName')!=child['memberName'] or native.get('serializedMemberCount')!=1):
-        raise ValueError(f'{LABEL}.list:native-not-validated')
-    if hashlib.sha256(data).hexdigest().upper()!=digest.upper() or not 0<=start<end<=len(data):raise ValueError(f'{LABEL}.list:source')
-    reader=Reader(data,source,end);reader.pos=start;count=reader.count(1,nullable=True);values=[]
+        raise ValueError(f'{LABEL}.{kind}:native-not-validated')
+    if (not isinstance(data,bytes) or not source or not isinstance(digest,str)
+        or type(start) is not int or type(end) is not int or not 0<=start<end<=len(data)
+        or hashlib.sha256(data).hexdigest().upper()!=digest.upper()):
+        raise ValueError(f'{LABEL}.{kind}:source')
+    reader=Reader(data,source,end);reader.pos=start
+    return reader,child
+
+
+def _read_id_value(reader,data,child):
+    begin=reader.pos
+    if reader.peek()==255:
+        reader.take(1,'null-buff-id');value={'status':'exact-null','namedFields':[]}
+    else:
+        reader.header(1);a=reader.pos;reader.byte_payload()
+        value={'status':'named-one-member-exact','namedFields':[{'name':child['memberName'],'declaredType':'string',
+                'start':a,'end':reader.pos,'rawHex':data[a:reader.pos].hex().upper()}]}
+    return {'start':begin,'end':reader.pos,**value,'recursiveNamedSchemaExact':True}
+
+
+def decode_id_value(data,source,digest,start,end,native):
+    """Name one independently typed BuffId value without adding list framing."""
+    reader,child=_id_reader(data,source,digest,start,end,native,'value')
+    value=_read_id_value(reader,data,child)
+    if reader.pos!=end:raise ValueError(f'{LABEL}.value:end')
+    return {**value,'wholeStoredSpanExact':True}
+
+
+def decode_id_list(data,source,digest,start,end,native):
+    reader,child=_id_reader(data,source,digest,start,end,native,'list')
+    count=reader.count(1,nullable=True);values=[]
     for _ in range(max(0,count)):
-        begin=reader.pos
-        if reader.peek()==255:
-            reader.take(1,'null-buff-id');value={'status':'exact-null','namedFields':[]}
-        else:
-            reader.header(1);a=reader.pos;reader.byte_payload()
-            value={'status':'named-one-member-exact','namedFields':[{'name':child['memberName'],'declaredType':'string',
-                    'start':a,'end':reader.pos,'rawHex':data[a:reader.pos].hex().upper()}]}
-        values.append({'start':begin,'end':reader.pos,**value})
+        values.append(_read_id_value(reader,data,child))
     if reader.pos!=end:raise ValueError(f'{LABEL}.list:end')
     return {'start':start,'end':end,'count':count,'elements':values,'wholeStoredSpanExact':True,'recursiveNamedSchemaExact':True}
 

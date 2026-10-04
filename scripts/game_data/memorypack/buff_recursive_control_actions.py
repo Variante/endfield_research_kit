@@ -8,8 +8,28 @@ from scripts.game_data.memorypack import buff_blackboard_double_child_receipt as
 from scripts.game_data.memorypack import buff_damage_check_buff_stack_condition_receipt as stack
 from scripts.game_data.memorypack import buff_id_actions as ids
 from scripts.game_data.memorypack import buff_string_actions as strings
+from scripts.game_data.memorypack import buff_damage_check_decorate_mask_condition_receipt as decorate
+from scripts.game_data.memorypack import buff_check_buff_id_context_advanced as advanced_ids
 
-SUPPORTED_TAGS={conditional.TAG,compare.parent.TAG,modify.TAG,stack._contract()["unionTag"]}|ids.supported_tags()|strings.supported_tags()
+SUPPORTED_TAGS={conditional.TAG,compare.parent.TAG,modify.TAG,stack._contract()["unionTag"],decorate._contract()['unionTag'],advanced_ids.supported_tag()}|ids.supported_tags()|strings.supported_tags()
+
+
+def decode_decorate_mask(data,source,digest,start,end,native):
+    contract=decorate._contract();proof=native['children']['decorateMask']
+    if (proof.get('status')!='validated' or proof.get('nativeInputs')!=contract['nativeInputs']
+        or proof.get('unionTag')!=contract['unionTag'] or proof.get('actionMemberPlan')!=contract['actionMemberPlan']
+        or not source or hashlib.sha256(data).hexdigest().upper()!=digest.upper()
+        or type(start)is not int or type(end)is not int or not 0<=start<end<=len(data)):
+        raise ValueError('buffRecursiveControlActions.decorateMask:native-or-source')
+    reader=Reader(data,source,end);reader.pos=start
+    reader.nested_union_tag((contract['unionTag'],),'decorate-mask-action')
+    reader.header(len(contract['actionMemberPlan']));fields=[]
+    for member in contract['actionMemberPlan']:
+        a=reader.pos;raw=reader.take(member['width'],member['name'])
+        fields.append({'name':member['name'],'declaredType':member['declaredType'],'kind':member['kind'],
+                       'start':a,'end':reader.pos,'rawHex':raw.hex().upper()})
+    if reader.pos!=end:raise ValueError('buffRecursiveControlActions.decorateMask:action-end')
+    return {'namedFields':fields,'recursiveStoredSchemaExact':True}
 
 
 def read_sequence(data,source,digest,start,end,native,depth):
@@ -108,5 +128,7 @@ def decode_action(data,*,source,digest,start,end,tag,native_validation,depth=0):
     elif tag==stack._contract()['unionTag']:result=decode_stack(data,source,digest,start,end,native_validation)
     elif tag in ids.supported_tags():result=ids.decode_action(data,source=source,digest=digest,start=start,end=end,tag=tag,native_validation=native_validation)
     elif tag in strings.supported_tags():result=strings.decode_action(data,source=source,digest=digest,start=start,end=end,tag=tag,native_validation=native_validation)
+    elif tag==decorate._contract()['unionTag']:result=decode_decorate_mask(data,source,digest,start,end,native_validation)
+    elif tag==advanced_ids.supported_tag():result=advanced_ids.decode_action(data,source=source,digest=digest,start=start,end=end,native_validation=native_validation)
     else:raise ValueError(f'buffRecursiveControlActions:unsupported-action={tag}')
     return {'schema':'endfield.buff-recursive-action-receipt.v1','tag':tag,'start':start,'end':end,**result}
