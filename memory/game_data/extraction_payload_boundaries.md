@@ -142,19 +142,17 @@ records the registry rules (`unmeasurable`, not-measured is never 0%, the
 strongest reader per family) and the two tiers (reviewed `exact`, declared
 `direct`); keep both reports side by side.
 
-That measurement, not file count, sets the order:
+The parent [`game_data_recovery.md`](../game_data_recovery.md) owns the recovery
+order. Use this measurement together with authenticated distinct-source
+refusals to choose a shared dependency; byte coverage alone does not rank its
+reuse. Buff event-map/root composition, LevelScript and template action routes,
+and Skill's remaining named-schema joins have different admission gates.
+Rerank first stops after the owning reader or complete gate advances.
 
-1. **LevelScriptData residue** -- the largest reviewed-tier unnamed region;
-   files stop at unsupported action-map union routes. Rerun the first-stop
-   census after each complete JsonData gate, since integrated routes move
-   files to exact.
-2. **BuffData interiors** -- nested action, condition and icon grammars behind
-   the format-framed files.
-3. **SkillData residue** -- distinct nested action tags touching one or two
-   files each, so each codec closes little.
-4. **LevelScriptTemplateData residue** -- the same union-route problem.
-
-Everything else is closed or schema-validated JSON; do not spend effort there.
+Other families may have complete stored framing or schema-validated JSON while
+their consumers, cross-file ownership and effective runtime values remain
+unresolved. A closed file stops format work on unchanged bytes; it does not
+close those higher-level questions.
 An earlier declaration-derived pass reached EOF on every selected family; that
 is a `direct` measure for its own input set and promotes no reviewed row.
 

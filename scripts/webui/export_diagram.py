@@ -140,9 +140,30 @@ def render() -> str:
             text(x + 16, 1273 + i * 31, name, size=13)
     end = 1208 + panel_height
     text(44, end + 36, "A standalone page builds its own tasks and reads other pages' last publications.", size=16, weight=600)
-    text(44, end + 66, "Audio → Story voices · Story → Characters appearances · Assets → Map textures · Data → Gameplay / Map evidence", size=15)
+    graph_y = end + 72
+    text(44, graph_y, "Which pages read another page's output", size=24, weight=700, fill="#0f172a")
+    text(44, graph_y + 26, "Arrows point from the publisher to the reader. Each page writes only its own publication.", size=15)
+    links = (
+        ("Story + Text", "Map / Audio / Gameplay", "Mission markers, conversations, Wiki titles and source graph", "Build-time read"),
+        ("Assets", "Characters / Map / Gameplay", "Media paths, material colours and asset references", "Build-time read"),
+        ("Map + Gameplay", "Audio", "World placements, gameplay index and projectile references", "Build-time read"),
+        ("Audio", "Story + Text", "Voice and event sidecars: lang/<LANG>/audio/conv/", "Browser read"),
+        ("Story + Text", "Characters", "Appearance navigation after exact source, speaker and text checks", "Browser read"),
+        ("Data", "Map / Gameplay", "Last published encounter and skill datasets", "Optional build-time read"),
+        ("Production + Gameplay", "Gameplay browser", "Combined Items, Recipes and Machines; independent publications", "Browser read"),
+    )
+    for i, (publisher, reader, information, kind) in enumerate(links):
+        y = graph_y + 50 + i * 82
+        box(44, y, 260, 58, "#f8fafc")
+        box(474, y, 290, 58, "#f0fdfa" if kind == "Browser read" else "#f8fafc")
+        text(174, y + 34, publisher, size=16, weight=600, anchor="middle")
+        text(619, y + 34, reader, size=16, weight=600, anchor="middle")
+        line(310, y + 37, 465, y + 37, arrow=True)
+        text(387, y + 17, kind, size=11, anchor="middle")
+        text(788, y + 24, information, size=13)
+    text(44, graph_y + 642, "Missing optional publications reduce detail; they never cause a page to rebuild another page.", size=15)
 
-    notes_y = end + 96
+    notes_y = graph_y + 672
     box(44, notes_y, 1272, 172, "#fff7ed", "#fed7aa")
     text(63, notes_y + 29, "What “everything” means here", size=20, weight=600, fill="#9a3412")
     for i, note in enumerate((

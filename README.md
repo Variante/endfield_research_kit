@@ -65,9 +65,9 @@ space and memory than the initial Story/Text setup.
 - **Characters** groups identity evidence, lists complete source appearances
   with verified Story links, and supports live merge/name overrides.
 - **Gameplay** covers characters, equipment, enemies, progression, authored
-  skill/action references, projectiles, and related assets.
-- **Production** connects items to recipes, machines, configured shop rewards,
-  and upgrade uses, with links to their source tables.
+  skill/action references, projectiles, and related assets. Its Items, Recipes
+  and Machines tabs connect item effects and rewards to crafting, shop
+  configurations, upgrade uses, and source tables.
 - **Text** provides searchable localized tables, achievement targets, activity
   prerequisites, and configured rewards.
 - **Audio** exposes decoded voices, music, sound effects, event relationships,
@@ -104,9 +104,10 @@ not named keep their previously generated data.
 | `.\export.bat --changed-only` | Every page except **Updates** | Applies only changed structured files from the installed client and reuses exported media |
 | `.\build_updates.bat OLD NEW` | **Updates** | Compares two complete export folders |
 
-The pages are `story` (with Text; `story-media` adds its images and videos),
+The export scopes are `story` (with Text; `story-media` adds its images and videos),
 `map`, `characters`, `gameplay`, `production`, `audio`, `assets` and `data`. A page builds
-only itself: Story's voice lines come from the Audio page and the asset links
+only its publication. `gameplay production` refreshes every Gameplay tab.
+Story's voice lines come from the Audio page and the asset links
 on Map, Characters and Gameplay from the Assets page, each appearing once that
 page has been built;
 `.\export.bat --help` lists what each one includes. A build without
@@ -215,7 +216,7 @@ until a run finishes.
 - `scratch/`: revisitable experiments; `tmp/`: disposable intermediates.
 
 Only `tools/AnimeStudio` is initialized by `setup.bat`. The
-`tools/Cpp2IL-Endfield` and `tools/EndfieldCapture` submodules are optional and are not required for the
+`tools/Cpp2IL-Endfield` submodule is optional and is not required for the
 normal WebUI workflow.
 
 Technical documentation:

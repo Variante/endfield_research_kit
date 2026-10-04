@@ -82,6 +82,20 @@ parity. Current denominators live in the generated `reports/animestudio/`
 receipts; per-family reader boundaries are in
 [`game_data/extraction_payload_boundaries.md`](game_data/extraction_payload_boundaries.md).
 
+Read progress in four layers:
+
+| Layer | What is proved | Current boundary |
+| --- | --- | --- |
+| Identity and container | Source, overlay, package and logical-byte identity | Broadly recovered; live provider/root selection remains separate |
+| Framing | Bounded records and exact consumption of their owning bytes | Strong corpus coverage, with concentrated partial families |
+| Named schema | Independently authenticated field names, types and recursive children | Broad coverage; Buff and Skill concentrate the remaining recursive work |
+| Consumer meaning | Authored ownership joins and selected native reads | Selective proofs; activation, live values and output remain separate |
+
+Behavioral and visual parity need their own output evidence. A bounded retained
+packet replay does not establish general renderer or gameplay parity. Use the
+current outer and family receipts for coverage counts; a matching native-input
+gate establishes contract applicability, not a fresh corpus sweep.
+
 Current position of the families with active recovery:
 
 - **JsonData.** The authenticated registry (`scripts.game_data.jsondata_corpus`)
@@ -135,7 +149,11 @@ Current position of the families with active recovery:
   shared AttributeModifierData collection now use forward readers rather than
   historical candidate co-occurrence restrictions. Residual ranking excludes
   already exact roots and distinguishes proved children from a still-unproved
-  parent composition. Positive damage, event-action and finder bodies retain
+  parent composition. Shared event-map actions now compose the reviewed
+  damage-mask condition and main-character target condition, plus the advanced
+  Buff-ID condition's independently proved BlackboardString subtype list and
+  GameplayTagQuery. Stored conditions still do not establish their evaluation.
+  Positive damage, event-action and finder bodies retain
   their explicit recursive blockers.
 - **Audio packages.** The complete available AKPK roster now retains sector,
   full-width key, language and package identity. Repeated typed keys and low-word
@@ -162,6 +180,21 @@ Current position of the families with active recovery:
   reference inside the BundleManifest dependency list; manifest-only edges and
   a live selected load stay open
   ([`game_data/unity_assets.md`](game_data/unity_assets.md)).
+- **Unity and presentation.** Standard object and media decoding is established;
+  prefab composition, material variants, Animator ownership and effect timing
+  remain consumer joins. Retained ribbon output proofs apply only to their
+  selected packets ([`game_data/unity_assets.md`](game_data/unity_assets.md)).
+- **World.** DynamicStreaming's authored component ownership is recovered under
+  its raw-source and template gates. Streaming still has anonymous subgraphs;
+  Terrain texture-path bindings remain conditional on the selected resources,
+  with channel meaning open; irradiance index ranges do not name record
+  encoding or GPU interpretation. Their owning guides are indexed below.
+- **Code and native I/O.** Decoded Lua and IFix instructions support static
+  references and selected operand joins, while invocation and patch activation
+  remain open. The static stream/read chain does not supply a live backing-file
+  identity or full-buffer delivery guarantee. See
+  [`game_data/ifix_patch.md`](game_data/ifix_patch.md) and
+  [`game_data/native_read_path.md`](game_data/native_read_path.md).
 
 Stable cross-format rules:
 
@@ -267,31 +300,13 @@ runtime question may improve understanding without decoding another file.
   expected generalization boundary and the acceptance/stop criteria before
   collecting. Do not revisit one unique case for additional sampled fields
   unless those fields can decide a high-value shared join.
-- When live evidence is necessary, combine independent admitted observations
-  into one bounded EndfieldCapture session and choose representatives by
-  distinct formats or consumer branches. Repetition is justified only by a
-  named unresolved state transition or missing observation. Stop collecting
-  when the acceptance criteria are met or the plan fails to reach its intended
-  boundary; diagnose and rerank before asking for another recording. Frida is
-  not an available capture path for this workflow.
+- Live capture tooling is internal-only; its repository boundary and the
+  instrumentation prohibition are documented in `AGENTS.md`. Saved evidence
+  remains useful only within its admitted format, consumer branch and source
+  scope. Name the missing state transition or observation before requesting
+  further evidence, and diagnose failed admission before repeating a recording.
 
-1. **LevelScript.** Native/source receipts feed the shared named reader. Only
-   a complete owner at physical EOF can be promoted by the combined JsonData
-   gate; closing an action may expose a later first stop. Rerank with
-   `scripts.game_data.levelscript_first_stop_census` after a gate, then recover
-   the highest-value refusals in validated batches. The camera blend-curve key
-   and alternative-camera-pose lists now use native-gated shared wrappers.
-   Original-type registrations, conversion interfaces, formatter contexts and
-   native ABI witnesses establish the static default squad-output grammar too.
-   Runtime provider replacement and cache selection remain open; these do not
-   hold the independently proved stored grammar. Stored
-   values and cursor closure never establish live execution or results.
-   The shared getter routes for client map variables and squad fight state now
-   continue selected complete owners to EOF under per-route native gates;
-   stored map keys and inherited node fields do not establish runtime values.
-   Promotion rules and non-obvious wire conclusions live in
-   [`game_data/serialization_memorypack.md`](game_data/serialization_memorypack.md).
-2. **BuffData.** Rank residual recursive fields after excluding every admitted
+1. **BuffData.** Rank residual recursive fields after excluding every admitted
    root. Reuse shared DataPair, AttributeModifierData, action and finder
    grammars only through independently proved parent typed calls. Ability and
    Buff event maps have different stored read orders despite sharing their
@@ -302,6 +317,25 @@ runtime question may improve understanding without decoding another file.
    export replay. Unproved positive-damage and finder/selector interiors stay
    explicit refusals; stored fields establish neither condition truth nor
    gameplay effects.
+   Start with reusable event-action children and complete root composition,
+   distinguishing an unproved child from a parent missing its composed receipt.
+   The source-authenticated residual census owns changing cohort sizes; first
+   obligations can overlap and reveal later blockers. The current family sweep
+   includes the general shared event-map and AttributeModifier compositions;
+   historical receipts from before those readers are coverage baselines only.
+2. **LevelScript.** Native/source receipts feed the shared named reader. Only
+   a complete owner at physical EOF can be promoted by the combined JsonData
+   gate; closing an action may expose a later first stop. Rerank with
+   `scripts.game_data.levelscript_first_stop_census` after a gate, then recover
+   the highest-value refusals in validated batches. Unlock, travel-pole and
+   laser-event headers, string/entity getters and click-enable inputs now have
+   reviewed stored routes. These compose through the existing typed child
+   grammars; event activation, resolved outputs and provider/cache selection
+   remain open. Damage-event filters, integer-list getters and movement and
+   navigation stop inputs now have independently reviewed parent routes too; complete
+   owners still require EOF, and a closed route can expose a later module gap.
+   Promotion rules and wire conclusions live in
+   [`game_data/serialization_memorypack.md`](game_data/serialization_memorypack.md).
 3. **SkillData.** Historical cursor receipts can be rebound only to unchanged
    logical sources under current parser/native provenance and a complete corpus
    gate. The positive control must retain its previous claim. The verified
@@ -323,8 +357,9 @@ runtime question may improve understanding without decoding another file.
 5. **World.** DynamicStreaming now has selected-native scalar and inline-vector
    component layouts and a direct authored MissionCondition string-slot join;
    Data exposes these only after native, current-roster and raw-byte checks.
-   Component/entity assignment, spatial units and live condition evaluation
-   remain separate joins in
+   Authored RootComp-to-DataIndex-to-component-instance ownership also closes
+   under the raw-source and template gates. Indirect child assignment, spatial
+   units and live condition evaluation remain separate joins in
    [`game_data/world_dynamic_streaming.md`](game_data/world_dynamic_streaming.md).
    Streaming needs independent record-end evidence or a bounded
    runtime carrier witness before field names; keep selector9, Marker13 gap

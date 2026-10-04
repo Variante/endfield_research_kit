@@ -570,18 +570,21 @@ Updates remains the separate `build_updates.bat OLD NEW` workflow.
 scope; `export.bat story --from-game` resolves to:
 
 ```bat
-python -m scripts.game_data.extraction.export_full_from_game --structured table json-data video audit-video lua --unity-json TextAsset MonoBehaviour PlayableDirector --animestudio-object-index
+python -m scripts.game_data.extraction.export_full_from_game --structured table json-data --unity-json TextAsset MonoBehaviour PlayableDirector --animestudio-object-index
 ```
 
-Run `export.bat PAGE --from-game --show-plan` to see any page's scope. No
-scope dumps raw asset bundles (`Bundle`, `InitBundle`, `BundleManifest`), audio
-PCK/media files, world streaming, dynamic streaming, irradiance volumes,
-extend-data bins or patch bytes: they have no place in `game/`.
-`build_audio.py` streams Wwise bank metadata directly from VFS when relinking
-audio events. The Map page's `terrain-height` block adds only Terrain `_H`
-height grids (not the larger `C/T/S/A/N` families); `debug` takes Terrain
-whole. Pass a bounded `AnimeStudio.CLI dump --block-type ...` into `tmp\` when
-diagnosing VFS coverage.
+Run `export.bat PAGE --from-game --show-plan` to see any page's scope.
+`story` is text-only; `story-media` adds images and videos. Data serves the
+remaining exposed families, including Lua and whole Terrain under `game/`,
+and Streaming, DynamicStreaming, IV, ExtendData, IFixPatch and the bundle
+manifest byte-for-byte under `raw/`. Selecting every page therefore extracts
+the same family/class scope as `debug`; debug additionally broadens asset
+indexing and checks Sprite images. The Map page's `terrain-height` selection
+contains only Terrain `_H` grids, unless another selected page owns whole
+Terrain. Bundles and audio packages are consumed rather than copied wholesale.
+`build_audio.py` streams Wwise metadata and decodes CN audio during an Audio
+`--from-game` run. Plain `export.bat` rebuilds existing exports. Pass a bounded
+`AnimeStudio.CLI dump --block-type ...` into `tmp\` when diagnosing VFS coverage.
 
 Pass an optional usable DummyDll folder to the story JSON export with:
 
@@ -787,9 +790,9 @@ When callers have already merged and filtered split files, they use `AssetsManag
 
 `Exporter.ExportMonoBehaviour` first tries the serialized TypeTree via `MonoBehaviour.ToType()`. If that fails and `--dummy_dlls` loaded assemblies, it tries a script-derived TypeTree with `Studio.MonoBehaviourToTypeTree`.
 
-If both decode paths fail but raw object data exists, the exporter writes metadata-only JSON with `$animestudio`, `type`, `name`, `pathId`, raw-data SHA-256, raw length, and decode error. This is intentional: the object was found and preserved for linking, but the script payload was not decoded into fields.
+Only fully decoded, exact object documents are published. Partial and metadata-only results are excluded; their reasons and object identities remain in the exclusion manifest and object-index audit. An excluded identity does not establish recovered fields or runtime meaning.
 
-Use `--dummy_dlls` only when script field recovery matters. Without usable DummyDlls, serialized TypeTree fallback may still work for built-in or serialized objects, and script-specific MonoBehaviour payloads may fall back to partial or metadata-only output.
+Use `--dummy_dlls` only when script field recovery matters. Missing or stale DummyDlls warn and continue through the available serialized schema path. Objects that cannot be decoded exactly remain excluded from publication.
 
 ## Export Error Logs
 

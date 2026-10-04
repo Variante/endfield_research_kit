@@ -415,6 +415,16 @@ rebuild whenever a focused test can decide the question. Being untracked does
 not make them disposable: keep them working, and delete a test only when the
 code it covers is gone.
 
+Once a file has passed its relevant tests or validation, reuse that passing
+result in future work. Revisit it only when a new finding or change relates to
+that file, its reader or validator, contract, source inputs, or dependencies.
+An unrelated edit, a new batch or session, or routine reassurance is not a
+reason to rerun passed checks. This applies to decoded source files as well as
+test modules: select only the affected files and checks, and state the related
+finding when reopening a previously validated file. Keep input/native
+freshness gates and authenticated receipt checks intact; unchanged passing
+results should be reused rather than re-probed.
+
 Run them by module path from the repository root:
 
 ```bat
@@ -770,39 +780,24 @@ acting.
 - `.codex/skills/map-interactive-legend/`: regenerating and reviewing the
   offline map `detailId` legend under `reports/map_recovery/`.
 
-`tools/EndfieldCapture/README.md` is the local usage guide for the optional
-native observer. No WebUI, export, or recovery workflow requires
-EndfieldCapture. When an investigation chooses to use it, the local environment
-needs Windows x64, Visual Studio 2022 C++ build tools, CMake 3.23+, and an exact
-installed Endfield build selected by `ENDFIELD_GAME_ROOT` or
-`ENDFIELD_GAME_EXE`. Build and test it from the submodule with:
+EndfieldCapture is internal-only tooling. Its optional local checkout under
+`tools/EndfieldCapture/` is ignored, is not a submodule, and is not part of the
+public setup, export, WebUI, or recovery command surface. For an explicitly
+requested internal native-observer task, use the local
+`tools/EndfieldCapture/README.md`; keep implementation and launch instructions
+inside that checkout.
 
-```bat
-cmake -S tools\EndfieldCapture -B tools\EndfieldCapture\build-local -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTING=ON
-cmake --build tools\EndfieldCapture\build-local --config Release --parallel
-ctest --test-dir tools\EndfieldCapture\build-local -C Release --output-on-failure
-```
+**Frida is prohibited.** Do not recommend, install, restore, or run Frida
+capture, attachment, or instrumentation, and do not substitute another
+injector. Historical profiles and saved sessions authorize only offline
+validation, import, and replay.
 
-For this user's live runtime captures, use **EndfieldCapture only**. Do not
-recommend, install, or run Frida capture/attachment, or substitute another
-injector. Retained generic/Frida profiles and traces remain useful for offline
-audits; their presence does not authorize live use. EndfieldCapture's separate
-`audio source-owner` and extended `audio source-provider` recipes observe entries only, and cannot substitute for
-the historical paired generic recipe's result/nesting claims. Check native
-coverage and its selected-build gates before requesting a capture.
-
-Use `tools\EndfieldCapture\StartCapture.bat` only with Endfield closed and
-follow its exact-build, prelaunch, one-attachment, bounded-session, and
-collection gates. It is observation-only: do not use it for shader/resource
-overrides, draw suppression, input hooks, or game modification. Treat missing
-modules, hash mismatches, hook errors, lost events, and incomplete provider
-summaries as failed evidence. Keep raw sessions under
-`scratch/reverse_engineering/endfield_capture/` and publish only compact,
-validated findings under the owning report or memory topic.
-During audio or visual recovery, agents may patch EndfieldCapture itself to
-improve observation coverage, event fidelity, diagnostics, or collection
-reproducibility, provided it remains observation-only and the exact-build,
-bounded-session, failure-reporting, build, and test gates above remain intact.
+Keep reusable offline evidence readers and reviewed contracts in this repo.
+Preserve selected-build, complete-session, loss-free, and source-identity gates;
+missing modules, mismatched inputs, hook errors, dropped events, or incomplete
+receipts withhold claims. Entry-only observations cannot supply the return or
+nesting claims of historical paired recordings. Store raw sessions in ignored
+paths and record durable conclusions in the owning memory topic.
 
 The current checkout does not ship a separate `endfield-story-recovery`
 skill folder. For that workflow, use the active docs (`README.md`,

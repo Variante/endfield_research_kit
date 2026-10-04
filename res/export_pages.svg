@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="1737" viewBox="0 0 1360 1737" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1360" height="2385" viewBox="0 0 1360 2385" role="img" aria-labelledby="title desc">
 <title id="title">Endfield export and WebUI build workflow</title>
 <desc id="desc">Commands, page extraction scopes, build dependencies and the boundary of full supported coverage.</desc>
 <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#94a3b8"/></marker></defs>
-<rect width="1360" height="1737" fill="#fff"/>
+<rect width="1360" height="2385" fill="#fff"/>
 <g font-family="Segoe UI, Arial, sans-serif">
 <text x="44" y="56" font-size="30" fill="#0f172a" font-weight="700" text-anchor="start">From installed Endfield data to the WebUI</text>
 <text x="44" y="87" font-size="16" fill="#334155" font-weight="400" text-anchor="start">export.bat selects page inputs; AnimeStudio extracts them; independent builders publish each page.</text>
@@ -348,13 +348,64 @@
 <text x="1029.0" y="1335" font-size="13" fill="#334155" font-weight="400" text-anchor="start">combat_relationships</text>
 <text x="1029.0" y="1366" font-size="13" fill="#334155" font-weight="400" text-anchor="start">audio</text>
 <text x="44" y="1460" font-size="16" fill="#334155" font-weight="600" text-anchor="start">A standalone page builds its own tasks and reads other pages&#x27; last publications.</text>
-<text x="44" y="1490" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Audio → Story voices · Story → Characters appearances · Assets → Map textures · Data → Gameplay / Map evidence</text>
-<rect x="44" y="1520" width="1272" height="172" rx="12" fill="#fff7ed" stroke="#fed7aa"/>
-<text x="63" y="1549" font-size="20" fill="#9a3412" font-weight="600" text-anchor="start">What “everything” means here</text>
-<text x="63" y="1579" font-size="15" fill="#334155" font-weight="400" text-anchor="start">All pages equal the supported full extraction scope. Debug adds broader asset indexing and Sprite image checks.</text>
-<text x="63" y="1604" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Decoded blocks → game/; packed small files → GameFiles.sqlite; exact Unity documents → Unity.sqlite; raw families → raw/.</text>
-<text x="63" y="1629" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Raw payloads and excluded Unity objects retain their evidence boundary; extraction does not recover every runtime meaning.</text>
-<text x="63" y="1654" font-size="15" fill="#334155" font-weight="400" text-anchor="start">The wrapper publishes CN and decodes CN audio. Updates separately compares two complete export trees.</text>
-<text x="44" y="1721" font-size="13" fill="#64748b" font-weight="400" text-anchor="start">Generated from scripts/webui/pages.py and extraction/scope.py · python -m scripts.webui.export_diagram</text>
+<text x="44" y="1496" font-size="24" fill="#0f172a" font-weight="700" text-anchor="start">Which pages read another page&#x27;s output</text>
+<text x="44" y="1522" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Arrows point from the publisher to the reader. Each page writes only its own publication.</text>
+<rect x="44" y="1546" width="260" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<rect x="474" y="1546" width="290" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="174" y="1580" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Story + Text</text>
+<text x="619" y="1580" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Map / Audio / Gameplay</text>
+<path d="M310 1583H465" stroke="#94a3b8" fill="none" marker-end="url(#arrow)"/>
+<text x="387" y="1563" font-size="11" fill="#334155" font-weight="400" text-anchor="middle">Build-time read</text>
+<text x="788" y="1570" font-size="13" fill="#334155" font-weight="400" text-anchor="start">Mission markers, conversations, Wiki titles and source graph</text>
+<rect x="44" y="1628" width="260" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<rect x="474" y="1628" width="290" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="174" y="1662" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Assets</text>
+<text x="619" y="1662" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Characters / Map / Gameplay</text>
+<path d="M310 1665H465" stroke="#94a3b8" fill="none" marker-end="url(#arrow)"/>
+<text x="387" y="1645" font-size="11" fill="#334155" font-weight="400" text-anchor="middle">Build-time read</text>
+<text x="788" y="1652" font-size="13" fill="#334155" font-weight="400" text-anchor="start">Media paths, material colours and asset references</text>
+<rect x="44" y="1710" width="260" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<rect x="474" y="1710" width="290" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="174" y="1744" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Map + Gameplay</text>
+<text x="619" y="1744" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Audio</text>
+<path d="M310 1747H465" stroke="#94a3b8" fill="none" marker-end="url(#arrow)"/>
+<text x="387" y="1727" font-size="11" fill="#334155" font-weight="400" text-anchor="middle">Build-time read</text>
+<text x="788" y="1734" font-size="13" fill="#334155" font-weight="400" text-anchor="start">World placements, gameplay index and projectile references</text>
+<rect x="44" y="1792" width="260" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<rect x="474" y="1792" width="290" height="58" rx="12" fill="#f0fdfa" stroke="#e2e8f0"/>
+<text x="174" y="1826" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Audio</text>
+<text x="619" y="1826" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Story + Text</text>
+<path d="M310 1829H465" stroke="#94a3b8" fill="none" marker-end="url(#arrow)"/>
+<text x="387" y="1809" font-size="11" fill="#334155" font-weight="400" text-anchor="middle">Browser read</text>
+<text x="788" y="1816" font-size="13" fill="#334155" font-weight="400" text-anchor="start">Voice and event sidecars: lang/&lt;LANG&gt;/audio/conv/</text>
+<rect x="44" y="1874" width="260" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<rect x="474" y="1874" width="290" height="58" rx="12" fill="#f0fdfa" stroke="#e2e8f0"/>
+<text x="174" y="1908" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Story + Text</text>
+<text x="619" y="1908" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Characters</text>
+<path d="M310 1911H465" stroke="#94a3b8" fill="none" marker-end="url(#arrow)"/>
+<text x="387" y="1891" font-size="11" fill="#334155" font-weight="400" text-anchor="middle">Browser read</text>
+<text x="788" y="1898" font-size="13" fill="#334155" font-weight="400" text-anchor="start">Appearance navigation after exact source, speaker and text checks</text>
+<rect x="44" y="1956" width="260" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<rect x="474" y="1956" width="290" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<text x="174" y="1990" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Data</text>
+<text x="619" y="1990" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Map / Gameplay</text>
+<path d="M310 1993H465" stroke="#94a3b8" fill="none" marker-end="url(#arrow)"/>
+<text x="387" y="1973" font-size="11" fill="#334155" font-weight="400" text-anchor="middle">Optional build-time read</text>
+<text x="788" y="1980" font-size="13" fill="#334155" font-weight="400" text-anchor="start">Last published encounter and skill datasets</text>
+<rect x="44" y="2038" width="260" height="58" rx="12" fill="#f8fafc" stroke="#e2e8f0"/>
+<rect x="474" y="2038" width="290" height="58" rx="12" fill="#f0fdfa" stroke="#e2e8f0"/>
+<text x="174" y="2072" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Production + Gameplay</text>
+<text x="619" y="2072" font-size="16" fill="#334155" font-weight="600" text-anchor="middle">Gameplay browser</text>
+<path d="M310 2075H465" stroke="#94a3b8" fill="none" marker-end="url(#arrow)"/>
+<text x="387" y="2055" font-size="11" fill="#334155" font-weight="400" text-anchor="middle">Browser read</text>
+<text x="788" y="2062" font-size="13" fill="#334155" font-weight="400" text-anchor="start">Combined Items, Recipes and Machines; independent publications</text>
+<text x="44" y="2138" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Missing optional publications reduce detail; they never cause a page to rebuild another page.</text>
+<rect x="44" y="2168" width="1272" height="172" rx="12" fill="#fff7ed" stroke="#fed7aa"/>
+<text x="63" y="2197" font-size="20" fill="#9a3412" font-weight="600" text-anchor="start">What “everything” means here</text>
+<text x="63" y="2227" font-size="15" fill="#334155" font-weight="400" text-anchor="start">All pages equal the supported full extraction scope. Debug adds broader asset indexing and Sprite image checks.</text>
+<text x="63" y="2252" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Decoded blocks → game/; packed small files → GameFiles.sqlite; exact Unity documents → Unity.sqlite; raw families → raw/.</text>
+<text x="63" y="2277" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Raw payloads and excluded Unity objects retain their evidence boundary; extraction does not recover every runtime meaning.</text>
+<text x="63" y="2302" font-size="15" fill="#334155" font-weight="400" text-anchor="start">The wrapper publishes CN and decodes CN audio. Updates separately compares two complete export trees.</text>
+<text x="44" y="2369" font-size="13" fill="#64748b" font-weight="400" text-anchor="start">Generated from scripts/webui/pages.py and extraction/scope.py · python -m scripts.webui.export_diagram</text>
 </g>
 </svg>

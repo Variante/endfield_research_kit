@@ -57,6 +57,13 @@ and leaving only report/CLI orchestration in `story_recovery`.
 
 - DialogTree and Timeline recover local line order and explicit option routes.
   A local branch does not imply a cross-Story continuation.
+- DialogTree and Timeline source hashes read the authoritative Unity store.
+  When a disposable filtered Timeline extract is absent, attachment and director
+  recovery use the original stored objects. Root selection must remain unique;
+  component joins require the exact serialized source file and PathID. A missing
+  store row or an object from another source file remains unresolved even when a
+  loose copy or the same PathID exists elsewhere. An empty parent-dialog set
+  produces a validated empty index; a missing index still fails validation.
 - Multi-output control nodes preserve every decoded arm and polarity. A shipped
   producer does not prove which arm executed.
 - Cutscene is a presentation union. Rooted Timeline, component-only Timeline,
@@ -150,11 +157,11 @@ Generated outputs live under `reports/story/build/`, `reports/story/recovery/`,
 `reports/source_graph/`. Counts, edge inventories, native addresses, hashes,
 per-level examples, and session proof belong there rather than here.
 
-## Bounded Story capture
+## Saved Story capture evidence
 
-EndfieldCapture has a dedicated Mission trace provider. Operational commands
-and prelaunch restrictions are owned by
-[`EndfieldCapture/README.md`](../../tools/EndfieldCapture/README.md).
+The retained Mission trace format has a dedicated offline preparation and
+inspection path. Live observer implementation and launch instructions are
+internal-only; see the repository boundary in `AGENTS.md`.
 `scripts/game_data/mission_trace_capture_prepare.py` resolves the symbolic
 method signatures and typed field paths in the reviewed
 `scripts/game_data/contracts/mission_trace_capture.json` against the explicitly
@@ -183,8 +190,73 @@ The mission-specific `OnSubConditionProgressChanged` observer retains the
 supplied quest, condition and integer progress alongside explicitly named
 pre-entry caches. Its request argument is not a snapshot of every incoming
 objective value, and entering the method does not prove delivery or server
-acceptance. Keep its caller path and live coverage unresolved until observed;
-advanced-progress UI refresh is a separate path.
+acceptance. Clean retained evidence now admits this observer during login
+restoration, including explicit quest arguments with null stored owners and
+supplied progress differing from the cache. An active identification sequence
+now starts `m1m70_q#2` with `isNewQuest=true`, supplies progress `1` with entry
+cache `0`, and later retains a `True` result/progress `1` alongside explicit
+quest and mission completion. The quest argument, stored parent and archived
+objective membership agree. Restoration and this active call share an
+authenticated Boolean delegate specialization that widens a condition result
+to the integer argument. This closes the active Boolean callback question;
+active multi-step numeric updates, live subtype/IFix selection and the earlier
+full call stack remain coverage gaps. Advanced-progress UI refresh is a
+separate path.
+
+The shared recipe now includes snapshot-group registration/notification,
+snapshot-condition lifecycle/callback context, interactive state request and
+integer property callback, and incoming interactive-property packet identity.
+Preparation has passed against the selected installed client; these additions
+have no admitted live-session evidence yet. The snapshot callback now retains
+its supplied string group ID alongside stored condition/quest identities,
+after separately proving the closed single-reference value layout and its
+indirect native argument passing during preparation. Layout alone previously
+selected an incorrect inline read and failed in a live photo callback. The
+preserved failed journal retains the named group notification, condition
+context and a subsequent supplied progress value, but is diagnostic-only;
+it cannot supply an admitted payload join or complete mission outcome.
+This is an explicit entry association; bound-group matching, callback result
+and progression still require additional evidence. Interactive supplied old/new
+values and stored pointer/server identities remain separate from applied writes and mission
+progress. The bounded source archive includes Snapshot and KiteStation tables
+to retain the entrust-to-mission and group-to-target configuration; source bytes
+still do not authenticate current-native semantics. See the optional internal
+checkout's README for the collection procedure.
+
+The launcher checks the independent recorder during startup, the observed
+health baseline and active capture. Unless screen backup was explicitly
+disabled, its premature exit, nonzero final exit or absent/incomplete typed
+completion receipt prevents the overall saved result. Preserve such sessions
+as provisional evidence; a readable earlier journal does not close the lost
+screen interval. The string argument proof also rejects unmodeled jumps and
+terminators rather than treating them as sequential execution.
+
+A subsequent clean `m1m43` gathering session preserves partial HUD progress,
+incoming target identities, the combined-root completion flag, quest handoff
+and mission completion. Its archived definition reuses the `m1m41` display
+keys while naming a different target set; keep variants distinct by their
+explicit mission and objective carriers. The source/packet identity match is
+useful evidence, but delivered property and objective numeric values remain
+unread. The selected interactive callbacks and snapshot callbacks are unhit,
+so this session neither admits an applied property write nor validates the
+repaired photo argument in a live invocation. See the combined-objective
+boundary in `memory/game_data/story_carriers.md`; generated session details
+belong under `reports/runtime_capture/`.
+
+Offline native evaluation now identifies a retained interactive-data consumer
+with server-data and loaded-entity property blackboard paths. This provides a
+specific alternative to the local root-component callback when investigating
+incoming property delivery; it does not identify the path actually taken by
+the earlier gathering session. The shared recipe adds receiver/packet identity
+at `InteractiveInfo.UpdateServerProperty` and supplied signed old/new state
+with explicit entity identity at `NavObstacleManager.OnInteractiveStateUpdate`.
+Selected-client preparation and host preflight have passed; these two entries
+still need live observation. Navigation dispatch is conditional, and its entry
+does not prove an applied property write or a Mission counter update. Delivered
+map members, concrete variable values and the incoming objective dictionary
+remain unread. Native claims and their limits belong to
+`memory/game_data/story_carriers.md`; no Story ordering or generated page-data
+change follows from this offline consumer analysis.
 
 The capture objective is a general model of mission behavior across the corpus.
 Assess coverage by shared mechanism: restoration versus new acceptance,
@@ -192,15 +264,32 @@ partial and combined-condition progress, authored action dispatch, branching,
 quest success/failure/pause, and final mission completion. Keep authored
 configuration, validated native consumer behavior, observed entries and a clean
 end-to-end session distinct. A hook firing once admits that observed case;
-installing every hook does not establish coverage of every mission or condition
+  installing every hook does not establish coverage of every mission or condition
 family. Prefer the next available mission that exercises an uncovered mechanism
 over repeating an already understood sequence. Preserve normal login, separate
 countable actions with visible progress, and retain the final transition and
 any separately performed claim.
 
+The retained `a1m15` sequence now reaches its final quest success, an explicit
+`CompleteMission` entry with a supplied succeed ID, and a `Processing` to
+`Completed` state-change entry in a clean package. Its later
+`hidden74_a1m15` availability and start have separate notifications. This
+closes the observed completion endpoint for that route. The retained activity
+configuration independently links the follow-up stage to a mission-state
+predicate for `a1m15` and a stored time gate. This proves a configured dependency,
+while actual server predicate evaluation, selected time range/timezone, unlock
+instant and reward credit remain unresolved. Sequence-level detail, configured
+dates and source identities stay in generated capture reports; no automatic
+Story ordering override follows.
+
 The default source snapshot covers all available mission definitions and
 LevelData/LevelScript/template/configuration families with shared semantic
-tables. A focused archive changes only source retention, not runtime filtering.
+tables, the binary `DialogIdTable`, and `TimeRangeTable`. The identity table
+supports direct stored wire-ID/name joins; the time table preserves configured
+ranges without asserting which one the server selected. Older captures may
+lack these sources, so separately retained fresh export bytes must be labelled
+as current supporting evidence. A focused archive changes only source retention,
+not runtime filtering.
 The offline inspector uses the retained profile, preserves raw scalar bits/nulls,
 and reports observed/unobserved coverage separately from receipt completeness.
 Explicit quest membership can join a retained mission definition; pointer reuse,
@@ -211,8 +300,19 @@ for advancing atomic status snapshots, recorded rows and a sustained healthy
 baseline before authorizing progression, and surfaces live losses or failed
 reads immediately. A healthy startup baseline does not validate carriers that
 have not yet been entered. Hook transitions check thread/context operations,
-patches, rollback and resumption; a failed transaction remains failed even if
-recovery restores execution. Unrecoverable rollback or resumption retains the
+patches, rollback and resumption; a failed suspension/context/patch transaction
+remains failed even if recovery restores execution. An observed pre-suspension
+`OpenThread` invalid-parameter refusal had no native changes and clean handle
+release. A thread disappearing after the snapshot is a possible explanation,
+not an established cause. Only that fully cleaned preparation refusal may
+restart the entire strict transaction, for at most three total attempts with a short pause;
+it cannot skip threads or retry a cleanup failure. Summary v2 retains every
+enable attempt, and live readiness, collection and offline inspection validate
+the history alongside the successful final transition. Older v1 receipts have
+no attempt history. A retained active gameplay run enables on the first
+attempt and collects cleanly; it admits that ordinary path on the repaired
+runtime without exercising the preparation-retry branch. Unrecoverable
+rollback or resumption retains the
 runtime until external process exit rather than running unsafe cleanup.
 The assembly observer anchors its stack with a saved frame pointer and restores
 flags before a valid Windows epilogue; offline tests check the actual Windows
@@ -318,21 +418,47 @@ complete evidence.
   `mission_trace_inspect` and the shared native claims. Keep authored topology,
   observed quest handoffs, restoration, and unresolved ownership separate;
   collection completeness and hook coverage answer different questions.
-- Prioritize condition creation and scope/implementation selection: explain why
-  a configured `CheckTalkOptionFinish` objective can complete without entering
-  its specialized hooks. Trace graph/client/server scope, virtual dispatch and
-  IFix routing offline before choosing new observations. The stored `$type`
-  does not establish the instantiated receiver or executed implementation.
+- The reviewed default Mission client selector and result binder admit only
+  `ClientOnly` leaves. Talk-finish and script-property conditions have other
+  virtual types, which explains how their specialized hooks can be absent
+  while quests progress. Effective scope, live receiver type and IFix selection
+  remain separate gaps; the stored `$type` does not establish execution.
 - Recover change-level objective and LevelScript property connections through
   authenticated scalar consumers carrying quest/condition or script/property
   identities. Root completion flags and tracking objective kinds cannot explain
-  individual combined-condition progress. Prove field reads and event-rate bounds
-  before adding observers; preserve the no-getter/no-container-traversal boundary.
-- Once installation and collection failures are resolved, capture an available
-  unfinished route through its final quest and mission-completion entry, retaining
-  the supplied completion identity. Select daily variants by explicit runtime
-  carriers. Require a complete final receipt; startup restoration or a later
-  screen-only completion cannot close a missing native transition.
+  individual combined-condition progress. The retained active identification
+  callback answers the Boolean-result question. In `m1m12_q#2`, incomplete then
+  complete root flags and screen-visible partial HUD counts accompany explicit
+  quest/mission completion, but no per-condition Mission progress callback is
+  retained. Individual marker writes and incoming numeric count delivery remain
+  unresolved. The observed LevelScript task lane names a different script from
+  the archived marker operands and cannot supply their ownership. Script-property
+  conditions produce boolean local results, while the reviewed Mission binder
+  selects `ClientOnly` leaves. Offline native recovery now establishes the
+  stored-value consumer, numeric presentation getters and incoming script
+  property-map writer path. A multiple combined objective counts children
+  whose stored-progress comparisons pass; its target is the child count,
+  independent of the cached condition result. Complete LevelData owners supply
+  marker defaults and the brief-data ID-to-key map used by that writer.
+  Actual delivered map entries, successful writes and the selected live display
+  branch remain unobserved. A new observer must prove field reads, ownership
+  and event-rate bounds while preserving the no-getter/no-container-traversal
+  boundary. Another capture is unnecessary for the already observed
+  identification callback or these recovered default consumers.
+  A prepared extension observes named Boolean-property condition lifecycle,
+  check and event entries plus the packet and runtime property-sync entries.
+  Scope and condition identity come from bounded before-entry fields; supplied
+  map contents and evaluated values remain excluded. Live installation and
+  event rates require a clean run on an unfinished matching marker objective.
+  Missing entries leave a coverage gap, and a sync entry alone proves no write.
+  Use a still-unfinished `日常·寻机启事` for that observation, preserving its
+  initial state for a single marker advance and final completion. Free
+  exploration by itself lacks that before/after objective ownership join.
+- Extend clean completion coverage to other available routes and uncovered
+  mechanisms, retaining the supplied completion identity. Select daily variants
+  by explicit runtime carriers. Require a complete final receipt; startup
+  restoration or a later screen-only completion cannot close a missing native
+  transition.
 - Revisit exact playback ownership only when server policy, payload-aware
   runtime evidence, or a new typed client carrier becomes available.
 - Close more CallServer callbacks and server placeholders through bounded typed

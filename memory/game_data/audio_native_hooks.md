@@ -9,20 +9,15 @@ read-only probes are prepared against it, and why none of them yet joins a key
 to an opened file, a decoder stream, or audible PCM. It is the audio counterpart
 of [`native_read_path.md`](native_read_path.md).
 
-**Current live-capture workflow: EndfieldCapture only.** The user explicitly
-does not use Frida; do not request another generic/Frida capture or substitute
-the experimental injector. The retained paired source bridge and owner/carrier
-recipes below describe historical generic tooling and offline evidence.
-EndfieldCapture now has a separate `audio source-owner` entry-only recipe,
-prepared by `prepare_endfield_source_owner` from the authenticated source,
-queue and carrier contracts. Its register/stack-preserving thunks observe the
-selector, clone, wide setter, factory, constructor, embedded consumer, Lock
-and carrier-control entries alongside both managed post methods. The setter's
-unproved additional stack inputs are forwarded untouched, without guessing a
-C++ signature or changing the return address. Entry-only thunks retain their
-disabled trampolines until process exit; recording quiescence protects the
-recorder. Native results and parent nesting are deliberately absent. The
-classic five-hook native recipe remains separate.
+Live capture tooling is internal-only and is excluded from the public
+repository. The retained paired source bridge and owner/carrier recipes below
+support historical evidence validation. The separate saved `audio source-owner`
+entry-only recipe is reconstructed by `prepare_endfield_source_owner` from
+authenticated source, queue and carrier contracts. Its recorded selector,
+clone, wide setter, factory, constructor, embedded consumer, Lock and
+carrier-control entries remain distinct from both managed post methods. Native
+results and parent nesting are absent, so these rows cannot replace historical
+paired recordings. The classic five-hook recipe remains a separate format.
 
 The new `audio/source_owner.jsonl` carries bounded declared scalar reads,
 one guarded descriptor, bounded terminated UTF-16 text, original register
@@ -357,15 +352,15 @@ return. The strict auditor accepts declared inactive nulls, but failed applicabl
 reads or malformed pointer returns withhold source summaries.
 
 [`prepare_audio_source_observer.py`](../../scripts/webui/story_recovery/prepare_audio_source_observer.py)
-emits the classic minimal profile for the maintained generic Frida observer. It requires
+reconstructs the classic minimal profile for validating saved paired observations. It requires
 all four source hooks plus both managed bridges, captures fixed source/info/
 output fields at entry and return, retains source and output pointer identities,
 and records call-pair, nesting and return-address evidence. It reads no media
 bytes and follows no pointer chains. Native hashes, exact exception-directory
 extents, instruction witnesses and managed identity/signature/windows gate
 profile publication; malformed or missing/mismatched inputs withhold it.
-The generic launcher now refuses arming if any explicitly required native hook
-fails, while older profiles' native hooks remain optional by default.
+Required-hook declarations remain part of each frozen profile; older profiles
+retain their original optional-hook boundary.
 
 The observer checks the reported module name, path and mapped PE image extent
 against the selected disk files and retains its validated ASLR base. Disk length
@@ -413,8 +408,8 @@ Neither a verified synchronous edge nor a same-address state match bridges a
 managed voice request across the asynchronous queue or establishes pointer
 lifetime. Saved consumer recordings now exercise both source flag states and
 the requested managed character path, but their native calls have no captured
-managed-parent chain. This profile is consumed directly by the generic
-observer and does not extend or activate the native EndfieldCapture provider.
+managed-parent chain. These saved paired observations remain separate from
+native entry-only evidence.
 File identity, codec choice, decoded content and audibility remain open.
 
 The separate
@@ -705,40 +700,29 @@ records a SHA256 inventory and verifies every ZIP member. This proves retained
 byte identity, not successful hooks, clean closure, selected-build validity or
 any playback claim; the strict capture auditor owns those gates. Archives and
 per-session inventories remain local generated evidence under
-`reports/audio/captures/`. The historical Frida PowerShell wrapper that chained
-prepare, capture and archive is removed; live capture uses EndfieldCapture.
+`reports/audio/captures/`. Live launchers and instrumentation agents have been
+removed; archive and audit commands operate only on saved files.
 A responsive agent stops recording new calls, finishes previously captured pairs
 and returns a drain receipt before the host attempts one unload. The strict
 auditor requires that protocol and a successful drain when either new receipt
 field is present; saved recordings without those fields retain their original
 receipt checks.
 
-Keep the game open until the capture timer and cleanup finish. Closing it
-first can destroy the injected script before its final receipt, producing an
-unclosed session even when the retained entry/result rows are paired. Archive
-checksums still preserve those bytes, but the strict auditor withholds all
-source summaries and rebased relations. It validates fixed fields independently
-and skips derived caller checks when closure/module verification is absent,
-avoiding false null-RVA callsite errors. A raw voice-path row is useful for
-confirming the intended path was recorded; missing carrier rows in an
-interrupted recording do not prove that a backend never executes. Preserve
-such attempts as diagnostics, without replacing earlier validated publication
-or synthesizing a clean-stop receipt.
-
-Process discovery is not runtime-module readiness. Audio capture uses a
-separate bounded module wait, longer than the shared launcher's default, before
-loading hooks; changing this setup budget does not consume the recording
-duration. Status-change messages and timeout details retain which expected
-modules the setup probe last reported missing, without adding unaudited
-module facts or new diagnostic-stream kinds. Prefer starting from a fully
-loaded voice screen. A module-wait timeout has no armed voice observations
-and its preserved archive cannot be treated as a successful capture.
+A session interrupted by process exit may lack a final receipt even when
+retained entry/result rows are paired. Archive checksums preserve those bytes,
+but the strict auditor withholds source summaries and rebased relations. It
+validates fixed fields independently and skips derived caller checks when
+closure/module verification is absent, avoiding false null-RVA callsite errors.
+A raw voice-path row can confirm the recorded path; missing carrier rows in an
+interrupted session do not prove that a backend never executes. Preserve such
+sessions as diagnostics, without replacing earlier validated publication or
+synthesizing a clean-stop receipt. Process discovery and module readiness
+alone do not supply an armed observation or a successful saved recording.
 
 A drain receipt proves captured-pair completion and delivery, not interceptor
 or thread quiescence. Unrecorded calls after the stop request are outside its
-counters, and a stalled host RPC has no independent deadline. Offline fixtures
-cover cancellation, active-pair completion, receipt failures and cleanup errors;
-they do not establish live game-crash prevention. The reported stop-time crash
+counters, and a stalled host RPC has no independent deadline. Offline receipt tests
+do not establish live game-crash prevention. The reported stop-time crash
 has matching Windows process evidence and a preserved dump showing an execute
 access violation outside loaded module ranges. The dump lacks stack and code
 bytes, memory protections and unloaded-module evidence, so it cannot identify
@@ -747,7 +731,7 @@ the former allocation or establish the crash cause. The reusable offline
 authenticates bounded dump framing and lists stored exception/context and module
 range evidence; raw stack words are explicitly distinct from unwound frames.
 
-EndfieldCapture's Audio callback queue runs throughout the attached lifetime;
+The native Audio callback queue runs throughout the attached lifetime;
 the writer filters retained rows to the manually selected windows. Its loss
 receipt is cumulative. A correctly closed window, complete managed pairs and
 contiguous retained entry capture IDs do not supply a missing interval-specific

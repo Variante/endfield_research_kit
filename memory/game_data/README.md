@@ -6,8 +6,10 @@ installed-data model, the shared asset/spatial and source-graph contracts, and
 the topic-wide remaining gaps. Read the parent first if you only want the rules.
 
 Files are organised by **level** (how deep the interpretation goes) and **lane**
-(which kind of data), not by reading order. Each file states its level and lane
-in its first line, and the lane prefix groups them in a directory listing.
+(which kind of data), not by reading order. The file index below groups the
+owning topics by lane and states their level or level range. A topic may cover
+both a stored format and its native consumer; each claim keeps its own evidence
+boundary.
 
 ## The four levels
 
@@ -41,8 +43,8 @@ content kinds -- **more than this directory documents**:
 | `DynamicStreaming` | main grids, `FBStreamArea`, and three auxiliary roots | **world** | [`world_dynamic_streaming.md`](world_dynamic_streaming.md) for main/area; [`install_and_vfs.md`](install_and_vfs.md) for the auxiliary roots |
 | `Terrain` | `TRET` container, `LAYER_C/D/N` | **world** | here |
 | `IV` | irradiance volumes | **world** | here |
-| `Table` | single-instance config tables | **gameplay** (Buff/Skill) and **text** | here for gameplay; [`../webui/story_recovery.md`](../webui/story_recovery.md) for Story/Text Tables |
-| `JsonData` | JSON name shapes: LipSync, NPC Montage, conversations | **text**, partly **world** | [`install_and_vfs.md`](install_and_vfs.md) for LipSync/Montage framing; [`../webui/story_recovery.md`](../webui/story_recovery.md) for conversations |
+| `Table` | SparkBuffer config tables exported as named JSON; gameplay and text references | **gameplay** and **text** | [`gameplay_semantics.md`](gameplay_semantics.md); [`../webui/story_recovery.md`](../webui/story_recovery.md) for Story/Text Tables |
+| `JsonData` | text JSON and binary serialized families: BuffData, SkillData, LevelScriptData, LevelData, Interactive, SpawnerConfig, animation and conversation data | **gameplay**, **story**, **world**, **text** | [`serialization_memorypack.md`](serialization_memorypack.md) for family routing; [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) for exact reader limits; Story presentation belongs to its WebUI guide |
 | `ExtendData`, `InitialExtendData` | `StringPathHash.bin`, `FacBoneTRS.bin`, `CompressData.bin` | **catalog** | here |
 | `Lua` | mission and consumer scripts | **code** | [`../webui/story_recovery.md`](../webui/story_recovery.md); index built by `scripts/webui/story/lua_consumer_references.py` |
 | `IFixPatchOut` | runtime code patches | **code** | [`ifix_patch.md`](ifix_patch.md) |
@@ -68,85 +70,130 @@ retain their framing-only boundary in `install_and_vfs.md`.
 world data, and `FacBoneTRS.bin` is facial-bone
 animation. Neither is spatial, so neither belongs in the world lane.
 
+## Follow a logical file through the export
+
+The installed `Persistent` overlay and `StreamingAssets` fallback first resolve
+one VFS logical identity. The export then preserves the payload in one of these
+places; the file extension does not decide whether it is decoded:
+
+```text
+export_full/
+  meta/extraction/provenance.json  selected publication and build identity
+  game/
+    Table/                        decoded table documents
+    Json/<family>/                text JSON or unchanged binary payloads
+    GameFiles.sqlite              packed Json/LipSync logical files
+    Unity.sqlite                  decoded Unity object documents
+    Unity/                        converted Unity media
+    Audio/, Video/, Lua/, Terrain/ decoded media, code and terrain outputs
+  raw/
+    Streaming/, DynamicStreaming/, IrradianceVolume/
+    ExtendData/, IFixPatchOut/, Bundles/  unchanged block payloads
+```
+
+Read the two SQLite stores through `game_file_store` and `unity_store`. An
+`exportRelativePath` in the JsonData ledger identifies a logical export path;
+packed files need the store accessor rather than an assumed loose-file path.
+BuffData and SkillData `.json` files are binary MemoryPack payloads. Recovered
+projections and inventories under `reports/` do not replace their source bytes.
+
+## What advances each lane
+
+The level below names the unresolved join, not a blanket completion percentage.
+Exact stored structure and selected static consumers can coexist with an open
+runtime question. The parent guide owns the work order; family receipts and
+generated censuses own changing counts and individual file refusals.
+
+| Lane and principal source | Current interpretation boundary | Next useful join | Owner |
+| --- | --- | --- | --- |
+| Extraction: installed containers and VFS blocks | logical identity, overlay, exact envelope and selected family gates | carry identity through the correct export/store accessor; authenticate the selected build before interpreting receipts | [`extraction_pipeline.md`](extraction_pipeline.md), [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) |
+| Catalog: ExtendData and BundleManifest | stored hash/path dictionaries and selected native lookup consumers | cross-store object ownership and effective lookup selection | [`extend_data.md`](extend_data.md), [`unity_assets.md`](unity_assets.md) |
+| Unity assets: bundles and Unity object store | source root, CAB, PathID and typed serialized references | prove the selected object's owner and consumer; a matching name alone supplies neither | [`unity_assets.md`](unity_assets.md) |
+| Gameplay: Table and JsonData families | named outer records; Buff has partial recursive children, Skill distinguishes complete frames from named schemas | compose typed action, blackboard, modifier and selector children through complete original roots; then check consumers separately | [`serialization_memorypack.md`](serialization_memorypack.md), [`gameplay_semantics.md`](gameplay_semantics.md) |
+| Story: MissionRuntimeAsset, LevelScript, Lua and Timeline objects | definition, trigger, condition and playback carriers with separate identity domains | shared first-refusal routes and explicit mission/consumer joins; preserve server and runtime ownership gaps | [`story_carriers.md`](story_carriers.md) |
+| World: raw streaming, terrain, irradiance and level data | exact framing plus selected native IDs, record copies and resource consumers | anonymous component fields, cross-format ownership and provider/activation selection | world topics below |
+| Audio: packages, banks, tables and action references | stored bank/object graph and selected authored naming/consumer joins | remaining selector semantics, object ownership and observed playback branches | [`audio_overview.md`](audio_overview.md) |
+| Code: Lua and IFixPatchOut | declared script references, patch targets and selected VM operands | reflection/provider selection and effective patch activation | [`ifix_patch.md`](ifix_patch.md), [`native_read_path.md`](native_read_path.md) |
+
 ## Files
 
 **Level 1 -- all lanes**
 
-| File | Lines |
-| --- | --- |
-| [`install_and_vfs.md`](install_and_vfs.md) -- the block inventory, the reader each family routes to, and reading a logical file | 202 |
-| [`shared_containers.md`](shared_containers.md) -- the `TRET` container, the terrain header, and the custom LZ4 with big-endian offsets and a bit-interleaved token | 164 |
-| [`containers_cabmap.md`](containers_cabmap.md) -- the `CABMap` container index that gives a PathID its source root | 154 |
+| File |
+| --- |
+| [`install_and_vfs.md`](install_and_vfs.md) -- the block inventory, the reader each family routes to, and reading a logical file |
+| [`shared_containers.md`](shared_containers.md) -- the `TRET` container, the terrain header, and the custom LZ4 with big-endian offsets and a bit-interleaved token |
+| [`containers_cabmap.md`](containers_cabmap.md) -- the `CABMap` container index that gives a PathID its source root |
 
 **World lane** -- terrain, chunks, DynamicStreaming grids and areas, irradiance.
 
-| File | Level | Lines |
-| --- | --- | --- |
-| [`world_terrain.md`](world_terrain.md) -- exact `TRET` corpus, native tile/layer render-property joins, managed converter-to-native setup and texture-resource copies, authored `_ConeMaps` shader sample, and open path/field/channel meaning | 3 | 163 |
-| [`world_chunks_schema.md`](world_chunks_schema.md) -- `InitChunkData`'s FlatBuffers schema, read from the bytes with no schema at all | 2 | 176 |
-| [`world_chunks_families.md`](world_chunks_families.md) -- the second family, the per-level index, the corpus gate | 2 | 157 |
-| [`world_irradiance.md`](world_irradiance.md) -- exact index ranges, selected scene/Gacha/proxy paths, supplied-directory room path, ready-buffer header/record-copy branch and command-binding callback, queued exact-read gate, conditional default Windows-file provider, native V3 cursor and absent parser EOF check; live root/provider/VFS/record meaning open | 3 | 168 |
-| [`world_dynamic_streaming.md`](world_dynamic_streaming.md) -- native-gated main/area/version readers, version-to-IdComp join and ban consumer, auxiliary ID/descriptor/blob pairs and their native copy route, resource/visibility joins, open runtime activation | 3 | 250 |
-| [`world_chunk_slots.md`](world_chunk_slots.md) -- slot 5's kind codes, slot 7's descriptor mask, and retracted offset readings | 3 | 155 |
-| [`world_chunk_unread_region.md`](world_chunk_unread_region.md) -- slot-7 descriptors, native mask consumer, authenticated ID/name-prefix join, enum-index counterexample, and the remaining unread run | 3 | 211 |
-| [`world_chunk_union_vectors.md`](world_chunk_union_vectors.md) -- the root retyped, and the retracted code/zero reading | 3 | 173 |
-| [`world_chunk_transforms.md`](world_chunk_transforms.md) -- the transform-matrix bulk | 3 | 150 |
+| File | Level |
+| --- | --- |
+| [`world_terrain.md`](world_terrain.md) -- exact `TRET` corpus, native tile/layer render-property joins, managed converter-to-native setup and texture-resource copies, authored `_ConeMaps` shader sample, and open path/field/channel meaning | 3 |
+| [`world_chunks_schema.md`](world_chunks_schema.md) -- `InitChunkData`'s FlatBuffers schema, read from the bytes with no schema at all | 2 |
+| [`world_chunks_families.md`](world_chunks_families.md) -- the second family, the per-level index, the corpus gate | 2 |
+| [`world_irradiance.md`](world_irradiance.md) -- exact index ranges, selected scene/Gacha/proxy paths, supplied-directory room path, ready-buffer header/record-copy branch and command-binding callback, queued exact-read gate, conditional default Windows-file provider, native V3 cursor and absent parser EOF check; live root/provider/VFS/record meaning open | 3 |
+| [`world_dynamic_streaming.md`](world_dynamic_streaming.md) -- native-gated main/area/version readers, version-to-IdComp join and ban consumer, auxiliary ID/descriptor/blob pairs and their native copy route, resource/visibility joins, open runtime activation | 3 |
+| [`world_chunk_slots.md`](world_chunk_slots.md) -- slot 5's kind codes, slot 7's descriptor mask, and retracted offset readings | 3 |
+| [`world_chunk_unread_region.md`](world_chunk_unread_region.md) -- slot-7 descriptors, native mask consumer, authenticated ID/name-prefix join, enum-index counterexample, and the remaining unread run | 3 |
+| [`world_chunk_union_vectors.md`](world_chunk_union_vectors.md) -- the root retyped, and the retracted code/zero reading | 3 |
+| [`world_chunk_transforms.md`](world_chunk_transforms.md) -- the transform-matrix bulk | 3 |
 
 **Audio lane** -- the Wwise chain, from bank container to what is actually named.
 
-| File | Level | Lines |
-| --- | --- | --- |
-| [`audio_overview.md`](audio_overview.md) -- the six evidence layers and the authored-versus-observed boundary | 2 | 222 |
-| [`audio_bank_format.md`](audio_bank_format.md) -- the bank sections outside HIRC | 2 | 126 |
-| [`audio_hirc_parser.md`](audio_hirc_parser.md) -- SDK-backed HIRC layouts and the exact shipped decision-tree walk, with runtime selection open | 2 | 203 |
-| [`audio_native_hooks.md`](audio_native_hooks.md) -- the native request chain, PlaySound string hashing, and bounded capture boundary | 2 | 163 |
-| [`audio_hirc_graph.md`](audio_hirc_graph.md) -- the object graph, the closed type layouts, and the typed v150 effect/bus parse | 3 | 250 |
-| [`audio_naming_coverage.md`](audio_naming_coverage.md) -- what is named and owned, and what nothing reaches | 4 | 192 |
+| File | Level |
+| --- | --- |
+| [`audio_overview.md`](audio_overview.md) -- the six evidence layers and the authored-versus-observed boundary | 2 |
+| [`audio_bank_format.md`](audio_bank_format.md) -- the bank sections outside HIRC | 2 |
+| [`audio_hirc_parser.md`](audio_hirc_parser.md) -- SDK-backed HIRC layouts and the exact shipped decision-tree walk, with runtime selection open | 2 |
+| [`audio_native_hooks.md`](audio_native_hooks.md) -- the native request chain, PlaySound string hashing, and bounded capture boundary | 2 |
+| [`audio_hirc_graph.md`](audio_hirc_graph.md) -- the object graph, the closed type layouts, and the typed v150 effect/bus parse | 3 |
+| [`audio_naming_coverage.md`](audio_naming_coverage.md) -- what is named and owned, and what nothing reaches | 4 |
 
-**Gameplay lane** -- authored `Table` config joined to native contracts.
+**Gameplay lane** -- authored `Table` and `JsonData` config joined to native contracts.
 
-| File | Level | Lines |
-| --- | --- | --- |
-| [`gameplay_semantics.md`](gameplay_semantics.md) -- root framing, action labels, selected enums, conditional damage-calculation evaluators, normal-entity attack selector, guarded Poise result route, and tag `0x1B` runtime call boundary | 4 | 227 |
+| File | Level |
+| --- | --- |
+| [`gameplay_semantics.md`](gameplay_semantics.md) -- root framing, action labels, selected enums, conditional damage-calculation evaluators, normal-entity attack selector, guarded Poise result route, and tag `0x1B` runtime call boundary | 4 |
 
 **Story lane** -- the carriers that activate and place Story.
 
-| File | Level | Lines |
-| --- | --- | --- |
-| [`story_carriers.md`](story_carriers.md) -- what a LevelScript action, Timeline record, or spatial carrier proves, its identity domain and slot action bindings, and the gates on all of it | 4 | 202 |
+| File | Level |
+| --- | --- |
+| [`story_carriers.md`](story_carriers.md) -- what a LevelScript action, Timeline record, or spatial carrier proves, its identity domain and slot action bindings, and the gates on all of it | 4 |
 
 **Catalog lane** -- the `ExtendData` and `BundleManifest` blocks.
 
-| File | Level | Lines |
-| --- | --- | --- |
-| [`extend_data.md`](extend_data.md) -- both current StringPathHash catalog joins, FacBoneTRS values, and CompressData graph/task/AI asset boundaries | 2–4 | 136 |
+| File | Level |
+| --- | --- |
+| [`extend_data.md`](extend_data.md) -- both current StringPathHash catalog joins, FacBoneTRS values, and CompressData graph/task/AI asset boundaries | 2–4 |
 
 **Unity assets lane** -- the `Bundle` and `Video` blocks.
 
-| File | Level | Lines |
-| --- | --- | --- |
-| [`unity_assets.md`](unity_assets.md) -- object identity, Bundle dependency joins, the binding evidence order, and what exporting an object does not prove | 4 | 235 |
+| File | Level |
+| --- | --- |
+| [`unity_assets.md`](unity_assets.md) -- object identity, Bundle dependency joins, the binding evidence order, and what exporting an object does not prove | 4 |
 
 **Code lane** -- the installed IFix runtime patch files.
 
-| File | Level | Lines |
-| --- | --- | --- |
-| [`ifix_patch.md`](ifix_patch.md) -- declared targets, VM operands and handlers, external signatures, and the patch-currentness gate | 4 | 152 |
+| File | Level |
+| --- | --- |
+| [`ifix_patch.md`](ifix_patch.md) -- declared targets, VM operands and handlers, external signatures, and the patch-currentness gate | 4 |
 
 **Extraction lane** -- the reader itself, and how far it is proven.
 
-| File | Level | Lines |
-| --- | --- | --- |
-| [`extraction_pipeline.md`](extraction_pipeline.md) -- AnimeStudio: export scopes, provenance states, scheduling, DummyDll, shader recovery, change workflow | 1 | 236 |
-| [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) -- one statement per family: which reader is fail-closed and where it stops | 2 | 254 |
+| File | Level |
+| --- | --- |
+| [`extraction_pipeline.md`](extraction_pipeline.md) -- AnimeStudio: export scopes, provenance states, scheduling, DummyDll, shader recovery, change workflow | 1 |
+| [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) -- one statement per family: which reader is fail-closed and where it stops | 2 |
 
 **Cross-lane**
 
-| File | Level | Lines |
-| --- | --- | --- |
-| [`serialization_memorypack.md`](serialization_memorypack.md) -- the JsonData registry, LevelScript/SkillData/BuffData route promotion, wire rules, and the IL2CPP chain that resolves a formatter | 2 | 342 |
-| [`native_read_path.md`](native_read_path.md) -- from `ResourceManager` down to `ReadFile`, and why it yields no authenticated receipt | 2 | 164 |
-| [`settled_and_open.md`](settled_and_open.md) -- the settled tables, and what is open, stated accurately | 4 | 153 |
+| File | Level |
+| --- | --- |
+| [`serialization_memorypack.md`](serialization_memorypack.md) -- the JsonData registry, LevelScript/SkillData/BuffData route promotion, wire rules, and the IL2CPP chain that resolves a formatter | 2–3 |
+| [`native_read_path.md`](native_read_path.md) -- from `ResourceManager` down to `ReadFile`, and why it yields no authenticated receipt | 2 |
+| [`settled_and_open.md`](settled_and_open.md) -- the settled tables, and what is open, stated accurately | 4 |
 
 ## Start here for a specific question
 
@@ -196,8 +243,8 @@ The rules in [`../README.md`](../README.md) apply unchanged. In addition:
 - per-build addresses, hashes, full member orders, and inventories belong in a
   contract JSON under `scripts/` or a generated report under `reports/`, and a
   reader's mechanics, per-route layout notes and non-proofs belong in its
-  module docstring, with only the durable interpretation here. The gameplay lane is the worked example:
-  213 per-tag layouts live in their tracked contracts, and this directory keeps
-  only the root framing and the shared rules;
+  module docstring, with only the durable interpretation here. Per-tag gameplay
+  layouts live in their tracked contracts; this directory keeps the root
+  interpretation and the shared evidence rules;
 - update this index, the parent file's index, and [`../README.md`](../README.md)
   in the same change as any file added or removed.

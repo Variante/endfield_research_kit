@@ -18,7 +18,7 @@ wrappers; direct CLI commands are for focused recovery and diagnostics.
 | --- | --- |
 | Installed VFS catalog, overlay, block reads, Unity objects, conversion | `tools/AnimeStudio/` |
 | Installed-game orchestration, scope, worker isolation, provenance | `scripts/game_data/extraction/export_full_from_game.py` |
-| Story/Text, Map, Characters, Gameplay, Audio, Assets publication | owning Python builders under `scripts/` |
+| Story/Text, Map, Characters, Gameplay, Production, Audio, Assets, Data publication | owning Python builders under `scripts/` |
 | Stable CLI mechanics and VFS evidence index | `.codex/skills/animestudio-workflow/references/animestudio.md` |
 | Per-build counts, hashes, failures, and audits | `reports/animestudio/` and `reports/export/` |
 
@@ -49,6 +49,11 @@ block, Unity class and the asset maps carry their own installed-layer stamp
 (`meta/extraction/provenance.json`), which the freshness guard checks per
 declared input. MonoBehaviour and PlayableDirector are always selected
 together, because the object index is merged from one run's JSON jobs.
+This is complete coverage of the exporter's supported families, not a claim
+that every installed object has an exact decoder or a proved semantic join.
+Partial and metadata-only Unity records remain excluded with audit reasons;
+raw families preserve their bytes. The wrapper publishes CN and decodes CN
+Audio by default. Updates separately compares two complete export trees.
 Changed-only export (`export_changed_game_data.py`) compares against its
 private snapshot or, after a client update, only a certified VFS ledger bound
 to the previous export summary, failing closed to a full export otherwise; it

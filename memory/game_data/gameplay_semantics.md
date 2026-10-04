@@ -125,8 +125,8 @@ Each was violated at least once and caught.
 
 - **Live provider selection.** A static reader is structural evidence, not proof
   the formatter executes; IfElse paths overwrite the callsite companion in
-  native thunks, and reuse reaches state-dependent dispatch. The current
-  `EndfieldCapture` gameplay-semantics profile observes seven selected
+  native thunks, and reuse reaches state-dependent dispatch. The saved
+  gameplay-semantics profile observes seven selected
   `ExecuteInternal` outcomes with bounded raw data words and opaque target
   carriers. It does not record the MemoryPack formatter provider, source-file
   identity, or action union tag at that boundary, so its receipt cannot close

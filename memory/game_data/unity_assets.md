@@ -96,10 +96,9 @@ a shader archive or draw-census match does not prove its geometry was copied.
 The older dedicated packets constrain pixel math but do not authenticate the
 later phase now under investigation. The reviewed
 `scripts/game_data/contracts/endminf_shared_strip_capture.json` drives two
-phase windows and the selected build/shader/mask gates in EndfieldCapture.
-`tools/EndfieldCapture/tools/verify_endminf_shared_strip_capture.py` requires
-same-Play root-clock brackets, complete consumed inputs, explicit MRT/depth
-before and after each owner, and changed colour. Its native replay and source
+phase windows and selected build/shader/mask gates for saved packet evidence.
+Admission requires same-Play root-clock brackets, complete consumed inputs,
+explicit MRT/depth before and after each owner, and changed colour. Its native replay and source
 material-constant join are subsequent checks; direct root time still cannot
 be promoted to child particle age. The shared root is reused across character
 pages: its name, instance identity and successful Play alone do not identify

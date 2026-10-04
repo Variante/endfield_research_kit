@@ -1,7 +1,4 @@
-# Contract JSON under scripts/ is byte-pinned evidence: its readers hash the
-# file's exact bytes (CONTRACT_SHA256 in the *_native.py modules, contractSha256
-# in the MemoryPack audit) and fail closed on any mismatch. 217 of these files
-# are CRLF on disk and three are deliberately mixed, so git must never convert
-# their line endings -- `eol=lf` here would rewrite them on checkout and break
-# every pin with no other symptom. `-text` disables all EOL conversion.
+# Preserve reviewed contract JSON bytes across checkouts. Git owns contract
+# integrity; native input and code-window hashes authenticate the selected game
+# build. Contracts do not pin their own bytes or another tracked contract.
 scripts/**/*.json -text
