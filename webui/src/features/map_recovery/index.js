@@ -198,7 +198,7 @@
   const root = () => document.querySelector("#map-recovery-app");
   const mapEl = () => root()?.querySelector(".mr-map");
   const svgEl = () => root()?.querySelector(".mr-canvas");
-  const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
+  const esc = window.WebUI.escapeHtml;
   const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
   const isTerrainBytePreview = (underlay) => underlay?.status === "terrain_height_grid_diagnostic";
   const pointHeightMasks = () => state.modelBackgrounds
@@ -390,6 +390,19 @@
     return row.label;
   };
 
+  let mapUpdateFacets;
+  const updateFacets = () => mapUpdateFacets ||= window.WebUI.facets.create({
+    countMode: "total",
+    groups: [window.WebUI.updateBadges.filterGroup("map", (row) => window.WebUI.updateBadges.status("map", [row.id, ...(row.variants || []).map((variant) => variant.id)]))],
+    onChange: () => refreshMapTree(),
+  });
+  const refreshMapTree = () => {
+    const nav = root()?.querySelector(".mr-map-column");
+    if (!nav) return;
+    nav.querySelectorAll(".mr-map-group, .mr-map-empty").forEach((group) => group.remove());
+    nav.insertAdjacentHTML("beforeend", mapTreeHtml());
+    nav.querySelectorAll("[data-map-id]").forEach((button) => button.addEventListener("click", () => { void switchMap(button.dataset.mapId); }));
+  };
   const mapTreeHtml = () => {
     const sort = state.mapSort || "default";
     const compare = (a, b) => {
@@ -397,11 +410,12 @@
       return String(sort === "name" ? mapTitle(a) : a.id).localeCompare(String(sort === "name" ? mapTitle(b) : b.id), undefined, { numeric: true });
     };
     const groups = new Map();
-    for (const row of [...(state.index?.maps || [])].sort(window.WebUI.sorting.comparator("map-sort", (a, b) => sort === "default" ? (state.index.maps.indexOf(a) - state.index.maps.indexOf(b)) : compare(a, b)))) {
+    for (const row of updateFacets().filter(state.index?.maps || []).sort(window.WebUI.sorting.comparator("map-sort", (a, b) => sort === "default" ? (state.index.maps.indexOf(a) - state.index.maps.indexOf(b)) : compare(a, b)))) {
       const family = row.family || "Other";
       if (!groups.has(family)) groups.set(family, []);
       groups.get(family).push(row);
     }
+    if (!groups.size) return `<p class="mr-map-empty">${esc(isZh() ? "没有符合筛选条件的地图。" : "No maps match these filters.")}</p>`;
     return [...groups.entries()].map(([family, rows]) => `<section class="mr-map-group"><h3>${esc(family)}</h3>${rows.map((row) => (
       `<button type="button" class="mr-map-item${row.id === state.selected ? " is-active" : ""}" data-map-id="${esc(row.id)}" title="${esc(mapTitle(row))}"><b>${esc(mapTitle(row))} ${window.WebUI.updateBadges.html("map", [row.id, ...(row.variants || []).map((variant) => variant.id)])}</b><span>${row.storyKeyCount || 0}${esc(t("countStories"))}</span></button>`
     )).join("")}</section>`).join("");
@@ -976,9 +990,7 @@
   const t = (key) => (isZh() ? TEXT.zh[key] : TEXT.en[key]) ?? TEXT.en[key] ?? key;
 
   async function fetchJson(path, { cache = "no-store", signal, onProgress } = {}) {
-    const response = window.WebUI?.fetchWithProgress
-      ? await window.WebUI.fetchWithProgress(path, { cache, signal, onProgress })
-      : await fetch(path, { cache, signal });
+    const response = await window.WebUI.fetchWithProgress(path, { cache, signal, onProgress });
     if (!response.ok) throw new Error(`${response.status} ${path}`);
     return response.json();
   }
@@ -2668,7 +2680,7 @@
         </div>
         <div class="mr-float-body">
           <div class="mr-browser-tree">
-            <nav class="mr-map-column" aria-label="${esc(t("title"))}"><select id="map-sort"><option value="default">${esc(isZh() ? "默认排序" : "Default order")}</option><option value="name">${esc(isZh() ? "名称" : "Name")}</option><option value="id">ID</option><option value="stories">${esc(isZh() ? "剧情数量" : "Story count")}</option></select>${mapTreeHtml()}</nav>
+            <nav class="mr-map-column" aria-label="${esc(t("title"))}"><select id="map-sort"><option value="default">${esc(isZh() ? "默认排序" : "Default order")}</option><option value="name">${esc(isZh() ? "名称" : "Name")}</option><option value="id">ID</option><option value="stories">${esc(isZh() ? "剧情数量" : "Story count")}</option></select>${window.WebUI.updateBadges.filterSection("map")}${mapTreeHtml()}</nav>
             <section class="mr-task-column" aria-label="${esc(t("mission"))}"><h2>${esc(t("mission"))}</h2>${window.WebUI.updateBadges.html("map", mapUpdateIds())}${window.WebUI.updateBadges.panel("map", mapUpdateIds())}${variantControls}${missionControls}<div class="mr-task-map-status">${mapMetrics}${surfaceAccuracy}</div></section>
             ${objectFilters}
             <section class="mr-inspector-column" aria-label="${esc(t("inspector"))}">
@@ -2770,15 +2782,15 @@
       if (details.open) state.expandedKinds.add(details.dataset.mapTypeGroup);
       else state.expandedKinds.delete(details.dataset.mapTypeGroup);
     }));
+    if (window.WebUI.updateBadges.syncFilter("map", "map", updateFacets())) refreshMapTree();
+    window.WebUI.updateBadges.bindFilter("map");
+    updateFacets().render(state.index?.maps || []);
     const sort = host.querySelector("#map-sort");
     if (sort) {
       sort.value = state.mapSort || "default";
       sort.addEventListener("change", () => {
         state.mapSort = sort.value;
-        const nav = host.querySelector(".mr-map-column");
-        nav.querySelectorAll(".mr-map-group").forEach((group) => group.remove());
-        nav.insertAdjacentHTML("beforeend", mapTreeHtml());
-        nav.querySelectorAll("[data-map-id]").forEach((button) => button.addEventListener("click", () => { void switchMap(button.dataset.mapId); }));
+        refreshMapTree();
       });
     }
     host.querySelector(".mr-display-menu")?.addEventListener("toggle", (event) => {
@@ -3153,9 +3165,9 @@
   };
   const stitchOnInitialOpen = (id) => ["map01", "map02", "blackbox01_dg001", "blackbox02_dg001"].includes(regionKey(id));
 
-  async function ensurePayload(row) {
+  async function ensurePayload(row, onProgress) {
     if (!state.payloads.has(row.id)) {
-      state.payloads.set(row.id, await fetchJson(`data/map_recovery/${row.src}`, { cache: "no-store" }));
+      state.payloads.set(row.id, await fetchJson(`data/map_recovery/${row.src}`, { cache: "no-store", onProgress }));
     }
     return state.payloads.get(row.id);
   }
@@ -3359,9 +3371,25 @@
     const members = memberRows
       .sort((a, b) => a.id.localeCompare(b.id))
       .map((item) => ({ id: item.id, row: item }));
-    await Promise.all(members.map(async (member) => {
-      member.payload = await ensurePayload(member.row);
+    const phases = members.map((member) => state.payloads.has(member.id) ? "preparing" : "downloading");
+    const updatePayloadPhase = () => {
+      if (request !== state.mapLoadRequest) return;
+      const phase = phases.includes("downloading") ? "downloading" : phases.includes("parsing") ? "parsing" : "preparing";
+      window.WebUI?.updateLoaderPhase?.("map-recovery", phase);
+    };
+    updatePayloadPhase();
+    await Promise.all(members.map(async (member, index) => {
+      member.payload = await ensurePayload(member.row, (_ratio, _loaded, _total, phase) => {
+        phases[index] = phase;
+        updatePayloadPhase();
+        if (phase === "parsing" && request === state.mapLoadRequest) return window.WebUI.nextPaint();
+      });
+      phases[index] = "preparing";
+      updatePayloadPhase();
     }));
+    if (request !== state.mapLoadRequest) return false;
+    window.WebUI?.updateLoaderPhase?.("map-recovery", "preparing");
+    await window.WebUI?.nextPaint?.();
     if (request !== state.mapLoadRequest) return false;
     await window.WebUI?.mapEncounters?.load(members.map((member) => member.id));
     if (request !== state.mapLoadRequest) return false;
@@ -3423,8 +3451,12 @@
     state.previewId = "";
     state.filePath = "";
     state.inspectorKey = "";
+    window.WebUI?.updateLoaderPhase?.("map-recovery", "rendering");
+    await window.WebUI?.nextPaint?.();
+    if (request !== state.mapLoadRequest) return false;
     render();
-    return true;
+    await window.WebUI?.nextPaint?.();
+    return request === state.mapLoadRequest;
   }
 
   async function switchMap(id, variantId = "") {
@@ -3473,20 +3505,19 @@
         ? await fetchJson("data/map_recovery/index.json", {
           cache: force ? "reload" : "no-store",
           signal: state.loadController.signal,
-          onProgress: (ratio) => window.WebUI?.updateLoader?.("map-recovery", ratio == null ? null : ratio * 0.3, t("loading")),
+          onProgress: window.WebUI.loaderProgress("map-recovery", () => request === state.loadRequest),
         })
         : state.index;
       await Promise.all([window.WebUI.updateBadges.load("map"), window.WebUI.updateBadges.loadFiles()]);
       if (request !== state.loadRequest) return null;
-      window.WebUI?.updateLoader?.("map-recovery", 0.35, t("loading"));
+      window.WebUI?.updateLoaderPhase?.("map-recovery", "preparing");
       await window.WebUI?.nextPaint?.();
+      if (request !== state.loadRequest) return null;
       // Payloads are fetched in parallel by loadMap. Keep the shared loader
       // indeterminate while those files are being decoded and merged.
-      window.WebUI?.updateLoader?.("map-recovery", null, t("loading"));
       const initialId = state.selected || state.index.defaultMap;
       const loaded = await loadMap(initialId, { includeRegion: state.regionScope === "all" && stitchOnInitialOpen(initialId) });
       if (request !== state.loadRequest) return null;
-      window.WebUI?.updateLoader?.("map-recovery", 1, t("loading"));
       return loaded;
     } catch (error) {
       if (request !== state.loadRequest || error?.name === "AbortError") return null;

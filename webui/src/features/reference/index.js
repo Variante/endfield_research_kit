@@ -384,8 +384,7 @@
         }
         return payload;
       })
-      .then(async (payload) => {
-        await Promise.all([window.WebUI.updateBadges.load("reference"), window.WebUI.updateBadges.loadFiles()]);
+      .then((payload) => {
         const normalized = applyReferenceTableMetadata(payload, table);
         if (generation === REF_STATE.dataGeneration) {
           REF_STATE.tableCache.set(cacheKey, normalized);
@@ -586,24 +585,26 @@
     const generation = REF_STATE.dataGeneration;
     window.WebUI.showLoader("reference");
     REF_STATE.loadingIndex = window.WebUI.fetchWithProgress(referenceDataPath("index.json", language), {
-      // Downloading is only part of the work; reserve the last 10% for parsing
-      // and rendering so the bar does not sit at 100% while the page is busy.
-      onProgress: (ratio) => {
-        if (generation === REF_STATE.dataGeneration) window.WebUI.updateLoader("reference", ratio == null ? null : ratio * 0.9);
-      },
+      onProgress: window.WebUI.loaderProgress("reference", () => generation === REF_STATE.dataGeneration),
     })
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((payload) => {
+      .then(async (payload) => {
+        if (generation !== REF_STATE.dataGeneration) return null;
+        window.WebUI.updateLoaderPhase("reference", "rendering");
+        await window.WebUI.nextPaint();
+        if (generation !== REF_STATE.dataGeneration) return null;
+        await Promise.all([window.WebUI.updateBadges.load("reference"), window.WebUI.updateBadges.loadFiles()]);
         if (generation !== REF_STATE.dataGeneration) return null;
         REF_STATE.index = payload || {};
         REF_STATE.tables = aggregateReferenceTables(Array.isArray(payload && payload.tables) ? payload.tables : []);
-        REF_STATE.loadingIndex = null;
         renderReferenceFacets();
         renderReferenceList();
-        window.WebUI.updateLoader("reference", 1);
+        await window.WebUI.nextPaint();
+        if (generation !== REF_STATE.dataGeneration) return null;
+        REF_STATE.loadingIndex = null;
         window.WebUI.hideLoader("reference");
         return REF_STATE.index;
       })
@@ -670,6 +671,7 @@
     REF_STATE.facets = window.WebUI.facets.create({
       countMode: "total", // chip counts are dataset totals, as on every other page
       groups: [
+        window.WebUI.updateBadges.filterGroup("reference", (table) => window.WebUI.updateBadges.sourceTableStatuses(table.table)),
         { id: "group", container: "#reference-group-filter", section: "reference-group",
           values: tablePrefix, title: (prefix) => prefix, single: true,
           className: "reference-group-chip" },
@@ -678,6 +680,8 @@
       ],
       chipClassName: "reference-filter-chip",
       onChange: () => {
+        REF_STATE.focusRowId = "";
+        REF_STATE.rowPagerKey = "";
         REF_STATE.pager?.reset();
         renderReferenceList();
         renderReferenceRows();
@@ -692,6 +696,7 @@
   }
 
   function renderReferenceFacets() {
+    window.WebUI.updateBadges.syncFilter("reference", "reference", referenceFacets());
     referenceFacets().render(REF_STATE.tables);
   }
 
@@ -1148,15 +1153,17 @@
 
     const q = referenceQuery();
     // A row a maintained reference asked to focus stays visible even when the
-    // active search would hide it, so following a reference never lands on an
-    // empty pane. The filter is otherwise untouched.
+    // active search would hide it. Explicit version-change filters still apply.
     const focusRowId = REF_STATE.focusRowId;
-    const rows = (payload.rows || []).filter(
-      (row) => rowMatches(row, q) || (focusRowId && String(row.id || "") === focusRowId),
-    );
+    const updates = referenceFacets().active("update");
+    const rows = (payload.rows || []).filter((row) => {
+      const status = window.WebUI.updateBadges.status("reference", `${String(table.table || "").replace(/\.json$/, "")}/${row.id}`);
+      return (!updates.size || updates.has(status))
+        && (rowMatches(row, q) || (focusRowId && String(row.id || "") === focusRowId));
+    });
     const wrap = ref$("#reference-rows");
     const pager = ensureReferenceRowPager(wrap);
-    const pagerKey = `${table.file}\u0000${q}`;
+    const pagerKey = `${table.file}\u0000${q}\u0000${[...updates].sort().join(",")}`;
     pager.setTotal(rows.length, { reset: REF_STATE.rowPagerKey !== pagerKey });
     REF_STATE.rowPagerKey = pagerKey;
     if (focusRowId) pager.showIndex(rows.findIndex((row) => String(row.id || "") === focusRowId));

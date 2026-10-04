@@ -484,8 +484,7 @@
 
     window.WebUI.showLoader("updates");
     UPDATE_STATE.loading = window.WebUI.fetchWithProgress("data/updates/latest.json", {
-      // Reserve the last 10% for parsing and rendering after the download ends.
-      onProgress: (ratio) => window.WebUI.updateLoader("updates", ratio == null ? null : ratio * 0.9),
+      onProgress: window.WebUI.loaderProgress("updates"),
     })
       .then((res) => {
         if (res.status === 404) {
@@ -498,14 +497,16 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.json();
       })
-      .then((payload) => {
+      .then(async (payload) => {
+        window.WebUI.updateLoaderPhase("updates", "rendering");
+        await window.WebUI.nextPaint();
         UPDATE_STATE.loaded = true;
         UPDATE_STATE.loading = null;
         UPDATE_STATE.payload = payload || {};
         UPDATE_STATE.entries = aggregateUpdateEntriesByHash(Array.isArray(payload && payload.entries) ? payload.entries : []);
         populateUpdateFilters();
         applyUpdateFilters();
-        window.WebUI.updateLoader("updates", 1);
+        await window.WebUI.nextPaint();
         window.WebUI.hideLoader("updates");
         return UPDATE_STATE.payload;
       })
@@ -712,20 +713,12 @@
     return url.toString();
   }
 
-  function fallbackAssetSourceRoots() {
-    return {
-      Unity: "export_full/game/Unity",
-      Game: "export_full/game",
-      Audio: "export_full/game/Audio",
-    };
-  }
-
   function updateAssetHref(rel) {
     const payload = UPDATE_STATE.payload || {};
     const assets = payload.assets || {};
     return exportFullHref(
       rel,
-      { ...fallbackAssetSourceRoots(), ...(assets.sourceRoots || {}) },
+      assets.sourceRoots,
       assets.sourceRoot || "export_full",
     );
   }
@@ -784,7 +777,7 @@
     if (!rel) return "";
     return exportRouteHref(
       rel,
-      { ...fallbackAssetSourceRoots(), ...(assets.previousSourceRoots || {}) },
+      assets.previousSourceRoots,
       assets.previousSourceRoot || "export_1d2",
       "export_previous",
     );

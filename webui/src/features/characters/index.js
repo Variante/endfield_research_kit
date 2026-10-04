@@ -14,7 +14,6 @@
 //     automatic or manual grouping, naming, evidence or overrides, and its
 //     absence leaves the page fully usable without badges.
 (() => {
-  const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const PANE_STORAGE_KEY = "webui_characters_splitter_width";
   const FILTER_HEIGHT_STORAGE_KEY = "webui_filter_splitter_height_characters";
   const FILTER_PANEL_STORAGE_KEY = "webui_characters_filters_collapsed";
@@ -45,11 +44,7 @@
     filterSignature: "",
   };
 
-  const esc = (value) => String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
+  const esc = window.WebUI.escapeHtml;
   const currentLanguage = () => String(document.querySelector("#language")?.value || "CN").toUpperCase();
   const zh = () => String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh").toLowerCase().startsWith("zh");
   const ui = (en, cn) => zh() ? cn : en;
@@ -124,18 +119,7 @@
     if (dotIdx < 0) return false;
     return IMAGE_EXTENSIONS.has(name.slice(dotIdx).toLowerCase());
   }
-  // Same fallback used by the Updates feature: the full sourceRoots map lives
-  // in the ~150MB assets/index.json, so this mirrors its source labels
-  // instead of loading that file just to preview a thumbnail.
-  const ASSET_SOURCE_ROOTS = {
-    Unity: "export_full/game/Unity",
-    Game: "export_full/game",
-    Audio: "export_full/game/Audio",
-  };
-  function assetImageHref(rel) {
-    const exportFullHref = window.WebUI?.exportFullHref;
-    return exportFullHref ? exportFullHref(rel, ASSET_SOURCE_ROOTS, "export_full") : "";
-  }
+  const assetImageHref = window.WebUI.exportFullHref;
   const kindLabel = (kind) => ({
     character: ui("Playable character", "可玩角色"),
     npc: "NPC",
@@ -607,15 +591,6 @@
     return sortRecords(rows);
   }
 
-  function isMobileLayout() {
-    return !!window.matchMedia?.(MOBILE_LAYOUT_QUERY).matches;
-  }
-
-  function parsePixels(value, fallback = 0) {
-    const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  }
-
   function renderFilterChips() {
     ensureFacets().render(displayRecords());
     const records = groupedRecords();
@@ -640,123 +615,29 @@
   }
 
   function setupFilterPanel() {
-    state.filterPanel = window.WebUI?.filters?.createPanelToggle?.({
+    state.filterPanel = window.WebUI.filters.createPanelToggle({
       panel: "#characters-filter-panel",
       toggle: "#characters-filter-toggle",
       left: "#characters-left",
       storageKey: FILTER_PANEL_STORAGE_KEY,
-      isMobile: isMobileLayout,
       labels: (collapsed) => ui(collapsed ? "Show filters" : "Hide filters", collapsed ? "显示筛选" : "隐藏筛选"),
       onChange: () => window.dispatchEvent(new Event("resize")),
-    }) || null;
+    });
   }
 
   function setupSplitters() {
-    const setupSplitter = window.WebUI?.setupSplitter;
-    const utils = window.WebUI?.splitterUtils;
     const shell = state.container;
-    const sidebar = shell?.querySelector("#characters-left");
-    const paneHandle = shell?.querySelector("#characters-splitter");
-    const filterPanel = shell?.querySelector("#characters-filter-panel");
-    const filterHandle = shell?.querySelector("#characters-filter-splitter");
-    const list = shell?.querySelector("#characters-list");
-    if (!setupSplitter || !utils || !shell || !sidebar || !paneHandle || !filterPanel || !filterHandle || !list) return;
-
-    let paneWasMobile = isMobileLayout();
-    setupSplitter({
-      handle: paneHandle,
-      storageKey: PANE_STORAGE_KEY,
-      bodyDragClass: "is-resizing-pane",
-      client: (event) => event.clientX,
-      keys: { decrease: ["ArrowLeft"], increase: ["ArrowRight"] },
-      enabled: () => !isMobileLayout(),
-      bounds: () => {
-        const min = parsePixels(getComputedStyle(sidebar).minWidth, 320);
-        const handleWidth = Math.max(1, paneHandle.getBoundingClientRect().width);
-        return { min, max: Math.max(min, shell.getBoundingClientRect().width - handleWidth - 320) };
-      },
-      read: () => parsePixels(sidebar.style.width, sidebar.getBoundingClientRect().width),
-      write: (width) => { sidebar.style.width = `${Math.round(width)}px`; },
-      clear: () => { sidebar.style.removeProperty("width"); },
-      sync: (ctrl) => {
-        if (isMobileLayout()) {
-          paneWasMobile = true;
-          ctrl.clear({ commit: false });
-          return;
-        }
-        if (shell.getBoundingClientRect().width < 48) return;
-        let width = parsePixels(sidebar.style.width, sidebar.getBoundingClientRect().width);
-        if (paneWasMobile || !sidebar.style.width) {
-          const stored = utils.readStoredNumber(PANE_STORAGE_KEY);
-          if (stored !== null) width = stored;
-        }
-        paneWasMobile = false;
-        ctrl.set(width, { persist: false, commit: false });
-      },
+    window.WebUI.setupListShellSplitters({
+      shell,
+      sidebar: shell.querySelector("#characters-left"),
+      pane: shell.querySelector("#characters-splitter"),
+      panel: shell.querySelector("#characters-filter-panel"),
+      filter: shell.querySelector("#characters-filter-splitter"),
+      list: shell.querySelector("#characters-list"),
+      paneStorageKey: PANE_STORAGE_KEY,
+      filterStorageKey: FILTER_HEIGHT_STORAGE_KEY,
+      minSidebarWidth: 320,
     });
-
-    const minPanelHeight = 56;
-    const minListHeight = 160;
-    let filterWasMobile = isMobileLayout();
-    const naturalFilterHeight = () => {
-      const previous = filterPanel.style.height;
-      const resized = filterPanel.classList.contains("is-filter-resized");
-      filterPanel.style.removeProperty("height");
-      filterPanel.classList.remove("is-filter-resized");
-      const height = Math.ceil(filterPanel.getBoundingClientRect().height);
-      if (previous) filterPanel.style.height = previous;
-      filterPanel.classList.toggle("is-filter-resized", resized);
-      return Math.max(minPanelHeight, height);
-    };
-    const filterBounds = () => {
-      let fixedHeight = 0;
-      for (const child of sidebar.children) {
-        if (child === filterPanel || child === list) continue;
-        fixedHeight += child.getBoundingClientRect().height;
-      }
-      const available = Math.max(minPanelHeight, sidebar.getBoundingClientRect().height - fixedHeight - minListHeight);
-      return { min: minPanelHeight, max: Math.max(minPanelHeight, Math.min(available, naturalFilterHeight())) };
-    };
-    const filterController = setupSplitter({
-      handle: filterHandle,
-      storageKey: FILTER_HEIGHT_STORAGE_KEY,
-      bodyDragClass: "is-resizing-filter",
-      client: (event) => event.clientY,
-      keys: { decrease: ["ArrowUp"], increase: ["ArrowDown"] },
-      enabled: () => !isMobileLayout() && !filterPanel.hidden,
-      bounds: filterBounds,
-      read: () => filterPanel.getBoundingClientRect().height,
-      write: (height) => {
-        filterPanel.style.height = `${Math.round(height)}px`;
-        filterPanel.classList.add("is-filter-resized");
-      },
-      clear: () => {
-        filterPanel.style.removeProperty("height");
-        filterPanel.classList.remove("is-filter-resized");
-      },
-      sync: (ctrl) => {
-        if (isMobileLayout() || filterPanel.hidden) {
-          filterWasMobile = isMobileLayout();
-          ctrl.clear({ commit: false });
-          return;
-        }
-        if (sidebar.getBoundingClientRect().height < 48) return;
-        const stored = utils.readStoredNumber(FILTER_HEIGHT_STORAGE_KEY);
-        if (stored !== null) {
-          filterWasMobile = false;
-          ctrl.set(stored, { persist: false, commit: false });
-        } else {
-          if (filterWasMobile) ctrl.clear({ commit: false });
-          filterWasMobile = false;
-          ctrl.syncAria();
-        }
-      },
-    });
-    if (window.MutationObserver && filterController) {
-      const observer = new MutationObserver(filterController.requestSync);
-      observer.observe(filterPanel, { attributes: true, attributeFilter: ["hidden"] });
-      observer.observe(filterPanel, { childList: true, subtree: true });
-    }
   }
 
   function renderShell() {
@@ -1472,7 +1353,6 @@
     if (document.body.dataset.activeView === "characters" || location.hash === "#characters") load();
   }
 
-  window.WebUI = window.WebUI || {};
   window.WebUI.characters = { init, load };
   window.addEventListener("webui:view-changed", (event) => {
     if (event.detail?.view === "characters") load();

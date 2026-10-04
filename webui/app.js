@@ -866,7 +866,7 @@ function ensureStoryOrderOcrPayloadForDebug() {
   if (!STATE.showDebug || STATE.storyOrderOcrPayload || STATE.storyOrderOcrPromise) return;
   void loadStoryOrderOcrPayload().then(() => {
     if (!STATE.showDebug) return;
-    if (typeof renderList === "function") renderList();
+    renderList();
     const cached = STATE.selectedKey ? STATE.convCache.get(STATE.selectedKey) : null;
     if (cached) renderConv(cached);
   }).catch(() => {});
@@ -905,9 +905,7 @@ function ensureStoryOrderMissionForEdit(missionId) {
   if (!missions || typeof missions !== "object") return null;
   let mission = missions[missionKey];
   if (!mission || typeof mission !== "object" || !Array.isArray(mission.order) || !mission.order.length) {
-    const baseline = typeof storyOrderMissionBaselineOrder === "function"
-      ? storyOrderMissionBaselineOrder(missionKey)
-      : [];
+    const baseline = storyOrderMissionBaselineOrder(missionKey);
     if (!baseline.length) return null;
     mission = missions[missionKey] = {
       level: "",
@@ -1071,10 +1069,7 @@ function buildFullStoryOrderPayload() {
   }
 
   const sortedMissions = {};
-  const missionKeys = Object.keys(payload.missions).sort((a, b) => {
-    if (typeof missionSort === "function") return missionSort(a, b);
-    return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
-  });
+  const missionKeys = Object.keys(payload.missions).sort(missionSort);
   for (const missionId of missionKeys) {
     const mission = payload.missions[missionId];
     if (!mission || typeof mission !== "object") continue;
@@ -1127,9 +1122,7 @@ function setStoryOrderMissionLocked(missionId, locked) {
   if (!missions || typeof missions !== "object") return false;
   let mission = missions[missionKey];
   if (!mission || typeof mission !== "object" || !Array.isArray(mission.order) || !mission.order.length) {
-    const baseline = typeof storyOrderMissionBaselineOrder === "function"
-      ? storyOrderMissionBaselineOrder(missionKey)
-      : [];
+    const baseline = storyOrderMissionBaselineOrder(missionKey);
     if (!baseline.length) return false;
     mission = missions[missionKey] = {
       level: "",
@@ -1254,7 +1247,7 @@ function clearStoryMissionDerivedCaches(entry, missionId) {
   if (!entry) return false;
   const dataTypes = entry._dataTypesNormalized;
   if (!Array.isArray(dataTypes)) return false;
-  const storyType = typeof storyMissionTypeFromId === "function" ? storyMissionTypeFromId(missionId) : "";
+  const storyType = storyMissionTypeFromId(missionId);
   if (storyType && dataTypes.includes(storyType)) return false;
   delete entry._dataTypesNormalized;
   return true;
@@ -1280,7 +1273,7 @@ function applyStoryOrderGroupingOverridesToEntries(entries = STATE.entries) {
 }
 
 function storyOrderMissionIdForEntry(entry) {
-  const storyMissionId = typeof entryStoryMissionId === "function" ? entryStoryMissionId(entry) : "";
+  const storyMissionId = entryStoryMissionId(entry);
   return storyMissionId || String(entry && entry.m || "");
 }
 
@@ -1291,9 +1284,7 @@ function storyOrderMissionIdForEntry(entry) {
 function sceneOrderInfoForEntry(entry) {
   const missionId = storyOrderMissionIdForEntry(entry);
   if (!missionId) return null;
-  const tr = typeof getMissionTimelineRecovery === "function"
-    ? getMissionTimelineRecovery(missionId)
-    : null;
+  const tr = getMissionTimelineRecovery(missionId);
   const info = tr && tr.sceneOrderInfo;
   if (!info || typeof info !== "object") return null;
   return info[String(entry && entry.k || "")] || null;
@@ -1309,8 +1300,7 @@ const SCENE_ORDER_CONF_LABEL = {
 // in the mission's current order. Empty when the mission JSON isn't cached yet.
 function storyOrderMissionUncertainKeys(missionId) {
   if (!missionId) return [];
-  const tr = typeof getMissionTimelineRecovery === "function"
-    ? getMissionTimelineRecovery(missionId) : null;
+  const tr = getMissionTimelineRecovery(missionId);
   const info = tr && tr.sceneOrderInfo;
   if (!info || typeof info !== "object") return [];
   const mission = STATE.storyOrderPayload && STATE.storyOrderPayload.missions
@@ -1339,8 +1329,8 @@ function jumpToNextUncertainRow(missionId) {
   const entry = Array.isArray(STATE.entries)
     ? STATE.entries.find((en) => en && en.k === target) : null;
   if (!entry) return false;
-  if (typeof loadConv === "function") loadConv(target);
-  if (typeof revealEntryInTree === "function") revealEntryInTree(entry);
+  loadConv(target);
+  revealEntryInTree(entry);
   return true;
 }
 
@@ -1355,9 +1345,7 @@ function storyOrderOcrRankForEntry(entry) {
   if (!STATE.showDebug || (STATE.sortMode || "story") !== "story") return null;
   const payload = STATE.storyOrderOcrPayload;
   if (!payload) return null;
-  const missionId = typeof storyOrderMissionIdForEntry === "function"
-    ? storyOrderMissionIdForEntry(entry)
-    : String(entry && entry.m || "");
+  const missionId = storyOrderMissionIdForEntry(entry);
   const order = storyOrderMissionOrderFromPayload(payload, missionId);
   const index = order.indexOf(String(entry && entry.k || ""));
   return index >= 0 ? index + 1 : null;
@@ -1370,9 +1358,7 @@ function storyOrderMissionCurrentOrder(missionId) {
     && STATE.storyOrderPayload.missions[missionKey];
   const order = overrideKeyList(mission && mission.order);
   if (order.length) return order;
-  return typeof storyOrderMissionBaselineOrder === "function"
-    ? storyOrderMissionBaselineOrder(missionKey)
-    : [];
+  return storyOrderMissionBaselineOrder(missionKey);
 }
 
 function storyOrderAppendMissing(out, seen, values) {
@@ -1390,13 +1376,9 @@ function completeStoryOrderSourceOrder(missionId, primaryOrder) {
   const seen = new Set();
   storyOrderAppendMissing(out, seen, overrideKeyList(primaryOrder));
   storyOrderAppendMissing(out, seen, storyOrderMissionCurrentOrder(missionKey));
-  if (typeof storyOrderMissionBaselineOrder === "function") {
-    storyOrderAppendMissing(out, seen, storyOrderMissionBaselineOrder(missionKey));
-  }
+  storyOrderAppendMissing(out, seen, storyOrderMissionBaselineOrder(missionKey));
   for (const entry of STATE.entries || []) {
-    const mid = typeof storyOrderMissionIdForEntry === "function"
-      ? storyOrderMissionIdForEntry(entry)
-      : String(entry && entry.m || "");
+    const mid = storyOrderMissionIdForEntry(entry);
     if (String(mid) === missionKey) storyOrderAppendMissing(out, seen, [entry && entry.k]);
   }
   return out;
@@ -1409,8 +1391,7 @@ function storyOrderSourceRank(value, fallback = Number.POSITIVE_INFINITY) {
 
 function storyOrderMissionStaticRecoveredSourceOrder(missionId) {
   const missionKey = String(missionId || "");
-  const tr = typeof getMissionTimelineRecovery === "function"
-    ? getMissionTimelineRecovery(missionKey) : null;
+  const tr = getMissionTimelineRecovery(missionKey);
   const info = tr && tr.sceneOrderInfo;
   if (!info || typeof info !== "object") return [];
   const baseOrder = storyOrderMissionCurrentOrder(missionKey);
@@ -1635,7 +1616,7 @@ function ensureStoryTriggerManifestForDebug() {
   if (!STATE.showDebug || STATE.storyTriggerLoadState === "loaded" || STATE.storyTriggerPromise) return;
   void loadStoryTriggerManifest().then(() => {
     if (!STATE.showDebug) return;
-    if (typeof rebuildTree === "function") rebuildTree({ resetScroll: false });
+    rebuildTree({ resetScroll: false });
     const cached = STATE.selectedKey ? STATE.convCache.get(STATE.selectedKey) : null;
     if (cached) renderConv(cached);
   });
@@ -2045,8 +2026,8 @@ function readingArchiveLinkSignal(value) {
 }
 
 function readingArchiveContentKey(entry) {
-  const isPopup = typeof entryIsReadingPopup === "function" && entryIsReadingPopup(entry);
-  const isArchive = typeof isPrtsArchiveEntry === "function" && isPrtsArchiveEntry(entry);
+  const isPopup = entryIsReadingPopup(entry);
+  const isArchive = isPrtsArchiveEntry(entry);
   if (!isPopup && !isArchive) return "";
   const preview = normalizeReadingArchiveLinkPart(entry && entry.p);
   if (!preview) return "";
@@ -2062,9 +2043,7 @@ function readingArchiveContentKey(entry) {
 }
 
 function readingArchiveMissionKey(entry) {
-  return typeof entryTreeMissionId === "function"
-    ? entryTreeMissionId(entry)
-    : String(entry && entry.m || "");
+  return entryTreeMissionId(entry);
 }
 
 function uniqueReadingArchiveKeys(keys) {
@@ -3451,7 +3430,7 @@ function applyUiStrings() {
   }
   syncGenderVariantControl();
   $("#q").placeholder = uiText("searchPlaceholder");
-  if (typeof syncStoryOrderEditor === "function") syncStoryOrderEditor();
+  syncStoryOrderEditor();
   syncRevealCurrentButton();
   syncFilterPanel();
 }
@@ -3548,21 +3527,21 @@ async function switchLanguage(languageCode, { preserveSelection = true, requeste
   try {
     const res = await fetchJson(dataPath("index.json", info.code), {
       fresh: true,
-      // Map the index download (the dominant payload) onto the first half of the bar.
-      onProgress: (ratio) => window.WebUI.updateLoader("story", ratio == null ? null : ratio * 0.5),
+      onProgress: window.WebUI.loaderProgress("story", () => token === STATE.indexRequestToken),
     });
     if (!res.ok) throw new Error(`index.json HTTP ${res.status}`);
     const index = await res.json();
     if (token !== STATE.indexRequestToken) return;
 
-    window.WebUI.updateLoader("story", 0.6);
+    window.WebUI.updateLoaderPhase("story", "preparing");
+    await window.WebUI.nextPaint();
+    if (token !== STATE.indexRequestToken) return;
     const [actorsPayload, missionsPayload, storyMediaPayload] = await Promise.all([
       loadLanguageSidecar(index, "actors", info.code),
       loadLanguageSidecar(index, "missions", info.code),
       loadStoryMediaPayload().catch(() => ({ entries: [] })),
     ]);
     if (token !== STATE.indexRequestToken) return;
-    window.WebUI.updateLoader("story", 0.8);
 
     STATE.index = index;
     STATE.actorNames = normalizeActorNames(actorsPayload.actorNames || {});
@@ -3587,9 +3566,9 @@ async function switchLanguage(languageCode, { preserveSelection = true, requeste
     STATE.rawStoryTypes = computeRawStoryTypes(STATE.entries);
     await ensureArchiveMetadataIndex(info.code, token);
     if (token !== STATE.indexRequestToken) return;
-    window.WebUI.updateLoader("story", 0.95);
-    // Let 95% paint before the chip-building + filtering render blocks.
+    window.WebUI.updateLoaderPhase("story", "rendering");
     await window.WebUI.nextPaint();
+    if (token !== STATE.indexRequestToken) return;
     STATE.prtsCategoryLabels = computePrtsCategoryLabels(STATE.entries);
     STATE.selectedKey = previousKey && STATE.entries.some((entry) => entry.k === previousKey)
       ? previousKey
@@ -3602,14 +3581,17 @@ async function switchLanguage(languageCode, { preserveSelection = true, requeste
       detail: { language: info.code },
     }));
 
-    window.WebUI.updateLoader("story", 1);
-    window.WebUI.hideLoader("story");
-
     if (STATE.selectedKey) {
+      window.WebUI.updateLoaderPhase("story", "preparing");
+      await window.WebUI.nextPaint();
+      if (token !== STATE.indexRequestToken) return;
       await loadConv(STATE.selectedKey);
     } else {
       clearConversationPane();
     }
+    await window.WebUI.nextPaint();
+    if (token !== STATE.indexRequestToken) return;
+    window.WebUI.hideLoader("story");
   } catch (error) {
     if (token !== STATE.indexRequestToken) return;
     window.WebUI.hideLoader("story");
@@ -3832,7 +3814,6 @@ function storyTriggerCategoryLabel(category) {
 }
 
 function storyTriggerView(key) {
-  if (!STORY_TRIGGERS || typeof STORY_TRIGGERS.triggerView !== "function") return null;
   return STORY_TRIGGERS.triggerView(STATE.storyTriggerManifest, key);
 }
 
@@ -3880,7 +3861,7 @@ function renderItem(row) {
   div.style.paddingLeft = (8 + 2 * 14) + "px";
   div.dataset.key = e.k;
 
-  const editable = typeof storyOrderEntryEditable === "function" ? storyOrderEntryEditable(e) : null;
+  const editable = storyOrderEntryEditable(e);
   let dragHandle = "";
   if (editable) {
     div.draggable = true;
@@ -3900,9 +3881,7 @@ function renderItem(row) {
       `</span>`;
   }
 
-  const missionIdForEntry = typeof storyOrderMissionIdForEntry === "function"
-    ? storyOrderMissionIdForEntry(e)
-    : "";
+  const missionIdForEntry = storyOrderMissionIdForEntry(e);
   const inStorySort = (STATE.sortMode || "story") === "story";
   let storyOrderTagState = STORY_ORDER_ENTRY_TAG_DEFAULT;
   let storyOrderTagBadge = "";
@@ -3910,11 +3889,7 @@ function renderItem(row) {
   let storyOrderTagToggle = "";
   let removeFromMissionButton = "";
   if (missionIdForEntry && inStorySort) {
-    storyOrderTagState = typeof storyOrderEntryTagState === "function"
-      ? storyOrderEntryTagState(missionIdForEntry, e.k)
-      : (typeof storyOrderEntryPossiblyUnused === "function" && storyOrderEntryPossiblyUnused(missionIdForEntry, e.k)
-        ? STORY_ORDER_ENTRY_TAG_UNUSED
-        : STORY_ORDER_ENTRY_TAG_DEFAULT);
+    storyOrderTagState = storyOrderEntryTagState(missionIdForEntry, e.k);
     const tagIsBranch = storyOrderTagState === STORY_ORDER_ENTRY_TAG_BRANCH;
     const tagIsUnused = storyOrderTagState === STORY_ORDER_ENTRY_TAG_UNUSED;
     if (tagIsBranch) {
@@ -3948,9 +3923,7 @@ function renderItem(row) {
         `<span class="story-order-unused-toggle-mark" aria-hidden="true">${toggleMark}</span>` +
         `<span class="story-order-unused-toggle-label">${toggleLabel}</span>` +
       `</button>`;
-    const hasCode = typeof storyOrderEntryHasMissionCode === "function"
-      ? storyOrderEntryHasMissionCode(missionIdForEntry, e.k)
-      : true;
+    const hasCode = storyOrderEntryHasMissionCode(missionIdForEntry, e.k);
     if (!hasCode) {
       div.classList.add("story-order-foreign-key");
       const removeLabel = escapeHtml(uiText("storyOrderRemoveFromMission"));
@@ -8871,8 +8844,8 @@ function storyOrderOpenKey(key) {
   if (!entryKey) return false;
   const entry = STATE.entryByKey instanceof Map ? STATE.entryByKey.get(entryKey) : null;
   if (!entry) return false;
-  if (typeof loadConv === "function") loadConv(entryKey);
-  if (typeof revealEntryInTree === "function") revealEntryInTree(entry);
+  loadConv(entryKey);
+  revealEntryInTree(entry);
   return true;
 }
 
@@ -9172,15 +9145,15 @@ function storyOrderBuilderCommit(missionKey) {
   const draft = storyOrderBuilderDraft(missionId, storyOrderComparisonSources(missionId));
   const order = overrideKeyList(draft.order);
   if (!missionId || !order.length) return false;
-  if (typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionId)) return false;
-  if (typeof setStoryOrderMissionOrder !== "function" || !setStoryOrderMissionOrder(missionId, order)) return false;
+  if (storyOrderMissionLocked(missionId)) return false;
+  if (!setStoryOrderMissionOrder(missionId, order)) return false;
   storyOrderSetBuilderDraft(missionId, order);
-  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
+  scheduleStoryOrderSave();
   const wrap = $("#list-wrap");
   const prevScroll = wrap ? wrap.scrollTop : 0;
-  if (typeof rebuildTree === "function") rebuildTree({ resetScroll: false });
+  rebuildTree({ resetScroll: false });
   if (wrap) wrap.scrollTop = prevScroll;
-  if (typeof renderList === "function") renderList();
+  renderList();
   storyOrderRefreshCurrentDetail();
   return true;
 }
@@ -9544,7 +9517,7 @@ function renderStoryOrderComparisonPanel(missionId, currentKey) {
   if (!sources.length) return null;
   const activeSort = storyOrderDefaultSortSource(sources);
   const draft = storyOrderBuilderDraft(missionKey, sources);
-  const locked = typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey);
+  const locked = storyOrderMissionLocked(missionKey);
 
   const panel = document.createElement("div");
   panel.className = "story-order-compare-panel";

@@ -200,6 +200,7 @@
       indexes: null,
     },
     loading: null,
+    loadToken: 0,
     showDebug: false,
     searchTokens: [],
     collapsedKinds: new Set(),
@@ -347,18 +348,18 @@
     return normalizeGameplaySelection(params.get("gameplay") || params.get("gameplayId") || params.get("entry") || "");
   }
 
-  function findGameplayEntry(value) {
+  function findGameplayEntry(value, entries = STATE.entries) {
     const id = normalizeGameplaySelection(value);
     if (!id) return null;
     const raw = String(value || "").trim();
     const exactKey = raw.includes(":") ? raw : "";
     if (exactKey) {
-      const exact = STATE.entries.find((entry) => entry && `${entry.kind}:${entry.id}` === exactKey);
+      const exact = entries.find((entry) => entry && `${entry.kind}:${entry.id}` === exactKey);
       if (exact) return exact;
     }
     const candidates = new Set([id]);
     if (!id.startsWith("wiki_")) candidates.add(`wiki_${id}`);
-    return STATE.entries.find((entry) => entry && (
+    return entries.find((entry) => entry && (
       candidates.has(entry.id)
       || candidates.has(`${entry.kind}:${entry.id}`)
       || storyWikiKeys(entry).some((key) => candidates.has(key))
@@ -489,10 +490,10 @@
     return storyWikiKeys(entry)[0] || "";
   }
 
-  function storyWikiHrefForKey(key) {
+  function storyWikiHrefForKey(key, language = STATE.language) {
     if (!key) return "";
     const params = new URLSearchParams();
-    params.set("lang", STATE.language || currentLanguage());
+    params.set("lang", language || currentLanguage());
     params.set("ui", STATE.uiLocale || "zh");
     params.set("story", key);
     return `?${params.toString()}#story`;
@@ -502,7 +503,7 @@
     return storyWikiHrefForKey(storyWikiKey(entry));
   }
 
-  function renderStoryWikiLink(entry) {
+  function renderStoryWikiLink(entry, language = STATE.language) {
     const activeGender = currentCharacterGender();
     const keys = isEndministrator(entry)
       ? storyWikiKeys(entry).filter((key) => {
@@ -511,7 +512,7 @@
       })
       : storyWikiKeys(entry);
     return keys.map((key) => {
-      const href = storyWikiHrefForKey(key);
+      const href = storyWikiHrefForKey(key, language);
       if (!href) return "";
       return `<a class="gameplay-detail-tag gameplay-detail-wiki-link gameplay-wiki-link" href="${escapeHtml(href)}"><span>${escapeHtml(text("storyWiki"))}</span></a>`;
     }).filter(Boolean).join("");
@@ -726,22 +727,22 @@
     return query?.tagIds || [];
   }
 
-  function gameplayTargetForItem(item) {
+  function gameplayTargetForItem(item, entries = STATE.entries) {
     const id = String(item?.id || "").trim();
     if (!id) return null;
     let kind = ["weapon", "character"].includes(String(item?.kind || "")) ? String(item.kind) : "";
     if (!kind && id.startsWith("wpn_")) kind = "weapon";
     if (!kind && id.startsWith("chr_")) kind = "character";
-    return kind ? findGameplayEntry(`${kind}:${id}`) : null;
+    return kind ? findGameplayEntry(`${kind}:${id}`, entries) : null;
   }
 
-  function materialChipRows(items) {
+  function materialChipRows(items, entries = STATE.entries) {
     return (items || [])
       .filter((item) => item && (item.name || item.id))
       .map((item) => {
         const label = item.name || item.id;
         const count = item.count !== undefined && item.count !== null && item.count !== "" ? formatValue(item.count) : "";
-        const target = gameplayTargetForItem(item);
+        const target = gameplayTargetForItem(item, entries);
         const icon = renderGameplayItemIcon(item, label, { static: Boolean(target) });
         if (target) {
           const targetKey = `${target.kind}:${target.id}`;
@@ -752,8 +753,8 @@
       .join("");
   }
 
-  function renderMaterialChips(items) {
-    const rows = materialChipRows(items);
+  function renderMaterialChips(items, entries = STATE.entries) {
+    const rows = materialChipRows(items, entries);
     return rows ? `<div class="gameplay-blackboard">${rows}</div>` : "";
   }
 
@@ -1773,7 +1774,7 @@
         <div class="gameplay-talent-level-title">${escapeHtml(row.name || `${text("potential")} ${formatValue(row.level === undefined || row.level === null ? "" : row.level)}`)}</div>
         ${meta ? `<div class="gameplay-skill-meta">${escapeHtml(meta)}</div>` : ""}
         ${description.html}
-        ${disclosure(text("configurationDetails"), values)}
+        ${values ? `<div class="gameplay-subheading">${escapeHtml(text("configurationDetails"))}</div>${values}` : ""}
         ${pictures ? `<div class="gameplay-subheading">${escapeHtml(text("potentialPictures"))}</div>${pictures}` : ""}
         ${topicImages ? `<div class="gameplay-subheading">${escapeHtml(text("potentialCardTopic"))}</div>${topicImages}` : ""}
         ${required ? `<div class="gameplay-subheading">${escapeHtml(text("requiredItems"))}</div>${required}` : ""}
@@ -2728,7 +2729,7 @@
         section(text("combatTalents"), talentGroups || (talentCards ? `<div class="gameplay-card-grid">${talentCards}</div>` : ""), "talents"),
         section(text("factoryTalents"), factoryGroups, "factory"),
         section(text("characterPotentials"), renderCharacterPotentials(entry), "potentials"),
-        section(text("growthMaterials"), disclosure(text("characterBreakthroughs"), renderCharacterBreakthroughs(entry)), "growth"),
+        section(text("growthMaterials"), renderCharacterBreakthroughs(entry), "growth"),
         section(text("characterAssets"), characterAssets, "assets"),
       ].join(""),
     };
@@ -3760,7 +3761,7 @@
     return rows ? `<div class="gameplay-card-grid">${rows}</div>` : "";
   }
 
-  function renderItemRewardCards(entry) {
+  function renderItemRewardCards(entry, entries = STATE.entries) {
     const chest = entry.chestData || {};
     const blocks = [];
     const chestDetails = renderChipPairs([
@@ -3768,12 +3769,12 @@
       { label: text("selectedCount"), value: chest.selectedCount },
     ]);
     if (chestDetails) blocks.push(chestDetails);
-    const randomItems = renderMaterialChips(chest.randomItems || []);
+    const randomItems = renderMaterialChips(chest.randomItems || [], entries);
     if (randomItems) blocks.push(`<div class="gameplay-subheading">${escapeHtml(text("randomItems"))}</div>${randomItems}`);
     const rewardCards = (chest.rewards || []).map((reward) => {
       if (!reward) return "";
-      const fixed = renderMaterialChips(reward.items || []);
-      const probable = renderMaterialChips(reward.probableItems || []);
+      const fixed = renderMaterialChips(reward.items || [], entries);
+      const probable = renderMaterialChips(reward.probableItems || [], entries);
       const quantityNote = reward.quantityDataUnavailable
         ? `<div class="gameplay-integration-note is-warning" role="status">${escapeHtml(text("rewardQuantityUnavailable"))}</div>`
         : "";
@@ -3816,11 +3817,46 @@
     };
   }
 
-  const INTEGRATION_ASSET_SOURCE_ROOTS = Object.freeze({
-    Unity: "export_full/game/Unity",
-    Game: "export_full/game",
-    Audio: "export_full/game/Audio",
-  });
+  // Item catalog details read the matching Gameplay publication without
+  // replacing the entity pane's language, selection or pending requests.
+  const itemIndexes = new Map();
+  let itemAssets = null;
+  async function catalogItem(id, language) {
+    if (!itemIndexes.has(language)) {
+      const pending = (async () => {
+        if (STATE.index && STATE.language === language) return STATE.index;
+        const response = await fetchWithProgress(gameplayDataPath(language));
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        return response.json();
+      })().catch((error) => { itemIndexes.delete(language); throw error; });
+      itemIndexes.set(language, pending);
+    }
+    const data = await itemIndexes.get(language);
+    const entries = Array.isArray(data.entries) ? data.entries : [];
+    return { entry: entries.find((row) => row.kind === "item" && row.id === id), entries };
+  }
+
+  async function itemContent(id, language) {
+    const { entry, entries } = await catalogItem(id, language);
+    if (!entry) return "";
+    return [
+      renderStoryWikiLink(entry, language),
+      entry.apSupplyData ? section(text("apRecoverValue"), renderChipPairs([
+        { label: text("apRecoverValue"), value: entry.apSupplyData.apRecoverValue },
+      ])) : "",
+      section(text("itemUse"), renderItemUse(entry)),
+      section(text("itemActions"), renderItemActions(entry)),
+      section(text("itemRewards"), renderItemRewardCards(entry, entries)),
+    ].join("");
+  }
+
+  async function itemGallery(id, language) {
+    const { entry } = await catalogItem(id, language);
+    if (!entry) return "";
+    const assets = await (itemAssets ||= fetchIntegrationJson(integrationPath("assets", language),
+      (payload) => payload && payload.entries && typeof payload.entries === "object").catch(() => null));
+    return renderGameplayAssetGallery(entry, assets);
+  }
 
   function integrationPath(kind, language) {
     const code = encodeURIComponent(String(language || "CN").toUpperCase());
@@ -3903,11 +3939,7 @@
     return url.toString();
   }
 
-  function gameplayAssetHref(rel) {
-    const helper = window.WebUI?.exportFullHref;
-    if (typeof helper === "function") return helper(rel, INTEGRATION_ASSET_SOURCE_ROOTS, "export_full");
-    return `/export_full/${String(rel || "").split("/").map((part) => encodeURIComponent(part)).join("/")}`;
-  }
+  const gameplayAssetHref = window.WebUI.exportFullHref;
 
   function gameplayAssetRefsForItem(item) {
     const itemId = String(item?.id || "").trim();
@@ -4073,9 +4105,9 @@
     return `<a class="gameplay-asset-path" href="${escapeHtml(gameplayAssetPageHref(rel))}" title="${escapeHtml(text("openAsset"))}"><span>${escapeHtml(title)}</span><code>${escapeHtml(rel)}</code></a>`;
   }
 
-  function renderGameplayAssetGallery(entry) {
+  function renderGameplayAssetGallery(entry, assets = STATE.integration.assets) {
     const key = `${entry?.kind || ""}:${entry?.id || ""}`;
-    const refs = STATE.integration.assets?.entries?.[key];
+    const refs = assets?.entries?.[key];
     if (!refs) return "";
     const kind = String(entry?.kind || "");
     const iconLike = ["weapon", "equipment", "item"].includes(kind);
@@ -4431,6 +4463,10 @@
       button.addEventListener("click", () => {
         const target = findGameplayEntry(button.dataset.gameplayRelatedKey || "");
         if (!target) return;
+        if (window.WebUI.gameplayTabs) {
+          window.WebUI.gameplayTabs.open(target.kind, target.id);
+          return;
+        }
         STATE.selected = target;
         // A related reward often points outside the current search/filter
         // result (for example, an item search pointing at a weapon).  Clear
@@ -4788,7 +4824,7 @@
   function renderKindTabs() {
     const active = [...STATE.facets.active("kinds")][0] || "character";
     gp$("#gameplay-count").textContent = formatNumber(STATE.entries.filter((entry) => entry.kind === active).length);
-    gp$("#gameplay-kind-tabs").innerHTML = KIND_ORDER.map((kind) => `<button type="button" class="page-mode-button${active === kind ? " is-active" : ""}" data-gameplay-kind="${kind}" aria-pressed="${active === kind}">${escapeHtml(kindLabel(kind))} (${formatNumber(STATE.entries.filter((entry) => entry.kind === kind).length)})</button>`).join("");
+    window.WebUI.gameplayTabs?.render();
     for (const [, suffix, , , kind] of ENTRY_FACET_GROUPS) {
       const section = gp$(`[data-filter-section="gameplay-${suffix}"]`);
       if (section) section.hidden = (kind || "character") !== active;
@@ -4796,10 +4832,15 @@
   }
 
   function selectKind(kind) {
-    STATE.facets.reset({ silent: true });
-    STATE.facets.set("kinds", [kind], { silent: true });
-    gp$("#gameplay-q").value = "";
+    const requested = findGameplayEntry(requestedGameplaySelection());
+    if (!STATE.facets.active("kinds").has(kind) || (requested && !STATE.filtered.includes(requested))) {
+      STATE.facets.reset({ silent: true });
+      STATE.facets.set("kinds", [kind], { silent: true });
+      gp$("#gameplay-q").value = "";
+    }
+    if (requested?.kind === kind) STATE.selected = requested;
     applyFilters();
+    if (requested?.kind === kind) revealSelectedInList();
   }
 
   function listTypeLabel(entry) {
@@ -4860,6 +4901,7 @@
           label: kindLabel, className: (kind) => KIND_CHIP_CLASS[kind] || "kind-chip",
           order: (a, b) => kindRank(a) - kindRank(b) || a.localeCompare(b) },
         ...entryGroups,
+        window.WebUI.updateBadges.filterGroup("gameplay", (entry) => window.WebUI.updateBadges.status("gameplay", `${entry.kind}:${entry.id}`)),
         { id: "rarities", container: "#gameplay-rarity-filter", section: "gameplay-rarity", values: rarityFilterKey,
           label: rarityFilterLabel, order: (a, b) => Number(b) - Number(a),
           countMode: "faceted", hideEmpty: true },
@@ -4869,6 +4911,7 @@
   }
 
   function buildFilterChips() {
+    window.WebUI.updateBadges.syncFilter("gameplay", "gameplay", STATE.facets);
     for (const [id, , key, label] of ENTRY_FACET_GROUPS) {
       facetLabels.set(id, new Map(STATE.entries.map((entry) => [key(entry), label(entry)]).filter(([value]) => value)));
     }
@@ -5077,22 +5120,35 @@
     const language = currentLanguage();
     if (!force && STATE.index && STATE.language === language) {
       if (STATE.integration.language !== language || STATE.integration.status === "idle") void loadGameplayIntegration(language);
-      return;
+      return STATE.index;
     }
-    if (STATE.loading) return STATE.loading;
+    if (!force && STATE.loading && STATE.language === language) return STATE.loading;
+    const token = ++STATE.loadToken;
+    ++STATE.integration.token;
     STATE.language = language;
+    STATE.index = null;
+    STATE.entries = [];
+    STATE.filtered = [];
+    STATE.selected = null;
+    if (force) { itemIndexes.clear(); itemAssets = null; }
     window.WebUI.showLoader?.("gameplay", text("loading"));
-    STATE.loading = (async () => {
+    const pending = (async () => {
       try {
         const res = await fetchWithProgress(gameplayDataPath(language), {
-          onProgress: (ratio) => window.WebUI.updateLoader?.("gameplay", ratio, text("loading")),
+          onProgress: window.WebUI.loaderProgress("gameplay", () => token === STATE.loadToken),
         });
         if (!res.ok) {
           if (res.status === 404) throw new Error(text("noData"));
           throw new Error(`${res.status} ${res.statusText}`.trim());
         }
         const data = await res.json();
+        if (token !== STATE.loadToken) return null;
+        window.WebUI.updateLoaderPhase("gameplay", "preparing");
         await Promise.all([window.WebUI.updateBadges.load("gameplay"), window.WebUI.updateBadges.loadFiles()]);
+        if (token !== STATE.loadToken) return null;
+        window.WebUI.updateLoaderPhase("gameplay", "rendering");
+        await window.WebUI.nextPaint();
+        if (token !== STATE.loadToken) return null;
         STATE.index = data || {};
         STATE.entries = Array.isArray(data.entries) ? data.entries : [];
         refreshGameplayFileSearch();
@@ -5101,42 +5157,35 @@
         gp$("#gameplay-count").textContent = formatNumber(STATE.entries.length);
         buildFilterChips();
         applyFilters();
+        await window.WebUI.nextPaint();
+        if (token !== STATE.loadToken) return null;
         void loadGameplayIntegration(language, force);
+        return STATE.index;
       } catch (err) {
+        if (token !== STATE.loadToken) return null;
         STATE.index = null;
         STATE.entries = [];
         STATE.filtered = [];
         gp$("#gameplay-count").textContent = "0";
         renderListNote(text("loadError", { message: err && err.message ? err.message : String(err) }));
+        renderDetail(null);
+        return null;
       } finally {
-        window.WebUI.hideLoader?.("gameplay");
-        STATE.loading = null;
+        if (token === STATE.loadToken) {
+          window.WebUI.hideLoader?.("gameplay");
+          STATE.loading = null;
+        }
       }
     })();
+    STATE.loading = pending;
     return STATE.loading;
   }
 
-  function maybeLoadGameplay(force = false) {
-    if (isGameplayActive()) loadGameplay(force);
-  }
-
   function bindEvents() {
-    gp$("#gameplay-kind-tabs")?.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-gameplay-kind]");
-      if (button) selectKind(button.dataset.gameplayKind);
-    });
     gp$("#gameplay-q")?.addEventListener("input", () => applyFilters());
     gp$("#gameplay-sort")?.addEventListener("change", () => applyFilters());
     gp$("#gameplay-reset")?.addEventListener("click", () => resetFilters());
     gp$("#gameplay-reveal-current")?.addEventListener("click", () => revealSelectedInList());
-    window.addEventListener("webui:view-changed", (event) => {
-      if (event.detail && event.detail.view === "gameplay") loadGameplay();
-    });
-    window.addEventListener("hashchange", () => maybeLoadGameplay());
-    window.addEventListener("webui:language-changed", (event) => {
-      STATE.language = String((event.detail && event.detail.language) || currentLanguage()).toUpperCase();
-      if (isGameplayActive()) loadGameplay(true);
-    });
     window.addEventListener("webui:ui-locale-changed", (event) => {
       STATE.uiLocale = normalizeUiLocale(event.detail && event.detail.locale) || STATE.uiLocale;
       applyUiStrings();
@@ -5168,9 +5217,15 @@
     });
     bindEvents();
     applyUiStrings();
-    maybeLoadGameplay();
   }
 
+  window.WebUI.gameplay = {
+    load: loadGameplay, selectKind, itemContent, itemGallery,
+    count: (kind) => STATE.index ? STATE.entries.filter((entry) => entry.kind === kind).length : null,
+    resolveKind: (value) => findGameplayEntry(value)?.kind || "",
+    normalizeSelection: normalizeGameplaySelection,
+    invalidateItems: () => { itemIndexes.clear(); itemAssets = null; },
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 })();

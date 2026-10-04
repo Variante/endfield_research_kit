@@ -15,6 +15,7 @@ def production_source_records(tables: dict[str, dict[str, Any]]) -> dict[str, di
     publication = build_catalog(tables, {})
     catalog = publication["records"]
     aliases = publication["itemAliases"]
+    recipe_aliases = publication.get("recipeAliases", {})
     result = {}
     for kind, records in catalog.items():
         for key, record in records.items():
@@ -59,7 +60,8 @@ def production_source_records(tables: dict[str, dict[str, Any]]) -> dict[str, di
                         building(value["machineId"])
                     for building_id in value.get("buildingIds", []):
                         building(building_id)
-                    recipe = catalog["recipes"].get(str(value.get("id", "")))
+                    recipe_id = str(value.get("id", ""))
+                    recipe = catalog["recipes"].get(recipe_aliases.get(recipe_id, recipe_id))
                     if str(value.get("type")) in {"machine", "hub", "manual"} and recipe:
                         receipts(recipe)
                         building(recipe["machineId"])

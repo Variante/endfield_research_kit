@@ -12,7 +12,7 @@
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
 
   function isMobileLayout() {
-    return !!(window.matchMedia && window.matchMedia(MOBILE_LAYOUT_QUERY).matches);
+    return window.matchMedia(MOBILE_LAYOUT_QUERY).matches;
   }
 
   function parseCssPixels(value, fallback = 0) {
@@ -223,6 +223,102 @@
     return ctrl;
   }
 
+  // Sidebar width and filter height share the same layout and persistence rules.
+  function setupListShellSplitters({
+    shell, sidebar, pane, panel = null, filter = null, list = null, paneStorageKey, filterStorageKey = "", minSidebarWidth = 300,
+  }) {
+    if (!shell || !sidebar || !pane) return;
+
+    let paneWasMobile = isMobileLayout();
+    setupSplitter({
+      handle: pane,
+      storageKey: paneStorageKey,
+      bodyDragClass: "is-resizing-pane",
+      client: (event) => event.clientX,
+      keys: { decrease: ["ArrowLeft"], increase: ["ArrowRight"] },
+      enabled: () => !isMobileLayout(),
+      bounds: () => {
+        const min = parseCssPixels(getComputedStyle(sidebar).minWidth, minSidebarWidth);
+        return { min, max: Math.max(min, shell.getBoundingClientRect().width - Math.max(1, pane.getBoundingClientRect().width) - 320) };
+      },
+      read: () => parseCssPixels(sidebar.style.width, sidebar.getBoundingClientRect().width),
+      write: (width) => { sidebar.style.width = `${Math.round(width)}px`; },
+      clear: () => { sidebar.style.removeProperty("width"); },
+      sync: (controller) => {
+        if (isMobileLayout()) {
+          paneWasMobile = true;
+          controller.clear({ commit: false });
+          return;
+        }
+        if (shell.getBoundingClientRect().width < 48) return;
+        let width = parseCssPixels(sidebar.style.width, sidebar.getBoundingClientRect().width);
+        if (paneWasMobile || !sidebar.style.width) width = readStoredNumber(paneStorageKey) ?? width;
+        paneWasMobile = false;
+        controller.set(width, { persist: false, commit: false });
+      },
+    });
+    if (!panel || !filter) return;
+
+    const minPanelHeight = 56;
+    const minListHeight = 160;
+    let filterWasMobile = isMobileLayout();
+    const naturalHeight = () => {
+      const previous = panel.style.height;
+      const resized = panel.classList.contains("is-filter-resized");
+      panel.style.removeProperty("height");
+      panel.classList.remove("is-filter-resized");
+      const height = Math.ceil(panel.getBoundingClientRect().height);
+      if (previous) panel.style.height = previous;
+      panel.classList.toggle("is-filter-resized", resized);
+      return Math.max(minPanelHeight, height);
+    };
+    const controller = setupSplitter({
+      handle: filter,
+      storageKey: filterStorageKey,
+      bodyDragClass: "is-resizing-filter",
+      client: (event) => event.clientY,
+      keys: { decrease: ["ArrowUp"], increase: ["ArrowDown"] },
+      enabled: () => !isMobileLayout() && !panel.hidden,
+      bounds: () => {
+        let fixed = 0;
+        for (const child of sidebar.children) {
+          if (child !== panel && child !== list) fixed += child.getBoundingClientRect().height;
+        }
+        const available = Math.max(minPanelHeight, sidebar.getBoundingClientRect().height - fixed - minListHeight);
+        return { min: minPanelHeight, max: Math.max(minPanelHeight, Math.min(available, naturalHeight())) };
+      },
+      read: () => panel.getBoundingClientRect().height,
+      write: (height) => {
+        panel.style.height = `${Math.round(height)}px`;
+        panel.classList.add("is-filter-resized");
+      },
+      clear: () => {
+        panel.style.removeProperty("height");
+        panel.classList.remove("is-filter-resized");
+      },
+      sync: (ctrl) => {
+        if (isMobileLayout() || panel.hidden) {
+          filterWasMobile = isMobileLayout();
+          ctrl.clear({ commit: false });
+          return;
+        }
+        if (sidebar.getBoundingClientRect().height < 48) return;
+        const stored = readStoredNumber(filterStorageKey);
+        if (stored !== null) {
+          filterWasMobile = false;
+          ctrl.set(stored, { persist: false, commit: false });
+        } else {
+          if (filterWasMobile) ctrl.clear({ commit: false });
+          filterWasMobile = false;
+          ctrl.syncAria();
+        }
+      },
+    });
+    const observer = new MutationObserver(controller.requestSync);
+    observer.observe(panel, { attributes: true, attributeFilter: ["hidden"], childList: true, subtree: true });
+  }
+
+  window.WebUI.setupListShellSplitters = setupListShellSplitters;
   window.WebUI.setupSplitter = setupSplitter;
   window.WebUI.splitterUtils = { isMobileLayout, parseCssPixels, clampNumber, readStoredNumber };
 })();

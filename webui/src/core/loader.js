@@ -2,9 +2,10 @@
   const WebUI = window.WebUI;
 
   const LOADER_TEXT = {
-    zh: { loading: "加载中…" },
-    en: { loading: "Loading…" },
+    zh: { loading: "加载中…", downloading: "正在下载数据…", parsing: "正在解析数据…", preparing: "正在整理数据…", rendering: "正在显示内容…" },
+    en: { loading: "Loading…", downloading: "Downloading data…", parsing: "Reading data…", preparing: "Preparing data…", rendering: "Displaying content…" },
   };
+  const pendingHides = new WeakMap();
 
   function loaderLocale() {
     const raw = String(window.WEBUI_UI_LOCALE || "zh").toLowerCase();
@@ -12,7 +13,7 @@
   }
 
   function loaderText(key) {
-    return (LOADER_TEXT[loaderLocale()] || LOADER_TEXT.en)[key] || key;
+    return LOADER_TEXT[loaderLocale()][key] || key;
   }
 
   function viewContainer(view) {
@@ -45,14 +46,18 @@
   function showLoader(view, label) {
     const loader = ensureLoader(view);
     if (!loader) return;
+    pendingHides.get(loader)?.();
     const labelNode = loader.querySelector(".view-loader-label");
-    if (labelNode) labelNode.textContent = label || loaderText("loading");
+    labelNode.textContent = label || loaderText("loading");
     const track = loader.querySelector(".view-loader-track");
     const fill = loader.querySelector(".view-loader-fill");
     const pct = loader.querySelector(".view-loader-pct");
-    if (track) track.classList.add("is-indeterminate");
-    if (fill) fill.style.width = "";
-    if (pct) pct.textContent = "";
+    track.classList.add("is-indeterminate");
+    fill.style.width = "";
+    pct.textContent = "";
+    track.setAttribute("role", "progressbar");
+    track.setAttribute("aria-label", label || loaderText("loading"));
+    track.removeAttribute("aria-valuenow");
     loader.hidden = false;
     loader.classList.remove("is-hiding");
   }
@@ -62,26 +67,43 @@
   function updateLoader(view, ratio, label) {
     const loader = ensureLoader(view);
     if (!loader || loader.hidden) return;
+    const track = loader.querySelector(".view-loader-track");
     if (label) {
       const labelNode = loader.querySelector(".view-loader-label");
-      if (labelNode) labelNode.textContent = label;
+      labelNode.textContent = label;
+      track.setAttribute("aria-label", label);
     }
-    const track = loader.querySelector(".view-loader-track");
     const fill = loader.querySelector(".view-loader-fill");
     const pct = loader.querySelector(".view-loader-pct");
     if (ratio == null || !Number.isFinite(ratio)) {
-      if (track) track.classList.add("is-indeterminate");
+      track.classList.add("is-indeterminate");
       // Clear the inline width so the indeterminate CSS (40% sweeping block)
       // applies; otherwise a stale width keeps the bar looking ~full with no
       // matching number.
-      if (fill) fill.style.width = "";
-      if (pct) pct.textContent = "";
+      fill.style.width = "";
+      pct.textContent = "";
+      track.removeAttribute("aria-valuenow");
       return;
     }
     const clamped = Math.max(0, Math.min(1, ratio));
-    if (track) track.classList.remove("is-indeterminate");
-    if (fill) fill.style.width = `${(clamped * 100).toFixed(1)}%`;
-    if (pct) pct.textContent = `${Math.round(clamped * 100)}%`;
+    track.classList.remove("is-indeterminate");
+    fill.style.width = `${(clamped * 100).toFixed(1)}%`;
+    pct.textContent = `${Math.round(clamped * 100)}%`;
+    track.setAttribute("aria-valuenow", String(Math.round(clamped * 100)));
+  }
+
+  // Percentages describe this named phase, never an estimated share of total
+  // load time. CPU work and requests with unknown sizes stay indeterminate.
+  function updateLoaderPhase(view, phase, ratio = null) {
+    updateLoader(view, ratio, loaderText(phase));
+  }
+
+  function loaderProgress(view, isCurrent = () => true) {
+    return (ratio, _loaded, _total, phase = "downloading") => {
+      if (!isCurrent()) return;
+      updateLoaderPhase(view, phase, ratio);
+      if (phase === "parsing") return nextPaint();
+    };
   }
 
   // Resolve after the browser has had a chance to paint, so a just-set progress
@@ -90,16 +112,8 @@
   // await this never stall.
   function nextPaint() {
     return new Promise((resolve) => {
-      let done = false;
-      const finish = () => {
-        if (done) return;
-        done = true;
-        resolve();
-      };
-      if (typeof requestAnimationFrame === "function") {
-        requestAnimationFrame(() => requestAnimationFrame(finish));
-      }
-      setTimeout(finish, 60);
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+      setTimeout(resolve, 60);
     });
   }
 
@@ -108,58 +122,66 @@
     const container = viewContainer(view);
     const loader = container && container.querySelector(":scope > .view-loader");
     if (!loader || loader.hidden) return;
+    pendingHides.get(loader)?.();
     loader.classList.add("is-hiding");
     const finish = () => {
       loader.hidden = true;
       loader.classList.remove("is-hiding");
     };
     let done = false;
-    const onEnd = () => {
-      if (done) return;
+    const cleanup = () => {
       done = true;
+      clearTimeout(timer);
       loader.removeEventListener("transitionend", onEnd);
+      pendingHides.delete(loader);
+    };
+    const onEnd = (event) => {
+      if (event && (event.target !== loader || event.propertyName !== "opacity")) return;
+      if (done) return;
+      cleanup();
       finish();
     };
     loader.addEventListener("transitionend", onEnd);
     // Fallback in case the transition does not fire (e.g. reduced motion).
-    setTimeout(onEnd, 320);
+    const timer = setTimeout(onEnd, 320);
+    pendingHides.set(loader, cleanup);
   }
 
   // fetch() wrapper that reports download progress via `init.onProgress(ratio,
   // loaded, total)`. `ratio` is null when the total size is unknown so callers
-  // can fall back to an indeterminate bar. Returns a normal Response.
+  // can fall back to an indeterminate bar. A fourth argument names the phase;
+  // the final `parsing` callback may yield a paint before JSON decoding blocks.
+  // Returns a normal Response.
   async function fetchWithProgress(url, init = {}) {
     const onProgress = typeof init.onProgress === "function" ? init.onProgress : null;
     const opts = { ...init };
     delete opts.onProgress;
 
-    const res = await fetch(url, opts);
-    if (!onProgress || !res.ok || typeof ReadableStream === "undefined") {
-      return res;
-    }
+    let res = await fetch(url, opts);
 
     // Some responses (notably 304 Not Modified under conditional caching) may
     // have an empty body and would otherwise produce unexpected JSON parse
     // errors on callers that expect JSON. Force a no-store refresh in that case.
     if (!res.body && res.status === 304) {
-      const reload = await fetch(url, {
+      res = await fetch(url, {
         ...opts,
         cache: "no-store",
       });
-      return reload;
     }
 
-    if (!res.body) {
+    if (!onProgress || !res.ok || !res.body || typeof ReadableStream === "undefined") {
       return res;
     }
 
     // When the response is compressed (gzip/br), Content-Length is the encoded
     // size while the stream yields decoded bytes, so `loaded` overshoots and the
     // ratio is meaningless. Treat the total as unknown in that case.
-    const encoded = String(res.headers.get("Content-Encoding") || "").trim();
-    let total = encoded ? 0 : Number(res.headers.get("Content-Length")) || 0;
+    const encoded = String(res.headers.get("Content-Encoding") || "").trim().toLowerCase();
+    const length = Number(res.headers.get("Content-Length"));
+    let total = (!encoded || encoded === "identity") && Number.isFinite(length) && length > 0 ? length : 0;
     let loaded = 0;
     const reader = res.body.getReader();
+    onProgress(total ? 0 : null, loaded, total, "downloading");
 
     let failed = false;
     const stream = new ReadableStream({
@@ -170,7 +192,10 @@
         if (failed) return;
         try {
           const { done, value } = await reader.read();
+          if (failed) return;
           if (done) {
+            await onProgress(null, loaded, total, "parsing");
+            if (failed) return;
             controller.close();
             return;
           }
@@ -178,7 +203,7 @@
           // If we ever exceed the advertised length the header was unreliable
           // (e.g. proxy-applied compression); drop to indeterminate.
           if (total && loaded > total) total = 0;
-          onProgress(total ? loaded / total : null, loaded, total);
+          onProgress(total ? loaded / total : null, loaded, total, "downloading");
           controller.enqueue(value);
         } catch (error) {
           failed = true;
@@ -191,7 +216,7 @@
       },
       cancel(reason) {
         failed = true;
-        reader.cancel(reason);
+        return reader.cancel(reason);
       },
     });
 
@@ -202,5 +227,5 @@
     });
   }
 
-  Object.assign(WebUI, { showLoader, updateLoader, hideLoader, nextPaint, fetchWithProgress });
+  Object.assign(WebUI, { showLoader, updateLoader, updateLoaderPhase, loaderProgress, hideLoader, nextPaint, fetchWithProgress });
 })();

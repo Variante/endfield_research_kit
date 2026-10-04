@@ -1,9 +1,11 @@
 // Optional export-source changes. Pages keep their current datasets and IDs;
-// missing/invalid sidecars remove only badges. Deleted IDs remain in the
+// missing/invalid sidecars remove badges and their filters. Deleted IDs remain in the
 // comparison and never create recovered page content.
 (() => {
   const statuses = new Set(["added", "modified", "deleted"]);
   const pages = new Map();
+  const available = new Set();
+  const sourceTables = new Map();
   const pending = new Map();
   const files = new Map();
   const localeZh = () => String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh").toLowerCase().startsWith("zh");
@@ -31,8 +33,52 @@
     const versions = page === "characters" ? [3, 4] : [1, 2, 3];
     const valid = payload?.available === true && versions.includes(payload.schemaVersion)
       && (page === "characters" || payload.page === page) && Array.isArray(payload.entries);
+    if (valid) available.add(page);
+    else available.delete(page);
     pages.set(page, new Map(valid ? payload.entries.filter((entry) => statuses.has(entry?.status))
       .map((entry) => [String(entry.id || entry.characterKey || entry.characterId || ""), entry]).filter(([id]) => id) : []));
+    if (page === "reference") {
+      sourceTables.clear();
+      for (const [id, entry] of pages.get(page)) {
+        const table = id.split("/")[0].replace(/\.json$/, "");
+        if (!sourceTables.has(table)) sourceTables.set(table, new Set());
+        sourceTables.get(table).add(entry.status);
+      }
+    }
+  }
+  // Table facets use the sidecar index without fetching every Text payload.
+  function sourceTableStatuses(table) {
+    return [...(sourceTables.get(String(table || "").replace(/\.json$/, "")) || [])];
+  }
+  function filterGroup(prefix, values, options = {}) {
+    return { id: "update", container: `#${prefix}-update-filter`, section: `${prefix}-updates`,
+      values, items: [...statuses], label, ...options };
+  }
+  function filterSection(prefix) {
+    return `<section class="filter-section is-collapsed" data-filter-section="${prefix}-updates" data-default-collapsed="1" hidden>
+      <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="${prefix}-update-filter-body"><span id="${prefix}-update-filter-label">${ui("Version changes", "版本变化")}</span></button>
+      <div id="${prefix}-update-filter-body" class="filter-section-body" hidden><div id="${prefix}-update-filter" class="chips" data-multi="1"></div></div></section>`;
+  }
+  function syncFilter(prefix, page = prefix, facets = null) {
+    const cleared = !available.has(page) && !!facets?.active("update").size;
+    if (cleared) facets.reset({ silent: true, only: ["update"] });
+    const title = document.querySelector(`#${prefix}-update-filter-label`);
+    if (title) {
+      title.textContent = ui("Version changes", "版本变化");
+      title.closest(".filter-section").hidden = !available.has(page);
+    }
+    return cleared;
+  }
+  // Dynamically rendered pages without their own section binding use this.
+  function bindFilter(prefix) {
+    const body = document.querySelector(`#${prefix}-update-filter-body`);
+    const button = body?.previousElementSibling;
+    if (!button) return;
+    button.addEventListener("click", () => {
+      body.hidden = !body.hidden;
+      button.setAttribute("aria-expanded", String(!body.hidden));
+      body.parentElement.classList.toggle("is-collapsed", body.hidden);
+    });
   }
   function entries(page, id) {
     return [...new Set(Array.isArray(id) ? id : [id])].map((key) => pages.get(page)?.get(String(key || ""))).filter(Boolean);
@@ -199,10 +245,12 @@
   }
   async function fetchFiles() {
     files.clear();
+    available.delete("files");
     try {
       const response = await fetch("data/updates/latest.json", { cache: "no-store" });
       const payload = response.ok ? await response.json() : null;
       if (!payload || !Array.isArray(payload.entries) || ![1, 2, 3, 4].includes(payload.schemaVersion)) return;
+      available.add("files");
       for (const entry of payload.entries) {
         if (!statuses.has(entry.status)) continue;
         for (const path of [entry.path, entry.asset_rel, entry.new_asset_rel, entry.new_asset_export_rel]) {
@@ -224,9 +272,12 @@
     visit(values);
     return [...found];
   }
-  function fileHtml(values) {
+  function fileStatus(values) {
     const rows = fileEntries(values);
-    return badge(rows.length ? rows.every((row) => row.status === rows[0].status) ? rows[0].status : "modified" : "");
+    return rows.length ? rows.every((row) => row.status === rows[0].status) ? rows[0].status : "modified" : "";
+  }
+  function fileHtml(values) {
+    return badge(fileStatus(values));
   }
   function fileDetails(values, { rows = fileEntries(values), open = false } = {}) {
     if (!rows.length) return "";
@@ -263,5 +314,6 @@
     });
   }
   window.WebUI.updateBadges = { load, register, status, html, changes, sourceChanges, sourceHtml,
+    sourceTableStatuses, filterGroup, filterSection, syncFilter, bindFilter, fileStatus,
     panel, detailsHtml, decorate, mount, mountFiles, loadFiles, fileKey, fileEntries, fileHtml, fileDetails, decorateFiles };
 })();

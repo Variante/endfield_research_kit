@@ -118,7 +118,6 @@
   const NOTES_OVERRIDE_PATH = "overrides/audio_notes.json";
   const NOTES_OVERRIDE_SCHEMA = "audioNotes.v1";
   const PLAYER_COLLAPSE_THRESHOLD = 20;
-  const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   // AudioCue projections have several publication owners. Keep one shared
   // classifier so normal-mode redaction cannot miss a newly surfaced owner.
   const AUDIO_CUE_CONTEXT_KINDS = new Set([
@@ -230,7 +229,7 @@
       runtimeNativeSourceBridgeRelations: "verified relations",
       runtimeNativeSourceBridgeUnresolved: "Unresolved joins",
       runtimeNativeSourceBridgeText: "Native text",
-      runtimeNativeCaptureWorkflow: "Native source/owner capture uses EndfieldCapture with entry-only observations. New results appear after a complete capture and selected-build audit; native returns, pointer lifetimes and earlier-source continuity remain unresolved.",
+      runtimeNativeCaptureWorkflow: "Saved native source/owner observations appear after a complete session passes the selected-build audit. Entry observations leave native returns, pointer lifetimes and earlier-source continuity unresolved.",
       runtimeNativeEntries: "Native source/owner entry observations",
       runtimeNativeEntryCount: "entries",
       runtimeNativeEntryBoundary: "Each count and text belongs to a captured function entry. Texts at different hooks are counted separately; no chain is inferred between calls. Returns, pointer lifetime, managed ownership, provider/file identity and audibility remain unresolved. Zero carrier entries mean this window contains no carrier snapshot.",
@@ -688,7 +687,7 @@
       runtimeNativeSourceBridgeUnresolved: "未验证关联",
       runtimeNativeSourceBridgeText: "原生文本",
       runtimeNativeOwnerCarrier: "解码器所有者快照",
-      runtimeNativeCaptureWorkflow: "原生音源／所有者采集使用 EndfieldCapture，仅记录函数入口。新结果需完成采集并通过当前版本审计后才会显示；原生返回值、指针生命周期及先前音源的连续性仍未确定。",
+      runtimeNativeCaptureWorkflow: "保存的原生音源／所有者观测需具备完整会话并通过当前版本审计后才会显示。入口观测无法确定原生返回值、指针生命周期及先前音源的连续性。",
       runtimeNativeEntries: "原生音源／所有者入口观测",
       runtimeNativeEntryCount: "次入口",
       runtimeNativeEntryBoundary: "每个计数与文本均属于一次函数入口观测。不同函数的文本分别计数，不推断调用之间的关联。返回值、指针生命周期、托管归属、提供者／文件身份及可听性仍未确定。载体入口为零仅表示本窗口没有载体快照。",
@@ -1095,17 +1094,10 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const locale = () => String(window.WEBUI_UI_LOCALE || state.uiLocale || document.documentElement.lang || "zh").toLowerCase().startsWith("en") ? "en" : "zh";
   const t = (key) => (TEXT[locale()] || TEXT.en)[key] || TEXT.en[key] || key;
-  const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  })[char]);
+  const esc = window.WebUI.escapeHtml;
   const normalize = (value) => String(value ?? "").trim();
   const normalizeLower = (value) => normalize(value).toLowerCase();
   const asArray = (value) => Array.isArray(value) ? value : (value === undefined || value === null || value === "" ? [] : [value]);
-  const isMobileLayout = () => !!window.matchMedia?.(MOBILE_LAYOUT_QUERY).matches;
-  const parsePixels = (value, fallback = 0) => {
-    const parsed = Number.parseFloat(value);
-    return Number.isFinite(parsed) ? parsed : fallback;
-  };
 
   function currentLanguage() {
     return String($("#language")?.value || state.language || "CN").toUpperCase();
@@ -1921,7 +1913,7 @@
     }
   }
 
-  async function ensureDataset(kind, { token = state.loadToken, force = false, progressBase = 0, progressSpan = 1 } = {}) {
+  async function ensureDataset(kind, { token = state.loadToken, force = false } = {}) {
     if (!force && state.datasets[kind]) return state.datasets[kind];
     if (!force && state.datasetPromises[kind]) return state.datasetPromises[kind];
     abortDataset(kind);
@@ -1929,6 +1921,9 @@
     const inline = recordsFromPayload(state.index?.[kind], kind);
     const specs = shardSpecs(state.index?.shards?.[kind]);
     if (!specs.length) {
+      window.WebUI?.updateLoaderPhase?.("audio", "preparing");
+      await window.WebUI?.nextPaint?.();
+      if (token !== state.loadToken) return null;
       const records = dedupeRecords(inline, kind);
       if (kind === "events") rebuildEventTaxonomy(records);
       state.datasets[kind] = records;
@@ -1936,32 +1931,48 @@
     }
 
     const indexPath = INDEX_PATH(state.language);
-    const progress = specs.map(() => 0);
+    const progress = specs.map(() => ({ loaded: 0, total: 0, phase: "downloading" }));
     const controllers = specs.map(() => new AbortController());
     state.datasetControllers[kind] = controllers;
-    const label = t(kind === "events" ? "loadingEvents" : "loadingMedia");
     const updateProgress = () => {
-      const ratio = progress.reduce((total, value) => total + value, 0) / Math.max(1, progress.length);
-      window.WebUI?.updateLoader?.("audio", progressBase + ratio * progressSpan, label);
+      if (token !== state.loadToken || state.mode !== kind) return;
+      const downloading = progress.some((item) => item.phase === "downloading");
+      const phase = downloading ? "downloading" : progress.some((item) => item.phase === "parsing") ? "parsing" : "preparing";
+      // A shard's fraction has no useful weight until every byte total is
+      // known. Never average percentages of differently sized responses.
+      const total = progress.reduce((sum, item) => sum + item.total, 0);
+      const ratio = downloading && progress.every((item) => item.total > 0)
+        ? progress.reduce((sum, item) => sum + item.loaded, 0) / total
+        : null;
+      window.WebUI?.updateLoaderPhase?.("audio", phase, ratio);
     };
+    updateProgress();
 
     const promise = Promise.all(specs.map(async (spec, index) => {
       const url = shardUrl(spec.path, indexPath);
-      if (!url) return [];
+      if (!url) {
+        progress[index].phase = "preparing";
+        updateProgress();
+        return [];
+      }
       const response = await window.WebUI.fetchWithProgress(url, {
         signal: controllers[index].signal,
         cache: "no-store",
-        onProgress: (ratio) => {
-          if (ratio !== null && Number.isFinite(ratio)) progress[index] = Math.max(progress[index], Math.min(0.98, ratio));
+        onProgress: (_ratio, loaded, total, phase) => {
+          Object.assign(progress[index], { loaded, total, phase });
           updateProgress();
+          if (phase === "parsing" && token === state.loadToken) return window.WebUI.nextPaint();
         },
       });
       if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
       const payload = await response.json();
-      progress[index] = 1;
+      progress[index].phase = "preparing";
       updateProgress();
       return recordsFromPayload(payload, kind);
-    })).then((parts) => {
+    })).then(async (parts) => {
+      if (token !== state.loadToken) return null;
+      updateProgress();
+      await window.WebUI?.nextPaint?.();
       if (token !== state.loadToken) return null;
       const records = dedupeRecords([...inline, ...parts.flat()], kind);
       if (kind === "events") rebuildEventTaxonomy(records);
@@ -2013,12 +2024,13 @@
         const response = await window.WebUI.fetchWithProgress(path, {
           signal: state.indexController.signal,
           cache: "no-store",
-          onProgress: (ratio) => window.WebUI?.updateLoader?.("audio", ratio === null ? null : ratio * 0.25, t("loading")),
+          onProgress: window.WebUI.loaderProgress("audio", () => token === state.loadToken),
         });
         if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
         const payload = await response.json();
         if (token !== state.loadToken) return null;
         state.index = payload && typeof payload === "object" ? payload : {};
+        window.WebUI?.updateLoaderPhase?.("audio", "preparing");
         state.sceneCatalog = await loadSceneCatalog(nextLanguage, token);
         if (token !== state.loadToken) return null;
         state.gameParameterNameById = new Map(asArray(
@@ -2029,20 +2041,24 @@
         ]).filter(([id]) => Number.isFinite(id)));
         applyIndexHeader();
         renderDetail();
-        await ensureDataset("events", { token, force, progressBase: 0.25, progressSpan: 0.75 });
+        await ensureDataset("events", { token, force });
         if (token !== state.loadToken) return null;
         const requestedKind = requestedSelectionKind();
         if (requestedKind === "media") {
           state.mode = "media";
           syncModeButtons();
           renderLoadingList();
-          await ensureDataset("media", { token, force, progressBase: 0.25, progressSpan: 0.75 });
+          await ensureDataset("media", { token, force });
           if (token !== state.loadToken) return null;
         }
+        window.WebUI?.updateLoaderPhase?.("audio", "rendering");
+        await window.WebUI?.nextPaint?.();
+        if (token !== state.loadToken) return null;
         buildFilterChips();
         applyFilters({ resetScroll: true });
         applyRequestedSelection();
-        window.WebUI?.updateLoader?.("audio", 1, t("loadingEvents"));
+        await window.WebUI?.nextPaint?.();
+        if (token !== state.loadToken) return null;
         return state.index;
       } catch (error) {
         if (token !== state.loadToken || error?.name === "AbortError") return null;
@@ -2064,6 +2080,7 @@
   async function switchMode(kind) {
     if (!["events", "media"].includes(kind) || state.mode === kind) return;
     state.mode = kind;
+    const token = state.loadToken;
     state.selected = null;
     resetFilters({ render: false });
     syncModeButtons();
@@ -2073,20 +2090,28 @@
     if (state.datasets[kind]) {
       buildFilterChips();
       applyFilters({ resetScroll: true });
+      window.WebUI?.setViewBusy?.("audio", false);
+      window.WebUI?.hideLoader?.("audio");
       return;
     }
     window.WebUI?.setViewBusy?.("audio", true);
     window.WebUI?.showLoader?.("audio", t(kind === "events" ? "loadingEvents" : "loadingMedia"));
     try {
-      const records = await ensureDataset(kind, { token: state.loadToken });
-      if (state.mode !== kind || !records) return;
+      const records = await ensureDataset(kind, { token });
+      if (token !== state.loadToken || state.mode !== kind || !records) return;
+      window.WebUI?.updateLoaderPhase?.("audio", "rendering");
+      await window.WebUI?.nextPaint?.();
+      if (token !== state.loadToken || state.mode !== kind) return;
       buildFilterChips();
       applyFilters({ resetScroll: true });
+      await window.WebUI?.nextPaint?.();
     } catch (error) {
-      if (error?.name !== "AbortError") renderLoadError(error, { index: false });
+      if (token === state.loadToken && state.mode === kind && error?.name !== "AbortError") renderLoadError(error, { index: false });
     } finally {
-      window.WebUI?.setViewBusy?.("audio", false);
-      window.WebUI?.hideLoader?.("audio");
+      if (token === state.loadToken && state.mode === kind) {
+        window.WebUI?.setViewBusy?.("audio", false);
+        window.WebUI?.hideLoader?.("audio");
+      }
     }
   }
 
@@ -2149,6 +2174,7 @@
               <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="audio-source-filter-body"><span id="audio-source-label"></span></button>
               <div id="audio-source-filter-body" class="filter-section-body" hidden><div id="audio-source-filter" class="chips" data-multi="1"></div></div>
             </section>
+            ${window.WebUI.updateBadges.filterSection("audio")}
           </div>
           <div id="audio-filter-splitter" class="filter-splitter" role="separator" aria-label="Resize audio filters" aria-orientation="horizontal" tabindex="0"></div>
           <div id="audio-list-meta"><span id="audio-shown">0</span> / <span id="audio-total">0</span> <span id="audio-shown-label"></span></div>
@@ -2223,115 +2249,27 @@
   }
 
   function setupFilterPanel() {
-    state.filterPanel = window.WebUI?.filters?.createPanelToggle?.({
+    state.filterPanel = window.WebUI.filters.createPanelToggle({
       panel: "#audio-filter-panel",
       toggle: "#audio-filter-toggle",
       left: "#audio-left",
       storageKey: FILTER_PANEL_STORAGE_KEY,
-      isMobile: isMobileLayout,
       labels: (collapsed) => t(collapsed ? "showFilters" : "hideFilters"),
       onChange: () => window.dispatchEvent(new Event("resize")),
-    }) || null;
+    });
   }
 
   function setupSplitters() {
-    const setup = window.WebUI?.setupSplitter;
-    const utils = window.WebUI?.splitterUtils;
-    const shell = $(".audio-shell", state.container);
-    const sidebar = $("#audio-left", state.container);
-    const pane = $("#audio-splitter", state.container);
-    const panel = $("#audio-filter-panel", state.container);
-    const filter = $("#audio-filter-splitter", state.container);
-    const list = $("#audio-list-wrap", state.container);
-    if (!setup || !utils || !shell || !sidebar || !pane || !panel || !filter || !list) return;
-
-    let paneWasMobile = isMobileLayout();
-    setup({
-      handle: pane,
-      storageKey: PANE_STORAGE_KEY,
-      bodyDragClass: "is-resizing-pane",
-      client: (event) => event.clientX,
-      keys: { decrease: ["ArrowLeft"], increase: ["ArrowRight"] },
-      enabled: () => !isMobileLayout(),
-      bounds: () => {
-        const min = parsePixels(getComputedStyle(sidebar).minWidth, 300);
-        return { min, max: Math.max(min, shell.getBoundingClientRect().width - pane.getBoundingClientRect().width - 320) };
-      },
-      read: () => parsePixels(sidebar.style.width, sidebar.getBoundingClientRect().width),
-      write: (width) => { sidebar.style.width = `${Math.round(width)}px`; },
-      clear: () => { sidebar.style.removeProperty("width"); },
-      sync: (controller) => {
-        if (isMobileLayout()) {
-          paneWasMobile = true;
-          controller.clear({ commit: false });
-          return;
-        }
-        if (shell.getBoundingClientRect().width < 48) return;
-        let width = parsePixels(sidebar.style.width, sidebar.getBoundingClientRect().width);
-        if (paneWasMobile || !sidebar.style.width) width = utils.readStoredNumber(PANE_STORAGE_KEY) ?? width;
-        paneWasMobile = false;
-        controller.set(width, { persist: false, commit: false });
-      },
+    window.WebUI.setupListShellSplitters({
+      shell: $(".audio-shell", state.container),
+      sidebar: $("#audio-left", state.container),
+      pane: $("#audio-splitter", state.container),
+      panel: $("#audio-filter-panel", state.container),
+      filter: $("#audio-filter-splitter", state.container),
+      list: $("#audio-list-wrap", state.container),
+      paneStorageKey: PANE_STORAGE_KEY,
+      filterStorageKey: FILTER_HEIGHT_STORAGE_KEY,
     });
-
-    const minPanelHeight = 56;
-    const minListHeight = 160;
-    let filterWasMobile = isMobileLayout();
-    const naturalHeight = () => {
-      const previous = panel.style.height;
-      const resized = panel.classList.contains("is-filter-resized");
-      panel.style.removeProperty("height");
-      panel.classList.remove("is-filter-resized");
-      const height = Math.ceil(panel.getBoundingClientRect().height);
-      if (previous) panel.style.height = previous;
-      panel.classList.toggle("is-filter-resized", resized);
-      return Math.max(minPanelHeight, height);
-    };
-    const controller = setup({
-      handle: filter,
-      storageKey: FILTER_HEIGHT_STORAGE_KEY,
-      bodyDragClass: "is-resizing-filter",
-      client: (event) => event.clientY,
-      keys: { decrease: ["ArrowUp"], increase: ["ArrowDown"] },
-      enabled: () => !isMobileLayout() && !panel.hidden,
-      bounds: () => {
-        let fixed = 0;
-        for (const child of sidebar.children) if (child !== panel && child !== list) fixed += child.getBoundingClientRect().height;
-        const available = Math.max(minPanelHeight, sidebar.getBoundingClientRect().height - fixed - minListHeight);
-        return { min: minPanelHeight, max: Math.max(minPanelHeight, Math.min(available, naturalHeight())) };
-      },
-      read: () => panel.getBoundingClientRect().height,
-      write: (height) => {
-        panel.style.height = `${Math.round(height)}px`;
-        panel.classList.add("is-filter-resized");
-      },
-      clear: () => {
-        panel.style.removeProperty("height");
-        panel.classList.remove("is-filter-resized");
-      },
-      sync: (ctrl) => {
-        if (isMobileLayout() || panel.hidden) {
-          filterWasMobile = isMobileLayout();
-          ctrl.clear({ commit: false });
-          return;
-        }
-        if (sidebar.getBoundingClientRect().height < 48) return;
-        const stored = utils.readStoredNumber(FILTER_HEIGHT_STORAGE_KEY);
-        if (stored !== null) {
-          filterWasMobile = false;
-          ctrl.set(stored, { persist: false, commit: false });
-        } else {
-          if (filterWasMobile) ctrl.clear({ commit: false });
-          filterWasMobile = false;
-          ctrl.syncAria();
-        }
-      },
-    });
-    if (window.MutationObserver && controller) {
-      const observer = new MutationObserver(controller.requestSync);
-      observer.observe(panel, { attributes: true, attributeFilter: ["hidden"] });
-      observer.observe(panel, { childList: true, subtree: true });
-    }
   }
 
   function applyUiText() {
@@ -2440,6 +2378,7 @@
         group("recovery", "recoveryTags", recoveryLabel),
         group("scope", "scope"),
         group("source", "source"),
+        window.WebUI.updateBadges.filterGroup("audio", (record) => window.WebUI.updateBadges.fileStatus(record.raw)),
       ],
       chipClassName: "audio-filter-chip",
       onChange: () => applyFilters({ resetScroll: true }),
@@ -2448,6 +2387,7 @@
   }
 
   function buildFilterChips() {
+    window.WebUI.updateBadges.syncFilter("audio", "files", audioFacets());
     audioFacets().render(state.datasets[state.mode] || []);
   }
 
@@ -6982,9 +6922,7 @@
         audio.preload = "none";
         audio.controls = true;
         audio.src = candidate.src;
-        const player = window.WebUI?.createMediaPlayer
-          ? window.WebUI.createMediaPlayer(audio, { waveform: true })
-          : audio;
+        const player = window.WebUI.createMediaPlayer(audio, { waveform: true });
         const sourceLink = document.createElement("a");
         sourceLink.className = "audio-source-link";
         sourceLink.href = candidate.src;
@@ -7174,7 +7112,6 @@
     return true;
   }
 
-  window.WebUI = window.WebUI || {};
   window.WebUI.audio = { init, load, retry: () => load(state.language, { force: true }) };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();

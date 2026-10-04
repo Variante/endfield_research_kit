@@ -57,6 +57,11 @@
 .production-section h3 span { font-size: 12px; color: var(--muted); font-weight: normal; }
 .production-reference { padding: 10px 12px; border: 1px solid var(--border); border-radius: 7px; font-size: 13px; line-height: 1.65; overflow-wrap: anywhere; }
 .production-references { display: grid; gap: 7px; }
+.production-machine-recipe { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; }
+.production-machine-formula { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; min-width: 0; }
+.production-machine-group { min-width: 0; }
+.production-machine-arrow { color: var(--accent); font-size: 20px; }
+.production-machine-time, .production-machine-recipe-link { white-space: nowrap; font-size: 12px; }
 .production-reference + .production-reference { margin-top: 7px; }
 .production-reference strong { display: inline-block; margin-bottom: 3px; }
 .production-flow { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 15px; align-items: center; }
@@ -75,10 +80,27 @@
 .production-properties dl { display: grid; grid-template-columns: minmax(100px, 180px) minmax(0, 1fr); gap: 6px 14px; margin: 12px 0; }
 .production-properties dt { color: var(--muted); overflow-wrap: anywhere; }
 .production-properties dd { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.production-composite-icon { position: relative; display: inline-block; width: 26px; height: 26px; flex: 0 0 auto; vertical-align: middle; }
+.production-composite-icon > .production-icon { display: block; width: 100%; height: 100%; margin: 0; }
+.production-composite-icon > .production-content-icon { position: absolute; width: 44.444%; height: 44.444%; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.production-composite-icon.production-icon-list { width: 48px; height: 48px; }
+.production-composite-icon.production-icon-large { width: 88px; height: 88px; }
+.production-medal-tier h4 { display: flex; align-items: center; gap: 8px; }
+.production-recipe-variants { display: grid; gap: 16px; }
+.production-recipe-variant { padding: 16px; border: 1px solid var(--border); border-radius: 7px; min-width: 0; }
+.production-recipe-variant > h4 { margin: 0 0 12px; font-size: 15px; }
+.production-duration { font-size: 13px; line-height: 1.7; }
+.production-recipe-config { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.production-recipe-config h4 { margin: 0 0 10px; font-size: 13px; }
+.production-recipe-config .production-properties dl { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .production-sources li, .production-audit li { margin: 6px 0; overflow-wrap: anywhere; }
 .production-error { padding: 12px; color: var(--muted); overflow-wrap: anywhere; }
 body:not(.show-debug) .production-technical { display: none; }
 @media (max-width: 760px) {
+  .production-machine-recipe { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; }
+  .production-machine-formula { grid-column: 1 / -1; }
+  .production-recipe-config { grid-template-columns: minmax(0, 1fr); }
+  .production-composite-icon.production-icon-large { width: 60px; height: 60px; }
   #production-app { height: auto; }
   .production-layout { display: block; height: auto; }
   .production-sidebar { width: auto; min-width: 0; border-right: none; border-bottom: 1px solid var(--border); }

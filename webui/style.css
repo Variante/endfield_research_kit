@@ -854,6 +854,13 @@ textarea:focus-visible,
 #list, #asset-list { position: absolute; top: 0; left: 0; right: 0; }
 #list-spacer, #asset-list-spacer { width: 1px; }
 
+.asset-list-empty {
+  padding: 16px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
 .list-pager {
   display: grid;
   grid-template-columns: auto minmax(64px, 1fr) auto auto;
@@ -7005,6 +7012,17 @@ body.is-resizing-filter * {
   display: flex;
   height: 100%;
   min-height: 0;
+}
+
+/* The category catalog must scroll before it displaces the asset results. */
+#asset-filter-panel {
+  max-height: 50vh;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#asset-list-wrap {
+  min-height: 160px;
 }
 
 .asset-item-row {

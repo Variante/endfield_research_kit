@@ -9,13 +9,14 @@ from scripts.game_data.unity_store import open_store_if_present
 from scripts.source_paths import ExportLayout
 
 
-def load_icons(layout: ExportLayout, icon_ids: set[str]) -> tuple[dict[str, Any], dict[str, Any]]:
+def load_icons(layout: ExportLayout, icon_ids: set[str], *, square_icon_ids: set[str] | None = None) -> tuple[dict[str, Any], dict[str, Any]]:
     """Choose full-size item icons using the shared shape preference.
 
     Match exact authored tokens first. Shape and resolution only choose the
     displayed variant; they do not establish which asset the runtime loads.
     """
     requested = {value.lower() for value in icon_ids}
+    square_only = {value.lower() for value in square_icon_ids or ()}
     entries: list[dict[str, Any]] = []
     rejected = []
     textures = layout.unity_type_dir("Texture2D")
@@ -56,6 +57,8 @@ def load_icons(layout: ExportLayout, icon_ids: set[str]) -> tuple[dict[str, Any]
     icons = {}
     for entry in sorted(entries, key=rank):
         stem = media_lookup_stem(entry["r"])[0]
+        if stem in square_only and entry["width"] != entry["height"]:
+            continue
         icons.setdefault(stem, {field: entry[field] for field in ("r", "width", "height")})
     return icons, {"requested": len(requested), "resolved": len(icons),
                    "missing": sorted(requested - icons.keys()), "rejected": rejected,

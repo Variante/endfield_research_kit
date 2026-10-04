@@ -1,7 +1,7 @@
 (() => {
   const WebUI = window.WebUI = window.WebUI || {};
   const ui = (en, zh) => String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh").startsWith("zh") ? zh : en;
-  const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const escape = window.WebUI.escapeHtml;
   const scalar = (value) => String(value ?? "");
   const normalizeText = (value) => scalar(value).trim();
   const labels = {

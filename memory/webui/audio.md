@@ -102,8 +102,8 @@ reference is required before its reads appear on an Event or media detail.
   decoded media row or a claim that its backing file opened or decoded.
   These native summaries never annotate Event or media rows and leave the
   asynchronous managed-path-to-source/provider join open.
-  Current live capture uses EndfieldCapture's separate `audio source-owner`
-  entry-only recipe. A complete retail session now supplies a separate
+  The separate saved `audio source-owner` entry-only recipe admits a complete
+  retail session as an independent
   `nativeEntryObservations` Runtime detail: counts include unobserved hooks,
   native texts stay grouped by entry hook, and source storage fields retain
   their local snapshot boundary. It does not merge entry counts into paired

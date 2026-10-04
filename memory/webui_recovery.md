@@ -11,8 +11,7 @@ and behavior contracts remain in [`../webui/README.md`](../webui/README.md).
 | Story | [`webui/story.md`](webui/story.md) | `scripts.webui.story` |
 | Map | [`webui/map.md`](webui/map.md) | `scripts.webui.map.build_map_recovery_data` |
 | Characters | [`webui/characters.md`](webui/characters.md) | `scripts.webui.characters.build_character_data` |
-| Gameplay | [`webui/gameplay.md`](webui/gameplay.md) | `scripts.webui.gameplay.build_gameplay` |
-| Production | [`webui/production.md`](webui/production.md) | `scripts.webui.production.build_production` |
+| Gameplay | [`webui/gameplay.md`](webui/gameplay.md); [production catalogs](webui/production.md) | `scripts.webui.gameplay.build_gameplay`, `scripts.webui.production.build_production` |
 | Audio | [`webui/audio.md`](webui/audio.md) | `scripts.webui.audio.build_audio` |
 | Assets | [`webui/assets.md`](webui/assets.md) | `scripts.webui.assets.build_assets` |
 | Text | [`webui/text.md`](webui/text.md) | `scripts.webui.story` |
@@ -23,18 +22,31 @@ Mission Pipeline is a standalone recovery workflow, not a WebUI page or normal
 export stage. Retired Progression and Combat & Projectiles pages stay retired;
 their useful data belongs to Gameplay.
 
-Production reuses Story's safe rich-text renderer and raw-tag display setting;
+Gameplay's production catalogs reuse Story's safe rich-text renderer and raw-tag display setting;
 shared facet chips accept optional decorative icons.
+Shared facet chip counts are dataset totals; combined groups and search can
+return no matches even when a chip has a positive count. Assets documents this
+in its chip tooltips and empty-list message (see [Assets](webui/assets.md)).
 
-Gameplay, Production, Audio and Data use the same dataset-tab bar directly below their
-sidebar title. Gameplay tabs separate entity kinds and keep subtype filtering
-within the selected dataset; generated data remains Gameplay-owned.
+Gameplay has one dataset bar for Characters, Weapons, Equipment, Items, Enemies,
+Recipes and Machines. Its Items tab combines the Production catalog with
+Gameplay's published use effects and rewards in the same displayed language.
+Both builders retain their own output paths and export scopes; run
+`export.bat gameplay production` to refresh all of these tabs. Legacy
+`#production` links preserve their catalog filters inside Gameplay.
+Audio and Data share the dataset-tab styling below their sidebar title.
 
-Updates owns optional `updates/{characters,story,map,gameplay}.json`
+Updates owns optional `updates/{characters,story,map,gameplay,production,reference}.json`
 sidecars. Page consumers add change badges and old/current detail panels to
 their current publications, including grouped Map variants and linked files;
 the comparison never writes into another page's dataset or alters its
 recovery evidence. See [Updates](webui/updates.md) for the comparison boundary.
+Every page with change tags also offers Characters-style Version changes
+facets, using the badge's status and combining with the page's other filters.
+Text Tables filters table membership from the reference sidecar and filters
+loaded rows by their exact source key. Audio and Assets share linked-file
+status aggregation; Map uses the displayed group's combined variant status.
+Unavailable comparisons hide the facets without changing the published data.
 
 ## Export flow
 
@@ -104,9 +116,11 @@ The flow is:
    maps (`meta/extraction/provenance.json`), so an output left over from an
    earlier build fails the check and is named, while an absent optional input
    only degrades its builder.
-4. Run the build graph: Story first where later tasks read it, then Map, Assets,
-   Characters, Gameplay, the curated source graph and its consumers, Audio and
-   the Data page's decoded datasets, each as soon as its edges succeed.
+4. Run ready tasks in the build graph within the job limit. Story, Assets,
+   Production, projectile recovery and Data can start together; later tasks
+   start as soon as their selected dependency edges succeed. The registry
+   owns this order; `python -m scripts.webui.export_diagram` regenerates the
+   scope matrix and dependency depths in `res/export_pages.svg`.
 5. Write step timings and process-tree memory benchmarks under
    `reports/export/`.
 
@@ -124,6 +138,9 @@ all publication stages succeed.
 
 ## Shared contracts
 
+- Shared loaders report measured download progress within a named stage;
+  parsing, preparation and rendering stay indeterminate. See
+  [`webui/README.md`](../webui/README.md) for the frontend contract.
 - Generated data belongs in `webui/data/`; never hand-edit it. User-maintained
   inputs belong in `webui/overrides/`, and export runs never replace Story
   order or manual option overrides.

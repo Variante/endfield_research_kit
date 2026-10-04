@@ -6,7 +6,7 @@
   const text = (value) => String(value ?? "");
   const unique = (values) => [...new Set(values.filter(Boolean).map(text))];
   const ui = (en, zh) => String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh").startsWith("zh") ? zh : en;
-  const esc = (value) => text(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const esc = window.WebUI.escapeHtml;
 
   function buildModel(conv, { missionTimelineRecovery = null } = {}) {
     if (!conv || !conv.key) return null;

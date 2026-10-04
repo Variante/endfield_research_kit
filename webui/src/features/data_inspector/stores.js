@@ -61,7 +61,6 @@
   const FILES_SELECTION_KEY = "data_files_selection";
   const FILES_PAGE_SIZE_KEY = "data_files_page_size";
   const SQL_DRAFT_KEY = "data_sql_draft";
-  const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const PATH_ID_KEY = /path_?id$/i;
   const BASE64_TEXT = /^[A-Za-z0-9+/]+={0,2}$/;
   const FIELDS = ["name", "object", "pathId", "cab"];
@@ -74,7 +73,6 @@
   const zh = () => String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh")
     .toLowerCase().startsWith("zh");
   const ui = (en, cn) => (zh() ? cn : en);
-  const isMobileLayout = () => !!(window.matchMedia && window.matchMedia(MOBILE_LAYOUT_QUERY).matches);
   const shell = () => WebUI.dataInspectorShell || {};
   const decodedApi = () => WebUI.decodedInspector || null;
   const formatBytes = (value) => (shell().formatBytes ? shell().formatBytes(value) : `${value} B`);
@@ -783,16 +781,15 @@
       </div>`;
     bindFilesEvents(pane);
     shell().bindFilterSections?.(pane);
-    files.filterPanel = WebUI.filters?.createPanelToggle?.({
+    files.filterPanel = WebUI.filters.createPanelToggle({
       panel: "#data-files-filter-panel",
       toggle: "#data-files-filter-toggle",
       left: "#data-files-left",
       storageKey: FILES_FILTER_PANEL_KEY,
-      isMobile: isMobileLayout,
       labels: (collapsed) => (collapsed ? ui("Show filters", "显示筛选") : ui("Hide filters", "隐藏筛选")),
       onChange: () => window.dispatchEvent(new Event("resize")),
-    }) || null;
-    shell().setupListShellSplitters?.({
+    });
+    window.WebUI.setupListShellSplitters({
       shell: $(".data-page-shell", pane),
       sidebar: $("#data-files-left", pane),
       pane: $("#data-files-splitter", pane),
@@ -2181,7 +2178,7 @@ doc(data, '$.a.b')     ${esc(ui("-> one JSON value", "-> 单个 JSON 值"))}</pr
     renderSqlExamples();
     renderSqlResult();
     shell().bindFilterSections?.(pane);
-    shell().setupListShellSplitters?.({
+    window.WebUI.setupListShellSplitters({
       shell: $(".data-page-shell", pane),
       sidebar: $("#data-sql-left", pane),
       pane: $("#data-sql-splitter", pane),

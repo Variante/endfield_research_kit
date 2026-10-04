@@ -40,7 +40,7 @@ precedence; `WEBUI_PREVIOUS_EXPORT_ROOT` remains the server-specific override.
 
 ## Pages and routing
 
-Ten tabs, in navigation order. `data-view` is the tab token in `index.html`
+Nine tabs, in navigation order. `data-view` is the tab token in `index.html`
 and the value of `document.body.dataset.activeView`.
 
 | Page | `data-view` | Scope | Behavior contract |
@@ -48,8 +48,7 @@ and the value of `document.body.dataset.activeView`.
 | Story | `story` | Reconstructed dialog, SNS, radio, local branch overviews, cutscenes, media, and evidence-typed order | `app.js` |
 | Map | `map-recovery` | Authored world-space evidence, encounters, patrols, NPCs and scene conditions with minimap, model, point, and water layers | `src/features/map_recovery/index.js` |
 | Characters | `characters` | Identity groups, complete source appearances, verified Story links, related assets, and live overrides | `src/features/characters/index.js` |
-| Gameplay | `gameplay` | Characters, equipment, enemies, items, progression, skills, projectiles, and assets | `src/features/gameplay/index.js` |
-| Production | `production` | Items, recipe inputs and outputs, machines, configured shop rewards, and upgrade uses | `src/features/production/index.js` |
+| Gameplay | `gameplay` | Characters, equipment, enemies, items and their effects, recipes, machines, progression, skills, projectiles, and assets | `src/features/gameplay/{tabs,index}.js`, `src/features/production/index.js` |
 | Text | `reference` | Searchable localized table/reference rows and configured achievement/activity targets and rewards | `src/features/reference/index.js` |
 | Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state | `src/features/audio/index.js` |
 | Assets | `assets` | Exported images, models, video, and metadata | `assets.js` |
@@ -70,8 +69,10 @@ L2 states by exact per-file path partition. Its missing state stays visible;
 a present stale receipt or declaration mismatch stops publication.
 
 Deep links are query parameters kept current with `history.replaceState`.
-`#<view>` also selects a tab: the retired `#projectiles` falls back to
-Gameplay, and any other unknown hash falls back to Story.
+`#<view>` also selects a tab: `#projectiles` falls back to Gameplay.
+Legacy `#production` links select the corresponding Gameplay catalog and
+normalize to `#gameplay`, preserving the selection and filters. Unknown hashes
+fall back to Story.
 
 | Parameter | Selects |
 | --- | --- |
@@ -81,8 +82,8 @@ Gameplay, and any other unknown hash falls back to Story.
 | `?line=` / `?cid=` with `?story=` | Focus a rendered Story line or content ID and open containing disclosures; `cid` disambiguates repeated line IDs |
 | `?asset=` | Assets entry by relative path |
 | `?audio=` + `?audioKind=` | Audio record (`events` or a media shard) |
-| `?gameplay=` + `?gameplayId=` + `?entry=` | Gameplay list, item, and sub-entry |
-| `?productionKind=` + `?productionId=` (+ `?productionQ=`, repeated `?productionType=` / `?productionCategory=` / `?productionTag=`, `?productionSort=`) | Production catalog (`items`, `recipes`, `machines`), selected record, search, facets, and order; old medal item IDs resolve to their achievement group |
+| `?gameplayKind=` (+ `?gameplay=` / `?gameplayId=` / `?entry=`) | Gameplay dataset (`character`, `weapon`, `equipment`, `item`, `enemy`, `recipe`, `machine`) and selected entity; existing item links open the combined Items catalog |
+| `?productionKind=` + `?productionId=` (+ `?productionQ=`, repeated `?productionType=` / `?productionCategory=` / `?productionTag=`, `?productionSort=`) | Gameplay's item, recipe or machine catalog (`items`, `recipes`, `machines`), selected record, search, facets, and order; old medal item IDs resolve to their achievement group |
 | `?inspectDataset=` + `?inspect=` | Data page, Files mode: the selected decoded record (dataset and record id) |
 | `?dataMode=` + `?dataRoot=` + `?dataStore=` + `?dataGroup=` + `?dataName=` (+ `?dataQ=`, `?dataField=`, `?dataStatus=`, `?dataFolder=`, `?dataTag=`, `?dataSort=`) | Data page mode (`files`, `sql`; the retired `decoded` opens `files`), export (`previous`, omitted for current), selected sources (repeated `dataStore`: `unity`, `game-files`, `loose`, `undecoded`, `decoded`), selected groups (repeated `dataGroup=<source>:<group>`; an unqualified group belongs to `dataStore`), the selected store row, search, and the repeated decoded filters and order; build with `WebUI.dataPageUrl` / `dataPageUrlForRel` |
 
@@ -106,8 +107,8 @@ Load order, as `index.html` declares it:
 | `src/features/story/{branches.js,branches.css}` | Local option and SNS branch overviews; typed routes, manual annotations, and unresolved continuations |
 | `assets.js` | Assets page |
 | `src/features/characters/{index.js,appearances.js,style.css}` | Characters view, collapsible appearance records with source-checked Story navigation, and runtime overrides |
-| `src/features/gameplay/{labels.js,loadout.js,mechanics.js,skill_refs.js,index.js}` | Gameplay datasets, loadout calculator, semantic summaries, authored skill references, and detail rendering |
-| `src/features/production/{index.js,style.css}` | Production catalogs using shared facets, sorting, pagination, and Data file links |
+| `src/features/gameplay/{labels.js,loadout.js,mechanics.js,skill_refs.js,index.js,tabs.js}` | Gameplay entity details, loadout, semantic summaries, authored skill references, item effects, and shared dataset navigation |
+| `src/features/production/{index.js,style.css}` | Gameplay's item, recipe and machine catalogs using shared facets, sorting, pagination, and Data file links |
 | `src/features/audio/{index.js,style.css}` | Audio evidence browser |
 | `src/features/map_recovery/{index.js,encounters.js,style.css}` | Map view and selection-only authored encounter overlays |
 | `src/features/next_views.js` | shared page-bootstrap wiring |
@@ -119,30 +120,52 @@ Load order, as `index.html` declares it:
 Generated data belongs in `webui/data/`; user-managed inputs belong in
 `webui/overrides/`. Do not hand-edit generated JSON.
 
-Gameplay separates characters, weapons, equipment, items and enemies into dataset
-tabs; only the selected dataset's type filters are shown. Item filters distinguish
-operator AP supplies, other AP supplies and authored item display/type categories;
-the usable-item display category splits into tactical items and consumables.
+Loading overlays name the current stage: download, reading, preparation or
+display. Percentages describe downloaded bytes in that stage, using trustworthy
+uncompressed response lengths; Audio weights parallel shards by bytes only
+when every length is known. Unknown lengths, compressed responses and CPU work
+show an indeterminate bar. No fixed stage weights estimate overall load time.
+Stage changes paint before blocking work, and overlays close after the content
+has had a chance to paint. Superseded requests cannot update the current load,
+and an earlier fade cannot hide a restarted loader.
+
+Gameplay separates characters, weapons, equipment, items, enemies, recipes and
+machines into dataset tabs; only the selected dataset's filters are shown.
+Items uses the complete Production item catalog, adding the matching Gameplay
+publication's AP recovery, use effects, action blackboards, chest rewards,
+Story wiki links and optional asset gallery.
+Item effects use the catalog's displayed data language; an unavailable Gameplay
+publication shows a retry state without hiding the catalog or its relationships.
 Rarity chips show only values present in the current dataset and subtype filters;
 changing types clears rarity selections that no longer have entries.
 Gameplay offers the shared sort dropdown for default relevance/type order, name
 ascending/descending, rarity ascending/descending, type and ID. Explicit sorts
 take precedence over search relevance; changing sort returns to the first page,
 and reset restores default order while keeping the dataset tab.
-Gameplay, Production, Audio and Data share dataset-tab styling immediately below the sidebar
-title, followed by counts, actions, filters and the list. Reset keeps the selected
-Gameplay dataset; related-item links switch to their target dataset.
+Gameplay uses a shared dataset bar above both catalog panes. Audio and Data use
+the same tab styling below their sidebar title. Reset keeps the selected
+Gameplay dataset; recipe, ingredient, machine and reward links switch to their
+target dataset. Browser history restores catalog selections and filters.
 
-Production merges item-type chips with identical localized labels and uses the
+The item catalog merges type chips with identical localized labels and uses the
 in-game encyclopedia groups for building chips. Available item and group icons
 come from its compact lookup over existing exported media. Descriptions stay
 expanded and use Story's rich-text/raw-tag display; building dimensions are
-shown directly, and empty relationship sections are hidden.
+shown as depth × width × height, and empty relationship sections are hidden.
+Machines label power consumption as electricity consumption. Each machine
+recipe row shows ingredients → outputs with quantities and processing time,
+and links to its recipe detail.
+Character breakthrough costs and potential values stay expanded. Character
+avatar items use square head images; filled containers include their liquid/gas
+icons, and medal tiers use their achievement artwork. Single-tier medals show
+Level 1. Recipes producing the same complete output item set share one entry,
+preserving each method's inputs, quantities and configured production time.
+Conditions and stored configuration stay expanded in two columns on desktop.
 Recipes also filter by their produced items' categories. Achievement medals
 share one entry per proved tier group, keeping every tier's description and
 target; medal filters use the authored achievement categories. Matching limited
 items linked by `LTItemTable` also share an entry, combining their relationships
-and retaining navigation/search through either original identifier. Production uses
+and retaining navigation/search through either original identifier. These catalogs use
 the shared update badges and old/current source-field details. Gameplay list
 rows reuse its optional asset-reference images as lazy thumbnails; characters
 use horizontal face banners, following the selected Administrator gender.
@@ -343,7 +366,10 @@ when that identity still matches, without re-rendering its detail on each input.
 ### Gameplay
 
 Gameplay owns character progression, equipment, enemies, skills, Buffs,
-projectiles, and assets; audio is not attached. Character and enemy details use
+projectiles, and assets, and hosts the independently published Production item,
+recipe and machine catalogs. Dataset paths and builder ownership remain
+separate: `export.bat gameplay production` refreshes all Gameplay tabs from
+the existing export. Character and enemy details use
 an overview and local section navigation. Characters lead with parsed mechanisms,
 then combat/base talents and growth. Enemies lead with authored combat traits;
 configuration selectors update their attributes and attached effects together.
@@ -601,6 +627,11 @@ Marker eligibility and render-layer grades:
   document is a Data-page store row, and a material links to its Data-page
   document. The optional `Table owner` fact requires an exact whole-stem match
   in an asset-bearing field.
+- Assets chip counts are totals over grouped asset entries. Type, category,
+  source, and search can narrow the result to zero; chip tooltips and the
+  empty-list message explain this and point to clearing search or resetting.
+  The filter panel scrolls within half the viewport height so expanding the
+  category catalog keeps the results visible.
 - Sprite images are crop documents over their textures, still linked as
   `.../game/Unity/Sprite/<name>.png`; `serve.py` answers with the crop
   document and `sprite_worker.js` renders it pixel-identical to AnimeStudio.
@@ -618,7 +649,7 @@ payload diffs through its maintained reader and says so (`text_kind`); a
 changed file with no diff says why (`text_diff_note`). Path-only relocations
 with unchanged content are omitted. Build with `.\build_updates.bat OLD NEW`.
 
-Optional `data/updates/{characters,story,map,gameplay}.json` sidecars add Added/Modified
+Optional `data/updates/{characters,story,map,gameplay,production,reference}.json` sidecars add Added/Modified
 badges to Story conversation titles, Map zone lists and the selected zone,
 and Gameplay entry lists and details. The shared `src/ui/update_badges.js`
 loads them without caching. Badges describe changes in linked authored source
@@ -634,6 +665,17 @@ and owner; their comparison stays visible outside debug mode. Linked file
 changes include bounded plain/decoded diffs, file sizes, and previous/current
 export links. Reader coverage gaps and truncated previews are stated explicitly.
 Missing legacy detail data is explained instead of leaving a tag unexplained.
+
+Story, Text Tables, Map, Gameplay, Production catalogs, Audio and Assets share
+Characters' collapsible **Version changes** filter: Added, Modified and Deleted.
+Selections combine with existing filters; selecting multiple statuses matches
+any of them, and clearing the selection includes unchanged items again. Counts
+are dataset totals (tables for Text Tables), independent of other filters.
+Text Tables narrows both the table list and its displayed rows. Map filters
+zone groups using the same combined variant status as their badge; Audio and
+Assets use the same linked-file status as their badges. Missing comparison
+data hides this filter and clears its selection. Deleted filters show only entries present in the page's
+dataset; they do not reconstruct removed content.
 
 ### Data
 

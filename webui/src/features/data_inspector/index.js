@@ -76,7 +76,6 @@
   const TREE_ROW_BUDGET = 4000;
   const RAW_PREVIEW_LIMIT = 1000000;
   const JSON_VIEW_LIMIT = 2000000;
-  const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const MISSING = Symbol("declared-but-not-published");
 
   const lazyValues = new Map();
@@ -104,9 +103,6 @@
   const zh = () => String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh")
     .toLowerCase().startsWith("zh");
   const ui = (en, cn) => (zh() ? cn : en);
-  const isMobileLayout = () => !!(window.matchMedia && window.matchMedia(MOBILE_LAYOUT_QUERY).matches);
-  const parsePixels = (value, fallback) => (window.WebUI.splitterUtils?.parseCssPixels(value, fallback)
-    ?? (Number.isFinite(Number.parseFloat(value)) ? Number.parseFloat(value) : fallback));
 
   // ---------------------------------------------------------------- labels --
 
@@ -217,103 +213,6 @@
   // The pane splitter (sidebar width) and, when a filter panel and its splitter
   // are given, the filter splitter (panel height) of one list-page shell. The
   // Data page's Files and SQL modes reuse it with their own elements.
-  function setupListShellSplitters({
-    shell, sidebar, pane, panel = null, filter = null, list = null, paneStorageKey, filterStorageKey = "",
-  }) {
-    const setup = window.WebUI?.setupSplitter;
-    const utils = window.WebUI?.splitterUtils;
-    if (!setup || !utils || !shell || !sidebar || !pane) return;
-
-    let paneWasMobile = isMobileLayout();
-    setup({
-      handle: pane,
-      storageKey: paneStorageKey,
-      bodyDragClass: "is-resizing-pane",
-      client: (event) => event.clientX,
-      keys: { decrease: ["ArrowLeft"], increase: ["ArrowRight"] },
-      enabled: () => !isMobileLayout(),
-      bounds: () => {
-        const min = parsePixels(getComputedStyle(sidebar).minWidth, 300);
-        return { min, max: Math.max(min, shell.getBoundingClientRect().width - pane.getBoundingClientRect().width - 320) };
-      },
-      read: () => parsePixels(sidebar.style.width, sidebar.getBoundingClientRect().width),
-      write: (width) => { sidebar.style.width = `${Math.round(width)}px`; },
-      clear: () => { sidebar.style.removeProperty("width"); },
-      sync: (controller) => {
-        if (isMobileLayout()) {
-          paneWasMobile = true;
-          controller.clear({ commit: false });
-          return;
-        }
-        if (shell.getBoundingClientRect().width < 48) return;
-        let width = parsePixels(sidebar.style.width, sidebar.getBoundingClientRect().width);
-        if (paneWasMobile || !sidebar.style.width) width = utils.readStoredNumber(paneStorageKey) ?? width;
-        paneWasMobile = false;
-        controller.set(width, { persist: false, commit: false });
-      },
-    });
-    if (!panel || !filter) return;
-
-    const minPanelHeight = 56;
-    const minListHeight = 160;
-    let filterWasMobile = isMobileLayout();
-    const naturalHeight = () => {
-      const previous = panel.style.height;
-      const resized = panel.classList.contains("is-filter-resized");
-      panel.style.removeProperty("height");
-      panel.classList.remove("is-filter-resized");
-      const height = Math.ceil(panel.getBoundingClientRect().height);
-      if (previous) panel.style.height = previous;
-      panel.classList.toggle("is-filter-resized", resized);
-      return Math.max(minPanelHeight, height);
-    };
-    const controller = setup({
-      handle: filter,
-      storageKey: filterStorageKey,
-      bodyDragClass: "is-resizing-filter",
-      client: (event) => event.clientY,
-      keys: { decrease: ["ArrowUp"], increase: ["ArrowDown"] },
-      enabled: () => !isMobileLayout() && !panel.hidden,
-      bounds: () => {
-        let fixed = 0;
-        for (const child of sidebar.children) if (child !== panel && child !== list) fixed += child.getBoundingClientRect().height;
-        const available = Math.max(minPanelHeight, sidebar.getBoundingClientRect().height - fixed - minListHeight);
-        return { min: minPanelHeight, max: Math.max(minPanelHeight, Math.min(available, naturalHeight())) };
-      },
-      read: () => panel.getBoundingClientRect().height,
-      write: (height) => {
-        panel.style.height = `${Math.round(height)}px`;
-        panel.classList.add("is-filter-resized");
-      },
-      clear: () => {
-        panel.style.removeProperty("height");
-        panel.classList.remove("is-filter-resized");
-      },
-      sync: (ctrl) => {
-        if (isMobileLayout() || panel.hidden) {
-          filterWasMobile = isMobileLayout();
-          ctrl.clear({ commit: false });
-          return;
-        }
-        if (sidebar.getBoundingClientRect().height < 48) return;
-        const stored = utils.readStoredNumber(filterStorageKey);
-        if (stored !== null) {
-          filterWasMobile = false;
-          ctrl.set(stored, { persist: false, commit: false });
-        } else {
-          if (filterWasMobile) ctrl.clear({ commit: false });
-          filterWasMobile = false;
-          ctrl.syncAria();
-        }
-      },
-    });
-    if (window.MutationObserver && controller) {
-      const observer = new MutationObserver(controller.requestSync);
-      observer.observe(panel, { attributes: true, attributeFilter: ["hidden"] });
-      observer.observe(panel, { childList: true, subtree: true });
-    }
-  }
-
   // ------------------------------------------------------------- list rows --
 
   // The page controller (stores.js) owns the list, its filters and paging;
@@ -1521,7 +1420,6 @@
     toneClass,
   };
   window.WebUI.dataInspectorShell = {
-    setupListShellSplitters,
     bindFilterSections,
     formatBytes,
     copyToClipboard,

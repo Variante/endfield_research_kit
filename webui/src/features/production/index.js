@@ -1,5 +1,5 @@
-// Production publishes stored table configurations and exact ID joins. It uses
-// the shared facets, search, sorting, pager and Data source-file navigation.
+// Production catalog renderer inside Gameplay. Publication paths and exact ID
+// joins remain owned by the Production builder; gameplay/tabs.js owns navigation.
 (() => {
   const W = window.WebUI;
   const esc = W.escapeHtml;
@@ -12,7 +12,7 @@
     loadToken: 0, detailToken: 0, detail: null, loading: null, splitter: null, records: {},
   };
   const currentLanguage = () => String($("#language")?.value || "CN").toUpperCase();
-  const active = () => document.body.dataset.activeView === "production" || location.hash === "#production";
+  const active = () => document.body.dataset.activeView === "gameplay" && ["item", "recipe", "machine"].includes(W.gameplayTabs?.kind);
   const kindLabel = (kind) => ({ items: ui("Items & materials", "物品与材料"), recipes: ui("Recipes", "配方"), machines: ui("Machines & buildings", "设备与建筑") })[kind] || kind;
   const tagLabel = (tag) => ({
     factory_item: ui("Production material", "生产物料"), craftable: ui("Recipe output", "配方产物"),
@@ -44,24 +44,24 @@
     return url ? `<img class="production-icon ${className}" src="${esc(url)}" alt="" loading="lazy" decoding="async">` : "";
   };
   const rowIcon = (row, className = "") => {
-    const ids = row.kind === "recipes" ? (row.outcomes || []).flat().map((ref) => ref.iconId) : [row.iconId];
-    return iconHtml(ids.find((id) => iconUrl(id)), className);
+    const refs = row.kind === "recipes" ? (row.outcomes || []).flat() : [row];
+    const ref = refs.find((value) => iconUrl(value.iconId));
+    if (!ref) return "";
+    const base = iconHtml(ref.iconId, className);
+    return iconUrl(ref.contentIconId)
+      ? `<span class="production-composite-icon ${className}">${base}${iconHtml(ref.contentIconId, "production-content-icon")}</span>` : base;
   };
   const categoryLabel = (id) => id === "(none)" ? ui("Uncategorized", "未分类")
     : state.rows.flatMap((row) => row.categories || []).find((category) => category.id === id)?.title || id;
   const categoryIcon = (id) => iconUrl(state.rows.flatMap((row) => row.categories || []).find((category) => category.id === id)?.iconId);
   const typeValue = (row) => row.kind === "machines" ? (row.categories?.length ? row.categories.map((category) => category.id) : ["(none)"])
-    : row.kind === "items" ? row.typeGroup || row.type || "(none)" : row.type || "(none)";
-  const canonicalId = (kind, id) => kind === "items" ? state.data?.itemAliases?.[id] || id : id;
+    : row.kind === "items" ? row.typeGroup || row.type || "(none)" : row.types || row.type || "(none)";
+  const canonicalId = (kind, id) => (kind === "items" ? state.data?.itemAliases?.[id]
+    : kind === "recipes" ? state.data?.recipeAliases?.[id] : "") || id;
 
   function pageUrl(kind, id) {
     id = canonicalId(kind, id);
-    const url = new URL(location.href);
-    for (const key of [...url.searchParams.keys()]) if (key.startsWith("production")) url.searchParams.delete(key);
-    url.searchParams.set("productionKind", kind);
-    if (id) url.searchParams.set("productionId", id);
-    url.hash = "production";
-    return url.href;
+    return W.gameplayTabs.pageUrl({ items: "item", recipes: "recipe", machines: "machine" }[kind], id);
   }
 
   function recordLink(kind, id, title, resolved = true) {
@@ -84,10 +84,12 @@
     }).join("")}</ul></details>`;
   }
 
-  function properties(values, label = ui("Stored configuration", "存储配置")) {
+  function properties(values, label = ui("Stored configuration", "存储配置"), expanded = false) {
     const rows = Object.entries(values).filter(([, value]) => value != null && value !== "");
-    if (!rows.length) return "";
-    return `<details class="production-properties"><summary>${esc(label)}</summary><dl>${rows.map(([key, value]) => `<dt>${esc(key)}</dt><dd>${esc(typeof value === "object" ? JSON.stringify(value) : String(value))}</dd>`).join("")}</dl></details>`;
+    if (!rows.length && !expanded) return "";
+    const content = rows.length ? `<dl>${rows.map(([key, value]) => `<dt>${esc(key)}</dt><dd>${esc(typeof value === "object" ? JSON.stringify(value) : String(value))}</dd>`).join("")}</dl>` : empty(ui("No values stored.", "未存储配置值。"));
+    return expanded ? `<section class="production-properties"><h4>${esc(label)}</h4>${content}</section>`
+      : `<details class="production-properties"><summary>${esc(label)}</summary>${content}</details>`;
   }
 
   function section(title, contents, count) {
@@ -96,9 +98,25 @@
   }
 
   function dimensions(range) {
-    const labels = { depth: ui("Depth", "深度"), height: ui("Height", "高度"), width: ui("Width", "宽度") };
-    const values = Object.entries(labels).filter(([key]) => Number.isFinite(range?.[key]));
-    return values.length ? `<dl class="production-dimensions">${values.map(([key, label]) => `<div><dt>${esc(label)}</dt><dd>${number(range[key])}</dd></div>`).join("")}</dl>` : "";
+    const axes = ["depth", "width", "height"];
+    if (!axes.some((key) => Number.isFinite(range?.[key]))) return "";
+    const size = axes.map((key) => Number.isFinite(range?.[key]) ? number(range[key]) : "—").join(" × ");
+    return `<dl class="production-dimensions"><div><dt>${esc(ui("Dimensions (depth × width × height)", "尺寸（深度 × 宽度 × 高度）"))}</dt><dd>${esc(size)}</dd></div></dl>`;
+  }
+
+  const durationText = (row) => row.durationSeconds != null
+    ? `${esc(number(row.durationSeconds))} ${esc(ui("s", "秒"))}` : esc(ui("Not specified", "未指定"));
+
+  function inlineRecipeGroups(groups) {
+    if (!(groups || []).some((group) => group.length)) return esc(ui("No items recorded", "未记录物品"));
+    return groups.map((group) => `<span class="production-machine-group">${groups.length > 1 ? "(" : ""}${group.map(itemBundle).join(" <span class=production-plus>+</span> ")}${groups.length > 1 ? ")" : ""}</span>`).join(" · ");
+  }
+
+  function renderMachineRecipe(recipe) {
+    const formula = recipe.ingredients && recipe.outcomes
+      ? `${inlineRecipeGroups(recipe.ingredients)}<span class="production-machine-arrow" aria-hidden="true">→</span>${inlineRecipeGroups(recipe.outcomes)}`
+      : recordLink("recipes", recipe.id, recipe.title);
+    return `<article class="production-reference production-machine-recipe" data-production-recipe="${esc(recipe.id)}"><div class="production-machine-formula">${formula}</div><span class="production-machine-time">${esc(ui("Processing time", "处理时间"))}: ${durationText(recipe)}</span><a class="production-machine-recipe-link" href="${esc(pageUrl("recipes", recipe.id))}" data-production-kind="recipes" data-production-id="${esc(recipe.id)}" title="${esc(recipe.title)}">${esc(ui("Details", "详情"))}</a></article>`;
   }
 
   function renderGroups(groups) {
@@ -145,7 +163,7 @@
     if (row.medalLevels?.length) {
       html += `<div class="production-meta">${(row.categories || []).map((category) => badge(category.title)).join("")}</div>`;
       return html + section(ui("Medal tiers", "蚀刻章等级"), `<div class="production-references">${row.medalLevels.map((tier) => `<article class="production-reference production-medal-tier">
-        <h4>${esc(`${ui("Level", "等级")} ${tier.level}${tier.plated ? ` · ${ui("Plated", "镀层")}` : ""}`)}</h4><code>${esc(tier.item.id)}</code>
+        <h4>${rowIcon(tier.item)}${esc(`${ui("Level", "等级")} ${tier.level}${tier.plated ? ` · ${ui("Plated", "镀层")}` : ""}`)}</h4><code>${esc(tier.item.id)}</code>
         ${tier.item.description && tier.item.description !== row.description ? `<div class="production-description">${richText(tier.item.description)}</div>` : ""}
         ${tier.conditions.length ? `<ul>${tier.conditions.map((condition) => `<li>${richText(condition.description || condition.conditionId)}${condition.progressToCompare != null ? ` · ${esc(ui("Target", "目标"))} ${number(condition.progressToCompare)}` : ""}</li>`).join("")}</ul>` : ""}
         ${renderItem(tier.item)}${sourceLinks(tier.item.sources)}</article>`).join("")}</div>`, row.medalLevels.length);
@@ -165,19 +183,22 @@
   }
 
   function renderRecipe(row) {
+    if (row.recipeVariants?.length) {
+      return section(ui("Production methods", "制作方式"), `<div class="production-recipe-variants">${row.recipeVariants.map((variant) => `<article class="production-recipe-variant"><h4>${esc(variant.title)}</h4>${renderRecipe(variant)}${sourceLinks(variant.sources)}</article>`).join("")}</div>`, row.recipeVariants.length);
+    }
     let html = `<div class="production-meta">${badge(tagLabel(row.type))}${(row.categories || []).map((category) => badge(category.title)).join("")}${row.machineId ? recordLink("machines", row.machineId, row.machineName, row.machineResolved) : ""}</div>`;
+    html += `<p class="production-duration"><strong>${esc(ui("Production time", "生产时间"))}</strong>: ${durationText(row)}</p>`;
     html += `<div class="production-flow">${section(ui("Ingredients", "原料"), renderGroups(row.ingredients))}<div class="production-arrow" aria-hidden="true">→</div>${section(ui("Outputs", "产物"), renderGroups(row.outcomes))}</div>`;
     if (row.formulaItem) html += section(ui("Formula item", "配方物品"), itemLink(row.formulaItem));
-    html += properties(row.conditions, ui("Unlock and operating conditions", "解锁与运行条件"));
-    if (Object.keys(row.timing || {}).length) html += section(ui("Stored timing fields", "存储时序字段"), `<p class="production-note">${esc(ui("These fields are shown as stored. Effective production time and rates have not been established.", "按原始字段展示；尚未确定实际生产用时与速率。"))}</p>${properties(row.timing)}`);
+    html += `<div class="production-recipe-config">${properties(row.conditions, ui("Unlock and operating conditions", "解锁与运行条件"), true)}${properties({ ...(row.configuration || {}), ...(row.timing || {}) }, ui("Stored configuration", "存储配置"), true)}</div>`;
     return html;
   }
 
   function renderMachine(row) {
-    let html = `<div class="production-meta">${(row.categories || []).map((category) => `<span class="production-badge production-category">${iconHtml(category.iconId)}${esc(category.title)}</span>`).join("")}${row.needPower ? badge(ui("Requires power", "需要供电")) : ""}${badge(`${ui("Power consumption field", "功耗字段")}: ${row.powerConsume ?? "—"}`)}</div>`;
+    let html = `<div class="production-meta">${(row.categories || []).map((category) => `<span class="production-badge production-category">${iconHtml(category.iconId)}${esc(category.title)}</span>`).join("")}${row.needPower ? badge(ui("Requires power", "需要供电")) : ""}${badge(`${ui("Electricity consumption", "电力消耗")}: ${row.powerConsume ?? "—"}`)}</div>`;
     html += dimensions(row.range);
     if (row.items.length) html += section(ui("Building items", "建筑物品"), row.items.map(itemLink).join(" · "));
-    html += section(ui("Recipes", "配方"), row.recipes.length ? `<div class="production-references">${row.recipes.map((recipe) => `<article class="production-reference">${recordLink("recipes", recipe.id, recipe.title)}</article>`).join("")}</div>` : empty(ui("No recipe names this building ID.", "没有配方直接引用此建筑标识符。")), row.recipes.length);
+    html += section(ui("Recipes", "配方"), row.recipes.length ? `<div class="production-references">${row.recipes.map(renderMachineRecipe).join("")}</div>` : empty(ui("No recipe names this building ID.", "没有配方直接引用此建筑标识符。")), row.recipes.length);
     html += properties({ type: row.type, inputPorts: row.inputPorts, outputPorts: row.outputPorts, range: row.range,
       placeDomains: row.placeDomains, recommendDomains: row.recommendDomains, rendererTemplateMap: row.rendererTemplateMap });
     return html;
@@ -191,7 +212,21 @@
     panel.innerHTML = `<header class="production-detail-header"><div class="production-identity">${rowIcon(row, "production-icon-large")}<div><small>${esc(kindLabel(row.kind))}</small><h2>${esc(row.title)} ${W.updateBadges.html("production", updateId)}</h2><code>${esc(row.id)}</code></div></div><button type="button" class="panel-toggle" id="production-copy">${esc(ui("Copy link", "复制链接"))}</button></header>
       ${W.updateBadges.panel("production", updateId)}
       ${row.description ? `<div class="production-description">${richText(row.description)}</div>` : ""}
-      ${row.kind === "items" ? renderItem(row) : row.kind === "recipes" ? renderRecipe(row) : renderMachine(row)}${sourceLinks(row.sources)}`;
+      ${row.kind === "items" ? renderItem(row) : row.kind === "recipes" ? renderRecipe(row) : renderMachine(row)}
+      ${row.kind === "items" ? '<div class="production-gameplay-item" data-gameplay-item-content></div><div data-gameplay-item-assets></div>' : ""}${sourceLinks(row.sources)}`;
+    if (row.kind === "items") {
+      const contents = panel.querySelector("[data-gameplay-item-content]");
+      const token = state.detailToken;
+      W.gameplay.itemContent(row.id, state.language).then((html) => {
+        if (token === state.detailToken && contents.isConnected) contents.innerHTML = html;
+      }).catch(() => {
+        if (token === state.detailToken && contents.isConnected) contents.innerHTML = `${empty(ui("Gameplay item effects are unavailable in this publication.", "当前数据暂不可读取物品使用效果。"))}<button type="button" data-gameplay-item-retry>${esc(ui("Retry item effects", "重试使用效果"))}</button>`;
+      });
+      const gallery = panel.querySelector("[data-gameplay-item-assets]");
+      W.gameplay.itemGallery(row.id, state.language).then((html) => {
+        if (token === state.detailToken && gallery.isConnected) gallery.innerHTML = html;
+      }).catch(() => {});
+    }
     $("#production-copy").addEventListener("click", async (event) => {
       const button = event.currentTarget;
       try {
@@ -229,7 +264,7 @@
 
   function searchText(row) {
     return [row.id, row.title, row.description, row.typeName, row.showingTypeName, row.machineName, row.machineId,
-      ...(row.aliases || []),
+      ...(row.aliases || []), ...(row.machineNames || []), ...(row.machineIds || []),
       ...(row.categories || []).map((category) => `${category.id} ${category.title}`),
       ...[...(row.ingredients || []), ...(row.outcomes || [])].flatMap((group) => group.map((ref) => `${ref.id} ${ref.title}`)),
       ...row.tags.map(tagLabel), ...row.sources.map((source) => `${source.table}.json ${source.row}`),
@@ -241,7 +276,7 @@
     if (!host) return;
     host.innerHTML = state.pager.slice(state.filtered).map((row) => {
       const subtitle = row.kind === "items" ? (row.medalLevelCount ? `${row.typeName} · ${(row.categories || []).map((category) => category.title).join(" · ")} · ${row.medalLevelCount} ${ui("tiers", "个等级")}` : `${row.typeName} · ${ui("Recipe sources", "制作来源")} ${row.counts.producedBy} · ${ui("Uses", "用途")} ${row.counts.usedBy + row.counts.upgrades}`)
-        : row.kind === "recipes" ? `${tagLabel(row.type)} · ${(row.categories || []).map((category) => category.title).join(" · ")}${row.machineName ? ` · ${row.machineName}` : ""}`
+        : row.kind === "recipes" ? `${(row.types || [row.type]).map(tagLabel).join(" · ")} · ${(row.categories || []).map((category) => category.title).join(" · ")}${row.variantCount > 1 ? ` · ${row.variantCount} ${ui("methods", "种方式")}` : row.machineName ? ` · ${row.machineName}` : ""}`
           : `${(row.categories || []).map((category) => category.title).join(" · ") || ui("Uncategorized", "未分类")}${row.recipeCount ? ` · ${ui("Recipes", "配方")} ${row.recipeCount}` : ""}`;
       return `<button type="button" class="production-row${row.id === state.selectedId ? " selected" : ""}" data-production-select="${esc(row.id)}" aria-pressed="${row.id === state.selectedId}">${rowIcon(row, "production-icon-list")}<span class="production-row-text"><strong>${esc(row.title)} ${W.updateBadges.html("production", `${row.kind}:${row.id}`)}</strong><span>${esc(subtitle)}</span><code>${esc(row.id)}</code></span></button>`;
     }).join("") || empty(ui("No matching records. Reset filters to see the catalog.", "没有符合条件的记录；可重置筛选查看目录。"));
@@ -271,18 +306,21 @@
     const url = new URL(location.href);
     for (const key of [...url.searchParams.keys()]) if (key.startsWith("production")) url.searchParams.delete(key);
     url.searchParams.set("productionKind", state.kind);
+    url.searchParams.set("gameplayKind", { items: "item", recipes: "recipe", machines: "machine" }[state.kind]);
     if (state.selectedId) url.searchParams.set("productionId", state.selectedId);
     if (state.query) url.searchParams.set("productionQ", state.query);
     if (state.sort !== "title") url.searchParams.set("productionSort", state.sort);
     state.facets.toParams(url.searchParams);
-    url.hash = "production";
+    url.hash = "gameplay";
     history.replaceState(history.state, "", url);
   }
 
   function readUrl() {
     const params = new URLSearchParams(location.search);
-    state.kind = kinds.includes(params.get("productionKind")) ? params.get("productionKind") : "recipes";
-    state.selectedId = canonicalId(state.kind, params.get("productionId") || "");
+    state.kind = { item: "items", recipe: "recipes", machine: "machines" }[params.get("gameplayKind") || W.gameplayTabs?.kind]
+      || (kinds.includes(params.get("productionKind")) ? params.get("productionKind") : "recipes");
+    const legacyItem = state.kind === "items" ? W.gameplay.normalizeSelection(params.get("gameplay") || params.get("gameplayId") || params.get("entry") || "") : "";
+    state.selectedId = canonicalId(state.kind, params.get("productionId") || legacyItem);
     state.query = params.get("productionQ") || "";
     state.sort = ["title", "title-desc", "rarity-asc", "rarity-desc"].includes(params.get("productionSort")) ? params.get("productionSort") : "title";
     if (state.kind === "items" && state.data) {
@@ -328,24 +366,25 @@
     const facetState = state.facets?.snapshot();
     state.rows = state.data[state.kind];
     state.root.innerHTML = `<div class="production-layout">
-      <aside id="production-sidebar" class="production-sidebar"><header><div class="production-toolbar"><h2>${esc(ui("Production", "生产"))}</h2><button id="production-filter-toggle" class="panel-toggle" type="button" aria-controls="production-filters" aria-expanded="true"></button></div>
-      <nav class="production-kinds page-mode-switch" aria-label="${esc(ui("Production catalogs", "生产目录"))}">${kinds.map((kind) => `<button type="button" data-production-catalog="${kind}" aria-pressed="${state.kind === kind}" class="page-mode-button${state.kind === kind ? " is-active" : ""}">${esc(kindLabel(kind))} (${number(state.data[kind].length)})</button>`).join("")}</nav></header>
+      <aside id="production-sidebar" class="production-sidebar"><header><div class="production-toolbar"><h2>${esc(kindLabel(state.kind))}</h2><button id="production-filter-toggle" class="panel-toggle" type="button" aria-controls="production-filters" aria-expanded="true"></button></div></header>
       <div id="production-filters" class="filters"><div class="filter-control-row production-search-row"><label for="production-search">${esc(ui("Search names, IDs, ingredients or files", "搜索名称、标识符、原料或文件"))}</label><input id="production-search" type="search" value="${esc(state.query)}" placeholder="${esc(ui("Regex tokens; match any word", "正则词条；任一词匹配"))}"></div>
       <div class="filter-section-body filter-control-row"><label for="production-sort">${esc(ui("Sort", "排序"))}</label><select id="production-sort"><option value="title">${esc(ui("Name (A-Z)", "名称 (A-Z)"))}</option><option value="title-desc">${esc(ui("Name descending", "名称降序"))}</option><option value="rarity-asc">${esc(ui("Rarity ascending", "稀有度升序"))}</option><option value="rarity-desc">${esc(ui("Rarity descending", "稀有度降序"))}</option></select></div>
       <details class="filter-section" data-filter-section="production-type"><summary>${esc(state.kind === "machines" ? ui("Encyclopedia categories", "百科分类") : state.kind === "recipes" ? ui("Crafting method", "制作方式") : ui("Types", "类型"))}</summary><div id="production-type-filter" class="production-chips"></div></details>
       <details class="filter-section" data-filter-section="production-category"${state.kind === "machines" ? " hidden" : ""}><summary>${esc(state.kind === "recipes" ? ui("Output categories", "产物分类") : ui("Medal categories", "蚀刻章分类"))}</summary><div id="production-category-filter" class="production-chips"></div></details>
       <details class="filter-section" data-filter-section="production-tag"${state.kind === "recipes" ? " hidden" : ""}><summary>${esc(ui("Relationships", "关联"))}</summary><div id="production-tag-filter" class="production-chips"></div></details>
+      ${W.updateBadges.filterSection("production")}
       <button id="production-reset" class="panel-toggle" type="button">${esc(ui("Reset filters", "重置筛选"))}</button></div>
       <div class="production-list-heading"><strong>${esc(kindLabel(state.kind))}</strong><span id="production-count" aria-live="polite"></span></div><div id="production-list"></div><footer id="production-pager"></footer></aside>
       <div id="production-splitter" class="pane-splitter" role="separator" aria-label="${esc(ui("Resize production sidebar", "调整生产侧栏宽度"))}" aria-orientation="vertical" tabindex="0"></div>
       <main class="production-main"><p class="production-boundary">${esc(ui("Stored recipes, shop listings and item-use references. Unlock conditions and actual availability may differ in play.", "展示存储的配方、商店配置与物品用途引用。实际解锁条件及可用性以游戏运行情况为准。"))}</p>
-      ${state.language !== state.requestedLanguage ? `<p class="production-note">${esc(ui(`Production has no ${state.requestedLanguage} publication; showing ${state.language}.`, `生产页没有 ${state.requestedLanguage} 数据，当前显示 ${state.language}。`))}</p>` : ""}
+      ${state.language !== state.requestedLanguage ? `<p class="production-note">${esc(ui(`This catalog has no ${state.requestedLanguage} publication; showing ${state.language}.`, `此目录没有 ${state.requestedLanguage} 数据，当前显示 ${state.language}。`))}</p>` : ""}
       <div id="production-detail" aria-live="polite"></div><details class="production-technical production-audit"><summary>${esc(ui("Coverage and unresolved references", "覆盖范围与待解析引用"))}</summary><p>${esc(ui("Upgrade coverage: weapon breakthrough and experience, equipment enhancement, manual-upgrade mappings, formula items and shop currencies. Other item sources and uses may exist.", "升级用途覆盖武器突破与经验、装备强化、手动升级映射、配方物品及商店货币；物品还可能有其他来源和用途。"))}</p>
       <p>${esc(ui("Unresolved source references", "待解析来源引用"))}: ${number(state.data.unresolvedReferences.length)}</p><ul>${state.data.unresolvedReferences.map((row) => `<li>${esc(row.table)} · <code>${esc(row.row)}.${esc(row.field)} → ${esc(row.target || ui("empty", "空值"))}</code></li>`).join("")}</ul></details></main></div>`;
     $("#production-sort").value = state.sort;
     W.sorting.refresh();
     state.facets = W.facets.create({
       countMode: "total", groups: [
+        W.updateBadges.filterGroup("production", (row) => W.updateBadges.status("production", `${row.kind}:${row.id}`), { param: "productionUpdate" }),
         { id: "type", container: "#production-type-filter", section: "production-type", param: "productionType",
           values: typeValue, label: (value) => state.kind === "recipes" ? tagLabel(value) : state.kind === "machines" ? categoryLabel(value) : state.rows.find((row) => typeValue(row) === value)?.typeName || value,
           icon: (value) => state.kind === "machines" ? categoryIcon(value) : "" },
@@ -356,6 +395,8 @@
     });
     if (params) state.facets.fromParams(params, { silent: true });
     else if (facetState) state.facets.restore(facetState, { silent: true });
+    W.updateBadges.syncFilter("production", "production", state.facets);
+    W.updateBadges.bindFilter("production");
     state.facets.render(state.rows);
     state.pager = W.pagination.createPager({ container: "#production-pager", storageKey: "webui_production_page_size", onChange: renderList });
     setupPaneSplitter();
@@ -372,6 +413,7 @@
       state.pager.showIndex(state.filtered.findIndex((row) => row.id === state.selectedId));
       select(state.selectedId, { write: false });
     } else renderDetail(null);
+    W.gameplayTabs?.render();
   }
 
   async function getJson(url) {
@@ -389,7 +431,7 @@
     const token = ++state.loadToken;
     ++state.detailToken;
     state.requestedLanguage = requested;
-    state.root.innerHTML = empty(ui("Loading production catalog…", "正在加载生产目录…"));
+    state.root.innerHTML = empty(ui("Loading catalog…", "正在加载目录…"));
     const pending = (async () => {
       try {
         const manifest = await getJson("data/production/manifest.json");
@@ -404,7 +446,8 @@
       } catch (error) {
         if (token !== state.loadToken) return null;
         state.data = null;
-        state.root.innerHTML = `${empty(ui("Production data could not be loaded.", "无法加载生产数据。"))}<p class="production-error">${esc(error.message)}</p><button type="button" data-production-retry>${esc(ui("Retry", "重试"))}</button><p class="production-technical"><code>python -m scripts.webui.production.build_production --languages CN</code></p>`;
+        state.root.innerHTML = `${empty(ui("This catalog could not be loaded.", "无法加载此目录。"))}<p class="production-error">${esc(error.message)}</p><button type="button" data-production-retry>${esc(ui("Retry", "重试"))}</button>`;
+        W.gameplayTabs?.render();
         return null;
       } finally { if (token === state.loadToken) state.loading = null; }
     })();
@@ -412,13 +455,9 @@
     return pending;
   }
 
-  function open(kind, id = "", { push = true } = {}) {
+  function open(kind, id = "") {
     if (!kinds.includes(kind)) return;
-    if (push) history.pushState(history.state, "", pageUrl(kind, id));
-    state.kind = kind; state.selectedId = canonicalId(kind, id); state.query = ""; state.sort = "title";
-    state.facets?.reset({ silent: true });
-    if (state.data) renderShell(); else load();
-    if (id) $("#production-detail")?.scrollIntoView({ block: "nearest" });
+    W.gameplayTabs.open({ items: "item", recipes: "recipe", machines: "machine" }[kind], canonicalId(kind, id));
   }
 
   function init() {
@@ -428,22 +467,18 @@
     state.root.addEventListener("click", (event) => {
       const link = event.target.closest("[data-production-kind]");
       if (link && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) { event.preventDefault(); open(link.dataset.productionKind, link.dataset.productionId); return; }
-      const catalog = event.target.closest("[data-production-catalog]");
-      if (catalog) { open(catalog.dataset.productionCatalog); return; }
+      const reward = event.target.closest("[data-gameplay-related-key]");
+      if (reward) { const [kind, ...id] = reward.dataset.gameplayRelatedKey.split(":"); W.gameplayTabs.open(kind, id.join(":")); return; }
       const selection = event.target.closest("[data-production-select]");
       if (selection) { select(selection.dataset.productionSelect); return; }
       if (event.target.closest("[data-production-retry]")) load(currentLanguage(), true);
       if (event.target.closest("[data-production-retry-detail]")) select(state.selectedId);
+      if (event.target.closest("[data-gameplay-item-retry]") && state.detail) renderDetail(state.detail);
     });
-    if (active()) load();
   }
 
-  W.production = { init, load, open, pageUrl };
-  window.addEventListener("webui:view-changed", (event) => { if (event.detail?.view === "production") load(); });
-  window.addEventListener("webui:language-changed", (event) => { if (active()) load(event.detail?.language || currentLanguage()); });
-  window.addEventListener("webui:ui-locale-changed", () => { if (state.data) renderShell(); });
+  W.production = { init, load, open, pageUrl, count: (kind) => state.data ? state.data[kind]?.length : null };
+  window.addEventListener("webui:ui-locale-changed", () => { if (active() && state.data) renderShell(); });
   window.addEventListener("webui:inline-tag-mode-changed", () => { if (state.detail) renderDetail(state.detail); });
-  window.addEventListener("webui:retry-view", (event) => { if (event.detail?.view === "production") load(currentLanguage(), true); });
-  window.addEventListener("popstate", () => { if (active() && state.data) renderShell({ params: readUrl() }); });
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true }); else init();
 })();

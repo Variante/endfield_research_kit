@@ -64,19 +64,14 @@ function entryTreeDataTypes(entry) {
 function entryTreeDataTypesForSort(entry, sortMode) {
   const types = entryTreeDataTypes(entry);
   if ((sortMode || "story") !== "story") return types;
-  if (typeof storyOrderDetailForEntry !== "function" || !storyOrderDetailForEntry(entry)) return types;
-  const missionId = typeof storyOrderMissionIdForEntry === "function"
-    ? storyOrderMissionIdForEntry(entry)
-    : entryTreeMissionId(entry);
-  const storyType = typeof storyMissionTypeFromId === "function"
-    ? storyMissionTypeFromId(missionId)
-    : "";
+  if (!storyOrderDetailForEntry(entry)) return types;
+  const missionId = storyOrderMissionIdForEntry(entry);
+  const storyType = storyMissionTypeFromId(missionId);
   if (!storyType) return types;
   const out = [storyType];
   for (const dataType of types) {
     if (
       dataType !== storyType
-      && typeof entryUsesMissionLinkedNativeDataType === "function"
       && entryUsesMissionLinkedNativeDataType(entry, dataType)
     ) {
       out.push(dataType);
@@ -86,12 +81,10 @@ function entryTreeDataTypesForSort(entry, sortMode) {
 }
 
 function entryShouldHideArchiveDuplicateStoryType(entry, dataType) {
-  if (!entry || !dataType || typeof entryHasReadingArchiveMissionDuplicate !== "function") return false;
+  if (!entry || !dataType) return false;
   if (!entryHasReadingArchiveMissionDuplicate(entry)) return false;
   if (String(dataType || "").startsWith("prtscat:")) return false;
-  const missionType = typeof storyMissionTypeFromId === "function"
-    ? storyMissionTypeFromId(entryTreeMissionId(entry))
-    : "";
+  const missionType = storyMissionTypeFromId(entryTreeMissionId(entry));
   return !!missionType && dataType === missionType;
 }
 
@@ -181,8 +174,7 @@ function entryTreeMissionId(entry) {
 
 function treeGroupInfo(entry, dataTypeOverride = "") {
   const dataType = dataTypeOverride || entryTreeDataType(entry);
-  const useNativeMissionGroup = typeof entryUsesMissionLinkedNativeDataType === "function"
-    && entryUsesMissionLinkedNativeDataType(entry, dataType);
+  const useNativeMissionGroup = entryUsesMissionLinkedNativeDataType(entry, dataType);
   if (dataType === "topic") {
     const topicGroup = topicTreeGroupInfo(entry);
     if (topicGroup) return topicGroup;
@@ -312,6 +304,7 @@ const storyFacets = window.WebUI.facets.create({
   countMode: "total",
   onChange: () => applyFilters(),
   groups: [
+    window.WebUI.updateBadges.filterGroup("story", (entry) => window.WebUI.updateBadges.status("story", entry.k)),
     {
       id: "kind", container: "#kind-filter", section: "kind",
       values: entryKindChipToken,
@@ -376,6 +369,7 @@ function kindChipOrder() {
 
 // Re-derive the chips after the entries (or the UI locale) changed.
 function renderStoryFacets() {
+  window.WebUI.updateBadges.syncFilter("story", "story", storyFacets);
   storyFacets.invalidate().render(STATE.entries);
 }
 
@@ -419,15 +413,13 @@ function syncStoryOrderEditor() {
 }
 
 function storyOrderMoveInfo(entry) {
-  if (!entry || typeof storyOrderMissionIdForEntry !== "function") return null;
+  if (!entry) return null;
   const missionId = storyOrderMissionIdForEntry(entry);
   if (!missionId) return null;
   const mission = STATE.storyOrderPayload
     && STATE.storyOrderPayload.missions
     && STATE.storyOrderPayload.missions[missionId];
-  let order = typeof overrideKeyList === "function"
-    ? overrideKeyList(mission && mission.order)
-    : [];
+  let order = overrideKeyList(mission && mission.order);
   if (!order.length) order = storyOrderMissionBaselineOrder(missionId);
   const key = String(entry.k || "");
   const index = order.indexOf(key);
@@ -435,12 +427,21 @@ function storyOrderMoveInfo(entry) {
   return { missionId, order, index };
 }
 
+function saveStoryOrderAndRefreshTree() {
+  scheduleStoryOrderSave();
+
+  const wrap = $("#list-wrap");
+  const prevScroll = wrap ? wrap.scrollTop : 0;
+  rebuildTree({ resetScroll: false });
+  if (wrap) wrap.scrollTop = prevScroll;
+  renderList();
+}
+
 function storyOrderEntryEditable(entry) {
   if (!storyOrderEditingEnabled()) return null;
   const info = storyOrderMoveInfo(entry);
   if (!info) return null;
-  const isLocked = typeof storyOrderMissionLocked === "function"
-    && storyOrderMissionLocked(info.missionId);
+  const isLocked = storyOrderMissionLocked(info.missionId);
   if (isLocked) return null;
   return info;
 }
@@ -450,12 +451,10 @@ function reorderStoryOrderEntry(missionId, fromKey, toKey, placeAfter) {
   const mission = STATE.storyOrderPayload
     && STATE.storyOrderPayload.missions
     && STATE.storyOrderPayload.missions[missionId];
-  let order = typeof overrideKeyList === "function"
-    ? overrideKeyList(mission && mission.order)
-    : [];
+  let order = overrideKeyList(mission && mission.order);
   if (!order.length) order = storyOrderMissionBaselineOrder(missionId);
   if (!order.length) return false;
-  if (typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionId)) return false;
+  if (storyOrderMissionLocked(missionId)) return false;
   const fromIndex = order.indexOf(String(fromKey));
   const toIndex = order.indexOf(String(toKey));
   if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return false;
@@ -467,23 +466,17 @@ function reorderStoryOrderEntry(missionId, fromKey, toKey, placeAfter) {
   if (placeAfter) insertAt += 1;
   nextOrder.splice(insertAt, 0, moved);
 
-  if (typeof setStoryOrderMissionOrder !== "function" || !setStoryOrderMissionOrder(missionId, nextOrder)) {
+  if (!setStoryOrderMissionOrder(missionId, nextOrder)) {
     return false;
   }
-  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
-
-  const wrap = $("#list-wrap");
-  const prevScroll = wrap ? wrap.scrollTop : 0;
-  rebuildTree({ resetScroll: false });
-  if (wrap) wrap.scrollTop = prevScroll;
-  renderList();
+  saveStoryOrderAndRefreshTree();
   return true;
 }
 
 function storyOrderMissionIdForGroup(groupKey) {
   const missionId = String(groupKey || "");
   if (!missionId || missionId.includes(":")) return "";
-  if (typeof storyMissionTypeFromId === "function" && storyMissionTypeFromId(missionId)) {
+  if (storyMissionTypeFromId(missionId)) {
     return missionId;
   }
   const mission = STATE.storyOrderPayload
@@ -503,9 +496,7 @@ function storyOrderMissionBaselineOrder(missionId) {
   const items = [];
   for (const entry of source) {
     if (!entry) continue;
-    const mid = typeof storyOrderMissionIdForEntry === "function"
-      ? storyOrderMissionIdForEntry(entry)
-      : String(entry.m || "");
+    const mid = storyOrderMissionIdForEntry(entry);
     if (String(mid) !== target) continue;
     const key = String(entry.k || "");
     if (!key || seen.has(key)) continue;
@@ -513,8 +504,8 @@ function storyOrderMissionBaselineOrder(missionId) {
     items.push(entry);
   }
   items.sort((a, b) => {
-    const ap = typeof storyOrderPositionForEntry === "function" ? storyOrderPositionForEntry(a) : null;
-    const bp = typeof storyOrderPositionForEntry === "function" ? storyOrderPositionForEntry(b) : null;
+    const ap = storyOrderPositionForEntry(a);
+    const bp = storyOrderPositionForEntry(b);
     const hasA = Number.isFinite(ap);
     const hasB = Number.isFinite(bp);
     if (hasA && hasB && ap !== bp) return ap - bp;
@@ -528,7 +519,7 @@ function storyOrderMissionLockControl(row) {
   if ((STATE.sortMode || "story") !== "story") return "";
   const missionId = String(row && row.storyOrderMissionId || "");
   if (!missionId) return "";
-  const locked = typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionId);
+  const locked = storyOrderMissionLocked(missionId);
   const stateKey = locked ? "storyOrderMissionLocked" : "storyOrderMissionEditable";
   const titleKey = locked ? "storyOrderUnlockMissionTitle" : "storyOrderLockMissionTitle";
   const label = escapeHtml(uiText(stateKey));
@@ -547,9 +538,7 @@ function storyOrderMissionMoveUnusedControl(row) {
   if ((STATE.sortMode || "story") !== "story") return "";
   const missionId = String(row && row.storyOrderMissionId || "");
   if (!missionId) return "";
-  const unusedSet = typeof storyOrderMissionPossiblyUnused === "function"
-    ? storyOrderMissionPossiblyUnused(missionId)
-    : new Set();
+  const unusedSet = storyOrderMissionPossiblyUnused(missionId);
   const count = unusedSet ? unusedSet.size : 0;
   const titleKey = count ? "storyOrderMoveUnusedToEndTitle" : "storyOrderMoveUnusedToEndNone";
   const label = escapeHtml(uiText("storyOrderMoveUnusedToEnd"));
@@ -578,7 +567,7 @@ function storyOrderMissionVerifiedControl(row) {
   const mission = STATE.storyOrderPayload && STATE.storyOrderPayload.missions
     && STATE.storyOrderPayload.missions[missionId];
   if (!mission || !Array.isArray(mission.order) || !mission.order.length) return "";
-  const locked = typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionId);
+  const locked = storyOrderMissionLocked(missionId);
   if (locked) return "";
   const label = escapeHtml(uiText("storyOrderUnverifiedBadge"));
   const title = escapeHtml(uiText("storyOrderUnverifiedTitle"));
@@ -591,8 +580,7 @@ function storyOrderMissionReviewControl(row) {
   if ((STATE.sortMode || "story") !== "story" || !STATE.showDebug) return "";
   const missionId = String(row && row.storyOrderMissionId || "");
   if (!missionId) return "";
-  const keys = typeof storyOrderMissionUncertainKeys === "function"
-    ? storyOrderMissionUncertainKeys(missionId) : [];
+  const keys = storyOrderMissionUncertainKeys(missionId);
   if (!keys.length) return "";
   const label = escapeHtml(uiText("storyOrderReviewJump"));
   const title = escapeHtml(uiText("storyOrderReviewJumpTitle"));
@@ -608,18 +596,14 @@ function storyOrderMissionReviewControl(row) {
 function moveStoryOrderMissionUnusedToEnd(missionId) {
   const missionKey = String(missionId || "");
   if (!missionKey) return false;
-  if (typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey)) return false;
+  if (storyOrderMissionLocked(missionKey)) return false;
   const mission = STATE.storyOrderPayload
     && STATE.storyOrderPayload.missions
     && STATE.storyOrderPayload.missions[missionKey];
-  let order = typeof overrideKeyList === "function"
-    ? overrideKeyList(mission && mission.order)
-    : [];
+  let order = overrideKeyList(mission && mission.order);
   if (!order.length) order = storyOrderMissionBaselineOrder(missionKey);
   if (!order.length) return false;
-  const unusedSet = typeof storyOrderMissionPossiblyUnused === "function"
-    ? storyOrderMissionPossiblyUnused(missionKey)
-    : new Set();
+  const unusedSet = storyOrderMissionPossiblyUnused(missionKey);
   if (!unusedSet || !unusedSet.size) return false;
 
   const kept = [];
@@ -632,31 +616,19 @@ function moveStoryOrderMissionUnusedToEnd(missionId) {
   const nextOrder = kept.concat(moved);
   if (nextOrder.every((k, i) => k === order[i])) return false;
 
-  if (typeof setStoryOrderMissionOrder !== "function" || !setStoryOrderMissionOrder(missionKey, nextOrder)) {
+  if (!setStoryOrderMissionOrder(missionKey, nextOrder)) {
     return false;
   }
-  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
-
-  const wrap = $("#list-wrap");
-  const prevScroll = wrap ? wrap.scrollTop : 0;
-  rebuildTree({ resetScroll: false });
-  if (wrap) wrap.scrollTop = prevScroll;
-  renderList();
+  saveStoryOrderAndRefreshTree();
   return true;
 }
 
 function toggleStoryOrderMissionLock(missionId) {
   const missionKey = String(missionId || "");
-  if (!missionKey || typeof setStoryOrderMissionLocked !== "function") return false;
-  const nextLocked = !(typeof storyOrderMissionLocked === "function" && storyOrderMissionLocked(missionKey));
+  if (!missionKey) return false;
+  const nextLocked = !storyOrderMissionLocked(missionKey);
   if (!setStoryOrderMissionLocked(missionKey, nextLocked)) return false;
-  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
-
-  const wrap = $("#list-wrap");
-  const prevScroll = wrap ? wrap.scrollTop : 0;
-  rebuildTree({ resetScroll: false });
-  if (wrap) wrap.scrollTop = prevScroll;
-  renderList();
+  saveStoryOrderAndRefreshTree();
   return true;
 }
 
@@ -665,27 +637,11 @@ function cycleStoryOrderEntryTagState(missionId, entryKey) {
   const key = String(entryKey || "");
   if (!missionKey || !key) return false;
 
-  if (typeof setStoryOrderEntryTagState !== "function") {
-    if (typeof setStoryOrderEntryPossiblyUnused !== "function") return false;
-    const next = !(typeof storyOrderEntryPossiblyUnused === "function" && storyOrderEntryPossiblyUnused(missionKey, key));
-    if (!setStoryOrderEntryPossiblyUnused(missionKey, key, next)) return false;
-  } else {
-    const current = typeof storyOrderEntryTagState === "function"
-      ? storyOrderEntryTagState(missionKey, key)
-      : "";
-    const next = typeof nextStoryOrderEntryTagState === "function"
-      ? nextStoryOrderEntryTagState(current)
-      : (current === "unused" ? "" : "unused");
-    if (!setStoryOrderEntryTagState(missionKey, key, next)) return false;
-  }
+  const current = storyOrderEntryTagState(missionKey, key);
+  const next = nextStoryOrderEntryTagState(current);
+  if (!setStoryOrderEntryTagState(missionKey, key, next)) return false;
 
-  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
-
-  const wrap = $("#list-wrap");
-  const prevScroll = wrap ? wrap.scrollTop : 0;
-  rebuildTree({ resetScroll: false });
-  if (wrap) wrap.scrollTop = prevScroll;
-  renderList();
+  saveStoryOrderAndRefreshTree();
   return true;
 }
 
@@ -696,15 +652,9 @@ function toggleStoryOrderEntryPossiblyUnused(missionId, entryKey) {
 function removeStoryOrderEntryFromMissionAndSave(missionId, entryKey) {
   const missionKey = String(missionId || "");
   const key = String(entryKey || "");
-  if (!missionKey || !key || typeof removeStoryOrderEntryFromMission !== "function") return false;
+  if (!missionKey || !key) return false;
   if (!removeStoryOrderEntryFromMission(missionKey, key)) return false;
-  if (typeof scheduleStoryOrderSave === "function") scheduleStoryOrderSave();
-
-  const wrap = $("#list-wrap");
-  const prevScroll = wrap ? wrap.scrollTop : 0;
-  rebuildTree({ resetScroll: false });
-  if (wrap) wrap.scrollTop = prevScroll;
-  renderList();
+  saveStoryOrderAndRefreshTree();
   return true;
 }
 
@@ -836,9 +786,7 @@ function bindEvents() {
     if (missionReviewButton) {
       ev.preventDefault();
       ev.stopPropagation();
-      if (typeof jumpToNextUncertainRow === "function") {
-        jumpToNextUncertainRow(missionReviewButton.dataset.missionId);
-      }
+      jumpToNextUncertainRow(missionReviewButton.dataset.missionId);
       return;
     }
     const unusedToggle = ev.target.closest(".story-order-unused-toggle");
@@ -886,14 +834,13 @@ function bindEvents() {
       window.dispatchEvent(new CustomEvent("webui:debug-changed", {
         detail: { enabled: next },
       }));
-      if (next && typeof ensureStoryTriggerManifestForDebug === "function") {
+      if (next) {
         ensureStoryTriggerManifestForDebug();
       }
       if (STATE.selectedKey && STATE.convCache.has(STATE.selectedKey)) {
         renderConv(STATE.convCache.get(STATE.selectedKey));
       }
-      if (typeof rebuildTree === "function") rebuildTree({ resetScroll: false });
-      else if (typeof renderList === "function") renderList();
+      rebuildTree({ resetScroll: false });
     });
   }
   $("#inline-tag-mode").addEventListener("change", (ev) => {
@@ -916,7 +863,7 @@ function bindEvents() {
     if (storyOrderAdoptButton) {
       ev.preventDefault();
       ev.stopPropagation();
-      if (!storyOrderAdoptButton.disabled && typeof storyOrderAdoptMissionOrder === "function") {
+      if (!storyOrderAdoptButton.disabled) {
         storyOrderAdoptMissionOrder(storyOrderAdoptButton.dataset.missionId, storyOrderAdoptButton.dataset.source);
       }
       return;
@@ -979,7 +926,7 @@ function applyFilters() {
   let out = storyFacets.isFiltered() ? storyFacets.filter(STATE.entries) : STATE.entries;
   const tokens = window.WebUI.parseQuery(f.q);
   if (tokens.length) {
-    if (typeof ensureStorySearchIndexLoaded === "function" && !STATE.storySearchLoaded) {
+    if (!STATE.storySearchLoaded) {
       void ensureStorySearchIndexLoaded().then(() => {
         if (STATE.filters.q && STATE.storySearchLoaded) applyFilters();
       });
@@ -1196,8 +1143,8 @@ function makeBaseItemSorter(mode) {
 // stability only.
 function makeStorySorter() {
   return (a, b) => {
-    const ap = typeof storyOrderPositionForEntry === "function" ? storyOrderPositionForEntry(a) : null;
-    const bp = typeof storyOrderPositionForEntry === "function" ? storyOrderPositionForEntry(b) : null;
+    const ap = storyOrderPositionForEntry(a);
+    const bp = storyOrderPositionForEntry(b);
     const hasA = Number.isFinite(ap);
     const hasB = Number.isFinite(bp);
     if (hasA && hasB && ap !== bp) return ap - bp;
@@ -1212,7 +1159,6 @@ function makeStorySorter() {
 
 function entryIsReadingPopup(entry) {
   return String(entry && entry.d || "") === "text"
-    && typeof entryHasTag === "function"
     && entryHasTag(entry, "readingPopup");
 }
 

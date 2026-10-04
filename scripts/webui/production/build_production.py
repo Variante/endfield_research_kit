@@ -20,6 +20,7 @@ from scripts.source_paths import ExportLayout
 from scripts.webui.production.icons import load_icons
 from scripts.webui.production.limited_items import group_limited_items
 from scripts.webui.production.medals import group_medals
+from scripts.webui.production.recipes import group_recipes
 
 
 SCHEMA = "endfield.production.v1"
@@ -30,12 +31,14 @@ TABLE_NAMES = (
     "FactoryManualCraftUpgradeTable", "ShopGoodsTable", "ShopTable", "ShopGroupTable",
     "RewardTable", "WeaponBasicTable", "WeaponBreakThroughTemplateTable",
     "WeaponExpItemTable", "EquipEnhanceCostTable", "WikiGroupTable", "WikiEntryDataTable",
-    "AchievementTable", "AchievementTypeTable", "LTItemTable",
+    "AchievementTable", "AchievementTypeTable", "LTItemTable", "UserAvatarTable",
+    "FullBottleTable", "FullGasJarTable",
 )
 BOUNDARY = (
     "Stored table configuration and exact identifier joins. Recipe groups retain their "
-    "stored boundaries; they do not establish alternatives, timing units, effective rates "
-    "or runtime unlocks. Shop itemBundles are configured rewards; random bundles and "
+    "stored boundaries. Configured machine time is progressRound * msPerRound / 1000 "
+    "seconds, as displayed by FactoryUtils.getCraftNeedTime; it does not establish "
+    "effective rates or runtime unlocks. Shop itemBundles are configured rewards; random bundles and "
     "conditions are not resolved into guaranteed or currently available items. Upgrade "
     "coverage is limited to the named source tables, not all possible item uses."
 )
@@ -85,11 +88,24 @@ def build_catalog(tables: dict[str, dict[str, Any]], texts: dict[str, Any]) -> d
         if row.get("refItemId") and row.get("groupId") in building_categories:
             wiki_by_item[str(row["refItemId"])].append((key, row))
 
+    avatars = {str(row["itemId"]): (key, row) for key, row in table("UserAvatarTable").items()
+               if row.get("itemId") and row.get("icon")}
+
+    def item_icon(key: str, row: dict[str, Any]) -> dict[str, str]:
+        icon = {"iconId": row.get("iconId", "")}
+        if key in avatars:
+            icon["iconId"] = str(avatars[key][1]["icon"]).rsplit("/", 1)[-1]
+        for name, field in (("FullBottleTable", "liquidId"), ("FullGasJarTable", "gasId")):
+            container = table(name).get(key)
+            if container and container.get(field) in table("ItemTable"):
+                icon["contentIconId"] = table("ItemTable")[container[field]].get("iconId", "")
+        return icon
+
     def item_ref(item_id: Any, count: Any = None) -> dict[str, Any]:
         key = str(item_id or "")
         row = table("ItemTable").get(key)
         result = {"id": key, "title": localized(row.get("name"), texts) or key if row else key,
-                  "resolved": row is not None, "iconId": row.get("iconId", "") if row else ""}
+                  "resolved": row is not None, **(item_icon(key, row) if row else {"iconId": ""})}
         if count is not None:
             result["count"] = count
         return result
@@ -107,7 +123,7 @@ def build_catalog(tables: dict[str, dict[str, Any]], texts: dict[str, Any]) -> d
             "typeName": type_name, "typeGroup": type_groups.get(type_name, str(row.get("type", ""))),
             "showingType": row.get("showingType"),
             "showingTypeName": localized(showing_row.get("name"), texts),
-            "rarity": row.get("rarity", 0), "iconId": row.get("iconId", ""),
+            "rarity": row.get("rarity", 0), **item_icon(key, row),
             "stackLimit": row.get("maxStackCount"),
             "backpackStackLimit": row.get("maxBackpackStackCount"),
             "obtainWayIds": row.get("obtainWayIds", []),
@@ -118,6 +134,11 @@ def build_catalog(tables: dict[str, dict[str, Any]], texts: dict[str, Any]) -> d
         if factory is not None:
             items[key]["sources"].append(source("FactoryItemTable", key))
             items[key]["tags"].append("factory_item")
+        if key in avatars:
+            items[key]["sources"].append(source("UserAvatarTable", avatars[key][0], "itemId, icon"))
+        for name in ("FullBottleTable", "FullGasJarTable"):
+            if key in table(name):
+                items[key]["sources"].append(source(name, key))
 
     def append_item(item_id: str, field: str, value: dict[str, Any], table_name: str, row_id: str) -> None:
         if item_id in items:
@@ -195,14 +216,22 @@ def build_catalog(tables: dict[str, dict[str, Any]], texts: dict[str, Any]) -> d
                     "defaultUnlock", "domainId", "belongingGroupIds", "usableLevel", "gasEnv", "signal",
                 ) if field in row},
                 "timing": {field: row[field] for field in ("progressRound", "totalProgress") if field in row},
+                "configuration": {field: row[field] for field in (
+                    "formulaGroupId", "buffers", "sortId", "craftFilterType", "rarity", "showingType",
+                ) if field in row},
                 "sources": [source(table_name, key)], "tags": [recipe_type],
             }
             if craft_group is not None:
                 recipe["timing"]["msPerRound"] = craft_group.get("msPerRound")
                 recipe["sources"].append(source("FactoryMachineCraftGroupTable", group_id))
+                rounds, ms = row.get("progressRound"), craft_group.get("msPerRound")
+                if recipe_type == "machine" and _positive(rounds) and _positive(ms):
+                    recipe["durationSeconds"] = rounds * ms / 1000
             if machine_id:
                 if machine_id in machines:
-                    machines[machine_id]["recipes"].append({"id": recipe_id, "title": title, "type": recipe_type})
+                    machines[machine_id]["recipes"].append({field: recipe[field] for field in (
+                        "id", "title", "type", "ingredients", "outcomes", "durationSeconds",
+                    ) if field in recipe})
                 else:
                     unresolved.append({"table": table_name, "row": key, "field": "machineId", "target": machine_id})
             recipes[recipe_id] = recipe
@@ -343,12 +372,16 @@ def build_catalog(tables: dict[str, dict[str, Any]], texts: dict[str, Any]) -> d
     item_count = len(items)
     aliases = group_limited_items(items, tables)
     aliases.update(group_medals(items, tables, lambda value: localized(value, texts)))
+    source_recipe_count = len(recipes)
+    recipe_types = dict(Counter(row["type"] for row in recipes.values()))
+    recipe_aliases = group_recipes(recipes)
     return {
         "records": {"items": items, "recipes": recipes, "machines": machines},
         "itemAliases": aliases,
+        "recipeAliases": recipe_aliases,
         "stats": {"items": len(items), "recipes": len(recipes), "machines": len(machines),
                   "sourceItems": item_count, "medalGroups": sum("medalLevels" in row for row in items.values()),
-                  "recipeTypes": dict(Counter(row["type"] for row in recipes.values())),
+                  "sourceRecipes": source_recipe_count, "recipeTypes": recipe_types,
                   "craftableItems": sum(bool(row["producedBy"]) for row in items.values()),
                   "shopItemLinks": shop_listing_count, "shopsWithRandomRewards": random_shop_count,
                   "upgradeUseLinks": sum(len(row["upgrades"]) for row in items.values()),
@@ -372,6 +405,7 @@ def publish(catalog: dict[str, Any], language: str, out_dir: Path, inputs: list[
         "unresolvedReferences": catalog["unresolvedReferences"],
         "icons": catalog.get("icons", {}), "iconStatus": catalog.get("iconStatus", {}),
         "itemAliases": catalog.get("itemAliases", {}),
+        "recipeAliases": catalog.get("recipeAliases", {}),
     }
     for kind, records in catalog["records"].items():
         shards: dict[str, dict[str, Any]] = defaultdict(dict)
@@ -380,7 +414,7 @@ def publish(catalog: dict[str, Any], language: str, out_dir: Path, inputs: list[
             shard = f"{kind}/{bucket}.json"
             shards[shard][key] = row
             fields = ("id", "kind", "title", "type", "typeName", "typeGroup", "showingTypeName",
-                      "rarity", "tags", "sources", "iconId", "categories", "aliases")
+                      "rarity", "tags", "sources", "iconId", "contentIconId", "categories", "aliases")
             summary = {field: row[field] for field in fields if field in row}
             summary["detail"] = shard
             summary["description"] = row.get("description", "")
@@ -390,6 +424,9 @@ def publish(catalog: dict[str, Any], language: str, out_dir: Path, inputs: list[
                     summary["medalLevelCount"] = len({str(tier["level"]) for tier in row["medalLevels"]})
             elif kind == "recipes":
                 summary.update({field: row[field] for field in ("ingredients", "outcomes", "machineId", "machineName")})
+                summary.update({field: row[field] for field in ("types", "machineNames", "machineIds", "durationSeconds")
+                                if field in row})
+                summary["variantCount"] = len(row.get("recipeVariants", [])) or 1
             else:
                 summary["recipeCount"] = len(row["recipes"])
             index[kind].append(summary)
@@ -424,7 +461,19 @@ def main(argv: list[str] | None = None) -> int:
     icon_ids.update(str(row.get("iconId") or "") for row in
                     tables["WikiGroupTable"].get("wiki_type_building", {}).get("list", []))
     icon_ids.update(str(row.get("icon") or "") for row in tables["ItemShowingTypeTable"].values())
-    icons, icon_status = load_icons(layout, icon_ids - {""})
+    square_icon_ids = {str(row["icon"]).rsplit("/", 1)[-1] for row in tables["UserAvatarTable"].values()
+                       if str(row.get("itemId", "")).startswith("item_user_avatar_chr") and row.get("icon")}
+    icon_ids.update(str(row["icon"]).rsplit("/", 1)[-1] for row in tables["UserAvatarTable"].values()
+                    if row.get("icon"))
+    for key, achievement in tables["AchievementTable"].items():
+        for info in achievement.get("levelInfos", {}).values():
+            level = info.get("achieveLevel")
+            if isinstance(level, int):
+                token = f"{key}_lv{level:02d}"
+                icon_ids.add(token)
+                if achievement.get("canBePlated"):
+                    icon_ids.add(token + "_plating")
+    icons, icon_status = load_icons(layout, icon_ids - {""}, square_icon_ids=square_icon_ids)
     for language, (texts, receipt) in localizations.items():
         catalog = build_catalog(tables, texts)
         catalog.update(icons=icons, iconStatus=icon_status)

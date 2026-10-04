@@ -1,3 +1,11 @@
+/* Shared dataset navigation over the entity and production catalog panes. */
+#gameplay-view { display: flex; flex-direction: column; }
+#gameplay-view[hidden], #gameplay-app[hidden], #production-app[hidden] { display: none; }
+.gameplay-catalog-header { flex: 0 0 auto; padding: 12px 16px 8px; border-bottom: 1px solid var(--border); background: var(--bg-2); }
+.gameplay-catalog-header h1 { margin: 0 0 8px; font-size: 18px; }
+#gameplay-view > #gameplay-app, #gameplay-view > #production-app { flex: 1 1 0; height: auto; min-height: 0; }
+.production-gameplay-item { margin-top: 20px; }
+
 /* Character and enemy reading views; other Gameplay kinds keep their layout. */
 .gameplay-overview {
   display: flex;

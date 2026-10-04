@@ -53,7 +53,9 @@ def group_medals(items: dict[str, dict[str, Any]], tables: dict[str, dict[str, A
                     continue
                 plated = bool(row.get("canBePlated") and item_id == f"{expected}_plate")
                 conditions = row.get("plateConditions", []) if plated else info.get("conditions", [])
-                levels.append({"level": level, "plated": plated, "item": items[item_id],
+                tier_item = {**items[item_id], "iconId": f"{key}_lv{int(level):02d}" + ("_plating" if plated else "")}
+                levels.append({"level": 1 if len(row.get("levelInfos", {})) == 1 else level,
+                               "sourceLevel": level, "plated": plated, "item": tier_item,
                                "conditions": [{**condition, "description": text(condition.get("desc"))}
                                               for condition in conditions]})
                 owners[item_id].add(key)

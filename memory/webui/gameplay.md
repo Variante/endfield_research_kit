@@ -7,6 +7,23 @@ skills, Buffs, projectiles, and semantic asset links. It is the destination for
 useful data from the retired Progression and Combat & Projectiles pages. Audio
 is deliberately not attached while its ownership model is under review.
 
+The page also hosts the independently published [production catalogs](production.md)
+through one shared dataset bar: Characters, Weapons, Equipment, Items, Enemies,
+Recipes and Machines. Items uses the complete Production catalog and retains
+Gameplay AP recovery, use effects, action blackboards and chest rewards.
+Existing Story wiki links and optional asset galleries remain in item details.
+Item-effect loading uses the catalog's displayed language without changing the
+entity pane's selected language or pending requests. Missing item-effect data
+leaves catalog details usable and shows a retry action.
+Character breakthrough costs and each potential's configuration values render
+expanded in the character detail, so progression data needs no disclosure click.
+
+`webui/src/features/gameplay/tabs.js` owns dataset routing and browser history.
+Legacy Production links keep their selections and filters under `#gameplay`;
+legacy Gameplay item links open the combined Items tab. Builders and output
+paths remain independent. `export.bat gameplay production` refreshes all tabs
+from the existing export.
+
 ## Inputs and recovery flow
 
 `python -m scripts.webui.gameplay.build_gameplay` runs every stage; the stages

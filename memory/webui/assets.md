@@ -37,6 +37,16 @@ evidence source for other pages, not proof that an asset was used at runtime.
 `gameplay_refs.json`. Frontend behavior is in the header comment of
 `webui/assets.js`.
 
+Filter counts come from the same grouped entries that the list filters, not
+raw exported files. They are dataset totals; type, category and source groups
+combine with AND, and search narrows their result. A numbered category can
+therefore have no matches with other filters active. Chip tooltips and the
+empty-list message explain that distinction; reset clears the search and all
+facet selections. Image categories (such as Boss) and OBJ model categories
+(such as Model Boss) describe separate kinds of entries.
+The expanded category catalog scrolls inside a bounded filter panel; the asset
+list keeps its own space so matching rows remain visible below the filters.
+
 ## Evidence boundary
 
 - Source/CAB plus PathID is the stable Unity identity. Normalized names are

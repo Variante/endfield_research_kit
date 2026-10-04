@@ -1,7 +1,9 @@
-# Production page recovery
+# Gameplay production catalogs
 
-Production is a table-backed item, recipe and building catalog. The page keeps
-its own publication and does not rebuild or depend on Gameplay, Assets or Data.
+Production is the table-backed item, recipe and building publication displayed
+inside Gameplay. Its builder keeps its own publication and does not rebuild or
+depend on Gameplay, Assets or Data. Gameplay adds optional use effects and
+rewards to item details from the publication in the same displayed language.
 Its source links reuse the Data page's file viewer; the catalog and details
 remain usable in a static package without that viewer's local server API.
 
@@ -82,8 +84,12 @@ build. Refreshing from the installed game remains an explicit separate choice.
 
 These joins prove stored configuration and identifier references, not current
 availability, runtime unlocks, complete acquisition coverage or actual production
-rates. Machine timing fields are preserved without converting progress units to
-seconds. Recipe groups do not imply alternatives. A missing source link means
+rates. Configured machine duration follows the exported UI's
+`FactoryUtils.getCraftNeedTime` in `Common/Utils/FactoryUtils.lua`:
+`progressRound * msPerRound / 1000` seconds. `totalProgress` remains a raw progress
+field. Missing rounds or craft-group milliseconds leave duration unspecified;
+hub and manual recipes do not acquire an invented duration. Recipe groups do not
+imply alternatives. A missing source link means
 the supported tables do not supply one; it does not mean an item is unobtainable.
 Manual-upgrade rows are shown as mappings, without inventing an unstated consumed
 quantity. There is no guessed join by label, naming convention or address order.
@@ -96,11 +102,14 @@ ownership. The page does not calculate production chains or effective rates.
 ## Frontend contract
 
 `webui/src/features/production/index.js` mounts inside `#production-app` under
-the shell's `#production-view`. It uses shared facets, regular-expression search,
+`#gameplay-view`; `gameplay/tabs.js` owns shared dataset navigation. It uses
+shared facets, regular-expression search,
 category/direction sorting, pagination, filter collapsing and Data file links.
-The three catalogs are Items, Recipes and Machines & buildings. Selection,
+The three catalogs are Gameplay's Items, Recipes and Machines & buildings. Selection,
 search and repeated type/output-category/relationship filters persist in `production*` URL
-parameters. Links use `?productionKind=<kind>&productionId=<id>#production`.
+parameters. Links also set `gameplayKind=item|recipe|machine` and use `#gameplay`.
+Legacy `#production` links normalize to the shared Gameplay page while retaining
+their filters and selection. Legacy Gameplay item identifiers open Items.
 Search determines membership; the chosen name/rarity order applies even with
 multiple search terms. Catalog and relationship navigation resets filters and
 sorting to match the destination URL; browser history restores the prior state.
@@ -112,6 +121,27 @@ Normal views retain item relationships and meaningful availability limitations.
 Item-type filters merge identical localized labels while retaining each original
 type in the data. Building filters show encyclopedia groups and their available
 icons. Item, recipe-output and building icons share the same compact lookup.
+Character avatar items follow `UserAvatarTable.itemId` and its explicit icon
+reference, selecting a square image for character heads. Filled bottle and gas
+jar icons overlay the exact `FullBottleTable.liquidId` or `FullGasJarTable.gasId`
+item icon at the center, matching the exported `UI/Widgets/ItemIcon.lua` layout
+(content side length `80/180` of the container). Achievement tiers select
+`<achievementId>_lvNN` art and `_plating` for the proved plated variant. A single
+authored tier displays Level 1 while retaining its original `sourceLevel` for
+the icon and evidence; multiple tiers keep their authored levels.
+Recipes with the same complete set of positive output item IDs share an entry.
+`recipeVariants` preserve each source recipe's nested groups, counts, machine,
+conditions and configured duration; differing co-products stay separate.
+`recipeAliases` retains old recipe URLs and reverse links. Recipe type filters
+cover all methods in an entry, and search covers all machines and source IDs.
+Every method shows production time and expanded conditions/configuration in two
+columns, stacking on narrow screens. These display groups do not imply one
+combined craft or establish that methods are interchangeable at runtime.
+Machines display `powerConsume` as electricity consumption and dimensions as
+depth × width × height. Their recipe rows include each source method's full
+ingredient/output groups and quantities plus processing time, with a link to
+the recipe detail. The builder embeds these method summaries before recipe
+grouping, so a machine row never borrows another method's time or quantities.
 Descriptions render expanded through Story's safe rich-text renderer, including
 bold and named emphasis tags, and follow the shared raw-tag display setting.
 Empty relationship sections are omitted.

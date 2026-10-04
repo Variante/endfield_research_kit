@@ -7,7 +7,7 @@
   const PANEL_STORAGE_KEY = "webui_filters_collapsed";
 
   function isMobileLayout() {
-    return !!(window.matchMedia && window.matchMedia(MOBILE_LAYOUT_QUERY).matches);
+    return window.matchMedia(MOBILE_LAYOUT_QUERY).matches;
   }
 
   function resolveEl(ref) {
@@ -50,7 +50,7 @@
     const normalized = (items || []).map((item) =>
       item && typeof item === "object" && "value" in item ? item : { value: item });
 
-    if (!single && opts.prune !== false && active && typeof active.delete === "function") {
+    if (!single && opts.prune !== false && active) {
       const present = new Set(normalized.map((item) => item.value));
       for (const value of [...active]) {
         if (!present.has(value)) active.delete(value);
@@ -85,7 +85,7 @@
 
       const isOn = single
         ? value === active
-        : !!(active && typeof active.has === "function" && active.has(value));
+        : !!(active && active.has(value));
       chip.classList.toggle("on", isOn);
 
       chip.addEventListener("click", () => {
@@ -95,7 +95,7 @@
           return;
         }
         let on = isOn;
-        if (active && typeof active.has === "function") {
+        if (active) {
           on = !active.has(value);
           if (on) active.add(value);
           else active.delete(value);

@@ -115,9 +115,8 @@ closed.
   has no known pointer to that prefab. The WebUI therefore retains the
   candidate grade. The smallest useful capture is the streamed entity id with
   its selected prefab resource path or root source CAB+PathID at creation time.
-  No current `EndfieldCapture` profile emits that pair: its graphics, audio,
-  gameplay-semantic, SkillData, and ECS-list observations do not bind a streamed
-  entity to prefab selection. The native Streaming contract proves selected
+  No retained graphics, audio, gameplay-semantic, SkillData or ECS-list
+  observation binds a streamed entity to prefab selection. The native Streaming contract proves selected
   anonymous row/path reads but no concrete Create instance or prefab-selection
   callback ABI. A new capture must first prove and gate a callback that observes
   scene/chunk context, entity id, and selected prefab root/path in one call;
@@ -237,8 +236,8 @@ closed.
   the selected initial native argument path. The same native object has a
   conditional `SetAmount` -> `SetInfiniteWaterHeight` ->
   `_UpdateInfiniteWaterMeshPos` path to the surface Mono's height setters, so
-  later height can differ. The dedicated `EndfieldCapture` Map water profile
-  keys one live `map02_lv002` Setup call by `GameLevel.id` and the source
+  later height can differ. The saved Map water receipt
+  keys one observed `map02_lv002` Setup call by `GameLevel.id` and the source
   `LevelWaterVolumeData.id`, then observes the same-thread `GetMesh` and
   `UpdataMesh` chain. Its saved receipt has one selected Setup, one `GetMesh`,
   and one published observation with the expected hash and requested position
@@ -254,12 +253,14 @@ closed.
   while requiring all other bounded gates. The v2 recorder reads bounded
   decimal string content and computes completeness independently of that
   diagnostic. The raw v1 receipt remains unchanged; its post-Setup ID equality
-  is unknown. `map_water_live_capture.py` revalidates the saved session
+  is unknown. The frozen profile identities live in
+  `scripts/game_data/contracts/map_water*_capture_profile.json`;
+  `map_water_capture_preflight.py` checks their native/source declarations
+  offline. `map_water_live_capture.py` revalidates the saved session
   and selected authored source before focused Map publication; the UI labels
   this polygon with the live mesh-delivery observation. This does not observe
   a later height setter, final transform, or renderer visibility. Other Map02
-  water-volume rows remain outside this focused join. The dedicated profile
-  cannot run alongside the SkillData cursor profile in the current host.
+  water-volume rows remain outside this focused join.
   A separate preflight-validated Map water transform profile targets this
   same returned surface Mono. It pins the current `Tick`, `get_position` and
   `OnRecycle` bodies, binds a stable 16-byte WaterVolumePtr token, and requires

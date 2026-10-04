@@ -10,6 +10,8 @@
 //     and names the exported table row whose asset-bearing field holds this
 //     asset's exact normalized stem. No such row means no owner; a shared name
 //     prefix never produces one, and an absent sidecar only removes the fact.
+//   * Filter chip counts are totals over grouped entries. Their tooltips and
+//     the empty-list message explain why combined filters can return no rows.
 //   * A Sprite index entry with `crop` (its texture's path) has no file and no
 //     `s`; the page shows its pixel size and a Cropped from fact. Every page
 //     still links to .../game/Unity/Sprite/<name>.png: serve.py answers with
@@ -31,7 +33,6 @@
     "story",
     "characters",
     "gameplay",
-    "production",
     "audio",
     "map-recovery",
     "assets",
@@ -42,7 +43,7 @@
   ]);
   const DEBUG_ONLY_VIEWS = new Set(["recovery"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({ recovery: "story" });
-  const RETIRED_VIEW_FALLBACKS = Object.freeze({ projectiles: "gameplay" });
+  const RETIRED_VIEW_FALLBACKS = Object.freeze({ projectiles: "gameplay", production: "gameplay" });
   // Facet value for files directly under the export root (empty source).
   const ROOT_SOURCE = "(root)";
   const SHARED_ASSET_NAME_PREFIXES = new Set(["S", "T", "P", "M"]);
@@ -113,6 +114,8 @@
       sortSizeAsc: "\u6587\u4ef6\u5927\u5c0f\u4ece\u5c0f\u5230\u5927",
       sortName: "\u6587\u4ef6\u540d (A-Z)",
       reset: "\u91cd\u7f6e\u7b5b\u9009",
+      filterCountHint: "\u6570\u91cf\u4e3a\u5168\u90e8\u8d44\u6e90\u6761\u76ee\u7684\u603b\u6570\u3002\u7c7b\u578b\u3001\u5206\u7c7b\u548c\u6765\u6e90\u7b5b\u9009\u9700\u540c\u65f6\u6ee1\u8db3\u3002",
+      noMatchingAssets: "\u6ca1\u6709\u8d44\u6e90\u7b26\u5408\u5f53\u524d\u641c\u7d22\u548c\u7b5b\u9009\u3002\u6807\u7b7e\u6570\u91cf\u4e3a\u5168\u90e8\u8d44\u6e90\u6761\u76ee\u7684\u603b\u6570\u3002\u8bf7\u6e05\u7a7a\u641c\u7d22\u6216\u91cd\u7f6e\u7b5b\u9009\u3002",
       listUnit: "\u6761\u76ee",
       empty: "\u4ece\u5de6\u4fa7\u9009\u62e9\u4e00\u4e2a\u5bfc\u51fa\u8d44\u6e90\u3002",
       openRawFile: "\u6253\u5f00\u539f\u59cb\u6587\u4ef6",
@@ -218,6 +221,8 @@
       sortSizeAsc: "File size (low to high)",
       sortName: "File name (A-Z)",
       reset: "Reset filters",
+      filterCountHint: "Counts are totals across all asset entries. Type, category and source filters must all match.",
+      noMatchingAssets: "No assets match the current search and filters. Tag counts show totals across all asset entries. Clear the search or reset filters.",
       listUnit: "items",
       empty: "Choose an exported asset from the left.",
       openRawFile: "Open raw file",
@@ -422,13 +427,17 @@
       countMode: "total",
       chipClassName: "asset-filter-chip",
       groups: [
+        window.WebUI.updateBadges.filterGroup("asset", (entry) => window.WebUI.updateBadges.fileStatus(entry)),
         { id: "type", container: "#asset-type-filter", section: "asset-type", order: "count",
-          values: (entry) => entry.ext || entry.kind, label: assetTypeLabel },
+          values: (entry) => entry.ext || entry.kind, label: assetTypeLabel,
+          title: (value) => `${assetTypeLabel(value)}\n${assetUiText("filterCountHint")}` },
         { id: "category", container: "#asset-category-filter", section: "asset-category",
           className: "asset-category-chip", values: assetCategoryValues, label: assetCategoryLabel,
+          title: (value) => `${assetCategoryLabel(value)}\n${assetUiText("filterCountHint")}`,
           order: (a, b) => naturalCompare(assetCategoryLabel(a), assetCategoryLabel(b)) || naturalCompare(a, b) },
         { id: "source", container: "#asset-source-filter", section: "asset-source", order: "count",
           className: "asset-source-chip", values: (entry) => entry.source || ROOT_SOURCE,
+          title: () => assetUiText("filterCountHint"),
           label: (value) => (value === ROOT_SOURCE ? assetUiText("rootFolder") : value) },
       ],
       onChange: () => applyAssetFilters(),
@@ -597,6 +606,7 @@
     setDocumentTitleForView(ASSET_STATE.activeView);
 
     if (!refresh || !ASSET_STATE.loaded) return;
+    window.WebUI.updateBadges.syncFilter("asset", "files", ASSET_STATE.facets);
     ASSET_STATE.facets.render();
     applyAssetFilters();
     if (ASSET_STATE.selectedEntry) renderSelectedAsset();
@@ -604,6 +614,13 @@
 
   function resolveViewFromHash() {
     const hash = (window.location.hash || "").replace(/^#/, "").toLowerCase();
+    if (hash === "production") {
+      const url = new URL(window.location.href);
+      const kinds = { items: "item", recipes: "recipe", machines: "machine" };
+      url.searchParams.set("gameplayKind", kinds[url.searchParams.get("productionKind")] || "recipe");
+      url.hash = "gameplay";
+      history.replaceState(history.state, "", url);
+    }
     if (RETIRED_VIEW_FALLBACKS[hash]) return RETIRED_VIEW_FALLBACKS[hash];
     return AVAILABLE_VIEWS.has(hash) ? hash : "story";
   }
@@ -665,7 +682,6 @@
       story: "storyPageTitle",
       characters: "charactersPageTitle",
       gameplay: "gameplayPageTitle",
-      production: "productionPageTitle",
       audio: "audioPageTitle",
       "map-recovery": "mapRecoveryPageTitle",
       assets: "assetsPageTitle",
@@ -679,7 +695,7 @@
   }
 
   function setActiveView(view, { updateHash = true } = {}) {
-    const requestedView = AVAILABLE_VIEWS.has(view) ? view : "story";
+    const requestedView = RETIRED_VIEW_FALLBACKS[view] || (AVAILABLE_VIEWS.has(view) ? view : "story");
     ASSET_STATE.activeView = availableView(requestedView);
     document.body.dataset.activeView = ASSET_STATE.activeView;
 
@@ -817,24 +833,16 @@
     clearShellStatus("assets");
     window.WebUI.showLoader("assets");
     ASSET_STATE.loadPromise = window.WebUI.fetchWithProgress("data/assets/index.json", {
-        // Downloading is only ~a third of the wall-clock cost (parse + hydrate +
-        // chips + render dominate), so the download drives just the first 45% of
-        // the bar; the rest advances through those phases below.
-        onProgress: (ratio) => window.WebUI.updateLoader("assets", ratio == null ? null : ratio * 0.45),
+        onProgress: window.WebUI.loaderProgress("assets"),
       })
         .then((res) => {
           if (!res.ok) throw new Error(`assets/index.json HTTP ${res.status}`);
-          // Streaming the body drives the bar to ~45%; the JSON.parse inside
-          // json() then blocks briefly (~100ms) with the bar held there.
           return res.json();
         })
-      // Staged so the bar advances through the heavy main-thread phases instead
-      // of freezing. nextPaint() lets each value render before the next blocking
-      // step runs, so the percentage tracks the actual work.
       .then(async (payload) => {
-        await window.WebUI.updateBadges.loadFiles();
-        window.WebUI.updateLoader("assets", 0.5);
+        window.WebUI.updateLoaderPhase("assets", "preparing");
         await window.WebUI.nextPaint();
+        await window.WebUI.updateBadges.loadFiles();
 
         const hydrated = hydrateEntries(payload.entries || []);
         ASSET_STATE.entries = hydrated.entries;
@@ -861,17 +869,15 @@
           : {};
         ASSET_STATE.loaded = true;
         $("#asset-count").textContent = ASSET_STATE.entries.length.toLocaleString();
-        window.WebUI.updateLoader("assets", 0.7);
+        window.WebUI.updateLoaderPhase("assets", "rendering");
         await window.WebUI.nextPaint();
 
+        window.WebUI.updateBadges.syncFilter("asset", "files", ASSET_STATE.facets);
         ASSET_STATE.facets.render(ASSET_STATE.entries);
         seedAssetExpansions();
-        window.WebUI.updateLoader("assets", 0.85);
-        await window.WebUI.nextPaint();
-
         applyAssetFilters();
         applyInitialAssetSelection();
-        window.WebUI.updateLoader("assets", 1);
+        await window.WebUI.nextPaint();
         window.WebUI.hideLoader("assets");
         setViewBusy("assets", false);
         $("#asset-empty")?.classList.remove("is-error");
@@ -1644,7 +1650,11 @@
     const total = ASSET_STATE.rows.length;
     spacer.style.height = `${ASSET_STATE.totalH}px`;
     if (!total) {
-      list.replaceChildren();
+      const message = document.createElement("div");
+      message.className = "asset-list-empty";
+      message.setAttribute("role", "status");
+      message.textContent = assetUiText("noMatchingAssets");
+      list.replaceChildren(message);
       return;
     }
 

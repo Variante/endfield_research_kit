@@ -1,13 +1,12 @@
 # WebUI page recovery
 
-Each active page has one maintenance guide. Read the page guide before changing
+Each active page has a maintenance guide. Read the page guide before changing
 its builder, generated contract, or frontend consumer.
 
 - [`story.md`](story.md): conversations, ordering, options, media, and evidence.
 - [`map.md`](map.md): level ownership, spatial evidence, render layers, and Story links.
 - [`characters.md`](characters.md): identity merging, localization, models, and overrides.
-- [`gameplay.md`](gameplay.md): playable/enemy data, skills, buffs, projectiles, and sounds.
-- [`production.md`](production.md): item sources and uses, recipe groups, machines, and exact table references.
+- [`gameplay.md`](gameplay.md): playable/enemy data, skills, buffs, projectiles, shared catalog navigation, and item effects.
 - [`text.md`](text.md): localized table discovery and row rendering.
 - [`audio.md`](audio.md): Wwise identity, decoded media, semantics, and annotations.
 - [`assets.md`](assets.md): exported resource inventory and semantic references.
@@ -16,7 +15,9 @@ its builder, generated contract, or frontend consumer.
   recovery state, and the measured-versus-declared boundary the page enforces.
 - [`data_inspector.md`](data_inspector.md): the Data page: export-store file viewer and SQL console, plus decoded-dataset publication.
 
-One file here is not a page guide:
+Supplementary publication and recovery guides:
+
+- [`production.md`](production.md): Gameplay's independently published item sources and uses, recipes, machines, and exact table references.
 
 - [`story_recovery.md`](story_recovery.md): the Story reconstruction model --
   evidence layers, ownership, branches, ordering, validation, and remaining
