@@ -2015,7 +2015,7 @@ def recover_timeline_text_attachments(
         extract_dir = ROOT / extract_dir
     if not dialog_registry_path.is_absolute():
         dialog_registry_path = ROOT / dialog_registry_path
-    if not line_orders_path.is_file() or not extract_dir.is_dir():
+    if not line_orders_path.is_file():
         return []
     line_orders = load_json(line_orders_path)
     if not isinstance(line_orders, dict):

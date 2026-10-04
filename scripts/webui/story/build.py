@@ -86,7 +86,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
-    require_export_layout(getattr(args, 'export_root', None))
+    require_export_layout()
     ensure_timeline_orders_current(args.timeline_recovery, args.force_timeline_recovery)
     build_timeline_action_evidence_for_build()
 
@@ -164,4 +164,4 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        sys.exit(1)
+        raise SystemExit(1)

@@ -47,6 +47,7 @@ from scripts.webui.story.dialog_tree_routes import (
 from scripts.webui.story.story_keys import canonical_cutscene_key as mission_canonical_cutscene_key
 from scripts.webui.story.unity_documents import (
     document_dir_present,
+    document_exists,
     glob_documents,
     read_document_bytes,
     read_document_text,
@@ -473,7 +474,7 @@ def extract_dialog_tree_definition_evidence(
 @lru_cache(maxsize=8192)
 def _recover_dialog_tree_definition_evidence(dialog_key: str) -> dict | None:
     path = _find_anime_tree_path(f"{dialog_key}.json")
-    if not path.is_file():
+    if not document_exists(path):
         return None
     payload = _load_anime_resource_payload(path)
     evidence = extract_dialog_tree_definition_evidence(payload, dialog_key)
@@ -483,7 +484,7 @@ def _recover_dialog_tree_definition_evidence(dialog_key: str) -> dict | None:
         **evidence,
         "sourceFile": repo_rel(path),
         "sourcePathId": path_id_export_path_id(path.stem),
-        "sourceSha256": hashlib.sha256(path.read_bytes()).hexdigest().upper(),
+        "sourceSha256": hashlib.sha256(read_document_bytes(path)).hexdigest().upper(),
         "sourceType": "AnimeStudio TextAsset/DialogTree",
     }
 
@@ -2005,7 +2006,7 @@ def recover_dialog_tree_open_ui_content_actions() -> list[dict]:
         asset_name = str(payload.get("_assetName") or "").strip()
         if asset_name != dialog_key:
             continue
-        source_sha256 = hashlib.sha256(path.read_bytes()).hexdigest().upper()
+        source_sha256 = hashlib.sha256(read_document_bytes(path)).hexdigest().upper()
         for record in _extract_dialog_tree_open_ui_content_actions(payload):
             out.append({
                 **record,
@@ -2206,7 +2207,7 @@ def recover_dialog_tree_prime_reachable_carriers_for_parent(
     if not dialog_key:
         return []
     path = _find_anime_tree_path(dialog_key)
-    if not path.is_file():
+    if not document_exists(path):
         return []
     out = _recover_dialog_tree_prime_reachable_carriers_from_path(
         path,

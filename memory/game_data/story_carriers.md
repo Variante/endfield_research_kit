@@ -138,6 +138,97 @@ server policy and unvisited runtime execution remain unresolved.
   Tracking data identifies navigation/presentation targets and does
   not replace a completion condition. These consumers do not establish a
   Mission quest-to-LevelScript task owner.
+- `MissionSystem.OnSubConditionProgressChanged` retains an explicit quest
+  argument even when the supplied condition's stored `parentQuestId` is null.
+  Retained quest definitions can independently locate that condition within a
+  combined objective. Restoration observations include a supplied progress
+  value that differs from the pre-entry progress cache, followed by another
+  request for the same quest and condition with a different supplied value.
+  Preserve argument and cache separately; neither callback counts nor their
+  values alone identify player actions, incoming objective-map contents, or
+  acknowledged server progress. Stored condition types do not authenticate
+  the receiver's runtime subtype. Advanced-progress UI refresh remains a
+  separate path.
+  Active identification evidence now includes `m1m70_q#2`: `StartQuest` enters
+  with `isNewQuest=true`, and a later callback supplies progress `1` while the
+  pre-entry progress cache is `0`. The explicit quest and stored parent agree;
+  archived quest/objective membership selects `CheckSnapshotIdentifySuccess`,
+  rather than its reused condition ID alone. Later deactivation retains a
+  `True` result and progress `1`; separate carriers record quest success and
+  mission completion. These are separate named entries and cache
+  snapshots, not a reconstructed request/reply pairing.
+- Default Mission client activation and result-callback binding select leaves
+  whose virtual `get_conditionType` returns `ClientOnly`. Combined objectives
+  recurse into exact `CombineCondition` children and apply that selection to
+  their leaves. `MissionSystem.IsServerCondition` classifies the other enum
+  values as server conditions. `GameConditionBoth` inherits this activation
+  selector; its name does not mean both implementations execute for every
+  quest. The symbolic enum/getter checks re-resolve the selected metadata and
+  bounded dispatch helper. Their predicates check instruction relationships;
+  branch meaning also relies on the reviewed bodies, and does not identify a
+  live receiver, IFix replacement or authoritative server rule.
+  Photo/identification objectives (`CheckSnapshotIdentifySuccess`) inherit
+  `GameConditionClient`, whose default getter returns `ClientOnly`; they are
+  now represented by a retained active callback as well as source evidence.
+  The admitted restoration and active identification calls share an
+  authenticated return into a Boolean delegate specialization: it widens the
+  Boolean argument to the supplied progress integer and resolves the Mission
+  closure's quest and condition.
+  The reviewed default `GameCondition.set_result` path supplies whether the
+  changed result equals `True`. These observations therefore demonstrate a
+  Boolean-result bridge, not arbitrary numeric counters. The caller witness
+  does not reconstruct every earlier frame or select an IFix branch.
+  Identification group IDs must be distinguished from an entrust's snapshot
+  preset: the mission condition's group joins `SnapshotIdentifyGroupTable`
+  to target IDs, then the base and target-family tables supply stored target
+  requirements. A sphere-family target can describe an empty interactive
+  template rather than a named tree entity; localized scenery does not prove
+  its live entity identity. The capture recipe now retains named group
+  registration/notification entries and snapshot-condition lifecycle/callback
+  context and the callback's supplied string group ID. The closed
+  `EventData<string>` layout is proved from its selected generic container,
+  sole instance type-parameter field, sequential layout and default class
+  size. Open-generic native size/offset rows are placeholders and must never
+  supply closed-instance offsets. Layout does not establish argument passing:
+  the selected snapshot callback receives this eight-byte value indirectly.
+  Preparation separately proves the entry argument's zero-offset pointer load
+  reaching a named string comparison, retaining register identity across calls
+  and control-flow joins. A small native equality wrapper is followed only
+  when it preserves both string arguments and reaches the named two-string
+  comparison. Missing or changed proof rejects preparation. An earlier inline
+  read failed in a live photo callback; its failed journal remains diagnostic
+  evidence and cannot be admitted as a complete collection. Together, layout
+  and passing proofs enable a payload-to-condition entry association; the bound group parameter, actual comparison/result,
+  IFix selection and progression remain unobserved.
+  `InteractiveCheckInt` is a server-condition family, with no declared local
+  event-check lifecycle. Named interactive state requests, integer property
+  callbacks and incoming packet identities provide separate carriers for its
+  investigation. Old/new callback arguments are supplied values, not proof of
+  a blackboard write; stored EntityPtr logic IDs, entity server IDs and packet
+  IDs must stay distinct until an explicit join is established. Incoming
+  property/objective maps and server completion rules remain unresolved.
+  The reviewed `interactivePropertyDelivery` claims identify the default
+  packet path through `EntityManager.ServerSyncInteractiveProperty` to
+  `InteractiveInfo.UpdateServerProperty`, including only unwind-owned native
+  fragments. The consumer reaches the retained server-data property blackboard
+  and has a separate loaded-entity blackboard branch. An absent
+  `InteractiveRootComponent.OnInteractivePropertyUpdate` entry therefore does
+  not establish absent property delivery; this default-body distinction does
+  not identify the branch executed in an earlier session.
+  Conversion reads the wire parameter's real/value type selectors and integer
+  list storage. A list field is not a concrete scalar value, and unproved
+  generic value-field offsets cannot establish a closed numeric layout. The
+  blackboard setter's named dictionary lookup is validated; its remaining
+  mutation helpers and existing-value behavior still need their own proof.
+  The capture recipe separately retains the property consumer's stored
+  entity-data ID, level, template, parent script and generation alongside the
+  supplied packet identity, and the navigation consumer's supplied signed
+  old/new state arguments alongside its explicit entity argument's stored
+  server/level/script identity. These are entry associations, not applied
+  writes or authoritative Mission child values. Default navigation dispatch
+  is conditional and precedes blackboard setter calls; observed ordering alone
+  cannot establish nesting or causal ownership. Incoming Mission objective
+  dictionaries remain a separate carrier from both property blackboards.
 - `StartQuest` distinguishes restoration from a newly entered quest. The
   world-ready restore path passes `isNewQuest=false`; the quest-state update
   path derives the flag from the prior state. A method entry alone cannot
@@ -154,6 +245,33 @@ server policy and unvisited runtime execution remain unresolved.
   observed variant through explicit mission/quest carriers and the retained
   definition; neither the visible title nor a reused radio ID selects it.
   A condition ID alone is not a globally unique mission owner.
+  Mission completion observations include the incoming mission-state carrier,
+  `CompleteMission` with its supplied succeed ID, and the corresponding
+  `Processing` to `Completed` state-event arguments. Cleanup can revisit
+  explicitly owned conditions from earlier quests with zero entry progress
+  caches. Such deactivation entries are not new quest failures or recomputed
+  condition results. A subsequent mission's availability and acceptance need
+  their own identity-bearing notifications; adjacency does not establish its
+  unlock dependency or reward credit.
+- Objective presentation has a separate numeric consumer. The default
+  `ObjectiveData.GetValue` supplies its stored condition ID and values
+  dictionary to `CollectionExtensions.GetValueOrDefault`. The reviewed
+  `Copy` body clears and repopulates a destination dictionary from the incoming
+  objective map; named calls and field reads do not authenticate every loop
+  key/value transfer. Preserve the incoming map, the copied completion flag
+  and the displayed count as separate carriers.
+  `CombineCondition` presentation getters sum each child's numeric presentation
+  value or target. For an `Objective` displaying a multiple combined condition,
+  the default progress getter instead counts children whose
+  `GetResultByProgress` comparison passes; its target is the child count.
+  `GetResultByProgress` compares current progress with the configured target
+  using the virtual comparator. It does not read the cached condition result.
+  A single combined condition uses a completion-based presentation; an explicit
+  display condition and advanced progress have separate branches. Completed
+  objective show data can present its target as progress. These default paths
+  explain how partial counts can appear without a per-child Mission callback;
+  they do not identify the numeric values delivered in a retained session or
+  establish the live IFix branch.
 - `CheckTalkOptionFinish` belongs to `GameConditionBoth`. Activation resolves
   and caches its dialog/finish operands, checks existing finish history
   immediately, and binds `Check` to `ON_SYNC_ALL_DIALOG` and `ON_FINISH_DIALOG`;
@@ -169,12 +287,85 @@ server policy and unvisited runtime execution remain unresolved.
   retain both instead of substituting the cache for the outgoing argument.
   Sends have been observed in both `Exiting` and `Exited` states through
   different callers, which does not by itself identify their branch predicate.
+  Dialogue wire identities have a separate explicit join: `DataManager` owns
+  `DialogIdTable`; the outgoing consumer uses `dialogStrToNum`, and the incoming
+  finish consumer uses `dialogNumToStr`. The stored MemoryPack table has bounded
+  dialogue/option maps and inverse maps that can be checked through EOF with
+  the maintained table readers. Preserve these bytes with the capture. A
+  current-source mapping can name an incoming wire ID without timing-based
+  pairing, but does not correlate a particular request or expose unsampled
+  finish-list contents; it is not a snapshot of the live dictionary.
   A quest configured with `CheckTalkOptionFinish` can have observed success
   and a generic condition deactivation without any entry at the selected
-  type's `OnActivate`, `Check`, or `OnDeactivate` hooks. Matching the authored
-  dialog/finish operands to playback does not close that execution gap; the
-  runtime condition type, alternate implementation path, and server decision
-  remain unresolved.
+  type's `OnActivate`, `Check`, or `OnDeactivate` hooks. Its default virtual
+  type is `CheckTalkFinish`, outside the `ClientOnly` selection above, so the
+  default Mission client path explains how those specialized hooks can be
+  absent. Matching authored dialog/finish operands to playback still does not
+  authenticate the live subtype, IFix selection or server decision.
+- `CheckLevelScriptPropertyBool` also inherits `GameConditionBoth` and returns
+  the non-`ClientOnly` type `CheckLevelScriptProperty`. Its default local
+  `OnActivate` resolves the map, script, property key, comparator and boolean
+  operand. `_DoCheck` reads the property, assigns a comparison result and
+  registers a property-change listener; `_OnEvent` compares the event value
+  with the cached operand, and deactivation removes the listener. This is a
+  boolean result path, not a marker counter. `GameCondition.set_result` can
+  forward a boolean result through a bound callback to
+  `OnSubConditionProgressChanged`, but the Mission callback binder above
+  selects `ClientOnly` leaves. These bodies therefore do not prove that a
+  stored script-property objective uses that callback in a live mission.
+  Individual property writes, incoming objective-map entries and active
+  partial progress need their own identity-bearing observations.
+  Retained `m1m12_q#2` evidence separates these gaps: its archived combined
+  objective checks the marker boolean properties, and its copied root
+  completion flag remains false before the final true update and explicit
+  quest/mission completion. The screen separately records partial HUD counts.
+  No per-condition Mission progress callback is retained for that quest, so
+  neither the root flag nor the screen identifies a changed child property or
+  the incoming numeric count. Observed LevelScript task notifications carry a
+  different script ID from the archived marker operands; their timing cannot
+  establish property ownership.
+  The property's synchronization consumer is also explicit: the default
+  network handler constructs a script pointer from the incoming script ID and
+  forwards its property map. The manager resolves that runtime; its
+  `ServerSyncProperties` loop obtains the brief-data property-ID map and
+  blackboard, looks up each ID, converts its value, writes the mapped key and
+  recycles the temporary variable. The reviewed handler does not establish
+  scene ownership from the packet's scene field. Missing maps, unknown IDs,
+  failed conversions and an unresolved runtime remain distinct refusal paths.
+  Complete, ledger-authenticated `LevelData` owners supply the marker scripts'
+  `LevelScriptBriefData`: the marker Boolean defaults are false, and their
+  numeric IDs map to the exact `bMarker1`/`bMarker2`/`bMarker3` keys. The separate
+  full `LevelScriptData` graph has null property fields and only effect-save
+  variables in its graph blackboard; that does not erase the brief-data map.
+  Its authored actions contain marker property readers but no Boolean setter.
+  These stored defaults and the native sync path establish a possible writer
+  carrier, not an observed property update or the server rule producing it.
+- The retained `m1m43` gathering daily exercises the same distinction through
+  an `InteractiveCheckInt` combined objective. Its archived MissionRuntimeAsset
+  reuses `m1m41` display-text keys but supplies its own objective and entity
+  operands; shared text does not make the mission IDs interchangeable. The
+  maintained `mission_trace_inspect` verifies the package and source inventory
+  before decoding the bounded recipe in
+  `scripts/game_data/contracts/mission_trace_capture.json`.
+  In that session the incoming interactive packet IDs match the five archived
+  operands, while copied combined-root completion stays false through partial
+  HUD advances and becomes true at the final update. Explicit quest-state,
+  successor acceptance and mission-state entries complete the observed path.
+  This is a case-specific packet-ID/operand match, not a universal equivalence
+  between logical IDs and server IDs. No Mission subcondition-progress entry
+  names the gathering quest, and neither selected interactive property callback
+  nor state-request hook fires. The network hook observes identity fields only:
+  delivered property values, applied writes, incoming objective numeric values
+  and the selected live consumer remain unresolved. Adjacent packet/objective
+  entries and independently visible HUD counts cannot supply those missing
+  payloads or causal ownership. The default Server condition selection is
+  consistent with the missing local callbacks; absence alone proves no live
+  subtype, IFix choice or callback failure.
+- `GetScopeMask` uses the virtual force-override tuple when enabled, otherwise
+  the authored scope mask; `GetUseGraphScope` reads the authored graph flag.
+  Named `ScopeName` flags describe the stored scope domain. These selectors
+  do not establish the effective current or graph scope, script availability,
+  or condition execution admission.
 - `CheckActivityConditionalStageStatus` and `GameConditionServerPlaceHolder`
   inherit the server-condition lane and declare no local `Check`; the activity
   class also declares no activation override. Activity-stage descriptions and
@@ -186,6 +377,13 @@ server policy and unvisited runtime execution remain unresolved.
   entries can retain progress equal to the threshold while the cached result
   remains `Undecided`; these snapshots do not observe a `Check` return or prove
   that a local comparison produced `True`.
+  Activity configuration supplies a separate stored dependency join:
+  `ActivityConditionalMultiStageTable` associates stage, mission and time keys;
+  its condition and stage-owner tables retain explicit predicates, while
+  `TimeRangeTable` retains candidate opening/closing ranges. A named
+  `MissionStateEqual` predicate can establish the configured prerequisite
+  independently of adjacent runtime notifications. It does not prove server
+  evaluation, the selected range/timezone, or the actual unlock instant.
 - LevelScript local condition changes send script/task/condition identity and
   absolute progress (`isAdd=false`). Incoming task-state messages apply task
   state through manager/runtime/task-runtime consumers. Separate condition maps

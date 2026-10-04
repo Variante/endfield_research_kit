@@ -9142,6 +9142,128 @@
     },
     {
       "family": "ActionBase",
+      "tag": 777,
+      "memberCount": 11,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_MainCharMoveToDirectionForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "direction",
+          "Param<Vector3>"
+        ],
+        [
+          "gait",
+          "Param<MovementComponent.GroundedMoveGait>"
+        ],
+        [
+          "navID",
+          "ParamOutput<int>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/map01_lv005/3400010000.json",
+        "sourceSha256": "48F1B049155DB984D49083164546272101B71CFBD064005E445AD76B132FF780",
+        "unionOffset": 1711,
+        "endOffset": 1804,
+        "spanSha256": "A3CCC9FA7DB1952576C75EE3B9B3340A4C20BB3ED1AC2236C2C9D0D8C9426699"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+      }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 778,
+      "memberCount": 9,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_MainCharStopNavMoveForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "navMoveId",
+          "Param<int>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/map01_lv005/3400010000.json",
+        "sourceSha256": "48F1B049155DB984D49083164546272101B71CFBD064005E445AD76B132FF780",
+        "unionOffset": 1946,
+        "endOffset": 2005,
+        "spanSha256": "94EE3CD8CF118A3AE7D22BDC096568538E8908FA1A1F65B93FCB31E5EF1459DE"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+      }
+    },
+    {
+      "family": "ActionBase",
       "tag": 780,
       "memberCount": 10,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ManualEndLevelScriptForMemoryPack",
@@ -10528,6 +10650,67 @@
         "source": "LevelScriptData/dung02_dg002/24900160009.json",
         "unionOffset": 170,
         "boundary": "The authenticated current sequential action-list cursor reaches this tag/member pair; every generated field is consumed in setter order and later map fields must remain aligned."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 815,
+      "memberCount": 10,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyOverrideNameForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "nameId",
+          "Param<LangKey>"
+        ],
+        [
+          "proxyId",
+          "Param<string>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/map01_lv001/2100070024.json",
+        "sourceSha256": "889A17DCD0998D3C12672C164E5DA402C6E19D5965D58B62946953860B65EBA9",
+        "unionOffset": 7,
+        "endOffset": 120,
+        "spanSha256": "46175E6B997FA3595CE23B7C91A2B50F512D03CF7936D1464882741C7A5F6C56"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
       }
     },
     {
@@ -12214,6 +12397,67 @@
           "___blackboardKey__",
           "___entity__"
         ]
+      }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 863,
+      "memberCount": 10,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayCameraUniqueWorldEffectForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "effectKey",
+          "Param<string>"
+        ],
+        [
+          "effectSaveId",
+          "ParamOutput<int>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/dung01_rdg003/24000000013.json",
+        "sourceSha256": "8EF84F4758498964E477891F6F7BC9481EBE6CC1069C0F6F98E68C529E2F92B9",
+        "unionOffset": 1338,
+        "endOffset": 1452,
+        "spanSha256": "788A8C25DD49D33C332FAD6410FBC695C0BAA1FF569270B38C93657276768BFC"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
       }
     },
     {
@@ -20609,6 +20853,59 @@
     },
     {
       "family": "ActionBase",
+      "tag": 1179,
+      "memberCount": 8,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ShowStartWorldChallengeBannerForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/map02_lv002/22800950004.json",
+        "sourceSha256": "9259A766A725C4133E771D536AAD5092383F0A7EF3DD9FD98D3A70C42379F635",
+        "unionOffset": 5137,
+        "endOffset": 5169,
+        "spanSha256": "B6FFE013F625CEB509E4758AC6A95C68B391525D62609B563DB418485570B261"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+      }
+    },
+    {
+      "family": "ActionBase",
       "tag": 1181,
       "memberCount": 9,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ShowUIReadingPopPanelForMemoryPack",
@@ -23918,6 +24215,63 @@
         "endOffset": 53,
         "spanSha256": "BB2AA8BD95BF5EF8358EC3198B89A1CC7BBFC1D8BBD3DBE7DB4C8B3C2185ED3A",
         "boundary": "Selected native switch and wrapper, complete nine-member reader and typed boolean parameter context, ordered reads and setters, and current ledger-joined source cursor prove stored fields. Whole-owner promotion requires the corpus gate."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "tag": 1254,
+      "memberCount": 9,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ToggleGeneralAbilityLoneClickForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "clickEnabled",
+          "Param<bool>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/dung02_dg003/29800030000.json",
+        "sourceSha256": "EA2CE548C28F74FA4DAF348E4B4B353D24D2680FC4BE351E29EDBA88113F7050",
+        "unionOffset": 736,
+        "endOffset": 782,
+        "spanSha256": "53693B5DF2BFA18E0722DFF56108F6F65E82E9321F27649D2B07ED706E60597B"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
       }
     },
     {
@@ -27754,6 +28108,99 @@
     },
     {
       "family": "ActionHeader",
+      "tag": 35,
+      "memberCount": 18,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityEvent_OnIntTryUnlockForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "filterLevel",
+          "int32"
+        ],
+        [
+          "filterMask",
+          "int32"
+        ],
+        [
+          "filterMode",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "priority",
+          "int32"
+        ],
+        [
+          "triggerActiveDuring",
+          "int32"
+        ],
+        [
+          "validate",
+          "Param<bool>"
+        ],
+        [
+          "targetEntity",
+          "Param<EntityPtr>"
+        ],
+        [
+          "targetEntityList",
+          "Param<List<EntityPtr>>"
+        ],
+        [
+          "targetEntityListOutput",
+          "ParamOutput<EntityPtr>"
+        ],
+        [
+          "triggerTarget",
+          "int32"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/map01_lv003/300000021.json",
+        "sourceSha256": "337B696FFA6F72F6D164944121D3A8032EFA2C5E1C2297EBA32496BAB53E0EA7",
+        "unionOffset": 106,
+        "endOffset": 222,
+        "spanSha256": "C87B9C249DC333EB0A6ABCCBCC2766C12EB00C6FBDD9BEBB3B5C8D9987EF2F56"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+      }
+    },
+    {
+      "family": "ActionHeader",
       "tag": 36,
       "memberCount": 18,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityEvent_OnIntUnlockedForMemoryPack",
@@ -30334,6 +30781,103 @@
     },
     {
       "family": "ActionHeader",
+      "tag": 107,
+      "memberCount": 19,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnEntityTakeDamageForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "filterLevel",
+          "int32"
+        ],
+        [
+          "filterMask",
+          "int32"
+        ],
+        [
+          "filterMode",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "priority",
+          "int32"
+        ],
+        [
+          "triggerActiveDuring",
+          "int32"
+        ],
+        [
+          "validate",
+          "Param<bool>"
+        ],
+        [
+          "damageOutput",
+          "ParamOutput<float>"
+        ],
+        [
+          "entityFilter",
+          "Param<EntityPtr>"
+        ],
+        [
+          "entityOutput",
+          "ParamOutput<EntityPtr>"
+        ],
+        [
+          "isCharacterFilter",
+          "Param<bool>"
+        ],
+        [
+          "useEntityFilter",
+          "Param<bool>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/base01_dg002/22000010017.json",
+        "sourceSha256": "3182BB14AA0A1CE11C832DB98B8C84BB2623D6AF1274627A70479B15AAF81278",
+        "unionOffset": 18094,
+        "endOffset": 18238,
+        "spanSha256": "E42603B8CDA09A41A79D793A320AE491A02216E76C3B4F285332413B3EBE4FE6"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+      }
+    },
+    {
+      "family": "ActionHeader",
       "tag": 111,
       "memberCount": 15,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnGhostWallAfterTeleportPerformFinishForMemoryPack",
@@ -31340,6 +31884,99 @@
         "source": "LevelScriptData/dung01_rdg004/24200020001.json",
         "unionOffset": 487,
         "boundary": "The authenticated current sequential action-list cursor reaches this tag/member pair; every generated field is consumed in setter order and later map fields must remain aligned."
+      }
+    },
+    {
+      "family": "ActionHeader",
+      "tag": 137,
+      "memberCount": 18,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnScriptedCharPatrolEventForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "filterLevel",
+          "int32"
+        ],
+        [
+          "filterMask",
+          "int32"
+        ],
+        [
+          "filterMode",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "priority",
+          "int32"
+        ],
+        [
+          "triggerActiveDuring",
+          "int32"
+        ],
+        [
+          "validate",
+          "Param<bool>"
+        ],
+        [
+          "entityOutput",
+          "ParamOutput<EntityPtr>"
+        ],
+        [
+          "keyFilter",
+          "Param<string>"
+        ],
+        [
+          "keyOutput",
+          "ParamOutput<string>"
+        ],
+        [
+          "patrolIdOutput",
+          "ParamOutput<ulong>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/dung01_rdg007/24700010035.json",
+        "sourceSha256": "06E4C250EA0B3FAC7C2AAE868747FD2C5C25E84ACFB761F7CDA122BA60DBD779",
+        "unionOffset": 3885,
+        "endOffset": 4027,
+        "spanSha256": "7110EADDC27F1CC991AE3449B13B7A3C467BB27DD45457E9326046E797DA7CD1"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
       }
     },
     {
@@ -33054,6 +33691,91 @@
     },
     {
       "family": "ActionHeader",
+      "tag": 174,
+      "memberCount": 16,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelEvent_OnTravelPoleBeginForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "filterLevel",
+          "int32"
+        ],
+        [
+          "filterMask",
+          "int32"
+        ],
+        [
+          "filterMode",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "priority",
+          "int32"
+        ],
+        [
+          "triggerActiveDuring",
+          "int32"
+        ],
+        [
+          "validate",
+          "Param<bool>"
+        ],
+        [
+          "entityOutput",
+          "ParamOutput<EntityPtr>"
+        ],
+        [
+          "instKeyOutput",
+          "ParamOutput<string>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/dung02_dg002/24900160009.json",
+        "sourceSha256": "34BE7C0DCBC4AB3D23C2C3FE54B1A76E83AEE54CEC86681DF2D30A97FF863111",
+        "unionOffset": 12006,
+        "endOffset": 12120,
+        "spanSha256": "23327CB7A664DE45DF7502A94EDD50EC90B79A868A411D89332748382D8DA2FC"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+      }
+    },
+    {
+      "family": "ActionHeader",
       "tag": 182,
       "memberCount": 17,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_MissionEvent_OnClientGlobalVarChangedForMemoryPack",
@@ -34509,6 +35231,87 @@
         "source": "Interactive/InteractiveData/data_int_forge_iron.json",
         "unionOffset": 4155,
         "boundary": "The authenticated current header-list cursor selects tag 216/member 15. ActionHeader's generated 14-field base and the derived ParamOutput<Vector3> land on the template facOccDis field; the remaining typed tail closes at EOF."
+      }
+    },
+    {
+      "family": "ActionHeader",
+      "tag": 217,
+      "memberCount": 15,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_OnHitByLaserForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "filterLevel",
+          "int32"
+        ],
+        [
+          "filterMask",
+          "int32"
+        ],
+        [
+          "filterMode",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "priority",
+          "int32"
+        ],
+        [
+          "triggerActiveDuring",
+          "int32"
+        ],
+        [
+          "validate",
+          "Param<bool>"
+        ],
+        [
+          "entity",
+          "ParamOutput<EntityPtr>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/dung01_cdg003/12000000003.json",
+        "sourceSha256": "C360A3631ADF1FE519225FC57B4E8E1E8070445DCD2D4791DEBBE0B22F9B7182",
+        "unionOffset": 1179,
+        "endOffset": 1260,
+        "spanSha256": "099402CAA0BA76E9E68755AD3574AEC529EFF79D03EE3F585DB2982466BEDD1B"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
       }
     },
     {
@@ -38218,6 +39021,59 @@
     },
     {
       "family": "GetterBase",
+      "tag": 327,
+      "memberCount": 8,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetSpawnerGroupKeyOfEntityForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "entityPtr",
+          "Param<EntityPtr>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/indie_tower001/43000010020.json",
+        "sourceSha256": "DED9DA7C8F0CF30E6973995D224972250A3602D00EB3D935BE10773036AF62EE",
+        "unionOffset": 6198,
+        "endOffset": 6270,
+        "spanSha256": "B6D21EF4801FFAE05A1BBD6D1CBD2A1E837ED690C327ADF7C33859F7B2CCBDCE"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+      }
+    },
+    {
+      "family": "GetterBase",
       "tag": 330,
       "memberCount": 7,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetSquadInFightForMemoryPack",
@@ -38666,6 +39522,59 @@
         "generatedSetterOrder": [
           "__instance"
         ]
+      }
+    },
+    {
+      "family": "GetterBase",
+      "tag": 424,
+      "memberCount": 8,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetterStringForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "value",
+          "Param<string>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/map01_lv001/2100210004.json",
+        "sourceSha256": "81A23A2FB0E9C91474975E1DF66F4E3DFC29185C2193275D5C15A1CF6E2FAB8A",
+        "unionOffset": 12752,
+        "endOffset": 12809,
+        "spanSha256": "6A2DC08833F11D5C341D7FB33B8A18A56A49831035CE1E5086DEFAE262F8D8FD"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
       }
     },
     {
@@ -39730,6 +40639,59 @@
     },
     {
       "family": "GetterBase",
+      "tag": 689,
+      "memberCount": 8,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ListGetLengthIntForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "list",
+          "Param<List<int>>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/dung02_cdg006/28200000009.json",
+        "sourceSha256": "124CC6B70250F498D90EB461E387AC6E89199D2120000CFE92E2AF97EDB358E9",
+        "unionOffset": 8419,
+        "endOffset": 8476,
+        "spanSha256": "084769F2B676BCA277C5BD896D9BCE9E2EF03BE4C0269F039798F4B895A831BE"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+      }
+    },
+    {
+      "family": "GetterBase",
       "tag": 701,
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ListGetLengthVector3ForMemoryPack",
@@ -40081,6 +41043,63 @@
         "boundary": "Exact sequential chasing-rabbit map cursor, authenticated wrapper and generated setter order; all following map and root fields join physical EOF."
       },
       "evidenceBoundary": "Exact inherited index and list fields; Param<List<GameplayTag>> admits only null/empty lists, with positive element bodies unresolved."
+    },
+    {
+      "family": "GetterBase",
+      "tag": 833,
+      "memberCount": 9,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ListGetValueIntForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "index",
+          "Param<int>"
+        ],
+        [
+          "list",
+          "Param<List<int>>"
+        ]
+      ],
+      "nativeGate": "levelscript_stored_routes_native",
+      "nativeCursorEvidence": {
+        "source": "LevelScriptData/dung02_cdg006/28200000009.json",
+        "sourceSha256": "124CC6B70250F498D90EB461E387AC6E89199D2120000CFE92E2AF97EDB358E9",
+        "unionOffset": 6437,
+        "endOffset": 6520,
+        "spanSha256": "47582730267DDE33E2EABFE9CE731F64FA177EC4969D274EEFA2D874A75D428E"
+      },
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_stored_routes_native.json",
+        "boundary": "selected native union branch, complete generated reader, typed ReadValue contexts, ordered setters and source span replay; no execution claim"
+      }
     },
     {
       "family": "GetterBase",

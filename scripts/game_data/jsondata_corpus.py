@@ -121,7 +121,7 @@ from scripts.game_data.levelscript_binary import (
     LevelScriptTopLevelFramingError,
     frame_levelscript_named,
 )
-from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs
+from scripts.game_data.levelscript_reader_inputs import reader_input_changes, snapshot_complete_reader_inputs
 from scripts.game_data.levelscript_template_binary import (
     LevelScriptTemplateFramingError,
     frame_levelscript_template,
@@ -3083,9 +3083,18 @@ def build_report(
             "filename extension, or leading member count never supplies a schema."
         ),
     }
-    if snapshot_complete_reader_inputs() != levelscript_inputs_before:
-        raise CensusGateError("levelscript-reader-inputs-drift", source="complete LevelScript reader scope",
-                              expected="identical complete start/end source path sets and bytes", actual="reader inputs changed during canonical decode")
+    levelscript_inputs_after = snapshot_complete_reader_inputs()
+    if levelscript_inputs_after != levelscript_inputs_before:
+        changes = reader_input_changes(levelscript_inputs_before, levelscript_inputs_after)
+        first = changes["changes"][0] if changes["changes"] else None
+        error = CensusGateError("levelscript-reader-inputs-drift",
+                                source=first["path"] if first else "complete LevelScript reader scope",
+                                expected=first["expected"] if first else changes["expectedMetadata"],
+                                actual=first["actual"] if first else changes["actualMetadata"])
+        error.diagnostic.update({"validator": "jsondata_corpus.build_report",
+                                 "check": "levelscript-reader-inputs-drift", **changes})
+        error.args = (json.dumps(error.diagnostic, ensure_ascii=False, sort_keys=True),)
+        raise error
     return report, results
 
 

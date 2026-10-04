@@ -31,6 +31,13 @@ V3 additionally requires a typed ReadPackable context and reviewed default
 collection composition for plain lists. The integer switch's List<int>
 registration, concrete list/primitive readers and symbolic generic contexts
 establish count-plus-Int32 storage independently of live provider replacement.
+Typed output parameters require their own selected ReadValue contexts, even
+when an established wire grammar is shared with another output type. The
+patrol-event header retains entity, key and patrol-ID outputs, while the
+camera-effect action retains an effect-ID output. Header filter/trigger enums
+additionally require an explicit signed-Int32 backing declaration. The stored
+NPC name/proxy operands and challenge-banner action use existing Param and
+base-action grammars. None establishes a resolved output or an event firing.
 
 Run as: python -m scripts.game_data.levelscript_route_deserialize_native
 """
@@ -75,7 +82,16 @@ PARAM_ENUM_UNDERLYING = {'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.GeneralA
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.MountPoint>': ('Beyond.Gameplay.MountPoint',
                                                                  'int'),
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.RollingStoneController+ManipulateLauncherOp>': ('Beyond.Gameplay.RollingStoneController+ManipulateLauncherOp',
-                                                                                                  'int')}
+                                                                                                  'int'),
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait>': ('Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait', 'int')}
+HEADER_ENUM_UNDERLYING = {
+    name: (name, "int") for name in (
+        "Beyond.Gameplay.Actions.FilterLevel",
+        "Beyond.Gameplay.Actions.FilterMask",
+        "Beyond.Gameplay.Actions.TriggerActiveDuring",
+        "Beyond.Gameplay.Actions.EntityEventHeader+TriggerTarget",
+    )
+}
 
 
 def _relative_call_target(image: NativeImage, rva: int) -> int:
@@ -137,6 +153,14 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
                                           for item in row["readOrder"]]):
         raise ValueError(f"levelscriptRouteDeserialize.native:wrapper-members={key}")
     aliases = {'Beyond.GEnums.ScopeName': 'int32',
+ 'Beyond.Gameplay.Actions.FilterLevel': 'int32',
+ 'Beyond.Gameplay.Actions.FilterMask': 'int32',
+ 'Beyond.Gameplay.Actions.TriggerActiveDuring': 'int32',
+ 'Beyond.Gameplay.Actions.EntityEventHeader+TriggerTarget': 'int32',
+ 'Beyond.Gameplay.Actions.ParamOutput`1<Beyond.Gameplay.Core.EntityPtr>': 'ParamOutput<EntityPtr>',
+ 'Beyond.Gameplay.Actions.ParamOutput`1<int>': 'ParamOutput<int>',
+ 'Beyond.Gameplay.Actions.ParamOutput`1<string>': 'ParamOutput<string>',
+ 'Beyond.Gameplay.Actions.ParamOutput`1<ulong>': 'ParamOutput<ulong>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.GEnums.GeneralAbilityType>': 'Param<GeneralAbilityType>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Actions.ShowUIToast+ShowToastType>': 'Param<ShowUIToast.ShowToastType>',
  'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.CommonMaskBlendData>': 'Param<CommonMaskBlendData>',
@@ -165,11 +189,15 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
  'System.Collections.Generic.List`1<int>': 'List<int>',
  'bool': 'bool',
  'int': 'int32',
- 'string': 'string'}
+ 'string': 'string',
+    'Beyond.Gameplay.Actions.ParamOutput`1<float>': 'ParamOutput<float>',
+    'Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait>': 'Param<MovementComponent.GroundedMoveGait>',
+    'Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<int>>': 'Param<List<int>>'}
     if [[member.name.lstrip("_"), aliases.get(member.declared_type)] for member in members] != row["fields"]:
         raise ValueError(f"levelscriptRouteDeserialize.native:codec-kinds={key}")
     for member in members:
-        if member.declared_type in ("Beyond.GEnums.ScopeName", "Beyond.Gameplay.DestroyBallReason") and (member.kind, member.underlying_kind, member.width) != ("enum", "scalar32", 4):
+        if (aliases.get(member.declared_type) == "int32" and member.declared_type != "int"
+                and (member.kind, member.underlying_kind, member.width) != ("enum", "scalar32", 4)):
             raise ValueError(f"levelscriptRouteDeserialize.native:scope-enum-backing={key}")
     body = bodies.body(row["wrapperName"], "Deserialize")
     base = image.pe.image_base
@@ -191,7 +219,9 @@ def _typed_route(image: NativeImage, bodies: BodyIndex, wrapper: Any, row: dict[
         raise ValueError(f"levelscriptRouteDeserialize.native:member-count-instruction={key}")
     previous = instruction["rva"]
     for item in row["readOrder"]:
-        is_param = item["declaredType"].startswith("Beyond.Gameplay.Actions.Param`1<") or item["declaredType"] == "System.Collections.Generic.List`1<int>"
+        is_param = item["declaredType"].startswith((
+            "Beyond.Gameplay.Actions.Param`1<", "Beyond.Gameplay.Actions.ParamOutput`1<",
+        )) or item["declaredType"] == "System.Collections.Generic.List`1<int>"
         if is_param != ("typedReadContext" in item):
             raise ValueError(f"levelscriptRouteDeserialize.native:required-typed-context={key}/{item['name']}")
         if is_param:
@@ -348,6 +378,12 @@ def _validate(
     if not required_enums.issubset(actual_enums):
         raise ValueError("levelscriptRouteDeserialize.contract:required-param-enum-underlying="
                          f"expected={sorted(required_enums)}:actual={sorted(actual_enums)}")
+    header_enums = {HEADER_ENUM_UNDERLYING[item["declaredType"]]
+                    for row in contract["routes"] for item in row["readOrder"]
+                    if item["declaredType"] in HEADER_ENUM_UNDERLYING}
+    if not header_enums.issubset(actual_enums):
+        raise ValueError("levelscriptRouteDeserialize.contract:required-header-enum-underlying="
+                         f"expected={sorted(header_enums)}:actual={sorted(actual_enums)}")
     for enum in recorded_enums:
         definition = enum["typeDefinition"]
         if image.type_name(definition) != enum["typeName"]:

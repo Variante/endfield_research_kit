@@ -37,6 +37,15 @@ from scripts.common import (
     resolve_installed_game_data_root,
     sha256_file as sha256_path,
 )
+from scripts.webui.story.unity_documents import (
+    document_exists,
+    document_sha256,
+    document_size,
+    documents_by_path_id,
+    glob_documents,
+    read_document_bytes,
+    type_dir_store,
+)
 
 
 class TimelineNativeUnavailable(NativeEvidenceUnavailable):
@@ -660,7 +669,7 @@ def original_file_record(path_value: str, role: str) -> dict[str, Any]:
     path = Path(path_value)
     if not path.is_absolute():
         path = ROOT / path
-    payload = json.loads(path.read_text(encoding="utf-8-sig"))
+    payload = json.loads(read_document_bytes(path).decode("utf-8-sig"))
     meta = payload.get("$animestudio") or {}
     return {
         "role": role,
@@ -674,7 +683,7 @@ def original_file_record(path_value: str, role: str) -> dict[str, Any]:
         "sourceOffset": meta.get("sourceOffset"),
         "byteSize": meta.get("byteSize"),
         "rawDataSha256": meta.get("rawDataSha256"),
-        "exportedJsonSha256": sha256_path(path),
+        "exportedJsonSha256": document_sha256(path),
     }
 
 
@@ -683,7 +692,7 @@ def hashed_source_record(path_value: Path | str, role: str) -> dict[str, Any]:
     path = Path(path_value)
     if not path.is_absolute():
         path = ROOT / path
-    if not path.is_file():
+    if not document_exists(path):
         raise RuntimeError(
             "validator=timeline_embedded_story_runtime failed: "
             "gate=related_original_file; "
@@ -692,8 +701,8 @@ def hashed_source_record(path_value: Path | str, role: str) -> dict[str, Any]:
     return {
         "role": role,
         "path": repo_path(path),
-        "byteSize": path.stat().st_size,
-        "sha256": sha256_path(path),
+        "byteSize": document_size(path),
+        "sha256": document_sha256(path),
     }
 
 
@@ -1648,7 +1657,8 @@ def recover_parent_dialog_activation_routes(
     if not dialog_keys:
         empty = join_parent_dialog_activation_routes(
             rows,
-            {"summary": {}, "headerRows": []},
+            {"validation": {"status": "validated", "failures": []},
+             "runtimeSlotMappingId": "", "rows": []},
             {},
             {},
             {},
@@ -1766,6 +1776,11 @@ class ExportedObjectResolver:
 
     def __init__(self, extract_dir: Path) -> None:
         self.extract_dir = extract_dir
+        self.store_dirs = (
+            {name: EXPORT_LAYOUT.unity_type_dir(name)
+             for name in ("MonoBehaviour", "PlayableDirector")}
+            if not extract_dir.is_dir() else {}
+        )
         self.paths_by_suffix: dict[str, list[Path]] = defaultdict(list)
         self.payload_cache: dict[Path, dict[str, Any]] = {}
         suffix_re = re.compile(r"_p([0-9A-Fa-f]{16})\.json$")
@@ -1777,7 +1792,7 @@ class ExportedObjectResolver:
 
     def load(self, path: Path) -> dict[str, Any]:
         if path not in self.payload_cache:
-            payload = json.loads(path.read_text(encoding="utf-8-sig"))
+            payload = json.loads(read_document_bytes(path).decode("utf-8-sig"))
             if not isinstance(payload, dict):
                 raise RuntimeError(f"expected object JSON: {path}")
             self.payload_cache[path] = payload
@@ -1790,7 +1805,12 @@ class ExportedObjectResolver:
     ) -> tuple[Path, dict[str, Any]] | None:
         suffix = f"{path_id & 0xFFFFFFFFFFFFFFFF:016X}"
         matches = []
-        for path in self.paths_by_suffix.get(suffix, []):
+        paths = (
+            [path for directory in self.store_dirs.values()
+             for path in documents_by_path_id(directory, path_id)]
+            if self.store_dirs else self.paths_by_suffix.get(suffix, [])
+        )
+        for path in paths:
             payload = self.load(path)
             meta = payload.get("$animestudio") or {}
             if (
@@ -1835,7 +1855,12 @@ def director_records(
     resolver: ExportedObjectResolver,
 ) -> list[dict[str, Any]]:
     records = []
-    for path in sorted(resolver.extract_dir.glob("*/PlayableDirector/*.json")):
+    paths = (
+        glob_documents(resolver.store_dirs["PlayableDirector"], "*.json")
+        if resolver.store_dirs else
+        sorted(resolver.extract_dir.glob("*/PlayableDirector/*.json"))
+    )
+    for path in paths:
         payload = resolver.load(path)
         meta = payload.get("$animestudio") or {}
         playable = resolved_pointer_identity(payload, "$.m_PlayableAsset")
@@ -1876,6 +1901,17 @@ def same_serialized_file_component_paths(
     directors: list[dict[str, Any]],
 ) -> list[Path]:
     """Use extraction provenance to bound component scans to exact files."""
+    if resolver.store_dirs:
+        directory = resolver.store_dirs["MonoBehaviour"]
+        store = type_dir_store(directory)
+        if store is None:
+            return []
+        return sorted({
+            directory / row.name
+            for source_file in {director["identity"][0] for director in directors}
+            for row in store.iter_rows_by_source_file(source_file, "MonoBehaviour")
+            if row.name.lower().endswith(".json")
+        })
     wanted_by_chunk: dict[Path, dict[int, set[str]]] = defaultdict(
         lambda: defaultdict(set)
     )
@@ -1922,7 +1958,7 @@ def cutscene_root_records(
 
     def is_candidate(path: Path) -> bool:
         try:
-            raw = path.read_bytes()
+            raw = read_document_bytes(path)
         except OSError:
             return False
         return (

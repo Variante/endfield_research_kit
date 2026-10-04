@@ -46,6 +46,22 @@ def snapshot_complete_reader_inputs() -> dict[str, Any]:
             "files": rows}
 
 
+def reader_input_changes(before: dict[str, Any], after: dict[str, Any], *, limit: int = 8) -> dict[str, Any]:
+    """Describe a failed snapshot join with deterministic, bounded file identities."""
+    previous = {row["path"]: row for row in before["files"]}
+    current = {row["path"]: row for row in after["files"]}
+    changes = []
+    for path in sorted(previous.keys() | current.keys()):
+        expected, actual = previous.get(path), current.get(path)
+        if expected != actual:
+            changes.append({"path": path,
+                            "change": "added" if expected is None else "removed" if actual is None else "modified",
+                            "expected": expected, "actual": actual})
+    return {"changedFiles": len(changes), "changes": changes[:limit],
+            "expectedMetadata": {key: before.get(key) for key in ("schema", "scope")},
+            "actualMetadata": {key: after.get(key) for key in ("schema", "scope")}}
+
+
 def require_current_reader_inputs(recorded: Any) -> dict[str, Any]:
     current = snapshot_complete_reader_inputs()
     if recorded != current:

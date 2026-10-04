@@ -14,6 +14,7 @@ from functools import lru_cache as _radio_cont_lru_cache
 from pathlib import Path
 from pathlib import Path as _RadioContPath
 from scripts.webui.search import linked_file_search_text
+from scripts.webui.story.kite_station_tasks import project_kite_station_tasks
 from scripts.webui.story.context import (
     ADMIN_ACTOR_IDS,
     ATMOS_CLUSTER_TABLE_PATH,
@@ -6835,6 +6836,18 @@ def build_language_bundle(
         if search_text:
             entry["x"] = search_text
         index_entries.append(entry)
+
+    for task_page in project_kite_station_tasks(
+        load_optional_table_json(TABLE_DIR, "KiteStationEntrustTasksTable.json"),
+        translate=t,
+        text_trace=text_trace,
+        named_text_trace=named_text_key_trace,
+        mission_name=mission_name,
+        mission_flow=load_mission_flow,
+    ):
+        write_reference_page(**task_page)
+        extra_mission_names.setdefault(task_page["mission_id"], task_page["title"])
+
     def character_page_title(char_id: str) -> str:
         row = character_rows.get(char_id) if isinstance(character_rows.get(char_id), dict) else {}
         actor_id = char_id.split("_", 2)[-1] if char_id.startswith("chr_") else char_id

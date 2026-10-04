@@ -42,6 +42,16 @@ Story rebuild.
 Story's own `conv/*.json` never carries voice. Controls and rendering rules are
 in the header comment of `webui/app.js`.
 
+Observation-station entrusts also publish Story document cards, including in
+the lean profile. `scripts/webui/story/kite_station_tasks.py` projects each
+`KiteStationEntrustTasksTable` row through its explicit `missionId`, including
+the localized name, description, objective instructions from the existing
+mission-flow reader, and completion text. The target text remains available
+when no localized runtime objective exists. This gives task-only missions
+sidebar groups and searchable entries: a mission sidecar alone does not make
+a Story group. These are authored task definitions, not recovered dialogue,
+playback evidence, or a source of scene-order edges.
+
 `webui/src/features/story/branches.js` renders the compact branch overview
 from the selected conversation and its existing mission publication; it adds
 no builder input or new recovery pass. `render(conv, options)` returns a fresh
