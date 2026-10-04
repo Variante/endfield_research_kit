@@ -16,10 +16,12 @@ from typing import Any
 from scripts.repo_paths import REPO_ROOT
 
 TABLE_PREFIXES = ("SNS", "Dialog", "Mission", "Quest", "ChapterMission", "InteractiveMission", "AudioDialog",
-                  "Activity", "Dungeon", "Level", "Map", "Npc")
+                  "Activity", "Dungeon", "Level", "Map", "Npc", "Snapshot", "KiteStation")
 TEXT_TABLES = {"TextTable.json", "TextVoIdTable.json", "I18nTextTable_CN.json"}
+IDENTITY_TIME_TABLES = {"TimeRangeTable.json"}
 ALL_JSON_FAMILIES = ("MissionRuntimeAsset", "LevelData", "LevelScriptData", "LevelScriptTemplateData", "LevelConfig")
-SHARED_JSON = ("game/Json/GameplayConfig/NpcProxyExDataTable.json",)
+SHARED_JSON = ("game/Json/GameplayConfig/NpcProxyExDataTable.json",
+               "game/Json/GameplayConfig/DialogIdTable.json")
 MAX_FILES = 16384
 MAX_COPY_FILE_BYTES = 32 * 1024 * 1024
 MAX_COPY_BYTES = 128 * 1024 * 1024
@@ -30,7 +32,19 @@ class SourceArchiveError(ValueError):
     """Source selection or archive publication cannot be completed safely."""
 
 
-def select_sources(export_root: Path, mission: str) -> tuple[list[tuple[Path, str]], list[str]]:
+def select_sources(export_root: Path, mission: str, *, profile: str = "mission") -> tuple[list[tuple[Path, str]], list[str]]:
+    if profile not in {"mission", "buff"} or (profile == "buff" and mission != "all"):
+        raise SourceArchiveError("mission_source_archive: expected mission or buff; buff requires --mission all")
+    if profile == "buff":
+        provenance = export_root / "meta/extraction/provenance.json"
+        sources = sorted((export_root / "game/Json/BuffData").glob("*.json"))
+        if not provenance.is_file() or not sources:
+            raise SourceArchiveError("mission_source_archive: buff requires export provenance and nonempty game/Json/BuffData")
+        selected = [(provenance, "exportProvenance"), *((path, "buffData") for path in sources)]
+        selected.extend((path, "buffIdentityTable") for path in sorted((export_root / "game/Table").glob("Buff*.json")))
+        if len(selected) > MAX_FILES:
+            raise SourceArchiveError(f"mission_source_archive: selected {len(selected)} files exceeds {MAX_FILES}")
+        return selected, []
     if not re.fullmatch(r"[a-z0-9_]{1,80}", mission):
         raise SourceArchiveError("mission_source_archive: invalid mission ID")
     required = [(export_root / "meta/extraction/provenance.json", "exportProvenance")]
@@ -62,7 +76,7 @@ def select_sources(export_root: Path, mission: str) -> tuple[list[tuple[Path, st
         if path.is_file():
             selected[path] = "sharedSemanticJson"
     for path in (export_root / "game/Table").glob("*.json"):
-        if path.stem.startswith(TABLE_PREFIXES) or path.name in TEXT_TABLES:
+        if path.stem.startswith(TABLE_PREFIXES) or path.name in TEXT_TABLES | IDENTITY_TIME_TABLES:
             selected[path] = "sharedSemanticTable"
     if len(selected) > MAX_FILES:
         raise SourceArchiveError(f"mission_source_archive: selected {len(selected)} files exceeds {MAX_FILES}")
@@ -76,13 +90,16 @@ def select_sources(export_root: Path, mission: str) -> tuple[list[tuple[Path, st
     for table in ("SNSDialogTable.json", "SNSDialogOptionTable.json", "DialogTextTable.json", "DialogOptionTable.json", "TextTable.json", "I18nTextTable_CN.json"):
         if export_root / f"game/Table/{table}" not in selected:
             gaps.append(f"Expected semantic table missing: game/Table/{table}")
+    for relative in (*SHARED_JSON, *(f"game/Table/{name}" for name in sorted(IDENTITY_TIME_TABLES))):
+        if export_root / relative not in selected:
+            gaps.append(f"Expected identity/context source missing: {relative}")
     # Preserve identity/provenance and mission definitions before optional tables
     # or script files can consume a copy budget.
     priority = {"exportProvenance": 0, "mission": 1, "missionMeta": 2}
     return sorted(selected.items(), key=lambda item: (priority.get(item[1], 3), item[0].relative_to(export_root).as_posix())), gaps
 
 
-def archive(export_root: Path, output_dir: Path, mission: str) -> dict[str, Any]:
+def archive(export_root: Path, output_dir: Path, mission: str, *, profile: str = "mission") -> dict[str, Any]:
     export_root, output_dir = Path(export_root).resolve(), Path(output_dir).resolve()
     if not any(output_dir.is_relative_to((REPO_ROOT / folder).resolve()) for folder in ("reports", "scratch", "tmp")):
         raise SourceArchiveError("mission_source_archive: output must be under reports/, scratch/, or tmp/")
@@ -90,20 +107,23 @@ def archive(export_root: Path, output_dir: Path, mission: str) -> dict[str, Any]
         raise SourceArchiveError("mission_source_archive: output must be outside the selected export")
     if output_dir.exists() and (not output_dir.is_dir() or any(output_dir.iterdir())):
         raise SourceArchiveError("mission_source_archive: output directory must be new or empty")
-    selected, gaps = select_sources(export_root, mission)
+    selected, gaps = select_sources(export_root, mission, profile=profile)
     output_dir.mkdir(parents=True, exist_ok=True)
     inventory: dict[str, Any] = {"schema": "endfield.mission-source-archive.v1", "focusMission": mission,
         "archivedAt": datetime.now(timezone.utc).isoformat(), "exportRoot": str(export_root),
         "evidenceBoundary": "structuralOnly", "nativeValidated": False,
         "identityBoundary": "Copied exported bytes and their SHA256 identities only; export provenance is retained verbatim and is not a current-native validation result.",
         "selectionScope": "allMissions" if mission == "all" else "focusedMission",
-        "selection": ("All available MissionRuntimeAsset, LevelData, LevelScriptData, LevelScriptTemplateData and LevelConfig JSON bytes; shared NPC/activity/dungeon/mission/dialog tables and CN localization."
+        "selection": ("All available MissionRuntimeAsset, LevelData, LevelScriptData, LevelScriptTemplateData and LevelConfig JSON bytes; shared NPC/activity/dungeon/mission/dialog/snapshot/entrust identity/time tables and CN localization."
                       if mission == "all" else "Mission-delimited JSON filenames, required mission/meta/provenance, and bounded shared semantic tables including CN localization."),
         "budgets": {"maxFiles": MAX_FILES, "maxCopyFileBytes": MAX_COPY_FILE_BYTES,
                     "maxCopyBytes": MAX_COPY_BYTES, "maxIdentityBytes": MAX_IDENTITY_BYTES},
         "files": [], "gaps": gaps, "copiedFiles": 0, "copiedBytes": 0, "identityBytes": 0,
         "unarchivedScope": ("Unity.sqlite objects, other JSON families, media and non-CN localization are outside this bounded archive. Referenced sources outside the selected families remain unresolved."
                             if mission == "all" else "Other missions, indirect template dependencies, Unity.sqlite objects, media, and non-CN localization are outside this bounded archive.")}
+    if profile == "buff":
+        inventory.update(selectionScope="buffData", selection="All exported BuffData JSON bytes and available Buff identity tables, with export provenance retained verbatim.",
+                         unarchivedScope="SkillData, character/ability/entity definitions, other JSON families, Unity objects and media are not archived. Referenced sources outside BuffData remain unresolved.")
     try:
         for path, role in selected:
             if not path.resolve().is_relative_to(export_root):
@@ -162,17 +182,18 @@ def archive(export_root: Path, output_dir: Path, mission: str) -> dict[str, Any]
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mission", default="all", help="All available mission sources by default; supply a mission key for a smaller snapshot.")
+    parser.add_argument("--profile", choices=("mission", "buff"), default="mission", help="Buff selects BuffData source bytes without requiring mission definitions.")
     parser.add_argument("--export-root", type=Path, default=REPO_ROOT / "export_full")
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
-        result = archive(args.export_root, args.output_dir, args.mission)
+        result = archive(args.export_root, args.output_dir, args.mission, profile=args.profile)
     except (OSError, SourceArchiveError) as exc:
         print(f"[mission_trace_source_archive] failed: {exc}")
         return 1
     print(f"[mission_trace_source_archive] archived: {result['copiedFiles']} files, {result['copiedBytes']} bytes; {len(result['gaps'])} gaps; native validation not claimed")
     if args.mission == "all" and not result["selectionComplete"]:
-        print("[mission_trace_source_archive] incomplete all-mission selection: source copy budgets exceeded; preserve the inventory and review the bounds before launch")
+        print("[mission_trace_source_archive] incomplete source selection: source copy budgets exceeded; preserve the inventory and review the source archive bounds")
         return 1
     return 0
 

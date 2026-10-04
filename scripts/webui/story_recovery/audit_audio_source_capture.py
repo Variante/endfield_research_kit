@@ -30,7 +30,7 @@ from scripts.game_data.il2cpp.native_image import pe_mapped_image_size
 from scripts.game_data.wwise_source_native import CONTRACT_PATH, load_validated_source_contract
 from scripts.repo_paths import REPO_ROOT
 from scripts.webui.story_recovery import prepare_audio_source_observer as observer
-from scripts.webui.story_recovery import runtime_trace_audio_capture as capture
+from scripts.webui.story_recovery import runtime_trace_audio_manifest as manifest_io
 from scripts.webui.story_recovery import runtime_trace_audio_import as importer
 from scripts.webui.story_recovery import runtime_trace_core as core
 
@@ -364,7 +364,7 @@ def audit_events(
                 if not equal:
                     issue("attachedModuleIdentity", end, field="attached" + prefix + suffix, expected=expected, actual=value)
             try:
-                base = capture.validated_module_base(end.get("attached" + prefix + "Base"), expectation["size"], prefix)
+                base = manifest_io.validated_module_base(end.get("attached" + prefix + "Base"), expectation["size"], prefix)
                 ranges[session_id].append({"moduleName": expectation["name"], "base": base, "size": expectation["size"]})
             except RuntimeError as exc:
                 issue("moduleBase", end, detail=str(exc))
@@ -620,7 +620,7 @@ def audit_capture(
         report = {"schema": SCHEMA, "status": native_gate["status"], "claimsAvailable": False, "nativeGate": native_gate,
                   "sourcePairs": [], "diagnostics": [{"check": "selectedNativeInputs", "detail": native_gate["detail"]}]}
     else:
-        profile = capture.load_manifest(manifest)
+        profile = manifest_io.load_manifest(manifest)
         recipe_gate = observer.validate_profile_recipe(profile, contract, game_root)
         verified = core.verify_game_files(game_root, profile)
         expectations = {prefix: {"path": str(verified[key]), "name": verified[key].name,

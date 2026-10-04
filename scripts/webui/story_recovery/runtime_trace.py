@@ -1,15 +1,12 @@
-r"""Capture or import hash-locked runtime evidence.
+"""Import saved hash-locked runtime evidence offline.
 
 Examples from the repository root::
 
-    tools\frida-runtime\venv\Scripts\python.exe -m scripts.webui.story_recovery.runtime_trace capture --profile mission
-    tools\frida-runtime\venv\Scripts\python.exe -m scripts.webui.story_recovery.runtime_trace capture --profile audio
     python -m scripts.webui.story_recovery.runtime_trace import --profile mission capture.jsonl
     python -m scripts.webui.story_recovery.runtime_trace import --profile audio capture.jsonl
 
-Mission and audio keep separate hook manifests, agents, event schemas, and
-evidence policies. This file is the only command-line entry point; profile
-modules contain adapters and the shared core owns process/hash/JSONL safety.
+Mission and audio keep separate event schemas and evidence policies. Profile
+modules contain import adapters; the shared core validates files and JSONL.
 """
 from __future__ import annotations
 
@@ -23,14 +20,12 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.story_recovery.runtime_trace"
     )
 
-from scripts.webui.story_recovery import runtime_trace_audio_capture as audio_capture
 from scripts.webui.story_recovery import runtime_trace_audio_import as audio_import
-from scripts.webui.story_recovery import runtime_trace_mission_capture as mission_capture
 from scripts.webui.story_recovery import runtime_trace_mission_import as mission_import
 
 
 PROFILES = ("mission", "audio")
-ACTIONS = ("capture", "import")
+ACTIONS = ("import",)
 
 
 def _selected_profile(argv: Sequence[str]) -> str | None:
@@ -57,8 +52,6 @@ def command_parser(action: str, profile: str) -> argparse.ArgumentParser:
     parser.add_argument("action", choices=[action])
     parser.add_argument("--profile", required=True, choices=[profile])
     adapter = {
-        ("capture", "mission"): mission_capture,
-        ("capture", "audio"): audio_capture,
         ("import", "mission"): mission_import,
         ("import", "audio"): audio_import,
     }[(action, profile)]
@@ -84,11 +77,6 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
-    if args.action == "capture":
-        return {
-            "mission": mission_capture.capture,
-            "audio": audio_capture.capture,
-        }[args.profile](args)
     try:
         return {
             "mission": mission_import.import_trace,

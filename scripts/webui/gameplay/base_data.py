@@ -305,7 +305,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--runtime-tag-capture",
         type=Path,
         help=(
-            "Hash-gated JSONL produced by capture_runtime_tags.py; merge exact "
+            "Hash-gated saved GameplayTag JSONL; merge exact "
             "runtime GameplayTag name/id observations."
         ),
     )

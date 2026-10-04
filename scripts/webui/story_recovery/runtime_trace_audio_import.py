@@ -393,7 +393,7 @@ def read_source_observer_inputs(
             raise fail(str(manifest), str(exc)) from exc
         # The shared loader owns profile shape validation; compare its bytes
         # again before publication to guard a concurrent replacement.
-        if audit.capture.load_manifest(manifest) != profile:
+        if audit.manifest_io.load_manifest(manifest) != profile:
             raise fail(str(manifest), "profile changed before source audit")
         verified = core.verify_game_files(selected_root, profile)
         expectations = {
@@ -852,7 +852,7 @@ def _managed_context_events(
 ) -> list[dict[str, Any]]:
     """Resolve managed frames carried on a native event.
 
-    The Frida agent records both the carrier-only context stack and the full
+    The historical agent records both the carrier-only context stack and the full
     attached managed hook stack on native callbacks.  Treat the capture IDs as
     a bounded synchronous relation; never infer a relation from a matching
     thread alone.
@@ -887,7 +887,7 @@ def summarize_managed_external_path_lifecycle(
     """Summarize managed external paths and their bounded native path overlaps.
 
     The optional VoicePlayer hook and the Adapter hook are joined only through
-    the Frida parent-capture chain or exact same-session path strings. These
+    the historical parent-capture chain or exact same-session path strings. These
     joins do not establish a native handle, selected Wwise branch, or PCM.
     """
 
@@ -2091,7 +2091,7 @@ def summarize_native_call_relations(
 ) -> list[dict[str, Any]]:
     """Report exact same-thread synchronous native-hook nesting.
 
-    ``nativeParentCaptureId`` is assigned by the Frida agent from a per-thread
+    ``nativeParentCaptureId`` is assigned by the historical agent from a per-thread
     native interceptor stack.  Only resolve a relation when the parent id is a
     native call in the same session; timing or same-session adjacency is not
     enough to create a relation.

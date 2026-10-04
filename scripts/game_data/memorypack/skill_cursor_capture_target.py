@@ -23,19 +23,13 @@ interior ownership.  A second binding with the same schema
 copied hash; its populated ActionGroup needs separate interior evidence, and
 the second-talent witness cannot select its terminal by analogy.
 
-Capture procedure: wait for ``runtime.ready``, exercise a plausible source
-trigger, stop the capture with ``Numpad 9`` while the game is still open, and
-retain the raw receipt before exiting; a session that ends by the game
-exiting leaves no receipt, and runtime readiness alone never supplies a
-cursor.  Authored links identify plausible triggers, not proof that the game
-loads the source.
-
-Before a new target, rebuild the all-unselected basis
+Offline verification requires the retained raw receipt, admitted source
+bytes, current all-unselected basis
 (``reports/animestudio/skilldata_cursor_basis_latest.json``) and its
-native-only context with ``python -m
-scripts.game_data.il2cpp.skill_cursor_native_context``, and check the host
-with ``tools/EndfieldCapture/StartCapture.bat skilldata-cursor targeted
---skilldata-next-target --preflight-only --no-pause``.  Verify the session's
+native-only context from ``python -m
+scripts.game_data.il2cpp.skill_cursor_native_context``. Runtime readiness alone
+never supplies a cursor. Authored links identify possible triggers, without
+proving that the source loaded. Verify the saved session's
 ``<session>/skilldata-cursor/receipt.json`` with ``--output
 reports/animestudio/skilldata_cursor_target_verification_latest.json``; that
 is what ``memorypack.skill_corpus --capture-target-verification`` replays.

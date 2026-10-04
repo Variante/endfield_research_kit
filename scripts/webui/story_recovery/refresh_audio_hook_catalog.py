@@ -1,16 +1,10 @@
 """Re-pin the audio hook catalog to the installed build.
 
 `audio_runtime_trace_hooks.json` is the `audioRuntimeTrace.hooks.v2` evidence
-catalog that `StartCapture.bat` hands to the capture host as its build
-manifest. **The host owns the conversion**: it looks up five required hooks by
-name, takes only each one's `rva`, supplies the module and ABI identifier from
-its own table, and writes the `audioRuntimeTrace.activation.v1` manifest the
-audio provider consumes. Producing that activation file here would be writing
-something nothing reads -- a mistake this module was built making.
-
-What actually blocks a capture is that the catalog is pinned to the build it
-was recorded on. This re-pins it, and verifies the two halves differently
-because they are different claims.
+catalog. This offline utility re-resolves its five required entries against
+selected native inputs and verifies the two address families independently.
+The result is a revalidation artifact, not proof of a saved session's original
+profile bytes or permission to attach to a process.
 
 *The managed hooks* live in `GameAssembly.dll`, rebuilt on every client update,
 so their addresses are re-resolved by name through `il2cpp.method_resolver` --
@@ -29,7 +23,7 @@ not are sixteen-byte leaf getters, which MSVC omits from `.pdata` by design. A
 future rebuild that *does* move code therefore fails closed instead of hooking
 whatever now sits at the address.
 
-**Only the five hooks the host requires are refreshed.** Every other row keeps
+**Only the five required catalog entries are refreshed.** Every other row keeps
 a superseded address and is recorded as such in `refreshedHooks`, because a row
 that silently kept a stale address would be indistinguishable from a current
 one.

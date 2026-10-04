@@ -7,7 +7,7 @@ transport, but its output is never publication eligible.  This verifier does
 not publish a whole-schema corpus claim.
 
 The target set (``contracts/skill_cursor_capture_target_set.json``, gated
-before launch by ``python -m
+for offline validation by ``python -m
 scripts.game_data.il2cpp.skill_cursor_target_set_context``) binds every
 current terminal-ambiguous SkillData logical source plus the
 already closed Purrche second-talent source as a positive control.  The
@@ -30,17 +30,15 @@ every requested target and the positive control verified, each reading the
 earlier one-member terminal, so that set needs no further capture.  A
 top-level cursor never names a populated ActionGroup interior.
 
-Workflow.  ``python -m scripts.game_data.il2cpp.skill_cursor_target_set_context
---preflight --capture-binding-batch`` prints the host binding;
-``tools/EndfieldCapture/StartCapture.bat skilldata-cursor targeted
---skilldata-all-targets --no-pause`` (first with ``--preflight-only``) runs
-the session; ``python -m
+Offline workflow. ``python -m
+scripts.game_data.il2cpp.skill_cursor_target_set_context`` validates the native
+and source binding. ``python -m
 scripts.game_data.memorypack.skill_cursor_target_set_progress
-<session>/skilldata-cursor/progress.json`` shows provisional coverage; this
-module then verifies ``<session>/skilldata-cursor/receipt.json`` into
+<session>/skilldata-cursor/progress.json`` inspects provisional saved coverage;
+this module verifies ``<session>/skilldata-cursor/receipt.json`` into
 ``reports/animestudio/skilldata_cursor_target_set_verification_latest.json``
 (with ``--diagnose-incomplete``, into
-``skilldata_cursor_target_set_diagnostic_latest.json``).  The verification
+``skilldata_cursor_target_set_diagnostic_latest.json``). The verification
 is what ``memorypack.skill_corpus --capture-target-set-verification`` replays.
 Raw sessions stay under ``scratch/reverse_engineering/endfield_capture/``.
 

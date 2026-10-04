@@ -1,9 +1,8 @@
-"""Prepare a minimal generic Audio observer from the verified source contract.
+"""Reconstruct an Audio observation profile for offline saved-evidence validation.
 
-This emits a Frida ``audioRuntimeTrace.hooks.v2`` profile, not a capture-host
-activation manifest. It needs no change to EndfieldCapture. The optional bridge
-recipe follows only declared bounded fields and terminated text; it reads no
-media bytes.
+This emits an ``audioRuntimeTrace.hooks.v2`` document from the verified source
+contract. The optional bridge recipe describes only declared bounded fields
+and terminated text. Validation reads selected native files and saved evidence.
 """
 from __future__ import annotations
 
@@ -23,7 +22,7 @@ from scripts.game_data.wwise_source_native import CONTRACT_PATH, load_validated_
 from scripts.game_data import wwise_source_queue_native as queue_native
 from scripts.game_data import wwise_owner_carrier_native as carrier_native
 from scripts.repo_paths import REPO_ROOT
-from scripts.webui.story_recovery import runtime_trace_audio_capture as capture
+from scripts.webui.story_recovery import runtime_trace_audio_manifest as manifest_io
 from scripts.webui.story_recovery import runtime_trace_core as core
 from scripts.webui.audio.semantics import source_observer_profile as profiles
 
@@ -155,7 +154,7 @@ def prepare(
     game_root: Path, output: Path, report: Path, *, include_source_consumer: bool = False,
     include_source_bridge: bool = False, include_owner_carrier: bool = False,
 ) -> tuple[dict[str, Any] | None, dict[str, Any]]:
-    """Gate selected native files and the exact generic-agent contract offline."""
+    """Gate selected native files and the exact saved-profile recipe offline."""
     game_root = game_root.resolve()
     output, report = _check_publication_paths(game_root, output, report)
     contract, audit = load_validated_source_contract(
@@ -164,7 +163,7 @@ def prepare(
         ak_sound_engine=game_root / "Endfield_Data/Plugins/x86_64/AkSoundEngine.dll",
     )
     audit = {**audit, "selectedGameRoot": str(game_root), "profilePath": str(output),
-             "observer": "maintainedGenericFrida", "fridaRequiredForOfflinePreflight": False}
+             "observer": "savedAudioTraceProfile"}
     if contract is None:
         audit["profileStatus"] = "withheld"
         _atomic_json(report, audit)
@@ -194,11 +193,9 @@ def prepare(
     # Verify every file (including the process executable) before publishing the
     # generated manifest. The native reader independently checked body witnesses.
     verified = core.verify_game_files(game_root, profile)
-    capture.validate_hook_ranges(profile, verified["gameAssembly"], verified["akSoundEngine"])
-    agent = capture.render_agent_source(capture.DEFAULT_AGENT, profile)
-    _atomic_json(output, profile, validate=capture.load_manifest)
+    manifest_io.validate_hook_ranges(profile, verified["gameAssembly"], verified["akSoundEngine"])
+    _atomic_json(output, profile, validate=manifest_io.load_manifest)
     audit.update(profileStatus="ready", managedHooks=len(profile["hooks"]), nativeHooks=len(profile["nativeHooks"]),
-                 renderedAgentBytes=len(agent.encode("utf-8")),
                  capturedStructures={key: value["captureBytes"] for key, value in contract["structures"].items()},
                  unresolved=contract["evidenceBoundary"]["unresolved"])
     _atomic_json(report, audit)

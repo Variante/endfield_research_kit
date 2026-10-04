@@ -18,6 +18,7 @@ from typing import Any
 
 from scripts.common import check_installed_native_inputs, sha256_file
 from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.mission_trace_abi import prove_string_argument_mode
 from scripts.game_data.il2cpp.body_claims import BodyIndex
 from scripts.game_data.il2cpp.native_image import NativeImage
 from scripts.game_data.il2cpp.protocol import (
@@ -27,7 +28,9 @@ from scripts.game_data.il2cpp.protocol import (
 from scripts.repo_paths import REPO_ROOT
 
 RECIPE_PATH = CONTRACTS_DIR / "mission_trace_capture.json"
-RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v2"
+PROFILE_RECIPES = {"mission": RECIPE_PATH, "buff": CONTRACTS_DIR / "buff_runtime_trace_capture.json"}
+RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v3"
+REFERENCE_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v4"
 BUILD_SCHEMA = "endfieldCapture.missionTraceBuild.v1"
 ABI_ID = "win64.transparent_entry_snapshot.v1"
 NO_CHAIN = 4097
@@ -44,7 +47,7 @@ class PreparationError(ValueError):
 
 def read_recipe(path: Path = RECIPE_PATH) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict) or value.get("schema") != RECIPE_SCHEMA:
+    if not isinstance(value, dict) or value.get("schema") not in {RECIPE_SCHEMA, REFERENCE_RECIPE_SCHEMA}:
         raise PreparationError("mission_trace.recipe: unsupported schema")
     hooks = value.get("hooks")
     if not isinstance(hooks, list) or not 1 <= len(hooks) <= MAX_HOOKS:
@@ -72,7 +75,15 @@ class SelectedMethods:
 
     def parent(self, name: str) -> str:
         td = self.index.types.get(name)
-        return self.type_name(td.parent_index) if td is not None and td.parent_index >= 0 else ""
+        if td is None and "<" in name and name.endswith(">"):
+            td = self.index.types.get(name.split("<", 1)[0])
+            if td is not None and td.generic_container_index < 0:
+                td = None
+        parent = self.type_name(td.parent_index) if td is not None and td.parent_index >= 0 else ""
+        # A closed generic's non-generic ancestor is a metadata relationship,
+        # not proof of instantiated field offsets or a value argument's ABI.
+        # Substitution-dependent ancestry needs a separate resolver.
+        return "" if "VAR[" in parent else parent
 
     def is_enum(self, name: str) -> bool:
         return self.parent(name) == "System.Enum"
@@ -83,6 +94,8 @@ class SelectedMethods:
     def value_size(self, name: str) -> int:
         """Derive unboxed size from this build's Il2CppTypeDefinitionSizes."""
         td = self.index.types.get(name)
+        if td is None and name.endswith("<string>"):
+            return self.string_value_layout(name)["unboxedBytes"]
         if td is None or not self.is_value_type(name):
             raise PreparationError(f"mission_trace.abi: not a named value type: {name}")
         registration = self.image.registration
@@ -97,6 +110,36 @@ class SelectedMethods:
         if not 1 <= size <= 4096:
             raise PreparationError(f"mission_trace.abi: invalid unboxed value size: {name}:{size}")
         return size
+
+    def string_value_layout(self, name: str) -> dict[str, Any]:
+        """Prove a closed, sequential, single-reference generic value wrapper.
+
+        Open generic size/offset tables contain placeholders, not the closed
+        layout. A sole string field, sequential layout and default class size
+        establish offset zero and eight bytes on the selected Win64 ABI. Reject
+        every other generic layout instead of substituting placeholder offsets.
+        """
+        label = f"mission_trace.abi: generic string wrapper {name}"
+        td = self.index.types.get(name[:-8]) if name.endswith("<string>") else None
+        if (td is None or self.parent(name) != "System.ValueType"
+                or td.flags & 0x18 != 0x08 or not td.bitfield & 0x800
+                or td.field_count != 1 or td.generic_container_index < 0):
+            raise PreparationError(f"{label}: requires sequential single-field value type with default class size")
+        metadata = self.image.metadata
+        section = metadata.sections["genericContainers"]
+        offset = section.offset + td.generic_container_index * 16
+        if not section.offset <= offset <= section.offset + section.size - 16:
+            raise PreparationError(f"{label}: generic container outside selected metadata")
+        owner, count, is_method, parameter = struct.unpack_from("<iiii", metadata.buf, offset)
+        if owner != td.index or count != 1 or is_method != 0 or parameter < 0:
+            raise PreparationError(f"{label}: generic container identity/arity drift")
+        fields = list(metadata.fields_for(td))
+        if (len(fields) != 1 or self.type_name(fields[0].type_index) != f"VAR[{parameter}]"
+                or self.field_attributes(fields[0].type_index) & 0x10):
+            raise PreparationError(f"{label}: sole instance field must be the selected type parameter")
+        return {"definition": name[:-8], "field": metadata.string(fields[0].name_index),
+                "closedType": name, "fieldType": "string", "unboxedOffset": 0, "unboxedBytes": 8,
+                "evidence": "selected generic container and sole instance VAR field; sequential layout; default class size; Win64 reference layout"}
 
     def enum_members(self, name: str) -> dict[str, Any]:
         """Read signed/unsigned Int32 defaults using selected primitive types."""
@@ -134,6 +177,38 @@ class SelectedMethods:
                 "signed": underlying == "int", "members": rows,
                 "source": "selected metadata default blob and native MetadataRegistration.types"}
 
+    def string_argument_proof(self, hook: dict[str, Any], arg: int, mode: str) -> dict[str, Any]:
+        if not 0 <= arg < 4:
+            raise PreparationError(f"{hook['name']}: string wrapper proof requires a GP register argument")
+        _method, _parameters, pointer = self.resolve(hook)
+        end = self.index.extents.get(pointer)
+        if end is None or not 16 <= end - pointer <= 16384:
+            raise PreparationError(f"{hook['name']}: missing bounded native string-wrapper consumer body")
+        equality = self.index.body("System.String", "op_Equality", parameters=["System.String", "System.String"])
+        consumer = equality.pointer
+        # Some builds register a tiny op_Equality wrapper that clears only
+        # MethodInfo and tail-jumps to the named two-string Equals body.
+        # Preserve both string registers; do not follow arbitrary helpers.
+        tail = equality.rows[-1] if equality.rows else {}
+        target = re.fullmatch(r"jmp 0x([0-9a-f]+)", tail.get("text", ""))
+        prefix = [row.get("text") for row in equality.rows[:-1]]
+        if (target and prefix in ([], ["xor r8d, r8d"])
+                and "System.String.Equals" in self.index.names_of(int(target.group(1), 16))
+                and ["System.String", "System.String"] in self.index.parameter_types(int(target.group(1), 16))):
+            consumer = int(target.group(1), 16)
+        try:
+            proof = prove_string_argument_mode(self.index._decode(pointer, end - pointer),
+                argument_register=("rcx", "rdx", "r8", "r9")[arg], equality_pointer=consumer, mode=mode)
+            proof["consumerRva"] = f"0x{consumer - self.image.pe.image_base:x}"
+            if consumer != equality.pointer:
+                proof["consumer"] = "System.String.Equals(string,string)"
+                proof["via"] = {"symbol": equality.symbol, "rva": f"0x{equality.pointer - self.image.pe.image_base:x}",
+                    "bodySha256": hashlib.sha256(self.image.pe.bytes_at_va(equality.pointer, equality.size)).hexdigest(),
+                    "evidence": "named equality wrapper preserves both string arguments and tail-jumps to named Equals"}
+            return proof
+        except ValueError as exc:
+            raise PreparationError(f"{hook['name']}: string wrapper native argument proof failed: {exc}") from exc
+
     def is_owner(self, actual: str, owner: str) -> bool:
         seen: set[str] = set()
         while actual and actual not in seen:
@@ -150,12 +225,16 @@ class SelectedMethods:
         if owner not in self._field_cache:
             td = self.index.types.get(owner)
             if td is None:
-                raise PreparationError(f"mission_trace.field: missing owner {owner}")
-            offsets = runtime_type_field_offsets(self.image.metadata, self.image.pe, self.image.registration, td.index)
-            self._field_cache[owner] = {
-                self.image.metadata.string(f.name_index): (self.type_name(f.type_index), offsets[self.image.metadata.string(f.name_index)], self.field_attributes(f.type_index))
-                for f in self.image.metadata.fields_for(td)
-            }
+                if not owner.endswith("<string>"):
+                    raise PreparationError(f"mission_trace.field: missing owner {owner}")
+                layout = self.string_value_layout(owner)
+                self._field_cache[owner] = {layout["field"]: ("string", 16, 0)}
+            else:
+                offsets = runtime_type_field_offsets(self.image.metadata, self.image.pe, self.image.registration, td.index)
+                self._field_cache[owner] = {
+                    self.image.metadata.string(f.name_index): (self.type_name(f.type_index), offsets[self.image.metadata.string(f.name_index)], self.field_attributes(f.type_index))
+                    for f in self.image.metadata.fields_for(td)
+                }
         if name not in self._field_cache[owner]:
             raise PreparationError(f"mission_trace.field: missing field {qualified}")
         field_type, offset, attributes = self._field_cache[owner][name]
@@ -224,6 +303,7 @@ class SelectedMethods:
         offset = 0
         inline = False
         representation = spec.get("argumentRepresentation")
+        native_argument_proof = None
         if representation is None and path and spec["argument"] != "this" and self.is_value_type(current_type):
             raise PreparationError(f"{hook['name']}.{spec['label']}: value-type argument path requires explicit argumentRepresentation")
         if representation is not None:
@@ -234,9 +314,17 @@ class SelectedMethods:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: value ABI size drift; expected {representation.get('bytes')}, actual {actual_size}")
             if representation["mode"] == "indirectValue":
                 if actual_size in {1, 2, 4, 8}:
-                    raise PreparationError(f"{hook['name']}.{spec['label']}: indirect value requires Win64 indirect aggregate size")
+                    if (actual_size != 8 or not current_type.endswith("<string>")
+                            or spec["type"] != "string" or len(path) != 1
+                            or representation.get("nativeProof") != "stringEqualityArgument"):
+                        raise PreparationError(f"{hook['name']}.{spec['label']}: indirect value requires native string argument proof or Win64 indirect aggregate size")
+                    native_argument_proof = self.string_argument_proof(hook, arg, "indirectValue")
             elif actual_size != 8 or len(path) != 1 or spec["type"] != "string":
                 raise PreparationError(f"{hook['name']}.{spec['label']}: inline value supports only an eight-byte string wrapper")
+            elif current_type.endswith("<string>"):
+                if representation.get("nativeProof") != "stringEqualityArgument":
+                    raise PreparationError(f"{hook['name']}.{spec['label']}: generic string wrapper requires native argument proof; layout does not establish passing mode")
+                native_argument_proof = self.string_argument_proof(hook, arg, "inlineValue")
             if not path:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: value argument requires a reviewed field path")
             inline = True
@@ -258,6 +346,8 @@ class SelectedMethods:
             if not 0 <= offset <= 4096:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: field offset outside 0..4096")
             resolved_path.append({"field": step["field"], "type": actual_type, "offset": field_offset})
+            if owner.endswith("<string>") and owner not in self.index.types:
+                resolved_path[-1]["layoutProof"] = self.string_value_layout(owner)
             current_type = actual_type
             if position != len(path) - 1:
                 inline = step.get("mode") == "inline"
@@ -268,13 +358,20 @@ class SelectedMethods:
                     offset = 0
         if current_type != spec["type"]:
             raise PreparationError(f"{hook['name']}.{spec['label']}: expected {spec['type']}, actual {current_type}")
+        value_representation = spec.get("valueRepresentation")
+        if value_representation not in {None, "referenceIdentity"}:
+            raise PreparationError(f"{hook['name']}.{spec['label']}: unsupported value representation")
+        reference_identity = value_representation == "referenceIdentity"
+        if reference_identity and (representation is not None or current_type not in self.index.types
+                                   or self.is_value_type(current_type)):
+            raise PreparationError(f"{hook['name']}.{spec['label']}: reference identity requires a named managed reference type, not a value layout")
         enum = self.is_enum(current_type)
-        underlying = current_type
+        underlying = "ulong" if reference_identity else current_type
         if enum:
             _owner, underlying, _offset = self.field(f"{current_type}::value__")
             if underlying not in {"int", "uint"}:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: enum storage drift for {current_type}; expected int/uint, actual {underlying}")
-        width = _WIDTH.get(current_type, 32 if enum else None)
+        width = 64 if reference_identity else _WIDTH.get(current_type, 32 if enum else None)
         if not path and current_type != "string":
             if current_type in {"float", "double"}:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: floating register argument is unsupported by the GP/stack observer ABI")
@@ -282,7 +379,7 @@ class SelectedMethods:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: unsupported argument type {current_type}")
             kind = 4
         else:
-            kind = _VALUE_KIND.get(current_type, 2 if enum else None)
+            kind = 1 if reference_identity else _VALUE_KIND.get(current_type, 2 if enum else None)
             if kind is None:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: unsupported leaf type {current_type}")
         # A stored System.String is an object reference, whereas a direct
@@ -303,9 +400,13 @@ class SelectedMethods:
                   "argumentName": spec["argument"], "role": spec.get("role", "observation"),
                   "storageType": underlying, "signed": underlying in {"int", "long"},
                   "observation": "argument" if not path else "receiver-field" if spec["argument"] == "this" else "argument-field"}
+        if reference_identity:
+            result["valueRepresentation"] = "referenceIdentity"
         if representation is not None:
             result["argumentRepresentation"] = {**representation,
-                "evidence": "selected Il2CppTypeDefinitionSizes.instance_size minus object header; Win64 aggregate ABI"}
+                "evidence": "selected generic layout and separately checked native argument proof" if native_argument_proof else "selected Il2CppTypeDefinitionSizes.instance_size minus object header; Win64 aggregate ABI"}
+            if native_argument_proof:
+                result["argumentRepresentation"]["nativeArgumentProof"] = native_argument_proof
         return result
 
 
@@ -315,6 +416,8 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
     hooks = []
     seen_rvas: set[int] = set()
     for spec in recipe["hooks"]:
+        if any(field.get("valueRepresentation") is not None for field in spec["fields"]) and recipe.get("schema") != REFERENCE_RECIPE_SCHEMA:
+            raise PreparationError("mission_trace.recipe: reference identities require recipe v4")
         method, _parameters, pointer = selected.resolve(spec)
         end = selected.index.extents.get(pointer)
         if end is None or not 16 <= end - pointer <= MAX_BODY_BYTES:
@@ -342,7 +445,10 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
     return hooks
 
 
-def prepare(game_dir: Path, mission: str = "all", *, recipe: dict[str, Any] | None = None) -> dict[str, Any]:
+def prepare(game_dir: Path, mission: str = "all", *, recipe: dict[str, Any] | None = None,
+            profile: str = "mission") -> dict[str, Any]:
+    if profile not in PROFILE_RECIPES or (profile == "buff" and mission != "all"):
+        raise PreparationError("mission_trace.profile: expected mission or buff; buff requires --mission all")
     game_dir = Path(game_dir).resolve()
     if game_dir.name.casefold() == "endfield_data":
         game_dir = game_dir.parent
@@ -354,7 +460,7 @@ def prepare(game_dir: Path, mission: str = "all", *, recipe: dict[str, Any] | No
     gate = check_installed_native_inputs(gameassembly=files["gameAssembly"][1], metadata=files["metadata"][1])
     if not gate.validated:
         raise PreparationError(f"mission_trace.native: {gate.status}: {gate.detail}")
-    recipe = read_recipe() if recipe is None else recipe
+    recipe = read_recipe(PROFILE_RECIPES[profile]) if recipe is None else recipe
     pins = {}
     for role, (relative, path) in files.items():
         if not path.is_file():
@@ -373,8 +479,8 @@ def prepare(game_dir: Path, mission: str = "all", *, recipe: dict[str, Any] | No
     return {"schema": BUILD_SCHEMA, "gameBuild": f"endfield-gameassembly-{gate.gameassembly_sha256[:12]}",
             "profile": "mission-trace", "processName": "Endfield.exe", "files": pins,
             "preparedAt": datetime.now(timezone.utc).isoformat(),
-            "focusMission": mission, "recordingScope": "all-named-context-unfiltered",
-            "missionSelection": {"mode": "all-missions" if mission == "all" else "named-analysis-focus", "nativeFilter": False},
+            "focusMission": mission, "recordingScope": "buff-runtime-unfiltered" if profile == "buff" else "all-named-context-unfiltered",
+            "missionSelection": {"mode": "not-selected" if profile == "buff" else "all-missions" if mission == "all" else "named-analysis-focus", "nativeFilter": False},
             "recipeSchema": recipe["schema"], "missionTraceHooks": hooks,
             "enumDefinitions": enum_definitions,
             "coverageGaps": recipe.get("coverageGaps", []),
@@ -393,6 +499,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--game-dir", type=Path, default=os.environ.get("ENDFIELD_GAME_ROOT"), required=not bool(os.environ.get("ENDFIELD_GAME_ROOT")))
     parser.add_argument("--mission", default="all", help="Offline analysis label only; native observations are unfiltered (default: all).")
+    parser.add_argument("--profile", choices=tuple(PROFILE_RECIPES), default="mission", help="Reviewed observer recipe; buff records Buff lifecycle and selected action entries.")
     parser.add_argument("--output", type=Path, default=REPO_ROOT / "reports/runtime_capture/mission-trace-build.json")
     parser.add_argument("--report", type=Path, default=REPO_ROOT / "reports/runtime_capture/mission-trace-preflight.json")
     args = parser.parse_args(argv)
@@ -401,7 +508,7 @@ def main(argv: list[str] | None = None) -> int:
     if output == report_path:
         raise PreparationError("mission_trace.output: profile and report must be distinct")
     try:
-        manifest = prepare(args.game_dir, args.mission)
+        manifest = prepare(args.game_dir, args.mission, profile=args.profile)
     except (PreparationError, OSError, RuntimeError, KeyError, ValueError) as exc:
         report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text(json.dumps({"schema": "endfield.mission-trace-preparation.v1", "status": "failed", "focusMission": args.mission, "detail": str(exc)}, indent=2), encoding="utf-8")

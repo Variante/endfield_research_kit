@@ -181,7 +181,8 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
     summary = bound_object(artifacts, "mission-trace/summary.json", limits)
     session = bound_object(artifacts, "session.json", limits)
     require(profile.get("schema") == "endfieldCapture.missionTraceBuild.v1", "unsupported retained profile schema")
-    require(summary.get("schema") == "endfieldCapture.missionTraceSummary.v1", "unsupported provider summary schema")
+    require(summary.get("schema") in ("endfieldCapture.missionTraceSummary.v1", "endfieldCapture.missionTraceSummary.v2"),
+            "unsupported provider summary schema")
     require(session.get("schema") == "endfieldCapture.session.v1" and profile.get("profile") == "mission-trace" and
             session.get("providers") == 128 and session.get("gameBuild") == profile.get("gameBuild"), "session/profile binding mismatch")
     hooks, summary_hooks = profile.get("missionTraceHooks"), summary.get("hooks")
@@ -225,6 +226,13 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             require([field.get(key) for key in ("arg", "kind", "offset", "chain0", "chain1")] == read, "field/readProgram binding mismatch")
             require(isinstance(field.get("type"), str) and len(field["type"]) <= 256, "invalid field type")
             require(field.get("valueBits") in (None, 8, 16, 32, 64), "unsupported field width")
+            representation = field.get("valueRepresentation")
+            require(representation in (None, "referenceIdentity"), "unsupported value representation")
+            if representation == "referenceIdentity":
+                require(profile.get("recipeSchema") == "endfield.mission-trace-capture-recipe.v4"
+                        and field.get("valueBits") == 64 and field.get("kind") in (1, 4)
+                        and field.get("storageType") == "ulong" and field.get("signed") is False,
+                        "invalid reference identity binding")
             path = field.get("fieldPath", [])
             require(isinstance(path, list) and len(path) <= 8 and all(isinstance(part, dict) and
                     isinstance(part.get("field"), str) and len(part["field"]) <= 512 for part in path), "invalid typed field path")
@@ -273,7 +281,7 @@ def decode_field(field: dict[str, Any], observed: dict[str, Any], enums: dict[st
                "stateName": {1: "exact", 2: "unreadable", 3: "truncated", 4: "observedNull"}[state], "raw64": raw,
                "read": {key: field[key] for key in ("arg", "kind", "offset", "chain0", "chain1")},
                "fieldPath": field.get("fieldPath", [])}
-    for key in ("storageType", "signed", "argumentName", "role", "observation", "argumentRepresentation"):
+    for key in ("storageType", "signed", "argumentName", "role", "observation", "argumentRepresentation", "valueRepresentation"):
         if key in field:
             decoded[key] = field[key]
     if state == 4:
@@ -324,7 +332,11 @@ def decode_field(field: dict[str, Any], observed: dict[str, Any], enums: dict[st
         signed = field.get("signed") if type(field.get("signed")) is bool else None
     value = masked - (1 << bits) if signed and masked & (1 << (bits - 1)) else masked
     decoded.update(value=value, signed=signed)
-    if name == "bool":
+    if field.get("valueRepresentation") == "referenceIdentity":
+        require(bits == 64 and signed is False, "invalid reference identity width/signedness")
+        decoded.update(rawPointer=masked, nullReference=masked == 0,
+                       interpretation="Same-process managed reference identity only; no pointee fields, stable cross-session identity or ownership inferred.")
+    elif name == "bool":
         decoded.update(value=bool(masked), canonicalBool=masked in (0, 1))
     elif definition is not None:
         members = definition.get("members")
@@ -403,6 +415,33 @@ def strict_receipt_consistent(receipt: Any, hooks: int) -> bool:
             and receipt.get("patchesChanged") == hooks)
 
 
+def strict_preparation_retry_consistent(receipt: Any) -> bool:
+    """Only a fully cleaned OpenThread/87 refusal before any suspension is retryable."""
+    if not isinstance(receipt, dict):
+        return False
+    expected = {"status": 13, "failureStage": 3, "windowsError": 87,
+                "hookIndex": (1 << 32) - 1, "rollbackHookIndex": (1 << 32) - 1}
+    expected.update(dict.fromkeys(("rollbackFailureStage", "rollbackThreadId", "rollbackWindowsError",
+                                  "cleanupFailureStage", "cleanupThreadId", "cleanupWindowsError",
+                                  "threadsSuspended", "threadsResumed", "contextsChanged", "patchesChanged"), 0))
+    return (all(type(receipt.get(key)) is int and receipt[key] == value for key, value in expected.items())
+            and all(type(receipt.get(key)) is int and 0 < receipt[key] <= (1 << 32) - 1
+                    for key in ("threadId", "threadsEnumerated"))
+            and receipt.get("rollbackAttempted") is False and receipt.get("rollbackSucceeded") is True
+            and receipt.get("cleanupSucceeded") is True and receipt.get("pendingRecovery") is False)
+
+
+def strict_enable_history_consistent(summary: dict[str, Any], hooks: int) -> bool:
+    if summary.get("schema") == "endfieldCapture.missionTraceSummary.v1":
+        return "strictEnableHistory" not in summary and "strictEnableAttempts" not in summary
+    attempts, history, final = summary.get("strictEnableAttempts"), summary.get("strictEnableHistory"), summary.get("strictEnable")
+    return (type(attempts) is int and 1 <= attempts <= 3 and isinstance(history, list) and len(history) == attempts
+            and all(strict_preparation_retry_consistent(receipt) for receipt in history[:-1])
+            and isinstance(final, dict) and isinstance(history[-1], dict) and history[-1] == final
+            and all(type(history[-1][key]) is type(final[key]) for key in final)
+            and strict_receipt_consistent(history[-1], hooks))
+
+
 def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = False, limits: Limits = Limits()) -> dict[str, Any]:
     session, output_dir = Path(session).resolve(strict=True), Path(output_dir).resolve()
     require(session.is_dir(), "session is not a directory")
@@ -432,15 +471,18 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
         require(isinstance(enums, dict) and len(enums) <= 256, "enum definition budget exceeded")
         report["gaps"].extend(report["sources"]["gaps"])
         missing_enums = sorted({field["type"] for hook in hooks for field in hook["fields"]
-                                if field["type"] not in PRIMITIVES and field["type"] not in ("string", "float") and field["type"] not in enums})
+                                if field.get("valueRepresentation") != "referenceIdentity" and field["type"] not in PRIMITIVES and field["type"] not in ("string", "float") and field["type"] not in enums})
         if missing_enums:
             report["gaps"].append("No retained enum definition for: " + ", ".join(missing_enums))
-        strict = all(strict_receipt_consistent(summary.get(key), len(hooks)) for key in ("strictEnable", "strictDisable"))
+        enable_history = strict_enable_history_consistent(summary, len(hooks))
+        strict = enable_history and all(strict_receipt_consistent(summary.get(key), len(hooks)) for key in ("strictEnable", "strictDisable"))
         failure_markers = [name for name in ("runtime.error", "mission-trace/aborted.json", "mission-trace/strict-fatal.txt")
                            if name in artifacts and artifacts[name]["bytes"] > 0]
         report["receiptFacts"] = {"captureCompleteClaim": summary.get("complete"), "healthyClaim": summary.get("healthy"),
                                   "failureReason": summary.get("failureReason"), "nativeInputHashesBoundToProfile": True,
                                   "collectionBoundFailureMarkers": failure_markers,
+                                  "strictEnableAttempts": summary.get("strictEnableAttempts"),
+                                  "strictEnableHistoryConsistent": enable_history,
                                   "strictTransitionReceiptsConsistent": strict, "strictReceiptProofBoundary": "Retained report consistency only; native transactions are not re-executed or independently observed."}
         journal_name = "mission-trace/events.jsonl"
         require(journal_name in artifacts and artifacts[journal_name]["bytes"] <= limits.journal_bytes, "missing or oversized journal")

@@ -184,6 +184,9 @@
             },
             {
               "writesField": "Beyond.Gameplay.MissionSystem+ObjectiveData::isCompleted"
+            },
+            {
+              "calls": ["System.Collections.Generic.Dictionary`2.Clear", "Google.Protobuf.Collections.MapField`2.GetEnumerator", "System.Collections.Generic.Dictionary`2.Add"]
             }
           ]
         },
@@ -218,6 +221,61 @@
               "readsField": "Beyond.Gameplay.MissionSystem+ObjectiveData::isCompleted"
             }
           ]
+        }
+      }
+    },
+    "objectiveValuePresentation": {
+      "methods": {
+        "compareStoredProgress": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "GetResultByProgress",
+          "claims": [
+            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_compareOperator"},
+            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progress"},
+            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progressToCompare"},
+            {"calls": ["Beyond.TableUtils.DoCompare"]}
+          ],
+          "contract": "The default comparison reads the selected receiver's virtual comparison operator, current progress and target, then calls DoCompare. It is separate from cached m_result and does not prove live values or a server completion rule."
+        },
+        "storedObjectiveValue": {
+          "type": "Beyond.Gameplay.MissionSystem+ObjectiveData",
+          "method": "GetValue",
+          "claims": [
+            {"passesFieldToCall": {"field": "Beyond.Gameplay.MissionSystem+ObjectiveData::conditionId", "call": "System.Collections.Generic.CollectionExtensions.GetValueOrDefault", "register": "rdx"}},
+            {"passesFieldToCall": {"field": "Beyond.Gameplay.MissionSystem+ObjectiveData::values", "call": "System.Collections.Generic.CollectionExtensions.GetValueOrDefault", "register": "rcx"}}
+          ],
+          "contract": "The default body passes its stored condition id and values dictionary to GetValueOrDefault. This lookup is separate from objective display aggregation and does not attribute an incoming packet to a live condition."
+        },
+        "combineDisplayedProgress": {
+          "type": "Beyond.Gameplay.CombineCondition",
+          "method": "get_progressForShow",
+          "claims": [
+            {"readsField": "Beyond.Gameplay.CombineCondition::subConditions"},
+            {"calls": ["System.Collections.Generic.List`1+Enumerator.MoveNext"]},
+            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progressForShow"}
+          ],
+          "contract": "The default body enumerates the stored children and dispatches their progress-for-show getter through its selected metadata slot. Accumulation and objective branch selection require the separately reviewed body flow."
+        },
+        "combineDisplayedTarget": {
+          "type": "Beyond.Gameplay.CombineCondition",
+          "method": "get_progressToCompareForShow",
+          "claims": [
+            {"readsField": "Beyond.Gameplay.CombineCondition::subConditions"},
+            {"calls": ["System.Collections.Generic.List`1+Enumerator.MoveNext"]},
+            {"callsVirtualGetter": "Beyond.Gameplay.GameCondition.get_progressToCompareForShow"}
+          ],
+          "contract": "The default body enumerates the stored children and dispatches their target-for-show getter through its selected metadata slot. This presentation target is distinct from the incoming values dictionary."
+        },
+        "objectiveShowData": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "_CreateObjectiveShowData",
+          "claims": [
+            {"calls": ["Beyond.Gameplay.Objective.get_isShowProgress", "Beyond.Gameplay.Objective.get_progressForShow", "Beyond.Gameplay.Objective.get_progressToCompareForShow"]},
+            {"readsField": "Beyond.Gameplay.Objective::isCompleted"},
+            {"writesField": "Beyond.Gameplay.ObjectiveShowData::progress"},
+            {"writesField": "Beyond.Gameplay.ObjectiveShowData::progressToCompare"}
+          ],
+          "contract": "The owned default body fragments call the objective presentation getters and write separate current and target fields on the display record. Field-offset predicates alone do not prove every receiver or the completion-dependent choice of value."
         }
       }
     },
@@ -717,6 +775,463 @@
           ],
           "contract": "Contains the specified named calls or selected field-offset accesses; receiver ownership and full branch flow require the separately reviewed typed chain."
         }
+      }
+    },
+    "progressAndDialogIdentity": {
+      "methods": {
+        "conditionBooleanProgressBridge": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "set_result",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.GameCondition::onResultChange"
+            },
+            {
+              "callsAnonymousHelper": {
+                "helperCalls": [
+                  "Beyond.Gameplay.MissionSystem.OnSubConditionProgressChanged"
+                ],
+                "helperMatches": [
+                  "movzx edi, dl",
+                  "mov r9d, edi"
+                ]
+              }
+            }
+          ]
+        },
+        "questResultClosure": {
+          "type": "Beyond.Gameplay.MissionSystem+<>c__DisplayClass70_1",
+          "method": "<StartQuest>b__1",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.OnSubConditionProgressChanged"
+              ]
+            },
+            {
+              "readsField": "Beyond.Gameplay.MissionSystem+<>c__DisplayClass70_1::condition"
+            }
+          ]
+        },
+        "dialogOutgoingIdentityMap": {
+          "type": "Beyond.Gameplay.CinematicSystem",
+          "method": "SendFinishDialog",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.DataManager::<dialogIdTable>k__BackingField"
+            },
+            {
+              "readsField": "Beyond.Gameplay.DialogIdTable::dialogStrToNum"
+            },
+            {
+              "calls": [
+                "System.Collections.Generic.Dictionary`2.TryGetValue"
+              ]
+            }
+          ]
+        },
+        "dialogIncomingIdentityMap": {
+          "type": "Beyond.Gameplay.CinematicSystem",
+          "method": "_Handle_FinishDialog",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.DataManager::<dialogIdTable>k__BackingField"
+            },
+            {
+              "readsField": "Beyond.Gameplay.DialogIdTable::dialogNumToStr"
+            },
+            {
+              "calls": [
+                "System.Collections.Generic.Dictionary`2.TryGetValue"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "missionConditionSelection": {
+      "types": {
+        "Beyond.Gameplay.CheckSnapshotIdentifySuccess": {
+          "parent": "Beyond.Gameplay.GameConditionClient",
+          "absentDeclaredMethods": [
+            "get_conditionType"
+          ]
+        },
+        "Beyond.Gameplay.GameConditionBoth": {
+          "parent": "Beyond.Gameplay.GameCondition",
+          "absentDeclaredMethods": [
+            "ActivateClientCondition",
+            "DeactivateClientCondition"
+          ]
+        }
+      },
+      "methods": {
+        "clientConditionType": {
+          "type": "Beyond.Gameplay.GameConditionClient",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumMember": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "ClientOnly"
+              }
+            }
+          ],
+          "contract": "The native default client-condition getter selects ClientOnly. Stored photo/identification objectives are capture candidates; their availability, live subtype, IFix selection and active callback invocation remain unresolved."
+        },
+        "missionServerClassification": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "IsServerCondition",
+          "claims": [
+            {
+              "comparesVirtualEnumResult": {
+                "method": "Beyond.Gameplay.GameCondition.get_conditionType",
+                "enumType": "Beyond.GEnums.ConditionType",
+                "member": "ClientOnly"
+              }
+            },
+            {
+              "matches": "setne al"
+            }
+          ],
+          "contract": "Reviewed native branch classifies a non-ClientOnly condition as server-side; this does not reveal server policy or the live runtime subtype."
+        },
+        "leafClientActivation": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "ActivateClientCondition",
+          "claims": [
+            {
+              "comparesVirtualEnumResult": {
+                "method": "Beyond.Gameplay.GameCondition.get_conditionType",
+                "enumType": "Beyond.GEnums.ConditionType",
+                "member": "ClientOnly"
+              }
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.GameCondition.Deactivate",
+                "Beyond.Gameplay.GameCondition.Activate"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Reviewed native branch returns for a non-ClientOnly leaf; the ClientOnly branch deactivates then activates with the supplied source. The primitive comparison does not itself prove the complete branch."
+        },
+        "combinedClientActivation": {
+          "type": "Beyond.Gameplay.CombineCondition",
+          "method": "ActivateClientCondition",
+          "claims": [
+            {
+              "comparesVirtualEnumResult": {
+                "method": "Beyond.Gameplay.GameCondition.get_conditionType",
+                "enumType": "Beyond.GEnums.ConditionType",
+                "member": "ClientOnly"
+              }
+            },
+            {
+              "readsField": "Beyond.Gameplay.CombineCondition::subConditions"
+            }
+          ],
+          "contract": "Reviewed native loop recurses into exact CombineCondition children; other children are dispatched only when their virtual type is ClientOnly. Concrete dispatch and branch flow remain reviewed interpretation."
+        },
+        "clientResultCallbackBinding": {
+          "type": "Beyond.Gameplay.MissionSystem+<>c__DisplayClass70_0",
+          "method": "<StartQuest>g__BindCallback|0",
+          "claims": [
+            {
+              "comparesVirtualEnumResult": {
+                "method": "Beyond.Gameplay.GameCondition.get_conditionType",
+                "enumType": "Beyond.GEnums.ConditionType",
+                "member": "ClientOnly"
+              }
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.GameCondition+ResultChange..ctor"
+              ]
+            },
+            {
+              "writesField": "Beyond.Gameplay.GameCondition::onResultChange"
+            }
+          ],
+          "contract": "Reviewed native traversal recursively visits exact combined children and installs a result-change delegate only on ClientOnly leaves; this does not authenticate a later delegate invocation or request owner."
+        },
+        "Beyond.Gameplay.CheckTalkOptionFinish.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumMember": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckTalkFinish"
+              }
+            }
+          ],
+          "contract": "Native default getter returns the selected named enum member, distinct from ClientOnly; IFix replacement and live receiver type remain unresolved."
+        },
+        "Beyond.Gameplay.CheckLevelScriptPropertyBool.get_conditionType": {
+          "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+          "method": "get_conditionType",
+          "claims": [
+            {
+              "returnsEnumMember": {
+                "type": "Beyond.GEnums.ConditionType",
+                "member": "CheckLevelScriptProperty"
+              }
+            }
+          ],
+          "contract": "Native default getter returns the selected named enum member, distinct from ClientOnly; IFix replacement and live receiver type remain unresolved."
+        }
+      }
+    },
+    "conditionScopeSelectors": {
+      "methods": {
+        "authoredScopeMask": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "GetScopeMask",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.GameCondition::scopeMask"
+            },
+            {
+              "matches": "shr rax, 0x20"
+            }
+          ],
+          "contract": "Reviewed default path uses the virtual force-override tuple when enabled, otherwise authored scopeMask. Effective current/graph scope and execution admission are not established."
+        },
+        "authoredGraphScope": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "GetUseGraphScope",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.GameCondition::useGraphScope"
+            }
+          ],
+          "contract": "Native default path returns the authored graph-scope flag; this is not the effective scope."
+        }
+      }
+    },
+    "levelScriptPropertySynchronization": {
+      "methods": {
+        "receivePropertyMap": {
+          "type": "Beyond.Gameplay.GameplayNetwork",
+          "method": "_Handle_SyncLevelScriptProperty",
+          "claims": [
+            {"passesFieldToCall": {"field": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY::scriptId_", "call": "Beyond.Gameplay.Core.LevelScriptPtr..ctor", "register": "rdx"}},
+            {"passesFieldToCall": {"field": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY::properties_", "call": "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptProperties", "register": "r8"}},
+            {"calls": ["Beyond.Gameplay.Core.LevelScriptPtr..ctor", "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptProperties"], "ordered": true}
+          ],
+          "contract": "The default network handler constructs a script pointer from the supplied script id and forwards the supplied property map. The packet's scene field, effective live receiver and upstream writer rule are not established by these claims."
+        },
+        "selectScriptRuntime": {
+          "type": "Beyond.Gameplay.Core.LevelScriptManager",
+          "method": "ServerSyncLevelScriptProperties",
+          "claims": [
+            {"calls": ["Beyond.Gameplay.Core.LevelScriptManager.TryGetLevelScript", "Beyond.Gameplay.Core.LevelScriptRuntime.ServerSyncProperties"], "ordered": true}
+          ],
+          "contract": "The default manager resolves the supplied script pointer and invokes the property synchronizer on a found runtime. A successful lookup is not observed."
+        },
+        "applyMappedProperties": {
+          "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+          "method": "ServerSyncProperties",
+          "claims": [
+            {"calls": ["Beyond.Gameplay.Core.LevelScriptRuntime.get_propertyIdToKeyMap", "Beyond.Gameplay.Core.LevelScriptRuntime.get_properties", "Google.Protobuf.Collections.MapField`2.GetEnumerator", "System.Collections.Generic.Dictionary`2.TryGetValue", "Beyond.Gameplay.ParamVariableExtensions.ToVariable", "Beyond.Gameplay.ParamBlackboard.SetVariableValue", "Beyond.Gameplay.ParamVariablePool.Recycle"], "ordered": true}
+          ],
+          "contract": "The reviewed default loop requires the runtime property-id map and blackboard, looks up supplied property ids, converts supplied values, writes mapped keys and recycles temporary variables. Unknown ids, missing maps and conversion failures do not establish a write. Live values and the server's generating rule remain unresolved."
+        },
+        "briefPropertyIdMap": {
+          "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+          "method": "get_propertyIdToKeyMap",
+          "claims": [
+            {"readsField": "Beyond.Gameplay.Core.LevelScriptRuntime::<briefData>k__BackingField"},
+            {"readsField": "Beyond.Gameplay.LevelScriptBriefData::propertyIdToKeyMap"}
+          ],
+          "contract": "The reviewed default getter obtains its property-id map from the script brief data; offset predicates alone do not establish both receiver types. The full LevelScriptData graph's nullable property map is a separate stored field."
+        }
+      }
+    },
+    "levelScriptPropertyConditions": {
+      "types": {
+        "Beyond.Gameplay.CheckLevelScriptPropertyBool": {
+          "parent": "Beyond.Gameplay.GameConditionBoth"
+        }
+      },
+      "methods": {
+        "resolvePropertyOperands": {
+          "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+          "method": "OnActivate",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.CheckLevelScriptPropertyBool::_mapId"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckLevelScriptPropertyBool::_scriptId"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckLevelScriptPropertyBool::_key"
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_compareValue"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Actions.ParamExtensions.GetValue",
+                "Beyond.Gameplay.CheckLevelScriptPropertyBool._DoCheck"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Reviewed native activation resolves authored operands and caches the script/property identity and boolean comparison operand before checking."
+        },
+        "initialPropertyCheckAndSubscription": {
+          "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+          "method": "_DoCheck",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelScriptManager.TryGetLevelScript",
+                "Beyond.Gameplay.Core.LevelScriptRuntime.get_properties",
+                "Beyond.TableUtils.DoCompare",
+                "Beyond.Gameplay.GameCondition.set_result",
+                "Beyond.Gameplay.Core.LevelEventManager.RegisterScriptEventActionTriggerOnPropertyChanged"
+              ]
+            },
+            {
+              "writesField": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_handlerId"
+            }
+          ],
+          "contract": "Reviewed native path reads a boolean property, compares it, stores a condition result and registers its property-change callback. Getter success, live activation and writer identity are not proved."
+        },
+        "propertyChangeBooleanResult": {
+          "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+          "method": "_OnEvent",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.CheckLevelScriptPropertyBool::_comparer"
+            },
+            {
+              "readsField": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_compareValue"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.ParamBlackboard.GetValue",
+                "Beyond.TableUtils.DoCompare",
+                "Beyond.Gameplay.GameCondition.set_result"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Reviewed native callback compares the event blackboard boolean with its configured operand and assigns a result. It does not count markers or establish mission ownership."
+        },
+        "removePropertySubscription": {
+          "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+          "method": "OnDeactivate",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_handlerId"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.LevelEventManager.UnregisterListener"
+              ]
+            }
+          ],
+          "contract": "Native default deactivation removes the stored property listener."
+        }
+      }
+    },
+    "interactivePropertyDelivery": {
+      "methods": {
+        "propertyPacketForwarding": {
+          "type": "Beyond.Gameplay.GameplayNetwork",
+          "method": "_Handle_SyncInteractiveProperty",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.EntityManager.ServerSyncInteractiveProperty"
+              ]
+            }
+          ],
+          "contract": "Named client packet handler forwards to retained entity-data synchronization on its default path; entry is not acknowledgment."
+        },
+        "retainedEntityPropertyDelivery": {
+          "type": "Beyond.Gameplay.Core.EntityManager",
+          "method": "ServerSyncInteractiveProperty",
+          "claims": [
+            {
+              "readsField": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY::id_"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.EntityManager+EntityReleaseProcessor.IsPendingRelease",
+                "Beyond.Gameplay.Core.InteractiveInfo.UpdateServerProperty"
+              ]
+            }
+          ],
+          "contract": "Selected body and unwind-owned fragments read packet identity and check pending release before the named retained-data consumer; this is not a general packet-id/logic-id equivalence."
+        },
+        "interactivePropertyContainerUpdates": {
+          "type": "Beyond.Gameplay.Core.InteractiveInfo",
+          "method": "UpdateServerProperty",
+          "claims": [
+            {
+              "readsField": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY::properties_"
+            },
+            {
+              "readsField": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY::clientOperate_"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Core.BaseEntityData::m_entity"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.InteractiveServerData.get_properties",
+                "Beyond.Gameplay.ParamVariableExtensions.ToVariable",
+                "Beyond.Gameplay.ParamBlackboard.TryGetValue",
+                "Beyond.Gameplay.NavObstacleManager.OnInteractiveStateUpdate",
+                "Beyond.Gameplay.ParamBlackboard.SetVariableValue",
+                "Beyond.Gameplay.ParamVariablePool.Recycle"
+              ]
+            }
+          ],
+          "contract": "Default property delivery converts wire values and reaches server blackboard mutation and a separate loaded-entity blackboard branch. Navigation dispatch is a conditional state consumer. Named calls alone do not prove loop member transfers or active IFix paths."
+        },
+        "wireParameterConversion": {
+          "type": "Beyond.Gameplay.ParamVariableExtensions",
+          "method": "ToVariable",
+          "claims": [
+            {
+              "readsField": "Proto.DYNAMIC_PARAMETER::valueType_"
+            },
+            {
+              "readsField": "Proto.DYNAMIC_PARAMETER::realType_"
+            },
+            {
+              "readsField": "Proto.DYNAMIC_PARAMETER::valueIntList_"
+            }
+          ],
+          "contract": "Wire real/value type tags and integer-list storage are read by the converter; scalar values and lists must not be conflated, and no generic value layout is inferred."
+        },
+        "blackboardVariableMutation": {
+          "type": "Beyond.Gameplay.ParamBlackboard",
+          "method": "SetVariableValue",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.ParamBlackboard::variableDict"
+            },
+            {
+              "calls": [
+                "System.Collections.Generic.Dictionary`2.TryGetValue"
+              ]
+            }
+          ],
+          "contract": "Default setter consults the keyed variable dictionary through the named lookup. Its remaining mutation helpers have no admitted named identity here; existing-value behavior, inserted values and concrete generic numeric layouts remain unresolved."
+        }
+      },
+      "evidenceBoundary": {
+        "direct": "Selected named calls and field-offset accesses in bounded bodies and their unwind-owned fragments.",
+        "conditional": "Default client consumer paths; loaded-entity and navigation branches have their own conditions.",
+        "unresolved": "Incoming map members, copied concrete variable values, actual executed writes, live IFix selection and Mission ownership."
       }
     }
   },

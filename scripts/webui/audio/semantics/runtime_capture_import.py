@@ -1,16 +1,12 @@
 """Validate one bounded audio capture session, and say what it cannot give.
 
-`audio_native_hooks` records a chain that is statically closed as far as the
-managed request and then stops: no static evidence joins a source key to an
-opened file, to a decoder, or to audible output. The hooks for that join are
-prepared in `tools/EndfieldCapture` and, in that file's words, are *prepared
-evidence only until an authorized capture observes a match* -- and no verified
-capture has produced the continuity rows yet.
+`audio_native_hooks` records a chain statically closed as far as the managed
+request. No admitted evidence joins a source key to an opened file, decoder
+or audible output.
 
-This module is the consumer side of that. It reads a session written by
-`StartCapture.bat audio`, applies the gates that make a session usable at all,
-and reports what the artifacts on disk support. It never launches anything and
-never writes into the session.
+This module reads retained ``capture.session.v1`` sessions, applies fail-closed
+admission gates, and reports what the artifacts on disk support. It never
+launches anything or writes into the session.
 
 **Gates, all fail-closed, all read from real sessions rather than assumed.**
 The provider publishes its own completeness counters in ``audio/summary.json``
@@ -131,8 +127,8 @@ def check_session(session: Path) -> dict[str, Any]:
     windows_file = audio / "windows.jsonl"
     if not summary_file.is_file():
         raise SessionError(
-            f"no audio summary at {summary_file}; was this session run with "
-            "StartCapture.bat audio?")
+            f"no audio summary at {summary_file}; saved audio evidence requires "
+            "audio/summary.json from a complete session")
     summary = json.loads(summary_file.read_bytes())
     schema = str(summary.get("schema"))
     if schema != SUMMARY_SCHEMA:

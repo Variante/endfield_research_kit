@@ -1,0 +1,1110 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v4",
+  "status": "reviewed",
+  "hooks": [
+    {
+      "name": "buff.Buff.Reset",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "Reset",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "buffData",
+          "type": "Beyond.Gameplay.Core.BuffData"
+        },
+        {
+          "name": "buffOwner",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "buffSource",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "addBuffOption",
+          "type": "Beyond.Gameplay.Core.Buff+AddBuffOption"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedBuffId",
+          "argument": "buffData",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedBuffOwnerIdentity",
+          "argument": "buffOwner",
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedBuffSourceIdentity",
+          "argument": "buffSource",
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff._LoadActions",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "_LoadActions",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "buffActions",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffActionMap>"
+        },
+        {
+          "name": "abilityActions",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.AbilityActionMap>"
+        },
+        {
+          "name": "timelineActions",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.TimelineAction+TimelineActionData>"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff._LoadIgniteActions",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "_LoadIgniteActions",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff.OnStart",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "OnStart",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff.OnTrigger",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "OnTrigger",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff._ExecuteBuffAction",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "_ExecuteBuffAction",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "buffEvent",
+          "type": "Beyond.Gameplay.Core.Buff+Event"
+        },
+        {
+          "name": "target",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedBuffEvent",
+          "argument": "buffEvent",
+          "type": "Beyond.Gameplay.Core.Buff+Event",
+          "role": "state"
+        },
+        {
+          "label": "suppliedTargetIdentity",
+          "argument": "target",
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff.OnFinish",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "OnFinish",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "reason",
+          "type": "Beyond.Gameplay.Core.Buff+FinishReason"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedReason",
+          "argument": "reason",
+          "type": "Beyond.Gameplay.Core.Buff+FinishReason",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.AbilityAction.Reset",
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "method": "Reset",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "reason",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ResetReason"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.AbilityAction.ReAssign",
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "method": "ReAssign",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedEnvironmentIdentity",
+          "argument": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.AbilityAction.AssignData",
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "method": "AssignData",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "data",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData"
+        },
+        {
+          "name": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedServerActionIndex",
+          "argument": "data",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedEnvironmentIdentity",
+          "argument": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.SendBattleSignalToLevel.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.SendBattleSignalToLevel",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.ReadSkillSettingData.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.ReadSkillSettingData",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.CheckHp.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.Conditions.CheckHp",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.CheckPoiseValue.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    }
+  ],
+  "coverageGaps": [
+    "No managed getters or runtime collection enumeration.",
+    "Raw IActionEnvironment references need an explicit same-process instance/lifecycle join; pooled pointers alone do not establish ownership.",
+    "ExecuteInternal observations cover only the named vitals, skill-setting and battle-signal consumers; absence is not proof that an action did not run.",
+    "No action return, float-register payload, dynamic blackboard, target resolution, IFix, server acceptance or final HP/attribute-write evidence.",
+    "BuffData source archive is byte identity only; canonical corpus receipts/native gates decide whether stored schema rows are current.",
+    "Per-frame _TriggerInternal is omitted; the journal does not measure continuous tick cadence.",
+    "Reset entry fields precede reassignment and may describe a previous pooled instance; supplied BuffData identity and subsequent stored identities remain separate."
+  ],
+  "evidenceBoundary": "Direct bounded Buff lifecycle and selected action entries; stored definition/instance/environment carriers and supplied values remain distinct. Managed reference identity reads retain pointers without dereferencing their objects. Runtime effect meaning and server criteria remain unresolved."
+}

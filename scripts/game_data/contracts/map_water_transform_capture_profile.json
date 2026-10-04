@@ -1,0 +1,74 @@
+{
+  "schema": "endfieldCapture.mapWaterVolumeBuild.v2",
+  "gameBuild": "endfield-2026-08-25-gameassembly-c24495e5",
+  "profile": "map-water-volume",
+  "processName": "Endfield.exe",
+  "files": {
+    "executable": {
+      "relativePath": "Endfield.exe",
+      "bytes": 823352,
+      "sha256": "b409340ebdf73b07ab945e4200445d26e168a9be060c591d783ba8c9fbcebd17"
+    },
+    "gameAssembly": {
+      "relativePath": "GameAssembly.dll",
+      "bytes": 256677352,
+      "sha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89"
+    },
+    "metadata": {
+      "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+      "bytes": 57021288,
+      "sha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+    },
+    "unityPlayer": {
+      "relativePath": "UnityPlayer.dll",
+      "bytes": 33069624,
+      "sha256": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    }
+  },
+  "capture": {
+    "sceneId": "map02_lv002",
+    "waterVolumeId": 22800040000,
+    "meshPathHash": 951739358744751118,
+    "gameLevelIdFieldOffset": 24,
+    "levelWaterVolumeIdFieldOffset": 16,
+    "waterVolumeIdFieldOffset": 48,
+    "waterVolumeMeshPathHashFieldOffset": 72,
+    "waterVolumeSurfaceMeshMonoFieldOffset": 192,
+    "surfaceMonoWaterVolumePtrFieldOffset": 152,
+    "setup": {
+      "rva": 61532032,
+      "bodyBytes": 1649,
+      "sha256": "7251C64731568CF63746FA0DF4BD255291EC87130CE38A8F25FC6DC86E268047"
+    },
+    "getMesh": {
+      "rva": 61518144,
+      "bodyBytes": 3777,
+      "sha256": "788A1FBF0DF31D31F2D6E136ADD98ADF1EEBAE9A7C29FC0759C5C50D090105A8"
+    },
+    "updataMesh": {
+      "rva": 61516128,
+      "bodyBytes": 127,
+      "sha256": "9F82547591DCC53798E91B4FA154FF3E9F404AC82C764204670BD9CFDA8D0572"
+    },
+    "tick": {
+      "rva": 99954632,
+      "bodyBytes": 1044,
+      "sha256": "D0BD56E66586E517F5B1AFC29B1341D54AE2ABC6359D856DF0C94FD684DEE139"
+    },
+    "getPosition": {
+      "rva": 99957144,
+      "bodyBytes": 133,
+      "sha256": "5CB24AC1E7ED4183A326AADB24E32B3C7B7C7211B91A8C4C6C93336713FFBC9B"
+    },
+    "onRecycle": {
+      "rva": 72125568,
+      "bodyBytes": 2208,
+      "sha256": "1A31721262B91DC9531893C537BFAD5A2C67F8603318376B2C96AEB2E9A23A58"
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "The initial selected Setup/GetMesh/UpdataMesh chain remains gated. A second selected Mono Tick hook can sample Transform.position after the original Tick through that Mono's native get_position method, while OnRecycle invalidates the object lifetime.",
+    "conditional": "A near-stop transform receipt requires this exact client build, a selected Mono whose 16-byte WaterVolumePtr token remains stable, at least two finite Tick samples, and a last sample within the bounded stop interval.",
+    "unresolved": "A near-stop Tick position is not an atomic stop-time transform or a renderer-visibility check. Preflight does not prove that the selected Mono will tick during the next session."
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.mission-trace-capture-recipe.v2",
+  "schema": "endfield.mission-trace-capture-recipe.v3",
   "status": "reviewed",
   "hooks": [
     {
@@ -4699,9 +4699,18 @@
       "returnType": "void",
       "static": false,
       "parameters": [
-        { "name": "questId", "type": "string" },
-        { "name": "subCondition", "type": "Beyond.Gameplay.GameCondition" },
-        { "name": "progress", "type": "int" }
+        {
+          "name": "questId",
+          "type": "string"
+        },
+        {
+          "name": "subCondition",
+          "type": "Beyond.Gameplay.GameCondition"
+        },
+        {
+          "name": "progress",
+          "type": "int"
+        }
       ],
       "name": "mission.OnSubConditionProgressChanged",
       "fields": [
@@ -4716,7 +4725,12 @@
           "argument": "subCondition",
           "type": "string",
           "role": "identity",
-          "path": [{ "field": "Beyond.Gameplay.GameCondition::uniqueId", "type": "string" }]
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
         },
         {
           "label": "suppliedProgress",
@@ -4730,7 +4744,12 @@
           "argument": "subCondition",
           "type": "string",
           "role": "identity",
-          "path": [{ "field": "Beyond.Gameplay.GameCondition::parentQuestId", "type": "string" }],
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ],
           "observation": "Stored condition context at entry; null or unequal context is retained without inferred ownership."
         },
         {
@@ -4738,14 +4757,24 @@
           "argument": "subCondition",
           "type": "int",
           "role": "identity",
-          "path": [{ "field": "Beyond.Gameplay.GameCondition::objectiveIndex", "type": "int" }]
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
         },
         {
           "label": "entryProgress",
           "argument": "subCondition",
           "type": "int",
           "role": "progress",
-          "path": [{ "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField", "type": "int" }],
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ],
           "observation": "Pre-entry base-storage snapshot; distinct from suppliedProgress."
         },
         {
@@ -4753,7 +4782,12 @@
           "argument": "subCondition",
           "type": "int",
           "role": "progress",
-          "path": [{ "field": "Beyond.Gameplay.GameCondition::m_advancedProgress", "type": "int" }],
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_advancedProgress",
+              "type": "int"
+            }
+          ],
           "observation": "Pre-entry advanced-progress cache; not a computed result."
         },
         {
@@ -4761,7 +4795,12 @@
           "argument": "subCondition",
           "type": "int",
           "role": "progress",
-          "path": [{ "field": "Beyond.Gameplay.GameCondition::m_advancedMaxProgress", "type": "int" }],
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_advancedMaxProgress",
+              "type": "int"
+            }
+          ],
           "observation": "Pre-entry advanced-progress maximum cache; not a computed result."
         }
       ],
@@ -4769,6 +4808,1409 @@
       "evidenceBoundary": {
         "direct": "Supplied quest/condition identities and signed numeric entry argument, with separate typed pre-entry condition cache fields on the selected build.",
         "unresolved": "Entry does not prove the invocation source, live IFix selection, successful request construction/send, server acceptance, numeric incoming objective-map contents, result evaluation or the condition's actual runtime subtype. The separately reviewed current default-body request construction is not proved by capture preparation or carried across builds by this role label."
+      }
+    },
+    {
+      "name": "condition.scriptPropertyBool.OnActivate",
+      "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+      "method": "OnActivate",
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Exact named Boolean property-condition entry and typed stored identity/cache fields before that entry.",
+        "conditional": "A non-null parentQuestId and unique archived condition membership are required for mission ownership. PropertyKey0 is a complete property path only when entryPropertyLengthMinusOne is zero. Activation may precede cache initialization.",
+        "unresolved": "No evaluated event value, method return, setter outcome, getter call, container traversal, live IFix selection or server criterion is captured. EntryResult and entryCompareValue are pre-entry caches, not this invocation's result."
+      },
+      "semanticRole": "named script-property condition entry with typed pre-entry caches"
+    },
+    {
+      "name": "condition.scriptPropertyBool.OnDeactivate",
+      "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+      "method": "OnDeactivate",
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryMapId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_mapId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_levelScriptPtr",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "entryPropertyKey0",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_propertyPath",
+              "type": "Beyond.PropertyPath",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.PropertyPath::key0",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Exact named Boolean property-condition entry and typed stored identity/cache fields before that entry.",
+        "conditional": "A non-null parentQuestId and unique archived condition membership are required for mission ownership. PropertyKey0 is a complete property path only when entryPropertyLengthMinusOne is zero. Activation may precede cache initialization.",
+        "unresolved": "No evaluated event value, method return, setter outcome, getter call, container traversal, live IFix selection or server criterion is captured. EntryResult and entryCompareValue are pre-entry caches, not this invocation's result."
+      },
+      "semanticRole": "named script-property condition entry with typed pre-entry caches"
+    },
+    {
+      "name": "condition.scriptPropertyBool._DoCheck",
+      "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+      "method": "_DoCheck",
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryMapId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_mapId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_levelScriptPtr",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "entryPropertyKey0",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_propertyPath",
+              "type": "Beyond.PropertyPath",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.PropertyPath::key0",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryPropertyLengthMinusOne",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_propertyPath",
+              "type": "Beyond.PropertyPath",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.PropertyPath::lengthMinusOne",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryCompareValue",
+          "argument": "this",
+          "type": "bool",
+          "role": "observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_compareValue",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Exact named Boolean property-condition entry and typed stored identity/cache fields before that entry.",
+        "conditional": "A non-null parentQuestId and unique archived condition membership are required for mission ownership. PropertyKey0 is a complete property path only when entryPropertyLengthMinusOne is zero. Activation may precede cache initialization.",
+        "unresolved": "No evaluated event value, method return, setter outcome, getter call, container traversal, live IFix selection or server criterion is captured. EntryResult and entryCompareValue are pre-entry caches, not this invocation's result."
+      },
+      "semanticRole": "named script-property condition entry with typed pre-entry caches"
+    },
+    {
+      "name": "condition.scriptPropertyBool._OnEvent",
+      "type": "Beyond.Gameplay.CheckLevelScriptPropertyBool",
+      "method": "_OnEvent",
+      "parameters": [
+        {
+          "name": "eventContext",
+          "type": "Beyond.Gameplay.ParamBlackboard"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryMapId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_mapId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_levelScriptPtr",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "entryPropertyKey0",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_propertyPath",
+              "type": "Beyond.PropertyPath",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.PropertyPath::key0",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "entryPropertyLengthMinusOne",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_propertyPath",
+              "type": "Beyond.PropertyPath",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.PropertyPath::lengthMinusOne",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryCompareValue",
+          "argument": "this",
+          "type": "bool",
+          "role": "observation",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.CheckLevelScriptPropertyBool::m_compareValue",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Exact named Boolean property-condition entry and typed stored identity/cache fields before that entry.",
+        "conditional": "A non-null parentQuestId and unique archived condition membership are required for mission ownership. PropertyKey0 is a complete property path only when entryPropertyLengthMinusOne is zero. Activation may precede cache initialization.",
+        "unresolved": "No evaluated event value, method return, setter outcome, getter call, container traversal, live IFix selection or server criterion is captured. EntryResult and entryCompareValue are pre-entry caches, not this invocation's result."
+      },
+      "semanticRole": "named script-property condition entry with typed pre-entry caches"
+    },
+    {
+      "name": "script.ServerSyncProperties",
+      "type": "Beyond.Gameplay.Core.LevelScriptRuntime",
+      "method": "ServerSyncProperties",
+      "parameters": [
+        {
+          "name": "serverDynamicParams",
+          "type": "Google.Protobuf.Collections.MapField`2<int,Proto.DYNAMIC_PARAMETER>"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "scriptId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<scriptPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::scriptId",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "scriptLevelIdNum",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<scriptPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.LevelScriptPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptPtr::<levelId>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "runtimeLevelId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<levelId>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "runtimeLevelIdNum",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.LevelScriptRuntime::<levelIdNum>k__BackingField",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed stored runtime script/level identity at ServerSyncProperties entry.",
+        "unresolved": "The incoming map and its values are not traversed. Entry does not prove any property write, callback, mission ownership, IFix selection or successful synchronization."
+      },
+      "semanticRole": "named incoming property synchronization entry"
+    },
+    {
+      "name": "network.OnLevelScriptProperty",
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_SyncLevelScriptProperty",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "sceneNumId",
+          "argument": "msg",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY::sceneNumId_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "scriptId",
+          "argument": "msg",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY::scriptId_",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "clientOperate",
+          "argument": "msg",
+          "type": "bool",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_UPDATE_LEVEL_SCRIPT_PROPERTY::clientOperate_",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "evidenceBoundary": {
+        "direct": "Typed packet script/scene/clientOperate fields before handler entry.",
+        "unresolved": "The property map is not traversed. Entry does not prove the handler used sceneNumId, applied the update, selected a local condition or accepted a server completion rule."
+      },
+      "semanticRole": "named incoming property packet handler entry"
+    },
+    {
+      "name": "snapshot.RegisterIdentify",
+      "type": "Beyond.Gameplay.SnapshotSystem",
+      "method": "RegisterIdentify",
+      "parameters": [
+        {
+          "name": "identifyGroupId",
+          "type": "string"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "identifyGroupId",
+          "argument": "identifyGroupId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Supplied identification group string at the named SnapshotSystem entry.",
+        "unresolved": "Entry does not prove registration, a successful photograph, event dispatch, matching callback payload, task ownership, or server acceptance. No collection contents or return values are read."
+      }
+    },
+    {
+      "name": "snapshot.UnRegisterIdentify",
+      "type": "Beyond.Gameplay.SnapshotSystem",
+      "method": "UnRegisterIdentify",
+      "parameters": [
+        {
+          "name": "identifyGroupId",
+          "type": "string"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "identifyGroupId",
+          "argument": "identifyGroupId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Supplied identification group string at the named SnapshotSystem entry.",
+        "unresolved": "Entry does not prove registration, a successful photograph, event dispatch, matching callback payload, task ownership, or server acceptance. No collection contents or return values are read."
+      }
+    },
+    {
+      "name": "snapshot.NotifyIdentifyGroupSuccess",
+      "type": "Beyond.Gameplay.SnapshotSystem",
+      "method": "NotifyIdentifyGroupSuccess",
+      "parameters": [
+        {
+          "name": "identifyGroupId",
+          "type": "string"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "identifyGroupId",
+          "argument": "identifyGroupId",
+          "type": "string",
+          "role": "identity"
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Supplied identification group string at the named SnapshotSystem entry.",
+        "unresolved": "Entry does not prove registration, a successful photograph, event dispatch, matching callback payload, task ownership, or server acceptance. No collection contents or return values are read."
+      }
+    },
+    {
+      "name": "condition.snapshot.OnActivate",
+      "type": "Beyond.Gameplay.CheckSnapshotIdentifySuccess",
+      "method": "OnActivate",
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Named snapshot-condition entry with typed stored condition/quest/objective identities and pre-entry state/result/progress.",
+        "unresolved": "The generic eventData payload and bound identify-group parameter are not read. Pre-entry caches do not prove callback result, a payload match, IFix selection or progression; group notification and callback proximity is not an ownership join."
+      }
+    },
+    {
+      "name": "condition.snapshot.GetResult",
+      "type": "Beyond.Gameplay.CheckSnapshotIdentifySuccess",
+      "method": "GetResult",
+      "parameters": [
+        {
+          "name": "eventData",
+          "type": "Beyond.EventData`1<string>"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "suppliedIdentifyGroupId",
+          "argument": "eventData",
+          "type": "string",
+          "role": "identity",
+          "argumentRepresentation": {
+            "mode": "indirectValue",
+            "bytes": 8,
+            "nativeProof": "stringEqualityArgument"
+          },
+          "path": [
+            {
+              "field": "Beyond.EventData`1<string>::value",
+              "type": "string"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Named snapshot-condition entry with typed stored condition/quest/objective identities, pre-entry state/result/progress and the supplied eventData string group ID. The closed single-reference value layout is re-proved against selected metadata.",
+        "unresolved": "The bound identify-group Param<string> is not read. Supplied event payload and stored condition context form an explicit entry association, but do not prove a bound-group comparison, callback return/result, IFix selection, progression or server acceptance."
+      }
+    },
+    {
+      "name": "condition.snapshot.OnDeactivate",
+      "type": "Beyond.Gameplay.CheckSnapshotIdentifySuccess",
+      "method": "OnDeactivate",
+      "parameters": [],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "conditionId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::uniqueId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "parentQuestId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::parentQuestId",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "objectiveIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::objectiveIndex",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "entryState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<state>k__BackingField",
+              "type": "Beyond.Gameplay.ConditionState"
+            }
+          ]
+        },
+        {
+          "label": "entryResult",
+          "argument": "this",
+          "type": "Beyond.Gameplay.ConditionResult",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::m_result",
+              "type": "Beyond.Gameplay.ConditionResult"
+            }
+          ]
+        },
+        {
+          "label": "entryProgress",
+          "argument": "this",
+          "type": "int",
+          "role": "progress",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.GameCondition::<progress>k__BackingField",
+              "type": "int"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Named snapshot-condition entry with typed stored condition/quest/objective identities and pre-entry state/result/progress.",
+        "unresolved": "The generic eventData payload and bound identify-group parameter are not read. Pre-entry caches do not prove callback result, a payload match, IFix selection or progression; group notification and callback proximity is not an ownership join."
+      }
+    },
+    {
+      "name": "interactive.OnInteractivePropertyUpdate",
+      "type": "Beyond.Gameplay.Core.InteractiveRootComponent",
+      "method": "OnInteractivePropertyUpdate",
+      "parameters": [
+        {
+          "name": "propertyKey",
+          "type": "string"
+        },
+        {
+          "name": "oldValue",
+          "type": "int"
+        },
+        {
+          "name": "newValue",
+          "type": "int"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "propertyKey",
+          "argument": "propertyKey",
+          "type": "string",
+          "role": "identity"
+        },
+        {
+          "label": "suppliedOldValue",
+          "argument": "oldValue",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "suppliedNewValue",
+          "argument": "newValue",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "storedLogicId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entityPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.EntityPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.EntityPtr::logicId",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "storedUseSlotId",
+          "argument": "this",
+          "type": "bool",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entityPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.EntityPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.EntityPtr::useSlotId",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "label": "storedServerId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "storedLevelId",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<levelId>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "storedParentScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+              "type": "Beyond.Gameplay.Core.Entity",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<parentScriptId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Supplied property key and signed old/new integer arguments, alongside separate stored EntityPtr and entity identity fields at callback entry.",
+        "unresolved": "Entry does not prove a blackboard write, packet causality, a mission condition callback, numeric objective-map contents, or server completion. Stored pointer and server identities are distinct carriers and are not assumed equal."
+      }
+    },
+    {
+      "name": "interactive.ReqChangeState",
+      "type": "Beyond.Gameplay.InteractiveLogicBase",
+      "method": "ReqChangeState",
+      "parameters": [
+        {
+          "name": "stateValue",
+          "type": "int"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "requestedState",
+          "argument": "stateValue",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "storedLogicId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.InteractiveLogicBase::<controller>k__BackingField",
+              "type": "Beyond.Gameplay.Core.InteractiveLogicController",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entityPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.EntityPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.EntityPtr::logicId",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "storedUseSlotId",
+          "argument": "this",
+          "type": "bool",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.InteractiveLogicBase::<controller>k__BackingField",
+              "type": "Beyond.Gameplay.Core.InteractiveLogicController",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BaseComponent::<entityPtr>k__BackingField",
+              "type": "Beyond.Gameplay.Core.EntityPtr",
+              "mode": "inline"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.EntityPtr::useSlotId",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Supplied state request and stored controller EntityPtr identity at the named request entry.",
+        "unresolved": "Entry does not prove request send, applied local state, server acceptance or a particular mission target. Other interactive implementations can bypass this method."
+      }
+    },
+    {
+      "name": "network.OnInteractiveProperty",
+      "type": "Beyond.Gameplay.GameplayNetwork",
+      "method": "_Handle_SyncInteractiveProperty",
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY"
+        }
+      ],
+      "returnType": "void",
+      "static": false,
+      "fields": [
+        {
+          "label": "sceneNumId",
+          "argument": "msg",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY::sceneNumId_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "interactiveId",
+          "argument": "msg",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY::id_",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "clientOperate",
+          "argument": "msg",
+          "type": "bool",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY::clientOperate_",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "named identification or interactive entry observation",
+      "evidenceBoundary": {
+        "direct": "Typed incoming packet scene/object/clientOperate fields before handler entry.",
+        "unresolved": "The properties map is not traversed. Packet identity does not prove any particular key/value was delivered or written, callback causality, target logicId equivalence, or a server mission rule."
+      }
+    },
+    {
+      "name": "interactive.UpdateServerProperty",
+      "type": "Beyond.Gameplay.Core.InteractiveInfo",
+      "method": "UpdateServerProperty",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "msg",
+          "type": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY"
+        }
+      ],
+      "fields": [
+        {
+          "label": "storedEntityDataId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseEntityData::<id>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "storedLevelIdNum",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseEntityData::<levelIdNum>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "storedTemplateId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseEntityData::<templateId>k__BackingField",
+              "type": "string"
+            }
+          ]
+        },
+        {
+          "label": "storedParentScriptId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseEntityData::<parentScriptId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "storedServerGeneration",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BaseEntityData::<serverGeneration>k__BackingField",
+              "type": "uint"
+            }
+          ]
+        },
+        {
+          "label": "sceneNumId",
+          "argument": "msg",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY::sceneNumId_",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "interactiveId",
+          "argument": "msg",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY::id_",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "clientOperate",
+          "argument": "msg",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Proto.SC_SCENE_UPDATE_INTERACTIVE_PROPERTY::clientOperate_",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "incoming interactive property delivery to explicit retained entity-data context",
+      "evidenceBoundary": {
+        "direct": "Supplied packet scene/id/clientOperate and typed pre-entry BaseEntityData id/level/template/script/generation on the same named receiver entry. Raw receiver and packet addresses remain in the journal.",
+        "conditional": "The reviewed native default body converts delivered properties and updates the server-data blackboard, with a separate loaded-entity blackboard branch; live IFix selection is not observed.",
+        "unresolved": "Entity-data id, packet id and authored logic id retain separate carrier names. Incoming map members, applied values, successful writes, callback nesting and Mission causality are not sampled."
+      }
+    },
+    {
+      "name": "interactive.OnStateUpdateForNavigation",
+      "type": "Beyond.Gameplay.NavObstacleManager",
+      "method": "OnInteractiveStateUpdate",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "entity",
+          "type": "Beyond.Gameplay.Core.Entity"
+        },
+        {
+          "name": "oldState",
+          "type": "int"
+        },
+        {
+          "name": "newState",
+          "type": "int"
+        }
+      ],
+      "fields": [
+        {
+          "label": "suppliedOldState",
+          "argument": "oldState",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "suppliedNewState",
+          "argument": "newState",
+          "type": "int",
+          "role": "state"
+        },
+        {
+          "label": "storedEntityServerId",
+          "argument": "entity",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<serverId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        },
+        {
+          "label": "storedLevelId",
+          "argument": "entity",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<levelId>k__BackingField",
+              "type": "int"
+            }
+          ]
+        },
+        {
+          "label": "storedParentScriptId",
+          "argument": "entity",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Entity::<parentScriptId>k__BackingField",
+              "type": "ulong"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "explicit integer state-change request to the navigation obstacle consumer",
+      "evidenceBoundary": {
+        "direct": "Supplied signed old/new state values and typed stored server/level/script identity from the same entity argument. Null entity fields remain null evidence.",
+        "conditional": "InteractiveInfo.UpdateServerProperty has a named default-body call to this consumer before blackboard update calls; retained entry ordering cannot prove the active branch, nesting or causal ownership.",
+        "unresolved": "Entry is a navigation update request; it does not prove applied property writes, successful obstacle updates, an authoritative Mission child value or server acceptance. Other property types/branches can bypass this consumer."
       }
     }
   ],
@@ -4784,6 +6226,7 @@
     "Typed task tracking retains the supplied objectiveIndex/completionBool. Its current reviewed caller supplies objectiveEnum; preparation does not prove that control flow on another build. No unique conditionId or unchanged incoming map member is retained.",
     "Global condition polling getters and result/progress setters are omitted to avoid unproved volume. GameCondition.set_progress also lacks a bounded current .pdata body; condition lifecycle snapshots do not replace per-change numeric progress events.",
     "A stored parentQuestId is explicit receiver context; null values remain a coverage gap and timestamp proximity never supplies missing ownership.",
-    "Base-typed condition storage and observed declared method families do not authenticate the receiver's actual runtime subtype. Named numeric progress requests do not replace incoming objective-map delivery or a successful send/acknowledgment."
+    "Base-typed condition storage and observed declared method families do not authenticate the receiver's actual runtime subtype. Named numeric progress requests do not replace incoming objective-map delivery or a successful send/acknowledgment.",
+    "Snapshot notification retains a supplied identifyGroupId; snapshot-condition GetResult retains its supplied event payload with stored quest/condition context. Bound Param<string>, comparison/result and authoritative success remain unread; temporal proximity never supplies missing ownership. Interactive request/property entries retain explicit carriers, not successful writes or incoming map contents."
   ]
 }
