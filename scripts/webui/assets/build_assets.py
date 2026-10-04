@@ -16,7 +16,7 @@ Run from the repo root:
 from __future__ import annotations
 
 import argparse
-import sys
+from collections import Counter
 from pathlib import Path
 
 if __package__ in {None, ""}:
@@ -25,12 +25,10 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.assets.build_assets"
     )
 
-from scripts.common import require_export_layout
-
 from scripts.webui.assets.index import AssetScanResult, scan_exported_media_assets
 from scripts.webui.assets.story_media import build_story_media_payload, write_story_media_payload
 from scripts.webui.assets.table_asset_owners import build_table_asset_owner_payload
-from scripts.common import ASSET_DIR, EXPORT_ROOT, OUT_DIR, ROOT, TABLE_DIR, write_json
+from scripts.common import ASSET_DIR, EXPORT_ROOT, ROOT, TABLE_DIR, require_export_layout, write_json
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -60,45 +58,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def _source_root_label(source_roots: dict) -> str:
-    return ", ".join(
-        f"{source}:{label}"
-        for source, label in sorted((source_roots or {}).items())
-    )
-
-
-def _payload_stats(
-    asset_payload: dict,
-    video_payload: dict,
-    asset_index_path: Path,
-    scan: AssetScanResult,
-) -> tuple[dict, dict]:
-    asset_counts = asset_payload.get("counts") or {}
-    video_counts = video_payload.get("counts") or {}
-    asset_stats = {
-        "sourceRoot": _source_root_label(asset_payload.get("sourceRoots") or {}),
-        "assets": int(asset_counts.get("total") or 0),
-        "images": int(asset_counts.get("image") or 0),
-        "models": int(asset_counts.get("model") or 0),
-        "videos": int(asset_counts.get("video") or 0),
-        "json": int(asset_counts.get("json") or 0),
-        "materials": scan.materials,
-        "imageCategories": scan.image_categories,
-        "materialLikeImages": scan.material_like_images,
-        "previewModels": sum(
-            1
-            for entry in (asset_payload.get("entries") or [])
-            if isinstance(entry, dict) and entry.get("p")
-        ),
-        "indexBytes": asset_index_path.stat().st_size,
-    }
-    video_stats = {
-        "videos": int(video_counts.get("video") or 0),
-        "indexBytes": 0,
-    }
-    return asset_stats, video_stats
-
-
 def build_output_payloads(
     scan: AssetScanResult,
     *,
@@ -126,26 +85,19 @@ def build_output_payloads(
     if mode != "focused":
         return full_asset_payload, full_video_payload, story_payload, full_asset_payload
 
-    entries = story_payload.get("entries") or []
-    image_entries = [
-        entry for entry in entries
-        if isinstance(entry, dict) and entry.get("k") == "image"
-    ]
-    video_entries = [
-        entry for entry in entries
-        if isinstance(entry, dict) and entry.get("k") == "video"
-    ]
-    image_categories: dict[str, int] = {}
-    for entry in image_entries:
-        category = entry.get("ic")
-        if category:
-            image_categories[str(category)] = image_categories.get(str(category), 0) + 1
+    entries = story_payload["entries"]
+    image_entries = [entry for entry in entries if entry["k"] == "image"]
+    video_entries = [entry for entry in entries if entry["k"] == "video"]
+    image_categories = Counter(str(entry["ic"]) for entry in image_entries if entry.get("ic"))
+    media_header = {
+        "generated": story_payload["generated"],
+        "root": story_payload["root"],
+        "mode": "webui",
+        "sourceRoots": story_payload["sourceRoots"],
+    }
 
     asset_payload = {
-        "generated": story_payload.get("generated"),
-        "root": story_payload.get("root") or "export_full",
-        "mode": "webui",
-        "sourceRoots": story_payload.get("sourceRoots") or {},
+        **media_header,
         "counts": {
             "total": len(entries),
             "image": len(image_entries),
@@ -156,16 +108,10 @@ def build_output_payloads(
         "entries": entries,
         "relations": {},
         "imageCategories": dict(sorted(image_categories.items())),
-        "materialLikeImages": sum(
-            1 for entry in image_entries
-            if isinstance(entry, dict) and entry.get("mt")
-        ),
+        "materialLikeImages": sum(bool(entry.get("mt")) for entry in image_entries),
     }
     video_payload = {
-        "generated": story_payload.get("generated"),
-        "root": story_payload.get("root") or "export_full",
-        "mode": "webui",
-        "sourceRoots": story_payload.get("sourceRoots") or {},
+        **media_header,
         "counts": {
             "total": len(video_entries),
             "video": len(video_entries),
@@ -178,11 +124,7 @@ def build_output_payloads(
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
-    require_export_layout(getattr(args, 'export_root', None))
-    OUT_DIR.mkdir(parents=True, exist_ok=True)
-    # Keep existing files so write-if-changed can avoid rewriting identical
-    # indexes.
-    ASSET_DIR.mkdir(parents=True, exist_ok=True)
+    require_export_layout()
 
     print(f"Building {args.mode} asset index ({args.publish}) from {EXPORT_ROOT}...")
     asset_index_path = ASSET_DIR / "index.json"
@@ -204,49 +146,32 @@ def main(argv: list[str] | None = None) -> None:
     # every exported asset regardless of the published index mode.
     owner_index_path = ASSET_DIR / "table_owners.json"
     owner_payload = build_table_asset_owner_payload(
-        full_asset_payload.get("entries") or [],
+        full_asset_payload["entries"],
         TABLE_DIR,
     )
     write_json(owner_index_path, owner_payload)
-    owner_counts = owner_payload.get("counts") or {}
+    owner_counts = owner_payload["counts"]
     print(
         "Table asset owners:",
         owner_index_path,
         (
-            f"({owner_counts.get('ownedStems', 0)} of {owner_counts.get('assetStems', 0)} "
+            f"({owner_counts['ownedStems']} of {owner_counts['assetStems']} "
             f"asset stems owned by an exact table field across "
-            f"{owner_counts.get('tables', 0)} tables)"
+            f"{owner_counts['tables']} tables)"
         ),
     )
-    asset_stats, video_stats = _payload_stats(
-        asset_payload,
-        video_payload,
-        asset_index_path,
-        scan,
-    )
+    counts = asset_payload["counts"]
     scope = "Story/Wiki media" if args.mode == "focused" else "source assets"
     print(
         "Asset index written:",
         asset_index_path,
         (
-            f"({asset_stats['assets']} {scope}; {asset_stats['images']} images; "
-            f"{asset_stats['models']} models; {asset_stats['videos']} videos; "
-            f"{asset_stats['json']} JSON files)"
+            f"({counts['total']} {scope}; {counts['image']} images; "
+            f"{counts['model']} models; {counts['video']} videos; "
+            f"{counts.get('json', 0)} JSON files)"
         ),
     )
-    print("Video index:", f"{video_stats['videos']} videos (in-memory Story media input)")
-    print(
-        "\nAsset root copy:",
-        asset_index_path,
-        (
-            f"(source root: {asset_stats['sourceRoot']}; "
-            f"{asset_stats['assets']} source assets indexed; "
-            f"{asset_stats['images']} images; {asset_stats['models']} models; "
-            f"{asset_stats.get('videos', 0)} videos; {asset_stats.get('json', 0)} JSON files; "
-            f"{asset_stats['previewModels']} reviewable non-OBJ models)"
-        ),
-    )
-    print("Video index:", f"{video_stats['videos']} videos (in-memory Story media input)")
+    print("Video index:", f"{video_payload['counts']['video']} videos (in-memory Story media input)")
 
 
 def report_story_media(stats: dict) -> None:
@@ -267,4 +192,4 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        sys.exit(1)
+        raise SystemExit(1)

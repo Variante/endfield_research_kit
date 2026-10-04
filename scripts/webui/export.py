@@ -186,6 +186,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         fail(f"unknown page {', '.join(unknown)}; expected {', '.join(TARGETS)}")
     args.debug = DEBUG in args.targets
     pages = [target for target in args.targets if target not in (ALL, DEBUG)]
+    if ALL in args.targets and (pages or args.debug):
+        fail("all already builds every page; name no other page with it")
     if args.debug and pages:
         fail("debug already builds every page; name no other page with it")
     if args.webui_jobs < 1:
@@ -215,7 +217,7 @@ def stage(title: str) -> None:
 
 
 def run(argv: list[str]) -> int:
-    log(" ".join(Path(argv[0]).name if i == 0 else part for i, part in enumerate(argv)))
+    log(subprocess.list2cmdline([Path(argv[0]).name, *argv[1:]]))
     return subprocess.run(argv, cwd=REPO_ROOT, check=False).returncode
 
 

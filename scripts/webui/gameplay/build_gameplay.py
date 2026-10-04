@@ -144,22 +144,10 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
     if stage == "base":
         from scripts.webui.gameplay import base_data
 
-        return int(
-            base_data.main(
-                [
-                    "--languages",
-                    *languages,
-                    "--default-language",
-                    args.default_language,
-                    *(
-                        ["--runtime-tag-capture", str(args.runtime_tag_capture)]
-                        if args.runtime_tag_capture
-                        else []
-                    ),
-                ]
-            )
-            or 0
-        )
+        argv = ["--languages", *languages, "--default-language", args.default_language]
+        if args.runtime_tag_capture:
+            argv.extend(("--runtime-tag-capture", str(args.runtime_tag_capture)))
+        return int(base_data.main(argv) or 0)
     if stage == "projectiles":
         from scripts.webui.gameplay import projectiles
 
@@ -181,16 +169,14 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
     if stage == "audit":
         from scripts.webui.gameplay import recovery_audit
 
-        audit_scope = getattr(args, "audit_scope", "active")
-        if audit_scope == "full":
+        if args.audit_scope == "full":
             audit_args = ["--full-corpus"]
-            export_root = getattr(args, "export_root", None)
-            if export_root:
-                audit_args.extend(("--export-root", str(export_root)))
+            if args.export_root:
+                audit_args.extend(("--export-root", str(args.export_root)))
             return int(recovery_audit.main(audit_args) or 0)
         for language in languages:
             input_path = (
-                WEBUI_DATA_ROOT / "lang" / str(language).upper() / "gameplay" / "index.json"
+                WEBUI_DATA_ROOT / "lang" / language.upper() / "gameplay" / "index.json"
             )
             if not input_path.is_file():
                 print(
@@ -208,7 +194,7 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    require_export_layout(getattr(args, 'export_root', None))
+    require_export_layout(args.export_root)
     # Preserve dependency order regardless of the order flags were given.
     selected = [stage for stage in STAGES if not args.stage or stage in args.stage]
     for stage in selected:

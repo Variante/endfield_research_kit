@@ -71,8 +71,7 @@ def plan_lines(tasks: Sequence[TaskSpec]) -> list[str]:
     lines: list[str] = []
     for depth in range(max(depths.values(), default=-1) + 1):
         grouped = [task for task in tasks if depths[task.name] == depth]
-        if grouped:
-            lines.append(f"[depth{depth}]")
+        lines.append(f"[depth{depth}]")
         for task in grouped:
             lines.append(f"  {task.name} (after: {', '.join(task.after) or '-'})")
             lines.extend(f"    {display_command(command)}" for command in task.commands)
@@ -129,28 +128,28 @@ def run_graph(tasks: Sequence[TaskSpec], jobs: int) -> tuple[int, list[TaskRun]]
     depths = dependency_depths(tasks)
     runs = {task.name: TaskRun(task, depths[task.name]) for task in tasks}
     order = [task.name for task in tasks]
+    failure_order = sorted(order, key=depths.__getitem__)
     returncode = 0
     started = time.perf_counter()
 
     def ready(name: str) -> bool:
         return all(runs[dependency].status == "ok" for dependency in runs[name].spec.after)
 
-    def blocked(name: str) -> bool:
-        return any(runs[dependency].status in {"failed", "skipped"} for dependency in runs[name].spec.after)
-
     with ThreadPoolExecutor(max_workers=jobs) as executor:
         pending: dict = {}
         while True:
             # Skip anything whose inputs will never be published, then start
             # every runnable task the job budget allows.
-            progressed = True
-            while progressed:
-                progressed = False
-                for name in order:
-                    if runs[name].status == "pending" and blocked(name):
-                        runs[name].status = "skipped"
-                        print(f"[webui-build] skipping {name}: a dependency did not succeed", file=sys.stderr, flush=True)
-                        progressed = True
+            # Parents come first, so skips propagate through the whole graph
+            # in one pass even when the registry lists children first.
+            for name in failure_order:
+                run = runs[name]
+                if run.status == "pending" and any(
+                    runs[dependency].status in {"failed", "skipped"}
+                    for dependency in run.spec.after
+                ):
+                    run.status = "skipped"
+                    print(f"[webui-build] skipping {name}: a dependency did not succeed", file=sys.stderr, flush=True)
             for name in order:
                 run = runs[name]
                 if run.status != "pending" or len(pending) >= jobs or not ready(name):
@@ -161,13 +160,8 @@ def run_graph(tasks: Sequence[TaskSpec], jobs: int) -> tuple[int, list[TaskRun]]
                 print(f"[webui-build] start {name}{after}", flush=True)
                 pending[executor.submit(run_task, run.spec)] = name
             if not pending:
-                stalled = [name for name in order if runs[name].status == "pending"]
-                if stalled:
-                    # Unreachable for a validated DAG; never leave work silently
-                    # unbuilt if the scheduler ever regresses.
-                    raise RuntimeError("build graph stalled with runnable work left: " + ", ".join(stalled))
                 break
-            done, _ = wait(list(pending), return_when=FIRST_COMPLETED)
+            done, _ = wait(pending, return_when=FIRST_COMPLETED)
             for future in done:
                 name = pending.pop(future)
                 run = runs[name]
@@ -255,11 +249,11 @@ def write_reports(payload: dict) -> None:
     ]
     for phase in payload["phases"]:
         for task in phase["tasks"]:
-            if task.get("status") not in {"ok", "failed"}:
-                result = task.get("status") or "pending"
+            if task["status"] not in {"ok", "failed"}:
+                result = task["status"]
             else:
                 result = "ok" if task["returnCode"] == 0 else f"failed ({task['returnCode']})"
-            after = ", ".join(task.get("after") or []) or "-"
+            after = ", ".join(task["after"]) or "-"
             lines.append(f"| {phase['name']} | {task['name']} | {after} | {result} | {task['seconds']:.3f} |")
     md_tmp = REPORT_MD.with_suffix(".md.tmp")
     md_tmp.write_text("\n".join(lines) + "\n", encoding="utf-8")

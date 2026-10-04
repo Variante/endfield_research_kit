@@ -239,7 +239,6 @@ def write_json(
     compact: bool = True,
     trailing_newline: bool = False,
 ) -> bool:
-    path.parent.mkdir(parents=True, exist_ok=True)
     separators = (",", ":") if compact and indent is None else None
     text = json.dumps(payload, ensure_ascii=False, indent=indent, separators=separators)
     if trailing_newline:

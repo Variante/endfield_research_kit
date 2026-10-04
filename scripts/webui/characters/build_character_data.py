@@ -556,16 +556,16 @@ def build_language_payload(
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    require_export_layout(getattr(args, 'export_root', None))
+    require_export_layout(args.export_root)
     roots = table_roots(args.export_root)
     if not roots:
         print(f"Missing table directory {ExportLayout(args.export_root).table_dir}")
         return 2
-    fallback = str(args.default_language).strip().upper() or "CN"
+    fallback = args.default_language.strip().upper() or "CN"
     snapshot_dir = args.snapshot_dir or (WEBUI_BUILD_DIR / "characters")
     outputs = []
     for raw_language in args.languages:
-        language = str(raw_language).strip().upper()
+        language = raw_language.strip().upper()
         if not language:
             continue
         payload = build_language_payload(language, roots, fallback, args.asset_index)

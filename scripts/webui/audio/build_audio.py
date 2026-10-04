@@ -3204,7 +3204,7 @@ def load_cached_event_audio_index(
 
 def decode_jobs(args: argparse.Namespace) -> int:
     """Worker count for the WEM→FLAC decode pass."""
-    requested = int(getattr(args, "decode_jobs", 0) or 0)
+    requested = args.decode_jobs
     return requested if requested > 0 else max(1, os.cpu_count() or 1)
 
 
@@ -4703,7 +4703,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Optional runtime-trace bundle for managed requests and separately audited anonymous source observations.",
     )
     parser.add_argument("--native-entry-session", type=Path, default=None,
-                        help="One complete EndfieldCapture source-owner session; publish entry snapshots separately from paired captures.")
+                        help="One complete saved source-owner session; publish entry snapshots separately from paired captures.")
     parser.add_argument("--native-entry-package-index", type=Path, default=None,
                         help="Optional VFS package candidate index for bounded encoded-word comparisons with the admitted native-entry session.")
     parser.add_argument("--native-entry-decode-witness", type=Path, default=None,
@@ -4719,6 +4719,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Decoded audio root containing shared and per-language folders. Default: <export-root>/game/Audio.",
     )
     args = parser.parse_args(argv)
+    focused = args.semantics_only or args.native_entry_only or args.package_catalog_only or args.runtime_source_only
     if args.package_catalog_only != (args.package_input_set_sha256 is not None):
         parser.error('--package-catalog-only requires --package-input-set-sha256, used only with this mode')
     if args.package_catalog_only and any(value is not None for value in (
@@ -4738,14 +4739,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     if args.runtime_source_only and any(value is not None for value in (
         args.native_entry_session, args.native_entry_package_index, args.native_entry_decode_witness)):
         parser.error('--runtime-source-only does not refresh native-entry sessions')
-    if (args.semantics_only or args.native_entry_only or args.package_catalog_only or args.runtime_source_only) and (
+    if focused and (
         args.skip_decode or args.refresh_hirc or args.refresh_lua_audio
         or args.block != "all" or args.decode_jobs != 0
         or args.streaming_assets is not None or args.fallback_assets is not None
         or args.audio_dumper != DEFAULT_AUDIO_DUMPER
     ):
         parser.error("focused Audio refresh cannot be combined with decode or HIRC refresh options")
-    if args.game_root is None and not (args.semantics_only or args.native_entry_only or args.package_catalog_only or args.runtime_source_only):
+    if args.game_root is None and not focused:
         args.game_root = DEFAULT_GAME_ROOT
     if args.game_root is not None:
         if args.streaming_assets is None:
