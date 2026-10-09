@@ -101,7 +101,7 @@ not named keep their previously generated data.
 | `.\export.bat story audio --from-game` | **Story**, **Text**, **Audio** | Text-only Story plus the Audio page, which also gives Story its voice lines               |
 | `.\export.bat map --from-game`         | **Map**                        | Extracts only Map's inputs                                                                |
 | `.\export.bat debug --from-game`       | Every page except **Updates**  | Extracts every supported structured block and Unity class, then builds every page         |
-| `.\export.bat --changed-only`          | Every page except **Updates**  | Applies only changed structured files from the installed client and reuses exported media |
+| `.\export.bat --changed-only`          | Every page, including **Updates** | Syncs installed data and media, then compares with the last successful sync              |
 | `.\build_updates.bat OLD NEW`          | **Updates**                    | Compares two complete export folders                                                      |
 
 The export scopes are `story` (with Text; `story-media` adds its images and

@@ -31,10 +31,15 @@ in its chip tooltips and empty-list message (see [Assets](webui/assets.md)).
 Gameplay has one dataset bar for Characters, Weapons, Equipment, Items, Enemies,
 Recipes and Machines. Its Items tab combines the Production catalog with
 Gameplay's published use effects and rewards in the same displayed language.
+Picture items reuse Gameplay's asset-token publication to show the corresponding
+`pic_*` illustration above the catalog description with the shared image preview.
 Both builders retain their own output paths and export scopes; run
 `export.bat gameplay production` to refresh all of these tabs. Legacy
 `#production` links preserve their catalog filters inside Gameplay.
 Audio and Data share the dataset-tab styling below their sidebar title.
+Story completion rewards use its own mission/Table inputs; their item links
+open Gameplay's last published Items catalog without adding a page dependency.
+Their names and IDs enter Story's own localized search sidecar before detail loading.
 
 Updates owns optional `updates/{characters,story,map,gameplay,production,reference}.json`
 sidecars. Page consumers add change badges and old/current detail panels to
@@ -61,7 +66,7 @@ Choose the smallest workflow that owns the changed input:
 | Extract and build one page | `.\export.bat map --from-game` |
 | Lean Story/Text extraction (the setup path) | `.\export.bat story --from-game` |
 | Extract every structured block and Unity class | `.\export.bat debug --from-game` |
-| Apply changed installed VFS files locally, then rebuild every page | `.\export.bat --changed-only` |
+| Sync installed data and build every page plus Updates | `.\export.bat --changed-only` |
 | Compare two complete exports for Updates | `.\build_updates.bat OLD NEW` |
 | Serve / package | `python serve.py` / `python -m scripts.webui.package` |
 
@@ -128,13 +133,15 @@ The flow is:
 workers. `--asset-jobs N` limits AnimeStudio workers. Use
 `--full-source-graph` only for exhaustive Unity object/PathID investigation.
 
-`--changed-only` is a local refresh, not an Updates comparison. It runs the
-same complete build of every page while reusing existing bundle-derived
-outputs, asset maps and decoded audio, which its freshness check reports as
-reused rather than current. Only changed structured VFS logical files are
-extracted; it neither calls the Updates builder nor advances any
-previous-export/Updates baseline. Its private VFS snapshot commits only after
-all publication stages succeed.
+`--changed-only` synchronizes the complete supported export scope before
+building every page and Updates. Structured files use the authenticated local
+delta where possible; Unity outputs, asset maps, the object index and CN/shared
+audio refresh through their normal producers and freshness gates. Updates
+compares against the last successful sync, using managed complete snapshots.
+Only a successful extraction, page build and comparison advances that baseline;
+failed runs retain it, and an unchanged run keeps the last feed. Initial mixed
+exports need a saved complete old export, or the first successful sync only
+initializes a baseline. See [Updates](webui/updates.md) for comparison ownership.
 
 ## Shared contracts
 
@@ -157,6 +164,9 @@ all publication stages succeed.
   remains on the Audio page.
 - List-page layout, pagination, and search semantics are shared frontend
   contracts in [`../webui/README.md`](../webui/README.md).
+  Text applies a smaller rendering budget and bounded raw-file previews; its
+  complete-source access and browser size limits are documented in
+  [Text](webui/text.md).
   Linked file names stay searchable before detail loading; Audio publishes
   Story's audio-file search text in its own conversation index, alongside the
   per-conversation sidecars, without rewriting Story outputs.

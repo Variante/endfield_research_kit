@@ -142,6 +142,7 @@ from scripts.game_data.media_resolver import (
     ENV_EMOJI_FALLBACK_LAYER_STEMS,
     ENV_EMOJI_PREFAB_LAYER_STEMS,
     collect_inline_image_ids,
+    collect_story_reward_icon_ids,
     collect_wiki_media_image_ids,
     inline_image_number_key,
     normalize_inline_image_id,
@@ -496,7 +497,11 @@ def regex_prefix(value: str) -> str:
 
 def collect_webui_texture_name_patterns() -> list[str]:
     webui_root = ROOT / "webui"
-    image_ids = collect_inline_image_ids(webui_root) | collect_wiki_media_image_ids(webui_root)
+    image_ids = (
+        collect_inline_image_ids(webui_root)
+        | collect_wiki_media_image_ids(webui_root)
+        | collect_story_reward_icon_ids(webui_root)
+    )
     patterns: set[str] = set()
 
     def add_stem(value: str, *, include_layers: bool = False) -> None:
@@ -600,6 +605,18 @@ def compact_source_fingerprint(fingerprint: dict[str, Any] | None) -> dict[str, 
     if fingerprint is None:
         return None
     return {key: fingerprint.get(key) for key in ("files", "bytes", "fingerprint")}
+
+
+def animestudio_cache_source_fingerprint(
+    source: str, sources: dict[str, Any], overlay_skip_sha256: str | None,
+) -> dict[str, Any]:
+    """Bind cached exports to both the primary layer and parsed dependencies."""
+    return {
+        **compact_source_fingerprint(sources[source]),
+        "overlay_skip_sha256": overlay_skip_sha256,
+        "fallback_sources": {name: compact_source_fingerprint(sources[name])
+                             for name in sorted(sources) if name != source},
+    }
 
 
 def animestudio_asset_cache_path(output_root: Path) -> Path:
@@ -2640,7 +2657,8 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help=(
             "Treat structured files as already refreshed by the local changed-only workflow. "
-            "Requires --skip-structured and a complete manifest matching the exact current inputs."
+            "Requires a complete manifest matching the exact current inputs. Other structured "
+            "blocks may be selected in the same run; their publication is stamped separately."
         ),
     )
     parser.add_argument(
@@ -2806,6 +2824,8 @@ def load_structured_incremental_manifest(
         raise ValueError(f"incremental structured manifest is not complete/applied: {path}")
     if payload.get("updatesIntegration") != "disabled":
         raise ValueError("incremental structured manifest must explicitly disable Updates integration")
+    if payload.get("structuredDumpMode") not in {"focused", "default"}:
+        raise ValueError(f"incremental structured manifest has an unsupported dump mode: {path}")
     if structured_dump_mode is not None and payload.get("structuredDumpMode") != structured_dump_mode:
         raise ValueError(
             "incremental structured manifest dump mode does not match this export: "
@@ -6181,7 +6201,10 @@ def load_animestudio_object_index_summary(
                 expected_source_fingerprint
             )
             if published_source != current_source:
-                raise ValueError("published object index was built from a different source fingerprint")
+                raise ValueError(
+                    "published object index was built from a different source fingerprint; "
+                    f"expected={current_source}; actual={published_source}"
+                )
         outputs = summary.get("outputs")
         if not isinstance(outputs, dict):
             raise ValueError("published summary has no outputs")
@@ -6406,8 +6429,6 @@ def main() -> int:
     args = parse_args()
     game_root = args.game_root.resolve()
     output_root = args.output.resolve()
-    if args.structured_incremental_manifest and not args.skip_structured:
-        raise SystemExit("--structured-incremental-manifest requires --skip-structured")
     if args.structured_incremental_manifest and args.report_only:
         raise SystemExit("--structured-incremental-manifest cannot be used with --report-only")
     v1_folders = [name for name in LAYOUT_V1_FOLDERS if (output_root / name).exists()]
@@ -6661,7 +6682,7 @@ def main() -> int:
                 output_root=output_root,
                 selected_sources=selected_sources,
                 current_source_sizes=source_sizes,
-                structured_dump_mode=args.structured_dump_mode or "focused",
+                structured_dump_mode=args.structured_dump_mode,
             )
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc
@@ -6739,6 +6760,10 @@ def main() -> int:
     installed_layers = tuple(
         layer for layer in INSTALLED_LAYERS if (game_root / layer / "VFS").is_dir()
     )
+    cache_source_sizes = dict(source_sizes)
+    missing_cache_layers = tuple(layer for layer in installed_layers if layer not in cache_source_sizes)
+    if missing_cache_layers:
+        cache_source_sizes.update(collect_source_sizes(game_root, missing_cache_layers))
     for source in installed_layers:
         source_root = game_root / source
         source_report_dir = ensure_dir(reports_dir / source)
@@ -6956,10 +6981,9 @@ def main() -> int:
                     options=options,
                     cli_signature=animestudio_cli_signature,
                     dummy_dll_signature=animestudio_asset_cache_dummy_evidence,
-                    source_fingerprint={
-                        **compact_source_fingerprint(source_sizes[source]),
-                        "overlay_skip_sha256": overlay_skip_signatures.get(source),
-                    },
+                    source_fingerprint=animestudio_cache_source_fingerprint(
+                        source, cache_source_sizes, overlay_skip_signatures.get(source),
+                    ),
                 )
                 animestudio_stage_plans[stage] = plan
                 log(
@@ -7282,10 +7306,10 @@ def main() -> int:
         refreshed_blocks: tuple[str, ...] = ()
         if "structured" in publish_summary:
             refreshed_blocks = extraction.structured_blocks
-        elif structured_incremental_manifest is not None:
-            refreshed_blocks = STRUCTURED_LEVELS[
+        if structured_incremental_manifest is not None:
+            refreshed_blocks = tuple(dict.fromkeys((*refreshed_blocks, *STRUCTURED_LEVELS[
                 str(structured_incremental_manifest.get("structuredDumpMode") or "focused")
-            ]
+            ])))
         publish_summary["provenance"] = record_extraction_provenance(
             output_root,
             structured_blocks=refreshed_blocks,

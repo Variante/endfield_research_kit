@@ -37,7 +37,7 @@ and `sprite_crops.py`.
 | One page's inputs | `.\export.bat map --from-game` | exactly what that page's build tasks read (`scripts/webui/pages.py`) |
 | Every page's inputs | `.\export.bat --from-game` | the union of the pages' inputs, in one AnimeStudio run; with the Data page's files that is everything |
 | Everything | `.\export.bat debug --from-game` | `scope.EVERYTHING`: every structured block and Unity class |
-| Apply a local client delta without publishing Updates | `.\export.bat --changed-only` | changed focused VFS files; bundle-derived outputs reused; every page built |
+| Synchronize the installed client and compare with the last successful sync | `.\export.bat --changed-only` | focused VFS delta plus refreshed remaining structured inputs, Unity, indexes and CN/shared audio; every page and Updates built |
 
 An export is one `ExtractionScope` (`scope.py`): structured blocks plus Unity
 JSON and Convert classes, with named levels as presets. Decoded blocks publish
@@ -53,11 +53,38 @@ This is complete coverage of the exporter's supported families, not a claim
 that every installed object has an exact decoder or a proved semantic join.
 Partial and metadata-only Unity records remain excluded with audit reasons;
 raw families preserve their bytes. The wrapper publishes CN and decodes CN
-Audio by default. Updates separately compares two complete export trees.
-Changed-only export (`export_changed_game_data.py`) compares against its
-private snapshot or, after a client update, only a certified VFS ledger bound
-to the previous export summary, failing closed to a full export otherwise; it
-reuses bundle-derived outputs and never touches Updates state.
+Audio by default. Updates compares two complete export trees.
+The low-level changed-file exporter (`export_changed_game_data.py`) compares
+against its private snapshot or a certified VFS ledger bound to the previous
+export summary, failing closed when the previous data cannot be authenticated.
+The `--changed-only` wrapper falls back to full extraction in that case. It
+refreshes the rest of the supported scope and verifies ordinary per-input
+freshness, including the merged object index; a structured delta cannot make
+an older Unity export current.
+
+Per-asset Unity cache keys bind both the object's layer and all installed
+fallback layers, in addition to the overlay skip list, object Hash, CLI,
+DummyDll and export options. An unchanged object Hash cannot authenticate its
+parsed dependencies after a fallback-layer update.
+
+The VFS dump bounds file extraction to at most eight parallel producers.
+Packed `Json/LipSync` writes enqueue compression tasks on the same thread pool;
+unbounded producers can fill the document store's queue and leave its writer
+waiting for compression stranded on blocked producers. Keep producer
+concurrency bounded when changing either side of this pipeline. The
+`packed-dump-stress` CLI test runs a synthetic packed corpus with a small
+thread pool and an external timeout, checking that every row is published.
+
+`export_sync.py` preserves independent complete export snapshots under
+`reports/export/sync/`: mutable files and decoded audio are copied, SQLite
+stores use the backup API, and converted Unity media can be hardlinked because
+publication unlinks each old file before replacement. Only snapshots with the
+matching ownership receipt are pruned. The current export, the next comparison
+baseline and the previous comparison's old side remain available. Source
+identity is checked again before commit; a failed run retains its old baseline
+so retrying cannot compare against a half-published export. The Story guide
+consumer reports an incomplete object-index validator's original failure and
+expected source fingerprint before trying to use its merged path.
 
 **Lua** is not a Story input: it ships with the Data page and every all-page
 run, and the Mission Pipeline consumes the index built from it. The exporter
@@ -159,6 +186,13 @@ fingerprints is stated in `AGENTS.md`), so rerun the full audit and rebind
 dependent corpus gates deliberately. It records the CLI apphost EXE, not every
 implementation DLL, so an assembly-only change also needs a decoder-closure
 check.
+
+An audit made with a retained CLI copy binds corpus streaming to that recorded
+path. Pass the copy through the gate's `--cli` option when reusing its audit;
+an identical apphost at the default path does not replace the recorded build
+input. The Buff gate checks this identity before native validation and reports
+the selected path and hash beside the bounded recorded build inputs. Its
+before/after decoder-closure checks still authenticate the accompanying DLLs.
 
 **Diagnostics.** The optional object index fails closed on any incomplete or
 stale part (`animestudio_index_io.py`). Read

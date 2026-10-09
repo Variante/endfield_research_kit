@@ -13,10 +13,9 @@ output set is validated, and deletions are applied explicitly. The first run
 after a client update may seed the old side only from a certified VFS audit
 ledger whose input set and physical inventory bind to the previous export
 summary; otherwise it fails closed and requires a full export. Bundle-derived
-outputs (maps, objects, assets, audio) are reused, not refreshed per changed
-file, because a changed bundle does not prove per-output ownership; the build
-reports them as reused and a page extraction refreshes them. This mode never
-reads or writes Updates state.
+outputs are refreshed by the WebUI synchronization orchestrator, because a
+changed bundle does not prove per-output ownership. This low-level structured
+phase never reads or writes Updates state.
 """
 
 from __future__ import annotations
@@ -62,7 +61,7 @@ from scripts.game_data.extraction.export_full_from_game import (
     SOURCES,
     collect_source_sizes,
 )
-from scripts.game_data.extraction.scope import FOCUSED_STRUCTURED_BLOCKS, TERRAIN_HEIGHT_FILE_REGEX
+from scripts.game_data.extraction.scope import FOCUSED_STRUCTURED_BLOCKS, STRUCTURED_LEVELS, TERRAIN_HEIGHT_FILE_REGEX
 
 
 SCHEMA_VERSION = 1
@@ -127,7 +126,7 @@ def _workflow_lock_holder(lock: Path) -> str:
 
 
 @contextmanager
-def _exclusive_lock(output_root: Path) -> Iterator[None]:
+def exclusive_workflow_lock(output_root: Path, *, state_root: Path | None = None) -> Iterator[None]:
     """Serialize the workflow on a lock the OS releases when its holder dies.
 
     The lock is a byte-range lock rather than the lock file's existence, so a
@@ -137,7 +136,7 @@ def _exclusive_lock(output_root: Path) -> Iterator[None]:
     can still read it for diagnostics.
     """
 
-    state_root = _state_root(output_root)
+    state_root = state_root or _state_root(output_root)
     state_root.mkdir(parents=True, exist_ok=True)
     lock = state_root / "workflow.lock"
     descriptor = os.open(lock, os.O_CREAT | os.O_RDWR)
@@ -708,6 +707,32 @@ def can_retry_applied_abort(
     return all(_fingerprint_equal(manifest_sizes.get(source) or {}, current_sizes[source]) for source in SOURCES)
 
 
+def validate_full_export_seed(
+    args: argparse.Namespace, summary: dict[str, Any], current_sizes: dict[str, dict[str, Any]],
+) -> None:
+    """Reset private delta evidence only from a current complete structured export."""
+    if summary.get("command_failure_count") or summary.get("structured_incremental") or summary.get("structured_source_sizes_preserved"):
+        raise ChangedExportError("delta initialization requires a successful full structured export")
+    if any(not _fingerprint_equal((summary.get("source_sizes") or {}).get(source) or {}, current_sizes[source]) for source in SOURCES):
+        raise ChangedExportError("delta initialization full-export source fingerprints are not current")
+    layer = _effective_layer(args.game_root)
+    structured = (summary.get("structured") or {}).get(layer) or {}
+    blocks = set(structured.get("blocks") or ())
+    if "terrain" in blocks:
+        blocks.add("terrain-height")
+    missing = set(STRUCTURED_LEVELS[args.structured_dump_mode]) - blocks
+    if structured.get("returncode") != 0 or missing:
+        raise ChangedExportError(f"delta initialization full-export scope is incomplete for {layer}: missing={sorted(missing)}")
+    from scripts.game_data.extraction.verify_export_freshness import build_report, Requirements
+    report = build_report(
+        game_root=args.game_root, output_root=args.output, summary_path=args.export_summary,
+        sources=SOURCES, requirements=Requirements(STRUCTURED_LEVELS[args.structured_dump_mode]),
+    )
+    if report.get("fresh") is not True:
+        failures = (report.get("missingOutputs") or []) + (report.get("staleOutputs") or [])
+        raise ChangedExportError(f"delta initialization full-export freshness failed: {failures[:3]}")
+
+
 def prepare(args: argparse.Namespace) -> dict[str, Any]:
     game_root = args.game_root.resolve()
     output_root = args.output.resolve()
@@ -744,6 +769,8 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         )
     previous_sizes = previous_summary.get("source_sizes") or {}
     current_sizes = collect_source_sizes(game_root, SOURCES)
+    if args.initialize_from_full_export:
+        validate_full_export_seed(args, previous_summary, current_sizes)
     retry_applied_abort = can_retry_applied_abort(
         existing_manifest,
         game_root=game_root,
@@ -769,7 +796,10 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
             )
             baseline_path = _snapshot_path(output_root, source)
             baseline_kind = "local_snapshot"
-            if retry_applied_abort:
+            if args.initialize_from_full_export:
+                previous_rows = current_rows
+                baseline_kind = "current_full_export_initialized"
+            elif retry_applied_abort:
                 previous_rows = current_rows
                 baseline_kind = "applied_aborted_retry"
             elif baseline_path.is_file():
@@ -976,9 +1006,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--manifest", type=Path, default=ExportLayout(DEFAULT_OUTPUT).extraction_incremental_dir / "pending_manifest.json")
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--check", action="store_true")
+    parser.add_argument("--initialize-from-full-export", action="store_true",
+                        help="Initialize private delta snapshots from a freshly validated full export, replacing obsolete delta evidence")
     args = parser.parse_args(argv)
     if args.action != "prepare" and args.check:
         parser.error("--check is only valid with prepare")
+    if args.initialize_from_full_export and (args.action != "prepare" or args.check):
+        parser.error("--initialize-from-full-export is only valid with a publishing prepare")
     return args
 
 
@@ -992,7 +1026,7 @@ def main(argv: list[str] | None = None) -> int:
             preview = read_json(args.manifest, {})
             output_root = Path(preview.get("outputRoot") or args.output).resolve()
             operation = finalize if args.action == "finalize" else abort
-        with _exclusive_lock(output_root):
+        with exclusive_workflow_lock(output_root):
             payload = operation(args)
     except ChangedExportError as exc:
         print(f"[changed-export] {exc}", file=sys.stderr)

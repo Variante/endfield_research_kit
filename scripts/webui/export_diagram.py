@@ -91,7 +91,7 @@ def render() -> str:
         text(x + 14, 364, second, size=14)
         if i < 3:
             line(x + 299, 337, x + 320, 337, arrow=True)
-    text(44, 410, "Plain export.bat starts at step 3. --changed-only refreshes changed structured files, then builds every page.", size=15)
+    text(44, 410, "Plain export.bat starts at step 3. --changed-only syncs installed data, then builds every page and Updates.", size=15)
 
     text(44, 455, "What each page selects", size=24, weight=700, fill="#0f172a")
     text(44, 480, "Grouped cells show any matching input. Hover a cell for exact class/block names.", size=15)
@@ -170,7 +170,7 @@ def render() -> str:
         "All pages equal the supported full extraction scope. Debug adds broader asset indexing and Sprite image checks.",
         "Decoded blocks → game/; packed small files → GameFiles.sqlite; exact Unity documents → Unity.sqlite; raw families → raw/.",
         "Raw payloads and excluded Unity objects retain their evidence boundary; extraction does not recover every runtime meaning.",
-        "The wrapper publishes CN and decodes CN audio. Updates separately compares two complete export trees.",
+        "The wrapper publishes CN and decodes CN audio. Changed-only compares complete exports with the last successful sync.",
     )):
         text(63, notes_y + 59 + i * 25, note, size=15)
     height = notes_y + 217

@@ -8,6 +8,28 @@ WebUI source edits, generated reports, or scratch data as game updates.
 
 ## Inputs and recovery flow
 
+`export.bat --changed-only` automates this comparison after synchronizing all
+supported installed-game inputs and building the pages. It uses exact content
+hashes and its own cache under `reports/export/sync/`, leaving the manual
+comparison cache independent. The first run adopts a coherent current export
+as its old side; if the current export is partial or mixed, it uses the complete
+export named by `--previous-export-root` or `ENDFIELD_PREVIOUS_EXPORT_ROOT`.
+Without either, it initializes a baseline and emits no invented all-added feed.
+Subsequent comparisons use the last successful synchronization, never an
+intermediate failed export. Unchanged installed inputs keep the last feed.
+
+An adopted legacy export can cover fewer data families than the current
+all-page synchronization. Its first feed then includes export-coverage changes
+as well as game-content changes; do not attribute every added row to a client
+update without matching recorded coverage. Subsequent automatic snapshots use
+the same all-page scope.
+
+The orchestrator stages the feed and all sidecars together, then publishes the
+directory and records the new complete snapshot only after all stages succeed.
+Managed snapshots retain the last comparison's old side and the next baseline;
+they never delete the user-supplied old export. Snapshot storage and extraction
+ownership are documented in [the extraction pipeline](../game_data/extraction_pipeline.md).
+
 1. Resolve `OLD` and `NEW` complete export roots from the command line or
    `endfield_paths.bat`.
 2. Refresh the cached previous-export baseline when the saved old export was

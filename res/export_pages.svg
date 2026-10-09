@@ -32,7 +32,7 @@
 <text x="1036" y="316" font-size="18" fill="#0f172a" font-weight="600" text-anchor="start">4  Publish the WebUI</text>
 <text x="1036" y="341" font-size="14" fill="#334155" font-weight="400" text-anchor="start">Each builder owns its page outputs</text>
 <text x="1036" y="364" font-size="14" fill="#334155" font-weight="400" text-anchor="start">Record timings and memory reports</text>
-<text x="44" y="410" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Plain export.bat starts at step 3. --changed-only refreshes changed structured files, then builds every page.</text>
+<text x="44" y="410" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Plain export.bat starts at step 3. --changed-only syncs installed data, then builds every page and Updates.</text>
 <text x="44" y="455" font-size="24" fill="#0f172a" font-weight="700" text-anchor="start">What each page selects</text>
 <text x="44" y="480" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Grouped cells show any matching input. Hover a cell for exact class/block names.</text>
 <rect x="44" y="499" width="1272" height="534" rx="12" fill="#fff" stroke="#e2e8f0"/>
@@ -405,7 +405,7 @@
 <text x="63" y="2227" font-size="15" fill="#334155" font-weight="400" text-anchor="start">All pages equal the supported full extraction scope. Debug adds broader asset indexing and Sprite image checks.</text>
 <text x="63" y="2252" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Decoded blocks → game/; packed small files → GameFiles.sqlite; exact Unity documents → Unity.sqlite; raw families → raw/.</text>
 <text x="63" y="2277" font-size="15" fill="#334155" font-weight="400" text-anchor="start">Raw payloads and excluded Unity objects retain their evidence boundary; extraction does not recover every runtime meaning.</text>
-<text x="63" y="2302" font-size="15" fill="#334155" font-weight="400" text-anchor="start">The wrapper publishes CN and decodes CN audio. Updates separately compares two complete export trees.</text>
+<text x="63" y="2302" font-size="15" fill="#334155" font-weight="400" text-anchor="start">The wrapper publishes CN and decodes CN audio. Changed-only compares complete exports with the last successful sync.</text>
 <text x="44" y="2369" font-size="13" fill="#64748b" font-weight="400" text-anchor="start">Generated from scripts/webui/pages.py and extraction/scope.py · python -m scripts.webui.export_diagram</text>
 </g>
 </svg>

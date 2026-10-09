@@ -40,7 +40,8 @@ Use repository wrappers for production workflows:
   tasks read, as declared in `scripts/webui/pages.py`; `--show-plan` prints it.
 - Text-only first-time Story refresh: `export.bat story --from-game`.
 - Every structured block and Unity class: `export.bat debug --from-game`.
-- Local changed-file refresh with every normal WebUI builder: `export.bat --changed-only`.
+- Installed-game synchronization with every WebUI builder and automatic Updates
+  against the last successful sync: `export.bat --changed-only`.
 - Updates publication from two complete exports: `build_updates.bat OLD NEW`.
 
 Use direct CLI calls only for targeted parity probes, extraction, or debugging.

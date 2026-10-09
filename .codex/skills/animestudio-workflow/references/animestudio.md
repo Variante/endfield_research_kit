@@ -90,6 +90,13 @@ staged `endfield.game-file-store.v1` SQLite file. Other dump outputs remain
 loose. The full structured wrapper merges those rows into `game/GameFiles.sqlite`
 after a successful dump and deletes the staged store.
 
+Dump file extraction is bounded to at most eight parallel producers: packed
+documents enqueue compression work on the same pool, and unbounded producers
+can fill the queue while its writer waits for stranded compression tasks.
+For this concurrency regression, run the CLI test executable's
+`packed-dump-stress` mode with an external timeout; it publishes a synthetic
+packed corpus under a deliberately small thread pool and verifies its rows.
+
 `--object_index_jsonl` is opt-in and writes schema-v1 rows documented by
 `AnimeStudio.CLI\Resources\ObjectIndexSchemaV1.json`. Use a unique sidecar per
 CLI process. A consumer must reject a missing/non-terminal summary or
@@ -556,13 +563,17 @@ task; it is not silently replaced by sparse registry points.
 structured logical files by decoded MD5, length, numeric type, path, and
 encryption identity. It dumps additions/modifications with exact full-path
 `--file-regex` filters, removes deleted outputs, and validates the staged file
-set. It reuses existing bundle-derived AnimeStudio outputs and decoded audio,
-then runs every normal WebUI builder. The private local snapshot advances only
-after every builder succeeds. A retry after a later-stage failure may reuse
+set. The wrapper also refreshes the remaining structured inputs, Unity outputs,
+asset maps, the merged object index and CN/shared audio, then builds every page
+and Updates. Missing authenticated delta evidence falls back to full extraction.
+Both the private VFS state and successful-sync baseline advance only after
+every stage succeeds. A retry after a later-stage failure may reuse
 already-applied structured files only when the aborted manifest matches the
 exact game root, output root, dump mode, and current source fingerprints. This
-mode never calls the Updates builder or touches its previous-export baseline;
-Updates remains the separate `build_updates.bat OLD NEW` workflow.
+mode keeps its complete comparison snapshots and cache under
+`reports/export/sync/`, comparing exactly against the last successful sync.
+Failures retain the old baseline, and unchanged inputs preserve the last feed.
+`build_updates.bat OLD NEW` remains available for manual comparisons.
 
 ## Wrapper Integration
 

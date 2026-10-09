@@ -10,7 +10,7 @@ rem   export.bat --from-game            extract what every page reads, then buil
 rem   export.bat story --from-game      the lean Story/Text extraction and build
 rem   export.bat map audio --from-game  only what Map and Audio read
 rem   export.bat debug --from-game      every structured block and Unity class
-rem   export.bat --changed-only         apply changed structured files, build all
+rem   export.bat --changed-only         sync installed data, build all + Updates
 rem   export.bat --help                 every option
 
 rem endfield_paths.bat supplies ENDFIELD_GAME_ROOT and ENDFIELD_EXPORT_ROOT;

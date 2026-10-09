@@ -3341,6 +3341,36 @@ def run_audio_dumper(
     return source_by_rel
 
 
+def prune_absent_decoded_audio(
+    args: argparse.Namespace, language: str,
+    current: dict[tuple[str, str], dict[str, str]],
+) -> int:
+    """A successful complete decode replaces the CN/shared emitted file set.
+
+    Partial block refreshes and semantic-only runs have no authority to remove
+    files. Call only after every decode pass and source manifest validated.
+    """
+    if args.skip_decode or args.block != "all":
+        return 0
+    if not current:
+        raise RuntimeError("full audio decode emitted no validated files; refusing to remove the prior audio set")
+    removed = 0
+    for storage in (SHARED_AUDIO_STORAGE, language):
+        root = (args.audio_root / storage).resolve()
+        if not root.is_dir():
+            continue
+        for path in root.rglob("*"):
+            if not path.is_file() or path.suffix.lower() not in AUDIO_EXTENSIONS:
+                continue
+            if not path.resolve().is_relative_to(root):
+                raise RuntimeError(f"decoded audio path escapes its storage root: {path}")
+            key = (storage, path.relative_to(root).as_posix())
+            if key not in current:
+                path.unlink()
+                removed += 1
+    return removed
+
+
 def append_audio_id_candidate(ids: list[str], seen: set[str], value: object) -> None:
     if isinstance(value, (list, tuple, set)):
         for item in value:
@@ -4095,6 +4125,9 @@ def build_audio(args: argparse.Namespace) -> int:
     stage.mark("priorSourceMetadata")
     decoded_source_by_rel = run_audio_dumper(args, language, language_info, export_categories)
     fresh_outputs = set(decoded_source_by_rel)
+    removed_audio = prune_absent_decoded_audio(args, language, decoded_source_by_rel)
+    if removed_audio:
+        print(f"Audio synchronization: removed {removed_audio:,} previously decoded files absent from the current decode")
     stage.mark("decode")
 
     for regroup_storage in (SHARED_AUDIO_STORAGE, language):
