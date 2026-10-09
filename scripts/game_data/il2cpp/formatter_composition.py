@@ -158,7 +158,7 @@ def validate_typed_usage_context(image: NativeImage, row: dict[str, Any], *, lab
     if usage >> 32 or not usage & 1 or usage >> 29 != row["tag"]:
         raise ValueError(f"{label}.native:usage-kind")
     index = (usage & 0x1fffffff) >> 1
-    if row["tag"] == 1:
+    if row["tag"] in (1, 2):
         if index != row["typeIndex"]:
             raise ValueError(f"{label}.native:usage-type-index")
         pointer = _type_pointer(image, index, label)
@@ -178,3 +178,62 @@ def validate_typed_usage_context(image: NativeImage, row: dict[str, Any], *, lab
                 raise ValueError(f"{label}.native:usage-method-arguments={field}")
     else:
         raise ValueError(f"{label}.contract:unsupported-usage-kind={row['tag']}")
+
+
+def validate_source_list_formatter_registration(image: NativeImage, flow: dict[str, Any], *, label: str) -> None:
+    """Check a static ListFormatter allocation/registration against its source type.
+
+    This validates the checked non-null allocation path, not a later stateful
+    provider return. The caller separately authenticates the typed source usage.
+    """
+    allocation, constructor, registration = (flow[k] for k in ('allocation', 'constructor', 'registration'))
+    for usage in (allocation, constructor, registration):
+        validate_typed_usage_context(image, usage, label=label)
+    source = flow['sourceContext']
+    if (allocation['tag'] != 1 or constructor['tag'] != 6 or registration['tag'] != 6
+            or constructor['typeName'] != 'MemoryPack.Formatters.ListFormatter`1'
+            or constructor['methodName'] != '.ctor'
+            or constructor['classArguments'] != [flow['elementType']]
+            or registration['typeName'] != 'MemoryPack.MemoryPackFormatterProvider'
+            or registration['methodName'] != 'Register'
+            or registration['methodSpec'][2] != source['methodSpec'][2]):
+        raise ValueError(f'{label}.native:list-registration-identity')
+    pointer = _type_pointer(image, allocation['typeIndex'], label)
+    raw = image.pe.bytes_at_va(pointer, 16)
+    if raw[10] != 0x15:
+        raise ValueError(f'{label}.native:list-formatter-type-kind')
+    definition, instance_pointer = struct.unpack('<QQ', image.pe.bytes_at_va(struct.unpack_from('<Q', raw)[0], 16))
+    instance = image.instantiations.resolve_pointer(instance_pointer)
+    source_instance = image.instantiations.resolve(source['methodSpec'][2])
+    if (runtime_type_name(image.pe, image.metadata, definition) != 'MemoryPack.Formatters.ListFormatter`1'
+            or len(instance.arguments) != 1 or instance.index != constructor['methodSpec'][1]
+            or len(source_instance.arguments) != 1):
+        raise ValueError(f'{label}.native:list-formatter-instantiation')
+    carrier = source_instance.arguments[0].type_pointer_va
+    carrier_raw = image.pe.bytes_at_va(carrier, 16)
+    if carrier_raw[10] != 0x15:
+        raise ValueError(f'{label}.native:source-list-kind')
+    _, element_pointer = struct.unpack('<QQ', image.pe.bytes_at_va(struct.unpack_from('<Q', carrier_raw)[0], 16))
+    elements = image.instantiations.resolve_pointer(element_pointer).arguments
+    if (len(elements) != 1 or elements[0].type_pointer_va != instance.arguments[0].type_pointer_va
+            or registration['methodArguments'] != [runtime_type_name(image.pe, image.metadata, carrier)]):
+        raise ValueError(f'{label}.native:list-source-element-pointer')
+    window = flow['window']; image.check_windows([window], label=label)
+    rows = image.mapper.decode_x64_subset(image.pe.bytes_at_va(image.pe.image_base + window['startRva'],
+            window['endRva'] - window['startRva']), image.pe.image_base + window['startRva'],
+            stop_offset=window['endRva'] - window['startRva'])
+    if len(rows) != 13:
+        raise ValueError(f'{label}.native:list-register-program-length')
+    for at, text in {2:'mov rbx, rax', 3:'test rax, rax', 6:'mov rcx, rax',
+                     9:'mov rcx, rbx', 10:'add rsp, 0x20', 11:'pop rbx'}.items():
+        if rows[at]['text'] != text:
+            raise ValueError(f'{label}.native:list-register-object-flow={at}')
+    if (int(rows[0]['va'], 16) - image.pe.image_base != allocation['instructionRva']
+            or int(rows[5]['va'], 16) - image.pe.image_base != constructor['instructionRva']
+            or int(rows[8]['va'], 16) - image.pe.image_base != registration['instructionRva']
+            or not rows[4]['text'].startswith('je ')):
+        raise ValueError(f'{label}.native:list-register-usage-flow')
+    for at, key, opcode in ((1,'allocation',0xe8),(7,'constructor',0xe8),(12,'registration',0xe9)):
+        raw = bytes.fromhex(rows[at]['bytes']); rva = int(rows[at]['va'], 16) - image.pe.image_base
+        if len(raw) != 5 or raw[0] != opcode or rva + 5 + struct.unpack_from('<i', raw, 1)[0] != flow['actualCalls'][key]:
+            raise ValueError(f'{label}.native:list-register-call={key}')

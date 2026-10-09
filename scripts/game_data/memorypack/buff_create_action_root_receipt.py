@@ -9,8 +9,11 @@ independently replays the receipt (see below).
 It accepts only a sole ``CreateBuffAction`` in ``abilityEventAction``, an
 empty ``buffEventAction``, and the already supported other root children,
 and composes the CreateBuff input, ``BlackboardDouble``, ``TargetSettings``,
-``DirectionSettings``, ``SelectorData``, selected null or zero-member finder,
-and ``BuffIconDurationSourceSetting`` child receipts. It reads the original
+recursive ``DirectionSettings`` and ``SelectorData`` children,
+and ``BuffIconDurationSourceSetting`` child receipts. The complete shared
+action proof supplies these children to both root paths; this adapter keeps
+its independent sole-action, input-cardinality and root-field restrictions.
+It reads the original
 logical bytes through all thirty root members, checks the stored ``id``
 against the source stem and reaches physical EOF. ``buff_corpus`` integrates
 this receipt per accepted row, and ``scripts.game_data.jsondata_corpus``
@@ -27,14 +30,11 @@ from pathlib import PurePosixPath
 from typing import Any
 
 from scripts.game_data.memorypack import (
-    buff_adding_cooldown, buff_blackboard_double_child_receipt as blackboard,
+    buff_adding_cooldown,
     buff_create_buff_action_receipt as create,
-    buff_create_icon_duration_child_receipt as icon_duration,
-    buff_create_input_child_receipt as create_input,
-    buff_datapair_native, buff_direction_settings_child_receipt as direction,
-    buff_dispel_config, buff_icon_config, buff_selector_data_child_receipt as selector,
-    buff_selector_finder_character_team as character_team,
-    buff_stacking_compact_native, buff_target_settings_child_receipt as target,
+    buff_datapair_native,
+    buff_dispel_config, buff_icon_config,
+    buff_stacking_compact_native,
     buff_timeline_empty_native,
 )
 from scripts.game_data.memorypack.buff import (
@@ -53,11 +53,28 @@ SCHEMA = "endfield.buff-root-single-create-action-receipt.v1"
 LABEL = "buffRootSingleCreateAction"
 
 
-def validate_current_native_contract() -> dict[str, Any]:
-    """Validate every reader used by this narrow root branch once per sweep."""
+def validate_current_native_contract(*, recursive_validation: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Use the shared complete action proof, retaining this root's own gates.
+
+    Corpus orchestration supplies its already validated recursive context.
+    Standalone callers build that same context once, so a new nested owner
+    cannot be silently omitted by an older, separately maintained child list.
+    """
     root = validate_root_native()
     if root.get("status") != "validated":
         raise ValueError(f"{LABEL}.native:root-{root.get('status')}")
+    recursive = (buff_recursive_actions.validate_current_native_contract()
+                 if recursive_validation is None else recursive_validation)
+    if (recursive.get("status") != "validated"
+            or recursive.get("nativeInputs") != root["nativeInputs"]):
+        raise ValueError(f"{LABEL}.native:recursive-actions-status-or-build")
+    action_children = recursive.get("children", {})
+    required = ("create", "iconDuration", "createInput", "blackboard", "target",
+                "direction", "selector", "characterTeamFinder", "directionTargets",
+                "selectorGeometry", "selectorPostprocessors")
+    for name in required:
+        if action_children.get(name, {}).get("status") != "validated":
+            raise ValueError(f"{LABEL}.native:recursive-actions-child={name}")
     children = {
         "addingCooldown": buff_adding_cooldown.validate_current_native_contract(),
         "blackboardDataPairs": buff_datapair_native.validate_current_native_contract(),
@@ -65,21 +82,8 @@ def validate_current_native_contract() -> dict[str, Any]:
         "iconConfig": buff_icon_config.validate_current_native_contract(),
         "stackingSettings": buff_stacking_compact_native.validate_current_native_contract(),
         "timelineActions": buff_timeline_empty_native.validate_current_native_contract(),
-        "create": create.validate_current_native_contract(),
-        "iconDuration": icon_duration.validate_current_native_contract(),
-        "createInput": create_input.validate_current_native_contract(),
-        "blackboard": blackboard.validate_current_native_contract(),
-        "target": target.validate_current_native_contract(),
     }
-    children["direction"] = direction.validate_current_native_contract(
-        target_native=children["target"]
-    )
-    children["selector"] = selector.validate_current_native_contract(
-        target_native=children["target"]
-    )
-    children["characterTeamFinder"] = character_team.validate_current_native_contract(
-        selector_native=children["selector"]
-    )
+    children.update(action_children)
     for name, child in children.items():
         if child.get("status") != "validated":
             raise ValueError(f"{LABEL}.native:{name}-{child.get('status')}")

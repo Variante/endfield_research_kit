@@ -11,7 +11,10 @@ The direct tier names stored fields. Conditional composition names positive
 DamageUnit lists, the selected calculation wrappers, shared BlackboardDouble
 and EffectActionCfg/vector children, and independently proved TargetSettings
 children at their original byte spans. Null lists, null elements and empty
-lists remain distinct. Positive cost, processor and tag collections, other
+lists remain distinct. Positive tags require a separate List<GameplayTag>
+source/count proof and independently named wrapped elements. Positive processor
+lists compose through their own typed collection and independent leaf receipts.
+Positive cost collections, other
 calculation tags, positive terrain-effect arrays and unsupported target
 children refuse the complete action. The shared child API composes the same
 calculation and effect values for independently typed parent fields. Strings,
@@ -37,6 +40,8 @@ from scripts.game_data.memorypack import named_native_records as records_native
 from scripts.game_data.memorypack import buff_adding_cooldown as scalar
 from scripts.game_data.memorypack import buff_effect_config_child_receipt as effect_config
 from scripts.game_data.memorypack import buff_effect_vector_child_receipt as vectors
+from scripts.game_data.memorypack import skill_damage_unit_gameplay_tag_list as tag_list
+from scripts.game_data.memorypack import buff_damage_processor_collection as processor_list
 
 LABEL = "buffDamageAction"
 TAG = 154
@@ -45,7 +50,7 @@ CONTRACT_PATH = CONTRACTS_DIR / "buff_damage_action_native.json"
 
 def _contract() -> dict[str, Any]:
     value, _ = read_reviewed_contract(
-        CONTRACT_PATH, schema="endfield.buff-damage-action-native-contract.v1",
+        CONTRACT_PATH, schema="endfield.buff-damage-action-native-contract.v3",
         status="exact-current-build", label=LABEL,
     )
     required = {"action", "unit", "environment", "sound", "calculation0",
@@ -56,6 +61,31 @@ def _contract() -> dict[str, Any]:
             or any(not record.get("members") or len({m["fieldName"] for m in record["members"]})
                    != len(record["members"]) for record in value["records"].values())):
         raise ValueError(f"{LABEL}.contract:shape")
+    binding = value.get('damageTagsList')
+    if binding != {'ownerRecord':'unit','sourceMemberIndex':9,'fieldName':'damageTags',
+            'declaredType':'System.Collections.Generic.List`1<Beyond.Gameplay.Core.GameplayTag>'}:
+        raise ValueError(f'{LABEL}.contract:tag-list-binding')
+    list_contract, _ = tag_list._contract_and_sources()
+    owner = list_contract['owner']; member = value['records']['unit']['members'][binding['sourceMemberIndex']]
+    expected = value['nativeInputs']; list_pins = list_contract['nativeInputs']
+    if (member['fieldName'] != binding['fieldName'] or member['declaredType'] != binding['declaredType']
+            or member['kind'] != 'empty-list'
+            or member.get('sourceContextInstructionRva') != owner['listCallsiteRva']
+            or value['records']['unit']['runtimeTypeName'] != owner['typeName']
+            or owner['sourceMemberIndex'] != binding['sourceMemberIndex']
+            or value['dependencies'].get('damageTagsList') != tag_list.CONTRACT_PATH.name
+            or value['dependencies'].get('namedTagElements') != 'buff_aura_heal_actions_native.json'
+            or list_pins != {'gameassemblySha256':expected['GameAssembly.dll'],
+                'globalMetadataSha256':expected['global-metadata.dat'],'unityplayerSha256':expected['UnityPlayer.dll']}):
+        raise ValueError(f'{LABEL}.contract:tag-list-owner-or-build')
+    processor_binding=value.get('damageProcessorsList')
+    collection=processor_list._contract()
+    owner=collection['owner']
+    if (processor_binding!={'ownerRecord':'unit','sourceMemberIndex':owner['sourceMemberIndex'],
+            'fieldName':owner['fieldName'],'declaredType':owner['declaredType']}
+        or value['dependencies'].get('damageProcessorsList')!=processor_list.CONTRACT_PATH.name
+        or collection['nativeInputs']!=expected):
+        raise ValueError(f'{LABEL}.contract:processor-list-owner-or-build')
     return value
 
 
@@ -100,8 +130,29 @@ def validate_current_native_contract(*, vector_native: dict[str, Any],
             or list(route.member_order) != [m["fieldName"] for m in action["members"]]
             or list(route.member_declared_types) != [m["declaredType"] for m in action["members"]]):
         _fail("dispatcher-members", action["wrapperTypeName"], None if route is None else route.row())
+    list_native = tag_list.validate_current_native_contract()
+    if not _tag_list_native_matches(list_native, expected):
+        _fail('damage-tags-list-native', 'validated selected list source/count proof', list_native,
+            record='unit', field='damageTags')
+    processor_native=processor_list.validate_current_native_contract()
+    if processor_native.get('status')!='validated' or processor_native.get('nativeInputs')!=expected:
+        _fail('damage-processors-list-native','validated owned collection and independent leaves',
+            processor_native,record='unit',field='damageProcessors')
+    after = check_installed_native_inputs(expected['GameAssembly.dll'], expected['global-metadata.dat'],
+        gameassembly=gate.gameassembly, metadata=gate.metadata)
+    if after.status != 'validated' or hashlib.sha256(unityplayer.read_bytes()).hexdigest().upper() != expected['UnityPlayer.dll']:
+        _fail('native-inputs-after', expected, after.detail)
     return {"status": "validated", "nativeInputs": expected, "unionTag": TAG,
-            "recordMembers": proved, "evidenceBoundary": contract["evidenceBoundary"]}
+            "recordMembers": proved, "damageTagsListNative": list_native,
+            "damageProcessorsListNative":processor_native,
+            "evidenceBoundary": contract["evidenceBoundary"]}
+
+
+def _tag_list_native_matches(packet: dict[str, Any], expected: dict[str, Any]) -> bool:
+    return (packet.get('status') == 'validated'
+        and packet.get('nativeInputs') == {'gameassemblySha256':expected['GameAssembly.dll'],
+            'globalMetadataSha256':expected['global-metadata.dat'],'unityplayerSha256':expected['UnityPlayer.dll']}
+        and packet.get('sourceWindowValidation') == list(tag_list.SOURCE_NAMES))
 
 
 def _decode_value(data: bytes, *, source: str, digest: str, start: int, end: int,
@@ -114,6 +165,7 @@ def _decode_value(data: bytes, *, source: str, digest: str, start: int, end: int
     if (native_validation.get("status") != "validated" or native.get("status") != "validated"
             or native.get("nativeInputs") != contract["nativeInputs"] or native.get("unionTag") != TAG
             or native.get("recordMembers") != wanted or not source or not isinstance(data, bytes)
+            or not _tag_list_native_matches(native.get('damageTagsListNative', {}), contract['nativeInputs'])
             or not isinstance(digest, str) or hashlib.sha256(data).hexdigest().upper() != digest.upper()
             or type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data)):
         raise ValueError(f"{LABEL}.decode:native-source-or-span")
@@ -156,6 +208,36 @@ def _decode_value(data: bytes, *, source: str, digest: str, start: int, end: int
             elif kind == "byte-payload":
                 reader.byte_payload(); value["rawHex"] = data[begin:reader.pos].hex().upper()
             elif kind == "empty-list":
+                if key=='unit' and member['fieldName']==contract['damageProcessorsList']['fieldName']:
+                    count=reader.count(1,reserve=42,nullable=True)
+                    for _ in range(max(0,count)):
+                        reader.damage_processor_profile()
+                    if count>0:
+                        value['child']=processor_list.decode_collection(data,source=source,digest=digest,
+                            start=begin,end=reader.pos,native_validation=native.get('damageProcessorsListNative',{}))
+                    else:
+                        value['child']={'start':begin,'end':reader.pos,'count':count,'elements':[],
+                            'recursiveStoredSchemaExact':True,'runtimeMeaningExact':False}
+                    value['count']=count
+                    fields.append({**member,**value,'start':begin,'end':reader.pos})
+                    continue
+                if key == 'unit' and member['fieldName'] == contract['damageTagsList']['fieldName']:
+                    reader.damage_tag_collection()
+                    count = struct.unpack_from('<i', data, begin)[0]
+                    if count > 0:
+                        # Aura's native validator depends on Damage. Consume
+                        # its independently proved named element packet only
+                        # after the complete context is assembled, avoiding a
+                        # native dependency cycle.
+                        from scripts.game_data.memorypack import buff_aura_heal_actions as named_tags
+                        value['child'] = named_tags.decode_tag_elements(data, source=source, digest=digest,
+                            start=begin, end=reader.pos, native_validation=context.get('auraHeal', {}))
+                    else:
+                        value['child'] = {'start':begin, 'end':reader.pos, 'count':count, 'elements':[],
+                            'recursiveStoredSchemaExact':True, 'runtimeMeaningExact':False}
+                    value['count'] = count
+                    fields.append({**member, **value, 'start':begin, 'end':reader.pos})
+                    continue
                 count = reader.count(1, nullable=True)
                 if count > 0:
                     raise ValueError(f"{LABEL}.decode:positive-{member['fieldName']}-unproved at={begin}")

@@ -1,0 +1,45 @@
+{
+  "schema": "endfield.buff-action-array-callback-binding-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "declared-adapter-slot-abi-and-static-array-transfer-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependencies": {
+    "array": "buff_sequence_array_source_native.json",
+    "header": "buff_action_union_header_native.json",
+    "reference": "buff_timeline_reference_native.json",
+    "actionReference": "buff_action_reference_native.json"
+  },
+  "callbackSpecification": {
+    "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+    "typeDefinition": 13633,
+    "flags": 1048833,
+    "deserializeMethod": [
+      102199,
+      "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+      "Deserialize"
+    ],
+    "baseFormatterType": "MemoryPack.MemoryPackFormatter`1",
+    "slot": 5,
+    "returnTypeFlags": 128,
+    "baseMethodFlags": 1478,
+    "baseSlotWord": 1
+  },
+  "arrayTransferJoin": {
+    "sameReaderRegister": "rbx",
+    "formatterRegister": "r14",
+    "childOutputRegister": "r8",
+    "childOutputAddress": "array base + 32 + sign-extended index * 8",
+    "runtimeReferenceStride": 8
+  },
+  "evidenceBoundary": {
+    "exact": "Selected sealed reference adapter metadata, its declared Deserialize slot and void/Reader/original-output ABI, reciprocal generic parameter ownership, base-parent substitution, exact eager allocation and constructor argument order, and independently authenticated current source/control programs.",
+    "direct": "The selected positive array program forwards the same Reader and indexed original reference output through the provider receiver's virtual slot; the nominal closed signature is joined to that transfer without substituting a live receiver.",
+    "structuralOnly": "The abstract base slot encoding is retained as a selected metadata word and is not interpreted as a native callback entry.",
+    "conditional": "Previously owned abstract-adapter and union-false paths retain their stated initialization, ordinary return, buffer and runtime class/context selection conditions.",
+    "unresolved": "Actual provider/cache candidate, inflated receiver vtable and MethodInfo/shared pointer selection, callback cursor equality, positive list/root admission, refill/error behavior, and observed execution/effects. Lack of a unique closed compiled registration does not prove lack of runtime inflation."
+  }
+}

@@ -1,0 +1,636 @@
+{
+  "schema": "endfield.buff-cost-action-native-contract.v2",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "actionDispatch": {
+    "254": "obtainCost"
+  },
+  "reviewedDependencies": [
+    "buff_fe_native.json",
+    "buff_b4_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "records": {
+    "obtainCost": {
+      "sourceContract": "buff_fe_native.json",
+      "wrapperTypeDefinition": 16277,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ObtainCostAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9621,
+      "runtimeTypeName": "Beyond.Gameplay.Core.ObtainCostAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member20",
+      "readerMethod": [
+        121534,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_ObtainCostAction_DataForMemoryPack",
+        "Deserialize",
+        64262160
+      ],
+      "readerWindowStart": 64262160,
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 64262304,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262327,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84660300004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64262345,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262367,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F843D0300004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64262378,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262400,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F841C0300004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64262411,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262433,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84FB0200004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "atbGainMethod",
+          "declaredType": "Beyond.Gameplay.GainAtbMethod",
+          "setterMethodIndex": 121516,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64262451,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262473,
+            "targetRva": 64263632,
+            "methodIndex": 121516
+          },
+          "sourceToDestinationHex": "4885F60F84D30200004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "atbGainTag",
+          "declaredType": "Beyond.Gameplay.Core.GameplayTag",
+          "setterMethodIndex": 121517,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64262491,
+            "targetRva": 63324096
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262513,
+            "targetRva": 64263680,
+            "methodIndex": 121517
+          },
+          "sourceToDestinationHex": "4885F60F84AB0200004533C08BD0488BCE",
+          "sourceContextInstructionRva": 64262478,
+          "unmanagedSource": {
+            "width": 4,
+            "windowStartRva": 63324096,
+            "bufferPointerOffset": 80,
+            "remainingBytesOffset": 48,
+            "consumedOffsets": [
+              64,
+              68
+            ],
+            "instructions": [
+              [
+                63324124,
+                "488B5F50"
+              ],
+              [
+                63324128,
+                "8B1B"
+              ],
+              [
+                63324130,
+                "8B7730"
+              ],
+              [
+                63324133,
+                "83EE04"
+              ],
+              [
+                63324142,
+                "4883475004"
+              ],
+              [
+                63324147,
+                "83474004"
+              ],
+              [
+                63324151,
+                "83474404"
+              ],
+              [
+                63324155,
+                "897730"
+              ],
+              [
+                63324163,
+                "8BC3"
+              ]
+            ],
+            "boundary": "Selected normal path reads one DWORD, advances the source pointer and three counters by four, and returns its bits. Short-segment and provider paths remain separate.",
+            "registeredReader": {
+              "window": {
+                "startRva": 111087356,
+                "endRva": 111087420,
+                "sha256": "A3CDC201E9B5A54AC21B10668B2F7DB3AC8ABE982F91E2E39EEB5C07D087CA43",
+                "boundary": "Selected registered ReadUnmanaged<GameplayTag> normal DWORD read and Advance(4); short-segment behavior remains separate."
+              },
+              "instructions": [
+                [
+                  111087388,
+                  "488B5F50"
+                ],
+                [
+                  111087392,
+                  "BA04000000"
+                ],
+                [
+                  111087397,
+                  "488BCF"
+                ],
+                [
+                  111087400,
+                  "8B1B"
+                ],
+                [
+                  111087407,
+                  "8BC3"
+                ]
+              ],
+              "advanceCall": {
+                "rva": 111087402,
+                "targetRva": 46827968
+              },
+              "advanceWindow": {
+                "startRva": 46827968,
+                "endRva": 46828033,
+                "sha256": "1AC9D1CA96F68251C17CB7953A869C40B3C0CDD002EA1BE824D60A0757AF1BFD",
+                "boundary": "Selected Advance updates source pointer, remaining and cursor counters."
+              },
+              "advanceInstructions": [
+                [
+                  46827982,
+                  "4863FA"
+                ],
+                [
+                  46827985,
+                  "488BD9"
+                ],
+                [
+                  46827993,
+                  "8B7130"
+                ],
+                [
+                  46827996,
+                  "2BF7"
+                ],
+                [
+                  46828004,
+                  "48017B50"
+                ],
+                [
+                  46828008,
+                  "017B40"
+                ],
+                [
+                  46828011,
+                  "017B44"
+                ],
+                [
+                  46828014,
+                  "897330"
+                ]
+              ],
+              "boundary": "The registered body and optimized parent helper are distinct physical readers. Both selected normal paths read and return four stored bytes and advance the same reader slots by four; short-segment handling and provider choice are not equated."
+            }
+          }
+        },
+        {
+          "fieldName": "atbOnlyMainChar",
+          "declaredType": "bool",
+          "setterMethodIndex": 121518,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 64262524,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262547,
+            "targetRva": 64263728,
+            "methodIndex": 121518
+          },
+          "sourceToDestinationHex": "4885F60F848A0200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "atbSourceType",
+          "declaredType": "Beyond.Gameplay.GainAtbType",
+          "setterMethodIndex": 121519,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64262565,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262587,
+            "targetRva": 64263776,
+            "methodIndex": 121519
+          },
+          "sourceToDestinationHex": "4885F60F84610200004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "coefficient",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 121520,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 64262605,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262628,
+            "targetRva": 64263824,
+            "methodIndex": 121520
+          },
+          "sourceToDestinationHex": "4885F60F84390200004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64262592
+        },
+        {
+          "fieldName": "costType",
+          "declaredType": "Beyond.GEnums.CostType",
+          "setterMethodIndex": 121521,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64262646,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262668,
+            "targetRva": 64263872,
+            "methodIndex": 121521
+          },
+          "sourceToDestinationHex": "4885F60F84100200004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "costValue",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 121522,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 64262686,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262709,
+            "targetRva": 64263920,
+            "methodIndex": 121522
+          },
+          "sourceToDestinationHex": "4885F60F84E80100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64262673
+        },
+        {
+          "fieldName": "ignoreUspGainScalar",
+          "declaredType": "bool",
+          "setterMethodIndex": 121523,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 64262720,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262743,
+            "targetRva": 64263968,
+            "methodIndex": 121523
+          },
+          "sourceToDestinationHex": "4885F60F84C60100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "isPercentValue",
+          "declaredType": "bool",
+          "setterMethodIndex": 121524,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 64262754,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262777,
+            "targetRva": 64264016,
+            "methodIndex": 121524
+          },
+          "sourceToDestinationHex": "4885F60F84A40100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "playObtainAtbAudio",
+          "declaredType": "bool",
+          "setterMethodIndex": 121525,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 64262788,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262811,
+            "targetRva": 64264064,
+            "methodIndex": 121525
+          },
+          "sourceToDestinationHex": "4885F60F84820100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "playObtainAtbEffect",
+          "declaredType": "bool",
+          "setterMethodIndex": 121526,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 64262822,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262845,
+            "targetRva": 64264112,
+            "methodIndex": 121526
+          },
+          "sourceToDestinationHex": "4885F60F84600100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "source",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 121527,
+          "kind": "target-profile",
+          "sourceCall": {
+            "rva": 64262863,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262886,
+            "targetRva": 64264160,
+            "methodIndex": 121527
+          },
+          "sourceToDestinationHex": "4885F60F84370100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64262850
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 121528,
+          "kind": "target-profile",
+          "sourceCall": {
+            "rva": 64262904,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262927,
+            "targetRva": 64264208,
+            "methodIndex": 121528
+          },
+          "sourceToDestinationHex": "4885F60F840E0100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64262891
+        },
+        {
+          "fieldName": "useAtbGainTag",
+          "declaredType": "bool",
+          "setterMethodIndex": 121529,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 64262938,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262961,
+            "targetRva": 64264256,
+            "methodIndex": 121529
+          },
+          "sourceToDestinationHex": "4885F60F84EC0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useUspRecoverTag",
+          "declaredType": "bool",
+          "setterMethodIndex": 121530,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 64262972,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64262995,
+            "targetRva": 64264304,
+            "methodIndex": 121530
+          },
+          "sourceToDestinationHex": "4885F60F84CA0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "uspRecoverTag",
+          "declaredType": "Beyond.Gameplay.Core.GameplayTag",
+          "setterMethodIndex": 121531,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 64263013,
+            "targetRva": 63324096
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 64263035,
+            "targetRva": 64264352,
+            "methodIndex": 121531
+          },
+          "sourceToDestinationHex": "4885DB0F84A10000004533C08BD0488BCB",
+          "sourceContextInstructionRva": 64263000,
+          "unmanagedSource": {
+            "width": 4,
+            "windowStartRva": 63324096,
+            "bufferPointerOffset": 80,
+            "remainingBytesOffset": 48,
+            "consumedOffsets": [
+              64,
+              68
+            ],
+            "instructions": [
+              [
+                63324124,
+                "488B5F50"
+              ],
+              [
+                63324128,
+                "8B1B"
+              ],
+              [
+                63324130,
+                "8B7730"
+              ],
+              [
+                63324133,
+                "83EE04"
+              ],
+              [
+                63324142,
+                "4883475004"
+              ],
+              [
+                63324147,
+                "83474004"
+              ],
+              [
+                63324151,
+                "83474404"
+              ],
+              [
+                63324155,
+                "897730"
+              ],
+              [
+                63324163,
+                "8BC3"
+              ]
+            ],
+            "boundary": "Selected normal path reads one DWORD, advances the source pointer and three counters by four, and returns its bits. Short-segment and provider paths remain separate.",
+            "registeredReader": {
+              "window": {
+                "startRva": 111087356,
+                "endRva": 111087420,
+                "sha256": "A3CDC201E9B5A54AC21B10668B2F7DB3AC8ABE982F91E2E39EEB5C07D087CA43",
+                "boundary": "Selected registered ReadUnmanaged<GameplayTag> normal DWORD read and Advance(4); short-segment behavior remains separate."
+              },
+              "instructions": [
+                [
+                  111087388,
+                  "488B5F50"
+                ],
+                [
+                  111087392,
+                  "BA04000000"
+                ],
+                [
+                  111087397,
+                  "488BCF"
+                ],
+                [
+                  111087400,
+                  "8B1B"
+                ],
+                [
+                  111087407,
+                  "8BC3"
+                ]
+              ],
+              "advanceCall": {
+                "rva": 111087402,
+                "targetRva": 46827968
+              },
+              "advanceWindow": {
+                "startRva": 46827968,
+                "endRva": 46828033,
+                "sha256": "1AC9D1CA96F68251C17CB7953A869C40B3C0CDD002EA1BE824D60A0757AF1BFD",
+                "boundary": "Selected Advance updates source pointer, remaining and cursor counters."
+              },
+              "advanceInstructions": [
+                [
+                  46827982,
+                  "4863FA"
+                ],
+                [
+                  46827985,
+                  "488BD9"
+                ],
+                [
+                  46827993,
+                  "8B7130"
+                ],
+                [
+                  46827996,
+                  "2BF7"
+                ],
+                [
+                  46828004,
+                  "48017B50"
+                ],
+                [
+                  46828008,
+                  "017B40"
+                ],
+                [
+                  46828011,
+                  "017B44"
+                ],
+                [
+                  46828014,
+                  "897330"
+                ]
+              ],
+              "boundary": "The registered body and optimized parent helper are distinct physical readers. Both selected normal paths read and return four stored bytes and advance the same reader slots by four; short-segment handling and provider choice are not equated."
+            }
+          }
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native input pair, complete formatter windows, generated members, ordered result-to-setter transfers and independently closed child types.",
+    "direct": "Original stored field names, nullable child spans and raw value bits.",
+    "unresolved": "Live target/provider selection, evaluated values, condition results, resource gain/cost application and whole Buff root admission."
+  }
+}

@@ -12,7 +12,11 @@
     "sourceReadKind": "list",
     "listCallsiteRva": 58585432,
     "listMethodSpecIndex": 610730,
-    "listMethodSpec": [428462, -1, 8486],
+    "listMethodSpec": [
+      428462,
+      -1,
+      8486
+    ],
     "listTypeName": "System.Collections.Generic.List`1",
     "elementTypeName": "Beyond.Gameplay.Core.GameplayTag",
     "elementInstantiationIndex": 816,
@@ -22,19 +26,30 @@
     "listCount": "signed-i32-null-minus-one",
     "nullElement": "FF",
     "nonNullElementMemberCount": 1,
-    "nonNullElementReadKinds": ["scalar32"],
+    "nonNullElementReadKinds": [
+      "scalar32"
+    ],
     "minimumFollowingDamageUnitBytes": 38
   },
   "sourceContracts": [
-    {"path": "buff_9a_native.json", "role": "DamageUnit member-nine List<GameplayTag> callsite and generated reader"},
-    {"path": "buff_c5_native.json", "role": "same List<GameplayTag> MethodSpec and GameplayTag element reader"},
-    {"path": "buff_b4_native.json", "role": "conditional shared nullable signed list count and element loop"}
+    {
+      "path": "buff_9a_native.json",
+      "role": "DamageUnit member-nine List<GameplayTag> callsite and generated reader"
+    },
+    {
+      "path": "buff_c5_native.json",
+      "role": "same List<GameplayTag> MethodSpec and GameplayTag element reader"
+    },
+    {
+      "path": "buff_b4_native.json",
+      "role": "conditional shared nullable signed list count and element loop"
+    }
   ],
   "evidenceBoundary": {
     "exact": "Selected DamageUnit source member nine calls the pinned List<GameplayTag> MethodSpec and generic instantiation. The generated GameplayTag reader consumes either a null element or a one-member wrapper followed by a four-byte scalar.",
     "direct": "The source-bound current SkillData examples reach positive lists and rejoin their following DamageUnit members and complete TimelineActionData readers.",
     "conditional": "The signed nullable list count and element loop reuse the reviewed shared list grammar; active inflated provider selection is not observed. Promotion requires the selected native inputs and exact downstream cursor through each reached action.",
     "structuralOnly": "GameplayTag scalar bits are a stored value; this contract does not assign a tag name or gameplay effect.",
-    "unresolved": "Live list-provider selection, refill and allocation parity, positive EffectActionCfg arrays, and gameplay execution remain open. BuffData keeps its separate fail-closed reader policy."
+    "unresolved": "Live list-provider selection, refill and allocation parity, positive EffectActionCfg arrays, and gameplay execution remain open. BuffData admission additionally requires its named DamageUnit/action and independent named GameplayTag element proofs."
   }
 }

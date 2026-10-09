@@ -622,9 +622,28 @@ def _read_stream_rows(command: list[str]) -> tuple[list[dict], str]:
     return rows, process.stderr
 
 
+def _check_stream_cli_build(cli_path: Path, provenance: dict) -> None:
+    cli_key = os.path.normcase(str(cli_path.resolve()))
+    recorded = provenance['buildFingerprints']
+    authenticated_paths = {
+        os.path.normcase(str(Path(row['path']).resolve())) for row in recorded
+    }
+    if cli_key not in authenticated_paths:
+        actual = (vfs._fingerprint(cli_path) if cli_path.is_file()
+                  else {'path': cli_path.resolve().as_posix(), 'status': 'missing'})
+        expected = {'recordedBuildInputs': [
+            {key: row[key] for key in ('path', 'length', 'sha256')}
+            for row in recorded[:16]], 'totalBuildInputs': len(recorded)}
+        vfs._fail('stream-cli-not-in-outer-build-fingerprints',
+                  source=str(cli_path.resolve()), expected=expected, actual=actual)
+
+
 def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sha256,outputs=(),
                          selected_native_audit_path=buff_selected_roots.DEFAULT_NATIVE_AUDIT):
     expected=expected_input_set_sha256.upper()
+    outer,_,files,provenance=vfs._read_outer_and_ledger(outer_path,ledger_path,expected_input_set_sha256=expected)
+    _check_stream_cli_build(cli_path, provenance)
+    selected=select_rows(files,expected_input=expected)
     native_validation=validate_current_native_contract()
     residual_validation=validate_residual_native_contract()
     adding_cooldown_validation=validate_adding_cooldown_native_contract()
@@ -635,8 +654,10 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
     positive_damage_validation=buff_root_no_positive.validate_positive_damage_native_contract(
         root_validation=root_no_positive_validation,
     )
-    single_create_validation=buff_create_action_root_receipt.validate_current_native_contract()
     shared_event_validation=buff_event_maps.validate_current_native_contract()
+    single_create_validation=buff_create_action_root_receipt.validate_current_native_contract(
+        recursive_validation=shared_event_validation.get('recursiveActions', {}),
+    )
     selected_root_context=buff_selected_roots.prepare_native_context(
         audit_path=selected_native_audit_path, root_validation=root_no_positive_validation,
     )
@@ -670,8 +691,6 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             vfs._fail(f'buff-{name}-native-validation',source=source,expected='validated',actual=validation)
         if sorted(rows)!=expected_rows:
             vfs._fail(f'buff-{name}-row-set',source=source,expected=expected_rows,actual=sorted(rows))
-    outer,_,files,provenance=vfs._read_outer_and_ledger(outer_path,ledger_path,expected_input_set_sha256=expected)
-    selected=select_rows(files,expected_input=expected)
     def snapshot():
         adding_cooldown_sources = (
             ADDING_COOLDOWN_CONTRACT_PATH,
@@ -815,8 +834,6 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             'buffNamedSchema':vfs._fingerprint(Path(buff_named_schema.__file__)),
             'corpusGate':vfs._fingerprint(Path(__file__))}
     before=snapshot()
-    if os.path.normcase(str(cli_path.resolve())) not in {os.path.normcase(str(Path(r['path']).resolve())) for r in provenance['buildFingerprints']}:
-        vfs._fail('stream-cli-not-in-outer-build-fingerprints',source=str(cli_path))
     protected=[outer_path,ledger_path,Path(outer['primaryAssets']),Path(outer['fallbackAssets'])]
     protected.append(Path(buff_named_schema.__file__))
     protected.extend(Path(row['path']) for row in before['buffAddingCooldownSources']

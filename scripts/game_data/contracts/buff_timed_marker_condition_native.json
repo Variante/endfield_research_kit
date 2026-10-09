@@ -1,0 +1,195 @@
+{
+  "schema": "endfield.buff-timed-marker-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "actionDispatch": {
+    "129": "timedMarker"
+  },
+  "reviewedDependencies": [
+    "buff_81_native.json",
+    "buff_b4_native.json"
+  ],
+  "records": {
+    "timedMarker": {
+      "sourceContract": "buff_81_native.json",
+      "wrapperTypeDefinition": 16707,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTimedMarkerCondition_DataForMemoryPack",
+      "runtimeTypeDefinition": 13571,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.CheckTimedMarkerCondition+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member9",
+      "readerMethod": [
+        124759,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTimedMarkerCondition_DataForMemoryPack",
+        "Deserialize",
+        66867840
+      ],
+      "readerWindowStart": 66867840,
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66867984,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66868007,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F847D0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 66868025,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66868047,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84540100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 66868058,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66868080,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84330100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 66868091,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66868113,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84120100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "blackboardKey",
+          "declaredType": "string",
+          "setterMethodIndex": 124752,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 66868124,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66868147,
+            "targetRva": 66868400,
+            "methodIndex": 124752
+          },
+          "sourceToDestinationHex": "4885F60F84F10000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "checkTarget",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 124753,
+          "kind": "target-profile",
+          "sourceCall": {
+            "rva": 66868165,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66868188,
+            "targetRva": 66868448,
+            "methodIndex": 124753
+          },
+          "sourceToDestinationHex": "4885F60F84C80000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 66868152
+        },
+        {
+          "fieldName": "id",
+          "declaredType": "string",
+          "setterMethodIndex": 124754,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 66868199,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66868222,
+            "targetRva": 66868496,
+            "methodIndex": 124754
+          },
+          "sourceToDestinationHex": "4885F60F84A60000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "returnTrueIfNotExists",
+          "declaredType": "bool",
+          "setterMethodIndex": 124755,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66868233,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66868256,
+            "targetRva": 66868544,
+            "methodIndex": 124755
+          },
+          "sourceToDestinationHex": "4885F60F84840000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useBlackboardKey",
+          "declaredType": "bool",
+          "setterMethodIndex": 124756,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66868267,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66868286,
+            "targetRva": 66868592,
+            "methodIndex": 124756
+          },
+          "sourceToDestinationHex": "4885DB74664533C00FB6D0488BCB"
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native input pair, complete formatter windows, generated members, ordered result-to-setter transfers and independently closed child types.",
+    "direct": "Original stored field names, nullable child spans and raw value bits.",
+    "unresolved": "Live target/provider selection, evaluated values, condition results, resource gain/cost application and whole Buff root admission."
+  }
+}

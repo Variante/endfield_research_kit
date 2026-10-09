@@ -8,6 +8,7 @@ from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack import buff_find_settings_child_receipt as query_owner
 from scripts.game_data.memorypack import buff_selector_validator_tag_query as tag_owner
 from scripts.game_data.memorypack import buff_selector_validator_zero as zero_owner
+from scripts.game_data.memorypack import buff_selector_distance_validator as distance_owner
 
 
 def query_parent_binding(parent_native, child_native):
@@ -67,7 +68,7 @@ def decode_validator_list(data, *, source, digest, start, end, children):
         raise ValueError('buffSelectorSharedChildren.validators:zero-route-set-or-shape')
     reader=Reader(data,source,end);reader.pos=start;count=reader.count(1,nullable=True);values=[]
     for _ in range(max(0,count)):
-        begin=reader.pos;tag=reader.nested_union_tag(tuple(selected)+(tag_owner.TAG,),'validator')
+        begin=reader.pos;tag=reader.nested_union_tag(tuple(selected)+(tag_owner.TAG,distance_owner.TAG),'validator')
         if tag is None:
             values.append({'start':begin,'end':reader.pos,'status':'exact-null'});continue
         if reader.peek()==255:
@@ -75,11 +76,18 @@ def decode_validator_list(data, *, source, digest, start, end, children):
         elif tag in selected:
             if selected[tag]['serializedMemberCount']!=0:raise ValueError('buffSelectorSharedChildren.validators:zero-plan-drift')
             reader.header(0);status='named-zero-member-validator-exact-span';query=None
+        elif tag == distance_owner.TAG:
+            reader.header(3);reader.take(1,'clampToXZ');reader.take(4,'compareType');reader.scalar_payload()
+            status='named-distance-validator-exact-span';query=None
         else:
             reader.header(1);a=reader.pos;reader.query_profile()
             query=decode_query_value(data,source=source,digest=digest,start=a,end=reader.pos,native=children['findSettings'])
             status='named-query-member-exact-span'
-        values.append({'start':begin,'end':reader.pos,'tag':tag,'status':status,'query':query})
+        row={'start':begin,'end':reader.pos,'tag':tag,'status':status,'query':query}
+        if tag == distance_owner.TAG:
+            row['child']=distance_owner.decode_value(data,source=source,digest=digest,
+                start=begin,end=reader.pos,children=children)
+        values.append(row)
     if reader.pos!=end:raise ValueError('buffSelectorSharedChildren.validators:list-end')
     return {'start':start,'end':end,'count':count,'elements':values,'wholeStoredSchemaExact':True,
             'evidenceBoundary':'Named stored selected validator children; no runtime predicate evaluation.'}

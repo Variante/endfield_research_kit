@@ -1,0 +1,139 @@
+{
+  "schema": "endfield.buff-tick-interval-union-route-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "selected-indexed-tick-interval-new-child-and-packable-return-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sharedRouteContract": "buff_pick_target_union_route_native.json",
+  "sourceContract": "skill_timeline_tick_interval_native.json",
+  "fieldFlowsContract": "buff_tick_interval_sources_native.json",
+  "caseProgram": [
+    [
+      59828578,
+      "488B157F727109"
+    ],
+    [
+      59828585,
+      "488B0B"
+    ],
+    [
+      59828588,
+      "E8AF4E6FFC"
+    ],
+    [
+      59828593,
+      "488BCF"
+    ],
+    [
+      59828596,
+      "4885C0"
+    ],
+    [
+      59828599,
+      "0F85DCA85501"
+    ],
+    [
+      59828605,
+      "488B15DC1C7D09"
+    ],
+    [
+      59828612,
+      "E8371111FD"
+    ],
+    [
+      59828617,
+      "488903"
+    ],
+    [
+      59828620,
+      "488BD0"
+    ],
+    [
+      59828623,
+      "E94EF0FFFF"
+    ]
+  ],
+  "childThunk": {
+    "codeWindows": [
+      {
+        "startRva": 10615488,
+        "endRva": 10615500,
+        "sha256": "F7785E011BFFABD60B9AC330C7AC461B79E836904B78B3B448EA7DAABBFD4497",
+        "boundary": "Complete selected context-load/direct-jump thunk; physical leaf extent is not inferred"
+      }
+    ],
+    "program": [
+      [
+        10615488,
+        "488B15990B6C0C"
+      ],
+      [
+        10615495,
+        "E924FEDF02"
+      ]
+    ]
+  },
+  "castUsage": {
+    "instructionRva": 59828578,
+    "instructionHex": "488B157F727109",
+    "usageCellRva": 218258408,
+    "usageRawHex": "7345032000000000",
+    "tag": 1,
+    "typeIndex": 107193,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+    "typeRawHex": "93400000000000000000120000000000"
+  },
+  "childUsage": {
+    "instructionRva": 59828605,
+    "instructionHex": "488B15DC1C7D09",
+    "usageCellRva": 219022944,
+    "usageRawHex": "D7C112C000000000",
+    "tag": 6,
+    "methodSpecIndex": 614635,
+    "methodSpec": [
+      428462,
+      -1,
+      25129
+    ],
+    "typeName": "MemoryPack.MemoryPackReader",
+    "methodName": "ReadPackable",
+    "classArguments": [],
+    "methodArguments": [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack"
+    ]
+  },
+  "thunkUsage": {
+    "instructionRva": 10615488,
+    "instructionHex": "488B15990B6C0C",
+    "usageCellRva": 219022944,
+    "usageRawHex": "D7C112C000000000",
+    "tag": 6,
+    "methodSpecIndex": 614635,
+    "methodSpec": [
+      428462,
+      -1,
+      25129
+    ],
+    "typeName": "MemoryPack.MemoryPackReader",
+    "methodName": "ReadPackable",
+    "classArguments": [],
+    "methodArguments": [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack"
+    ]
+  },
+  "calls": {
+    "cast": 14368,
+    "child": 10615488,
+    "barrier": 239856
+  },
+  "evidenceBoundary": {
+    "exact": "Current indexed Tick branch, cast/closed ReadPackable usage identities, complete new-child output/normal-return route, and actual context thunk to the independently proved shared packable body. Shared prefix, null-cast, return, contexts and barrier declarations retain their existing owning contracts.",
+    "direct": "The initialized UInt16 selects the current Tick wrapper. Under null prior output the no-call cast returns zero, the same saved Reader enters the closed wrapper ReadPackable thunk, its full reference return is stored and passed to the actual shared barrier, and the frame returns normally.",
+    "conditional": "Warmed current union, canonical selected tag, null prior wrapper, compatible initialized closed contexts and default formatter/provider/cache selection, normal ABI-preserving noninterfering calls, valid stable disjoint Reader/output/frame and disabled barrier. Concrete Tick source/helper composition is independently proved.",
+    "structuralOnly": "This control contract supplies no stored payload extent. The selected twelve-byte thunk does not imply a full physical leaf extent.",
+    "unresolved": "Reuse/non-null cast branch, native recursive action callback cursor equality, runtime context/provider/barrier/refill/error selection or effects, global recursive/list/root admission and actual tick scheduling/damage execution."
+  }
+}

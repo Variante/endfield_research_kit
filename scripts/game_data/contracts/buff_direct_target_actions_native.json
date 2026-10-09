@@ -1,9 +1,10 @@
 {
-  "schema": "endfield.buff-direct-target-actions-native-contract.v1",
+  "schema": "endfield.buff-direct-target-actions-native-contract.v2",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
   },
   "catalogContract": "levelscript_union_tags.json",
   "routes": [
@@ -14,8 +15,12 @@
       "sourceReadOrder": "member5",
       "targetFieldName": "checkTarget",
       "targetFieldIndex": 4,
-      "sourceContextIndices": [0],
-      "contextMemberIndices": [4]
+      "sourceContextIndices": [
+        0
+      ],
+      "contextMemberIndices": [
+        4
+      ]
     },
     {
       "unionTag": 352,
@@ -64,11 +69,272 @@
       "contextMemberIndices": [
         4
       ]
+    },
+    {
+      "unionTag": 185,
+      "wrappedType": "Beyond.Gameplay.Core.ForceHideHeadBarAction+Data",
+      "sourceContract": "buff_b9_native.json",
+      "sourceReadOrder": "member6",
+      "targetFieldName": "target",
+      "targetFieldIndex": 5,
+      "sourceContextIndices": [
+        0,
+        1
+      ],
+      "contextMemberIndices": [
+        1,
+        5
+      ],
+      "namedRecord": "forceHideHeadBar"
+    },
+    {
+      "unionTag": 294,
+      "wrappedType": "Beyond.Gameplay.Core.RecoverFromPoiseBreak+Data",
+      "sourceContract": "buff_126_native.json",
+      "sourceReadOrder": "member5",
+      "targetFieldName": "target",
+      "targetFieldIndex": 4,
+      "sourceContextIndices": [
+        0,
+        1
+      ],
+      "contextMemberIndices": [
+        1,
+        4
+      ],
+      "namedRecord": "recoverFromPoiseBreak"
     }
   ],
   "evidenceBoundary": {
-    "exact": "Each reviewed source contract proves its own primitive/string/TargetSettings read order. The selected dispatcher, generated ordered member types, complete source windows and stated generic MethodSpec contexts independently join each parent target field to the shared TargetSettings child.",
-    "conditional": "String fields are retained as signed-length bytes; text decoding/provider parity is not promoted.",
-    "unresolved": "Live formatter choice, playback/visibility/owner-finish execution, evaluated target selection, and enclosing whole-root completeness until independent original-byte EOF replay."
+    "exact": "Each reviewed source contract proves its own primitive/string/TargetSettings read order. The selected dispatcher, generated ordered member types, complete source windows and stated generic MethodSpec contexts independently join each parent target field to the shared TargetSettings child. Added target-state records additionally authenticate each named source-result-to-destination transfer with the shared named-record checker.",
+    "conditional": "String fields are retained as signed-length bytes; text decoding/provider parity is not promoted. Newly named target-state records separately preserve null wrappers, null targets and original flag bytes; unsupported recursive target children refuse.",
+    "unresolved": "Live formatter choice, playback/visibility/owner-finish execution, evaluated target selection, and enclosing whole-root completeness until independent original-byte EOF replay. Head-bar finishing behavior and poise-break recovery remain unevaluated."
+  },
+  "namedRecords": {
+    "forceHideHeadBar": {
+      "sourceContract": "buff_b9_native.json",
+      "wrapperTypeDefinition": 16129,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ForceHideHeadBarAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9468,
+      "runtimeTypeName": "Beyond.Gameplay.Core.ForceHideHeadBarAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member6",
+      "readerMethod": [
+        120360,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_ForceHideHeadBarAction_DataForMemoryPack",
+        "Deserialize",
+        70113296
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70113463,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 70113440,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84170100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70113503,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 70113481,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84EE0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 70113468
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70113536,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 70113514,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84CD0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70113569,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 70113547,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84AC0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "finishByAction",
+          "declaredType": "bool",
+          "setterMethodIndex": 120356,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70113603,
+            "targetRva": 70113744,
+            "methodIndex": 120356
+          },
+          "sourceCall": {
+            "rva": 70113580,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F848B0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 120357,
+          "kind": "target",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70113640,
+            "targetRva": 70113792,
+            "methodIndex": 120357
+          },
+          "sourceCall": {
+            "rva": 70113621,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 70113608
+        }
+      ]
+    },
+    "recoverFromPoiseBreak": {
+      "sourceContract": "buff_126_native.json",
+      "wrapperTypeDefinition": 16377,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverFromPoiseBreak_DataForMemoryPack",
+      "runtimeTypeDefinition": 9748,
+      "runtimeTypeName": "Beyond.Gameplay.Core.RecoverFromPoiseBreak+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member5",
+      "readerMethod": [
+        122330,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverFromPoiseBreak_DataForMemoryPack",
+        "Deserialize",
+        70749232
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70749399,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 70749376,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84F50000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70749439,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 70749417,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84CC0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 70749404
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70749472,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 70749450,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84AB0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70749505,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 70749483,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F848A0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 122327,
+          "kind": "target",
+          "assignment": {
+            "kind": "setter",
+            "rva": 70749542,
+            "targetRva": 70749648,
+            "methodIndex": 122327
+          },
+          "sourceCall": {
+            "rva": 70749523,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 70749510
+        }
+      ]
+    }
   }
 }

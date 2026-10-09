@@ -14,14 +14,28 @@ by type and method, and evaluates them against whichever build is installed:
 ``matches``           some instruction (fragments included) fully matches a regex
 ``notCallsPrefix``    no direct or one-helper-deep callee name starts with the prefix
 ``returnsConstant``   some path returns the immediate value in ``eax``
+``returnsAfterFalseCall`` a false Boolean call falls through a checked JNE
+                      to a constant AL return and a bounded plain epilogue
 ``returnsEnumMember`` the immediate return matches a named member in the
                       selected build's native enum
+``returnsEnumAfterFalseCall`` a selected Int32-backed enum literal reaches RET
+                      through a plain epilogue after a checked Boolean guard
 ``returnsArgument``   some path returns the named argument register unchanged
 ``storesConstant``    writes an immediate into a named field of ``this``
+``storesInstanceByteArgumentAfterFalseCall`` complete incoming instance/byte
+                      aliases reach a named field on a checked guard's false path
 ``readsField``        reads a named field (any base register)
 ``writesField``       writes a named field (any base register, including SSE stores)
 ``readsNestedField``  reads a named field through a previously loaded parent field
 ``passesFieldToCall`` loads a named field into a named register at a named call
+``closedReferenceLayout`` a selected concrete witness proves its sole generic
+                      reference slot, optionally through a complete named field suffix
+``readsClosedDataField`` a selected concrete witness proves its closed generic
+                      data slot, then incoming-this aliases reach a named field
+``passesClosedDataFieldToCall`` the same proved chain passes a complete named
+                      reference field to a directly named reference parameter
+``passesClosedByteFieldToCall`` the owned Data byte reaches the sole bool/byte
+                      parameter of a reference instance method returning void/bool
 ``passesArgumentToCall`` a named incoming argument reaches a named callee
                       parameter through register copies
 ``passesEnumMemberToCall`` a selected enum member reaches a named callee
@@ -52,6 +66,10 @@ by type and method, and evaluates them against whichever build is installed:
 ``callsVirtualGetter`` a bounded IL2CPP getter helper receives the selected
                       no-argument virtual method slot; receiver ownership and
                       subsequent use of the return value remain separate claims
+``dispatchesVirtualAssignment`` a bounded anonymous helper compares a selected
+                      virtual slot with a named implementation, contains base
+                      field resets on its inline side, and forwards receiver,
+                      data, environment and MethodInfo on its other side
 ``comparesWithArguments`` compares one value with each named argument register
                       (through register moves), and with zero when ``zero`` is set
 
@@ -276,6 +294,9 @@ class BodyIndex:
             if not isinstance(method_index, int) or not 0 <= method_index < len(self.metadata.methods):
                 continue
             method = self.metadata.methods[method_index]
+            if parameter == "this" and not method.flags & 0x10:
+                locations.add(("register", "rcx"))
+                continue
             parameters = self.metadata.parameters_for(method)
             matches = [position for position, item in enumerate(parameters)
                        if self.metadata.string(item.name_index) == parameter]
@@ -657,8 +678,21 @@ def _parameter_aliases_before_call(
 
 def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | None:
     """Return a bounded failure reason, or ``None`` when the claim holds."""
+    if "closedReferenceLayout" in claim:
+        from .reference_layouts import check_closed_reference_layout
+        return check_closed_reference_layout(index, body, claim["closedReferenceLayout"])
+    if ("readsClosedDataField" in claim or "passesClosedDataFieldToCall" in claim
+            or "passesClosedByteFieldToCall" in claim):
+        from .closed_data_fields import check_closed_data_field
+        byte_argument = "passesClosedByteFieldToCall" in claim
+        forward = byte_argument or "passesClosedDataFieldToCall" in claim
+        key = "passesClosedByteFieldToCall" if byte_argument else "passesClosedDataFieldToCall" if forward else "readsClosedDataField"
+        return check_closed_data_field(index, body, claim[key], forward=forward, byte_argument=byte_argument)
     rows = body.all_rows
     texts = _texts(rows)
+    if "dispatchesVirtualAssignment" in claim:
+        from scripts.game_data.il2cpp.virtual_assignment import check_virtual_assignment
+        return check_virtual_assignment(index, body, claim["dispatchesVirtualAssignment"])
     if "callsVirtualGetter" in claim:
         symbol = claim["callsVirtualGetter"]
         slot = _virtual_method_slot(index, symbol)
@@ -1009,10 +1043,53 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
         reason = check_claim(index, body, {"returnsConstant": value})
         return (f"{spec['type']}.{spec['member']} ({value}): {reason}"
                 if reason else None)
+    if "returnsEnumAfterFalseCall" in claim:
+        from scripts.game_data.il2cpp.constant_returns import check_enum_return_after_false_call
+        return check_enum_return_after_false_call(index, body, claim["returnsEnumAfterFalseCall"])
     if "returnsConstant" in claim:
         value = int(claim["returnsConstant"])
         wanted = {f"mov eax, 0x{value:x}", f"mov eax, {value}"}
         return None if wanted & set(_texts(body.rows)) else f"no mov eax, 0x{value:x}"
+    if "returnsAfterFalseCall" in claim:
+        spec = claim["returnsAfterFalseCall"]
+        value = spec.get("value")
+        if type(value) is not int or value not in (0, 1):
+            return "returnsAfterFalseCall requires a Boolean AL value"
+        for at, row in enumerate(body.rows):
+            raw_call = bytes.fromhex(str(row.get("bytes") or ""))
+            if (not str(row.get("text") or "").startswith("call ")
+                    or len(raw_call) != 5 or raw_call[:1] != b"\xe8"
+                    or _named_direct_call(index, row, spec["call"]) is None):
+                continue
+            tail = body.rows[at + 1:at + 13]
+            if len(tail) < 4 or tail[0].get("text") != "test al, al":
+                continue
+            branch = bytes.fromhex(str(tail[1].get("bytes") or ""))
+            if not (len(branch) == 6 and branch[:2] == b"\x0f\x85"
+                    or len(branch) == 2 and branch[:1] == b"\x75"):
+                continue
+            branch_va = int(tail[1]["va"], 16)
+            displacement = int.from_bytes(branch[2:] if len(branch) == 6 else branch[1:], "little", signed=True)
+            target = branch_va + len(branch) + displacement
+            if tail[2].get("text") != f"mov al, 0x{value:x}" or bytes.fromhex(tail[2].get("bytes", "")) != bytes([0xB0, value]):
+                continue
+            # Accept only ordinary register-restoring epilogues. Unknown
+            # instructions, additional calls/branches, or AL writes refuse.
+            for following in tail[3:]:
+                text = str(following.get("text") or "")
+                if text == "ret":
+                    selected = [row, *tail[:tail.index(following) + 1]]
+                    if any(int(a["va"], 16) + len(bytes.fromhex(str(a.get("bytes") or ""))) != int(b["va"], 16)
+                           for a, b in zip(selected, selected[1:])):
+                        break
+                    return_va = int(following["va"], 16)
+                    constant_va = int(tail[2]["va"], 16)
+                    if not constant_va <= target <= return_va:
+                        return None
+                    break
+                if not re.fullmatch(r"(?:mov (?:rbx|rsi|rdi|rbp|r1[2-5]), \[rsp\+0x[0-9a-f]+\]|add rsp, 0x[0-9a-f]+|pop (?:rbx|rsi|rdi|rbp|r1[2-5])|nop)", text):
+                    break
+        return f"no bounded constant AL return after false {spec['call']}"
     if "returnsArgument" in claim:
         aliases = {claim["returnsArgument"]}
         for text in _texts(body.rows):
@@ -1025,6 +1102,12 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
         value = int(claim["storesConstant"]["value"])
         pattern = re.compile(rf"mov \[\w+\+0x{offset:x}\], 0x{value:x}$")
         return None if any(pattern.fullmatch(text) for text in texts) else f"no store of {value} at +0x{offset:x}"
+    if "returnsClosedByteFieldAfterFalseCall" in claim:
+        from .owned_byte_returns import check_byte_return
+        return check_byte_return(index, body, claim["returnsClosedByteFieldAfterFalseCall"])
+    if "storesInstanceByteArgumentAfterFalseCall" in claim:
+        from .byte_instance_stores import check_byte_instance_store
+        return check_byte_instance_store(index, body, claim["storesInstanceByteArgumentAfterFalseCall"])
     if "readsField" in claim:
         offset = index.field_offset(claim["readsField"])
         pattern = re.compile(rf"\[\w+\+0x{offset:x}\]")

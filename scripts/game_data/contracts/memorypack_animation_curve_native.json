@@ -1,0 +1,681 @@
+{
+  "schema": "endfield.memorypack-animation-curve-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_24_native.json"
+  ],
+  "sourceContract": "buff_24_native.json",
+  "sourceMethod": [
+    428704,
+    "MemoryPack.AnimationCurveFormatter",
+    "Deserialize",
+    54723024
+  ],
+  "storedMemberCount": 3,
+  "keyframeBytes": 28,
+  "keyframeTypeDefinition": 43512,
+  "keyframeTypeName": "UnityEngine.Keyframe",
+  "keyframeFields": [
+    {
+      "fieldName": "m_Time",
+      "declaredType": "float",
+      "wireOffset": 0,
+      "bytes": 4,
+      "runtimeFieldOffset": 16,
+      "sourceInstruction": [
+        54723615,
+        "F30F1030"
+      ],
+      "destinationInstruction": [
+        54723704,
+        "F30F11743E20"
+      ]
+    },
+    {
+      "fieldName": "m_Value",
+      "declaredType": "float",
+      "wireOffset": 4,
+      "bytes": 4,
+      "runtimeFieldOffset": 20,
+      "sourceInstruction": [
+        54723619,
+        "F30F107804"
+      ],
+      "destinationInstruction": [
+        54723710,
+        "F30F117C3E24"
+      ]
+    },
+    {
+      "fieldName": "m_InTangent",
+      "declaredType": "float",
+      "wireOffset": 8,
+      "bytes": 4,
+      "runtimeFieldOffset": 24,
+      "sourceInstruction": [
+        54723624,
+        "F3440F104008"
+      ],
+      "destinationInstruction": [
+        54723716,
+        "F3440F11443E28"
+      ]
+    },
+    {
+      "fieldName": "m_OutTangent",
+      "declaredType": "float",
+      "wireOffset": 12,
+      "bytes": 4,
+      "runtimeFieldOffset": 28,
+      "sourceInstruction": [
+        54723630,
+        "F3440F10480C"
+      ],
+      "destinationInstruction": [
+        54723723,
+        "F3440F114C3E2C"
+      ]
+    },
+    {
+      "fieldName": "m_WeightedMode",
+      "declaredType": "int",
+      "wireOffset": 16,
+      "bytes": 4,
+      "runtimeFieldOffset": 32,
+      "sourceInstruction": [
+        54723612,
+        "8B4810"
+      ],
+      "destinationInstruction": [
+        54723744,
+        "894C3E30"
+      ]
+    },
+    {
+      "fieldName": "m_InWeight",
+      "declaredType": "float",
+      "wireOffset": 20,
+      "bytes": 4,
+      "runtimeFieldOffset": 36,
+      "sourceInstruction": [
+        54723636,
+        "F3440F105014"
+      ],
+      "destinationInstruction": [
+        54723730,
+        "F3440F11543E34"
+      ]
+    },
+    {
+      "fieldName": "m_OutWeight",
+      "declaredType": "float",
+      "wireOffset": 24,
+      "bytes": 4,
+      "runtimeFieldOffset": 40,
+      "sourceInstruction": [
+        54723642,
+        "F3440F105818"
+      ],
+      "destinationInstruction": [
+        54723737,
+        "F3440F115C3E38"
+      ]
+    }
+  ],
+  "readerOffsets": {
+    "bufferPointer": 80,
+    "remaining": 48,
+    "consumed": [
+      64,
+      68
+    ]
+  },
+  "arrayPayloadOffset": 32,
+  "headerInstructions": [
+    [
+      54723041,
+      "4D8BF0"
+    ],
+    [
+      54723044,
+      "488BDA"
+    ],
+    [
+      54723053,
+      "488B4350"
+    ],
+    [
+      54723057,
+      "0FB630"
+    ],
+    [
+      54723060,
+      "8B7B30"
+    ],
+    [
+      54723063,
+      "83EF01"
+    ],
+    [
+      54723072,
+      "48FF4350"
+    ],
+    [
+      54723076,
+      "FF4340"
+    ],
+    [
+      54723079,
+      "FF4344"
+    ],
+    [
+      54723082,
+      "897B30"
+    ],
+    [
+      54723093,
+      "4080FEFF"
+    ],
+    [
+      54723103,
+      "4080FE03"
+    ]
+  ],
+  "raw8Program": {
+    "window": {
+      "startRva": 54723147,
+      "endRva": 54723196,
+      "sha256": "F624EA248D0EF987F9D2A8928FB3965B9EA66E864E854D17EA9CA8D003BE4684",
+      "boundary": "Two wire DWORDs, preserved wrap arguments and exact advance(8)."
+    },
+    "instructions": [
+      [
+        54723147,
+        "488B4350"
+      ],
+      [
+        54723151,
+        "448B20"
+      ],
+      [
+        54723154,
+        "448B6804"
+      ],
+      [
+        54723158,
+        "4489642420"
+      ],
+      [
+        54723163,
+        "44896C2424"
+      ],
+      [
+        54723168,
+        "8B7B30"
+      ],
+      [
+        54723171,
+        "83EF08"
+      ],
+      [
+        54723174,
+        "0F881CA79601"
+      ],
+      [
+        54723180,
+        "4883435008"
+      ],
+      [
+        54723185,
+        "83434008"
+      ],
+      [
+        54723189,
+        "83434408"
+      ],
+      [
+        54723193,
+        "897B30"
+      ]
+    ]
+  },
+  "countProgram": {
+    "window": {
+      "startRva": 54723210,
+      "endRva": 54723245,
+      "sha256": "2A39453CD1C134C998FE2B3EB7F7FF94DEB06FDE6DBF38E88C1008E8888249B3",
+      "boundary": "Signed array count and exact advance(4)."
+    },
+    "instructions": [
+      [
+        54723210,
+        "488B4350"
+      ],
+      [
+        54723214,
+        "448B38"
+      ],
+      [
+        54723217,
+        "8B7330"
+      ],
+      [
+        54723220,
+        "83EE04"
+      ],
+      [
+        54723223,
+        "0F881BA79601"
+      ],
+      [
+        54723229,
+        "4883435004"
+      ],
+      [
+        54723234,
+        "83434004"
+      ],
+      [
+        54723238,
+        "83434404"
+      ],
+      [
+        54723242,
+        "897330"
+      ]
+    ]
+  },
+  "arrayAllocation": {
+    "typeLoad": [
+      54723288,
+      "488B0D09F5C209"
+    ],
+    "cellRva": 218494952,
+    "typeName": "UnityEngine.Keyframe[]",
+    "instructions": [
+      [
+        54723288,
+        "488B0D09F5C209"
+      ],
+      [
+        54723295,
+        "498BD7"
+      ],
+      [
+        54723298,
+        "E8795BBFFC"
+      ],
+      [
+        54723303,
+        "488BF8"
+      ]
+    ],
+    "allocationCall": {
+      "rva": 54723298,
+      "targetRva": 155232
+    }
+  },
+  "keyframeProgram": {
+    "window": {
+      "startRva": 54723569,
+      "endRva": 54723767,
+      "sha256": "FDA79B44CEFB9754C6D22130A95D93A1212CEBBCACB3427E45D75EEC69A7ABF8",
+      "boundary": "Selected index-times-28, bounded source loads, named destination stores, cursor update and field restore."
+    },
+    "instructions": [
+      [
+        54723569,
+        "448BE5"
+      ],
+      [
+        54723572,
+        "4885FF"
+      ],
+      [
+        54723575,
+        "0F841F010000"
+      ],
+      [
+        54723581,
+        "443B6718"
+      ],
+      [
+        54723585,
+        "0F830F010000"
+      ],
+      [
+        54723591,
+        "4963C4"
+      ],
+      [
+        54723594,
+        "48"
+      ],
+      [
+        54723595,
+        "6B"
+      ],
+      [
+        54723596,
+        "F0"
+      ],
+      [
+        54723597,
+        "1C"
+      ],
+      [
+        54723598,
+        "837B301C"
+      ],
+      [
+        54723602,
+        "0F8CBAA59601"
+      ],
+      [
+        54723608,
+        "488B4350"
+      ],
+      [
+        54723612,
+        "8B4810"
+      ],
+      [
+        54723615,
+        "F30F1030"
+      ],
+      [
+        54723619,
+        "F30F107804"
+      ],
+      [
+        54723624,
+        "F3440F104008"
+      ],
+      [
+        54723630,
+        "F3440F10480C"
+      ],
+      [
+        54723636,
+        "F3440F105014"
+      ],
+      [
+        54723642,
+        "F3440F105818"
+      ],
+      [
+        54723648,
+        "898C24C8000000"
+      ],
+      [
+        54723655,
+        "448B6B30"
+      ],
+      [
+        54723659,
+        "4183ED1C"
+      ],
+      [
+        54723663,
+        "0F8893A59601"
+      ],
+      [
+        54723669,
+        "488343501C"
+      ],
+      [
+        54723674,
+        "8343401C"
+      ],
+      [
+        54723678,
+        "8343441C"
+      ],
+      [
+        54723682,
+        "44896B30"
+      ],
+      [
+        54723686,
+        "48896C3E24"
+      ],
+      [
+        54723691,
+        "41FFC4"
+      ],
+      [
+        54723694,
+        "48896C3E2C"
+      ],
+      [
+        54723699,
+        "48896C3E34"
+      ],
+      [
+        54723704,
+        "F30F11743E20"
+      ],
+      [
+        54723710,
+        "F30F117C3E24"
+      ],
+      [
+        54723716,
+        "F3440F11443E28"
+      ],
+      [
+        54723723,
+        "F3440F114C3E2C"
+      ],
+      [
+        54723730,
+        "F3440F11543E34"
+      ],
+      [
+        54723737,
+        "F3440F115C3E38"
+      ],
+      [
+        54723744,
+        "894C3E30"
+      ],
+      [
+        54723748,
+        "453BE7"
+      ],
+      [
+        54723751,
+        "0F8C50FFFFFF"
+      ],
+      [
+        54723757,
+        "448B642420"
+      ],
+      [
+        54723762,
+        "448B6C2424"
+      ]
+    ]
+  },
+  "wrapRestores": [
+    [
+      54723757,
+      "448B642420"
+    ],
+    [
+      54723762,
+      "448B6C2424"
+    ]
+  ],
+  "icallBindings": [
+    {
+      "fieldName": "preWrapMode",
+      "literal": "UnityEngine.AnimationCurve::set_preWrapMode(UnityEngine.WrapMode)",
+      "literalRva": 176605088,
+      "cacheCellRva": 233496048,
+      "fallbackInstructions": [
+        [
+          54723790,
+          "488D0DCBC24307"
+        ],
+        [
+          54723797,
+          "E856EBBEFC"
+        ],
+        [
+          54723802,
+          "4889050FD9A70A"
+        ],
+        [
+          54723809,
+          "E969FEFFFF"
+        ]
+      ],
+      "cacheLoad": [
+        54723391,
+        "488B05AADAA70A"
+      ],
+      "cacheTest": [
+        54723398,
+        "4885C0"
+      ],
+      "cacheBranch": [
+        54723401,
+        "0F847F010000"
+      ],
+      "argumentInstructions": [
+        [
+          54723407,
+          "418BD4"
+        ],
+        [
+          54723410,
+          "488BCB"
+        ],
+        [
+          54723413,
+          "FFD0"
+        ]
+      ]
+    },
+    {
+      "fieldName": "postWrapMode",
+      "literal": "UnityEngine.AnimationCurve::set_postWrapMode(UnityEngine.WrapMode)",
+      "literalRva": 176605008,
+      "cacheCellRva": 233496064,
+      "fallbackInstructions": [
+        [
+          54723814,
+          "488D0D63C24307"
+        ],
+        [
+          54723821,
+          "E83EEBBEFC"
+        ],
+        [
+          54723826,
+          "48890507D9A70A"
+        ],
+        [
+          54723833,
+          "E975FEFFFF"
+        ]
+      ],
+      "cacheLoad": [
+        54723427,
+        "488B0596DAA70A"
+      ],
+      "cacheTest": [
+        54723434,
+        "4885C0"
+      ],
+      "cacheBranch": [
+        54723437,
+        "0F8473010000"
+      ],
+      "argumentInstructions": [
+        [
+          54723443,
+          "418BD5"
+        ],
+        [
+          54723446,
+          "488BCB"
+        ],
+        [
+          54723449,
+          "FFD0"
+        ]
+      ]
+    },
+    {
+      "fieldName": "keys",
+      "literal": "UnityEngine.AnimationCurve::SetKeys(UnityEngine.Keyframe[])",
+      "literalRva": 176397928,
+      "cacheCellRva": 233496024,
+      "fallbackInstructions": [
+        [
+          54723838,
+          "488D0D63994007"
+        ],
+        [
+          54723845,
+          "E826EBBEFC"
+        ],
+        [
+          54723850,
+          "488905C7D8A70A"
+        ],
+        [
+          54723857,
+          "E981FEFFFF"
+        ]
+      ],
+      "cacheLoad": [
+        54723463,
+        "488B054ADAA70A"
+      ],
+      "cacheTest": [
+        54723470,
+        "4885C0"
+      ],
+      "cacheBranch": [
+        54723473,
+        "0F8467010000"
+      ],
+      "argumentInstructions": [
+        [
+          54723479,
+          "488BD7"
+        ],
+        [
+          54723482,
+          "488BCB"
+        ],
+        [
+          54723485,
+          "FFD0"
+        ]
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 54723024,
+      "endRva": 54723874,
+      "sha256": "FABD4BD728E24F052D78B9EFB6A97B54CEB5E5F4D968663FA7BFFA05BD00FD94",
+      "boundary": "Complete selected formatter normal, null and ICALL fallback body."
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected header/nullable-array framing, source strides and full original spans.",
+    "direct": "Two stored wrap arguments reach separately named resolution caches; closed Keyframe[] allocation and per-field native source/destination copies name each keyframe word.",
+    "conditional": "Selected compiled formatter normal path and declared callback-resolution names. Independent parent typed joins remain required.",
+    "unresolved": "Live formatter/callback selection, native callback execution, invalid/refill parity, evaluated curve, interpolation or gameplay effects."
+  }
+}

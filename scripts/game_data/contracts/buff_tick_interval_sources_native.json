@@ -1,0 +1,862 @@
+{
+  "schema": "endfield.buff-tick-interval-source-flows-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "complete-conditional-caller-and-owned-field-flows-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "candidateContract": "skill_timeline_tick_interval_native.json",
+  "commonSymbolsContract": "buff_selector_zero_finders_native.json",
+  "wrapper": {
+    "typeDefinition": 16531,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+    "parentTypeDefinition": 14293,
+    "parentWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+    "wrappedType": "Beyond.Gameplay.Core.TickIntervalAction+Data",
+    "serializedMemberCount": 9,
+    "inheritedMemberCount": 4,
+    "memberOrder": [
+      "isEnable",
+      "priorityLevel",
+      "priorityOffset",
+      "serverActionIndex",
+      "actionOnTick",
+      "executeEachFrame",
+      "tickInterval",
+      "tickIntervalBlackboardKey",
+      "useTickIntervalBlackboardKey"
+    ],
+    "memberWidthSum": null,
+    "framesAsUnion": false,
+    "framesAsRawStruct": false,
+    "members": [
+      {
+        "name": "isEnable",
+        "methodIndex": 107646,
+        "declaredType": "bool",
+        "kind": "bool",
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "width": 1
+      },
+      {
+        "name": "priorityLevel",
+        "methodIndex": 107647,
+        "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+        "kind": "enum",
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "underlyingKind": "scalar32",
+        "width": 4
+      },
+      {
+        "name": "priorityOffset",
+        "methodIndex": 107648,
+        "declaredType": "int",
+        "kind": "scalar32",
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "width": 4
+      },
+      {
+        "name": "serverActionIndex",
+        "methodIndex": 107649,
+        "declaredType": "int",
+        "kind": "scalar32",
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "width": 4
+      },
+      {
+        "name": "actionOnTick",
+        "methodIndex": 123527,
+        "declaredType": "Beyond.Gameplay.Core.SequenceActionData",
+        "kind": "object",
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack"
+      },
+      {
+        "name": "executeEachFrame",
+        "methodIndex": 123528,
+        "declaredType": "bool",
+        "kind": "bool",
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "width": 1
+      },
+      {
+        "name": "tickInterval",
+        "methodIndex": 123529,
+        "declaredType": "float",
+        "kind": "float32",
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "width": 4
+      },
+      {
+        "name": "tickIntervalBlackboardKey",
+        "methodIndex": 123530,
+        "declaredType": "string",
+        "kind": "string",
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack"
+      },
+      {
+        "name": "useTickIntervalBlackboardKey",
+        "methodIndex": 123531,
+        "declaredType": "bool",
+        "kind": "bool",
+        "declaringWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "width": 1
+      }
+    ]
+  },
+  "runtimeTypeDefinition": 9931,
+  "runtimeAncestry": [
+    {
+      "definition": 9931,
+      "name": "Beyond.Gameplay.Core.TickIntervalAction+Data",
+      "fields": [
+        {
+          "index": 44242,
+          "name": "executeEachFrame",
+          "type": {
+            "index": 108363,
+            "pointerRva": 219393496,
+            "rawHex": "FA8C0000000000000600028000000000",
+            "kind": 2,
+            "name": "bool"
+          }
+        },
+        {
+          "index": 44243,
+          "name": "tickInterval",
+          "type": {
+            "index": 141877,
+            "pointerRva": 219319384,
+            "rawHex": "6B8D00000000000006000C8000000000",
+            "kind": 12,
+            "name": "float"
+          }
+        },
+        {
+          "index": 44244,
+          "name": "tickIntervalBlackboardKey",
+          "type": {
+            "index": 143278,
+            "pointerRva": 219318360,
+            "rawHex": "C78C00000000000006000E0000000000",
+            "kind": 14,
+            "name": "string"
+          }
+        },
+        {
+          "index": 44245,
+          "name": "useTickIntervalBlackboardKey",
+          "type": {
+            "index": 108363,
+            "pointerRva": 219393496,
+            "rawHex": "FA8C0000000000000600028000000000",
+            "kind": 2,
+            "name": "bool"
+          }
+        },
+        {
+          "index": 44246,
+          "name": "actionOnTick",
+          "type": {
+            "index": 140798,
+            "pointerRva": 220209896,
+            "rawHex": "F2230000000000000600120000000000",
+            "kind": 18,
+            "name": "Beyond.Gameplay.Core.SequenceActionData",
+            "definition": 9202
+          }
+        }
+      ],
+      "offsets": {
+        "executeEachFrame": 32,
+        "tickInterval": 36,
+        "tickIntervalBlackboardKey": 40,
+        "useTickIntervalBlackboardKey": 48,
+        "actionOnTick": 56
+      },
+      "parent": {
+        "index": 150959,
+        "pointerRva": 221501112,
+        "rawHex": "EB230000000000000000120000000000",
+        "kind": 18,
+        "name": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+        "definition": 9195
+      }
+    },
+    {
+      "definition": 9195,
+      "name": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+      "fields": [
+        {
+          "index": 41811,
+          "name": "isEnable",
+          "type": {
+            "index": 108363,
+            "pointerRva": 219393496,
+            "rawHex": "FA8C0000000000000600028000000000",
+            "kind": 2,
+            "name": "bool"
+          }
+        },
+        {
+          "index": 41812,
+          "name": "priorityLevel",
+          "type": {
+            "index": 182985,
+            "pointerRva": 221588120,
+            "rawHex": "EA230000000000000600118000000000",
+            "kind": 17,
+            "name": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+            "definition": 9194
+          }
+        },
+        {
+          "index": 41813,
+          "name": "priorityOffset",
+          "type": {
+            "index": 126163,
+            "pointerRva": 219354024,
+            "rawHex": "3B8D0000000000000600088000000000",
+            "kind": 8,
+            "name": "int"
+          }
+        },
+        {
+          "index": 41814,
+          "name": "serverActionIndex",
+          "type": {
+            "index": 126163,
+            "pointerRva": 219354024,
+            "rawHex": "3B8D0000000000000600088000000000",
+            "kind": 8,
+            "name": "int"
+          }
+        }
+      ],
+      "offsets": {
+        "isEnable": 16,
+        "priorityLevel": 20,
+        "priorityOffset": 24,
+        "serverActionIndex": 28
+      },
+      "parent": {
+        "index": 133396,
+        "pointerRva": 222428568,
+        "rawHex": "068E00000000000000001C0000000000",
+        "kind": 28,
+        "name": "object"
+      }
+    }
+  ],
+  "wrapperAncestry": [
+    {
+      "definition": 16531,
+      "name": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+      "fields": [
+        {
+          "index": 123419,
+          "name": "__realInstance",
+          "type": {
+            "index": 180345,
+            "pointerRva": 221626008,
+            "rawHex": "CB260000000000000100120000000000",
+            "kind": 18,
+            "name": "Beyond.Gameplay.Core.TickIntervalAction+Data",
+            "definition": 9931
+          }
+        }
+      ],
+      "offsets": {
+        "__realInstance": 24
+      },
+      "parent": {
+        "index": 106254,
+        "pointerRva": 220372136,
+        "rawHex": "D5370000000000000000120000000000",
+        "kind": 18,
+        "name": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "definition": 14293
+      }
+    },
+    {
+      "definition": 14293,
+      "name": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+      "fields": [
+        {
+          "index": 122254,
+          "name": "___instance",
+          "type": {
+            "index": 150960,
+            "pointerRva": 219831944,
+            "rawHex": "EB230000000000000400120000000000",
+            "kind": 18,
+            "name": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+            "definition": 9195
+          }
+        }
+      ],
+      "offsets": {
+        "___instance": 16
+      },
+      "parent": {
+        "index": 133396,
+        "pointerRva": 222428568,
+        "rawHex": "068E00000000000000001C0000000000",
+        "kind": 28,
+        "name": "object"
+      }
+    }
+  ],
+  "instanceOffset": 16,
+  "cacheOffset": 24,
+  "symbols": {
+    "header": 46827616,
+    "allocate": 155744,
+    "constructor": 67471136,
+    "barrier": 158528,
+    "metadataInit": 266848,
+    "metadataUsageCount": 5,
+    "nullThrow": 11199508,
+    "onDeserialized": 153849240,
+    "classInit": 156352,
+    "getTypeFromHandle": 47864048,
+    "invalidPropertyCount": 58708720,
+    "cast": 14368
+  },
+  "fields": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "declaredType": "bool",
+      "fieldOwner": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+      "fieldOffset": 16,
+      "setterMethod": [
+        107646,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "set___isEnable__",
+        52483776
+      ],
+      "bodyKey": "setter0",
+      "mode": "normalized-byte-return",
+      "readKind": "bool-byte",
+      "readerEntryRva": 46827712,
+      "setterEntryRva": 52483776,
+      "sourceCallsiteRva": 67470400,
+      "contextBefore": false
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "fieldOwner": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+      "fieldOffset": 20,
+      "setterMethod": [
+        107647,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "set___priorityLevel__",
+        58153824
+      ],
+      "bodyKey": "setter1",
+      "mode": "int32-return",
+      "readKind": "scalar32",
+      "readerEntryRva": 46827184,
+      "setterEntryRva": 58153824,
+      "sourceCallsiteRva": 67470441,
+      "contextBefore": true
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "declaredType": "int",
+      "fieldOwner": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+      "fieldOffset": 24,
+      "setterMethod": [
+        107648,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "set___priorityOffset__",
+        58153856
+      ],
+      "bodyKey": "setter2",
+      "mode": "int32-return",
+      "readKind": "scalar32",
+      "readerEntryRva": 46827184,
+      "setterEntryRva": 58153856,
+      "sourceCallsiteRva": 67470474,
+      "contextBefore": false
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "declaredType": "int",
+      "fieldOwner": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+      "fieldOffset": 28,
+      "setterMethod": [
+        107649,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "set___serverActionIndex__",
+        58153888
+      ],
+      "bodyKey": "setter3",
+      "mode": "int32-return",
+      "readKind": "scalar32",
+      "readerEntryRva": 46827184,
+      "setterEntryRva": 58153888,
+      "sourceCallsiteRva": 67470507,
+      "contextBefore": false
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "actionOnTick",
+      "declaredType": "Beyond.Gameplay.Core.SequenceActionData",
+      "fieldOwner": "Beyond.Gameplay.Core.TickIntervalAction+Data",
+      "fieldOffset": 56,
+      "setterMethod": [
+        123527,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___actionOnTick__",
+        67470816
+      ],
+      "bodyKey": "setter4",
+      "mode": "reference-return",
+      "readKind": "sequence-profile",
+      "readerEntryRva": 47864976,
+      "setterEntryRva": 67470816,
+      "sourceCallsiteRva": 67470547,
+      "contextBefore": true
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "executeEachFrame",
+      "declaredType": "bool",
+      "fieldOwner": "Beyond.Gameplay.Core.TickIntervalAction+Data",
+      "fieldOffset": 32,
+      "setterMethod": [
+        123528,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___executeEachFrame__",
+        67470864
+      ],
+      "bodyKey": "setter5",
+      "mode": "normalized-byte-return",
+      "readKind": "bool-byte",
+      "readerEntryRva": 46827712,
+      "setterEntryRva": 67470864,
+      "sourceCallsiteRva": 67470581,
+      "contextBefore": false
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "tickInterval",
+      "declaredType": "float",
+      "fieldOwner": "Beyond.Gameplay.Core.TickIntervalAction+Data",
+      "fieldOffset": 36,
+      "setterMethod": [
+        123529,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___tickInterval__",
+        67470912
+      ],
+      "bodyKey": "setter6",
+      "mode": "single-return",
+      "readKind": "float32-bits",
+      "readerEntryRva": 46828464,
+      "setterEntryRva": 67470912,
+      "sourceCallsiteRva": 67470615,
+      "contextBefore": false
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "tickIntervalBlackboardKey",
+      "declaredType": "string",
+      "fieldOwner": "Beyond.Gameplay.Core.TickIntervalAction+Data",
+      "fieldOffset": 40,
+      "setterMethod": [
+        123530,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___tickIntervalBlackboardKey__",
+        67470960
+      ],
+      "bodyKey": "setter7",
+      "mode": "reference-return",
+      "readKind": "byte-payload",
+      "readerEntryRva": 46827264,
+      "setterEntryRva": 67470960,
+      "sourceCallsiteRva": 67470649,
+      "contextBefore": false
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "useTickIntervalBlackboardKey",
+      "declaredType": "bool",
+      "fieldOwner": "Beyond.Gameplay.Core.TickIntervalAction+Data",
+      "fieldOffset": 48,
+      "setterMethod": [
+        123531,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___useTickIntervalBlackboardKey__",
+        67471008
+      ],
+      "bodyKey": "setter8",
+      "mode": "normalized-byte-return",
+      "readKind": "bool-byte",
+      "readerEntryRva": 46827712,
+      "setterEntryRva": 67471008,
+      "sourceCallsiteRva": 67470683,
+      "contextBefore": false
+    }
+  ],
+  "bodies": {
+    "reader": {
+      "method": [
+        123534,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "Deserialize",
+        67470256
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 67470256,
+          "endRva": 67470323
+        },
+        {
+          "startRva": 67470323,
+          "endRva": 67470712
+        },
+        {
+          "startRva": 67470712,
+          "endRva": 67470795
+        },
+        {
+          "startRva": 67470795,
+          "endRva": 67470801
+        },
+        {
+          "startRva": 83281486,
+          "endRva": 83281499
+        },
+        {
+          "startRva": 83281499,
+          "endRva": 83281555
+        },
+        {
+          "startRva": 83281555,
+          "endRva": 83281576
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 67470256,
+          "endRva": 67470801,
+          "sha256": "3795076A219CEFE56AEAE759219BED31DCD7913B56FA58B71320259737F16EFF"
+        },
+        {
+          "startRva": 83281486,
+          "endRva": 83281576,
+          "sha256": "FCD9F7EAF5FB827561BD2049EEC5A1C522C04AC12DE755E4490E6FA348B51ADC"
+        }
+      ]
+    },
+    "getter": {
+      "method": [
+        123522,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "get___instance",
+        67471056
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 67471056,
+          "endRva": 67471130
+        },
+        {
+          "startRva": 83281576,
+          "endRva": 83281583
+        },
+        {
+          "startRva": 83281583,
+          "endRva": 83281638
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 67471056,
+          "endRva": 67471130,
+          "sha256": "AC56C1B17E743285958F9881D70C2FB9C64FEAA03560FABF8E03044E963FEB97"
+        },
+        {
+          "startRva": 83281576,
+          "endRva": 83281638,
+          "sha256": "1CE2BA9443F22DE499128C0EB8A41B0F10031F6DE804F9474A48CC76668100E7"
+        }
+      ]
+    },
+    "formatter": {
+      "method": [
+        123535,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack+Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPackFormatter",
+        "Deserialize",
+        67470160
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 67470160,
+          "endRva": 67470253
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 67470160,
+          "endRva": 67470253,
+          "sha256": "5679782FD925BE7E009E1D74B969EC8FABC4C61D42EA8511E64C92E4E3859ACE"
+        }
+      ]
+    },
+    "constructor": {
+      "method": [
+        123521,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        ".ctor",
+        67471136
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 67471136,
+          "endRva": 67471202
+        },
+        {
+          "startRva": 67471202,
+          "endRva": 67471290
+        },
+        {
+          "startRva": 67471290,
+          "endRva": 67471342
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 67471136,
+          "endRva": 67471342,
+          "sha256": "D68808D2F48D2C2AE53CF139D4AF37444EAF328F2C7EAA3B431765A6EABE9A39"
+        }
+      ]
+    },
+    "onDeserialized": {
+      "method": [
+        123526,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "OnDeserialized",
+        153849240
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 153849240,
+          "endRva": 153849352
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 153849240,
+          "endRva": 153849352,
+          "sha256": "EB9E8C24843633D33DAD45324C4EC62C41F91C03E45C1ABCF547D7CF8A743584"
+        }
+      ]
+    },
+    "setter0": {
+      "method": [
+        107646,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "set___isEnable__",
+        52483776
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 52483776,
+          "endRva": 52483803
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 52483776,
+          "endRva": 52483803,
+          "sha256": "6B3F0BBBC04E6C5227842435DAC2B8AFEE90B7E817EE2422D5983A7D4D59952C"
+        }
+      ]
+    },
+    "setter1": {
+      "method": [
+        107647,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "set___priorityLevel__",
+        58153824
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 58153824,
+          "endRva": 58153851
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 58153824,
+          "endRva": 58153851,
+          "sha256": "2F53EF4DA5A874110D655CEFBDCBB949BF75A76555860903B1C548812B532C2D"
+        }
+      ]
+    },
+    "setter2": {
+      "method": [
+        107648,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "set___priorityOffset__",
+        58153856
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 58153856,
+          "endRva": 58153883
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 58153856,
+          "endRva": 58153883,
+          "sha256": "2EFBFC76AD818A500C0FDF69E3A13ADF2833AB52B0645A70E0138442DB76A3D4"
+        }
+      ]
+    },
+    "setter3": {
+      "method": [
+        107649,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+        "set___serverActionIndex__",
+        58153888
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 58153888,
+          "endRva": 58153915
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 58153888,
+          "endRva": 58153915,
+          "sha256": "596666C73B74D62A6BD2CEC96BB77AEBA7F6E9C58A05155175D65074FC249A73"
+        }
+      ]
+    },
+    "setter4": {
+      "method": [
+        123527,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___actionOnTick__",
+        67470816
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 67470816,
+          "endRva": 67470861
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 67470816,
+          "endRva": 67470861,
+          "sha256": "023BC232D6F75485B50176847FEDAFF361D027E72BED27E2D7D6421B78D96A4B"
+        }
+      ]
+    },
+    "setter5": {
+      "method": [
+        123528,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___executeEachFrame__",
+        67470864
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 67470864,
+          "endRva": 67470900
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 67470864,
+          "endRva": 67470900,
+          "sha256": "62B6579A9313AB2C2EA6423D01F5E82E1EC630766EC0CDB84165AE7E9C016F8B"
+        }
+      ]
+    },
+    "setter6": {
+      "method": [
+        123529,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___tickInterval__",
+        67470912
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 67470912,
+          "endRva": 67470957
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 67470912,
+          "endRva": 67470957,
+          "sha256": "2F71418E2A54096D13C7ADC4BCC178EAB6B1F136268A8D5290A15A639A57C914"
+        }
+      ]
+    },
+    "setter7": {
+      "method": [
+        123530,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___tickIntervalBlackboardKey__",
+        67470960
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 67470960,
+          "endRva": 67471005
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 67470960,
+          "endRva": 67471005,
+          "sha256": "27C12D873836E545C5ED7DC35E9929079061253236FAD988F09999EDFBB8BBF1"
+        }
+      ]
+    },
+    "setter8": {
+      "method": [
+        123531,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack",
+        "set___useTickIntervalBlackboardKey__",
+        67471008
+      ],
+      "ownedPdataFragments": [
+        {
+          "startRva": 67471008,
+          "endRva": 67471044
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 67471008,
+          "endRva": 67471044,
+          "sha256": "E69A8519AC7F8C868E81321CDF431F76FAB8EE4DC8A95D5F9CA0AC60F2FEB07C"
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Current native input pins, complete unwind-owned windows, methods, generated wrapper and metadata-owned field/parameter layouts.",
+    "direct": "Complete original caller returns flow to the matching nine generated setters; inherited and concrete setters write their independently owned Data fields; FF clears the byref wrapper output and reaches the original return. Concrete formatter forwarding and metadata slot five are checked.",
+    "conditional": "Win64 ABI, stable disjoint compatible input/output/frame, normal noninterfering initialization/lifecycle/allocation/barrier/reader/setter/cast calls, typed cached Data result and independently established return representations. These preconditions do not prove child wire framing or actual provider/cast/lifecycle execution.",
+    "structuralOnly": "This source-flow contract grants no TickInterval stored parent, enclosing sequence/list/root admission.",
+    "unresolved": "Complete physical Sequence helper/formatter/output and recursive source-byte composition; actual scheduling, branches, tick cadence, damage execution and other runtime effects."
+  }
+}

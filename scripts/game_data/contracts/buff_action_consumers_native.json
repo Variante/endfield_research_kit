@@ -1,10 +1,11 @@
 {
-  "schema": "endfield.buff-action-consumer-claims.v1",
+  "schema": "endfield.buff-action-consumer-claims.v11",
   "status": "reviewed",
   "evidenceBoundary": {
-    "direct": "Named calls present in the selected native action bodies, independently re-proved by method identity.",
-    "conditional": "These calls describe compiled paths. Branch selection, IFix execution and actual delivery require separate evidence.",
-    "unresolved": "Live target selection, evaluated values, keys, writes, server acceptance and whole Buff behavior. Call presence does not prove that a particular stored field supplies a call argument."
+    "direct": "Named compiled calls, selected virtual assignment/initialization claims and narrowly witnessed incoming-instance closed-data field reads. Field reads authenticate receiver ownership separately from mere displacement matching; they do not establish later call arguments or live values. A checked false Boolean guard also reaches a typed enum literal through a complete EAX-to-RET epilogue. Selected bool/byte Data reads authenticate a complete byte MOV or unsigned byte MOVZX, register/base/displacement and incoming-instance ownership; they do not normalize or evaluate the byte. An explicit byte-argument mode also joins the owned Data byte to the sole selected bool/byte parameter of a nongeneric reference instance method returning void/bool. An owned instance byte-store profile follows complete incoming-this/argument aliases through the selected false Boolean guard to a named instance field. An explicit normal-forward-jump profile follows only complete local EB/E9 instructions whose byte-derived targets match the decoded text and a selected instruction boundary. Conditional branches retain fallthrough; other paths and loops are not explored. An explicit closed-generic-reference-field profile independently proves a full reference read and does not admit generic sink argument forwarding. Register-only BT decoding preserves operand direction, width, complete boundaries and the fact that only flags are written. A separate owned-byte return profile proves the selected false Boolean guard and non-null Data fallthrough return alwaysNext through AL with an unchanged complete epilogue.",
+    "conditional": "These calls describe compiled paths. Branch selection, IFix execution and actual delivery require separate evidence. Explicit local-path selection checks complete original instruction boundaries and local branch edges, while preserving the existing incoming-instance, field, ABI and clobber proofs. It does not establish branch feasibility, live selection or callee return.",
+    "unresolved": "Live target selection, evaluated values, keys, writes, server acceptance and whole Buff behavior. Call presence does not prove that a particular stored field supplies a call argument. Concrete reference suffixes establish only the selected closed Data slot. AI target-group updates, shorter SpellInfliction, CharHurtAnim, Ignite text events, projectile launch and lock-on recovery retain separate live branch/value/entity/effect gaps. Generic event Dispatch presence does not identify its instantiated event payload. Global creation/finish, lifetime arithmetic, chosen Buff handles, Switch Option selection/iteration and conditional mask outcomes remain open even when owned configuration fields and selected sink arguments are proved. The custom Switch policy caller use and current Data assignment, runtime duration values, early-finish reason, weapon receiver and rendering effects remain separate obligations.",
+    "structuralOnly": "A closedReferenceLayout claim independently proves the selected sole generic reference slot with either an instance-fieldless concrete subclass or an explicitly checked complete contiguous concrete suffix. Selected static declarations do not consume instance space. Closed generic suffix references authenticate the selected reference-class definition and complete closed argument identity independently of argument storage; generic value types remain excluded. This does not claim a field read, runtime type, field value or use at a sink."
   },
   "groups": {
     "vitals": {
@@ -209,6 +210,2741 @@
           "parameters": [
             "Proto.BUFF_RES"
           ]
+        }
+      }
+    },
+    "targetBuffBlackboard": {
+      "methods": {
+        "GetTargetBuffBBAdvanced.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body contains target and Buff-source resolution, Buff-handle filtering, float lookup and dynamic assignment calls. Selected Buff, supplied keys, lookup values and assignment ownership remain separate joins.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilitySystemUtils.ResolvePartBuffSource",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetBuffFindHandle_Dispose",
+                "Beyond.Gameplay.Core.Buff.get_isFinished",
+                "Beyond.Gameplay.Core.Buff.get_isEnabled",
+                "Beyond.ActionBlackboard.GetFloat",
+                "Beyond.ActionBlackboard.AssignDynamic"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "attributeValue": {
+      "methods": {
+        "StoreAttributeValue.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.StoreAttributeValue",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body contains attribute lookup, blackboard provider evaluation, dynamic assignment and Buff blackboard-change calls. Arithmetic, provider-to-argument mapping, branch choice, keys and resulting values remain unproved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilitySystem.get_attributes",
+                "Beyond.Gameplay.Core.Attributes.GetNonConvertedFinalValue",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.ActionBlackboard.TryGetDouble",
+                "Beyond.ActionBlackboard.AssignDynamic",
+                "Beyond.Gameplay.Core.Buff.OnBlackboardValueChange"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "probability": {
+      "methods": {
+        "Probablity.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.Probablity",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body contains blackboard provider evaluation and a Dice call. Evaluated probability, random state, live IFix selection and result are not observed.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.RandomUtils.Dice"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "initialization": {
+      "methods": {
+        "AbilityActionData.NewAction": {
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+          "method": "NewAction",
+          "parameters": [
+            "Beyond.Gameplay.Core.IActionEnvironment"
+          ],
+          "contract": "The bounded helper compares the metadata-selected AssignData virtual slot with the selected generic implementation. Its equal side contains nongeneric base environment and execution-state resets; the unequal side forwards receiver, data, environment and MethodInfo through that slot. This explains why assignment can bypass both selected named entries. Live branch selection, IFix, generic data-field meaning, cast success and returned action identity remain unproved.",
+          "claims": [
+            {
+              "dispatchesVirtualAssignment": {
+                "base": "Beyond.Gameplay.Core.AbilityAction.AssignData",
+                "implementation": {
+                  "type": "Beyond.Gameplay.Core.AbilityAction`1",
+                  "method": "AssignData",
+                  "classArguments": [
+                    "object"
+                  ],
+                  "parameters": [
+                    "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+                    "Beyond.Gameplay.Core.IActionEnvironment"
+                  ]
+                },
+                "environmentField": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+                "resultField": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+                "stateField": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+                "environmentParameter": "environment",
+                "dataIsCallerReceiver": true
+              }
+            }
+          ]
+        },
+        "SequenceAction.Init": {
+          "type": "Beyond.Gameplay.Core.SequenceAction",
+          "method": "Init",
+          "parameters": [
+            "Beyond.Gameplay.Core.SequenceActionData",
+            "Beyond.Gameplay.Core.IActionEnvironment"
+          ],
+          "contract": "Compiled path forwards the supplied environment to NewAction. Array element selection, live branch, returned action and assignment remain unresolved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction+AbilityActionData.NewAction"
+              ]
+            },
+            {
+              "passesArgumentToCall": {
+                "fromParameter": "environment",
+                "call": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData.NewAction",
+                "toParameter": "environment"
+              }
+            }
+          ]
+        },
+        "Skill._InitHighlightConditionAction": {
+          "type": "Beyond.Gameplay.Core.Skill",
+          "method": "_InitHighlightConditionAction",
+          "parameters": [],
+          "contract": "Compiled path contains environment construction and sequence creation; it does not prove either live branch or wrapper ownership for an observed action.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.Skill+SkillHighlightEnvironment..ctor",
+                "Beyond.Gameplay.Core.AbilityActionUtils.CreateSequenceAction"
+              ]
+            }
+          ]
+        },
+        "SkillHighlightEnvironment.Constructor": {
+          "type": "Beyond.Gameplay.Core.Skill+SkillHighlightEnvironment",
+          "method": ".ctor",
+          "parameters": [
+            "Beyond.Gameplay.Core.Skill"
+          ],
+          "contract": "Compiled constructor stores its incoming skill reference. Entry observation retains the supplied reference only; completion, lifetime and subsequent consumer environment selection require separate evidence.",
+          "claims": [
+            {
+              "storesArgument": {
+                "argument": "rdx",
+                "field": "Beyond.Gameplay.Core.Skill+SkillHighlightEnvironment::<skill>k__BackingField"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "entityCount": {
+      "methods": {
+        "CheckEntityNum.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body contains target-list selection, entity/target carrier reads, blackboard retrieval and assignment, and server-operation construction. These calls do not establish count/filter/comparison semantics, stored-field argument ownership, an executed write or server acceptance.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.Gameplay.Core.BattleTargetWrapper.get_entityPtr",
+                "Beyond.Gameplay.Core.TargetHandle.get_hitReactionInfos",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboard.GetFloat",
+                "Beyond.ActionBlackboard.AssignDynamic",
+                "Beyond.Gameplay.Core.BattleManager+ServerReporter.CreateServerOp"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "globalCooldown": {
+      "methods": {
+        "AddGlobalCDTimer.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.AddGlobalCDTimer",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body contains first-target selection, blackboard evaluation and a timed-marker call. The selected entity, stored buffId/cdTime argument association, evaluated duration, IFix path and timer application remain unresolved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.BattleManager.AddGlobalTimedMarker"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "passiveUi": {
+      "methods": {
+        "NotifyCharPassiveUIAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "The compiled body contains first-target selection, blackboard evaluation and the charPassiveNum setter call. The selected entity, stored target/value argument association, evaluated number and live UI effect remain unresolved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.AbilitySystem.set_charPassiveNum"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "skillCooldown": {
+      "methods": {
+        "SetSkillCdAtOnce.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.SetSkillCdAtOnce",
+          "method": "ExecuteInternal",
+          "contract": "Compiled target selection, active-skill lookup, BlackboardFloat evaluation, cooldown helper and global-event calls. Individual stored arguments, numerical branch result, live timer writes and notification delivery remain unresolved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilitySystem.get_activeSkillMap",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboard.GetFloat",
+                "Beyond.Gameplay.Core.SetSkillCdAtOnce._DoSetSkillCd",
+                "Beyond.EventManager.SendGlobal"
+              ]
+            }
+          ],
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ]
+        },
+        "SetSkillCdAtOnce._DoSetSkillCd": {
+          "type": "Beyond.Gameplay.Core.SetSkillCdAtOnce",
+          "method": "_DoSetSkillCd",
+          "contract": "Compiled current-timer and cooldown reads plus remaining-time update calls. Their branch-specific arithmetic and live IFix selection remain separate.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.Skill.get_cooldownTimer",
+                "Beyond.Gameplay.MultiPeriodicTimer.get_curUpdateTimer",
+                "Beyond.Gameplay.PeriodicTimer.get_periodTime",
+                "Beyond.Gameplay.MultiPeriodicTimer.get_remainingTime",
+                "Beyond.Gameplay.PeriodicTimer.SetRemainingTime",
+                "Beyond.Gameplay.Core.Skill.get_cooldown",
+                "Beyond.Gameplay.MultiPeriodicTimer.SetCurrentTimerRemainingTimeWithExtendedPeriod"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "modeSwitch": {
+      "methods": {
+        "SwitchModeAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.SwitchModeAction",
+          "method": "ExecuteInternal",
+          "contract": "Compiled owner lookup and mode-enable calls. Stored mode ID, flags and selected branch need their own argument-flow proof.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.get_owner",
+                "Beyond.Gameplay.Core.AbilitySystem.EnableMode"
+              ]
+            }
+          ],
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ]
+        },
+        "SwitchModeAction.OnEnd": {
+          "type": "Beyond.Gameplay.Core.SwitchModeAction",
+          "method": "OnEnd",
+          "contract": "Compiled base end and mode-handle disable calls. A live handle, flags and actual restoration remain unresolved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.OnEnd",
+                "Beyond.Gameplay.Core.AbilitySystem+ModeHandle.DisableMode"
+              ]
+            }
+          ],
+          "parameters": []
+        }
+      }
+    },
+    "superArmorCondition": {
+      "methods": {
+        "CheckSuperArmor.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckSuperArmor",
+          "method": "ExecuteInternal",
+          "contract": "Compiled target selection and provider evaluation. Anonymous armor lookup/comparison, field argument ownership and predicate result remain unresolved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue"
+              ]
+            }
+          ],
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ]
+        }
+      }
+    },
+    "debugPrint": {
+      "methods": {
+        "DebugPrintAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.DebugPrintAction",
+          "method": "ExecuteInternal",
+          "contract": "If the compiled IFix check returns false, its straight fallthrough returns AL=1 through a checked epilogue without a print call. This does not establish the live patch state or patched implementation.",
+          "claims": [
+            {
+              "calls": [
+                "IFix.WrappersManagerImpl.IsPatched",
+                "IFix.WrappersManagerImpl.GetPatch"
+              ]
+            },
+            {
+              "returnsAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "value": 1
+              }
+            }
+          ],
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ]
+        }
+      }
+    },
+    "timeDilation": {
+      "methods": {
+        "TimeDilationAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.TimeDilationAction",
+          "method": "ExecuteInternal",
+          "contract": "The compiled body contains separate global and entity time-dilation start calls, target collection and Blackboard evaluation. Selected stored list/curve/operands, scaling arithmetic, live handle ownership and IFix branch remain unresolved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.TimeDilationManager.get_globalGameplaySlot",
+                "Beyond.Gameplay.Core.TimeDilationManager.StartGlobalTimeDilation",
+                "Beyond.Gameplay.Core.TimeDilationManager.StartEntityTimeDilation"
+              ]
+            }
+          ],
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ]
+        },
+        "TimeDilationAction.OnEnd": {
+          "type": "Beyond.Gameplay.Core.TimeDilationAction",
+          "method": "OnEnd",
+          "contract": "The compiled end body contains a TimeDilationHandle.Stop call. Stored finish flag, selected handle list and actual stopping need independent argument/branch evidence.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.TimeDilationHandle.Stop"
+              ]
+            }
+          ],
+          "parameters": []
+        }
+      }
+    },
+    "enemyHurtAnim": {
+      "methods": {
+        "EnemyHurtAnimAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.EnemyHurtAnimAction",
+          "method": "ExecuteInternal",
+          "contract": "Compiled paths contain first-target and target-list selection, Blackboard evaluation and hurt/back-swing/additive animation sinks. Selected attacker/defender, curve, impact/armor branch, duration arithmetic and actual animation remain unresolved.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.EnemyHurtAnimComponent.TryApplyHurtAnimInBackSwing",
+                "Beyond.Gameplay.Core.EnemyHurtAnimComponent._PlayHurtAnim",
+                "Beyond.Gameplay.Core.EnemyHurtAnimComponent._PlayHurtAdditive",
+                "Beyond.Gameplay.Core.AnimationQualityManager.TryAddAdditiveHurtShakeAnimation"
+              ]
+            }
+          ],
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ]
+        }
+      }
+    },
+    "createTimedMarker": {
+      "methods": {
+        "CreateTimedMarker.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.CreateTimedMarker",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Blackboard.TryGetString",
+                "Beyond.Gameplay.Core.AbilitySystem.AddTimedMarker"
+              ]
+            }
+          ],
+          "contract": "Compiled body/helper paths contain target collection, Blackboard evaluation and AddTimedMarker. Exact marker ID/duration arguments, target normalization, selected time-dilation flag and live registration remain unresolved."
+        },
+        "CreateTimedMarker.OnEnd": {
+          "type": "Beyond.Gameplay.Core.CreateTimedMarker",
+          "method": "OnEnd",
+          "parameters": [],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.TimedMarker.Remove"
+              ]
+            }
+          ],
+          "contract": "The compiled end path contains TimedMarker.Remove. Generic data-field ownership, finish flag, selected marker list and actual removal remain unresolved."
+        }
+      }
+    },
+    "tagMatchCondition": {
+      "methods": {
+        "CheckTagMatch.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckTagMatch",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargetsView",
+                "Beyond.Gameplay.Core.AbilitySystemUtils.ResolvePartBuffSource",
+                "Beyond.Gameplay.Core.Entity.MatchesQuery"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.Conditions.CheckTagMatch",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckTagMatch+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.Conditions.CheckTagMatch+Data::checkTarget"
+              }
+            }
+          ],
+          "contract": "Compiled paths contain target-view selection, part-source resolution and MatchesQuery. Exact stored query argument, target quantifier/short-circuit behavior, IFix branch and live predicate result remain unresolved. A fieldless concrete witness, occupied non-generic base and exact one-reference size increment independently prove the closed data slot. Incoming-this aliases reach this named stored field read on a compiled normal path; branch selection, later call arguments and live values remain unresolved."
+        }
+      }
+    },
+    "objectTypeCondition": {
+      "methods": {
+        "CheckObjectTypeMatch.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargetsView",
+                "Beyond.Gameplay.Core.AbilitySystem.get_objectType"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.Conditions.CheckObjectTypeMatch+Data::objectTypeMask"
+              }
+            }
+          ],
+          "contract": "Compiled paths contain target-view selection and object-type reads. Mask ownership, bitwise comparison, target quantifier and evaluated predicate remain unresolved. A fieldless concrete witness, occupied non-generic base and exact one-reference size increment independently prove the closed data slot. Incoming-this aliases reach this named stored field read on a compiled normal path; branch selection, later call arguments and live values remain unresolved."
+        }
+      }
+    },
+    "physicalInflictionCondition": {
+      "methods": {
+        "CheckPhysicalInflictionType.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckPhysicalInflictionType",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.IActionEnvironment+Context.TryGetEventContext",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboard.GetFloat",
+                "Beyond.ActionBlackboard.AssignDynamic"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.Conditions.CheckPhysicalInflictionType",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckPhysicalInflictionType+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.Conditions.CheckPhysicalInflictionType+Data::mask"
+              }
+            }
+          ],
+          "contract": "Compiled paths contain event-context acquisition and Blackboard reads/assignment. Context variant, mask/key argument ownership, event-value interpretation, server path and live predicate result remain unresolved. A fieldless concrete witness, occupied non-generic base and exact one-reference size increment independently prove the closed data slot. Incoming-this aliases reach this named stored field read on a compiled normal path; branch selection, later call arguments and live values remain unresolved."
+        }
+      }
+    },
+    "addTag": {
+      "methods": {
+        "AddTagAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.AddTagAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.Entity.AddTag"
+              ]
+            }
+          ],
+          "contract": "Compiled paths contain first-target selection, Blackboard evaluation and Entity.AddTag. Exact branch/field arguments, selected tag list, handle ownership and live attachment remain unresolved."
+        },
+        "AddTagAction.OnEnd": {
+          "type": "Beyond.Gameplay.Core.AddTagAction",
+          "method": "OnEnd",
+          "parameters": [],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.MultiTagHandle.RemoveTag"
+              ]
+            }
+          ],
+          "contract": "Compiled end paths contain MultiTagHandle.RemoveTag. Stored handle ownership, branch selection and actual tag removal remain unresolved."
+        }
+      }
+    },
+    "forEach": {
+      "methods": {
+        "ForEachAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.ForEachAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.Gameplay.Core.TargetHandle.get_targets",
+                "Beyond.Gameplay.Core.TargetHandle.SetTarget",
+                "Beyond.Gameplay.Core.SequenceAction.ExecuteInstant"
+              ]
+            }
+          ],
+          "contract": "Compiled paths contain target collection/access, temporary target binding and SequenceAction.ExecuteInstant. Exact sequence field, iteration order, view ownership and live execution remain unresolved."
+        },
+        "ForEachAction.OnEnd": {
+          "type": "Beyond.Gameplay.Core.ForEachAction",
+          "method": "OnEnd",
+          "parameters": [],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.SequenceAction.End"
+              ]
+            }
+          ],
+          "contract": "Compiled end paths contain SequenceAction.End. Selected sequence/handle and actual end transition remain unresolved."
+        }
+      }
+    },
+    "spawnAbilityEntity": {
+      "methods": {
+        "SpawnAbilityEntity.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.SpawnAbilityEntity",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargetsView",
+                "Beyond.Gameplay.Core.SpawnAbilityEntity._GetBornRotation",
+                "Beyond.ActionBlackboardExtensions.CreateAssignDataPair",
+                "Beyond.Gameplay.AbilityEntityTable.TryGetData",
+                "Beyond.Gameplay.Core.ObjectContainer.SpawnAbilityEntity",
+                "Beyond.Gameplay.Core.AbilityEntityController.OnSpawn"
+              ]
+            }
+          ],
+          "contract": "Compiled paths contain target selection, rotation helper, assignment preparation, entity-table lookup, spawn and controller initialization. Exact stored-field arguments, server/client paths, selected prefab, transform and entity ownership remain unresolved."
+        },
+        "SpawnAbilityEntity.OnEnd": {
+          "type": "Beyond.Gameplay.Core.SpawnAbilityEntity",
+          "method": "OnEnd",
+          "parameters": [],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.Entity.Release",
+                "Beyond.Gameplay.EffectManager.PauseAttachEffect",
+                "Beyond.Gameplay.Core.TargetHandle.Dispose"
+              ]
+            }
+          ],
+          "contract": "Compiled end paths contain entity release, attached-effect pause and target disposal. Lifetime flags, selected entities/handles and actual cleanup remain unresolved."
+        }
+      }
+    },
+    "cameraImpulse": {
+      "methods": {
+        "CameraImpulseAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.CameraImpulseAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.Gameplay.Core.TargetHandle.get_targets",
+                "Beyond.Gameplay.Core.AbilitySystemUtils.GetNodeTransform",
+                "Beyond.Gameplay.Core.CameraImpulseAction+CameraImpulseActionData.get_cameraShake2D",
+                "Beyond.Gameplay.View.CameraImpulseManager.StartImpulse",
+                "Beyond.Gameplay.View.CameraImpulseManager.StartImpulse2D"
+              ]
+            }
+          ],
+          "contract": "Compiled paths contain target collection, node-transform lookup, the cameraShake2D property and both impulse-start sinks. Exact stored-field arguments, selected transform, 2D/3D branch and impulse/camera ownership remain unresolved."
+        },
+        "CameraImpulseAction.OnEnd": {
+          "type": "Beyond.Gameplay.Core.CameraImpulseAction",
+          "method": "OnEnd",
+          "parameters": [],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.View.CameraImpulseManager.EndImpulse"
+              ]
+            }
+          ],
+          "contract": "Compiled end paths contain EndImpulse. Ending flags, selected handle and actual cleanup remain unresolved."
+        }
+      }
+    },
+    "notNextCheck": {
+      "methods": {
+        "NotNextCheckAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.NotNextCheckAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "When the selected Boolean IFix guard returns false, the normal getter returns the declared Int32-backed AlwaysReturnTrue enum through a complete EAX literal and plain epilogue. IFix paths, live getter selection, execution results, environment/context receiver ownership and subsequent sequence policy behavior remain unresolved."
+        }
+      }
+    },
+    "targetsEqualCondition": {
+      "methods": {
+        "CheckTargetsEqual.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckTargetsEqual",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargetsView",
+                "Beyond.Gameplay.Core.TargetHandleView.Contains",
+                "Beyond.Gameplay.Core.TargetHandleView.get_targets"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.Conditions.CheckTargetsEqual",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckTargetsEqual+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.Conditions.CheckTargetsEqual+Data::firstTargetSettings"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.Conditions.CheckTargetsEqual",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckTargetsEqual+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.Conditions.CheckTargetsEqual+Data::secondTargetSettings"
+              }
+            }
+          ],
+          "contract": "Named compiled sinks and independently receiver-proved stored reads are separate facts. They do not establish which stored field reaches a sink argument, selected targets/environments, branch truth, live writes, interrupt/pause transitions or event delivery. Unknown instruction paths remain refused; abnormalType ownership is not claimed."
+        },
+        "CheckTargetsEqual.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckTargetsEqual",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The checked normal false-guard path returns the selected CustomReturnType through a complete EAX zero and plain epilogue; this does not establish target equality or the sequence outcome."
+        }
+      }
+    },
+    "interruptCurrentSkill": {
+      "methods": {
+        "InterruptCurSkillAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.AbilityActions.InterruptCurSkillAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.Skill.Interrupt"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.AbilityActions.InterruptCurSkillAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AbilityActions.InterruptCurSkillAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.AbilityActions.InterruptCurSkillAction+Data::skillOwner"
+              }
+            }
+          ],
+          "contract": "Named compiled sinks and independently receiver-proved stored reads are separate facts. They do not establish which stored field reaches a sink argument, selected targets/environments, branch truth, live writes, interrupt/pause transitions or event delivery. Unknown instruction paths remain refused; abnormalType ownership is not claimed."
+        },
+        "InterruptCurSkillAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.AbilityActions.InterruptCurSkillAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "On false from the selected Boolean IFix guard, the normal property returns the declared AlwaysReturnTrue enum through a complete EAX literal and plain epilogue. This does not prove ExecuteInternal or sequence results, active IFix paths or live invocation."
+        }
+      }
+    },
+    "pauseBuffTime": {
+      "methods": {
+        "PauseBuffTime.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.PauseBuffTime",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.Buff.SetPaused"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.PauseBuffTime",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.PauseBuffTime+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.PauseBuffTime+Data::isPaused"
+              }
+            },
+            {
+              "passesClosedByteFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.PauseBuffTime",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.PauseBuffTime+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.PauseBuffTime+Data::isPaused",
+                "call": "Beyond.Gameplay.Core.Buff.SetPaused",
+                "parameter": "isPaused"
+              }
+            }
+          ],
+          "contract": "The normal compiled branch reads isPaused through the owned incoming-instance Data slot and supplies that complete byte to Buff.SetPaused.isPaused. The callee is independently a reference instance method with one bool parameter and void return. This does not prove the Buff receiver, successful casting, branch selection, source-to-live-Data assignment, normalization or actual pause transitions."
+        },
+        "PauseBuffTime.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.PauseBuffTime",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "On false from the selected Boolean IFix guard, the normal property returns the declared AlwaysReturnTrue enum through a complete EAX literal and plain epilogue. This does not prove ExecuteInternal or sequence results, active IFix paths or live invocation."
+        },
+        "Buff.SetPaused": {
+          "type": "Beyond.Gameplay.Core.Buff",
+          "method": "SetPaused",
+          "claims": [
+            {
+              "storesInstanceByteArgumentAfterFalseCall": {
+                "field": "Beyond.Gameplay.Core.Buff::m_isPaused",
+                "parameter": "isPaused",
+                "guard": "IFix.WrappersManagerImpl.IsPatched"
+              }
+            }
+          ],
+          "contract": "The selected nongeneric reference instance method has one bool parameter and void return. Complete incoming-this and argument-byte aliases survive the selected Boolean guard; its false JNE fallthrough writes the full byte into this Buff m_isPaused field. This is a compiled normal-path store, not live IFix selection, successful invocation, receiver association with a serialized source, pause duration or downstream tick behavior."
+        }
+      }
+    },
+    "abnormalStartFinish": {
+      "methods": {
+        "OnSpellAbnormalStartFinish.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.OnSpellAbnormalStartFinish",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.get_owner",
+                "Beyond.Gameplay.Core.AbilityAction.get_source",
+                "Beyond.Gameplay.Core.BattleManager+BattleRecorder.RecordSpellAbnormal",
+                "Beyond.Gameplay.Core.EventParams.Allocate",
+                "Beyond.Gameplay.Core.EventParams.SetSender",
+                "Beyond.Gameplay.Core.LevelEventManager.NeedTriggerLevelEvent",
+                "Beyond.Gameplay.Core.LevelEventManager.RaiseLevelEvent",
+                "Beyond.Gameplay.ParamBlackboard.SetValue"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.OnSpellAbnormalStartFinish",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.OnSpellAbnormalStartFinish+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.OnSpellAbnormalStartFinish+Data::isStart"
+              }
+            }
+          ],
+          "contract": "Named compiled sinks and independently receiver-proved stored reads are separate facts. They do not establish which stored field reaches a sink argument, selected targets/environments, branch truth, live writes, interrupt/pause transitions or event delivery. Unknown instruction paths remain refused; abnormalType ownership is not claimed."
+        },
+        "OnSpellAbnormalStartFinish.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.OnSpellAbnormalStartFinish",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "On false from the selected Boolean IFix guard, the normal property returns the declared AlwaysReturnTrue enum through a complete EAX literal and plain epilogue. This does not prove ExecuteInternal or sequence results, active IFix paths or live invocation."
+        }
+      }
+    },
+    "hitStop": {
+      "methods": {
+        "HitStopAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.HitStopAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargetsView",
+                "Beyond.Gameplay.Core.TimeDilationManager.StartHitStop"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.HitStopAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.HitStopAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.HitStopAction+Data::attacker"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.HitStopAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.HitStopAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.HitStopAction+Data::target"
+              }
+            }
+          ],
+          "contract": "Named compiled sinks and independently owned field reads remain separate evidence. They do not prove stored operands at sink arguments, branch/provider/IFix selection, target ownership or actual effects."
+        },
+        "HitStopAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.HitStopAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "The false Boolean guard reaches a complete typed EAX constant (literal or independently proved XOR-zero) through a plain epilogue. This is the declared normal return policy, not an execution result, inherited execution ownership or active patch selection."
+        }
+      }
+    },
+    "refreshBuffAttrModifier": {
+      "methods": {
+        "RefreshBuffAttrModifierValue.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.RefreshBuffAttrModifierValue",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.Buff.OnBlackboardValueChange",
+                "Beyond.Gameplay.Core.BattleManager+BattleRecorder.RecordBuffAttributeRefresh",
+                "Beyond.Gameplay.Core.AbilityAction+ServerActionParams.CreateServerOp"
+              ]
+            }
+          ],
+          "contract": "Named compiled sinks and independently owned field reads remain separate evidence. They do not prove stored operands at sink arguments, branch/provider/IFix selection, target ownership or actual effects."
+        },
+        "RefreshBuffAttrModifierValue.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.RefreshBuffAttrModifierValue",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "The false Boolean guard reaches a complete typed EAX constant (literal or independently proved XOR-zero) through a plain epilogue. This is the declared normal return policy, not an execution result, inherited execution ownership or active patch selection."
+        }
+      }
+    },
+    "vulnerable": {
+      "methods": {
+        "VulnerableAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.VulnerableAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean guard reaches a complete typed EAX constant (literal or independently proved XOR-zero) through a plain epilogue. This is the declared normal return policy, not an execution result, inherited execution ownership or active patch selection."
+        }
+      }
+    },
+    "spellInflictionOnChar": {
+      "methods": {
+        "SpellInflictionOnChar.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.SpellInflictionOnChar",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilitySystemUtils.GetSpellInflictionOnCharBuff",
+                "Beyond.Gameplay.Core.AbilitySystemUtils.GetSpellInflictionOnCharTriggeredBuff",
+                "Beyond.Gameplay.Core.AbilitySystem.AddBuff",
+                "Beyond.Gameplay.Core.AbilitySystem.ConsumeBuff",
+                "Beyond.Gameplay.Core.AbilitySystem.TriggerEvent",
+                "Beyond.ActionBlackboard.GetInt"
+              ]
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInflictionOnChar",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInflictionOnChar+Data>::m_data"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInflictionOnChar",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInflictionOnChar+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SpellInflictionOnChar+Data::source"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInflictionOnChar",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInflictionOnChar+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SpellInflictionOnChar+Data::target"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInflictionOnChar",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInflictionOnChar+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SpellInflictionOnChar+Data::source",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "parameter": "targetSettings"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInflictionOnChar",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInflictionOnChar+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SpellInflictionOnChar+Data::target",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "parameter": "targetSettings"
+              }
+            }
+          ],
+          "contract": "The selected instance-fieldless concrete layout (its dictionary declaration is static) proves the sole generic Data reference. Incoming-this aliases independently reach source/target reads and pass source to GetFirstTarget.targetSettings and target to GetTargets_Dispose.targetSettings on compiled paths. The decoder authenticates complete byte CMP boundaries without a register write. Selected entities, branches, counts/immunity/provider values, Buff delivery and actual effects remain unresolved; other candidate field chains still fail closed."
+        },
+        "SpellInflictionOnChar.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.SpellInflictionOnChar",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean guard reaches a complete typed EAX constant (literal or independently proved XOR-zero) through a plain epilogue. This is the declared normal return policy, not an execution result, inherited execution ownership or active patch selection."
+        }
+      }
+    },
+    "readAiTrans": {
+      "methods": {
+        "GetAITransDataAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.GetAITransDataAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        },
+        "GetAITransDataAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.GetAITransDataAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.GameLevel.TryGetAITransData",
+                "Beyond.Gameplay.Core.TargetHandle.SetTarget",
+                "Beyond.Gameplay.Core.IActionEnvironment+Context.UpdateTargetGroup"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.GetAITransDataAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetAITransDataAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.GetAITransDataAction+Data::aiTransKey"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.GetAITransDataAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetAITransDataAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.GetAITransDataAction+Data::saveTo"
+              }
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.GetAITransDataAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetAITransDataAction+Data>::m_data"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.GetAITransDataAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetAITransDataAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.GetAITransDataAction+Data::aiTransKey",
+                "call": "Beyond.Gameplay.Core.GameLevel.TryGetAITransData",
+                "parameter": "key"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.GetAITransDataAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetAITransDataAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.GetAITransDataAction+Data::saveTo",
+                "call": "Beyond.Gameplay.Core.IActionEnvironment+Context.UpdateTargetGroup",
+                "parameter": "key"
+              }
+            }
+          ],
+          "contract": "Incoming-this owns the independently read aiTransKey/saveTo strings. Full references reach TryGetAITransData.key and UpdateTargetGroup.key, with a TargetHandle.SetTarget call between them. Lookup outcomes, selected transform/handle, control flow, runtime delivery and update effects remain unresolved; saveTo names a target-group key in this compiled flow."
+        }
+      }
+    },
+    "spellInfliction": {
+      "methods": {
+        "SpellInfliction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.SpellInfliction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        },
+        "SpellInfliction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.SpellInfliction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.Gameplay.Core.AbilitySystemUtils.GetEnergyShardAttachedBuff",
+                "Beyond.Gameplay.Core.Ability.FillSkillCastInfo",
+                "Beyond.Gameplay.Core.AbilitySystem.Allocate",
+                "Beyond.Gameplay.Core.AbilitySystem._AddBuffInternal",
+                "Beyond.Gameplay.Core.AbilitySystem.NeedTriggerEvent",
+                "Beyond.Gameplay.Core.AbilitySystem.TriggerEvent",
+                "Beyond.Gameplay.Core.Buff+BuffContainer.ConsumeBuff"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInfliction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInfliction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SpellInfliction+Data::source"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInfliction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInfliction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SpellInfliction+Data::target"
+              }
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInfliction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInfliction+Data>::m_data"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInfliction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInfliction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SpellInfliction+Data::source",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "parameter": "targetSettings"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.SpellInfliction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SpellInfliction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SpellInfliction+Data::target",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "parameter": "targetSettings"
+              }
+            }
+          ],
+          "contract": "The declared dictionaries are static; the selected concrete instance adds only its closed Data reference. Owned source/target fields separately reach GetFirstTarget/GetTargets_Dispose.targetSettings. Compiled energy-shard Buff, allocation, consume, add and event calls do not establish branch selection, inflictionType/isExtra ownership, selected entities or effects."
+        }
+      }
+    },
+    "charHurtAnim": {
+      "methods": {
+        "CharHurtAnimAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.CharHurtAnimAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        },
+        "CharHurtAnimAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.CharHurtAnimAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.CharHurtAnimComponent.ApplyCharHurtAnim"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CharHurtAnimAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CharHurtAnimAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CharHurtAnimAction+Data::attacker"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CharHurtAnimAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CharHurtAnimAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CharHurtAnimAction+Data::defender"
+              }
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.CharHurtAnimAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CharHurtAnimAction+Data>::m_data"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.CharHurtAnimAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CharHurtAnimAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CharHurtAnimAction+Data::attacker",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "parameter": "targetSettings"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.CharHurtAnimAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CharHurtAnimAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CharHurtAnimAction+Data::defender",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "parameter": "targetSettings"
+              }
+            }
+          ],
+          "contract": "Owned attacker/defender Data references independently reach their typed selection arguments. Compiled Blackboard GetValue and ApplyCharHurtAnim calls are separate; curve/direction/scalar/configuration argument flows, animation outcomes and selected entities remain unresolved."
+        }
+      }
+    },
+    "spellInflictionType": {
+      "methods": {
+        "CheckSpellInflictionType.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        },
+        "CheckSpellInflictionType.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.IActionEnvironment+Context.TryGetEventContext",
+                "Beyond.ActionBlackboard.GetFloat",
+                "Beyond.ActionBlackboard.AssignDynamic",
+                "Beyond.Gameplay.Core.AbilityAction+ServerActionParams.GetServerRuntime",
+                "Beyond.Gameplay.Core.AbilityAction+ServerActionParams.CreateServerOp"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType+Data::mask"
+              }
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType+Data>::m_data"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType+Data::savedKey"
+              }
+            }
+          ],
+          "contract": "Incoming-this owns a complete selected mask read. Event-context, Blackboard and server-op calls remain compiled paths only. Saved-key ownership, bit-test inputs/results, branch selection and condition outcomes remain unresolved."
+        }
+      }
+    },
+    "igniteText": {
+      "methods": {
+        "IgniteBuffTextAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.IgniteBuffTextAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        },
+        "IgniteBuffTextAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.IgniteBuffTextAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.EventManager.get_gameEvents",
+                "Beyond.EventDispatcher`1.Dispatch",
+                "Beyond.EventBinding`1.Dispatch"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.IgniteBuffTextAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.IgniteBuffTextAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.IgniteBuffTextAction+Data::targetSettings"
+              }
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.IgniteBuffTextAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.IgniteBuffTextAction+Data>::m_data"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.IgniteBuffTextAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.IgniteBuffTextAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.IgniteBuffTextAction+Data::targetSettings",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "parameter": "targetSettings"
+              }
+            }
+          ],
+          "contract": "The owned TargetSettings reference reaches GetTargets_Dispose.targetSettings. EventManager and generic EventDispatcher/EventBinding Dispatch calls are compiled sinks only; their exact closed event payload identity, remaining Data fields, selected entities and displayed text remain unresolved."
+        }
+      }
+    },
+    "shelter": {
+      "methods": {
+        "ShelterAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.ShelterAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        }
+      }
+    },
+    "slow": {
+      "methods": {
+        "SlowAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.SlowAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        }
+      }
+    },
+    "speedup": {
+      "methods": {
+        "SpeedupAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.SpeedupAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        }
+      }
+    },
+    "weak": {
+      "methods": {
+        "WeakAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.WeakAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        }
+      }
+    },
+    "enhanced": {
+      "methods": {
+        "EnhancedAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.EnhancedAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        }
+      }
+    },
+    "launchProjectile": {
+      "methods": {
+        "LaunchProjectile.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.LaunchProjectile",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        },
+        "LaunchProjectile.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.LaunchProjectile",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "Beyond.Gameplay.ProjectileTable.TryGetData",
+                "Beyond.Gameplay.Core.LaunchProjectile._GetStartPos",
+                "Beyond.Gameplay.Core.LaunchProjectile._Launch"
+              ]
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.LaunchProjectile",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.LaunchProjectile+Data>::m_data",
+                "concreteInstanceSuffix": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.LaunchProjectile",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.LaunchProjectile+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.LaunchProjectile+Data::emitPos",
+                "concreteInstanceSuffix": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.LaunchProjectile",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.LaunchProjectile+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.LaunchProjectile+Data::projectileId",
+                "concreteInstanceSuffix": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.LaunchProjectile",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.LaunchProjectile+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.LaunchProjectile+Data::projectileSource",
+                "concreteInstanceSuffix": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.LaunchProjectile",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.LaunchProjectile+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.LaunchProjectile+Data::targetSettings",
+                "concreteInstanceSuffix": true
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.LaunchProjectile",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.LaunchProjectile+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.LaunchProjectile+Data::targetSettings",
+                "concreteInstanceSuffix": true,
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "parameter": "targetSettings"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.LaunchProjectile",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.LaunchProjectile+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.LaunchProjectile+Data::projectileSource",
+                "concreteInstanceSuffix": true,
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "parameter": "targetSettings"
+              }
+            }
+          ],
+          "contract": "The selected concrete string fields exactly fill a contiguous suffix after the non-generic base plus one reference. The explicit suffix claim independently establishes the closed Data slot; owned emitPos, projectileId, projectileSource and targetSettings reads follow. projectileSource and targetSettings reach separate target selection parameters. Table lookup, _GetStartPos and _Launch calls do not prove vector/provider evaluation, spawned objects, skill callbacks or trajectory/delivery effects."
+        }
+      }
+    },
+    "recoverLockOnEndIfNoLock": {
+      "methods": {
+        "RecoverLockOnEndIfNoLockAction.get_executeReturnType": {
+          "type": "Beyond.Gameplay.Core.RecoverLockOnEndIfNoLockAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false Boolean IFix guard reaches a complete typed EAX constant through the checked normal epilogue. This is the declared return policy, not the action result, inherited execution ownership or active patch selection."
+        },
+        "RecoverLockOnEndIfNoLockAction.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.RecoverLockOnEndIfNoLockAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.BattleManager.get_lockTarget"
+              ]
+            }
+          ],
+          "contract": "ExecuteInternal contains first-target and lock-target reads; OnEnd separately contains lock-target checks and ForceSetLockTarget. Its declared ObjectPtr value field is outside the current concrete-suffix proof, so no closed Data-slot/target read or receiver ownership is claimed. Recorded pointer provenance, no-lock branch selection, end timing and lock recovery effects remain unresolved."
+        },
+        "RecoverLockOnEndIfNoLockAction.OnEnd": {
+          "type": "Beyond.Gameplay.Core.RecoverLockOnEndIfNoLockAction",
+          "method": "OnEnd",
+          "parameters": [],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.BattleManager.get_lockTarget",
+                "Beyond.Gameplay.Core.BattleManager.ForceSetLockTarget"
+              ]
+            }
+          ],
+          "contract": "ExecuteInternal contains first-target and lock-target reads; OnEnd separately contains lock-target checks and ForceSetLockTarget. Its declared ObjectPtr value field is outside the current concrete-suffix proof, so no closed Data-slot/target read or receiver ownership is claimed. Recorded pointer provenance, no-lock branch selection, end timing and lock recovery effects remain unresolved."
+        }
+      }
+    },
+    "createGlobalBuff": {
+      "methods": {
+        "createGlobalBuff.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "Selected compiled calls and independently owned configuration flows. Call presence alone does not prove a particular branch, argument, evaluated result or effect. Only explicit field and argument claims supply those narrow joins.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.BattleManager.AddGlobalBuff",
+                "Beyond.ObjectPtr`1.get_isValid",
+                "System.Collections.Generic.List`1.AddWithResize",
+                "System.Collections.Generic.List`1.get_Item"
+              ]
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CreateGlobalBuffAction+Data>::m_data",
+                "concreteInstanceSuffix": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CreateGlobalBuffAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CreateGlobalBuffAction+Data::autoFinishByAction",
+                "concreteInstanceSuffix": true,
+                "followNormalForwardJumps": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CreateGlobalBuffAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CreateGlobalBuffAction+Data::count",
+                "concreteInstanceSuffix": true,
+                "followNormalForwardJumps": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CreateGlobalBuffAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CreateGlobalBuffAction+Data::globalBuffs",
+                "concreteInstanceSuffix": true,
+                "followNormalForwardJumps": true,
+                "closedGenericReferenceField": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CreateGlobalBuffAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CreateGlobalBuffAction+Data::globalBuffSource",
+                "concreteInstanceSuffix": true,
+                "followNormalForwardJumps": true
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CreateGlobalBuffAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CreateGlobalBuffAction+Data::globalBuffSource",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "parameter": "targetSettings",
+                "followNormalForwardJumps": true,
+                "concreteInstanceSuffix": true
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CreateGlobalBuffAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CreateGlobalBuffAction+Data::count",
+                "call": "Beyond.ActionBlackboardExtensions.GetValue",
+                "parameter": "param",
+                "followNormalForwardJumps": true,
+                "concreteInstanceSuffix": true
+              }
+            }
+          ]
+        },
+        "createGlobalBuff.OnEnd": {
+          "type": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+          "method": "OnEnd",
+          "parameters": [],
+          "contract": "Selected compiled calls and independently owned configuration flows. Call presence alone does not prove a particular branch, argument, evaluated result or effect. Only explicit field and argument claims supply those narrow joins.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.GlobalBuff.MarkFinish",
+                "Beyond.ObjectPtr`1.Lock",
+                "Beyond.ObjectPtr`1.get_isValid",
+                "System.Collections.Generic.List`1.get_Item"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "createGlobalBuffReturnPolicy": {
+      "methods": {
+        "createGlobalBuffReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.CreateGlobalBuffAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "contract": "The selected false IFix guard reaches a typed return-policy literal and complete return epilogue. This does not establish runtime guard selection or action execution.",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "setBuffDuration": {
+      "methods": {
+        "setBuffDuration.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.SetBuffDurationAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "Selected compiled calls and independently owned configuration flows. Call presence alone does not prove a particular branch, argument, evaluated result or effect. Only explicit field and argument claims supply those narrow joins.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.DLogger.LogError",
+                "Beyond.Gameplay.Core.Ability.FillSkillCastInfo",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetBuffFindHandle_Dispose",
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "Beyond.Gameplay.Core.AbilitySystem.FinishBuff",
+                "Beyond.Gameplay.Core.AbilitySystemUtils.ResolvePartBuffSource",
+                "Beyond.Gameplay.Core.Buff.RawSetLifeTime",
+                "Beyond.Gameplay.Core.Buff.get_isFinished",
+                "Beyond.Gameplay.Core.Buff.get_isServerBuff",
+                "Beyond.Gameplay.Core.Buff.get_lifeTime",
+                "Beyond.Gameplay.Core.Buff.get_lifeType",
+                "Beyond.ObjectPtr`1.Lock",
+                "System.ArgumentOutOfRangeException..ctor",
+                "System.Collections.Generic.List`1+Enumerator.MoveNext",
+                "System.Collections.Generic.List`1.GetEnumerator",
+                "System.Enum.ToString",
+                "System.String.Concat"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SetBuffDurationAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetBuffDurationAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SetBuffDurationAction+Data::buffSettings",
+                "followNormalForwardJumps": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SetBuffDurationAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetBuffDurationAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SetBuffDurationAction+Data::targetSettings",
+                "followNormalForwardJumps": true
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.SetBuffDurationAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetBuffDurationAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SetBuffDurationAction+Data::buffSettings",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetBuffFindHandle_Dispose",
+                "parameter": "buffFindSettings",
+                "followNormalForwardJumps": true
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.SetBuffDurationAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetBuffDurationAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SetBuffDurationAction+Data::targetSettings",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "parameter": "targetSettings",
+                "followNormalForwardJumps": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SetBuffDurationAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetBuffDurationAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SetBuffDurationAction+Data::operationType",
+                "followNormalForwardJumps": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SetBuffDurationAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetBuffDurationAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SetBuffDurationAction+Data::value",
+                "onAnyLocalCompiledPath": true
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.SetBuffDurationAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetBuffDurationAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SetBuffDurationAction+Data::value",
+                "call": "Beyond.ActionBlackboardExtensions.GetValue",
+                "parameter": "param",
+                "onAnyLocalCompiledPath": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SetBuffDurationAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetBuffDurationAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SetBuffDurationAction+Data::isFinishedEarly",
+                "onAnyLocalCompiledPath": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    "setBuffDurationReturnPolicy": {
+      "methods": {
+        "setBuffDurationReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.SetBuffDurationAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "contract": "The selected false IFix guard reaches a typed return-policy literal and complete return epilogue. This does not establish runtime guard selection or action execution.",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "switch": {
+      "methods": {
+        "switch.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.SwitchAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "contract": "Selected compiled calls and independently owned configuration flows. Call presence alone does not prove a particular branch, argument, evaluated result or effect. Only explicit field and argument claims supply those narrow joins.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.Gameplay.Core.SequenceAction.Execute",
+                "Beyond.Gameplay.Core.TargetHandle.CopyFrom",
+                "Beyond.Gameplay.Core.TargetHandleView..ctor",
+                "System.Collections.Generic.List`1.get_Item"
+              ]
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.SwitchAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SwitchAction+Data>::m_data",
+                "concreteInstanceSuffix": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SwitchAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SwitchAction+Data>::m_data",
+                "concreteInstanceSuffix": true,
+                "valueField": "Beyond.Gameplay.Core.SwitchAction+Data::choice",
+                "followNormalForwardJumps": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SwitchAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SwitchAction+Data>::m_data",
+                "concreteInstanceSuffix": true,
+                "valueField": "Beyond.Gameplay.Core.SwitchAction+Data::options",
+                "followNormalForwardJumps": true,
+                "closedGenericReferenceField": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SwitchAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SwitchAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SwitchAction+Data::choice",
+                "concreteInstanceSuffix": true,
+                "onAnyLocalCompiledPath": true
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.SwitchAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SwitchAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SwitchAction+Data::choice",
+                "concreteInstanceSuffix": true,
+                "call": "Beyond.ActionBlackboardExtensions.GetValue",
+                "parameter": "param",
+                "onAnyLocalCompiledPath": true
+              }
+            }
+          ]
+        },
+        "switch.OnEnd": {
+          "type": "Beyond.Gameplay.Core.SwitchAction",
+          "method": "OnEnd",
+          "parameters": [],
+          "contract": "Selected compiled calls and independently owned configuration flows. Call presence alone does not prove a particular branch, argument, evaluated result or effect. Only explicit field and argument claims supply those narrow joins.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.OnEnd",
+                "Beyond.Gameplay.Core.SequenceAction.End",
+                "Beyond.Gameplay.Core.TargetHandle.Dispose"
+              ]
+            }
+          ]
+        },
+        "switch.OnCreate": {
+          "type": "Beyond.Gameplay.Core.SwitchAction",
+          "method": "OnCreate",
+          "parameters": [],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.OnCreate",
+                "Beyond.Gameplay.Core.AbilityActionUtils.CreateSequenceAction",
+                "System.Collections.Generic.List`1+Enumerator.MoveNext",
+                "System.Collections.Generic.List`1.AddWithResize",
+                "System.Collections.Generic.List`1.GetEnumerator"
+              ]
+            }
+          ],
+          "contract": "Compiled sequence creation, reassignment, ticking or reset calls; stored Option-to-created-sequence identity, execution order and runtime effects remain unresolved."
+        },
+        "switch.OnReAssign": {
+          "type": "Beyond.Gameplay.Core.SwitchAction",
+          "method": "OnReAssign",
+          "parameters": [
+            "Beyond.Gameplay.Core.IActionEnvironment"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.SequenceAction.ReAssign",
+                "System.Collections.Generic.List`1.get_Item"
+              ]
+            }
+          ],
+          "contract": "Compiled sequence creation, reassignment, ticking or reset calls; stored Option-to-created-sequence identity, execution order and runtime effects remain unresolved."
+        },
+        "switch.OnTick": {
+          "type": "Beyond.Gameplay.Core.SwitchAction",
+          "method": "OnTick",
+          "parameters": [
+            "System.Single"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.OnTick",
+                "Beyond.Gameplay.Core.SequenceAction.OnTick"
+              ]
+            }
+          ],
+          "contract": "Compiled sequence creation, reassignment, ticking or reset calls; stored Option-to-created-sequence identity, execution order and runtime effects remain unresolved."
+        },
+        "switch.OnReset": {
+          "type": "Beyond.Gameplay.Core.SwitchAction",
+          "method": "OnReset",
+          "parameters": [
+            "Beyond.Gameplay.Core.AbilityAction+ResetReason"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.SequenceAction.Reset",
+                "System.Collections.Generic.List`1.get_Item"
+              ]
+            }
+          ],
+          "contract": "Compiled sequence creation, reassignment, ticking or reset calls; stored Option-to-created-sequence identity, execution order and runtime effects remain unresolved."
+        }
+      }
+    },
+    "switchReturnPolicy": {
+      "methods": {
+        "switchReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.SwitchAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "contract": "The selected false IFix guard reaches a typed return-policy literal and complete return epilogue. This does not establish runtime guard selection or action execution.",
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ]
+        }
+      }
+    },
+    "squadInFight": {
+      "methods": {
+        "squadInFight.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.Condition.CheckSquadInFight",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.BattleManager.get_isSquadInFight"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.Condition.CheckSquadInFight",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Condition.CheckSquadInFight+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.Condition.CheckSquadInFight+Data::invertCondition",
+                "followNormalForwardJumps": true
+              }
+            }
+          ],
+          "contract": "Compiled calls and independently authenticated stored-field reads. Generic list receiver/element invocation, fight-state receiver, mask predicates, weapon configuration flows and actual effects remain unproved."
+        }
+      }
+    },
+    "squadInFightReturnPolicy": {
+      "methods": {
+        "squadInFightReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.Condition.CheckSquadInFight",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false selected IFix guard reaches the declared CustomReturnType enum and complete EAX return epilogue; this does not establish invocation or action results."
+        }
+      }
+    },
+    "originSkillType": {
+      "methods": {
+        "originSkillType.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.CheckOriginSkillType",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.DLogger.LogError",
+                "Beyond.Gameplay.Core.IActionEnvironment+Context.get_currentEventContext",
+                "Beyond.Gameplay.Core.Skill.get_owner",
+                "Beyond.Gameplay.Core.Skill.get_skillId",
+                "System.Collections.Generic.List`1.Contains",
+                "System.String.Equals"
+              ]
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CheckOriginSkillType",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CheckOriginSkillType+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.CheckOriginSkillType+Data::skillTypeList",
+                "followNormalForwardJumps": true,
+                "closedGenericReferenceField": true
+              }
+            }
+          ],
+          "contract": "Compiled calls and independently authenticated stored-field reads. Generic list receiver/element invocation, fight-state receiver, mask predicates, weapon configuration flows and actual effects remain unproved."
+        }
+      }
+    },
+    "originSkillTypeReturnPolicy": {
+      "methods": {
+        "originSkillTypeReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.CheckOriginSkillType",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false selected IFix guard reaches the declared CustomReturnType enum and complete EAX return epilogue; this does not establish invocation or action results."
+        }
+      }
+    },
+    "charWeaponVisible": {
+      "methods": {
+        "charWeaponVisible.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.CharWeaponVisibleAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.DLogger.LogError",
+                "Beyond.Gameplay.Core.AbilityAction.get_owner",
+                "Beyond.Gameplay.View.WeaponComponent.SetAllVFXOverride",
+                "Beyond.Gameplay.View.WeaponComponent.SetAllWeaponState",
+                "Beyond.Gameplay.View.WeaponComponent.SetVFXOverride",
+                "Beyond.Gameplay.View.WeaponComponent.SetWeaponState"
+              ]
+            }
+          ],
+          "contract": "Compiled calls and independently authenticated stored-field reads. Generic list receiver/element invocation, fight-state receiver, mask predicates, weapon configuration flows and actual effects remain unproved."
+        }
+      }
+    },
+    "charWeaponVisibleReturnPolicy": {
+      "methods": {
+        "charWeaponVisibleReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.CharWeaponVisibleAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The false selected IFix guard reaches the declared CustomReturnType enum and complete EAX return epilogue; this does not establish invocation or action results."
+        }
+      }
+    },
+    "recoverPoiseCalls": {
+      "methods": {
+        "recoverPoise.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.RecoverPoiseAction",
+          "method": "ExecuteInternal",
+          "parameters": ["Beyond.Gameplay.Core.TargetHandleView"],
+          "claims": [{"calls": [
+            "Beyond.Gameplay.Core.AbilityActionUtils.GetActionTarget",
+            "Beyond.Gameplay.Core.AbilitySystem+Modifier.NewPoise",
+            "Beyond.Gameplay.EffectManager.CreateEffectByCfg"
+          ]}],
+          "contract": "Compiled direct calls only. Operand ownership, amount computation, selected target and accepted poise/effect writes remain unresolved."
+        }
+      }
+    },
+    "recoverPoiseReturnPolicy": {
+      "methods": {
+        "recoverPoiseReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.RecoverPoiseAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [{"returnsEnumAfterFalseCall": {
+            "call": "IFix.WrappersManagerImpl.IsPatched",
+            "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+            "member": "CustomReturnType"
+          }}],
+          "contract": "The selected false IFix guard reaches a typed return-policy literal and complete return epilogue. This does not establish runtime guard selection or action execution."
+        }
+      }
+    },
+    "recoverPoiseAlwaysNextReturn": {
+      "methods": {
+        "recoverPoise.AlwaysReturnTrue": {
+          "type": "Beyond.Gameplay.Core.RecoverPoiseAction",
+          "method": "AlwaysReturnTrue",
+          "parameters": [],
+          "claims": [{"returnsClosedByteFieldAfterFalseCall": {
+            "call": "IFix.WrappersManagerImpl.IsPatched",
+            "witnessType": "Beyond.Gameplay.Core.RecoverPoiseAction",
+            "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.RecoverPoiseAction+Data>::m_data",
+            "valueField": "Beyond.Gameplay.Core.RecoverPoiseAction+Data::alwaysNext"
+          }}],
+          "contract": "On the false selected Boolean IFix guard and non-null incoming owned Data fallthrough, an unsigned byte load supplies EAX/AL and survives the complete epilogue. The owned cold IFix target leaves this return program. This Boolean method is separate from the CustomReturnType enum getter; caller use, live patch selection and Data assignment remain unresolved."
+        }
+      }
+    },
+    "recoverPoiseTargetRead": {
+      "methods": {
+        "recoverPoise.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.RecoverPoiseAction",
+          "method": "ExecuteInternal",
+          "parameters": ["Beyond.Gameplay.Core.TargetHandleView"],
+          "claims": [{"readsClosedDataField": {
+            "witnessType": "Beyond.Gameplay.Core.RecoverPoiseAction",
+            "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.RecoverPoiseAction+Data>::m_data",
+            "valueField": "Beyond.Gameplay.Core.RecoverPoiseAction+Data::target",
+            "onAnyLocalCompiledPath": true
+          }}],
+          "contract": "One checked compiled local path reads target through the incoming owned Data slot. Target forwarding, selected entity, amount computation and accepted poise/effect writes remain unresolved."
+        }
+      }
+    },
+    "switchAlwaysNextReturn": {
+      "methods": {
+        "switch.AlwaysReturnTrue": {
+          "type": "Beyond.Gameplay.Core.SwitchAction",
+          "method": "AlwaysReturnTrue",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsClosedByteFieldAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "witnessType": "Beyond.Gameplay.Core.SwitchAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SwitchAction+Data>::m_data",
+                "valueField": "Beyond.Gameplay.Core.SwitchAction+Data::alwaysNext",
+                "concreteInstanceSuffix": true
+              }
+            }
+          ],
+          "contract": "On the false selected Boolean IFix guard and non-null incoming owned Data fallthrough, alwaysNext supplies AL and survives the complete epilogue. This Boolean method is separate from get_executeReturnType returning CustomReturnType. Caller use, patch selection and live Data assignment remain unresolved."
+        }
+      }
+    },
+    "finishGlobalConsumers": {
+      "methods": {
+        "finishGlobal.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.ActionBlackboardExtensions.GetValue",
+                "Beyond.Gameplay.Core.AbilityAction.get_blackboard",
+                "Beyond.Gameplay.Core.BattleManager.RemoveGlobalBuff",
+                "Beyond.Gameplay.Core.Buff.get_parentBuffRoot",
+                "Beyond.Gameplay.Core.GlobalBuff.MarkFinish",
+                "Beyond.CollectionExtensions.SafeCount",
+                "System.Collections.Generic.List`1.get_Item"
+              ]
+            },
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data>::m_data"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data::finishParent"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data::globalBuffIds",
+                "closedGenericReferenceField": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data::finishAll"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data::finishCount",
+                "onAnyLocalCompiledPath": true
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data::isFinishedEarly"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction+Data::finishCount",
+                "call": "Beyond.ActionBlackboardExtensions.GetValue",
+                "parameter": "param",
+                "onAnyLocalCompiledPath": true
+              }
+            }
+          ],
+          "contract": "Compiled calls and incoming-owned closed Data reads, with finishCount forwarded into its named Blackboard evaluation parameter. The ID-list receiver, chosen instances, count conversion, reason mapping, live guard/branch selection and accepted finish effects remain separate."
+        }
+      }
+    },
+    "finishGlobalReturnPolicy": {
+      "methods": {
+        "finishGlobalReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.AbilityActions.FinishGlobalBuffAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "The selected false IFix guard reaches the typed AlwaysReturnTrue enum literal and complete return epilogue. This is an enum policy getter, distinct from a Boolean AlwaysReturnTrue method. Live guard selection, caller policy use and action effects remain unresolved."
+        }
+      }
+    },
+    "blowOffTargetConfiguration": {
+      "methods": {
+        "blowOff.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.BlowOffCharacterAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.BlowOffCharacterAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.BlowOffCharacterAction+Data>::m_data"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.BlowOffCharacterAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.BlowOffCharacterAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.BlowOffCharacterAction+Data::attackerTargetSettings"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.BlowOffCharacterAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.BlowOffCharacterAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.BlowOffCharacterAction+Data::attackerTargetSettings",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "parameter": "targetSettings"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.BlowOffCharacterAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.BlowOffCharacterAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.BlowOffCharacterAction+Data::targetSettings"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.BlowOffCharacterAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.BlowOffCharacterAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.BlowOffCharacterAction+Data::targetSettings",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetTargets_Dispose",
+                "parameter": "targetSettings"
+              }
+            }
+          ],
+          "contract": "The incoming owned closed Data slot supplies attackerTargetSettings to GetFirstTarget.targetSettings and targetSettings to GetTargets_Dispose.targetSettings in the bounded ordinary compiled prefix. Actual first/list target selection, priority/speed/direction computation, later ApplyBlowOff arguments and accepted effects remain separate."
+        }
+      }
+    },
+    "blowOffReturnPolicy": {
+      "methods": {
+        "blowOffReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.BlowOffCharacterAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The selected false IFix guard reaches CustomReturnType and the complete enum return epilogue. This proves neither the runtime guard selection nor the action Boolean result."
+        }
+      }
+    },
+    "castSkillConfiguration": {
+      "methods": {
+        "castSkill.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.CastSkill",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.CastSkill",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CastSkill+Data>::m_data"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CastSkill",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CastSkill+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.CastSkill+Data::caster"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CastSkill",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CastSkill+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.CastSkill+Data::target"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CastSkill",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CastSkill+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.CastSkill+Data::skillId"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CastSkill",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CastSkill+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.CastSkill+Data::skipApplyCost"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CastSkill",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CastSkill+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.CastSkill+Data::inheritSourceSkillCastId"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.CastSkill",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CastSkill+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.CastSkill+Data::interruptCurSkillOnlyWhenTargetCastable"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.CastSkill",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CastSkill+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.CastSkill+Data::caster",
+                "call": "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+                "parameter": "targetSettings"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.CastSkill",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.CastSkill+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.CastSkill+Data::skillId",
+                "call": "Beyond.ActionBlackboardExtensions.GetValue",
+                "parameter": "param"
+              }
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargetsView",
+                "Beyond.Gameplay.Core.AbilitySystem.TryCastSkillDuringAction"
+              ]
+            }
+          ],
+          "contract": "The owned incoming closed Data slot supplies caster to GetFirstTarget.targetSettings and skillId to ActionBlackboardExtensions.GetValue.param in the bounded ordinary compiled path. The same owned Data stores target and the three flags read in that path. GetTargetsView and TryCastSkillDuringAction calls are present. GetTargetsView argument forwarding remains unproved because the current reference checker excludes its aggregate return ABI. Actual target selection, evaluated string, flag forwarding, inherited cast info, guard selection, skill acceptance and effects remain separate."
+        }
+      }
+    },
+    "castSkillReturnPolicy": {
+      "methods": {
+        "castSkillReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.CastSkill",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "CustomReturnType"
+              }
+            }
+          ],
+          "contract": "The selected false IFix guard reaches CustomReturnType and its complete enum return epilogue. This proves neither the runtime guard selection nor the action Boolean result."
+        }
+      }
+    },
+    "animatorActionEndConfiguration": {
+      "methods": {
+        "animator.OnEnd": {
+          "type": "Beyond.Gameplay.Core.SetAnimatorParamAction",
+          "method": "OnEnd",
+          "parameters": [],
+          "claims": [
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.SetAnimatorParamAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetAnimatorParamAction+Data>::m_data"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.SetAnimatorParamAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SetAnimatorParamAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.SetAnimatorParamAction+Data::actionOnEnd"
+              }
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.get_owner"
+              ]
+            }
+          ],
+          "contract": "The incoming owned closed Data slot supplies the Boolean actionOnEnd read in the bounded ordinary OnEnd path. The named owner getter is called. The flag branch outcome, owner/component identity, the two nested configuration operands and actual animator writes remain separate."
+        },
+        "animator.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.SetAnimatorParamAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityAction.get_owner"
+              ]
+            }
+          ],
+          "contract": "The current compiled execution method calls the named owner getter. This call presence does not establish a selected animator receiver, paramAction operand, helper selection or effect."
+        }
+      }
+    },
+    "animatorActionReturnPolicy": {
+      "methods": {
+        "animatorReturnPolicy": {
+          "type": "Beyond.Gameplay.Core.SetAnimatorParamAction",
+          "method": "get_executeReturnType",
+          "parameters": [],
+          "claims": [
+            {
+              "returnsEnumAfterFalseCall": {
+                "call": "IFix.WrappersManagerImpl.IsPatched",
+                "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+                "member": "AlwaysReturnTrue"
+              }
+            }
+          ],
+          "contract": "The selected false IFix guard reaches the declared AlwaysReturnTrue enum through the complete return epilogue. This is a policy getter, not proof of action invocation, Boolean execution results or animation effects."
+        }
+      }
+    },
+    "pickTargetConfiguration": {
+      "methods": {
+        "pickTarget.ExecuteInternal": {
+          "type": "Beyond.Gameplay.Core.PickTargetAction",
+          "method": "ExecuteInternal",
+          "parameters": [
+            "Beyond.Gameplay.Core.TargetHandleView"
+          ],
+          "claims": [
+            {
+              "closedReferenceLayout": {
+                "witnessType": "Beyond.Gameplay.Core.PickTargetAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.PickTargetAction+Data>::m_data"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.PickTargetAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.PickTargetAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.PickTargetAction+Data::contextKey"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.PickTargetAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.PickTargetAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.PickTargetAction+Data::target"
+              }
+            },
+            {
+              "readsClosedDataField": {
+                "witnessType": "Beyond.Gameplay.Core.PickTargetAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.PickTargetAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.PickTargetAction+Data::index"
+              }
+            },
+            {
+              "passesClosedDataFieldToCall": {
+                "witnessType": "Beyond.Gameplay.Core.PickTargetAction",
+                "dataField": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.PickTargetAction+Data>::m_data",
+                "followNormalForwardJumps": true,
+                "valueField": "Beyond.Gameplay.Core.PickTargetAction+Data::index",
+                "call": "Beyond.ActionBlackboardExtensions.GetValue",
+                "parameter": "param"
+              }
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilityActionUtils.GetTargetsView",
+                "Beyond.Gameplay.Core.TargetHandleView.get_targets",
+                "Beyond.Gameplay.Core.TargetHandle.SetTarget",
+                "Beyond.Gameplay.Core.IActionEnvironment+Context.UpdateTargetGroup"
+              ]
+            }
+          ],
+          "contract": "The owned incoming closed Data slot supplies contextKey, target and index reads. The index reference reaches the named static GetValue.param argument with Int32 return ABI. The named targets getter, GetTargetsView, SetTarget and UpdateTargetGroup calls are present. Target-to-GetTargetsView forwarding remains outside the current checker because its aggregate return ABI is excluded. Key-to-update forwarding, evaluated index, bounds outcome, item and target identity, mutation success, IFix selection and execution remain independent obligations."
         }
       }
     }

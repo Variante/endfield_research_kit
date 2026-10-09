@@ -283,6 +283,30 @@ def _decode_child(data: bytes, source: str, field: dict[str, Any],
             "namedFields": named, "wholeProviderByteSpanExact": True}
 
 
+def decode_blackboard_value(data: bytes, *, source: str, logical_sha256: str,
+                           start: int, end: int, provider_type: str,
+                           native_validation: dict[str, Any]) -> dict[str, Any]:
+    """Replay a proved provider; its caller independently owns the typed slot."""
+    contract = _contract()
+    bindings = [{"parentFieldIndex": row["parentFieldIndex"],
+                 "parentFieldName": row["parentFieldName"],
+                 "providerType": row["providerType"]} for row in contract["children"]]
+    if (native_validation.get("status") != "validated"
+            or native_validation.get("nativeInputs") != contract["nativeInputs"]
+            or native_validation.get("storedReadOrder") != contract["storedReadOrder"]
+            or native_validation.get("bindings") != bindings
+            or not isinstance(data, bytes) or not source or not isinstance(logical_sha256, str)
+            or hashlib.sha256(data).hexdigest().upper() != logical_sha256.upper()
+            or type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data)):
+        raise ValueError(f"{LABEL}:value-native-source-or-span")
+    selected = [row for row in bindings if row["providerType"] == provider_type]
+    if len(selected) != 1:
+        raise ValueError(f"{LABEL}:value-provider-not-proved")
+    row = _decode_child(data, source, {"start": start, "end": end}, selected[0], contract["storedReadOrder"])
+    return {**row, "source": source, "logicalSha256": logical_sha256.upper(),
+            "recursiveStoredSchemaExact": True, "runtimeMeaningExact": False}
+
+
 def decode_super_armor_blackboard_children(
     data: bytes, *, source: str, logical_sha256: str, start: int, end: int,
     native_validation: dict[str, Any],

@@ -1,0 +1,544 @@
+{
+  "schema": "endfield.buff-formatter-provider-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "selected-physical-formatter-provider-context-and-return-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependencies": {
+    "instance": "buff_timeline_instance_native.json",
+    "static": "buff_timeline_static_composition_native.json"
+  },
+  "declaration": [
+    428394,
+    "MemoryPack.MemoryPackFormatterProvider",
+    "GetFormatter"
+  ],
+  "providerContext": {
+    "definition": 428394,
+    "isMethod": true,
+    "token": 100663343,
+    "image": "MemoryPack.dll",
+    "typeName": "MemoryPack.MemoryPackFormatterProvider",
+    "methodName": "GetFormatter",
+    "start": 13,
+    "count": 2,
+    "entries": [
+      {
+        "relativeSlot": 0,
+        "rawHex": "01000000000000002448328C01000000",
+        "kind": 1,
+        "index": 2190,
+        "typeName": "MVAR[21100]",
+        "typeRawHex": "6C5200000000000000001E0000000000"
+      },
+      {
+        "relativeSlot": 1,
+        "rawHex": "0200000000000000F098328C01000000",
+        "kind": 2,
+        "index": 60616,
+        "typeName": "MemoryPack.MemoryPackFormatter`1<MVAR[21100]>",
+        "typeRawHex": "08358C8D010000000000150000000000"
+      }
+    ]
+  },
+  "calledEntryRva": 47858272,
+  "independentObjectRegistration": {
+    "pointer": 6553489636,
+    "methodSpecIndex": 516881,
+    "registration": {
+      "tableIndex": 488049,
+      "va": 6646479472,
+      "methodSpecIndex": 516881,
+      "rawHex": "11E30700BE70070022530100FFFFFFFF",
+      "indices": [
+        487614,
+        86818,
+        -1
+      ]
+    },
+    "classInstantiation": {
+      "index": -1,
+      "table_slot_va": null,
+      "record_va": null,
+      "argument_vector_va": null,
+      "padding_hex": "",
+      "arguments": []
+    },
+    "methodInstantiation": {
+      "index": 75,
+      "table_slot_va": 6625974776,
+      "record_va": 6626910416,
+      "argument_vector_va": 6669037504,
+      "padding_hex": "00000000",
+      "arguments": [
+        {
+          "index": 0,
+          "type_pointer_va": 6664879512,
+          "raw_type_record_hex": "068E00000000000000001C0000000000"
+        }
+      ]
+    },
+    "methodDefinitionIndices": [
+      428394
+    ],
+    "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+  },
+  "physicalEntryMatchedIndependentObject": false,
+  "calls": {
+    "typeKey": 27392,
+    "cacheHash": 276720,
+    "cacheCompare": 2934448,
+    "formatterResult": 47859568,
+    "formatterClassPredicate": 14416
+  },
+  "proof": {
+    "codeWindows": [
+      {
+        "startRva": 47858272,
+        "endRva": 47859475,
+        "sha256": "BCF62513ABA710E9AB67DBFDA036EFE7CEC127E1CADFB21E16530E168D2EBE02"
+      },
+      {
+        "startRva": 78582712,
+        "endRva": 78583019,
+        "sha256": "61FE687029897D01C5F5D0283742BCAB565002A11914EA01B54FBD87F2192D04"
+      }
+    ],
+    "program": [
+      [
+        47858272,
+        "4053"
+      ],
+      [
+        47858274,
+        "55"
+      ],
+      [
+        47858275,
+        "56"
+      ],
+      [
+        47858276,
+        "57"
+      ],
+      [
+        47858277,
+        "4154"
+      ],
+      [
+        47858279,
+        "4155"
+      ],
+      [
+        47858281,
+        "4156"
+      ],
+      [
+        47858283,
+        "4157"
+      ],
+      [
+        47858285,
+        "4883EC68"
+      ],
+      [
+        47858289,
+        "488BE9"
+      ],
+      [
+        47858292,
+        "4883793800"
+      ],
+      [
+        47858297,
+        "0F8438030000"
+      ],
+      [
+        47858303,
+        "488B5D38"
+      ],
+      [
+        47858307,
+        "488B1B"
+      ],
+      [
+        47858310,
+        "488B0DE31E300A"
+      ],
+      [
+        47858317,
+        "83B9E000000000"
+      ],
+      [
+        47858324,
+        "0F8482030000"
+      ],
+      [
+        47858330,
+        "4885DB"
+      ],
+      [
+        47858333,
+        "0F84A4D1D401"
+      ],
+      [
+        47858339,
+        "83B9E000000000"
+      ],
+      [
+        47858346,
+        "0F847D030000"
+      ],
+      [
+        47858352,
+        "B201"
+      ],
+      [
+        47858354,
+        "488BCB"
+      ],
+      [
+        47858357,
+        "E8462826FD"
+      ],
+      [
+        47858362,
+        "4C8D6020"
+      ],
+      [
+        47858366,
+        "488B1D9BBC0F0B"
+      ],
+      [
+        47858373,
+        "488B8B80000000"
+      ],
+      [
+        47858380,
+        "FF15DEAFA807"
+      ],
+      [
+        47858386,
+        "90"
+      ],
+      [
+        47858387,
+        "488B4340"
+      ],
+      [
+        47858391,
+        "49C7C0FFFFFFFF"
+      ],
+      [
+        47858398,
+        "4C898424C0000000"
+      ],
+      [
+        47858406,
+        "483B4338"
+      ],
+      [
+        47858410,
+        "0F84F7020000"
+      ],
+      [
+        47858416,
+        "4533ED"
+      ],
+      [
+        47858419,
+        "4C8B7348"
+      ],
+      [
+        47858423,
+        "49FFCE"
+      ],
+      [
+        47858426,
+        "498BCC"
+      ],
+      [
+        47858429,
+        "E8EEF529FD"
+      ],
+      [
+        47858434,
+        "488BF8"
+      ],
+      [
+        47858437,
+        "4C898424B0000000"
+      ],
+      [
+        47858445,
+        "488B7368"
+      ],
+      [
+        47858449,
+        "448B7B50"
+      ],
+      [
+        47858453,
+        "4923FE"
+      ],
+      [
+        47858456,
+        "488D0C7F"
+      ],
+      [
+        47858460,
+        "443B3CCE"
+      ],
+      [
+        47858464,
+        "751F"
+      ],
+      [
+        47858497,
+        "48837B3800"
+      ],
+      [
+        47858502,
+        "0F876CD0D401"
+      ],
+      [
+        47858508,
+        "488D047F"
+      ],
+      [
+        47858512,
+        "833CC600"
+      ],
+      [
+        47858516,
+        "0F85DF000000"
+      ],
+      [
+        47858522,
+        "488B54C608"
+      ],
+      [
+        47858527,
+        "498BCC"
+      ],
+      [
+        47858530,
+        "E8498352FD"
+      ],
+      [
+        47858535,
+        "85C0"
+      ],
+      [
+        47858537,
+        "0F85CA000000"
+      ],
+      [
+        47858543,
+        "4883FFFF"
+      ],
+      [
+        47858547,
+        "0F84CB000000"
+      ],
+      [
+        47858553,
+        "488D0C7F"
+      ],
+      [
+        47858557,
+        "488D14CE"
+      ],
+      [
+        47858561,
+        "488B4348"
+      ],
+      [
+        47858565,
+        "488D0C40"
+      ],
+      [
+        47858569,
+        "488B4368"
+      ],
+      [
+        47858573,
+        "488D0CC8"
+      ],
+      [
+        47858577,
+        "483BD1"
+      ],
+      [
+        47858580,
+        "0F84AA000000"
+      ],
+      [
+        47858586,
+        "488B4A10"
+      ],
+      [
+        47858590,
+        "488B4370"
+      ],
+      [
+        47858594,
+        "4C8B34C8"
+      ],
+      [
+        47858598,
+        "488B8B80000000"
+      ],
+      [
+        47858605,
+        "FF15F5AEA807"
+      ],
+      [
+        47858611,
+        "90"
+      ],
+      [
+        47858612,
+        "488B0D35B2340A"
+      ],
+      [
+        47858619,
+        "83B9E000000000"
+      ],
+      [
+        47858626,
+        "0F846F020000"
+      ],
+      [
+        47858632,
+        "803DD9A80F0B00"
+      ],
+      [
+        47858639,
+        "0F8426030000"
+      ],
+      [
+        47858645,
+        "488B0D14B2340A"
+      ],
+      [
+        47858652,
+        "83B9E000000000"
+      ],
+      [
+        47858659,
+        "0F8458020000"
+      ],
+      [
+        47858665,
+        "498BCE"
+      ],
+      [
+        47858668,
+        "E87F030000"
+      ],
+      [
+        47858673,
+        "488BD8"
+      ],
+      [
+        47858676,
+        "488B4538"
+      ],
+      [
+        47858680,
+        "488B4008"
+      ],
+      [
+        47858684,
+        "F6803801000001"
+      ],
+      [
+        47858691,
+        "0F8406020000"
+      ],
+      [
+        47858697,
+        "4885DB"
+      ],
+      [
+        47858700,
+        "0F843DD0D401"
+      ],
+      [
+        47858706,
+        "488BD0"
+      ],
+      [
+        47858709,
+        "488B0B"
+      ],
+      [
+        47858712,
+        "E833F425FD"
+      ],
+      [
+        47858717,
+        "84C0"
+      ],
+      [
+        47858719,
+        "0F842AD0D401"
+      ],
+      [
+        47858725,
+        "488BC3"
+      ],
+      [
+        47858728,
+        "4883C468"
+      ],
+      [
+        47858732,
+        "415F"
+      ],
+      [
+        47858734,
+        "415E"
+      ],
+      [
+        47858736,
+        "415D"
+      ],
+      [
+        47858738,
+        "415C"
+      ],
+      [
+        47858740,
+        "5F"
+      ],
+      [
+        47858741,
+        "5E"
+      ],
+      [
+        47858742,
+        "5D"
+      ],
+      [
+        47858743,
+        "5B"
+      ],
+      [
+        47858744,
+        "C3"
+      ]
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Actual physical entry through complete selected RET, all instruction/edge ownership and complete owned provider context. Independently registered GetFormatter<Object> differs from the called entry.",
+    "direct": "Incoming hidden MethodInfo is retained in RBP. Slot zero supplies the key; slot one supplies the expected formatter class. The selected candidate reaches the actual formatter-result helper; its nonnull return is preserved through the actual class predicate and returned unchanged in full RAX. Direct writes are confined to two caller-home stack slots.",
+    "conditional": "Initialized stable compatible inflated MethodInfo/class/provider state, selected cache branch outcomes, nonnull correctly typed normal call results and ordinary Win64 nonvolatile/stack ABI. Anonymous cache offsets do not establish collection meaning, branch feasibility or runtime selection.",
+    "structuralOnly": "Observed cache slots, candidate array entry and expected-class initialization flag.",
+    "unresolved": "Named physical body identity versus independent Object registration; cache misses, allocation/registration, locks/global indirect and helper effects, runtime provider/context/candidate selection, original child cursor/list/root composition."
+  }
+}

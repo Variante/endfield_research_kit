@@ -1,0 +1,159 @@
+{
+  "schema": "endfield.buff-spell-infliction-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "triggerCharSpellInfliction": {
+      "sourceContract": "buff_186_native.json",
+      "wrapperTypeDefinition": 16541,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerCharSpellInflictionEvent_DataForMemoryPack",
+      "runtimeTypeDefinition": 9942,
+      "runtimeTypeName": "Beyond.Gameplay.Core.TriggerCharSpellInflictionEvent+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member7",
+      "readerMethod": [
+        123616,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerCharSpellInflictionEvent_DataForMemoryPack",
+        "Deserialize",
+        63973136
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63973303,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 63973280,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F845D0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63973343,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 63973321,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84340100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 63973308
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63973376,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 63973354,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84130100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63973409,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 63973387,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84F20000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "eventSource",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 123611,
+          "kind": "target",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63973450,
+            "targetRva": 63974928,
+            "methodIndex": 123611
+          },
+          "sourceCall": {
+            "rva": 63973427,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84CA0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 63973414
+        },
+        {
+          "fieldName": "eventType",
+          "declaredType": "Beyond.Gameplay.Core.AbilitySystem+Event",
+          "setterMethodIndex": 123612,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63973490,
+            "targetRva": 63974976,
+            "methodIndex": 123612
+          },
+          "sourceCall": {
+            "rva": 63973468,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84A10000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 63973455
+        },
+        {
+          "fieldName": "inflictionType",
+          "declaredType": "Beyond.GEnums.SpellInflictionOnCharType",
+          "setterMethodIndex": 123613,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63973526,
+            "targetRva": 63975024,
+            "methodIndex": 123613
+          },
+          "sourceCall": {
+            "rva": 63973508,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885DB747D4533C08BD0488BCB",
+          "sourceContextInstructionRva": 63973495
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "390": "triggerCharSpellInfliction"
+  },
+  "evidenceBoundary": {
+    "exact": "Current union dispatcher, seven named source reads, closed TargetSettings and enum source contexts, and each read result reaching its own wrapper destination.",
+    "conditional": "Original action spans must compose an independently admitted TargetSettings child and both subsequent four-byte enum operands; unsupported recursive target paths refuse the action.",
+    "unresolved": "Live provider selection, selected targets, evaluated eventType and inflictionType, event dispatch, spell attachment and subsequent game state."
+  }
+}

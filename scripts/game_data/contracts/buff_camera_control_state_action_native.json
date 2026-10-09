@@ -1,0 +1,441 @@
+{
+  "schema": "endfield.buff-camera-control-state-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "cameraControlState": {
+      "sourceContract": "buff_19e_native.json",
+      "wrapperTypeDefinition": 15957,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_View_AddCameraControlStateAction_AddCameraControlStateActionDataForMemoryPack",
+      "runtimeTypeDefinition": 8357,
+      "runtimeTypeName": "Beyond.Gameplay.View.AddCameraControlStateAction+AddCameraControlStateActionData",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member23",
+      "readerMethod": [
+        118894,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_AddCameraControlStateAction_AddCameraControlStateActionDataForMemoryPack",
+        "Deserialize",
+        54747600
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54747767,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 54747744,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F848B0300004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54747807,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 54747785,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84620300004533C08BD0488BCE",
+          "sourceContextInstructionRva": 54747772
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54747840,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 54747818,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84410300004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54747873,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 54747851,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84200300004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "blendInCustomCurve",
+          "declaredType": "UnityEngine.AnimationCurve",
+          "setterMethodIndex": 118873,
+          "kind": "curve-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54747914,
+            "targetRva": 54753760,
+            "methodIndex": 118873
+          },
+          "sourceCall": {
+            "rva": 54747891,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84F80200004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54747878
+        },
+        {
+          "fieldName": "blendInStyle",
+          "declaredType": "Cinemachine.CinemachineBlendDefinition+Style",
+          "setterMethodIndex": 118874,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54747954,
+            "targetRva": 54753808,
+            "methodIndex": 118874
+          },
+          "sourceCall": {
+            "rva": 54747932,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84CF0200004533C08BD0488BCE",
+          "sourceContextInstructionRva": 54747919
+        },
+        {
+          "fieldName": "blendInTime",
+          "declaredType": "float",
+          "setterMethodIndex": 118875,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54747988,
+            "targetRva": 54753856,
+            "methodIndex": 118875
+          },
+          "sourceCall": {
+            "rva": 54747965,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "4885F60F84AE0200004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "blendOutCustomCurve",
+          "declaredType": "UnityEngine.AnimationCurve",
+          "setterMethodIndex": 118876,
+          "kind": "curve-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748029,
+            "targetRva": 54753904,
+            "methodIndex": 118876
+          },
+          "sourceCall": {
+            "rva": 54748006,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84850200004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54747993
+        },
+        {
+          "fieldName": "blendOutStyle",
+          "declaredType": "Cinemachine.CinemachineBlendDefinition+Style",
+          "setterMethodIndex": 118877,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748069,
+            "targetRva": 54753952,
+            "methodIndex": 118877
+          },
+          "sourceCall": {
+            "rva": 54748047,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F845C0200004533C08BD0488BCE",
+          "sourceContextInstructionRva": 54748034
+        },
+        {
+          "fieldName": "blendOutTime",
+          "declaredType": "float",
+          "setterMethodIndex": 118878,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748103,
+            "targetRva": 54754000,
+            "methodIndex": 118878
+          },
+          "sourceCall": {
+            "rva": 54748080,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "4885F60F843B0200004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "ccsDuration",
+          "declaredType": "float",
+          "setterMethodIndex": 118879,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748137,
+            "targetRva": 54754048,
+            "methodIndex": 118879
+          },
+          "sourceCall": {
+            "rva": 54748114,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "4885F60F84190200004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "ccsPriority",
+          "declaredType": "float",
+          "setterMethodIndex": 118880,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748171,
+            "targetRva": 54754096,
+            "methodIndex": 118880
+          },
+          "sourceCall": {
+            "rva": 54748148,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "4885F60F84F70100004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "configKey",
+          "declaredType": "string",
+          "setterMethodIndex": 118881,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748205,
+            "targetRva": 54754144,
+            "methodIndex": 118881
+          },
+          "sourceCall": {
+            "rva": 54748182,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F84D50100004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "customPriority",
+          "declaredType": "bool",
+          "setterMethodIndex": 118882,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748239,
+            "targetRva": 54754192,
+            "methodIndex": 118882
+          },
+          "sourceCall": {
+            "rva": 54748216,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84B30100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "inheritByNextSkill",
+          "declaredType": "bool",
+          "setterMethodIndex": 118883,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748273,
+            "targetRva": 54754240,
+            "methodIndex": 118883
+          },
+          "sourceCall": {
+            "rva": 54748250,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84910100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "inheritKey",
+          "declaredType": "string",
+          "setterMethodIndex": 118884,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748307,
+            "targetRva": 54754288,
+            "methodIndex": 118884
+          },
+          "sourceCall": {
+            "rva": 54748284,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F846F0100004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "inheritSkillIds",
+          "declaredType": "System.Collections.Generic.List`1<string>",
+          "setterMethodIndex": 118885,
+          "kind": "nullable-byte-payload-list",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748348,
+            "targetRva": 54754336,
+            "methodIndex": 118885
+          },
+          "sourceCall": {
+            "rva": 54748325,
+            "targetRva": 58849520
+          },
+          "sourceToDestinationHex": "4885F60F84460100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 54748312
+        },
+        {
+          "fieldName": "keepAdditiveParamOnLeave",
+          "declaredType": "bool",
+          "setterMethodIndex": 118886,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748382,
+            "targetRva": 54754384,
+            "methodIndex": 118886
+          },
+          "sourceCall": {
+            "rva": 54748359,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84240100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "overrideBlendIn",
+          "declaredType": "bool",
+          "setterMethodIndex": 118887,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748416,
+            "targetRva": 54754432,
+            "methodIndex": 118887
+          },
+          "sourceCall": {
+            "rva": 54748393,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84020100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "overrideBlendOut",
+          "declaredType": "bool",
+          "setterMethodIndex": 118888,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748450,
+            "targetRva": 54754480,
+            "methodIndex": 118888
+          },
+          "sourceCall": {
+            "rva": 54748427,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84E00000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "removeByActionEnd",
+          "declaredType": "bool",
+          "setterMethodIndex": 118889,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748484,
+            "targetRva": 54754528,
+            "methodIndex": 118889
+          },
+          "sourceCall": {
+            "rva": 54748461,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84BE0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "removeByDuration",
+          "declaredType": "bool",
+          "setterMethodIndex": 118890,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748518,
+            "targetRva": 54754576,
+            "methodIndex": 118890
+          },
+          "sourceCall": {
+            "rva": 54748495,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F849C0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useCcsCondition",
+          "declaredType": "bool",
+          "setterMethodIndex": 118891,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 54748548,
+            "targetRva": 54754624,
+            "methodIndex": 118891
+          },
+          "sourceCall": {
+            "rva": 54748529,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885DB747E4533C00FB6D0488BCB"
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "414": "cameraControlState"
+  },
+  "curveFormatterReference": {
+    "contract": "memorypack_animation_curve_native.json"
+  },
+  "stringListReference": {
+    "contract": "buff_find_settings_child_native.json",
+    "contextName": "buffIdList"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected named inherited/own camera parent fields, current dispatcher, separate curve-field contexts and complete original action spans.",
+    "direct": "Each camera curve context joins the actual AnimationCurve argument owned by the selected formatter base. inheritSkillIds joins the same closed string-list context and actual source call as the maintained BuffFindSettings list.",
+    "conditional": "Selected normal formatter and shared string-list byte grammar. Payload encoding, concrete formatter/provider selection and decoder parity remain unobserved; raw strings, enum bits and flags are preserved.",
+    "unresolved": "Camera addition/removal/inheritance operands, condition evaluation, handle lifetime, custom action result, curve evaluation and actual camera effects. An action span does not establish an enclosing root."
+  }
+}

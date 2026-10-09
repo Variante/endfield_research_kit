@@ -75,6 +75,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         or scalar_native.get("selectedReadOrder")
         != ["blackboardKey", "useBlackboardKey", "value"]
         or parent_contract.get("nativeInputs") != expected
+        or scalar._contract().get("nativeInputs") != expected
     ):
         raise ValueError(f"{LABEL}.native:parent-or-scalar-gate")
     source, _ = read_reviewed_contract(
@@ -223,7 +224,92 @@ def decode_blackboard_vector3_value(
                             "end": reader.pos, "child": member})
     if reader.pos != end:
         raise ValueError(f"{LABEL}.value:vector-end")
-    return {"start": start, "end": end, "status": status, "namedMembers": members}
+    return {"start": start, "end": end, "status": status, "namedMembers": members,
+            "recursiveStoredSchemaExact": True, "wholeValueExact": True}
+
+
+def _config_blackboard_children(data, source, logical_sha256, child, native_validation, contract):
+    """Name bounded interiors shared by standalone values and parent receipts."""
+    scalars: list[dict[str, Any]] = []
+    vectors: list[dict[str, Any]] = []
+    for field in child["namedFields"]:
+        if field["kind"] == "scalar":
+            scalar_child = scalar.decode_adding_cooldown(
+                data, field["start"], field["end"],
+                native_validation=native_validation["scalarNative"],
+            )
+            if (scalar_child.get("wholeValueExact") is not True
+                    or scalar_child.get("startOffset") != field["start"]
+                    or scalar_child.get("consumedEnd") != field["end"]):
+                raise ValueError(f"{LABEL}.decode:scalar-recursive-span")
+            scalars.append({"fieldName": field["fieldName"],
+                            "start": field["start"], "end": field["end"],
+                            "child": scalar_child})
+        elif field["fieldName"] in contract["vectorParentFields"]:
+            if field["kind"] != "vector":
+                raise ValueError(f"{LABEL}.decode:vector-kind={field['fieldName']}")
+            value = decode_blackboard_vector3_value(
+                data, source=source, logical_sha256=logical_sha256,
+                start=field["start"], end=field["end"], native_validation=native_validation,
+            )
+            vectors.append({"fieldName": field["fieldName"], **value})
+    if (
+        [row["fieldName"] for row in scalars]
+        != ["durationScaleBB", "lengthBB"]
+        or [row["fieldName"] for row in vectors]
+        != contract["vectorParentFields"]
+    ):
+        raise ValueError(f"{LABEL}.decode:config-blackboard-bindings")
+    return scalars, vectors
+
+
+def decode_effect_config_value(
+    data: bytes, *, source: str, logical_sha256: str, start: int, end: int,
+    native_validation: dict[str, Any],
+) -> dict[str, Any]:
+    """Close an actual typed EffectActionCfg span without inventing a parent.
+
+    The parent must prove its own typed field. Positive terrain-effect arrays
+    continue to refuse in the configuration owner; raw primitive values and
+    key payloads are preserved without evaluating blackboards or effects.
+    """
+    contract = _contract()
+    if (native_validation.get('status') != 'validated'
+            or native_validation.get('nativeInputs') != contract['nativeInputs']
+            or native_validation.get('vectorParentFields') != contract['vectorParentFields']
+            or native_validation.get('vectorMemberNames') != [r['fieldName'] for r in contract['readOrder']]
+            or native_validation.get('scalarNative', {}).get('status') != 'validated'
+            or native_validation.get('scalarNative', {}).get('selectedReadOrder')
+            != ['blackboardKey', 'useBlackboardKey', 'value']):
+        raise ValueError(f'{LABEL}.value:native-not-validated')
+    child = config.decode_effect_config_child_receipt(data, source=source,
+        logical_sha256=logical_sha256, start=start, end=end,
+        native_validation=native_validation['effectConfigNative'])
+    if (child.get('wholeChildSpanExact') is not True
+            or [child.get('start'), child.get('end')] != [start, end]
+            or child.get('logicalSha256') != logical_sha256.upper()
+            or child.get('source') != source):
+        raise ValueError(f'{LABEL}.value:config-recursive-span')
+    if child['status'] == 'exact-null':
+        if child['namedFields'] or end != start + 1 or data[start] != 255:
+            raise ValueError(f'{LABEL}.value:null-config-span')
+        scalars, vectors = [], []
+    elif child['status'] == 'named-direct-members-exact-span':
+        scalars, vectors = _config_blackboard_children(
+            data, source, logical_sha256, child, native_validation, contract)
+    else:
+        raise ValueError(f'{LABEL}.value:config-status')
+    interiors = {r['fieldName']: r for r in scalars + vectors}
+    fields = [{**f, 'rawHex': data[f['start']:f['end']].hex().upper(),
+               **({'child': interiors[f['fieldName']]} if f['fieldName'] in interiors else {})}
+              for f in child['namedFields']]
+    return {'schema': 'endfield.buff-effect-config-value-receipt.v1',
+        'source': source, 'logicalSha256': logical_sha256.upper(),
+        'start': start, 'end': end, 'status': child['status'], 'isNull': not fields,
+        'namedFields': fields, 'scalarChildren': scalars, 'vectorChildren': vectors,
+        'wholeValueExact': True, 'recursiveStoredSchemaExact': True,
+        'wholeBuffDataExact': False, 'runtimeMeaningExact': False,
+        'blackboardEvaluationObserved': False, 'effectExecutionObserved': False}
 
 
 def decode_effect_vector_child_receipt(
@@ -262,32 +348,8 @@ def decode_effect_vector_child_receipt(
     )
     if child["status"] != "named-direct-members-exact-span":
         raise ValueError(f"{LABEL}.decode:config-null")
-    scalars: list[dict[str, Any]] = []
-    vectors: list[dict[str, Any]] = []
-    for field in child["namedFields"]:
-        if field["kind"] == "scalar":
-            scalar_child = scalar.decode_adding_cooldown(
-                data, field["start"], field["end"],
-                native_validation=native_validation["scalarNative"],
-            )
-            scalars.append({"fieldName": field["fieldName"],
-                            "start": field["start"], "end": field["end"],
-                            "child": scalar_child})
-        elif field["fieldName"] in contract["vectorParentFields"]:
-            if field["kind"] != "vector":
-                raise ValueError(f"{LABEL}.decode:vector-kind={field['fieldName']}")
-            value = decode_blackboard_vector3_value(
-                data, source=source, logical_sha256=logical_sha256,
-                start=field["start"], end=field["end"], native_validation=native_validation,
-            )
-            vectors.append({"fieldName": field["fieldName"], **value})
-    if (
-        [row["fieldName"] for row in scalars]
-        != ["durationScaleBB", "lengthBB"]
-        or [row["fieldName"] for row in vectors]
-        != contract["vectorParentFields"]
-    ):
-        raise ValueError(f"{LABEL}.decode:config-blackboard-bindings")
+    scalars, vectors = _config_blackboard_children(
+        data, source, logical_sha256, child, native_validation, contract)
     return {
         "schema": SCHEMA, "status": "named-config-blackboard-children-exact-span",
         "source": source, "logicalSha256": logical_sha256.upper(),

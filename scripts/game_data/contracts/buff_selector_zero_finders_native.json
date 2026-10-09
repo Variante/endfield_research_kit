@@ -1,0 +1,3458 @@
+{
+  "schema": "endfield.buff-selector-zero-finders-native-contract.v2",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "catalogContract": "levelscript_union_tags.json",
+  "separateOwnerType": "Beyond.Gameplay.Core.Selector+CharacterTeamFinder+Data",
+  "symbols": {
+    "metadataInit": 266848,
+    "classInit": 156352,
+    "header": 46827616,
+    "allocate": 155744,
+    "barrier": 158528,
+    "nullThrow": 11199508,
+    "getNextSpan": 158372188,
+    "advanceFallback": 95232320,
+    "getTypeFromHandle": 47864048,
+    "invalidPropertyCount": 58708720,
+    "typePredicate": 14416,
+    "readPackable": 58849520,
+    "readPackableByref": 152999676,
+    "classInitDirect": 13472
+  },
+  "header": {
+    "entryRva": 46827616,
+    "ownedPdataFragments": [
+      {
+        "startRva": 46827616,
+        "endRva": 46827703
+      },
+      {
+        "startRva": 78517268,
+        "endRva": 78517313
+      }
+    ],
+    "codeWindows": [
+      {
+        "startRva": 46827616,
+        "endRva": 46827703,
+        "sha256": "CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F",
+        "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+      },
+      {
+        "startRva": 78517268,
+        "endRva": 78517313,
+        "sha256": "A5F20D141BC1EFE561400A9F3BAB2A4679CA7CB4C61D3F0A82392C861B521739",
+        "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+      }
+    ]
+  },
+  "parent": {
+    "entryRva": 59819504,
+    "method": [
+      163271,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPackFormatter",
+      "Deserialize",
+      59819504
+    ],
+    "ownedPdataFragments": [
+      {
+        "startRva": 59819504,
+        "endRva": 59821748
+      },
+      {
+        "startRva": 82204146,
+        "endRva": 82204664
+      }
+    ],
+    "codeWindows": [
+      {
+        "startRva": 59819504,
+        "endRva": 59821748,
+        "sha256": "8289EDCE590A767F157A48BC93D11579B7B4EB2F52F35BF84F6FB71D7BFE55D2",
+        "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+      },
+      {
+        "startRva": 82204146,
+        "endRva": 82204664,
+        "sha256": "02A1BFDAE1EE97FB06E8ABBC1D0225CF91163CE03B2DDB621C46FC807C9CC3AF",
+        "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+      }
+    ]
+  },
+  "prefix": {
+    "program": [
+      [
+        59819504,
+        "48895C2408"
+      ],
+      [
+        59819509,
+        "48896C2410"
+      ],
+      [
+        59819514,
+        "4889742418"
+      ],
+      [
+        59819519,
+        "57"
+      ],
+      [
+        59819520,
+        "4883EC20"
+      ],
+      [
+        59819524,
+        "803D1FF7590A00"
+      ],
+      [
+        59819531,
+        "498BF0"
+      ],
+      [
+        59819534,
+        "488BDA"
+      ],
+      [
+        59819537,
+        "0F846E040000"
+      ],
+      [
+        59819543,
+        "803D1328590A00"
+      ],
+      [
+        59819550,
+        "0F84E5070000"
+      ],
+      [
+        59819556,
+        "837B3001"
+      ],
+      [
+        59819560,
+        "0F8CC48F5501"
+      ],
+      [
+        59819566,
+        "488B4350"
+      ],
+      [
+        59819570,
+        "0FB628"
+      ],
+      [
+        59819573,
+        "8B7B30"
+      ],
+      [
+        59819576,
+        "83EF01"
+      ],
+      [
+        59819579,
+        "0F88C78F5501"
+      ],
+      [
+        59819585,
+        "48FF4350"
+      ],
+      [
+        59819589,
+        "FF4340"
+      ],
+      [
+        59819592,
+        "FF4344"
+      ],
+      [
+        59819595,
+        "897B30"
+      ],
+      [
+        59819598,
+        "4080FDFA"
+      ],
+      [
+        59819602,
+        "0F8398000000"
+      ],
+      [
+        59819608,
+        "0FB7FD"
+      ],
+      [
+        59819611,
+        "0FB7C7"
+      ],
+      [
+        59819614,
+        "83F817"
+      ],
+      [
+        59819617,
+        "0F875C915501"
+      ],
+      [
+        59819623,
+        "488D1592396FFC"
+      ],
+      [
+        59819630,
+        "8B8C8254CE9003"
+      ],
+      [
+        59819637,
+        "4803CA"
+      ],
+      [
+        59819640,
+        "FFE1"
+      ]
+    ],
+    "codeWindows": [
+      {
+        "startRva": 59819504,
+        "endRva": 59819642,
+        "sha256": "34AF3BB2C8783B1A665DC4DF96973A622CFDA828D66E83785B6F0034461EA0E6",
+        "boundary": "complete contiguous selected program at original instruction addresses"
+      }
+    ]
+  },
+  "records": [
+    {
+      "tag": 0,
+      "wrapper": {
+        "typeDefinition": 23025,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack",
+        "parentTypeDefinition": 22489,
+        "parentWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+        "wrappedType": "Beyond.Gameplay.Core.Selector+AbilityEntityTargetFinder+Data",
+        "serializedMemberCount": 0,
+        "inheritedMemberCount": 0,
+        "memberOrder": [],
+        "memberWidthSum": null,
+        "framesAsUnion": false,
+        "framesAsRawStruct": false,
+        "members": []
+      },
+      "dispatcher": {
+        "unionTag": 0,
+        "switchTableRva": 59821652,
+        "switchEntryCount": 24,
+        "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+        "switchTargetRva": 59820469,
+        "routeWindow": {
+          "startRva": 59820469,
+          "endRva": 59820512,
+          "sha256": "DF259282CE8465D72FFCDA6E8A5BAEE05109961038193841AAF846EFEA05EE47",
+          "boundary": "complete contiguous selected program at original instruction addresses"
+        },
+        "usageCellRva": 217990424,
+        "usageRawHex": "2144032000000000",
+        "registeredTypeIndex": 107024,
+        "wrapperTypeDefinition": 23025,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack"
+      },
+      "reader": {
+        "entryRva": 73872768,
+        "method": [
+          167023,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack",
+          "Deserialize",
+          73872768
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 73872768,
+            "endRva": 73872952
+          },
+          {
+            "startRva": 83964830,
+            "endRva": 83964920
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 73872768,
+            "endRva": 73872952,
+            "sha256": "9F1B36860BA2CC0C0C942886050A22AB34B205280885C6988E0E4D96136F5ACC",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          },
+          {
+            "startRva": 83964830,
+            "endRva": 83964920,
+            "sha256": "FE54BBE7A486FF6C9B52CA711486B2F29D0E93FED72597BBC3C392D5808D1124",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "formatter": {
+        "entryRva": 73872672,
+        "method": [
+          167024,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPackFormatter",
+          "Deserialize",
+          73872672
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 73872672,
+            "endRva": 73872761
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 73872672,
+            "endRva": 73872761,
+            "sha256": "5021BAC94E5B8A14F54EA555C1AB93B6CF37F8C76B6D221577694A10C2DF6E77",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "lifecycle": [
+        {
+          "entryRva": 73872960,
+          "method": [
+            167015,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack",
+            ".ctor",
+            73872960
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 73872960,
+              "endRva": 73873050
+            },
+            {
+              "startRva": 73873050,
+              "endRva": 73873123
+            },
+            {
+              "startRva": 73873123,
+              "endRva": 73873129
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 73872960,
+              "endRva": 73873129,
+              "sha256": "3E1D958B821280CB5E5D23123AD4B7982C06A2E65EC7FA4EC6428D1162F052BB",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        },
+        {
+          "entryRva": 158080776,
+          "method": [
+            167020,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack",
+            "OnDeserialized",
+            158080776
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 158080776,
+              "endRva": 158080888
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 158080776,
+              "endRva": 158080888,
+              "sha256": "377766C2ABCEAB9C37F3264ADC12C3FDBF7D256AD5DAD62512C907802EA7A23A",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        }
+      ],
+      "casePrograms": {
+        "case": {
+          "program": [
+            [
+              59820469,
+              "488B0E"
+            ],
+            [
+              59820472,
+              "4885C9"
+            ],
+            [
+              59820475,
+              "7417"
+            ],
+            [
+              59820477,
+              "488B15547B6D09"
+            ],
+            [
+              59820484,
+              "488B09"
+            ],
+            [
+              59820487,
+              "E8846E6FFC"
+            ],
+            [
+              59820492,
+              "84C0"
+            ],
+            [
+              59820494,
+              "0F854D040000"
+            ],
+            [
+              59820500,
+              "488B15BD7B6D09"
+            ],
+            [
+              59820507,
+              "E9DCFDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820469,
+              "endRva": 59820512,
+              "sha256": "DF259282CE8465D72FFCDA6E8A5BAEE05109961038193841AAF846EFEA05EE47",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new": {
+          "program": [
+            [
+              59820500,
+              "488B15BD7B6D09"
+            ],
+            [
+              59820507,
+              "E9DCFDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820500,
+              "endRva": 59820512,
+              "sha256": "1C2CC1BFBEAE26F3D60AE8ED656DBF1149830AB81A5B4403CD5840CF28471D78",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing": {
+          "program": [
+            [
+              59821601,
+              "4C8B0568776D09"
+            ],
+            [
+              59821608,
+              "E977F8FFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59821601,
+              "endRva": 59821613,
+              "sha256": "875D1ADF62D423A9B1D225484A988C1C7C63DD622DF5B4E6310221DCD20A24D6",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new_shared": {
+          "program": [
+            [
+              59819964,
+              "488BCB"
+            ],
+            [
+              59819967,
+              "E82C31F1FF"
+            ],
+            [
+              59819972,
+              "488906"
+            ],
+            [
+              59819975,
+              "488BCE"
+            ],
+            [
+              59819978,
+              "E871A371FC"
+            ],
+            [
+              59819983,
+              "E9DBFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819964,
+              "endRva": 59819988,
+              "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing_shared": {
+          "program": [
+            [
+              59819684,
+              "488BD6"
+            ],
+            [
+              59819687,
+              "488BCB"
+            ],
+            [
+              59819690,
+              "E84DD08D05"
+            ],
+            [
+              59819695,
+              "488B5C2430"
+            ],
+            [
+              59819700,
+              "488B6C2438"
+            ],
+            [
+              59819705,
+              "488B742440"
+            ],
+            [
+              59819710,
+              "4883C420"
+            ],
+            [
+              59819714,
+              "5F"
+            ],
+            [
+              59819715,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819684,
+              "endRva": 59819716,
+              "sha256": "BDF1F244C395D038982653E0E547C41A6BAC858EAEEA9084F1C76D2C4213AC8B",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        }
+      },
+      "newContext": {
+        "instructionRva": 59820500,
+        "instructionHex": "488B15BD7B6D09",
+        "cellRva": 217990552,
+        "usageRawHex": "BBC012C000000000",
+        "methodSpecIndex": 614493,
+        "methodSpec": [
+          428462,
+          -1,
+          24960
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23025,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "F1590000000000000000120000000000"
+          }
+        ]
+      },
+      "existingContext": {
+        "instructionRva": 59821601,
+        "instructionHex": "4C8B0568776D09",
+        "cellRva": 217990544,
+        "usageRawHex": "AFE012C000000000",
+        "methodSpecIndex": 618583,
+        "methodSpec": [
+          428461,
+          -1,
+          24960
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23025,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "F1590000000000000000120000000000"
+          }
+        ]
+      }
+    },
+    {
+      "tag": 1,
+      "wrapper": {
+        "typeDefinition": 23027,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack",
+        "parentTypeDefinition": 22489,
+        "parentWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+        "wrappedType": "Beyond.Gameplay.Core.Selector+AllEnemyFinder+Data",
+        "serializedMemberCount": 0,
+        "inheritedMemberCount": 0,
+        "memberOrder": [],
+        "memberWidthSum": null,
+        "framesAsUnion": false,
+        "framesAsRawStruct": false,
+        "members": []
+      },
+      "dispatcher": {
+        "unionTag": 1,
+        "switchTableRva": 59821652,
+        "switchEntryCount": 24,
+        "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+        "switchTargetRva": 59820591,
+        "routeWindow": {
+          "startRva": 59820591,
+          "endRva": 59820634,
+          "sha256": "67D3B8DB52D7DB791915DB30DCC45A9B463002599422FC7947F24FF3F4B028A8",
+          "boundary": "complete contiguous selected program at original instruction addresses"
+        },
+        "usageCellRva": 217990432,
+        "usageRawHex": "2344032000000000",
+        "registeredTypeIndex": 107025,
+        "wrapperTypeDefinition": 23027,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack"
+      },
+      "reader": {
+        "entryRva": 75157200,
+        "method": [
+          167035,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack",
+          "Deserialize",
+          75157200
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 75157200,
+            "endRva": 75157384
+          },
+          {
+            "startRva": 84160108,
+            "endRva": 84160198
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 75157200,
+            "endRva": 75157384,
+            "sha256": "E02B784251708273255CB65B3DBCECFF5253318386AB37E014C25D226895C3F7",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          },
+          {
+            "startRva": 84160108,
+            "endRva": 84160198,
+            "sha256": "95D41A8D71CFDF24F0D80A49E2039E6018C8A79C2D1878C7E599F5AE30B7B659",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "formatter": {
+        "entryRva": 75157104,
+        "method": [
+          167036,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPackFormatter",
+          "Deserialize",
+          75157104
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 75157104,
+            "endRva": 75157193
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 75157104,
+            "endRva": 75157193,
+            "sha256": "6AD6C1C14E6D38474628B3BE834ED9B9D478ED5C2768B473B141E7D11230CDA4",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "lifecycle": [
+        {
+          "entryRva": 75157392,
+          "method": [
+            167026,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack",
+            ".ctor",
+            75157392
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 75157392,
+              "endRva": 75157482
+            },
+            {
+              "startRva": 75157482,
+              "endRva": 75157555
+            },
+            {
+              "startRva": 75157555,
+              "endRva": 75157561
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 75157392,
+              "endRva": 75157561,
+              "sha256": "EDBAB680698FDCCB462408D47DEA27B4A1C3FF0881545829DD52058BDAE118F2",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        },
+        {
+          "entryRva": 158081152,
+          "method": [
+            167031,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack",
+            "OnDeserialized",
+            158081152
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 158081152,
+              "endRva": 158081264
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 158081152,
+              "endRva": 158081264,
+              "sha256": "3C9C8AE1B15F5D91E2D39DD1AB452BDE4A624048F00FE52C1DA2BFD095464786",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        }
+      ],
+      "casePrograms": {
+        "case": {
+          "program": [
+            [
+              59820591,
+              "488B0E"
+            ],
+            [
+              59820594,
+              "4885C9"
+            ],
+            [
+              59820597,
+              "7417"
+            ],
+            [
+              59820599,
+              "488B15E27A6D09"
+            ],
+            [
+              59820606,
+              "488B09"
+            ],
+            [
+              59820609,
+              "E80A6E6FFC"
+            ],
+            [
+              59820614,
+              "84C0"
+            ],
+            [
+              59820616,
+              "0F85DF030000"
+            ],
+            [
+              59820622,
+              "488B15EB7A6D09"
+            ],
+            [
+              59820629,
+              "E962FDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820591,
+              "endRva": 59820634,
+              "sha256": "67D3B8DB52D7DB791915DB30DCC45A9B463002599422FC7947F24FF3F4B028A8",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new": {
+          "program": [
+            [
+              59820622,
+              "488B15EB7A6D09"
+            ],
+            [
+              59820629,
+              "E962FDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820622,
+              "endRva": 59820634,
+              "sha256": "1C7B8413ABC2CC64F077F967FFB85326778AC4736DD2A225BCF54A8E31CE041E",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing": {
+          "program": [
+            [
+              59821613,
+              "4C8B051C776D09"
+            ],
+            [
+              59821620,
+              "E96BF8FFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59821613,
+              "endRva": 59821625,
+              "sha256": "1049C70A3A9556804CF91DFAAB0A25BDB73D53B937F84BBDF069D7242CC26EA2",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new_shared": {
+          "program": [
+            [
+              59819964,
+              "488BCB"
+            ],
+            [
+              59819967,
+              "E82C31F1FF"
+            ],
+            [
+              59819972,
+              "488906"
+            ],
+            [
+              59819975,
+              "488BCE"
+            ],
+            [
+              59819978,
+              "E871A371FC"
+            ],
+            [
+              59819983,
+              "E9DBFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819964,
+              "endRva": 59819988,
+              "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing_shared": {
+          "program": [
+            [
+              59819684,
+              "488BD6"
+            ],
+            [
+              59819687,
+              "488BCB"
+            ],
+            [
+              59819690,
+              "E84DD08D05"
+            ],
+            [
+              59819695,
+              "488B5C2430"
+            ],
+            [
+              59819700,
+              "488B6C2438"
+            ],
+            [
+              59819705,
+              "488B742440"
+            ],
+            [
+              59819710,
+              "4883C420"
+            ],
+            [
+              59819714,
+              "5F"
+            ],
+            [
+              59819715,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819684,
+              "endRva": 59819716,
+              "sha256": "BDF1F244C395D038982653E0E547C41A6BAC858EAEEA9084F1C76D2C4213AC8B",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        }
+      },
+      "newContext": {
+        "instructionRva": 59820622,
+        "instructionHex": "488B15EB7A6D09",
+        "cellRva": 217990464,
+        "usageRawHex": "BDC012C000000000",
+        "methodSpecIndex": 614494,
+        "methodSpec": [
+          428462,
+          -1,
+          24961
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23027,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "F3590000000000000000120000000000"
+          }
+        ]
+      },
+      "existingContext": {
+        "instructionRva": 59821613,
+        "instructionHex": "4C8B051C776D09",
+        "cellRva": 217990480,
+        "usageRawHex": "B1E012C000000000",
+        "methodSpecIndex": 618584,
+        "methodSpec": [
+          428461,
+          -1,
+          24961
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23027,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "F3590000000000000000120000000000"
+          }
+        ]
+      }
+    },
+    {
+      "tag": 5,
+      "wrapper": {
+        "typeDefinition": 23035,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack",
+        "parentTypeDefinition": 22489,
+        "parentWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+        "wrappedType": "Beyond.Gameplay.Core.Selector+GodEntityFinder+Data",
+        "serializedMemberCount": 0,
+        "inheritedMemberCount": 0,
+        "memberOrder": [],
+        "memberWidthSum": null,
+        "framesAsUnion": false,
+        "framesAsRawStruct": false,
+        "members": []
+      },
+      "dispatcher": {
+        "unionTag": 5,
+        "switchTableRva": 59821652,
+        "switchEntryCount": 24,
+        "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+        "switchTargetRva": 59820268,
+        "routeWindow": {
+          "startRva": 59820268,
+          "endRva": 59820315,
+          "sha256": "BB9C8FC8FF1FCE5845D93F2027C7471A59C28C6AB29F3485057F1F2662225EA6",
+          "boundary": "complete contiguous selected program at original instruction addresses"
+        },
+        "usageCellRva": 217990408,
+        "usageRawHex": "4344032000000000",
+        "registeredTypeIndex": 107041,
+        "wrapperTypeDefinition": 23035,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack"
+      },
+      "reader": {
+        "entryRva": 71423968,
+        "method": [
+          167085,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack",
+          "Deserialize",
+          71423968
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 71423968,
+            "endRva": 71424157
+          },
+          {
+            "startRva": 83671574,
+            "endRva": 83671664
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 71423968,
+            "endRva": 71424157,
+            "sha256": "514A95E8D5A5F527C8A612DDEB439D4BBBF88806210A70348FF1DA10CE1C7C68",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          },
+          {
+            "startRva": 83671574,
+            "endRva": 83671664,
+            "sha256": "AF1E484A546479F04E1D6801D7F17A787900C72499BCB76EFC617A7AC7CE7737",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "formatter": {
+        "entryRva": 71423872,
+        "method": [
+          167086,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPackFormatter",
+          "Deserialize",
+          71423872
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 71423872,
+            "endRva": 71423965
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 71423872,
+            "endRva": 71423965,
+            "sha256": "4AA5D021C194BA7A3DCD351D415A89B3B06D7BD3C5EB63F055873AB909A37767",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "lifecycle": [
+        {
+          "entryRva": 71424160,
+          "method": [
+            167077,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack",
+            ".ctor",
+            71424160
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 71424160,
+              "endRva": 71424218
+            },
+            {
+              "startRva": 71424218,
+              "endRva": 71424291
+            },
+            {
+              "startRva": 71424291,
+              "endRva": 71424343
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 71424160,
+              "endRva": 71424343,
+              "sha256": "F1A579A62D1561164E89E27EDE709F96E467DD791E74963D225D5E3C4E3F05F7",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        },
+        {
+          "entryRva": 158087564,
+          "method": [
+            167082,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack",
+            "OnDeserialized",
+            158087564
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 158087564,
+              "endRva": 158087676
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 158087564,
+              "endRva": 158087676,
+              "sha256": "B29E775B7291421EB9B8A1CC5FB6C6BBF381D1ECA964231EC84DD6AFEC8BA6DC",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        }
+      ],
+      "casePrograms": {
+        "case": {
+          "program": [
+            [
+              59820268,
+              "488B0E"
+            ],
+            [
+              59820271,
+              "4885C9"
+            ],
+            [
+              59820274,
+              "0F84E8000000"
+            ],
+            [
+              59820280,
+              "488B15097C6D09"
+            ],
+            [
+              59820287,
+              "488B09"
+            ],
+            [
+              59820290,
+              "E8496F6FFC"
+            ],
+            [
+              59820295,
+              "84C0"
+            ],
+            [
+              59820297,
+              "0F84D1000000"
+            ],
+            [
+              59820303,
+              "4C8B05727D6D09"
+            ],
+            [
+              59820310,
+              "E989FDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820268,
+              "endRva": 59820315,
+              "sha256": "BB9C8FC8FF1FCE5845D93F2027C7471A59C28C6AB29F3485057F1F2662225EA6",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new": {
+          "program": [
+            [
+              59820512,
+              "488B15997C6D09"
+            ],
+            [
+              59820519,
+              "E9D0FDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820512,
+              "endRva": 59820524,
+              "sha256": "2BAFF75435483B5BF17E94721AAB58547D9F8305F6E4DF190535429D64AFD0BC",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing": {
+          "program": [
+            [
+              59820303,
+              "4C8B05727D6D09"
+            ],
+            [
+              59820310,
+              "E989FDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820303,
+              "endRva": 59820315,
+              "sha256": "8D64CF1A578439A045169162394749160D35080ADE68B2B71F9D39DA9E222DDB",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new_shared": {
+          "program": [
+            [
+              59819964,
+              "488BCB"
+            ],
+            [
+              59819967,
+              "E82C31F1FF"
+            ],
+            [
+              59819972,
+              "488906"
+            ],
+            [
+              59819975,
+              "488BCE"
+            ],
+            [
+              59819978,
+              "E871A371FC"
+            ],
+            [
+              59819983,
+              "E9DBFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819964,
+              "endRva": 59819988,
+              "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing_shared": {
+          "program": [
+            [
+              59819684,
+              "488BD6"
+            ],
+            [
+              59819687,
+              "488BCB"
+            ],
+            [
+              59819690,
+              "E84DD08D05"
+            ],
+            [
+              59819695,
+              "488B5C2430"
+            ],
+            [
+              59819700,
+              "488B6C2438"
+            ],
+            [
+              59819705,
+              "488B742440"
+            ],
+            [
+              59819710,
+              "4883C420"
+            ],
+            [
+              59819714,
+              "5F"
+            ],
+            [
+              59819715,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819684,
+              "endRva": 59819716,
+              "sha256": "BDF1F244C395D038982653E0E547C41A6BAC858EAEEA9084F1C76D2C4213AC8B",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        }
+      },
+      "newContext": {
+        "instructionRva": 59820512,
+        "instructionHex": "488B15997C6D09",
+        "cellRva": 217990784,
+        "usageRawHex": "DBC012C000000000",
+        "methodSpecIndex": 614509,
+        "methodSpec": [
+          428462,
+          -1,
+          24977
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23035,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "FB590000000000000000120000000000"
+          }
+        ]
+      },
+      "existingContext": {
+        "instructionRva": 59820303,
+        "instructionHex": "4C8B05727D6D09",
+        "cellRva": 217990792,
+        "usageRawHex": "CFE012C000000000",
+        "methodSpecIndex": 618599,
+        "methodSpec": [
+          428461,
+          -1,
+          24977
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23035,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "FB590000000000000000120000000000"
+          }
+        ]
+      }
+    },
+    {
+      "tag": 6,
+      "wrapper": {
+        "typeDefinition": 23037,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack",
+        "parentTypeDefinition": 22489,
+        "parentWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+        "wrappedType": "Beyond.Gameplay.Core.Selector+GuardAITargetFinder+Data",
+        "serializedMemberCount": 0,
+        "inheritedMemberCount": 0,
+        "memberOrder": [],
+        "memberWidthSum": null,
+        "framesAsUnion": false,
+        "framesAsRawStruct": false,
+        "members": []
+      },
+      "dispatcher": {
+        "unionTag": 6,
+        "switchTableRva": 59821652,
+        "switchEntryCount": 24,
+        "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+        "switchTargetRva": 59820524,
+        "routeWindow": {
+          "startRva": 59820524,
+          "endRva": 59820567,
+          "sha256": "5E038DDF69E6050880F586BF967546687F9C555C4E106D8F68A442BCA2F8F76E",
+          "boundary": "complete contiguous selected program at original instruction addresses"
+        },
+        "usageCellRva": 217990304,
+        "usageRawHex": "4544032000000000",
+        "registeredTypeIndex": 107042,
+        "wrapperTypeDefinition": 23037,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack"
+      },
+      "reader": {
+        "entryRva": 73872304,
+        "method": [
+          167096,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack",
+          "Deserialize",
+          73872304
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 73872304,
+            "endRva": 73872488
+          },
+          {
+            "startRva": 83964740,
+            "endRva": 83964830
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 73872304,
+            "endRva": 73872488,
+            "sha256": "0CBF60027A43811728FDF6791367EF224ECA844FE2175D324BD144FA59DDFF2A",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          },
+          {
+            "startRva": 83964740,
+            "endRva": 83964830,
+            "sha256": "50A97CDBE6A22D8E5F7C44F0290E552B85670A27758C7C797E312D13AE3DB89B",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "formatter": {
+        "entryRva": 73872208,
+        "method": [
+          167097,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPackFormatter",
+          "Deserialize",
+          73872208
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 73872208,
+            "endRva": 73872297
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 73872208,
+            "endRva": 73872297,
+            "sha256": "1C2F1649644C1DABD523596D52C5A600D2D35D6F19F3AD03B24BE33A9B75C895",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "lifecycle": [
+        {
+          "entryRva": 73872496,
+          "method": [
+            167088,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack",
+            ".ctor",
+            73872496
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 73872496,
+              "endRva": 73872586
+            },
+            {
+              "startRva": 73872586,
+              "endRva": 73872659
+            },
+            {
+              "startRva": 73872659,
+              "endRva": 73872665
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 73872496,
+              "endRva": 73872665,
+              "sha256": "6987D4664C1987DC74A3A4C3D061F852F6FAFC8C798AF660C5EDEE458BB8F106",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        },
+        {
+          "entryRva": 158087940,
+          "method": [
+            167093,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack",
+            "OnDeserialized",
+            158087940
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 158087940,
+              "endRva": 158088052
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 158087940,
+              "endRva": 158088052,
+              "sha256": "545444B73225289D449EB8B413E21B0E317209E274C1B130B1834D8798167C6B",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        }
+      ],
+      "casePrograms": {
+        "case": {
+          "program": [
+            [
+              59820524,
+              "488B0E"
+            ],
+            [
+              59820527,
+              "4885C9"
+            ],
+            [
+              59820530,
+              "7417"
+            ],
+            [
+              59820532,
+              "488B15A57A6D09"
+            ],
+            [
+              59820539,
+              "488B09"
+            ],
+            [
+              59820542,
+              "E84D6E6FFC"
+            ],
+            [
+              59820547,
+              "84C0"
+            ],
+            [
+              59820549,
+              "0F852E040000"
+            ],
+            [
+              59820555,
+              "488B15867C6D09"
+            ],
+            [
+              59820562,
+              "E9A5FDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820524,
+              "endRva": 59820567,
+              "sha256": "5E038DDF69E6050880F586BF967546687F9C555C4E106D8F68A442BCA2F8F76E",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new": {
+          "program": [
+            [
+              59820555,
+              "488B15867C6D09"
+            ],
+            [
+              59820562,
+              "E9A5FDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820555,
+              "endRva": 59820567,
+              "sha256": "0DD4D6A1E6BF6AEF3482D3DB93D33BECFBEE424F22A91C2144B45CD56E6A833D",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing": {
+          "program": [
+            [
+              59821625,
+              "4C8B0550786D09"
+            ],
+            [
+              59821632,
+              "E95FF8FFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59821625,
+              "endRva": 59821637,
+              "sha256": "91C05B19289B6CB97EC2C5243E6FFFA4F278EC8AC2EDA2644870EB03EC4C534D",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new_shared": {
+          "program": [
+            [
+              59819964,
+              "488BCB"
+            ],
+            [
+              59819967,
+              "E82C31F1FF"
+            ],
+            [
+              59819972,
+              "488906"
+            ],
+            [
+              59819975,
+              "488BCE"
+            ],
+            [
+              59819978,
+              "E871A371FC"
+            ],
+            [
+              59819983,
+              "E9DBFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819964,
+              "endRva": 59819988,
+              "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing_shared": {
+          "program": [
+            [
+              59819684,
+              "488BD6"
+            ],
+            [
+              59819687,
+              "488BCB"
+            ],
+            [
+              59819690,
+              "E84DD08D05"
+            ],
+            [
+              59819695,
+              "488B5C2430"
+            ],
+            [
+              59819700,
+              "488B6C2438"
+            ],
+            [
+              59819705,
+              "488B742440"
+            ],
+            [
+              59819710,
+              "4883C420"
+            ],
+            [
+              59819714,
+              "5F"
+            ],
+            [
+              59819715,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819684,
+              "endRva": 59819716,
+              "sha256": "BDF1F244C395D038982653E0E547C41A6BAC858EAEEA9084F1C76D2C4213AC8B",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        }
+      },
+      "newContext": {
+        "instructionRva": 59820555,
+        "instructionHex": "488B15867C6D09",
+        "cellRva": 217990808,
+        "usageRawHex": "DDC012C000000000",
+        "methodSpecIndex": 614510,
+        "methodSpec": [
+          428462,
+          -1,
+          24978
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23037,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "FD590000000000000000120000000000"
+          }
+        ]
+      },
+      "existingContext": {
+        "instructionRva": 59821625,
+        "instructionHex": "4C8B0550786D09",
+        "cellRva": 217990800,
+        "usageRawHex": "D1E012C000000000",
+        "methodSpecIndex": 618600,
+        "methodSpec": [
+          428461,
+          -1,
+          24978
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23037,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "FD590000000000000000120000000000"
+          }
+        ]
+      }
+    },
+    {
+      "tag": 8,
+      "wrapper": {
+        "typeDefinition": 23041,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+        "parentTypeDefinition": 22489,
+        "parentWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+        "wrappedType": "Beyond.Gameplay.Core.Selector+InFightEnemyFinder+Data",
+        "serializedMemberCount": 0,
+        "inheritedMemberCount": 0,
+        "memberOrder": [],
+        "memberWidthSum": null,
+        "framesAsUnion": false,
+        "framesAsRawStruct": false,
+        "members": []
+      },
+      "dispatcher": {
+        "unionTag": 8,
+        "switchTableRva": 59821652,
+        "switchEntryCount": 24,
+        "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+        "switchTargetRva": 59820091,
+        "routeWindow": {
+          "startRva": 59820091,
+          "endRva": 59820138,
+          "sha256": "0B62ECAE4CE0C01DFB70C8142D4B33336237F23D4D701504D240CF22BC3108FE",
+          "boundary": "complete contiguous selected program at original instruction addresses"
+        },
+        "usageCellRva": 217990336,
+        "usageRawHex": "4D44032000000000",
+        "registeredTypeIndex": 107046,
+        "wrapperTypeDefinition": 23041,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack"
+      },
+      "reader": {
+        "entryRva": 68533040,
+        "method": [
+          167121,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+          "Deserialize",
+          68533040
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 68533040,
+            "endRva": 68533229
+          },
+          {
+            "startRva": 83378868,
+            "endRva": 83378958
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 68533040,
+            "endRva": 68533229,
+            "sha256": "77957DCDD0A58AE3E4C53C2D5E4F875FC2A021F742EDE8068AD94815944E2938",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          },
+          {
+            "startRva": 83378868,
+            "endRva": 83378958,
+            "sha256": "7B227C96B896A222099E47539BF36D3E15B248E862AE6561C45A77CE38BA4F18",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "formatter": {
+        "entryRva": 68532944,
+        "method": [
+          167122,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPackFormatter",
+          "Deserialize",
+          68532944
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 68532944,
+            "endRva": 68533037
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 68532944,
+            "endRva": 68533037,
+            "sha256": "7A0EE20E9C6D3E43A3E74C8C65F8E371F17081D00E8FFE572F559837C59DE5AD",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "lifecycle": [
+        {
+          "entryRva": 68533232,
+          "method": [
+            167113,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+            ".ctor",
+            68533232
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 68533232,
+              "endRva": 68533290
+            },
+            {
+              "startRva": 68533290,
+              "endRva": 68533363
+            },
+            {
+              "startRva": 68533363,
+              "endRva": 68533415
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 68533232,
+              "endRva": 68533415,
+              "sha256": "4CA644C77D73C0CF98164F5729907D13D7C39AAAC6D246F663D7CB0207680E3A",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        },
+        {
+          "entryRva": 158089452,
+          "method": [
+            167118,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+            "OnDeserialized",
+            158089452
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 158089452,
+              "endRva": 158089564
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 158089452,
+              "endRva": 158089564,
+              "sha256": "B71B946338EA5808A1515953B290AED3E1A3ABD5CD80C737409397FC7D23E296",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        }
+      ],
+      "casePrograms": {
+        "case": {
+          "program": [
+            [
+              59820091,
+              "488B0E"
+            ],
+            [
+              59820094,
+              "4885C9"
+            ],
+            [
+              59820097,
+              "0F843E010000"
+            ],
+            [
+              59820103,
+              "488B15727C6D09"
+            ],
+            [
+              59820110,
+              "488B09"
+            ],
+            [
+              59820113,
+              "E8FA6F6FFC"
+            ],
+            [
+              59820118,
+              "84C0"
+            ],
+            [
+              59820120,
+              "0F8427010000"
+            ],
+            [
+              59820126,
+              "4C8B05FB7D6D09"
+            ],
+            [
+              59820133,
+              "E93AFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820091,
+              "endRva": 59820138,
+              "sha256": "0B62ECAE4CE0C01DFB70C8142D4B33336237F23D4D701504D240CF22BC3108FE",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new": {
+          "program": [
+            [
+              59820421,
+              "488B15E47C6D09"
+            ],
+            [
+              59820428,
+              "E92BFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820421,
+              "endRva": 59820433,
+              "sha256": "455DA2633CAE085F0E600ED419F36E13C009FE2A5D6B0645B04908BC97032308",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing": {
+          "program": [
+            [
+              59820126,
+              "4C8B05FB7D6D09"
+            ],
+            [
+              59820133,
+              "E93AFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820126,
+              "endRva": 59820138,
+              "sha256": "7CCE5800908962D90D701A47776B48D11EE2478D662E889217D100953363F736",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new_shared": {
+          "program": [
+            [
+              59819964,
+              "488BCB"
+            ],
+            [
+              59819967,
+              "E82C31F1FF"
+            ],
+            [
+              59819972,
+              "488906"
+            ],
+            [
+              59819975,
+              "488BCE"
+            ],
+            [
+              59819978,
+              "E871A371FC"
+            ],
+            [
+              59819983,
+              "E9DBFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819964,
+              "endRva": 59819988,
+              "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing_shared": {
+          "program": [
+            [
+              59819684,
+              "488BD6"
+            ],
+            [
+              59819687,
+              "488BCB"
+            ],
+            [
+              59819690,
+              "E84DD08D05"
+            ],
+            [
+              59819695,
+              "488B5C2430"
+            ],
+            [
+              59819700,
+              "488B6C2438"
+            ],
+            [
+              59819705,
+              "488B742440"
+            ],
+            [
+              59819710,
+              "4883C420"
+            ],
+            [
+              59819714,
+              "5F"
+            ],
+            [
+              59819715,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819684,
+              "endRva": 59819716,
+              "sha256": "BDF1F244C395D038982653E0E547C41A6BAC858EAEEA9084F1C76D2C4213AC8B",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        }
+      },
+      "newContext": {
+        "instructionRva": 59820421,
+        "instructionHex": "488B15E47C6D09",
+        "cellRva": 217990768,
+        "usageRawHex": "E3C012C000000000",
+        "methodSpecIndex": 614513,
+        "methodSpec": [
+          428462,
+          -1,
+          24982
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23041,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "015A0000000000000000120000000000"
+          }
+        ]
+      },
+      "existingContext": {
+        "instructionRva": 59820126,
+        "instructionHex": "4C8B05FB7D6D09",
+        "cellRva": 217990752,
+        "usageRawHex": "D7E012C000000000",
+        "methodSpecIndex": 618603,
+        "methodSpec": [
+          428461,
+          -1,
+          24982
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23041,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "015A0000000000000000120000000000"
+          }
+        ]
+      }
+    },
+    {
+      "tag": 10,
+      "wrapper": {
+        "typeDefinition": 23045,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack",
+        "parentTypeDefinition": 22489,
+        "parentWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+        "wrappedType": "Beyond.Gameplay.Core.Selector+MainTargetFinder+Data",
+        "serializedMemberCount": 0,
+        "inheritedMemberCount": 0,
+        "memberOrder": [],
+        "memberWidthSum": null,
+        "framesAsUnion": false,
+        "framesAsRawStruct": false,
+        "members": []
+      },
+      "dispatcher": {
+        "unionTag": 10,
+        "switchTableRva": 59821652,
+        "switchEntryCount": 24,
+        "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+        "switchTargetRva": 59819910,
+        "routeWindow": {
+          "startRva": 59819910,
+          "endRva": 59819957,
+          "sha256": "708E22A0637E426AB4CFD163BB57AF8B09D215310450506673D93A2149E48739",
+          "boundary": "complete contiguous selected program at original instruction addresses"
+        },
+        "usageCellRva": 217990256,
+        "usageRawHex": "5944032000000000",
+        "registeredTypeIndex": 107052,
+        "wrapperTypeDefinition": 23045,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack"
+      },
+      "reader": {
+        "entryRva": 67046000,
+        "method": [
+          167144,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack",
+          "Deserialize",
+          67046000
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 67046000,
+            "endRva": 67046189
+          },
+          {
+            "startRva": 83232180,
+            "endRva": 83232270
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 67046000,
+            "endRva": 67046189,
+            "sha256": "64C82ADB83D09BB13CF2E6371B213BB10ED260899230B5C92F6397FFAE50A8E0",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          },
+          {
+            "startRva": 83232180,
+            "endRva": 83232270,
+            "sha256": "9B1FBCE30DD857DDA7137796989FC4707677CC593822F1099BEE02869D82B711",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "formatter": {
+        "entryRva": 67045904,
+        "method": [
+          167145,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPackFormatter",
+          "Deserialize",
+          67045904
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 67045904,
+            "endRva": 67045997
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 67045904,
+            "endRva": 67045997,
+            "sha256": "56AF4B848F017E4D6155A901EF19F8B44C0EAD5583E881F4B898017DF34223BF",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "lifecycle": [
+        {
+          "entryRva": 67046192,
+          "method": [
+            167136,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack",
+            ".ctor",
+            67046192
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 67046192,
+              "endRva": 67046250
+            },
+            {
+              "startRva": 67046250,
+              "endRva": 67046323
+            },
+            {
+              "startRva": 67046323,
+              "endRva": 67046375
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 67046192,
+              "endRva": 67046375,
+              "sha256": "3070F5A0B4C7BEFAD42B26F21631D661493B919D352BFDC1F62AC5A2D2DEF602",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        },
+        {
+          "entryRva": 158093372,
+          "method": [
+            167141,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack",
+            "OnDeserialized",
+            158093372
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 158093372,
+              "endRva": 158093484
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 158093372,
+              "endRva": 158093484,
+              "sha256": "989555797002D1B7F4D86ABD542929055E3E331A062294AE72EC1DA8DD6F9331",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        }
+      ],
+      "casePrograms": {
+        "case": {
+          "program": [
+            [
+              59819910,
+              "488B0E"
+            ],
+            [
+              59819913,
+              "4885C9"
+            ],
+            [
+              59819916,
+              "0F841F010000"
+            ],
+            [
+              59819922,
+              "488B15D77C6D09"
+            ],
+            [
+              59819929,
+              "488B09"
+            ],
+            [
+              59819932,
+              "E8AF706FFC"
+            ],
+            [
+              59819937,
+              "84C0"
+            ],
+            [
+              59819939,
+              "0F8408010000"
+            ],
+            [
+              59819945,
+              "4C8B05807E6D09"
+            ],
+            [
+              59819952,
+              "E9EFFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819910,
+              "endRva": 59819957,
+              "sha256": "708E22A0637E426AB4CFD163BB57AF8B09D215310450506673D93A2149E48739",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new": {
+          "program": [
+            [
+              59820209,
+              "488B15887D6D09"
+            ],
+            [
+              59820216,
+              "E9FFFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820209,
+              "endRva": 59820221,
+              "sha256": "92FF44FA54A5456DF65CB6DDD1719BD5B74990D177C790D012E38B651AA8A1DD",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing": {
+          "program": [
+            [
+              59819945,
+              "4C8B05807E6D09"
+            ],
+            [
+              59819952,
+              "E9EFFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819945,
+              "endRva": 59819957,
+              "sha256": "5FADB29C6A34C66B5E45F76C1A221342CE07FEF02355F8C5201E2008866FBD4C",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new_shared": {
+          "program": [
+            [
+              59819964,
+              "488BCB"
+            ],
+            [
+              59819967,
+              "E82C31F1FF"
+            ],
+            [
+              59819972,
+              "488906"
+            ],
+            [
+              59819975,
+              "488BCE"
+            ],
+            [
+              59819978,
+              "E871A371FC"
+            ],
+            [
+              59819983,
+              "E9DBFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819964,
+              "endRva": 59819988,
+              "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing_shared": {
+          "program": [
+            [
+              59819684,
+              "488BD6"
+            ],
+            [
+              59819687,
+              "488BCB"
+            ],
+            [
+              59819690,
+              "E84DD08D05"
+            ],
+            [
+              59819695,
+              "488B5C2430"
+            ],
+            [
+              59819700,
+              "488B6C2438"
+            ],
+            [
+              59819705,
+              "488B742440"
+            ],
+            [
+              59819710,
+              "4883C420"
+            ],
+            [
+              59819714,
+              "5F"
+            ],
+            [
+              59819715,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819684,
+              "endRva": 59819716,
+              "sha256": "BDF1F244C395D038982653E0E547C41A6BAC858EAEEA9084F1C76D2C4213AC8B",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        }
+      },
+      "newContext": {
+        "instructionRva": 59820209,
+        "instructionHex": "488B15887D6D09",
+        "cellRva": 217990720,
+        "usageRawHex": "EFC012C000000000",
+        "methodSpecIndex": 614519,
+        "methodSpec": [
+          428462,
+          -1,
+          24988
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23045,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "055A0000000000000000120000000000"
+          }
+        ]
+      },
+      "existingContext": {
+        "instructionRva": 59819945,
+        "instructionHex": "4C8B05807E6D09",
+        "cellRva": 217990704,
+        "usageRawHex": "E3E012C000000000",
+        "methodSpecIndex": 618609,
+        "methodSpec": [
+          428461,
+          -1,
+          24988
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23045,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "055A0000000000000000120000000000"
+          }
+        ]
+      }
+    },
+    {
+      "tag": 21,
+      "wrapper": {
+        "typeDefinition": 23067,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPack",
+        "parentTypeDefinition": 22489,
+        "parentWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+        "wrappedType": "Beyond.Gameplay.Core.Selector+SourceFinder+Data",
+        "serializedMemberCount": 0,
+        "inheritedMemberCount": 0,
+        "memberOrder": [],
+        "memberWidthSum": null,
+        "framesAsUnion": false,
+        "framesAsRawStruct": false,
+        "members": []
+      },
+      "dispatcher": {
+        "unionTag": 21,
+        "switchTableRva": 59821652,
+        "switchEntryCount": 24,
+        "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+        "switchTargetRva": 59820374,
+        "routeWindow": {
+          "startRva": 59820374,
+          "endRva": 59820421,
+          "sha256": "CF7316A22665E418ABF9844C268CC88B9355E2B9A98A57C303BEC19B622ED57C",
+          "boundary": "complete contiguous selected program at original instruction addresses"
+        },
+        "usageCellRva": 217990616,
+        "usageRawHex": "7B44032000000000",
+        "registeredTypeIndex": 107069,
+        "wrapperTypeDefinition": 23067,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPack"
+      },
+      "reader": {
+        "entryRva": 72080496,
+        "method": [
+          167295,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPack",
+          "Deserialize",
+          72080496
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 72080496,
+            "endRva": 72080685
+          },
+          {
+            "startRva": 83736958,
+            "endRva": 83737048
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 72080496,
+            "endRva": 72080685,
+            "sha256": "AB69BF2ED858F2D0B88A1D1A1B04C929CB284F466B329692EE5109E3BE1F8728",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          },
+          {
+            "startRva": 83736958,
+            "endRva": 83737048,
+            "sha256": "CB536694D42B7FCD129E0BFDC47919A826D2323D39433A11B455787104106614",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "formatter": {
+        "entryRva": 72080400,
+        "method": [
+          167296,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPackFormatter",
+          "Deserialize",
+          72080400
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 72080400,
+            "endRva": 72080493
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 72080400,
+            "endRva": 72080493,
+            "sha256": "C7D147879B2C0E8D40E867229764EE113109A54C71D3B563CA706A7207B95541",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "lifecycle": [
+        {
+          "entryRva": 72080688,
+          "method": [
+            167287,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPack",
+            ".ctor",
+            72080688
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 72080688,
+              "endRva": 72080746
+            },
+            {
+              "startRva": 72080746,
+              "endRva": 72080819
+            },
+            {
+              "startRva": 72080819,
+              "endRva": 72080871
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 72080688,
+              "endRva": 72080871,
+              "sha256": "DF7B5F9EF84841855A8D0CAE0E8C181EF9F579E00A81CAFFC5532CB6AC78A11D",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        },
+        {
+          "entryRva": 158100708,
+          "method": [
+            167292,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPack",
+            "OnDeserialized",
+            158100708
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 158100708,
+              "endRva": 158100820
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 158100708,
+              "endRva": 158100820,
+              "sha256": "2288E955303BF4C8861C0620012FF25F321C79AEAB61EB279EC81744F29292C1",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        }
+      ],
+      "casePrograms": {
+        "case": {
+          "program": [
+            [
+              59820374,
+              "488B0E"
+            ],
+            [
+              59820377,
+              "4885C9"
+            ],
+            [
+              59820380,
+              "0F84C1000000"
+            ],
+            [
+              59820386,
+              "488B156F7C6D09"
+            ],
+            [
+              59820393,
+              "488B09"
+            ],
+            [
+              59820396,
+              "E8DF6E6FFC"
+            ],
+            [
+              59820401,
+              "84C0"
+            ],
+            [
+              59820403,
+              "0F84AA000000"
+            ],
+            [
+              59820409,
+              "4C8B05B8746D09"
+            ],
+            [
+              59820416,
+              "E91FFDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820374,
+              "endRva": 59820421,
+              "sha256": "CF7316A22665E418ABF9844C268CC88B9355E2B9A98A57C303BEC19B622ED57C",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new": {
+          "program": [
+            [
+              59820579,
+              "488B151E746D09"
+            ],
+            [
+              59820586,
+              "E98DFDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820579,
+              "endRva": 59820591,
+              "sha256": "DBA2833768012AE6920BA906F5331C40AD044B1CEE8D6A38A11B2C29E88B201C",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing": {
+          "program": [
+            [
+              59820409,
+              "4C8B05B8746D09"
+            ],
+            [
+              59820416,
+              "E91FFDFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59820409,
+              "endRva": 59820421,
+              "sha256": "A7FC4835DE8F3CC80869191B475C04C1A283F6B5C237C3A7CE36D1207175AC89",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new_shared": {
+          "program": [
+            [
+              59819964,
+              "488BCB"
+            ],
+            [
+              59819967,
+              "E82C31F1FF"
+            ],
+            [
+              59819972,
+              "488906"
+            ],
+            [
+              59819975,
+              "488BCE"
+            ],
+            [
+              59819978,
+              "E871A371FC"
+            ],
+            [
+              59819983,
+              "E9DBFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819964,
+              "endRva": 59819988,
+              "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing_shared": {
+          "program": [
+            [
+              59819684,
+              "488BD6"
+            ],
+            [
+              59819687,
+              "488BCB"
+            ],
+            [
+              59819690,
+              "E84DD08D05"
+            ],
+            [
+              59819695,
+              "488B5C2430"
+            ],
+            [
+              59819700,
+              "488B6C2438"
+            ],
+            [
+              59819705,
+              "488B742440"
+            ],
+            [
+              59819710,
+              "4883C420"
+            ],
+            [
+              59819714,
+              "5F"
+            ],
+            [
+              59819715,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819684,
+              "endRva": 59819716,
+              "sha256": "BDF1F244C395D038982653E0E547C41A6BAC858EAEEA9084F1C76D2C4213AC8B",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        }
+      },
+      "newContext": {
+        "instructionRva": 59820579,
+        "instructionHex": "488B151E746D09",
+        "cellRva": 217988680,
+        "usageRawHex": "0DC112C000000000",
+        "methodSpecIndex": 614534,
+        "methodSpec": [
+          428462,
+          -1,
+          25005
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23067,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "1B5A0000000000000000120000000000"
+          }
+        ]
+      },
+      "existingContext": {
+        "instructionRva": 59820409,
+        "instructionHex": "4C8B05B8746D09",
+        "cellRva": 217988664,
+        "usageRawHex": "01E112C000000000",
+        "methodSpecIndex": 618624,
+        "methodSpec": [
+          428461,
+          -1,
+          25005
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23067,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "1B5A0000000000000000120000000000"
+          }
+        ]
+      }
+    },
+    {
+      "tag": 23,
+      "wrapper": {
+        "typeDefinition": 23069,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack",
+        "parentTypeDefinition": 22489,
+        "parentWrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+        "wrappedType": "Beyond.Gameplay.Core.Selector+TyphoeaArcherySelectedFinder+Data",
+        "serializedMemberCount": 0,
+        "inheritedMemberCount": 0,
+        "memberOrder": [],
+        "memberWidthSum": null,
+        "framesAsUnion": false,
+        "framesAsRawStruct": false,
+        "members": []
+      },
+      "dispatcher": {
+        "unionTag": 23,
+        "switchTableRva": 59821652,
+        "switchEntryCount": 24,
+        "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+        "switchTargetRva": 82204560,
+        "routeWindow": {
+          "startRva": 82204560,
+          "endRva": 82204599,
+          "sha256": "4FE9C49E9EFBC5E3B28752B8F88B366D49A10A8A3F661C1590AB5A44F865BD07",
+          "boundary": "complete contiguous selected program at original instruction addresses"
+        },
+        "usageCellRva": 217990536,
+        "usageRawHex": "8544032000000000",
+        "registeredTypeIndex": 107074,
+        "wrapperTypeDefinition": 23069,
+        "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack"
+      },
+      "reader": {
+        "entryRva": 158104696,
+        "method": [
+          167307,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack",
+          "Deserialize",
+          158104696
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 158104696,
+            "endRva": 158104933
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 158104696,
+            "endRva": 158104933,
+            "sha256": "F3FAB296BA89AF4E01F989DEE8D8B244D253DA9006E8F961067BBFB503FF696F",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "formatter": {
+        "entryRva": 158104468,
+        "method": [
+          167308,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPackFormatter",
+          "Deserialize",
+          158104468
+        ],
+        "ownedPdataFragments": [
+          {
+            "startRva": 158104468,
+            "endRva": 158104557
+          }
+        ],
+        "codeWindows": [
+          {
+            "startRva": 158104468,
+            "endRva": 158104557,
+            "sha256": "0B88F438B37F31CE3620E7F83762333113A6E41B9C16589E5768702AD2C83954",
+            "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+          }
+        ]
+      },
+      "lifecycle": [
+        {
+          "entryRva": 158105056,
+          "method": [
+            167298,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack",
+            ".ctor",
+            158105056
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 158105056,
+              "endRva": 158105215
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 158105056,
+              "endRva": 158105215,
+              "sha256": "46D05097788CEBB7C39C4E34BF4D3D24694C4BCC3CB349A8EBD637FDD46D3193",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        },
+        {
+          "entryRva": 158104944,
+          "method": [
+            167303,
+            "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack",
+            "OnDeserialized",
+            158104944
+          ],
+          "ownedPdataFragments": [
+            {
+              "startRva": 158104944,
+              "endRva": 158105056
+            }
+          ],
+          "codeWindows": [
+            {
+              "startRva": 158104944,
+              "endRva": 158105056,
+              "sha256": "66654F6B5FB3E998325C1DB5FE4356E86587E6352ECF4E85870A292B3458B463",
+              "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+            }
+          ]
+        }
+      ],
+      "casePrograms": {
+        "case": {
+          "program": [
+            [
+              82204560,
+              "488B0E"
+            ],
+            [
+              82204563,
+              "4885C9"
+            ],
+            [
+              82204566,
+              "741F"
+            ],
+            [
+              82204568,
+              "488B15E9ED1708"
+            ],
+            [
+              82204575,
+              "488B09"
+            ],
+            [
+              82204578,
+              "E8A9E019FB"
+            ],
+            [
+              82204583,
+              "84C0"
+            ],
+            [
+              82204585,
+              "740C"
+            ],
+            [
+              82204587,
+              "4C8B0566E61708"
+            ],
+            [
+              82204594,
+              "E9ED6EAAFE"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 82204560,
+              "endRva": 82204599,
+              "sha256": "4FE9C49E9EFBC5E3B28752B8F88B366D49A10A8A3F661C1590AB5A44F865BD07",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new": {
+          "program": [
+            [
+              82204599,
+              "488B1552E61708"
+            ],
+            [
+              82204606,
+              "E9F96FAAFE"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 82204599,
+              "endRva": 82204611,
+              "sha256": "19C356DBAFC4155A0578E13F180704FEF4736D62C45E9CB3510D252B87C6A706",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing": {
+          "program": [
+            [
+              82204587,
+              "4C8B0566E61708"
+            ],
+            [
+              82204594,
+              "E9ED6EAAFE"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 82204587,
+              "endRva": 82204599,
+              "sha256": "C1BA179956ACB8810A7890DAE9B3829D809E13A4EA1200AF4294C47606D9C5CD",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "new_shared": {
+          "program": [
+            [
+              59819964,
+              "488BCB"
+            ],
+            [
+              59819967,
+              "E82C31F1FF"
+            ],
+            [
+              59819972,
+              "488906"
+            ],
+            [
+              59819975,
+              "488BCE"
+            ],
+            [
+              59819978,
+              "E871A371FC"
+            ],
+            [
+              59819983,
+              "E9DBFEFFFF"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819964,
+              "endRva": 59819988,
+              "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        },
+        "existing_shared": {
+          "program": [
+            [
+              59819684,
+              "488BD6"
+            ],
+            [
+              59819687,
+              "488BCB"
+            ],
+            [
+              59819690,
+              "E84DD08D05"
+            ],
+            [
+              59819695,
+              "488B5C2430"
+            ],
+            [
+              59819700,
+              "488B6C2438"
+            ],
+            [
+              59819705,
+              "488B742440"
+            ],
+            [
+              59819710,
+              "4883C420"
+            ],
+            [
+              59819714,
+              "5F"
+            ],
+            [
+              59819715,
+              "C3"
+            ]
+          ],
+          "codeWindows": [
+            {
+              "startRva": 59819684,
+              "endRva": 59819716,
+              "sha256": "BDF1F244C395D038982653E0E547C41A6BAC858EAEEA9084F1C76D2C4213AC8B",
+              "boundary": "complete contiguous selected program at original instruction addresses"
+            }
+          ]
+        }
+      },
+      "newContext": {
+        "instructionRva": 82204599,
+        "instructionHex": "488B1552E61708",
+        "cellRva": 217988624,
+        "usageRawHex": "17C112C000000000",
+        "methodSpecIndex": 614539,
+        "methodSpec": [
+          428462,
+          -1,
+          25010
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23069,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "1D5A0000000000000000120000000000"
+          }
+        ]
+      },
+      "existingContext": {
+        "instructionRva": 82204587,
+        "instructionHex": "4C8B0566E61708",
+        "cellRva": 217988632,
+        "usageRawHex": "0BE112C000000000",
+        "methodSpecIndex": 618629,
+        "methodSpec": [
+          428461,
+          -1,
+          25010
+        ],
+        "methodName": "ReadPackable",
+        "declaringType": "MemoryPack.MemoryPackReader",
+        "arguments": [
+          {
+            "typeDefinition": 23069,
+            "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack",
+            "rawTypeRecordHex": "1D5A0000000000000000120000000000"
+          }
+        ]
+      }
+    }
+  ],
+  "dependencies": {
+    "rootList": "buff_timeline_root_list_native.json",
+    "readValue": "buff_timeline_read_value_native.json",
+    "provider": "buff_formatter_provider_native.json"
+  },
+  "sharedReaders": {
+    "valuePackable": {
+      "entryRva": 58849520,
+      "ownedPdataFragments": [
+        {
+          "startRva": 58849520,
+          "endRva": 58850806
+        },
+        {
+          "startRva": 79001096,
+          "endRva": 79001577
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 58849520,
+          "endRva": 58850806,
+          "sha256": "5917DCD09ACBA635492A0F3A751C3940EDEA02D5E0F38B977F3DADEFDC672279",
+          "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+        },
+        {
+          "startRva": 79001096,
+          "endRva": 79001577,
+          "sha256": "5BB052EC5DFD42EE4B76A5FF1554229DC46FFD3286852165F4C411D71E7116EB",
+          "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+        }
+      ]
+    },
+    "byrefPackable": {
+      "entryRva": 152999676,
+      "ownedPdataFragments": [
+        {
+          "startRva": 152999676,
+          "endRva": 152999748
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 152999676,
+          "endRva": 152999748,
+          "sha256": "B4036266845A0E70634B88CE84AD25BF741F0E7BC5CB14DF983081693A5A8B17",
+          "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+        }
+      ]
+    },
+    "byrefPackableContext": {
+      "definition": 428461,
+      "isMethod": true,
+      "token": 100663410,
+      "image": "MemoryPack.dll",
+      "typeName": "MemoryPack.MemoryPackReader",
+      "methodName": "ReadPackable",
+      "start": 35,
+      "count": 1,
+      "entries": [
+        {
+          "relativeSlot": 0,
+          "rawHex": "03000000000000001497328C01000000",
+          "kind": 3,
+          "index": 517703,
+          "methodSpec": [
+            428463,
+            -1,
+            55058
+          ],
+          "typeName": "MemoryPack.MemoryPackReader",
+          "methodName": "ReadValue"
+        }
+      ]
+    },
+    "byrefReadValueContext": {
+      "definition": 428463,
+      "isMethod": true,
+      "token": 100663412,
+      "image": "MemoryPack.dll",
+      "typeName": "MemoryPack.MemoryPackReader",
+      "methodName": "ReadValue",
+      "start": 37,
+      "count": 3,
+      "entries": [
+        {
+          "relativeSlot": 0,
+          "rawHex": "0300000000000000089C328C01000000",
+          "kind": 3,
+          "index": 516757,
+          "methodSpec": [
+            428394,
+            -1,
+            41929
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatterProvider",
+          "methodName": "GetFormatter"
+        },
+        {
+          "relativeSlot": 1,
+          "rawHex": "0200000000000000C897328C01000000",
+          "kind": 2,
+          "index": 211959,
+          "typeName": "MemoryPack.MemoryPackFormatter`1<MVAR[21112]>",
+          "typeRawHex": "787B928D010000000000150000000000"
+        },
+        {
+          "relativeSlot": 2,
+          "rawHex": "03000000000000007099328C01000000",
+          "kind": 3,
+          "index": 280174,
+          "methodSpec": [
+            428408,
+            41929,
+            -1
+          ],
+          "typeName": "MemoryPack.MemoryPackFormatter`1",
+          "methodName": "Deserialize"
+        }
+      ]
+    },
+    "byrefReadValue": {
+      "entryRva": 64290448,
+      "ownedPdataFragments": [
+        {
+          "startRva": 64290448,
+          "endRva": 64290583
+        }
+      ],
+      "codeWindows": [
+        {
+          "startRva": 64290448,
+          "endRva": 64290583,
+          "sha256": "4C4735D18C9DCD25287E61787BFBF5011F408996DB5FEFF1C5A8F67D45E78E0A",
+          "boundary": "complete current unwind-owned primary or linked cold fragment; semantic effects proved only by the selected program grammar"
+        }
+      ]
+    },
+    "byrefReadValueCalledEntryRva": 3211136,
+    "entryTransfers": [
+      {
+        "entryRva": 3211136,
+        "targetRva": 64290448,
+        "instructionHex": "E90BFFA303",
+        "window": {
+          "startRva": 3211136,
+          "endRva": 3211141,
+          "sha256": "F9F574CC0591E6A845579A287167E88723A02AB93D630E57B05DAF2A9A848DC4",
+          "boundary": "one complete original unconditional direct terminal jump; adjacent bytes and named body identity excluded"
+        }
+      }
+    ],
+    "symbols": {
+      "metadataInit": 266848,
+      "classInit": 156352,
+      "formatterDispatch": 258816,
+      "contextInit": 323472,
+      "provider": 47858272
+    },
+    "actualCalledEntryRegistrations": [
+      {
+        "rva": 58849520,
+        "registrations": []
+      },
+      {
+        "rva": 152999676,
+        "registrations": []
+      }
+    ],
+    "independentPackableObjectEntries": [
+      {
+        "definition": 428461,
+        "objectRegistration": {
+          "pointer": 6553534288,
+          "methodSpecIndex": 517419,
+          "registration": {
+            "tableIndex": 488525,
+            "va": 6646487088,
+            "methodSpecIndex": 517419,
+            "rawHex": "2BE507009A7207005ACC0000FFFFFFFF",
+            "indices": [
+              488090,
+              52314,
+              -1
+            ]
+          },
+          "classInstantiation": {
+            "index": -1,
+            "table_slot_va": null,
+            "record_va": null,
+            "argument_vector_va": null,
+            "padding_hex": "",
+            "arguments": []
+          },
+          "methodInstantiation": {
+            "index": 75,
+            "table_slot_va": 6625974776,
+            "record_va": 6626910416,
+            "argument_vector_va": 6669037504,
+            "padding_hex": "00000000",
+            "arguments": [
+              {
+                "index": 0,
+                "type_pointer_va": 6664879512,
+                "raw_type_record_hex": "068E00000000000000001C0000000000"
+              }
+            ]
+          },
+          "methodDefinitionIndices": [
+            428461
+          ],
+          "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+        },
+        "pointerRva": 111083344
+      },
+      {
+        "definition": 428462,
+        "objectRegistration": {
+          "pointer": 6553534232,
+          "methodSpecIndex": 517418,
+          "registration": {
+            "tableIndex": 488524,
+            "va": 6646487072,
+            "methodSpecIndex": 517418,
+            "rawHex": "2AE5070099720700D2FF0000FFFFFFFF",
+            "indices": [
+              488089,
+              65490,
+              -1
+            ]
+          },
+          "classInstantiation": {
+            "index": -1,
+            "table_slot_va": null,
+            "record_va": null,
+            "argument_vector_va": null,
+            "padding_hex": "",
+            "arguments": []
+          },
+          "methodInstantiation": {
+            "index": 75,
+            "table_slot_va": 6625974776,
+            "record_va": 6626910416,
+            "argument_vector_va": 6669037504,
+            "padding_hex": "00000000",
+            "arguments": [
+              {
+                "index": 0,
+                "type_pointer_va": 6664879512,
+                "raw_type_record_hex": "068E00000000000000001C0000000000"
+              }
+            ]
+          },
+          "methodDefinitionIndices": [
+            428462
+          ],
+          "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+        },
+        "pointerRva": 111083288
+      }
+    ],
+    "independentReadValueObjectEntry": {
+      "pointer": 6553544232,
+      "methodSpecIndex": 517707,
+      "registration": {
+        "tableIndex": 488725,
+        "va": 6646490288,
+        "methodSpecIndex": 517707,
+        "rawHex": "4BE60700627307005ACC0000FFFFFFFF",
+        "indices": [
+          488290,
+          52314,
+          -1
+        ]
+      },
+      "classInstantiation": {
+        "index": -1,
+        "table_slot_va": null,
+        "record_va": null,
+        "argument_vector_va": null,
+        "padding_hex": "",
+        "arguments": []
+      },
+      "methodInstantiation": {
+        "index": 75,
+        "table_slot_va": 6625974776,
+        "record_va": 6626910416,
+        "argument_vector_va": 6669037504,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664879512,
+            "raw_type_record_hex": "068E00000000000000001C0000000000"
+          }
+        ]
+      },
+      "methodDefinitionIndices": [
+        428463
+      ],
+      "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+    },
+    "actualReadValueMatchedIndependentObject": false
+  },
+  "evidenceBoundary": {
+    "exact": "Current native inputs, complete concrete wrapper/header/forwarder ownership and bytes, zero generated serialized members, indexed case type usage and closed ReadPackable overload arguments.",
+    "direct": "Both checked caller alternatives preserve Reader/output through their actual physical helper paths and ordinary formatter slot five; the value-return branch stores the complete RAX reference. Physical byref shim and terminal jump targets are authenticated independently of declared method names.",
+    "structuralOnly": "A bounded canonical short tag followed by zero or FF identifies only the stored zero-member Finder representation; no selected entity or target acceptance is evaluated.",
+    "conditional": "Canonical short buffered tag selection under warmed initialization, valid disjoint stable source/output/Reader/frame and increment bounds; default concrete child formatter selected; initialization, allocation, constructor, lifecycle, class predicate, typed generic helper and barrier calls return normally with required ABI and non-interference.",
+    "unresolved": "Named physical helper identities: actual calls have no generic code registration rows and differ from independently registered Object entries. Runtime context inflation, provider/helper/global effects, lifecycle/allocation contents, live formatter/target selection, extended/reserved wire and refill/error parity, and complete enclosing action/list/root joins remain open."
+  }
+}

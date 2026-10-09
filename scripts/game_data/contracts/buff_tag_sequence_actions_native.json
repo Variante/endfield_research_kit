@@ -1,0 +1,306 @@
+{
+  "schema": "endfield.buff-tag-sequence-actions-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "addTag": {
+      "sourceContract": "buff_0b_native.json",
+      "wrapperTypeDefinition": 15905,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AddTagAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9213,
+      "runtimeTypeName": "Beyond.Gameplay.Core.AddTagAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member8",
+      "readerMethod": [
+        118424,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AddTagAction_DataForMemoryPack",
+        "Deserialize",
+        63361824
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 63361968,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361991,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84810100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 63362009,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63362031,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84580100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 63361996
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 63362042,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63362064,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84370100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 63362075,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63362097,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84160100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "tag",
+          "declaredType": "Beyond.Blackboard+BlackboardString",
+          "setterMethodIndex": 118418,
+          "kind": "paired-payload",
+          "sourceCall": {
+            "rva": 63362115,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63362138,
+            "targetRva": 63364000,
+            "methodIndex": 118418
+          },
+          "sourceToDestinationHex": "4885F60F84EE0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 63362102
+        },
+        {
+          "fieldName": "tagOwner",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 118419,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 63362156,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63362179,
+            "targetRva": 63364048,
+            "methodIndex": 118419
+          },
+          "sourceToDestinationHex": "4885F60F84C50000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 63362143
+        },
+        {
+          "fieldName": "tags",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.GameplayTag>",
+          "setterMethodIndex": 118420,
+          "kind": "tag-elements",
+          "sourceCall": {
+            "rva": 63362197,
+            "targetRva": 58849520
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63362220,
+            "targetRva": 63364096,
+            "methodIndex": 118420
+          },
+          "sourceToDestinationHex": "4885F60F849C0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 63362184
+        },
+        {
+          "fieldName": "useBlackboard",
+          "declaredType": "bool",
+          "setterMethodIndex": 118421,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 63362231,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 63362250,
+            "targetRva": 63364144,
+            "methodIndex": 118421
+          },
+          "sourceToDestinationHex": "4885DB747E4533C00FB6D0488BCB"
+        }
+      ]
+    },
+    "forEach": {
+      "sourceContract": "buff_bd_native.json",
+      "wrapperTypeDefinition": 16139,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ForEachAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9476,
+      "runtimeTypeName": "Beyond.Gameplay.Core.ForEachAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member6",
+      "readerMethod": [
+        120430,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_ForEachAction_DataForMemoryPack",
+        "Deserialize",
+        66907312
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 66907456,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66907479,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F842A0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 66907497,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66907519,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84010100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 66907484
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 66907530,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66907552,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84E00000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 66907563,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66907585,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84BF0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "action",
+          "declaredType": "Beyond.Gameplay.Core.SequenceActionData",
+          "setterMethodIndex": 120426,
+          "kind": "sequence",
+          "sourceCall": {
+            "rva": 66907603,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66907626,
+            "targetRva": 66907776,
+            "methodIndex": 120426
+          },
+          "sourceToDestinationHex": "4885F60F84970000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 66907590
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 120427,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 66907644,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 66907663,
+            "targetRva": 66907824,
+            "methodIndex": 120427
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB",
+          "sourceContextInstructionRva": 66907631
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "11": "addTag",
+    "189": "forEach"
+  },
+  "childTypes": {
+    "paired-payload": "Beyond.Blackboard+BlackboardString",
+    "target": "Beyond.Gameplay.Core.TargetSettings",
+    "tag-elements": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.GameplayTag>",
+    "sequence": "Beyond.Gameplay.Core.SequenceActionData"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected source read order, closed field MethodSpecs, generated names and native assignments.",
+    "direct": "GameplayTag wrapper receiver projection is independently authenticated by its owning child source; SequenceActionData is independently authenticated by its shared source.",
+    "conditional": "Collection loops and positive recursive actions must close on their original spans under the child gates. Null wrappers, lists and elements remain distinct.",
+    "unresolved": "Live provider selection, evaluated Blackboard strings, tag matching/attachment, target iteration and action execution are not established by stored bytes."
+  }
+}

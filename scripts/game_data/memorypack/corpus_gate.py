@@ -399,18 +399,19 @@ def _stream_tool_snapshot(cli_path: Path) -> list[dict[str, Any]]:
     return result
 
 
-PARSER_PACKAGE = "scripts.game_data.memorypack"
+PARSER_PACKAGE = "scripts"
 
 
 def _package_import_closure(entry: Path) -> list[Path]:
-    """Every module of the package that ``entry`` can execute, found statically.
+    """Repository Python imports reachable from ``entry``, found statically.
 
     Imports are followed wherever they appear, including inside functions, so
-    a newly split helper cannot run without being fingerprinted. The package
-    has no dynamic imports, which is what makes the static closure complete.
+    a newly split native/helper module cannot escape parser provenance. Resolve
+    relative imports against each importing module, including package initializers.
+    Explicitly loaded external helpers still need their owner's source snapshot.
     """
 
-    source_root = MODULE_REPO_ROOT / "scripts/game_data/memorypack"
+    repo = MODULE_REPO_ROOT.resolve()
     pending = [entry.resolve()]
     seen: set[Path] = set()
     while pending:
@@ -418,6 +419,12 @@ def _package_import_closure(entry: Path) -> list[Path]:
         if path in seen:
             continue
         seen.add(path)
+        relative = path.relative_to(repo)
+        package = list(relative.with_suffix("").parts[:-1])
+        for depth in range(1, len(package) + 1):
+            init = repo.joinpath(*package[:depth], "__init__.py")
+            if init.is_file() and init.resolve() not in seen:
+                pending.append(init.resolve())
         tree = ast.parse(path.read_bytes(), filename=str(path))
         for node in ast.walk(tree):
             names: list[str] = []
@@ -425,21 +432,22 @@ def _package_import_closure(entry: Path) -> list[Path]:
                 names = [alias.name for alias in node.names]
             elif isinstance(node, ast.ImportFrom):
                 if node.level:
-                    base = ".".join(PARSER_PACKAGE.split(".")[: len(PARSER_PACKAGE.split(".")) - node.level + 1])
+                    if node.level > len(package):
+                        continue
+                    base = ".".join(package[:len(package) - node.level + 1])
                     module = f"{base}.{node.module}" if node.module else base
                 else:
                     module = node.module or ""
                 names = [module] + [f"{module}.{alias.name}" for alias in node.names]
             for name in names:
-                if not name.startswith(PARSER_PACKAGE + "."):
+                if name != PARSER_PACKAGE and not name.startswith(PARSER_PACKAGE + "."):
                     continue
-                leaf = name[len(PARSER_PACKAGE) + 1:].split(".")[0]
-                candidate = source_root / f"{leaf}.py"
+                module_path = repo.joinpath(*name.split("."))
+                candidate = module_path.with_suffix(".py")
+                if not candidate.is_file():
+                    candidate = module_path / "__init__.py"
                 if candidate.is_file():
                     pending.append(candidate.resolve())
-    init = source_root / "__init__.py"
-    if init.is_file():
-        seen.add(init.resolve())
     return sorted(seen)
 
 

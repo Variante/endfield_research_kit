@@ -1,0 +1,95 @@
+{
+  "schema": "endfield.buff-effect-line-center-copy-arguments-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-same-element-bulk-arguments-and-post-copy-return",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "programs": {
+    "arrayCopy": {
+      "entryRva": 47629440,
+      "windows": [
+        {
+          "startRva": 47629440,
+          "endRva": 47629857,
+          "sha256": "0B2D49C621211153A36F33E041DC3E7E4CCAA2CCD98C3184910645908455D8DF"
+        },
+        {
+          "startRva": 78574210,
+          "endRva": 78575414,
+          "sha256": "91F9A594B0CC611F9C2D4A9C308369E4DBF59B975D1D6E66E4A2ECDDB2F96F3B"
+        }
+      ],
+      "boundary": "complete selected unwind-owned windows; only named selected blocks have semantic proof"
+    },
+    "fastHelper": {
+      "entryRva": 159936,
+      "windows": [
+        {
+          "startRva": 159936,
+          "endRva": 161109,
+          "sha256": "F9D43736D6D05D39AA142B3B742A50E0646E89C0877F57749AC16FE5133521BF"
+        }
+      ],
+      "boundary": "complete selected unwind-owned windows; only named selected blocks have semantic proof"
+    },
+    "bulk": {
+      "entryRva": 3009824,
+      "windows": [
+        {
+          "startRva": 3009824,
+          "endRva": 3011469,
+          "sha256": "5C5588C1CB88F05140F0466BFCEF091E4D39C091BE1CD2D180B26F1910A3C213"
+        }
+      ],
+      "boundary": "complete selected unwind-owned windows; only named selected blocks have semantic proof"
+    }
+  },
+  "blocks": {
+    "outer": {
+      "program": "arrayCopy",
+      "startRva": 47629440,
+      "endRva": 47629604,
+      "boundary": "complete selected instruction block with explicit conditional edges"
+    },
+    "initial": {
+      "program": "fastHelper",
+      "startRva": 159936,
+      "endRva": 160091,
+      "boundary": "complete selected instruction block with explicit conditional edges"
+    },
+    "same": {
+      "program": "fastHelper",
+      "startRva": 160312,
+      "endRva": 160321,
+      "boundary": "complete selected instruction block with explicit conditional edges"
+    },
+    "arguments": {
+      "program": "fastHelper",
+      "startRva": 160841,
+      "endRva": 160900,
+      "boundary": "complete selected instruction block with explicit conditional edges"
+    },
+    "post": {
+      "program": "fastHelper",
+      "startRva": 160900,
+      "endRva": 160997,
+      "boundary": "complete selected instruction block with explicit conditional edges"
+    },
+    "epilogue": {
+      "program": "fastHelper",
+      "startRva": 161021,
+      "endRva": 161042,
+      "boundary": "complete selected instruction block with explicit conditional edges"
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Complete current owned caller/helper/bulk windows and six selected original instruction blocks, including correct REX.X SIB indices and qword byte-address arithmetic.",
+    "direct": "Current five managed Array.Copy arguments forward to the fast helper. Its selected same-element branch passes length times runtime stride and source/destination indexed byte addresses to the actual bulk entry, then checks an optional static-bitset update and returns AL true.",
+    "structuralOnly": "Runtime array-class/shape/element/stride slots and the optional static bitset have compiled representations; their initialized provider meanings are not promoted to named layouts.",
+    "conditional": "Non-null compatible arrays, nonnegative indices/length, selected shape/rank and bounds outcomes without integer overflow, the ordinary element-class edge and equal element-class pointers, normal bulk return with required nonvolatile registers preserved, and successful optional compare/exchange completion.",
+    "unresolved": "Bulk byte-copy implementation including variable-length dispatch/overlap/CPU-selected branches, live array class/stride and allocation identity, static-bitset disjointness from payloads, error/fallback paths, old-value preservation across resize and actual execution."
+  }
+}

@@ -117,7 +117,19 @@ def is_shared_event_candidate(framed: dict[str, Any], *, length: int) -> bool:
     """Candidate selection only; every recursive action still needs its receipt."""
     if framed.get("wholeSchemaExact") is True:
         return False
-    return _is_ordinary_root_candidate(framed, length=length, allow_event_maps=True)
+    # Filename markers can occur inside action payloads. Only the suffix reader's
+    # accepted candidates participate in this selection; rejected markers remain
+    # in the report. This is eligibility, never a whole-root proof: the original
+    # byte-zero reader must still close all fields, source ID and physical EOF.
+    candidates = framed.get("candidates")
+    if not isinstance(candidates, list) or any(not isinstance(row, dict) for row in candidates):
+        return False
+    accepted = [row for row in candidates if row.get("readerAcceptedThroughEof") is True]
+    if len(accepted) != 1 or framed.get("candidateCount") != 1:
+        return False
+    return _is_ordinary_root_candidate(
+        {**framed, "candidates": accepted}, length=length, allow_event_maps=True,
+    )
 
 
 def _is_ordinary_root_candidate(framed: dict[str, Any], *, length: int,

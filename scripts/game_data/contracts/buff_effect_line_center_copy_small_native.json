@@ -1,0 +1,202 @@
+{
+  "schema": "endfield.buff-effect-line-center-copy-small-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-small-snapshot-and-bounded-vector-byte-copy",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "bulkEntryRva": 3009824,
+  "blocks": {
+    "smallDispatch": {
+      "startRva": 3009824,
+      "endRva": 3009870,
+      "sha256": "1A9B2D8EE3E2FE997FC1C265149C8B1BF12863DD2BC05014B380DAC952D282BE"
+    },
+    "snapshot": {
+      "startRva": 3010118,
+      "endRva": 3010141,
+      "sha256": "C65D493FE3C240789E5870659AAA8E5D762FAD689765099AE881A800ECB795D8"
+    },
+    "highPrefix": {
+      "startRva": 3010205,
+      "endRva": 3010229,
+      "sha256": "D58A48D2222B49C84A7300356832D5E26950509AC21550E2EB56C0883AF87D63"
+    },
+    "highTail": {
+      "startRva": 3010424,
+      "endRva": 3010590,
+      "sha256": "C4A0697A8D01B0920CE9FEA063B27308691948D3836874A60E7CF5E11D8ED770"
+    },
+    "lowPrefix": {
+      "startRva": 3010934,
+      "endRva": 3010958,
+      "sha256": "4CF2C9D27E1BFAA4149F865D07B69CC1564525E4064C0AD2B065ADF62FAD26FB"
+    },
+    "lowTail": {
+      "startRva": 3011100,
+      "endRva": 3011239,
+      "sha256": "5399EBC7BE110600562941C2038CD3C8A9BBB8B50DC48CBD05CBE87A42F2A807"
+    }
+  },
+  "tables": {
+    "small": {
+      "startRva": 176961808,
+      "endRva": 176961872,
+      "sha256": "15283D1C802EDC0894BF757FC709A123A378BB767D7F46517A655951F0B9E8D8",
+      "entries": [
+        3009870,
+        3010100,
+        3009928,
+        3009983,
+        3010106,
+        3010079,
+        3010064,
+        3009936,
+        3010093,
+        3010037,
+        3010022,
+        3009904,
+        3010051,
+        3010000,
+        3009960,
+        3009872
+      ],
+      "boundary": "complete current dword RVA table; index selection and target joins proved by the consumer"
+    },
+    "high": {
+      "startRva": 176961872,
+      "endRva": 176961908,
+      "sha256": "9BF0D4F927F72E9668CBD9EC1ABF0C67879A1C54E0EABDE953F110711DECD41D",
+      "entries": [
+        3010582,
+        3010575,
+        3010561,
+        3010547,
+        3010533,
+        3010513,
+        3010493,
+        3010473,
+        3010453
+      ],
+      "boundary": "complete current dword RVA table; index selection and target joins proved by the consumer"
+    },
+    "low": {
+      "startRva": 176961944,
+      "endRva": 176961980,
+      "sha256": "02E52074303B0D79D5665BEC86AB674CAF5BED6CA0B1D78F36E42785D39BE82F",
+      "entries": [
+        3011234,
+        3011227,
+        3011213,
+        3011199,
+        3011185,
+        3011171,
+        3011157,
+        3011143,
+        3011129
+      ],
+      "boundary": "complete current dword RVA table; index selection and target joins proved by the consumer"
+    }
+  },
+  "smallLeaves": [
+    {
+      "startRva": 3009870,
+      "endRva": 3009871,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3010100,
+      "endRva": 3010106,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3009928,
+      "endRva": 3009935,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3009983,
+      "endRva": 3009999,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3010106,
+      "endRva": 3010111,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3010079,
+      "endRva": 3010093,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3010064,
+      "endRva": 3010079,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3009936,
+      "endRva": 3009960,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3010093,
+      "endRva": 3010100,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3010037,
+      "endRva": 3010051,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3010022,
+      "endRva": 3010037,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3009904,
+      "endRva": 3009928,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3010051,
+      "endRva": 3010064,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3010000,
+      "endRva": 3010022,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3009960,
+      "endRva": 3009983,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    },
+    {
+      "startRva": 3009872,
+      "endRva": 3009904,
+      "boundary": "actual small-table target entry through its complete plain RET inside authenticated parent bulk"
+    }
+  ],
+  "vectors": {
+    "high": {
+      "widthBytes": 32,
+      "lengthMaximum": 256
+    },
+    "low": {
+      "widthBytes": 16,
+      "lengthMaximum": 128
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Current parent owned bulk bytes, selected complete dispatch/snapshot/vector blocks, complete small target leaves and three raw dword RVA tables.",
+    "direct": "Unsigned small count directly indexes the small table; rounded vector length supplies its bounded table index. Both current mode branches join selected complete copy payloads and plain returns.",
+    "conditional": "Every integer byte count under the selected bounds is proved with distinct symbolic initial-source bytes. Requires parent same-element selections, valid stable non-wrapping memory/code/tables, supported instruction state, frame and optional bitset disjointness and successful normal completion; interleaved vector copies require destination <= source or destination >= source + length.",
+    "structuralOnly": "Anonymous mode and live class-stride operands remain representations; stored raw tables do not measure live selection.",
+    "unresolved": "Larger vector loops, non-temporal and backward paths, live stride/provider and allocation/alias lifetime, general resize old-value preservation, renderer/parent joins and observed execution."
+  }
+}

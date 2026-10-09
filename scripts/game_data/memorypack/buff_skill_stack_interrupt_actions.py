@@ -1,14 +1,14 @@
-"""Named CheckSkillType, CheckBuffStackNum and InterruptAction storage.
+"""Named skill, ATB-gain, Buff-stack, cooldown, duration, mode and interrupt storage.
 
 Reviewed complete normal/null windows, ordered source reads, generated wrapper
 inheritance, actual result-to-setter/store transfers and closed MethodSpecs
-prove the three parent layouts at the direct tier. Both Interrupt targets
+prove the named parent layouts at the direct tier. Both Interrupt targets
 retain independent null states. CheckBuffStackNum joins the one-member BuffId
 value, not a list or the three-member BlackboardBuffId, and independently joins
 TargetSettings and the stored BlackboardDouble profile.
 
 Conditional composition reuses authenticated child readers on original spans.
-The SkillType list's exact closed element type and independent four-byte source
+The SkillType and ATB-gain lists' exact closed element types and four-byte source
 read witness permit bounded count-times-four storage under the shared list
 consumer. They do not prove live provider selection. Lists retain null/empty
 states; scalars retain arbitrary raw bits. Unsupported targets, malformed
@@ -31,6 +31,7 @@ from scripts.game_data.memorypack.corpus_gate import CensusGateError
 from scripts.game_data.memorypack import named_native_records as records_native
 from scripts.game_data.memorypack import buff_id_actions as ids
 from scripts.game_data.memorypack import buff_adding_cooldown as scalar
+from scripts.game_data.memorypack import buff_find_settings_child_receipt as find_settings
 
 LABEL = "buffSkillStackInterruptActions"
 CONTRACT_PATH = CONTRACTS_DIR / "buff_skill_stack_interrupt_actions_native.json"
@@ -38,12 +39,27 @@ CONTRACT_PATH = CONTRACTS_DIR / "buff_skill_stack_interrupt_actions_native.json"
 
 def _contract() -> dict[str, Any]:
     value, _ = read_reviewed_contract(CONTRACT_PATH,
-        schema="endfield.buff-skill-stack-interrupt-actions-native-contract.v1",
+        schema="endfield.buff-skill-stack-interrupt-actions-native-contract.v7",
         status="exact-current-build", label=LABEL)
-    if (set(value.get("records", {})) != {"skillType", "buffStack", "interrupt"}
+    if (set(value.get("records", {})) != {"skillType", "buffStack", "interrupt", "obtainAtbType", "setSkillCdAtOnce", "switchMode", "interruptCurrentSkill", "recoverLockOnEndIfNoLock", "setBuffDuration", "originSkillType"}
             or set(value.get("actionDispatch", {}).values()) != set(value["records"])
-            or len(value["actionDispatch"]) != 3):
+            or len(value["actionDispatch"]) != 10):
         raise ValueError(f"{LABEL}.contract:shape")
+    duration = value["records"]["setBuffDuration"]
+    if (value["actionDispatch"].get("333") != "setBuffDuration" or len(duration["members"]) != 9
+            or [(m["fieldName"], m["kind"], m["declaredType"]) for m in duration["members"][4:]] != [
+                ("buffSettings", "finder", "Beyond.Gameplay.Core.BuffFindSettings"),
+                ("isFinishedEarly", "byte", "bool"),
+                ("operationType", "scalar32", "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+OperationType"),
+                ("targetSettings", "target", "Beyond.Gameplay.Core.TargetSettings"),
+                ("value", "scalar-payload", "Beyond.Blackboard+BlackboardDouble")]):
+        raise ValueError(f"{LABEL}.contract:duration-typed-children")
+    origin = value["records"]["originSkillType"]
+    if (value["actionDispatch"].get("72") != "originSkillType" or len(origin["members"]) != 6
+            or [(m["fieldName"], m["kind"], m["declaredType"]) for m in origin["members"][4:]] != [
+                ("attackTypeMask", "scalar32", "Beyond.Gameplay.Core.Conditions.CheckSkillType+AttackTypeMask"),
+                ("skillTypeList", "counted-scalar32", "System.Collections.Generic.List`1<Beyond.Gameplay.SkillType>")]):
+        raise ValueError(f"{LABEL}.contract:origin-skill-typed-list")
     return value
 
 
@@ -82,7 +98,7 @@ def validate_current_native_contract(*, children: dict[str, Any]) -> dict[str, A
     gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
     if gate.status != "validated":
         return {"status": gate.status, "detail": gate.detail, "nativeInputs": expected}
-    for name in ("target", "blackboard", "buffIdActions"):
+    for name in ("target", "blackboard", "buffIdActions", "findSettings"):
         child = children.get(name, {})
         if (child.get("status") != "validated"
                 or any(child.get("nativeInputs", {}).get(k) != expected[k]
@@ -110,6 +126,12 @@ def validate_current_native_contract(*, children: dict[str, Any]) -> dict[str, A
                 or list(route.member_order) != [m["fieldName"] for m in record["members"]]
                 or list(route.member_declared_types) != [m["declaredType"] for m in record["members"]]):
             _fail("dispatcher-members", record["wrapperTypeName"], None if route is None else route.row(), record=key)
+    after = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"],
+        gameassembly=gate.gameassembly, metadata=gate.metadata)
+    if after.status != "validated":
+        return {"status": after.status, "detail": after.detail, "nativeInputs": expected}
+    if hashlib.sha256(unity.read_bytes()).hexdigest().upper() != expected["UnityPlayer.dll"]:
+        _fail("UnityPlayer.dll-after", expected["UnityPlayer.dll"], "mismatched")
     return {"status": "validated", "nativeInputs": expected, "recordMembers": proved,
             "actionDispatch": contract["actionDispatch"], "evidenceBoundary": contract["evidenceBoundary"]}
 
@@ -121,21 +143,34 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
     contract = _contract(); context = native_validation.get("children", {})
     native = context.get("skillStackInterrupt", {})
     if (native_validation.get("status") != "validated" or native.get("status") != "validated"
+            or native_validation.get("nativeInputs") != contract["nativeInputs"]
             or native.get("nativeInputs") != contract["nativeInputs"]
             or native.get("recordMembers") != _members(contract)
             or native.get("actionDispatch") != contract["actionDispatch"]
+            or any(context.get(name, {}).get("status") != "validated"
+                   or any(context[name].get("nativeInputs", {}).get(k) != contract["nativeInputs"][k]
+                          for k in ("GameAssembly.dll", "global-metadata.dat"))
+                   for name in ("target", "blackboard", "buffIdActions"))
             or not isinstance(data, bytes) or not source or not isinstance(digest, str)
             or hashlib.sha256(data).hexdigest().upper() != digest.upper()
             or type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data)):
         raise ValueError(f"{LABEL}.decode:native-source-or-span")
     if str(tag) not in contract["actionDispatch"]:
         raise ValueError(f"{LABEL}.decode:unsupported-tag={tag}")
+    if contract["actionDispatch"][str(tag)] == "setBuffDuration" and (
+            context.get("findSettings", {}).get("status") != "validated"
+            or context["findSettings"].get("nativeInputs") != contract["nativeInputs"]):
+        raise ValueError(f"{LABEL}.decode:find-settings-native")
     reader = Reader(data, source, end); reader.pos = start
     if reader.nested_union_tag((tag,), "skill-stack-interrupt-action") != tag:
         raise ValueError(f"{LABEL}.decode:physical-tag")
     record = contract["records"][contract["actionDispatch"][str(tag)]]
-    reader.header(len(record["members"])); fields = []
-    for member in record["members"]:
+    fields = []
+    if reader.peek() == 255:
+        reader.take(1, "null-action-wrapper"); members = ()
+    else:
+        reader.header(len(record["members"])); members = record["members"]
+    for member in members:
         begin = reader.pos; kind = member["kind"]; value = {}
         if kind in ("byte", "scalar32"):
             value["rawHex"] = reader.take(1 if kind == "byte" else 4, member["fieldName"]).hex().upper()
@@ -155,13 +190,23 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
             if child.get("wholeValueExact") is not True:
                 raise ValueError(f"{LABEL}.decode:scalar-child-unproved at={begin}")
             value["child"] = {**child, "recursiveStoredSchemaExact": True}
+        elif kind == "finder":
+            reader.finder_profile()
+            child = find_settings.decode_find_settings_child_receipt(data, source=source,
+                logical_sha256=digest, start=begin, end=reader.pos, native_validation=context["findSettings"])
+            if child.get("wholeChildSpanExact") is not True:
+                raise ValueError(f"{LABEL}.decode:finder-child-unproved at={begin}")
+            value["child"] = {**child, "recursiveStoredSchemaExact": True}
+        elif kind == "byte-payload":
+            reader.byte_payload()
+            value.update(rawHex=data[begin:reader.pos].hex().upper(), payloadEncoding="unresolved")
         elif kind == "counted-scalar32":
             count = reader.count(4, nullable=True)
             elements = []
             for _ in range(max(0, count)):
                 a = reader.pos
                 elements.append({"start": a, "end": a + 4,
-                    "rawHex": reader.take(4, "skill-type-element").hex().upper()})
+                    "rawHex": reader.take(4, member["fieldName"] + "-element").hex().upper()})
             value["child"] = {"start": begin, "end": reader.pos, "count": count, "elements": elements,
                               "recursiveStoredSchemaExact": True, "liveProviderSelectionKnown": False}
         else:
@@ -169,6 +214,10 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
         if "child" in value and value["child"].get("recursiveStoredSchemaExact",
                                                    value["child"].get("recursiveNamedSchemaExact")) is not True:
             raise ValueError(f"{LABEL}.decode:incomplete-child={member['fieldName']} at={begin}")
+        if "child" in value:
+            child = value["child"]
+            if [child.get("start", child.get("startOffset")), child.get("end", child.get("consumedEnd"))] != [begin, reader.pos]:
+                raise ValueError(f"{LABEL}.decode:child-span={member['fieldName']} at={begin}")
         fields.append({"fieldName": member["fieldName"], "kind": kind, "start": begin,
                        "end": reader.pos, **value})
     if reader.pos != end:

@@ -1,0 +1,336 @@
+{
+  "schema": "endfield.buff-pick-target-union-route-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "selected-indexed-pick-target-new-child-and-packable-return-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependencies": {
+    "actionReference": "buff_action_reference_native.json",
+    "header": "buff_action_union_header_native.json",
+    "source": "skill_timeline_pick_target_native.json",
+    "rootPackable": "buff_timeline_root_list_native.json",
+    "readValue": "buff_timeline_read_value_native.json",
+    "instance": "buff_timeline_instance_native.json"
+  },
+  "indexedPrefix": {
+    "codeWindows": [
+      {
+        "startRva": 59824464,
+        "endRva": 59857304,
+        "sha256": "7DD4A9D54B8C84AD2F28EB8EBEE885C75F5E7BDC2890C386A7A9E6F709F2922B"
+      }
+    ],
+    "program": [
+      [
+        59824464,
+        "48895C2408"
+      ],
+      [
+        59824469,
+        "4889742418"
+      ],
+      [
+        59824474,
+        "57"
+      ],
+      [
+        59824475,
+        "4883EC20"
+      ],
+      [
+        59824479,
+        "803D16CF590A00"
+      ],
+      [
+        59824486,
+        "498BD8"
+      ],
+      [
+        59824489,
+        "488BFA"
+      ],
+      [
+        59824492,
+        "0F8476340000"
+      ],
+      [
+        59824498,
+        "33F6"
+      ],
+      [
+        59824500,
+        "488D542438"
+      ],
+      [
+        59824505,
+        "4533C0"
+      ],
+      [
+        59824508,
+        "6689742438"
+      ],
+      [
+        59824513,
+        "488BCF"
+      ],
+      [
+        59824516,
+        "E8F7FEFFFF"
+      ],
+      [
+        59824521,
+        "84C0"
+      ],
+      [
+        59824523,
+        "0F8422BD5501"
+      ],
+      [
+        59824529,
+        "0FB7742438"
+      ],
+      [
+        59824534,
+        "81FE9F010000"
+      ],
+      [
+        59824540,
+        "0F87E0BC5501"
+      ],
+      [
+        59824546,
+        "488D1557266FFC"
+      ],
+      [
+        59824553,
+        "8B8CB218539103"
+      ],
+      [
+        59824560,
+        "4803CA"
+      ],
+      [
+        59824563,
+        "FFE1"
+      ]
+    ]
+  },
+  "routeProgram": {
+    "codeWindows": [
+      {
+        "startRva": 59826828,
+        "endRva": 59826878,
+        "sha256": "3BE1135BACFDC59D15EB20483DD38B75482E704B2FF7318417B68AE0CBE51466",
+        "boundary": "selected 0x0114 type usage load, formatter route and rejoin"
+      },
+      {
+        "startRva": 59824464,
+        "endRva": 59857304,
+        "sha256": "7DD4A9D54B8C84AD2F28EB8EBEE885C75F5E7BDC2890C386A7A9E6F709F2922B"
+      }
+    ],
+    "program": [
+      [
+        59826828,
+        "488B152D6F6F09"
+      ],
+      [
+        59826835,
+        "488B0B"
+      ],
+      [
+        59826838,
+        "E885556FFC"
+      ],
+      [
+        59826843,
+        "488BCF"
+      ],
+      [
+        59826846,
+        "4885C0"
+      ],
+      [
+        59826849,
+        "0F85FBA25501"
+      ],
+      [
+        59826855,
+        "488B157A257D09"
+      ],
+      [
+        59826862,
+        "E81D0E11FD"
+      ],
+      [
+        59826867,
+        "488903"
+      ],
+      [
+        59826870,
+        "488BD0"
+      ],
+      [
+        59826873,
+        "E924F7FFFF"
+      ],
+      [
+        59824610,
+        "488BCB"
+      ],
+      [
+        59824613,
+        "E806CF72FC"
+      ],
+      [
+        59824618,
+        "488B5C2430"
+      ],
+      [
+        59824623,
+        "488B742440"
+      ],
+      [
+        59824628,
+        "4883C420"
+      ],
+      [
+        59824632,
+        "5F"
+      ],
+      [
+        59824633,
+        "C3"
+      ]
+    ]
+  },
+  "nullCastProgram": {
+    "codeWindows": [
+      {
+        "startRva": 14368,
+        "endRva": 14415,
+        "sha256": "B72D3A94376A8D6F5185D3FEBB84A9D292415C20DED784DE4FE8F417C4B7E855"
+      }
+    ],
+    "program": [
+      [
+        14368,
+        "4053"
+      ],
+      [
+        14370,
+        "4883EC20"
+      ],
+      [
+        14374,
+        "488BD9"
+      ],
+      [
+        14377,
+        "4885C9"
+      ],
+      [
+        14380,
+        "7419"
+      ],
+      [
+        14407,
+        "33C0"
+      ],
+      [
+        14409,
+        "4883C420"
+      ],
+      [
+        14413,
+        "5B"
+      ],
+      [
+        14414,
+        "C3"
+      ]
+    ]
+  },
+  "childThunk": {
+    "codeWindows": [
+      {
+        "startRva": 10612944,
+        "endRva": 10612956,
+        "sha256": "1D0777298F7E90FF3CD1F3F729014A357E662ABA6401877ECDBC11CF28B88827"
+      }
+    ],
+    "program": [
+      [
+        10612944,
+        "488B1551176C0C"
+      ],
+      [
+        10612951,
+        "E91408E002"
+      ]
+    ]
+  },
+  "castUsage": {
+    "instructionRva": 59826828,
+    "instructionHex": "488B152D6F6F09",
+    "usageCellRva": 218124736,
+    "usageRawHex": "7143032000000000",
+    "tag": 1,
+    "typeIndex": 106936,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PickTargetAction_DataForMemoryPack",
+    "typeRawHex": "BF3F0000000000000000120000000000"
+  },
+  "childUsage": {
+    "instructionRva": 59826855,
+    "instructionHex": "488B157A257D09",
+    "usageCellRva": 219023400,
+    "usageRawHex": "31C012C000000000",
+    "tag": 6,
+    "methodSpecIndex": 614424,
+    "methodSpec": [
+      428462,
+      -1,
+      24872
+    ],
+    "typeName": "MemoryPack.MemoryPackReader",
+    "methodName": "ReadPackable",
+    "classArguments": [],
+    "methodArguments": [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PickTargetAction_DataForMemoryPack"
+    ]
+  },
+  "thunkUsage": {
+    "instructionRva": 10612944,
+    "instructionHex": "488B1551176C0C",
+    "usageCellRva": 219023400,
+    "usageRawHex": "31C012C000000000",
+    "tag": 6,
+    "methodSpecIndex": 614424,
+    "methodSpec": [
+      428462,
+      -1,
+      24872
+    ],
+    "typeName": "MemoryPack.MemoryPackReader",
+    "methodName": "ReadPackable",
+    "classArguments": [],
+    "methodArguments": [
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PickTargetAction_DataForMemoryPack"
+    ]
+  },
+  "calls": {
+    "cast": 14368,
+    "child": 10612944,
+    "barrier": 239856
+  },
+  "evidenceBoundary": {
+    "exact": "Current indexed switch prefix, selected PickTarget route identity, owned concrete wrapper and closed ReadPackable usages, complete null-cast/route-output-return and actual context thunk to the previously proved shared packable body.",
+    "direct": "The UInt16 tag reaches an unsigned range check, four-byte RVA table index and image-base target. Null prior wrapper returns zero from a no-call cast path. The same saved Reader reaches the closed child ReadPackable call, whose full reference return is stored in the wrapper output and passed through the actual disabled shared barrier before restored return.",
+    "structuralOnly": "The selected union tag names one current wrapper; this control proof does not infer a child payload extent. The two-instruction thunk has no inferred full physical leaf extent.",
+    "conditional": "Warmed caller, selected UInt16 tag and null prior wrapper, compatible inflated Reader/formatter contexts and cache/provider selection, correctly typed normal child returns, disabled barrier, stable disjoint Reader/output/caller storage and Win64 ABI. The shared packable body identity is established by the actual thunk jump, not an unrelated Object MethodInfo.",
+    "unresolved": "Actual action-array virtual/class/provider selection; concrete PickTarget source/child cursors against original payload spans; allocation/cache/global/refill/error/active-barrier effects; positive lists, whole roots and gameplay execution. No old bundle tag or reserved marker is admitted."
+  }
+}

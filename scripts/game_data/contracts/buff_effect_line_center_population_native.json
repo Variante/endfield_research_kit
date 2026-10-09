@@ -1,0 +1,383 @@
+{
+  "schema": "endfield.buff-effect-line-center-population-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-initial-source-transfer-and-construction-grow-flow",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "fields": [
+    {
+      "role": "points",
+      "field": "HG.Rendering.Runtime.VFXTrailPointsTool::points",
+      "owner": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "type": "System.Collections.Generic.List`1<UnityEngine.Vector3>",
+      "offset": 128
+    },
+    {
+      "role": "temp",
+      "field": "HG.Rendering.Runtime.VFXTrailPointsTool::m_tempPoints",
+      "owner": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "type": "System.Collections.Generic.List`1<UnityEngine.Vector3>",
+      "offset": 144
+    },
+    {
+      "role": "center",
+      "field": "HG.Rendering.Runtime.VFXTrailPointsTool::centerOffset",
+      "owner": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "type": "UnityEngine.Vector3",
+      "offset": 116
+    },
+    {
+      "role": "world",
+      "field": "HG.Rendering.Runtime.VFXTrailPointsTool::useWorldSpace",
+      "owner": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "type": "bool",
+      "offset": 112
+    }
+  ],
+  "programs": {
+    "getPoints": {
+      "entryRva": 103301656,
+      "windows": [
+        {
+          "startRva": 103301656,
+          "endRva": 103301891,
+          "sha256": "15D9E78E723F6B1B64A776B7431B9820602068BD5E82E38341A1A8D6E7B98888"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "constructor": {
+      "entryRva": 103302304,
+      "windows": [
+        {
+          "startRva": 103302304,
+          "endRva": 103302518,
+          "sha256": "C6D82DC10CE0CC40CE2BCE154890E58623928AEB879C3C599A9CA00CA7749625"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "addWrapper": {
+      "entryRva": 3181688,
+      "windows": [
+        {
+          "startRva": 3181688,
+          "endRva": 3181724,
+          "sha256": "573C944EB273A9A7D289BF733E7F3E16FD4048C955B9A306380A123D6FD21B60"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "append": {
+      "entryRva": 49451680,
+      "windows": [
+        {
+          "startRva": 49451680,
+          "endRva": 49451884,
+          "sha256": "874D39238F17B6E31D2ED3C8BEA82F675169086FDF66B02D2B1707FD96774C53"
+        },
+        {
+          "startRva": 78674552,
+          "endRva": 78674575,
+          "sha256": "1FC17FC59FF470AAD238DFBE37428E545AF431DA7E64E397E274C3A41CE4C359"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "resize": {
+      "entryRva": 63778816,
+      "windows": [
+        {
+          "startRva": 63778816,
+          "endRva": 63778975,
+          "sha256": "E50F0F68657E724ED5B207C58269DDF54CF5C0C04769E6E8317DA23ECD09CCF9"
+        },
+        {
+          "startRva": 79230540,
+          "endRva": 79230563,
+          "sha256": "7D540F8141F0863860329BDE1C1953DD5446F38CBDD9E340FBDF1388C14DB027"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "ensureCapacity": {
+      "entryRva": 65937168,
+      "windows": [
+        {
+          "startRva": 65937168,
+          "endRva": 65937218,
+          "sha256": "25299B9B8516716670945D3A9C1CA76ABA40359611A0EE01CC829369D011052F"
+        },
+        {
+          "startRva": 65937218,
+          "endRva": 65937314,
+          "sha256": "E8DB10451521F0F3B91B9FCC41A36EE871C349601864A0CBE89881125C17D8C2"
+        },
+        {
+          "startRva": 65937314,
+          "endRva": 65937332,
+          "sha256": "05B4A56A8539656915472B1EA215301770D0486B301F5001526801166665C443"
+        },
+        {
+          "startRva": 65937332,
+          "endRva": 65937338,
+          "sha256": "6CE5AC773BC109D61FE752990CDD47BBCD4B3DB82FCC9178008170C5FE8BC65E"
+        },
+        {
+          "startRva": 79360578,
+          "endRva": 79360604,
+          "sha256": "52E94A7D50753A20D5D26A74AF19ADA81198D637E6076980A95AA5CF0EE75DF3"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "setCapacity": {
+      "entryRva": 65483312,
+      "windows": [
+        {
+          "startRva": 65483312,
+          "endRva": 65483473,
+          "sha256": "E9649CF33E50E182EDCE9B8B08A1A35A48AD895CB66626A5EE4A597F7EBA9298"
+        },
+        {
+          "startRva": 79335804,
+          "endRva": 79335886,
+          "sha256": "BB7CBD314440AED7FB2A9307E874C35278BF75257FC75CA0B7C3E3CBDBBB8C0D"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "listConstructor": {
+      "entryRva": 65194432,
+      "windows": [
+        {
+          "startRva": 65194432,
+          "endRva": 65194538,
+          "sha256": "D0BE24AAF47AF0C46AC3FDFABF4CF440C17B561C28D468191028EAADC090BC16"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    }
+  },
+  "declarations": [
+    {
+      "method": [
+        694,
+        "HG.Rendering.Runtime.VFXTrailPointsTool",
+        "_GetPoints",
+        103301656
+      ],
+      "flags": 129,
+      "returnType": "void",
+      "returnNativeTypeHex": "9D8D0000000000000000018000000000",
+      "parameters": [
+        {
+          "name": "finalPoints",
+          "type": "System.Collections.Generic.List`1<UnityEngine.Vector3>",
+          "nativeTypeHex": "F865258D010000000000150000000000"
+        }
+      ]
+    },
+    {
+      "method": [
+        695,
+        "HG.Rendering.Runtime.VFXTrailPointsTool",
+        ".ctor",
+        103302304
+      ],
+      "flags": 6278,
+      "returnType": "void",
+      "returnNativeTypeHex": "9D8D0000000000000000018000000000",
+      "parameters": []
+    }
+  ],
+  "contexts": {
+    "getItem": {
+      "tag": 6,
+      "usageRawHex": "4DAD07C000000000",
+      "methodSpecIndex": 251558,
+      "definition": [
+        286550,
+        "System.Collections.Generic.List`1",
+        "get_Item"
+      ],
+      "recordRawHex": "565F04008C030000FFFFFFFF",
+      "classArgumentRawHex": [
+        "C5AA0000000000000000118000000000"
+      ]
+    },
+    "add": {
+      "tag": 6,
+      "usageRawHex": "C9AC07C000000000",
+      "methodSpecIndex": 251492,
+      "definition": [
+        286555,
+        "System.Collections.Generic.List`1",
+        "Add"
+      ],
+      "recordRawHex": "5B5F04008C030000FFFFFFFF",
+      "classArgumentRawHex": [
+        "C5AA0000000000000000118000000000"
+      ]
+    },
+    "pointsType": {
+      "tag": 1,
+      "usageRawHex": "D1CE012000000000",
+      "typeIndex": 59240,
+      "typeName": "System.Collections.Generic.List`1<UnityEngine.Vector3>",
+      "nativeTypeHex": "F865258D010000000000150000000000"
+    },
+    "pointsConstructor": {
+      "tag": 6,
+      "usageRawHex": "C3AC07C000000000",
+      "methodSpecIndex": 251489,
+      "definition": [
+        286539,
+        "System.Collections.Generic.List`1",
+        ".ctor"
+      ],
+      "recordRawHex": "4B5F04008C030000FFFFFFFF",
+      "classArgumentRawHex": [
+        "C5AA0000000000000000118000000000"
+      ]
+    },
+    "tempType": {
+      "tag": 1,
+      "usageRawHex": "D1CE012000000000",
+      "typeIndex": 59240,
+      "typeName": "System.Collections.Generic.List`1<UnityEngine.Vector3>",
+      "nativeTypeHex": "F865258D010000000000150000000000"
+    },
+    "tempConstructor": {
+      "tag": 6,
+      "usageRawHex": "C3AC07C000000000",
+      "methodSpecIndex": 251489,
+      "definition": [
+        286539,
+        "System.Collections.Generic.List`1",
+        ".ctor"
+      ],
+      "recordRawHex": "4B5F04008C030000FFFFFFFF",
+      "classArgumentRawHex": [
+        "C5AA0000000000000000118000000000"
+      ]
+    }
+  },
+  "callTargets": {
+    "metadataInit": 266848,
+    "isPatched": 46758256,
+    "getItem": 49448240,
+    "addWrapper": 3181688,
+    "getPatch": 105575644,
+    "fatal": 11199508,
+    "invokePopulationPatch": 90943380,
+    "allocateObject": 155744,
+    "listConstructor": 65194432,
+    "writeBarrier": 158528,
+    "baseConstructor": 54511344,
+    "append": 49451680,
+    "addWithResize": 63778816,
+    "arrayIndexFailure": 74960,
+    "ensureCapacity": 65937168,
+    "setCapacity": 65483312,
+    "arrayCopy": 47629440,
+    "resolveArrayClass": 1015872,
+    "allocateArray": 155232,
+    "classInit": 156352,
+    "capacityOutOfRange": 159663212
+  },
+  "namedCallTargets": {
+    "isPatched": [
+      "IFix.WrappersManagerImpl.IsPatched"
+    ],
+    "getItem": [
+      "System.Collections.Generic.List`1.get_Item"
+    ],
+    "getPatch": [
+      "IFix.WrappersManagerImpl.GetPatch"
+    ],
+    "invokePopulationPatch": [
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_14",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_17",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_3",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_31",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_4",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_54",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_6",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_7"
+    ],
+    "listConstructor": [
+      "System.Collections.Generic.List`1..ctor",
+      "System.Collections.Generic.LowLevelList`1..ctor"
+    ],
+    "baseConstructor": [
+      "Beyond.TickableMono..ctor"
+    ],
+    "addWithResize": [
+      "System.Collections.Generic.List`1.AddWithResize"
+    ],
+    "ensureCapacity": [
+      "System.Collections.Generic.List`1.EnsureCapacity"
+    ],
+    "setCapacity": [
+      "System.Collections.Generic.List`1.set_Capacity"
+    ],
+    "arrayCopy": [
+      "System.Array.Copy"
+    ],
+    "capacityOutOfRange": [
+      "System.ThrowHelper.ThrowArgumentOutOfRangeException"
+    ]
+  },
+  "genericMethodTableMatches": [
+    {
+      "tableIndex": 238478,
+      "methodSpecIndex": 251489,
+      "rawHex": "61D6030051A2030010020100FFFFFFFF",
+      "indices": [
+        238161,
+        66064,
+        -1
+      ],
+      "methodPointerRva": 65194432
+    },
+    {
+      "tableIndex": 238481,
+      "methodSpecIndex": 251492,
+      "rawHex": "64D6030054A2030081D00000FFFFFFFF",
+      "indices": [
+        238164,
+        53377,
+        -1
+      ],
+      "methodPointerRva": 131430076
+    },
+    {
+      "tableIndex": 238547,
+      "methodSpecIndex": 251558,
+      "rawHex": "A6D6030096A20300B8BD0000FFFFFFFF",
+      "indices": [
+        238230,
+        48568,
+        -1
+      ],
+      "methodPointerRva": 49448240
+    }
+  ],
+  "capacityConstants": {
+    "emptyDefault": 4,
+    "maximum": 2146435071
+  },
+  "evidenceBoundary": {
+    "exact": "Current typed trail fields, selected List<Vector3> type/method cells and complete owned population/constructor/append/growth windows.",
+    "direct": "Source getter output passes unchanged through two twelve-byte copies to fast append or the resize append. Constructor stores the results of two separate allocation/constructor calls. Growth performs checked capacity selection, Array.Copy argument forwarding, items-reference replacement and final twelve-byte append.",
+    "structuralOnly": "Compiled list/array slots and the anonymous ancestor-byte assignment; no open generic field offsets or anonymous RGCTX/runtime class members are promoted to named layouts.",
+    "conditional": "Ordinary IFix-false paths, valid bounds and compatible initialized contexts/helpers. Whole no-resize copying requires initially empty destination, stable source count/reference/values, distinct source/destination headers, valid nonoverlapping or same-index storage and sufficient destination capacity for every append.",
+    "unresolved": "Array.Copy implementation and old-value preservation across resize, array allocation/class/static-storage semantics, allocation freshness, reference/aliasing lifetime, renderer submission and actual execution."
+  }
+}

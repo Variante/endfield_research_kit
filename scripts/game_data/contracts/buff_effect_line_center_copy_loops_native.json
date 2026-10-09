@@ -1,0 +1,54 @@
+{
+  "schema": "endfield.buff-effect-line-center-copy-loops-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-large-aligned-temporal-vector-byte-copy",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "bulkEntryRva": 3009824,
+  "blocks": {
+    "highAlignment": {
+      "startRva": 3010229,
+      "endRva": 3010275,
+      "boundary": "complete original selected block within parent authenticated bulk window"
+    },
+    "highPadding": {
+      "startRva": 3010275,
+      "endRva": 3010288,
+      "boundary": "complete original selected block within parent authenticated bulk window"
+    },
+    "highLoop": {
+      "startRva": 3010288,
+      "endRva": 3010424,
+      "boundary": "complete original selected block within parent authenticated bulk window"
+    },
+    "lowAlignment": {
+      "startRva": 3010958,
+      "endRva": 3010987,
+      "boundary": "complete original selected block within parent authenticated bulk window"
+    },
+    "lowPadding": {
+      "startRva": 3010987,
+      "endRva": 3010992,
+      "boundary": "complete original selected block within parent authenticated bulk window"
+    },
+    "lowLoop": {
+      "startRva": 3010992,
+      "endRva": 3011100,
+      "boundary": "complete original selected block within parent authenticated bulk window"
+    }
+  },
+  "selectionConstants": {
+    "highNonTemporalThreshold": 1572864
+  },
+  "highNonTemporalEntryRva": 3010592,
+  "evidenceBoundary": {
+    "exact": "Current full parent bulk bytes and complete selected alignment/padding/temporal-loop blocks with all original counter and guard instructions.",
+    "direct": "Parent large-vector fallthrough aligns destination by skipping to its next vector boundary, advances source equally and reduces length. Exact unsigned chunk guards, complete block moves and equal pointer advances join the existing raw tail tables and plain returns.",
+    "conditional": "Valid stable non-wrapping matching arrays/code/tables, parent compatible same-element and actual stride-width selections, supported vector state, temporal branch selection, forward-safe overlap, frame/bitset disjointness and successful normal completion. A natural-number loop induction and affine initial-source byte identities cover arbitrary iteration counts.",
+    "structuralOnly": "Anonymous mode, runtime array-class stride and initialized providers remain stored/compiled representations.",
+    "unresolved": "Non-temporal and backward copy implementation, live provider/stride/CPU choices, allocation and alias lifetime, general resize old-value preservation, renderer/parent joins and observed execution."
+  }
+}

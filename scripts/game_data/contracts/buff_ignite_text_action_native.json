@@ -1,0 +1,1174 @@
+{
+  "schema": "endfield.buff-ignite-text-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected input, source windows, closed context, generated members, two independent eight-byte return programs, cursor advancement, getter/setter transfer and union route.",
+    "direct": "Selected normal source order and owned field assignments.",
+    "structuralOnly": "Complete stored action and independently bounded TargetSettings; raw bytes, flags, enums and payload encoding remain uninterpreted.",
+    "conditional": "The helper and setter program proofs describe their selected normal paths. Source refill/cold paths retain only their owning formatter contract boundary.",
+    "unresolved": "Live formatter/provider selection, complete error parity, authored text/energy meaning, selected target entities, displayed text and whole Buff runtime effects."
+  },
+  "records": {
+    "igniteText": {
+      "sourceContract": "buff_cf_native.json",
+      "wrapperTypeDefinition": 16175,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IgniteBuffTextAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9514,
+      "runtimeTypeName": "Beyond.Gameplay.Core.IgniteBuffTextAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member11",
+      "readerMethod": [
+        120703,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_IgniteBuffTextAction_DataForMemoryPack",
+        "Deserialize",
+        67014544
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014711,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 67014688,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84FC0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014751,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 67014729,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84D30100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 67014716
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014784,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 67014762,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84B20100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014817,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 67014795,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84910100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "energyShardType",
+          "declaredType": "Beyond.GEnums.EnergyShardType",
+          "setterMethodIndex": 120694,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014857,
+            "targetRva": 67016512,
+            "methodIndex": 120694
+          },
+          "sourceCall": {
+            "rva": 67014835,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84690100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 67014822
+        },
+        {
+          "fieldName": "forceMainBody",
+          "declaredType": "bool",
+          "setterMethodIndex": 120695,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014891,
+            "targetRva": 67016560,
+            "methodIndex": 120695
+          },
+          "sourceCall": {
+            "rva": 67014868,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84480100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "mountPoint",
+          "declaredType": "Beyond.Gameplay.MountPoint",
+          "setterMethodIndex": 120696,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014931,
+            "targetRva": 67016608,
+            "methodIndex": 120696
+          },
+          "sourceCall": {
+            "rva": 67014909,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F841F0100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 67014896
+        },
+        {
+          "fieldName": "offset",
+          "declaredType": "UnityEngine.Vector2",
+          "setterMethodIndex": 120697,
+          "kind": "raw8",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67014972,
+            "targetRva": 67016656,
+            "methodIndex": 120697
+          },
+          "sourceCall": {
+            "rva": 67014949,
+            "targetRva": 64479280
+          },
+          "sourceToDestinationHex": "4885F60F84F70000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 67014936,
+          "unmanagedOutputSource": {
+            "mode": "unmanaged-return64-float-pair",
+            "width": 8,
+            "sourceDefinition": [
+              428448,
+              "MemoryPack.MemoryPackReader",
+              "ReadUnmanaged"
+            ],
+            "directReader": {
+              "window": {
+                "startRva": 64479280,
+                "endRva": 64479386,
+                "sha256": "A25DDED95D130813A85763445C9C66E873EF4E46E8C0206E4DB8582D62496330",
+                "boundary": "Exact selected normal program; external slow/error branches do not establish runtime execution."
+              },
+              "instructions": [
+                [
+                  64479280,
+                  "48895C2408"
+                ],
+                [
+                  64479285,
+                  "57"
+                ],
+                [
+                  64479286,
+                  "4883EC40"
+                ],
+                [
+                  64479290,
+                  "83793008"
+                ],
+                [
+                  64479294,
+                  "488BD9"
+                ],
+                [
+                  64479297,
+                  "0F29742430"
+                ],
+                [
+                  64479302,
+                  "0F297C2420"
+                ],
+                [
+                  64479307,
+                  "0F8C75E01801"
+                ],
+                [
+                  64479313,
+                  "488B4350"
+                ],
+                [
+                  64479317,
+                  "F30F1030"
+                ],
+                [
+                  64479321,
+                  "F30F107804"
+                ],
+                [
+                  64479326,
+                  "8B7B30"
+                ],
+                [
+                  64479329,
+                  "83EF08"
+                ],
+                [
+                  64479332,
+                  "0F886FE01801"
+                ],
+                [
+                  64479338,
+                  "4883435008"
+                ],
+                [
+                  64479343,
+                  "83434008"
+                ],
+                [
+                  64479347,
+                  "83434408"
+                ],
+                [
+                  64479351,
+                  "897B30"
+                ],
+                [
+                  64479354,
+                  "488B5C2450"
+                ],
+                [
+                  64479359,
+                  "0F28C6"
+                ],
+                [
+                  64479362,
+                  "0F28742430"
+                ],
+                [
+                  64479367,
+                  "0F14C7"
+                ],
+                [
+                  64479370,
+                  "0F287C2420"
+                ],
+                [
+                  64479375,
+                  "66480F7EC0"
+                ],
+                [
+                  64479380,
+                  "4883C440"
+                ],
+                [
+                  64479384,
+                  "5F"
+                ],
+                [
+                  64479385,
+                  "C3"
+                ]
+              ]
+            },
+            "registeredReader": {
+              "window": {
+                "startRva": 111088848,
+                "endRva": 111088936,
+                "sha256": "97346133B9788F4C1E2F6BF128F630F185FE9E019D8A4DCD9C30192EBECC7A2A",
+                "boundary": "Exact selected normal program; external slow/error branches do not establish runtime execution."
+              },
+              "instructions": [
+                [
+                  111088848,
+                  "4053"
+                ],
+                [
+                  111088850,
+                  "4883EC40"
+                ],
+                [
+                  111088854,
+                  "83793008"
+                ],
+                [
+                  111088858,
+                  "488BD9"
+                ],
+                [
+                  111088861,
+                  "0F29742430"
+                ],
+                [
+                  111088866,
+                  "0F297C2420"
+                ],
+                [
+                  111088871,
+                  "7D0D"
+                ],
+                [
+                  111088873,
+                  "4533C0"
+                ],
+                [
+                  111088876,
+                  "BA08000000"
+                ],
+                [
+                  111088881,
+                  "E8667CD102"
+                ],
+                [
+                  111088886,
+                  "488B4350"
+                ],
+                [
+                  111088890,
+                  "BA08000000"
+                ],
+                [
+                  111088895,
+                  "488BCB"
+                ],
+                [
+                  111088898,
+                  "F30F1030"
+                ],
+                [
+                  111088902,
+                  "F30F107804"
+                ],
+                [
+                  111088907,
+                  "E8B0742BFC"
+                ],
+                [
+                  111088912,
+                  "0F14F7"
+                ],
+                [
+                  111088915,
+                  "0F287C2420"
+                ],
+                [
+                  111088920,
+                  "66480F7EF0"
+                ],
+                [
+                  111088925,
+                  "0F28742430"
+                ],
+                [
+                  111088930,
+                  "4883C440"
+                ],
+                [
+                  111088934,
+                  "5B"
+                ],
+                [
+                  111088935,
+                  "C3"
+                ]
+              ],
+              "ensureCall": {
+                "rva": 111088881,
+                "targetRva": 158372188
+              },
+              "advanceCall": {
+                "rva": 111088907,
+                "targetRva": 46827968
+              },
+              "advanceWindow": {
+                "startRva": 46827968,
+                "endRva": 46828033,
+                "sha256": "1AC9D1CA96F68251C17CB7953A869C40B3C0CDD002EA1BE824D60A0757AF1BFD",
+                "boundary": "Exact selected normal program; external slow/error branches do not establish runtime execution."
+              },
+              "advanceInstructions": [
+                [
+                  46827968,
+                  "85D2"
+                ],
+                [
+                  46827970,
+                  "743C"
+                ],
+                [
+                  46827972,
+                  "48895C2410"
+                ],
+                [
+                  46827977,
+                  "57"
+                ],
+                [
+                  46827978,
+                  "4883EC20"
+                ],
+                [
+                  46827982,
+                  "4863FA"
+                ],
+                [
+                  46827985,
+                  "488BD9"
+                ],
+                [
+                  46827988,
+                  "4889742430"
+                ],
+                [
+                  46827993,
+                  "8B7130"
+                ],
+                [
+                  46827996,
+                  "2BF7"
+                ],
+                [
+                  46827998,
+                  "0F886C8AE301"
+                ],
+                [
+                  46828004,
+                  "48017B50"
+                ],
+                [
+                  46828008,
+                  "017B40"
+                ],
+                [
+                  46828011,
+                  "017B44"
+                ],
+                [
+                  46828014,
+                  "897330"
+                ],
+                [
+                  46828017,
+                  "488B742430"
+                ],
+                [
+                  46828022,
+                  "488B5C2438"
+                ],
+                [
+                  46828027,
+                  "4883C420"
+                ],
+                [
+                  46828031,
+                  "5F"
+                ],
+                [
+                  46828032,
+                  "C3"
+                ]
+              ]
+            },
+            "setter": {
+              "window": {
+                "startRva": 67016656,
+                "endRva": 67016710,
+                "sha256": "57BED42AF338391632852530F745C07F44379E8B9AEB8E8582A1921BE51674B1",
+                "boundary": "Exact selected normal program; external slow/error branches do not establish runtime execution."
+              },
+              "instructions": [
+                [
+                  67016656,
+                  "4883EC28"
+                ],
+                [
+                  67016660,
+                  "4889542448"
+                ],
+                [
+                  67016665,
+                  "33D2"
+                ],
+                [
+                  67016667,
+                  "E8C0000000"
+                ],
+                [
+                  67016672,
+                  "4885C0"
+                ],
+                [
+                  67016675,
+                  "741B"
+                ],
+                [
+                  67016677,
+                  "F30F10442448"
+                ],
+                [
+                  67016683,
+                  "F30F104C244C"
+                ],
+                [
+                  67016689,
+                  "F30F11402C"
+                ],
+                [
+                  67016694,
+                  "F30F114830"
+                ],
+                [
+                  67016699,
+                  "4883C428"
+                ],
+                [
+                  67016703,
+                  "C3"
+                ],
+                [
+                  67016704,
+                  "E80F4CACFC"
+                ],
+                [
+                  67016709,
+                  "CC"
+                ]
+              ],
+              "getterCall": {
+                "rva": 67016667,
+                "targetRva": 67016864
+              },
+              "getterMethod": [
+                120689,
+                "Beyond.MemoryPack.Beyond_Gameplay_Core_IgniteBuffTextAction_DataForMemoryPack",
+                "get___instance",
+                67016864
+              ],
+              "getterWindow": {
+                "startRva": 67016864,
+                "endRva": 67016938,
+                "sha256": "1BFA7FEB698EB7FDB9362B8A4960D0AFCF626DEB3B7DF4D45E6747ADE8D23BA3",
+                "boundary": "Exact selected normal program; external slow/error branches do not establish runtime execution."
+              },
+              "getterInstructions": [
+                [
+                  67016864,
+                  "4053"
+                ],
+                [
+                  67016866,
+                  "4883EC20"
+                ],
+                [
+                  67016870,
+                  "803DA1FBEB0900"
+                ],
+                [
+                  67016877,
+                  "488BD9"
+                ],
+                [
+                  67016880,
+                  "7423"
+                ],
+                [
+                  67016882,
+                  "48837B1800"
+                ],
+                [
+                  67016887,
+                  "0F844562F700"
+                ],
+                [
+                  67016893,
+                  "488B4310"
+                ],
+                [
+                  67016897,
+                  "48394318"
+                ],
+                [
+                  67016901,
+                  "0F853762F700"
+                ],
+                [
+                  67016907,
+                  "488B4318"
+                ],
+                [
+                  67016911,
+                  "4883C420"
+                ],
+                [
+                  67016915,
+                  "5B"
+                ],
+                [
+                  67016916,
+                  "C3"
+                ]
+              ],
+              "fieldOffset": 44
+            },
+            "parentProgram": [
+              [
+                67014544,
+                "48895C2418"
+              ],
+              [
+                67014549,
+                "57"
+              ],
+              [
+                67014550,
+                "4883EC20"
+              ],
+              [
+                67014554,
+                "803DAF04EC0900"
+              ],
+              [
+                67014561,
+                "488BDA"
+              ],
+              [
+                67014564,
+                "488BF9"
+              ],
+              [
+                67014567,
+                "0F8411020000"
+              ],
+              [
+                67014573,
+                "488B0B"
+              ],
+              [
+                67014576,
+                "C644243800"
+              ],
+              [
+                67014581,
+                "4885C9"
+              ],
+              [
+                67014584,
+                "0F85526AF700"
+              ],
+              [
+                67014590,
+                "488D542438"
+              ],
+              [
+                67014595,
+                "488BCF"
+              ],
+              [
+                67014598,
+                "E895F8CBFE"
+              ],
+              [
+                67014603,
+                "84C0"
+              ],
+              [
+                67014605,
+                "0F84826AF700"
+              ],
+              [
+                67014611,
+                "4889742430"
+              ],
+              [
+                67014616,
+                "48833B00"
+              ],
+              [
+                67014620,
+                "752D"
+              ],
+              [
+                67014622,
+                "488B0D2B600B09"
+              ],
+              [
+                67014629,
+                "E876D003FC"
+              ],
+              [
+                67014634,
+                "488BF0"
+              ],
+              [
+                67014637,
+                "4885C0"
+              ],
+              [
+                67014640,
+                "0F8434020000"
+              ],
+              [
+                67014646,
+                "33D2"
+              ],
+              [
+                67014648,
+                "488BC8"
+              ],
+              [
+                67014651,
+                "E8F0080000"
+              ],
+              [
+                67014656,
+                "488BCB"
+              ],
+              [
+                67014659,
+                "488933"
+              ],
+              [
+                67014662,
+                "E835DB03FC"
+              ],
+              [
+                67014667,
+                "0FB6742438"
+              ],
+              [
+                67014672,
+                "4080FE0B"
+              ],
+              [
+                67014676,
+                "0F85036AF700"
+              ],
+              [
+                67014682,
+                "488B33"
+              ],
+              [
+                67014685,
+                "488BCF"
+              ],
+              [
+                67014688,
+                "E89BF8CBFE"
+              ],
+              [
+                67014693,
+                "4885F6"
+              ],
+              [
+                67014696,
+                "0F84FC010000"
+              ],
+              [
+                67014702,
+                "4533C0"
+              ],
+              [
+                67014705,
+                "0FB6D0"
+              ],
+              [
+                67014708,
+                "488BCE"
+              ],
+              [
+                67014711,
+                "E8844622FF"
+              ],
+              [
+                67014716,
+                "488B15E50D0A09"
+              ],
+              [
+                67014723,
+                "488BCF"
+              ],
+              [
+                67014726,
+                "488B33"
+              ],
+              [
+                67014729,
+                "E862F6CBFE"
+              ],
+              [
+                67014734,
+                "4885F6"
+              ],
+              [
+                67014737,
+                "0F84D3010000"
+              ],
+              [
+                67014743,
+                "4533C0"
+              ],
+              [
+                67014746,
+                "8BD0"
+              ],
+              [
+                67014748,
+                "488BCE"
+              ],
+              [
+                67014751,
+                "E8FCCA78FF"
+              ],
+              [
+                67014756,
+                "488B33"
+              ],
+              [
+                67014759,
+                "488BCF"
+              ],
+              [
+                67014762,
+                "E841F6CBFE"
+              ],
+              [
+                67014767,
+                "4885F6"
+              ],
+              [
+                67014770,
+                "0F84B2010000"
+              ],
+              [
+                67014776,
+                "4533C0"
+              ],
+              [
+                67014779,
+                "8BD0"
+              ],
+              [
+                67014781,
+                "488BCE"
+              ],
+              [
+                67014784,
+                "E8FBCA78FF"
+              ],
+              [
+                67014789,
+                "488B33"
+              ],
+              [
+                67014792,
+                "488BCF"
+              ],
+              [
+                67014795,
+                "E820F6CBFE"
+              ],
+              [
+                67014800,
+                "4885F6"
+              ],
+              [
+                67014803,
+                "0F8491010000"
+              ],
+              [
+                67014809,
+                "4533C0"
+              ],
+              [
+                67014812,
+                "8BD0"
+              ],
+              [
+                67014814,
+                "488BCE"
+              ],
+              [
+                67014817,
+                "E8FACA78FF"
+              ],
+              [
+                67014822,
+                "488B15736F0B09"
+              ],
+              [
+                67014829,
+                "488BCF"
+              ],
+              [
+                67014832,
+                "488B33"
+              ],
+              [
+                67014835,
+                "E8F8F5CBFE"
+              ],
+              [
+                67014840,
+                "4885F6"
+              ],
+              [
+                67014843,
+                "0F8469010000"
+              ],
+              [
+                67014849,
+                "4533C0"
+              ],
+              [
+                67014852,
+                "8BD0"
+              ],
+              [
+                67014854,
+                "488BCE"
+              ],
+              [
+                67014857,
+                "E872060000"
+              ],
+              [
+                67014862,
+                "488B33"
+              ],
+              [
+                67014865,
+                "488BCF"
+              ],
+              [
+                67014868,
+                "E8E7F7CBFE"
+              ],
+              [
+                67014873,
+                "4885F6"
+              ],
+              [
+                67014876,
+                "0F8448010000"
+              ],
+              [
+                67014882,
+                "4533C0"
+              ],
+              [
+                67014885,
+                "0FB6D0"
+              ],
+              [
+                67014888,
+                "488BCE"
+              ],
+              [
+                67014891,
+                "E880060000"
+              ],
+              [
+                67014896,
+                "488B1589AB0009"
+              ],
+              [
+                67014903,
+                "488BCF"
+              ],
+              [
+                67014906,
+                "488B33"
+              ],
+              [
+                67014909,
+                "E8AEF5CBFE"
+              ],
+              [
+                67014914,
+                "4885F6"
+              ],
+              [
+                67014917,
+                "0F841F010000"
+              ],
+              [
+                67014923,
+                "4533C0"
+              ],
+              [
+                67014926,
+                "8BD0"
+              ],
+              [
+                67014928,
+                "488BCE"
+              ],
+              [
+                67014931,
+                "E888060000"
+              ],
+              [
+                67014936,
+                "488B1521D40009"
+              ],
+              [
+                67014943,
+                "488BCF"
+              ],
+              [
+                67014946,
+                "488B33"
+              ],
+              [
+                67014949,
+                "E8064FD9FF"
+              ],
+              [
+                67014954,
+                "4885F6"
+              ],
+              [
+                67014957,
+                "0F84F7000000"
+              ],
+              [
+                67014963,
+                "4533C0"
+              ],
+              [
+                67014966,
+                "488BD0"
+              ],
+              [
+                67014969,
+                "488BCE"
+              ],
+              [
+                67014972,
+                "E88F060000"
+              ]
+            ],
+            "argumentInstructions": [
+              [
+                67014936,
+                "488B1521D40009"
+              ],
+              [
+                67014943,
+                "488BCF"
+              ],
+              [
+                67014946,
+                "488B33"
+              ]
+            ],
+            "bridgeInstructions": [
+              [
+                67014954,
+                "4885F6"
+              ],
+              [
+                67014957,
+                "0F84F7000000"
+              ],
+              [
+                67014963,
+                "4533C0"
+              ],
+              [
+                67014966,
+                "488BD0"
+              ],
+              [
+                67014969,
+                "488BCE"
+              ],
+              [
+                67014972,
+                "E88F060000"
+              ]
+            ]
+          }
+        },
+        {
+          "fieldName": "showOnSquadIcon",
+          "declaredType": "bool",
+          "setterMethodIndex": 120698,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67015006,
+            "targetRva": 67016720,
+            "methodIndex": 120698
+          },
+          "sourceCall": {
+            "rva": 67014983,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84D50000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "targetSettings",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 120699,
+          "kind": "target-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67015047,
+            "targetRva": 67016768,
+            "methodIndex": 120699
+          },
+          "sourceCall": {
+            "rva": 67015024,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84AC0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 67015011
+        },
+        {
+          "fieldName": "textId",
+          "declaredType": "string",
+          "setterMethodIndex": 120700,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67015081,
+            "targetRva": 67016816,
+            "methodIndex": 120700
+          },
+          "sourceCall": {
+            "rva": 67015058,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885DB0F848A0000004533C0488BD0488BCB"
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "207": "igniteText"
+  }
+}

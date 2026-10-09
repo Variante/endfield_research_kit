@@ -95,6 +95,8 @@ IF_ELSE_ACTION_NAME = 'Core_IfElseAction_IfElseActionData'
 # (``levelscript_union_tags.tag_name``) and never written down here.
 _ACTION_MEMBER_COUNTS = {
     IF_ELSE_ACTION_NAME: IF_ELSE_ACTION_MEMBER_COUNT,
+    'Core_PickTargetAction_Data': 7,
+    'Core_TickIntervalAction_Data': 9,
     'Core_Conditions_CheckSkillId_Data': 5,
     'Core_ModifyDynamicBlackboard_Data': 10,
     'Core_CompareFloat_Data': 7,
@@ -113,6 +115,7 @@ _ACTION_MEMBER_COUNTS = {
     'Core_AbilityActions_FinishBuffAction_Data': 12,
     'Core_DamageAction_DamageActionData': 11,
     'Core_EffectAction_EffectActionData': 18,
+    'EffectLineCenterAction_Data': 19,
     'Core_Conditions_CheckHp_Data': 8,
     'Core_SpawnAbilityEntity_Data': 38,
     'Core_SetSkillCdAtOnce_Data': 11,
@@ -185,6 +188,7 @@ _ACTION_MEMBER_COUNTS = {
     'Core_AddTagToEntities_Data': 8,
     'Core_ChangeSeasonTowerEnergyAction_Data': 5,
     'Core_PlayAnimationAction_PlayAnimationActionData': 16,
+    'Core_JumpToAction_Data': 6,
     'Core_SetHpFloor_Data': 8,
     'Core_SaveShieldValueToBB_Data': 7,
     'Core_SaveTargetDistanceAction_Data': 7,
@@ -317,7 +321,7 @@ class Unsupported(FrameError):
 class Reader:
     def __init__(self,data,source,limit=None):
         self.data=data;self.source=source;self.pos=0;self.ranges=[];self.records=[]
-        self.postprocessor_depth=0;self.target_depth=0
+        self.target_depth=0
         self.limit=len(data) if limit is None else limit
         if type(self.limit) is not int or not 0<=self.limit<=len(data):
             raise FrameError(source,0,'limit within file',self.limit)
@@ -407,6 +411,18 @@ class Reader:
         self.header(_ACTION_MEMBER_COUNTS[name])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if name=='Core_PickTargetAction_Data':
+            # Independent selected PickTarget and BlackboardInt source proofs
+            # own these three fields; recursive naming keeps its own gate.
+            self.byte_payload();self.scalar_payload();self.target_profile()
+            return
+        if name=='Core_TickIntervalAction_Data':
+            # The independent complete source/helper owner proves this order;
+            # recursive naming additionally gates the current union return.
+            self.sequence(depth)
+            self.take(1,'anonymous-byte');self.take(4,'anonymous-float32-bits')
+            self.byte_payload(reserve=1);self.take(1,'anonymous-byte')
+            return
         if name=='Core_CastPlungingAttack_Data':
             # The selected header-five reader consumes the existing bounded
             # TargetSettings profile after its anonymous byte/DWORD prefix.
@@ -862,6 +878,9 @@ class Reader:
             self.sequence(depth)
             for _ in range(2):self.take(4,'anonymous-scalar32')
             self.byte_payload();self.take(1,'anonymous-nonzero-byte');return
+        if name=='Core_JumpToAction_Data':
+            self.sequence(depth)
+            self.take(4,'anonymous-scalar32');return
         if name=='Core_ChangeSeasonTowerEnergyAction_Data':
             self.scalar_payload();return
         if name=='Core_AddTagAction_Data':
@@ -1106,6 +1125,13 @@ class Reader:
             self.take(1,'anonymous-nonzero-byte');self.target_profile()
             for _ in range(5):self.take(1,'anonymous-nonzero-byte')
             self.byte_payload();self.target_profile();self.take(1,'anonymous-nonzero-byte')
+            return
+        if name=='EffectLineCenterAction_Data':
+            self.byte_payload();self.target_profile();self.effect_configuration_profile();self.target_profile()
+            self.take(1,'anonymous-nonzero-byte');self.target_profile()
+            for _ in range(5):self.take(1,'anonymous-nonzero-byte')
+            self.byte_payload();self.target_profile();self.take(1,'anonymous-nonzero-byte')
+            self.target_profile()
             return
         if name=='Core_DamageAction_DamageActionData':
             self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32')
@@ -1656,11 +1682,11 @@ class Reader:
 
     def selector_finder_profile(self):
         start=self.pos
-        tag=self.nested_union_tag((0,1,2,3,5,7,8,10,12,13,14,16,18,19,21),'finder')
+        tag=self.nested_union_tag((0,1,2,3,5,6,7,8,10,12,13,14,16,18,19,21,23),'finder')
         if tag is None:pass
         elif self.peek()==255:self.take(1,'null-nested-finder-wrapper')
         else:
-            self.header({0:0,1:0,2:0,3:4,5:0,7:8,8:0,10:0,12:1,13:1,14:2,16:9,18:11,19:4,21:0}[tag])
+            self.header({0:0,1:0,2:0,3:4,5:0,6:0,7:8,8:0,10:0,12:1,13:1,14:2,16:9,18:11,19:4,21:0,23:0}[tag])
             if tag==3:
                 self.take(12,'anonymous-raw12');self.take(16,'anonymous-raw16')
                 self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
@@ -1717,7 +1743,7 @@ class Reader:
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-validator-profile'))
 
     def selector_postprocessor_profile(self):
-        start=self.pos;tag=self.nested_union_tag((1,4,7,8),'postprocessor')
+        start=self.pos;tag=self.nested_union_tag((0,1,4,6,7,8),'postprocessor')
         if tag is None:pass
         elif self.peek()==255:self.take(1,'null-nested-postprocessor-wrapper')
         elif tag==1:
@@ -1730,14 +1756,17 @@ class Reader:
             for _ in range(2):
                 self.take(4,'anonymous-scalar32');self.take(1,'anonymous-nonzero-byte')
             self.take(4,'anonymous-scalar32')
+        elif tag==0:
+            self.header(6);self.scalar_payload();self.scalar_payload();self.byte_payload()
+            self.target_profile();self.scalar_payload();self.scalar_payload()
+        elif tag==6:
+            self.header(8);self.take(3,'anonymous-nonzero-bytes');self.scalar_payload()
+            self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-float32-bits')
+            self.take(2,'anonymous-nonzero-bytes')
         else:
-            # Admit one finite target expansion; a further recursive instance
-            # remains a reported gap before its member header is consumed.
-            if self.postprocessor_depth:
-                raise Unsupported(self.source,self.pos,'postprocessor target depth <= 1',2,'depth-limit')
-            self.header(2);self.postprocessor_depth+=1
-            try:self.target_profile()
-            finally:self.postprocessor_depth-=1
+            # The selected ExcludeTarget reader owns another TargetSettings.
+            # Count that child through the common target recursion guard.
+            self.header(2);self.target_profile()
             self.take(4,'anonymous-scalar32')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-postprocessor-profile'))
 
@@ -1981,6 +2010,13 @@ class Reader:
         start=self.pos;n=self.count(1,nullable=True)
         if n>0:raise Unsupported(self.source,start,'null or empty '+kind,n,'nested-profile')
 
+    def damage_tag_collection(self):
+        # DamageUnit member nine has wrapped GameplayTag list elements, with
+        # a separate shortest following tail. Named admission requires its
+        # parent/list native proof and an independently named element reader.
+        start=self.pos;self.tag_elements(reserve=38)
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-damage-tag-list'))
+
     def hit_sound_profile(self):
         start=self.pos
         if self.peek()==255:self.take(1,'null-hit-sound-profile')
@@ -2008,7 +2044,7 @@ class Reader:
             # Only the second list has selected DamageProcessorBase elements.
             # Reserve the third count and shortest remaining unit tail.
             for _ in range(max(0,self.count(1,reserve=42,nullable=True))):self.damage_processor_profile()
-            self.empty_damage_collection('damage unit list')
+            self.damage_tag_collection()
             self.take(4,'anonymous-scalar32');self.byte_payload();self.take(4,'anonymous-scalar32')
             self.effect_configuration_profile()
             for _ in range(5):self.take(1,'anonymous-nonzero-byte')

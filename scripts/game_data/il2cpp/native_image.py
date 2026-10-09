@@ -235,13 +235,16 @@ class NativeImage:
             raise ValueError(f"{label}.native:wrapper-name")
         return {"target": target, "typeIndex": type_index, "definition": definition, "usageCell": cell}
 
-    def nested_usage_cell(self, context: dict[str, Any], *, label: str | None = None) -> tuple[int, bytes]:
+    def nested_usage_cell(self, context: dict[str, Any], *, label: str | None = None,
+                          load_prefixes: tuple[bytes, ...] = RIP_RELATIVE_LOAD_PREFIXES) -> tuple[int, bytes]:
         """Resolve a nested-context usage cell from its recorded load instruction.
 
         The instruction is a 7-byte rip-relative load.  When the context records
         ``instructionHex`` the bytes must match exactly; otherwise only the
         encoding prefix is checked.  ``cellVa``/``cellRva`` and ``usageRawHex``
         are compared when present.
+        A caller proving a different context register must explicitly scope
+        ``load_prefixes``; the default accepted registers remain unchanged.
         """
         label = label or self.label
         pe = self.pe
@@ -253,7 +256,8 @@ class NativeImage:
                 raise ValueError(f"{label}.native:nested-instruction={context['instructionRva']:#x}")
         else:
             instruction = pe.bytes_at_va(va, 7)
-        if len(instruction) != 7 or instruction[:3] not in RIP_RELATIVE_LOAD_PREFIXES:
+        if (not load_prefixes or any(not isinstance(p, bytes) or len(p) != 3 for p in load_prefixes)
+                or len(instruction) != 7 or instruction[:3] not in load_prefixes):
             raise ValueError(f"{label}.native:nested-instruction-shape={context['instructionRva']:#x}")
         cell = va + 7 + struct.unpack_from("<i", instruction, 3)[0]
         if "cellVa" in context and cell != context["cellVa"]:

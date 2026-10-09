@@ -1,4 +1,4 @@
-"""Named stored ReadSkillSettingData and SendBattleSignalToLevel actions.
+"""Named stored skill, signal, target-Buff, stack and scalar data transfers.
 
 Complete selected reader windows, ordered result-to-setter transfers and
 closed field types prove the parent layouts. Original-span composition keeps
@@ -22,6 +22,7 @@ from scripts.game_data.memorypack.corpus_gate import CensusGateError
 from scripts.game_data.memorypack import named_native_records as records_native
 from scripts.game_data.memorypack import buff_adding_cooldown as scalar
 from scripts.game_data.memorypack import buff_blackboard_string_child_receipt as strings
+from scripts.game_data.memorypack import buff_find_settings_child_receipt as find
 
 LABEL = "buffDataTransferActions"
 CONTRACT_PATH = CONTRACTS_DIR / "buff_data_transfer_actions_native.json"
@@ -29,11 +30,11 @@ CONTRACT_PATH = CONTRACTS_DIR / "buff_data_transfer_actions_native.json"
 
 def _contract() -> dict[str, Any]:
     value, _ = read_reviewed_contract(CONTRACT_PATH,
-        schema="endfield.buff-data-transfer-actions-native-contract.v1",
+        schema="endfield.buff-data-transfer-actions-native-contract.v4",
         status="exact-current-build", label=LABEL)
-    if (set(value.get("records", {})) != {"signal", "skillSetting", "readData"}
-            or set(value.get("actionDispatch", {}).values()) != {"signal", "skillSetting"}
-            or len(value["actionDispatch"]) != 2):
+    if (set(value.get("records", {})) != {"signal", "skillSetting", "readData", "targetBuffBlackboard", "attributeValue", "saveStack", "simpleCalc", "readAiTrans"}
+            or set(value.get("actionDispatch", {}).values()) != {"signal", "skillSetting", "targetBuffBlackboard", "attributeValue", "saveStack", "simpleCalc", "readAiTrans"}
+            or len(value["actionDispatch"]) != 7):
         raise ValueError(f"{LABEL}.contract:shape")
     return value
 
@@ -63,7 +64,7 @@ def validate_current_native_contract(*, children: dict[str, Any]) -> dict[str, A
     gate = check_installed_native_inputs(expected["GameAssembly.dll"], expected["global-metadata.dat"])
     if gate.status != "validated":
         return {"status": gate.status, "detail": gate.detail, "nativeInputs": expected}
-    for name in ("target", "effectVectors", "blackboardString"):
+    for name in ("target", "effectVectors", "blackboardString", "findSettings"):
         child = children.get(name, {})
         if child.get("status") != "validated" or child.get("nativeInputs") != expected:
             _fail("shared-child", expected, {"name": name, "status": child.get("status"),
@@ -103,7 +104,7 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
             or native.get("actionDispatch") != contract["actionDispatch"] or key is None
             or any(context.get(k, {}).get("status") != "validated"
                    or context[k].get("nativeInputs") != contract["nativeInputs"]
-                   for k in ("target", "effectVectors", "blackboardString"))
+                   for k in ("target", "effectVectors", "blackboardString", "findSettings"))
             or not isinstance(data, bytes) or not source or not isinstance(digest, str)
             or hashlib.sha256(data).hexdigest().upper() != digest.upper()
             or type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data)):
@@ -136,15 +137,22 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
                 if child.get("wholeStoredSpanExact") is not True or [child.get("start"), child.get("end")] != [a, reader.pos]:
                     raise ValueError(f"{LABEL}.decode:string-span at={a}")
                 value["child"] = child
-            elif kind == "byte-payload":
+            elif kind in ("byte-payload", "bytePayload"):
                 reader.byte_payload()
                 value.update(rawHex=data[a:reader.pos].hex().upper(), payloadEncoding="unresolved")
-            elif kind == "target-profile":
+            elif kind in ("target-profile", "target"):
                 reader.target_profile(); span = {"start": a, "end": reader.pos, "fieldName": member["fieldName"]}
                 child = ({**span, "status": "exact-null", "recursiveStoredSchemaExact": True}
                     if data[a:reader.pos] == b"\xff" else target_decoder(data, source, digest, span, context))
                 if child.get("recursiveStoredSchemaExact") is not True or [child.get("start"), child.get("end")] != [a, reader.pos]:
                     raise ValueError(f"{LABEL}.decode:target-span at={a}")
+                value["child"] = child
+            elif kind in ("finder", "finder-profile"):
+                reader.finder_profile()
+                child = find.decode_find_settings_child_receipt(data, **args, start=a, end=reader.pos,
+                    native_validation=context["findSettings"])
+                if child.get("wholeChildSpanExact") is not True or [child.get("start"), child.get("end")] != [a, reader.pos]:
+                    raise ValueError(f"{LABEL}.decode:finder-span at={a}")
                 value["child"] = child
             elif kind == "counted-member4-profiles":
                 count = reader.count(1, nullable=True)

@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.buff-damage-action-native-contract.v1",
+  "schema": "endfield.buff-damage-action-native-contract.v3",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -11,12 +11,15 @@
   "dependencies": {
     "effectConfig": "buff_effect_config_child_native.json",
     "effectVectors": "buff_effect_vector_child_native.json",
-    "scalar": "buff_adding_cooldown_ownership_native.json"
+    "scalar": "buff_adding_cooldown_ownership_native.json",
+    "damageTagsList": "skill_damage_unit_gameplay_tag_list_native.json",
+    "namedTagElements": "buff_aura_heal_actions_native.json",
+    "damageProcessorsList": "buff_damage_processor_collection_native.json"
   },
   "evidenceBoundary": {
     "direct": "Ordered source reads are joined to named runtime destinations or generated setters under the selected native inputs.",
-    "conditional": "Stored list/object composition uses the selected closed generic field types and reviewed normal/null child readers; live formatter selection is unresolved.",
-    "unresolved": "Positive unit cost/processor/tag collections, unsupported calculation tags, positive terrain-effect arrays and gameplay execution."
+    "conditional": "Named positive DamageUnit lists, selected calculation and effect children, independently proved target spans, wrapped GameplayTag lists and separately owned processor collections compose under their own current native gates and original byte spans. Shared-reference list grammar remains conditional on the selected formatter; live provider choice and execution are unresolved.",
+    "unresolved": "Positive unit cost/processor collections, unsupported calculation tags, positive terrain-effect arrays and gameplay execution. Tag bits do not establish a tag name or accepted damage effect."
   },
   "records": {
     "action": {
@@ -1243,5 +1246,17 @@
       "sourceContextInstructionRva": 59818978,
       "record": "calculation3"
     }
+  },
+  "damageTagsList": {
+    "ownerRecord": "unit",
+    "sourceMemberIndex": 9,
+    "fieldName": "damageTags",
+    "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.GameplayTag>"
+  },
+  "damageProcessorsList": {
+    "sourceMemberIndex": 8,
+    "fieldName": "damageProcessors",
+    "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageProcessorBase>",
+    "ownerRecord": "unit"
   }
 }

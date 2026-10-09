@@ -1,0 +1,22 @@
+{
+  "schema": "endfield.buff-tick-interval-consumer-claims.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "conditional: named compiled getter return when the selected IFix Boolean guard returns false. This is an execute-return policy declaration, not an observed ExecuteInternal/OnTick result, branch selection, scheduling or gameplay effect. Data, Sequence and TargetHandle ownership and TickIntervalActionV2 remain unresolved.",
+  "methods": {
+    "TickIntervalAction.get_executeReturnType": {
+      "type": "Beyond.Gameplay.Core.TickIntervalAction",
+      "method": "get_executeReturnType",
+      "parameters": [],
+      "claims": [
+        {
+          "returnsEnumAfterFalseCall": {
+            "call": "IFix.WrappersManagerImpl.IsPatched",
+            "type": "Beyond.Gameplay.Core.AbilityAction+ExecuteReturnType",
+            "member": "AlwaysReturnTrue"
+          }
+        }
+      ],
+      "contract": "On the compiled path selected by false IsPatched, a complete EAX literal for the selected Int32-backed AlwaysReturnTrue member survives a plain epilogue to RET. The guard's true path and live method selection are outside this claim."
+    }
+  }
+}

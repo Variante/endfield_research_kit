@@ -1,0 +1,67 @@
+{
+  "schema": "endfield.buff-formatter-resolver-scan-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "anonymous-generic-record-parameter-scan-and-bounded-table-control-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_formatter_dispatch_fallback_native.json",
+  "entryRva": 68560,
+  "ownedWindows": [
+    {"startRva":68560,"endRva":69326,"sha256":"B7109C06795516EE598F3FE83ADB172CF949A3B44BFD057B0179DB050D6956AF"},
+    {"startRva":3072728,"endRva":3072785,"sha256":"7DF6B50EA0D81B620034B30D4FD836AFD996B25D48E24A211BEE764464D8B92C"}
+  ],
+  "codeWindows": [
+    {"startRva":68560,"endRva":69237,"sha256":"FB3CC112119ACC1D87455652E219427F036D1DBBE2837D839622883C826A55DA"},
+    {"startRva":3072728,"endRva":3072785,"sha256":"7DF6B50EA0D81B620034B30D4FD836AFD996B25D48E24A211BEE764464D8B92C"}
+  ],
+  "paddingWindows": [
+    {"startRva":69237,"endRva":69240,"sha256":"019F07BFE6BD5747F9F3B65F5A095DB04A0418D5F11C6FEEC58EAFF709860B66"},
+    {"startRva":69282,"endRva":69284,"sha256":"88174BA925C5691BFF5CF2698A670490725C2F586FD946282B314EA52D9C24CE"}
+  ],
+  "tables": [
+    {
+      "targetTableRva":69240,"targetCount":5,"targetTableSha256":"BBD174B9545A848FBD95A71D97332C225A6F6B9AAC9D9CDD0E1EE7574487D5B9",
+      "targets":[3072728,3072736,69229,3072744,68925],
+      "selectorTableRva":69260,"selectorCount":22,"selectorTableSha256":"D33D2C1123A72FB6EF6B90858C6888CE0C83EADE69685F8B78B4AF2F9B16101C",
+      "selectors":[0,0,1,1,2,2,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3],
+      "targetLabels":["normalizeFirstRdx","normalizeFirstR10","normalizeFirstR9","normalizeFirstR8","secondTag"]
+    },
+    {
+      "targetTableRva":69284,"targetCount":5,"targetTableSha256":"6B36900A8F45F1F2237D59583D914CBAF0CCB59CC54A61B86C1EF13FBD606DED",
+      "targets":[68968,3072752,69221,3072760,68965],
+      "selectorTableRva":69304,"selectorCount":22,"selectorTableSha256":"D33D2C1123A72FB6EF6B90858C6888CE0C83EADE69685F8B78B4AF2F9B16101C",
+      "selectors":[0,0,1,1,2,2,3,3,4,4,4,4,4,4,4,4,4,4,4,4,3,3],
+      "targetLabels":["compareNormalized","normalizeSecondR10","normalizeSecondR9","normalizeSecondR8","originalSecond"]
+    }
+  ],
+  "layout": {
+    "parameterContext":96,"prepareArgumentPointer":120,
+    "recordCount":304,"recordStorage":176,"recordStrideShift":4,"recordOffsetWord":8,
+    "carrierItems":8,"definitionContainerIndex":24,"metadataParameterStart":12,"parameterAttributes":14,
+    "tagByte":42,"nestedTagCarrier":72,"carrierFlags":40,
+    "normalizationPermissionByte":308,"specialClassTagPointer":80,
+    "pairBiasUnits":20,"pairScaleShift":4,
+    "directTagIntervalStart":12,"directTagIntervalEndExclusive":24,
+    "tableTagStart":4,"tableIndexMax":21,"bypassOuterTags":[29,20]
+  },
+  "globalCells": {
+    "normalizationR8":233436360,"normalizationR9":233436328,
+    "normalizationR10":233436312,"normalizationRdx":233436304,"specialClassRax":233436416,
+    "leafHeader":233439216,"leafBase":233439208
+  },
+  "calls": {"prepare":19360,"firstIndexLeaf":2984896,"secondIndexLeaf":2985104,"typeCarrier":27392,"relationPredicate":15024},
+  "indexLeaves": [
+    {"entryRva":2984896,"endRva":2984933,"sha256":"E46A7CE2A650CE10FAE06C657AF653D2906D4FC8241D4AA6F01FF7494C6CC283","headerOffsetWord":120,"recordShift":4},
+    {"entryRva":2985104,"endRva":2985141,"sha256":"70E1342A22A0CAB94CF07CEE0FE2645535FB291754890A6EF6D68993DFA5C894","headerOffsetWord":104,"recordShift":4}
+  ],
+  "evidenceBoundary": {
+    "exact": "Complete owned byte partition into checked code, table bytes and unreachable padding; full original branch grammar, signed byte/UInt16/dword widths, table reads and all actual direct/table targets. Both actual two-return index leaves are independently checked without inventing unwind extents.",
+    "direct": "The record and parameter scans conditionally compare or normalize stored carriers, test an opaque relation result, and produce a signed offset-plus-UInt16-selector pair address or zero. The two index leaves return zero for the dword minus-one sentinel, otherwise compute a header-offset/base/index address and preserve the volatile scan registers actually reused by the caller.",
+    "structuralOnly": "Anonymous class, record, context, carrier, variance-like flags and global storage. Table carrier substitutions do not assign named runtime types or select a live MethodInfo/interface target.",
+    "conditional": "Valid compatible stable selected native tables and receiver/context/record/parameter/carrier/stack/global/header/base storage. Preparation, carrier conversion and relation helpers return normally with compatible results and nonvolatile preservation. Leaf address arithmetic is not a bounds check or proof of live header/base identity.",
+    "unresolved": "Named runtime class/interface/generic context and slot meaning, selected live globals and initialization, conversion/relation side effects and results, live cache/setter, actual action callback/cursor, positive list and full root admission."
+  }
+}

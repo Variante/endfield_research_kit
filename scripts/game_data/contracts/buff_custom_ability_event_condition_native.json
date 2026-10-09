@@ -1,0 +1,144 @@
+{
+  "schema": "endfield.buff-custom-ability-event-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "customAbilityEvent": {
+      "sourceContract": "buff_5a_native.json",
+      "wrapperTypeDefinition": 16609,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckCustomAbilityEvent_DataForMemoryPack",
+      "runtimeTypeDefinition": 13481,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.CheckCustomAbilityEvent+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member6",
+      "readerMethod": [
+        124103,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckCustomAbilityEvent_DataForMemoryPack",
+        "Deserialize",
+        63365664
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63365831,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 63365808,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84170100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63365871,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 63365849,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84EE0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 63365836
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63365904,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 63365882,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84CD0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63365937,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 63365915,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84AC0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "eventName",
+          "declaredType": "Beyond.Blackboard+BlackboardString",
+          "setterMethodIndex": 124099,
+          "kind": "pairedPayload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63365978,
+            "targetRva": 63366112,
+            "methodIndex": 124099
+          },
+          "sourceCall": {
+            "rva": 63365955,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84840000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 63365942
+        },
+        {
+          "fieldName": "savedParamKey",
+          "declaredType": "string",
+          "setterMethodIndex": 124100,
+          "kind": "bytePayload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63366008,
+            "targetRva": 63366160,
+            "methodIndex": 124100
+          },
+          "sourceCall": {
+            "rva": 63365989,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB"
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "90": "customAbilityEvent"
+  },
+  "blackboardStringSourceContract": "buff_blackboard_string_child_native.json",
+  "stringSourceContract": "memorypack_utf8_source_helper_native.json",
+  "evidenceBoundary": {
+    "exact": "Current generated members, source/destination transfers and action dispatcher identify the complete custom ability event condition.",
+    "direct": "eventName independently composes a BlackboardString original span; savedParamKey separately uses the checked current UTF-8 source helper and remains required after the event operand.",
+    "structuralOnly": "BlackboardString key and value payloads retain their original bytes under the existing independent child contract; evaluated event names and blackboard selection are not inferred.",
+    "conditional": "Null wrappers, null/empty string payloads and arbitrary flag bits remain distinct. Whole Buff admission requires complete original root and independent canonical replay.",
+    "unresolved": "Live provider/IFix choice, event matching, parameter capture, selected blackboard values and condition results."
+  }
+}

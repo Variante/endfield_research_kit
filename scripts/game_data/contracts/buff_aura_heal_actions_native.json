@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.buff-aura-heal-actions-native-contract.v1",
+  "schema": "endfield.buff-aura-heal-actions-native-contract.v2",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
@@ -1541,7 +1541,94 @@
       ],
       "sourceReadMemberIndices": [
         1
-      ]
+      ],
+      "valueWrapperDestination": {
+        "mode": "inline-wrapper-value-rbx",
+        "instanceFieldName": "__instance",
+        "boxedHeaderBytes": 16,
+        "receiverAliasInstruction": [
+          68090945,
+          "488BDA"
+        ],
+        "receiverDereferenceInstruction": [
+          68091000,
+          "488B1B"
+        ],
+        "receiverProgram": [
+          [
+            68090945,
+            "488BDA"
+          ],
+          [
+            68090948,
+            "488BF9"
+          ],
+          [
+            68090951,
+            "744D"
+          ],
+          [
+            68090953,
+            "488D542430"
+          ],
+          [
+            68090958,
+            "C644243000"
+          ],
+          [
+            68090963,
+            "488BCF"
+          ],
+          [
+            68090966,
+            "E8058CBBFE"
+          ],
+          [
+            68090971,
+            "84C0"
+          ],
+          [
+            68090973,
+            "0F8434ADE800"
+          ],
+          [
+            68090979,
+            "48833B00"
+          ],
+          [
+            68090983,
+            "0F84C5ACE800"
+          ],
+          [
+            68090989,
+            "807C243001"
+          ],
+          [
+            68090994,
+            "0F85E5ACE800"
+          ],
+          [
+            68091000,
+            "488B1B"
+          ],
+          [
+            68091003,
+            "488BCF"
+          ],
+          [
+            68091006,
+            "E82D8ABBFE"
+          ],
+          [
+            68091011,
+            "4885DB"
+          ],
+          [
+            68091014,
+            "743B"
+          ]
+        ]
+      }
     }
   },
   "dependencies": {
@@ -1556,6 +1643,7 @@
   "evidenceBoundary": {
     "direct": "Ordered reader calls, closed field types and runtime destinations prove the stored names of both actions and five child wrappers. Vector3 source reads include both contiguous destination stores.",
     "conditional": "Original spans compose supported sequence actions, target children, assignment pairs, scalar providers, calculation variants, effect settings and gameplay-tag elements under selected native inputs.",
-    "unresolved": "Live provider/formatter selection, evaluated values, unsupported recursive children and gameplay execution."
+    "unresolved": "Live provider/formatter selection, evaluated values, unsupported recursive children and gameplay execution.",
+    "valueWrapperProjection": "GameplayTag is stored inline in the actual wrapper receiver. Wrapper instance offset plus unboxed value-member offset must equal the physical store displacement; boxed field-offset coincidence alone is insufficient."
   }
 }

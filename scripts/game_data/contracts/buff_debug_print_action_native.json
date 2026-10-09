@@ -1,0 +1,285 @@
+{
+  "schema": "endfield.buff-debug-print-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "actionDispatch": {
+    "155": "debugPrint"
+  },
+  "reviewedDependencies": [
+    "buff_9b_native.json",
+    "buff_b4_native.json"
+  ],
+  "records": {
+    "debugPrint": {
+      "sourceContract": "buff_9b_native.json",
+      "wrapperTypeDefinition": 16065,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DebugPrintAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9401,
+      "runtimeTypeName": "Beyond.Gameplay.Core.DebugPrintAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member9",
+      "readerMethod": [
+        119861,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_DebugPrintAction_DataForMemoryPack",
+        "Deserialize",
+        65994320
+      ],
+      "readerWindowStart": 65994320,
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 65994464,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65994487,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84C40100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 65994505,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65994527,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F849B0100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 65994538,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65994560,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F847A0100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 65994571,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65994593,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84590100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "bbKey",
+          "declaredType": "string",
+          "setterMethodIndex": 119854,
+          "kind": "bytePayload",
+          "sourceCall": {
+            "rva": 65994604,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65994627,
+            "targetRva": 65994944,
+            "methodIndex": 119854
+          },
+          "sourceToDestinationHex": "4885F60F84380100004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "color",
+          "declaredType": "UnityEngine.Color",
+          "setterMethodIndex": 119855,
+          "kind": "raw16",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 65994706,
+            "rawHex": "0F114030",
+            "fieldOwnerTypeDefinition": 9401,
+            "fieldOffset": 48,
+            "baseRegister": 0
+          },
+          "inlineSource": {
+            "width": 16,
+            "bufferPointerOffset": 80,
+            "remainingBytesOffset": 48,
+            "consumedOffsets": [
+              64,
+              68
+            ],
+            "instructions": [
+              [
+                65994645,
+                "488B4750"
+              ],
+              [
+                65994649,
+                "BA10000000"
+              ],
+              [
+                65994654,
+                "488BCF"
+              ],
+              [
+                65994657,
+                "0F1000"
+              ],
+              [
+                65994660,
+                "0F11442420"
+              ]
+            ],
+            "destinationInstructions": [
+              [
+                65994698,
+                "0F10442420"
+              ],
+              [
+                65994703,
+                "488BCF"
+              ],
+              [
+                65994706,
+                "0F114030"
+              ]
+            ],
+            "advanceCall": {
+              "rva": 65994665,
+              "targetRva": 46827968
+            },
+            "advanceWindow": {
+              "startRva": 46827968,
+              "endRva": 46828033,
+              "sha256": "1AC9D1CA96F68251C17CB7953A869C40B3C0CDD002EA1BE824D60A0757AF1BFD",
+              "boundary": "Selected Advance updates source pointer, remaining and cursor counters."
+            },
+            "advanceInstructions": [
+              [
+                46827982,
+                "4863FA"
+              ],
+              [
+                46827985,
+                "488BD9"
+              ],
+              [
+                46827993,
+                "8B7130"
+              ],
+              [
+                46827996,
+                "2BF7"
+              ],
+              [
+                46828004,
+                "48017B50"
+              ],
+              [
+                46828008,
+                "017B40"
+              ],
+              [
+                46828011,
+                "017B44"
+              ],
+              [
+                46828014,
+                "897330"
+              ]
+            ],
+            "sourceToDestinationHex": "4885F60F84FB00000033D2488BCEE8EF0100004885C00F84E80000000F10442420488BCF",
+            "boundary": "Inline source load of sixteen bytes into a stack temporary, explicit cursor advance(16), and copy of that same temporary to the selected runtime field. No nested formatter context is asserted."
+          }
+        },
+        {
+          "fieldName": "identifier",
+          "declaredType": "string",
+          "setterMethodIndex": 119856,
+          "kind": "bytePayload",
+          "sourceCall": {
+            "rva": 65994713,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65994736,
+            "targetRva": 65995040,
+            "methodIndex": 119856
+          },
+          "sourceToDestinationHex": "4885F60F84CB0000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "logType",
+          "declaredType": "Beyond.Gameplay.Core.DebugPrintAction+Data+LogType",
+          "setterMethodIndex": 119857,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 65994754,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65994776,
+            "targetRva": 65995088,
+            "methodIndex": 119857
+          },
+          "sourceToDestinationHex": "4885F60F84A20000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 65994741
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 119858,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 65994794,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 65994813,
+            "targetRva": 65995136,
+            "methodIndex": 119858
+          },
+          "sourceToDestinationHex": "4885DB747E4533C0488BD0488BCB",
+          "sourceContextInstructionRva": 65994781
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected normal/null source framing and authenticated original spans.",
+    "direct": "Generated inherited and local member identities, closed source types where present, exact source-to-runtime destination transfers; inline color reads independently prove sixteen source bytes and sixteen destination bytes.",
+    "conditional": "Parent composition requires independently validated target and scalar children on each original span.",
+    "unresolved": "Live target/provider selection, evaluated condition/log output, enum/color interpretation, short-segment error/refill parity and whole Buff root EOF."
+  }
+}

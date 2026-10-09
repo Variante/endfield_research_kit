@@ -1,0 +1,405 @@
+{
+  "schema": "endfield.buff-global-creation-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "createGlobalBuff": {
+      "sourceContract": "buff_95_native.json",
+      "wrapperTypeDefinition": 16053,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateGlobalBuffAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9381,
+      "runtimeTypeName": "Beyond.Gameplay.Core.CreateGlobalBuffAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member8",
+      "readerMethod": [
+        119750,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateGlobalBuffAction_DataForMemoryPack",
+        "Deserialize",
+        69564928
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 69565095,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 69565072,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84810100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 69565135,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 69565113,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84580100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 69565100
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 69565168,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 69565146,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84370100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 69565201,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 69565179,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84160100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "autoFinishByAction",
+          "declaredType": "bool",
+          "setterMethodIndex": 119744,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 69565235,
+            "targetRva": 69565488,
+            "methodIndex": 119744
+          },
+          "sourceCall": {
+            "rva": 69565212,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84F50000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "count",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 119745,
+          "kind": "scalar-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 69565276,
+            "targetRva": 69565536,
+            "methodIndex": 119745
+          },
+          "sourceCall": {
+            "rva": 69565253,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84CC0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 69565240
+        },
+        {
+          "fieldName": "globalBuffs",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.GlobalBuffInput>",
+          "setterMethodIndex": 119746,
+          "kind": "global-input-list",
+          "assignment": {
+            "kind": "setter",
+            "rva": 69565317,
+            "targetRva": 69565584,
+            "methodIndex": 119746
+          },
+          "sourceCall": {
+            "rva": 69565294,
+            "targetRva": 58849520
+          },
+          "sourceToDestinationHex": "4885F60F84A30000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 69565281
+        },
+        {
+          "fieldName": "globalBuffSource",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 119747,
+          "kind": "target",
+          "assignment": {
+            "kind": "setter",
+            "rva": 69565354,
+            "targetRva": 69565632,
+            "methodIndex": 119747
+          },
+          "sourceCall": {
+            "rva": 69565335,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885DB747E4533C0488BD0488BCB",
+          "sourceContextInstructionRva": 69565322
+        }
+      ]
+    },
+    "globalBuffInput": {
+      "sourceContract": "buff_95_native.json",
+      "wrapperTypeDefinition": 22433,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalBuffInputForMemoryPack",
+      "runtimeTypeDefinition": 10412,
+      "runtimeTypeName": "Beyond.Gameplay.Core.GlobalBuffInput",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "globalInputMember3",
+      "readerMethod": [
+        162862,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalBuffInputForMemoryPack",
+        "Deserialize",
+        52460400
+      ],
+      "members": [
+        {
+          "fieldName": "assignBlackboard",
+          "declaredType": "bool",
+          "setterMethodIndex": 162857,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 52460514,
+            "targetRva": 84401712,
+            "methodIndex": 162857
+          },
+          "sourceCall": {
+            "rva": 52460491,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84B40000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "assignItems",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Blackboard+AssignPair>",
+          "setterMethodIndex": 162858,
+          "kind": "assignment-list",
+          "assignment": {
+            "kind": "setter",
+            "rva": 52460555,
+            "targetRva": 52460176,
+            "methodIndex": 162858
+          },
+          "sourceCall": {
+            "rva": 52460532,
+            "targetRva": 58849520
+          },
+          "sourceToDestinationHex": "4885F60F848B0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 52460519
+        },
+        {
+          "fieldName": "globalBuffId",
+          "declaredType": "Beyond.Gameplay.Core.GlobalBuffId",
+          "setterMethodIndex": 162859,
+          "kind": "single-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 52460592,
+            "targetRva": 52460224,
+            "methodIndex": 162859
+          },
+          "sourceCall": {
+            "rva": 52460573,
+            "targetRva": 71074544
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 52460560
+        }
+      ]
+    },
+    "globalBuffId": {
+      "sourceContract": "buff_95_native.json",
+      "wrapperTypeDefinition": 22445,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalBuffIdForMemoryPack",
+      "runtimeTypeDefinition": 10413,
+      "runtimeTypeName": "Beyond.Gameplay.Core.GlobalBuffId",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "globalIdMember1",
+      "readerMethod": [
+        162968,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_GlobalBuffIdForMemoryPack",
+        "Deserialize",
+        71990176
+      ],
+      "members": [
+        {
+          "fieldName": "id",
+          "declaredType": "string",
+          "setterMethodIndex": 162965,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 71990254,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885DB7446488D4B10",
+          "assignment": {
+            "kind": "inline-value-field-store",
+            "rva": 71990268,
+            "rawHex": "488901",
+            "fieldOffset": 16,
+            "fieldOwnerTypeDefinition": 10413
+          }
+        }
+      ],
+      "inlineValueFlow": {
+        "mode": "reader-and-inline-wrapper-field-flow",
+        "normalProgram": [
+          [
+            71990176,
+            "48895C2410"
+          ],
+          [
+            71990181,
+            "57"
+          ],
+          [
+            71990182,
+            "4883EC20"
+          ],
+          [
+            71990186,
+            "803D1741A00900"
+          ],
+          [
+            71990193,
+            "488BDA"
+          ],
+          [
+            71990196,
+            "488BF9"
+          ],
+          [
+            71990199,
+            "7455"
+          ],
+          [
+            71990201,
+            "488D542430"
+          ],
+          [
+            71990206,
+            "C644243000"
+          ],
+          [
+            71990211,
+            "488BCF"
+          ],
+          [
+            71990214,
+            "E8950C80FE"
+          ],
+          [
+            71990219,
+            "84C0"
+          ],
+          [
+            71990221,
+            "0F84FD22B300"
+          ],
+          [
+            71990227,
+            "48833B00"
+          ],
+          [
+            71990231,
+            "0F848D22B300"
+          ],
+          [
+            71990237,
+            "807C243001"
+          ],
+          [
+            71990242,
+            "0F85AE22B300"
+          ],
+          [
+            71990248,
+            "488B1B"
+          ],
+          [
+            71990251,
+            "488BCF"
+          ],
+          [
+            71990254,
+            "E80D0B80FE"
+          ],
+          [
+            71990259,
+            "4885DB"
+          ],
+          [
+            71990262,
+            "7446"
+          ],
+          [
+            71990264,
+            "488D4B10"
+          ],
+          [
+            71990268,
+            "488901"
+          ],
+          [
+            71990271,
+            "488B5C2438"
+          ],
+          [
+            71990276,
+            "4883C420"
+          ],
+          [
+            71990280,
+            "5F"
+          ],
+          [
+            71990281,
+            "E932EFB7FB"
+          ]
+        ]
+      }
+    }
+  },
+  "actionDispatch": {
+    "149": "createGlobalBuff"
+  },
+  "childTypes": {
+    "global-input-list": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.GlobalBuffInput>",
+    "assignment-list": "System.Collections.Generic.List`1<Beyond.Blackboard+AssignPair>",
+    "single-payload": "Beyond.Gameplay.Core.GlobalBuffId",
+    "scalar-payload": "Beyond.Blackboard+BlackboardDouble",
+    "target": "Beyond.Gameplay.Core.TargetSettings"
+  },
+  "evidenceBoundary": {
+    "direct": "Selected complete reader windows, generated inherited fields, exact source-to-setter transfers and closed source contexts name the CreateGlobalBuffAction and GlobalBuffInput members. The value wrapper flow separately proves the GlobalBuffId reader argument, addressed owned string field and full eight-byte reference destination.",
+    "conditional": "Original-span composition requires independently authenticated TargetSettings, BlackboardDouble and AssignPair readers. GlobalBuffId.id preserves a signed-length byte payload rather than using its in-memory reference width as wire framing; null wrapper, null string, empty string and null/empty list remain separate states.",
+    "unresolved": "Evaluated count, provider/IFix selection, selected source entity, assignment execution, actual GlobalBuff creation/finish and whole Buff root completeness outside the owning root receipt."
+  }
+}

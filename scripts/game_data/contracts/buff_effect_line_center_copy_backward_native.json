@@ -1,0 +1,30 @@
+{
+  "schema": "endfield.buff-effect-line-center-copy-backward-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-complete-backward-overlap-copy",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "bulkEntryRva": 3009824,
+  "blocks": {
+    "backward": {
+      "startRva": 3011248,
+      "endRva": 3011469,
+      "boundary": "complete original common-dispatch backward target through its plain return, inside authenticated actual bulk body"
+    }
+  },
+  "instructionReference": {
+    "title": "Intel 64 and IA-32 SDM Volume 2B, MOVUPS and MOVAPS",
+    "url": "https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-2b-manual.pdf",
+    "boundary": "Legacy sixteen-byte bit transfers preserve bits above 127 without conversion; aligned MOVAPS memory operands require sixteen-byte alignment."
+  },
+  "evidenceBoundary": {
+    "exact": "Same opened native image revalidates actual argument/dispatch programs and authenticates the complete called bulk body. Every original backward instruction, local edge, width, padding, counter and plain return is checked.",
+    "direct": "The actual common unsigned overlap branch enters this complete program before mode selection. Original caches, aligned initial store, descending chunk body, repeat-header deferred writes, final pending-vector forwarding and every tail join are checked.",
+    "conditional": "N>32 and source<destination<source+N with non-wrapping endpoints, supported vector state and valid stable compatible memory without concurrent overwrite; parent same-element, normal-return, disjoint frame and optional bitset conditions. Distinct byte identities plus decreasing-counter induction prove complete backward copy for arbitrary selected length and every alignment/tail remainder.",
+    "structuralOnly": "Anonymous runtime stride/class/provider representation keeps its existing boundary.",
+    "unresolved": "Actual overlap/mode/CPU/stride selection, compatible allocation/freshness/nonaliasing lifetime, combined general bulk/resize preservation, renderer/parent joins and observed execution."
+  }
+}

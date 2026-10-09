@@ -1,0 +1,446 @@
+{
+  "schema": "endfield.buff-formatter-registration-state-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "provider-registration-arguments-and-selected-lookup-hit-return-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependencies": {
+    "header": "buff_action_union_header_native.json",
+    "provider": "buff_formatter_provider_native.json"
+  },
+  "providerType": "MemoryPack.MemoryPackFormatterProvider",
+  "dictionaryDefinition": "System.Collections.Concurrent.ConcurrentDictionary`2",
+  "dictionaryArguments": [
+    "System.Type",
+    "MemoryPack.IMemoryPackFormatter"
+  ],
+  "dictionaryField": {
+    "name": "formatters",
+    "typeName": "System.Collections.Concurrent.ConcurrentDictionary`2<System.Type,MemoryPack.IMemoryPackFormatter>",
+    "selectedOffsetWord": 24
+  },
+  "classCarrierOffsets": {
+    "staticStorage": 184,
+    "initialized": 224
+  },
+  "methods": {
+    "registerWrap": [
+      428386,
+      "MemoryPack.MemoryPackFormatterProvider",
+      "RegisterWrap",
+      58721264
+    ],
+    "publicLookup": [
+      428395,
+      "MemoryPack.MemoryPackFormatterProvider",
+      "GetFormatter",
+      158368988
+    ],
+    "namedLookup": [
+      428396,
+      "MemoryPack.MemoryPackFormatterProvider",
+      "GetFormatter_",
+      158368248
+    ]
+  },
+  "usages": {
+    "providerClass": {
+      "instructionRva": 58721289,
+      "instructionHex": "488B05E0F18E09",
+      "usageCellRva": 219084272,
+      "usageRawHex": "FDFE032000000000",
+      "tag": 1,
+      "typeIndex": 130942,
+      "typeName": "MemoryPack.MemoryPackFormatterProvider",
+      "typeRawHex": "F1D20000000000000000120000000000"
+    },
+    "setter": {
+      "instructionRva": 58721321,
+      "instructionHex": "4C8B0DA84B8409",
+      "usageCellRva": 218386392,
+      "usageRawHex": "3D8910C000000000",
+      "tag": 6,
+      "methodSpecIndex": 541854,
+      "methodSpec": [
+        286146,
+        2501,
+        -1
+      ],
+      "typeName": "System.Collections.Concurrent.ConcurrentDictionary`2",
+      "methodName": "set_Item",
+      "classArguments": [
+        "System.Type",
+        "MemoryPack.IMemoryPackFormatter"
+      ],
+      "methodArguments": []
+    },
+    "lookup": {
+      "instructionRva": 158368442,
+      "instructionHex": "4C8B0D1FCD9303",
+      "usageCellRva": 218386400,
+      "usageRawHex": "3B8910C000000000",
+      "tag": 6,
+      "methodSpecIndex": 541853,
+      "methodSpec": [
+        286135,
+        2501,
+        -1
+      ],
+      "typeName": "System.Collections.Concurrent.ConcurrentDictionary`2",
+      "methodName": "TryGetValue",
+      "classArguments": [
+        "System.Type",
+        "MemoryPack.IMemoryPackFormatter"
+      ],
+      "methodArguments": []
+    }
+  },
+  "calls": {
+    "dictionarySetter": 62558368,
+    "dictionaryLookup": 47244208,
+    "formatterResult": 47859568,
+    "usageInit": 266848,
+    "classInit": 156352,
+    "nullDictionary": 11199508,
+    "lookupClassInit": 13472
+  },
+  "registerProgram": {
+    "codeWindows": [
+      {
+        "startRva": 58721264,
+        "endRva": 58721405,
+        "sha256": "A31994FE88EFC8CBC3666CEBCB71FDD8CA317233F38D1EF5727110E6879631B5"
+      }
+    ],
+    "program": [
+      [
+        58721264,
+        "48895C2408"
+      ],
+      [
+        58721269,
+        "57"
+      ],
+      [
+        58721270,
+        "4883EC20"
+      ],
+      [
+        58721274,
+        "803D96BD6A0A00"
+      ],
+      [
+        58721281,
+        "488BDA"
+      ],
+      [
+        58721284,
+        "488BF9"
+      ],
+      [
+        58721287,
+        "743C"
+      ],
+      [
+        58721289,
+        "488B05E0F18E09"
+      ],
+      [
+        58721296,
+        "83B8E000000000"
+      ],
+      [
+        58721303,
+        "744D"
+      ],
+      [
+        58721305,
+        "488B88B8000000"
+      ],
+      [
+        58721312,
+        "488B4918"
+      ],
+      [
+        58721316,
+        "4885C9"
+      ],
+      [
+        58721319,
+        "744E"
+      ],
+      [
+        58721321,
+        "4C8B0DA84B8409"
+      ],
+      [
+        58721328,
+        "4C8BC7"
+      ],
+      [
+        58721331,
+        "488BD3"
+      ],
+      [
+        58721334,
+        "488B5C2430"
+      ],
+      [
+        58721339,
+        "4883C420"
+      ],
+      [
+        58721343,
+        "5F"
+      ],
+      [
+        58721344,
+        "E95B8C3A00"
+      ],
+      [
+        58721349,
+        "488D0D8C4B8409"
+      ],
+      [
+        58721356,
+        "E80F0E84FC"
+      ],
+      [
+        58721361,
+        "488D0D98F18E09"
+      ],
+      [
+        58721368,
+        "E8030E84FC"
+      ],
+      [
+        58721373,
+        "C60533BD6A0A01"
+      ],
+      [
+        58721380,
+        "EBA3"
+      ],
+      [
+        58721382,
+        "488BC8"
+      ],
+      [
+        58721385,
+        "E8525E82FC"
+      ],
+      [
+        58721390,
+        "488B057BF18E09"
+      ],
+      [
+        58721397,
+        "EBA2"
+      ],
+      [
+        58721399,
+        "E898DF2AFD"
+      ],
+      [
+        58721404,
+        "CC"
+      ]
+    ]
+  },
+  "publicLookupProgram": {
+    "codeWindows": [
+      {
+        "startRva": 158368988,
+        "endRva": 158369059,
+        "sha256": "FFD5ADCAA47E9B803FD13E901716B25CDB4FCF093FE1E0B3EC637AD66AD4111E"
+      }
+    ],
+    "program": [
+      [
+        158368988,
+        "4053"
+      ],
+      [
+        158368990,
+        "4883EC20"
+      ],
+      [
+        158368994,
+        "803DD2DE7C0400"
+      ],
+      [
+        158369001,
+        "488BD9"
+      ],
+      [
+        158369004,
+        "7513"
+      ],
+      [
+        158369006,
+        "488D0DFB709E03"
+      ],
+      [
+        158369013,
+        "E8668D93F6"
+      ],
+      [
+        158369018,
+        "C605BADE7C0401"
+      ],
+      [
+        158369025,
+        "488B0DE8709E03"
+      ],
+      [
+        158369032,
+        "83B9E000000000"
+      ],
+      [
+        158369039,
+        "7505"
+      ],
+      [
+        158369041,
+        "E8AADD91F6"
+      ],
+      [
+        158369046,
+        "488BCB"
+      ],
+      [
+        158369049,
+        "4883C420"
+      ],
+      [
+        158369053,
+        "5B"
+      ],
+      [
+        158369054,
+        "E94DC269F9"
+      ]
+    ]
+  },
+  "lookupHitProgram": {
+    "codeWindows": [
+      {
+        "startRva": 158368248,
+        "endRva": 158368986,
+        "sha256": "7EC89BE658FDF35F2E8472F7E06CE79601277AAD402A9CD17443034524C737D0"
+      }
+    ],
+    "program": [
+      [
+        158368248,
+        "48895C2410"
+      ],
+      [
+        158368253,
+        "57"
+      ],
+      [
+        158368254,
+        "4883EC20"
+      ],
+      [
+        158368258,
+        "803DB3E17C0400"
+      ],
+      [
+        158368265,
+        "488BD9"
+      ],
+      [
+        158368268,
+        "757F"
+      ],
+      [
+        158368397,
+        "488B0D5C739E03"
+      ],
+      [
+        158368404,
+        "488364243000"
+      ],
+      [
+        158368410,
+        "E801B28FF6"
+      ],
+      [
+        158368415,
+        "488B054A739E03"
+      ],
+      [
+        158368422,
+        "488B88B8000000"
+      ],
+      [
+        158368429,
+        "488B4918"
+      ],
+      [
+        158368433,
+        "4885C9"
+      ],
+      [
+        158368436,
+        "0F841A020000"
+      ],
+      [
+        158368442,
+        "4C8B0D1FCD9303"
+      ],
+      [
+        158368449,
+        "4C8D442430"
+      ],
+      [
+        158368454,
+        "488BD3"
+      ],
+      [
+        158368457,
+        "E8E26060F9"
+      ],
+      [
+        158368462,
+        "84C0"
+      ],
+      [
+        158368464,
+        "0F85EE010000"
+      ],
+      [
+        158368964,
+        "488B442430"
+      ],
+      [
+        158368969,
+        "488B5C2438"
+      ],
+      [
+        158368974,
+        "4883C420"
+      ],
+      [
+        158368978,
+        "5F"
+      ],
+      [
+        158368979,
+        "C3"
+      ]
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Current named static declarations, selected usage cells, closed dictionary MethodSpecs and authenticated complete caller/selected-hit instructions.",
+    "direct": "Original RegisterWrap key and formatter reach the setter together; public Type lookup preserves its key and tails to the same physical result helper called by the array provider; the selected named lookup hit returns its byref output.",
+    "structuralOnly": "Selected provider static field-offset word and class-carrier member displacements. These do not identify live static-storage values or an inflated runtime class.",
+    "conditional": "Stable initialized cells/class/static storage, normal helper returns, preserved Win64 nonvolatile/home-stack state, valid disjoint caller/output storage; selected named lookup reports AL true.",
+    "unresolved": "Dictionary setter mutation and retrieval semantics, inline physical result-helper control, cache/key identity and initialized state, runtime class/MethodInfo/vtable selection, callback cursor equality, positive lists, roots and execution."
+  }
+}

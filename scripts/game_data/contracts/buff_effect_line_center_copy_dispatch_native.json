@@ -1,0 +1,31 @@
+{
+  "schema": "endfield.buff-effect-line-center-copy-dispatch-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-complete-bulk-dispatch-and-store-value-coverage",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "bulkEntryRva": 3009824,
+  "operandDomains": {
+    "countBits": 64,
+    "pointerBits": 64,
+    "modeBits": 32,
+    "optionBits": 8
+  },
+  "parentContracts": {
+    "rep": "buff_effect_line_center_copy_rep_native.json",
+    "small": "buff_effect_line_center_copy_small_native.json",
+    "loops": "buff_effect_line_center_copy_loops_native.json",
+    "nonTemporal": "buff_effect_line_center_copy_non_temporal_native.json",
+    "backward": "buff_effect_line_center_copy_backward_native.json"
+  },
+  "evidenceBoundary": {
+    "exact": "One selected native image authenticates the full called bulk body and revalidates complete small, snapshot, bounded vector, REP, aligned temporal, non-temporal and backward programs through their owning contracts. Every original dispatch block and selected entry/fallthrough join is checked.",
+    "direct": "Actual unsigned size and overlap guards precede mode/option decisions. Both option-false fallthroughs enter the checked vector prefixes; the non-temporal threshold compares remaining after alignment. All selected loops and shared tail entries join their complete original programs.",
+    "conditional": "Exact gap-free disjoint integer interval partitions cover every unsigned count, mode and option bit; each masked alignment residue has its own complete count partition. Valid stable supported compatible ordinary memory, non-wrapping endpoints, no interfering writes and parent same-element/normal-return/disjoint-frame/optional-bitset conditions are required. REP alone requires DF=0. Complete checked stores carry all corresponding initial-source bytes; visibility remains separate.",
+    "structuralOnly": "Anonymous runtime array class stride and provider representations keep their earlier boundaries.",
+    "unresolved": "Actual CPU/mode/option/overlap/stride selection and DF value, global visibility at RET or getter observation, compatible allocation/freshness/nonaliasing lifetime, general resize preservation, renderer/parent configuration identity, recursive stored/list/root admission and observed execution."
+  }
+}

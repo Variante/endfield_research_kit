@@ -217,6 +217,35 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
         reads = program(hook)
         fields = hook.get("fields")
         require(isinstance(fields, list) and len(fields) == len(reads), "retained typed field metadata missing")
+        if "anonymousEntryProof" in hook or name == "buff.AbilityActionData.DispatchAssignData":
+            proof, caller = hook.get("anonymousEntryProof"), hook.get("sourceCaller")
+            require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7"}
+                    and isinstance(proof, dict) and isinstance(caller, dict)
+                    and all(isinstance(field, dict) for field in fields)
+                    and isinstance(caller.get("returnType"), str)
+                    and hook.get("methodIndex") is None and hook.get("returnType") == "unobserved"
+                    and proof.get("dataIsCallerReceiver") is True
+                    and proof.get("argumentRegisters") == {"action": "rdx", "data": "r8", "environment": "r9"}
+                    and isinstance(caller.get("methodIndex"), int)
+                    and proof.get("callerMethodIndex") == caller["methodIndex"],
+                    "invalid anonymous assignment provenance")
+            receiver = hook.get("receiverIdentity")
+            require(isinstance(receiver, dict) and receiver.get("arg") == 1
+                    and receiver.get("type") == caller.get("returnType"),
+                    "invalid anonymous assignment receiver")
+            require(isinstance(caller.get("symbol"), str) and caller["symbol"].endswith(".NewAction")
+                    and isinstance(caller.get("parameters"), list) and len(caller["parameters"]) == 1
+                    and isinstance(caller["parameters"][0], dict), "invalid anonymous assignment caller")
+            expected_types = {"suppliedActionIdentity": (1, caller["returnType"]),
+                              "suppliedDataIdentity": (2, caller["symbol"].rsplit(".", 1)[0]),
+                              "suppliedEnvironmentIdentity": (3, caller["parameters"][0].get("type"))}
+            require(len(fields) == 3 and {field.get("label") for field in fields} == set(expected_types)
+                    and all((field.get("arg"), field.get("type")) == expected_types[field["label"]]
+                            and field.get("valueRepresentation") == "referenceIdentity"
+                            and field.get("kind") == 4 and field.get("offset") == 0
+                            and field.get("chain0") == field.get("chain1") == 4097
+                            and not field.get("fieldPath") and not field.get("argumentRepresentation") for field in fields),
+                    "anonymous assignment requires three pure register identities")
         labels = set()
         for field, read in zip(fields, reads):
             require(isinstance(field, dict) and isinstance(field.get("label"), str) and 0 < len(field["label"]) <= 127,
@@ -229,7 +258,7 @@ def bindings(artifacts: dict[str, dict[str, Any]], limits: Limits) -> tuple[dict
             representation = field.get("valueRepresentation")
             require(representation in (None, "referenceIdentity"), "unsupported value representation")
             if representation == "referenceIdentity":
-                require(profile.get("recipeSchema") == "endfield.mission-trace-capture-recipe.v4"
+                require(profile.get("recipeSchema") in {"endfield.mission-trace-capture-recipe.v4", "endfield.mission-trace-capture-recipe.v5", "endfield.mission-trace-capture-recipe.v6", "endfield.mission-trace-capture-recipe.v7"}
                         and field.get("valueBits") == 64 and field.get("kind") in (1, 4)
                         and field.get("storageType") == "ulong" and field.get("signed") is False,
                         "invalid reference identity binding")
@@ -553,7 +582,8 @@ def inspect_session(session: Path, output_dir: Path, *, join_sources: bool = Fal
                 receiver = hook.get("receiverIdentity")
                 if isinstance(receiver, dict):
                     argument = integer(receiver.get("arg"), "receiver argument", 7)
-                    require(argument == 0 and isinstance(receiver.get("type"), str) and len(receiver["type"]) <= 256, "unsupported receiver identity carrier")
+                    expected_argument = 1 if "anonymousEntryProof" in hooks[index] else 0
+                    require(argument == expected_argument and isinstance(receiver.get("type"), str) and len(receiver["type"]) <= 256, "unsupported receiver identity carrier")
                     decoded["receiverIdentity"] = {"rawPointer": args[argument], "type": receiver["type"],
                                                     "boundary": "Observed entry pointer only; object lifetime and causal ownership unresolved."}
                 payload = (json.dumps(decoded, ensure_ascii=True, separators=(",", ":"), allow_nan=False) + "\n").encode("ascii")

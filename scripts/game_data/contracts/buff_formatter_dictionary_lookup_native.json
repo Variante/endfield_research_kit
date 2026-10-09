@@ -1,0 +1,58 @@
+{
+  "schema": "endfield.buff-formatter-dictionary-lookup-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "anonymous-lookup-index-chain-and-disabled-barrier-output-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependency": "buff_formatter_registration_state_native.json",
+  "entryRva": 47244208,
+  "barrierFlagCellRva": 233435660,
+  "layout": {
+    "tables": 16,
+    "comparer": 24,
+    "methodContext": 32,
+    "genericContext": 192,
+    "comparerContext": 96,
+    "tablesContext": 232,
+    "bucketStorage": 16,
+    "arrayContext": 16,
+    "preparedFlags": 312,
+    "initialized": 224,
+    "arrayCount": 24,
+    "arrayElements": 32,
+    "arrayElementScale": 8,
+    "nodeWord": 40,
+    "nodeKey": 16,
+    "nodeNext": 32,
+    "nodeValue": 24,
+    "keyErrorContext": 88
+  },
+  "calls": {
+    "prepareCarrier": 267328,
+    "initializeCarrier": 156352,
+    "keyWordProducer": 238784,
+    "candidatePredicate": 239408,
+    "keyErrorCarrier": 1015872,
+    "throwKeyError": 145940880,
+    "nullError": 11199508,
+    "boundsError": 74960
+  },
+  "codeWindows": [
+    {"startRva": 47244208, "endRva": 47244240, "sha256": "5E3F88A8CC2E9251E53DC8FE64EA40D2D09F72621999500D5FE5271A7F52474E"},
+    {"startRva": 47244240, "endRva": 47244658, "sha256": "403D5AA3FEDC656DD4FF8E0E175585B045C85D9CF579B161D575476CB2383D1A"},
+    {"startRva": 47244658, "endRva": 47244741, "sha256": "9E106BE208C4C7E5FEC138DBAAA9A1D9C4BA8915C6735618CCE2E79008BAE697"},
+    {"startRva": 47244741, "endRva": 47244799, "sha256": "235E26AFDB753C12C27976A3BAFB5463EBB22B2039195CCD664E458D8661380F"},
+    {"startRva": 47244799, "endRva": 47244805, "sha256": "F998CC50D9DD85E7B1B0A23881EF1EC0B736D1295B09D4720BAF357664E0E9B8"},
+    {"startRva": 47244805, "endRva": 47244817, "sha256": "D3D6396C58985FC45D2FF2F2D775930CC8CFEF859F87EAD2A43A1B08AE8B2477"}
+  ],
+  "evidenceBoundary": {
+    "exact": "Current code bytes and complete selected owned instruction grammar, with all local branches landing at checked instruction boundaries.",
+    "direct": "Original producer word reaches the sign-cleared dword division; remainder supplies the guarded slot index. Original word remains intact for candidate word comparison. Predicate arguments retain original query and candidate keys. Miss clears the full byref output and returns AL=false; hit stores the full node value and returns AL=true through the restored frame.",
+    "structuralOnly": "Layout names label observed anonymous carrier and slot expressions; closed generic runtime field names, class storage and managed array interpretation are not independently proved.",
+    "conditional": "Ordinary route requires stable compatible valid storage, nonnull key/comparer/context/carriers, normal ABI-compatible helper returns, positive signed divisor, finite stable chain, disjoint valid byref output and disabled barrier flag for a hit. LOCK stack operations remain writes/order operations; whole-method purity is not claimed.",
+    "unresolved": "Producer hash semantics, actual predicate equality, setter mutation, live cache contents, active barrier effects/reference lifetime, physical result-helper control, inflated class/MethodInfo/vtable identity, actual array callback and cursor equivalence, positive lists and complete roots."
+  }
+}

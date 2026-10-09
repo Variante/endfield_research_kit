@@ -1,0 +1,282 @@
+{
+  "schema": "endfield.buff-animator-param-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "setAnimatorParam": {
+      "sourceContract": "buff_14a_native.json",
+      "wrapperTypeDefinition": 16427,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAnimatorParamAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9806,
+      "runtimeTypeName": "Beyond.Gameplay.Core.SetAnimatorParamAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member8",
+      "readerMethod": [
+        122701,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAnimatorParamAction_DataForMemoryPack",
+        "Deserialize",
+        67770384
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67770551,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 67770528,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84620100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67770591,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 67770569,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84390100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 67770556
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67770624,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 67770602,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84180100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67770657,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 67770635,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84F70000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "actionOnEnd",
+          "declaredType": "bool",
+          "setterMethodIndex": 122695,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67770691,
+            "targetRva": 67772336,
+            "methodIndex": 122695
+          },
+          "sourceCall": {
+            "rva": 67770668,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84D60000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "endAction",
+          "declaredType": "Beyond.Gameplay.Core.AnimatorParamAction",
+          "setterMethodIndex": 122696,
+          "kind": "animator-param-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67770732,
+            "targetRva": 67772384,
+            "methodIndex": 122696
+          },
+          "sourceCall": {
+            "rva": 67770709,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84AD0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 67770696
+        },
+        {
+          "fieldName": "paramAction",
+          "declaredType": "Beyond.Gameplay.Core.AnimatorParamAction",
+          "setterMethodIndex": 122697,
+          "kind": "animator-param-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67770773,
+            "targetRva": 67772432,
+            "methodIndex": 122697
+          },
+          "sourceCall": {
+            "rva": 67770750,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84840000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 67770737
+        },
+        {
+          "fieldName": "paramName",
+          "declaredType": "string",
+          "setterMethodIndex": 122698,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67770803,
+            "targetRva": 67772480,
+            "methodIndex": 122698
+          },
+          "sourceCall": {
+            "rva": 67770784,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB"
+        }
+      ]
+    },
+    "animatorParam": {
+      "sourceContract": "buff_14a_native.json",
+      "wrapperTypeDefinition": 22427,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimatorParamActionForMemoryPack",
+      "runtimeTypeDefinition": 9330,
+      "runtimeTypeName": "Beyond.Gameplay.Core.AnimatorParamAction",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "animatorParamHeader5",
+      "readerMethod": [
+        162805,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimatorParamActionForMemoryPack",
+        "Deserialize",
+        68314624
+      ],
+      "members": [
+        {
+          "fieldName": "animatorParam",
+          "declaredType": "int",
+          "setterMethodIndex": 162798,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 68314737,
+            "targetRva": 84401920,
+            "methodIndex": 162798
+          },
+          "sourceCall": {
+            "rva": 68314715,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84DE0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "boolValue",
+          "declaredType": "bool",
+          "setterMethodIndex": 162799,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 68314771,
+            "targetRva": 84405664,
+            "methodIndex": 162799
+          },
+          "sourceCall": {
+            "rva": 68314748,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84BD0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "floatValue",
+          "declaredType": "float",
+          "setterMethodIndex": 162800,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "setter",
+            "rva": 68314805,
+            "targetRva": 84403952,
+            "methodIndex": 162800
+          },
+          "sourceCall": {
+            "rva": 68314782,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "4885F60F849B0000004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "intValue",
+          "declaredType": "int",
+          "setterMethodIndex": 162801,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 68314834,
+            "targetRva": 84402828,
+            "methodIndex": 162801
+          },
+          "sourceCall": {
+            "rva": 68314816,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F6747D4533C08BD0488BCE"
+        },
+        {
+          "fieldName": "paramType",
+          "declaredType": "UnityEngine.AnimatorControllerParameterType",
+          "setterMethodIndex": 162802,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 68314870,
+            "targetRva": 84401892,
+            "methodIndex": 162802
+          },
+          "sourceCall": {
+            "rva": 68314852,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885DB74594533C08BD0488BCB",
+          "sourceContextInstructionRva": 68314839
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "330": "setAnimatorParam"
+  },
+  "childTypes": {
+    "animator-param-profile": "Beyond.Gameplay.Core.AnimatorParamAction"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected current inputs and authenticated complete parent/child source windows and wrapper identities.",
+    "direct": "Parent named source/destination order, two distinct closed AnimatorParamAction contexts and the child five named primitive/enum fields.",
+    "conditional": "Ordinary compiled selected formatter paths; nullable parent and two independently nullable child wrappers. Flags, integer/float/enum bits and signed nullable name payload are retained without evaluating them.",
+    "unresolved": "Parameter-name encoding, animator parameter dispatch, actionOnEnd behavior, selected receiver/state and actual animation effects. Enclosing root admission is separate."
+  }
+}

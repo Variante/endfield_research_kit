@@ -41,10 +41,12 @@ def select_sources(export_root: Path, mission: str, *, profile: str = "mission")
         if not provenance.is_file() or not sources:
             raise SourceArchiveError("mission_source_archive: buff requires export provenance and nonempty game/Json/BuffData")
         selected = [(provenance, "exportProvenance"), *((path, "buffData") for path in sources)]
+        skills = sorted((export_root / "game/Json/SkillData").glob("*.json"))
+        selected.extend((path, "skillData") for path in skills)
         selected.extend((path, "buffIdentityTable") for path in sorted((export_root / "game/Table").glob("Buff*.json")))
         if len(selected) > MAX_FILES:
             raise SourceArchiveError(f"mission_source_archive: selected {len(selected)} files exceeds {MAX_FILES}")
-        return selected, []
+        return selected, ([] if skills else ["No available SkillData source bytes; skill source joins remain unresolved."])
     if not re.fullmatch(r"[a-z0-9_]{1,80}", mission):
         raise SourceArchiveError("mission_source_archive: invalid mission ID")
     required = [(export_root / "meta/extraction/provenance.json", "exportProvenance")]
@@ -122,8 +124,8 @@ def archive(export_root: Path, output_dir: Path, mission: str, *, profile: str =
         "unarchivedScope": ("Unity.sqlite objects, other JSON families, media and non-CN localization are outside this bounded archive. Referenced sources outside the selected families remain unresolved."
                             if mission == "all" else "Other missions, indirect template dependencies, Unity.sqlite objects, media, and non-CN localization are outside this bounded archive.")}
     if profile == "buff":
-        inventory.update(selectionScope="buffData", selection="All exported BuffData JSON bytes and available Buff identity tables, with export provenance retained verbatim.",
-                         unarchivedScope="SkillData, character/ability/entity definitions, other JSON families, Unity objects and media are not archived. Referenced sources outside BuffData remain unresolved.")
+        inventory.update(selectionScope="buffData", selection="All exported BuffData and available SkillData JSON bytes and Buff identity tables, with export provenance retained verbatim.",
+                         unarchivedScope="Character/ability/entity definitions, other JSON families, Unity objects and media are not archived. Referenced sources outside BuffData and SkillData remain unresolved.")
     try:
         for path, role in selected:
             if not path.resolve().is_relative_to(export_root):
@@ -182,7 +184,7 @@ def archive(export_root: Path, output_dir: Path, mission: str, *, profile: str =
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--mission", default="all", help="All available mission sources by default; supply a mission key for a smaller snapshot.")
-    parser.add_argument("--profile", choices=("mission", "buff"), default="mission", help="Buff selects BuffData source bytes without requiring mission definitions.")
+    parser.add_argument("--profile", choices=("mission", "buff"), default="mission", help="Buff selects BuffData and available SkillData source bytes without requiring mission definitions.")
     parser.add_argument("--export-root", type=Path, default=REPO_ROOT / "export_full")
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args(argv)

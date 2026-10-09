@@ -1,0 +1,141 @@
+{
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "passiveUi": {
+      "sourceContract": "buff_fc_native.json",
+      "wrapperTypeDefinition": 16273,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NotifyCharPassiveUIAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9617,
+      "runtimeTypeName": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member6",
+      "readerMethod": [
+        121496,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_NotifyCharPassiveUIAction_DataForMemoryPack",
+        "Deserialize",
+        69693552
+      ],
+      "readerWindowStart": 69693552,
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 69693696,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69693719,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F842A0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 69693737,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69693759,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84010100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 69693724
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 69693770,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69693792,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84E00000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 69693803,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69693825,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84BF0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 121492,
+          "kind": "target-profile",
+          "sourceCall": {
+            "rva": 69693843,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69693866,
+            "targetRva": 69694016,
+            "methodIndex": 121492
+          },
+          "sourceToDestinationHex": "4885F60F84970000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 69693830
+        },
+        {
+          "fieldName": "value",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 121493,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 69693884,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69693903,
+            "targetRva": 69694064,
+            "methodIndex": 121493
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB",
+          "sourceContextInstructionRva": 69693871
+        }
+      ]
+    }
+  },
+  "schema": "endfield.buff-notify-char-passive-ui-action-native-contract.v1",
+  "status": "exact-current-build",
+  "actionDispatch": {
+    "252": "passiveUi"
+  },
+  "evidenceBoundary": {
+    "exact": "Six stored fields, source-result stores, TargetSettings and BlackboardDouble closed types and exact child spans.",
+    "unresolved": "Live target selection, scalar evaluation, UI call and visible passive indicator."
+  }
+}

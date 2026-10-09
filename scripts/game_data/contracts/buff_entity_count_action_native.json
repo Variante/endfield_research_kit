@@ -1,0 +1,218 @@
+{
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "entityCount": {
+      "sourceContract": "buff_61_native.json",
+      "wrapperTypeDefinition": 16629,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckEntityNum_DataForMemoryPack",
+      "runtimeTypeDefinition": 13499,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member10",
+      "readerMethod": [
+        124242,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckEntityNum_DataForMemoryPack",
+        "Deserialize",
+        58575504
+      ],
+      "readerWindowStart": 58575504,
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58575648,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58575675,
+            "rawHex": "884110",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 16,
+            "baseRegister": 1
+          },
+          "sourceToDestinationHex": "4885F60F84BB010000488B4E104885C90F84AE010000"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58575691,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58575718,
+            "rawHex": "894114",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 20,
+            "baseRegister": 1
+          },
+          "sourceToDestinationHex": "4885F60F8490010000488B4E104885C90F8483010000",
+          "sourceContextInstructionRva": 58575681
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58575727,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58575754,
+            "rawHex": "894118",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 24,
+            "baseRegister": 1
+          },
+          "sourceToDestinationHex": "4885F60F846C010000488B4E104885C90F845F010000"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58575763,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58575790,
+            "rawHex": "89411C",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 28,
+            "baseRegister": 1
+          },
+          "sourceToDestinationHex": "4885F60F8448010000488B4E104885C90F843B010000"
+        },
+        {
+          "fieldName": "checkTarget",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 124234,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 58575806,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58575829,
+            "targetRva": 58575136,
+            "methodIndex": 124234
+          },
+          "sourceToDestinationHex": "4885F60F841D0100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 58575796
+        },
+        {
+          "fieldName": "compareType",
+          "declaredType": "Beyond.CompareType",
+          "setterMethodIndex": 124235,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58575847,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58575869,
+            "targetRva": 58575184,
+            "methodIndex": 124235
+          },
+          "sourceToDestinationHex": "4885F60F84F40000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 58575834
+        },
+        {
+          "fieldName": "containsHittableTarget",
+          "declaredType": "bool",
+          "setterMethodIndex": 124236,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58575880,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58575903,
+            "targetRva": 58575232,
+            "methodIndex": 124236
+          },
+          "sourceToDestinationHex": "4885F60F84D30000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "excludeDeadEntity",
+          "declaredType": "bool",
+          "setterMethodIndex": 124237,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58575914,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58575937,
+            "targetRva": 58575280,
+            "methodIndex": 124237
+          },
+          "sourceToDestinationHex": "4885F60F84B10000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "minNum",
+          "declaredType": "int",
+          "setterMethodIndex": 124238,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58575948,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58575970,
+            "targetRva": 58575328,
+            "methodIndex": 124238
+          },
+          "sourceToDestinationHex": "4885F60F848F0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "storeKey",
+          "declaredType": "string",
+          "setterMethodIndex": 124239,
+          "kind": "byte-payload",
+          "sourceCall": {
+            "rva": 58575981,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58576000,
+            "targetRva": 58575376,
+            "methodIndex": 124239
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB"
+        }
+      ]
+    }
+  },
+  "schema": "endfield.buff-entity-count-action-native-contract.v1",
+  "status": "exact-current-build",
+  "actionDispatch": {
+    "97": "entityCount"
+  },
+  "evidenceBoundary": {
+    "exact": "Current native formatter reads, generated declarations and actual source-result stores name all ten fields, including TargetSettings and the plain int minNum.",
+    "conditional": "Child schemas close only on authenticated original spans; parent maps and all thirty root fields must separately reach physical EOF.",
+    "unresolved": "Selected live entities, evaluated count, comparison outcome and storeKey use."
+  }
+}

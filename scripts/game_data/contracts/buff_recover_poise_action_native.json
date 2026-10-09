@@ -1,0 +1,234 @@
+{
+  "schema": "endfield.buff-recover-poise-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "actionDispatch": {
+    "296": "recoverPoise"
+  },
+  "reviewedDependencies": [
+    "buff_128_native.json",
+    "buff_damage_action_native.json",
+    "buff_ec_native.json"
+  ],
+  "records": {
+    "recoverPoise": {
+      "sourceContract": "buff_128_native.json",
+      "wrapperTypeDefinition": 16357,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverPoiseAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9728,
+      "runtimeTypeName": "Beyond.Gameplay.Core.RecoverPoiseAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member11",
+      "readerMethod": [
+        122198,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverPoiseAction_DataForMemoryPack",
+        "Deserialize",
+        58164432
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164599,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 58164576,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F840F0200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164639,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 58164617,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84E60100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 58164604
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164672,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 58164650,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84C50100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164705,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 58164683,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84A40100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "alwaysNext",
+          "declaredType": "bool",
+          "setterMethodIndex": 122189,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164739,
+            "targetRva": 58165136,
+            "methodIndex": 122189
+          },
+          "sourceCall": {
+            "rva": 58164716,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84830100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "effectData",
+          "declaredType": "Beyond.Gameplay.EffectActionCfg",
+          "setterMethodIndex": 122190,
+          "kind": "effect-configuration-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164780,
+            "targetRva": 58165184,
+            "methodIndex": 122190
+          },
+          "sourceCall": {
+            "rva": 58164757,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F845A0100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 58164744
+        },
+        {
+          "fieldName": "healer",
+          "declaredType": "Beyond.Gameplay.ActionTargetType",
+          "setterMethodIndex": 122191,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164820,
+            "targetRva": 58165232,
+            "methodIndex": 122191
+          },
+          "sourceCall": {
+            "rva": 58164798,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84310100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 58164785
+        },
+        {
+          "fieldName": "playHealEffect",
+          "declaredType": "bool",
+          "setterMethodIndex": 122192,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164854,
+            "targetRva": 58165280,
+            "methodIndex": 122192
+          },
+          "sourceCall": {
+            "rva": 58164831,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84100100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "poiseType",
+          "declaredType": "Beyond.GEnums.DamageType",
+          "setterMethodIndex": 122193,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164894,
+            "targetRva": 58165328,
+            "methodIndex": 122193
+          },
+          "sourceCall": {
+            "rva": 58164872,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84E70000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 58164859
+        },
+        {
+          "fieldName": "recoverValue",
+          "declaredType": "Beyond.Gameplay.Core.CalculationBase",
+          "setterMethodIndex": 122194,
+          "kind": "calculation-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164935,
+            "targetRva": 58165376,
+            "methodIndex": 122194
+          },
+          "sourceCall": {
+            "rva": 58164912,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84BF0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 58164899
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 122195,
+          "kind": "target-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 58164976,
+            "targetRva": 58165424,
+            "methodIndex": 122195
+          },
+          "sourceCall": {
+            "rva": 58164953,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885DB0F84960000004533C0488BD0488BCB",
+          "sourceContextInstructionRva": 58164940
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native named read/destination order and typed effect, CalculationBase and TargetSettings source contexts.",
+    "conditional": "Original action spans compose independently admitted EffectActionCfg, calculation and target children; unsupported recursive child paths refuse the action.",
+    "unresolved": "Actual poise recovery, evaluated calculation, selected targets, effect playback and execution policy."
+  }
+}

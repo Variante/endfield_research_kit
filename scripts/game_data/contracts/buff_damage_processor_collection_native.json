@@ -1,0 +1,88 @@
+{
+  "schema": "endfield.buff-damage-processor-collection-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependencies": {
+    "owner": "buff_damage_action_native.json",
+    "ownerSource": "buff_9a_native.json",
+    "modifier": "buff_damage_modifier_child_native.json",
+    "countSource": "buff_b4_native.json",
+    "scalar": "buff_damage_scalar_processor_child_native.json",
+    "scale": "buff_damage_scale_processor_child_native.json",
+    "text": "buff_damage_text_processor_child_native.json",
+    "instant": "buff_damage_instant_modify_attribute_processor_native.json",
+    "modifyCalc": "buff_damage_modify_calc_result_processor_child_native.json"
+  },
+  "owner": {
+    "record": "unit",
+    "sourceMemberIndex": 8,
+    "fieldName": "damageProcessors",
+    "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageProcessorBase>",
+    "runtimeTypeName": "Beyond.Gameplay.Core.DamageAction+DamageUnit"
+  },
+  "sourceContext": {
+    "instructionRva": 58585382,
+    "instructionHex": "488B1553248809",
+    "cellVa": 6660953472,
+    "usageRawHex": "1FA312C000000000",
+    "methodSpecIndex": 610703,
+    "methodSpec": [
+      428462,
+      -1,
+      62521
+    ],
+    "argumentRawHex": "38CB258D010000000000150000000000",
+    "typeDefinition": 37521,
+    "typeName": "System.Collections.Generic.List`1",
+    "generic": {
+      "carrierRawHex": "3878288D010000005075E78A0100000000000000000000000000000000000000",
+      "baseRawHex": "91920000000000000000120000000000",
+      "elementInstantiationIndex": 14393,
+      "elementArguments": [
+        "6B270000000000000000120000000000"
+      ]
+    },
+    "typeKind": 21
+  },
+  "sourceCall": {
+    "rva": 58585392,
+    "targetRva": 58849520
+  },
+  "conditionalCountSource": {
+    "codeWindowIndexes": [
+      11
+    ],
+    "dataWindowIndexes": [
+      0,
+      1,
+      2
+    ],
+    "formatterType": "MemoryPack.Formatters.ListFormatter`1",
+    "method": "Deserialize",
+    "referenceElementType": "object"
+  },
+  "wire": {
+    "count": "signed-i32-null-minus-one",
+    "minimumFollowingUnitBytes": 42,
+    "supportedUnionTags": [
+      0,
+      2,
+      3,
+      4,
+      5,
+      6,
+      9,
+      10
+    ],
+    "nullUnionElements": "unresolved-refuse"
+  },
+  "evidenceBoundary": {
+    "direct": "The named DamageUnit source member and DamageModifier source share one authenticated closed List<DamageProcessorBase> context and actual source helper. Each selected processor is independently decoded from its original byte span under its own current native proof.",
+    "conditional": "The registered shared List<Object> reference formatter supplies the nullable signed count and ordered element loop grammar. Current original owners must reproduce complete following fields and roots. Live inflated-provider and refill/error selection are not established.",
+    "unresolved": "Other processor variants and null union elements, live provider selection, evaluated arithmetic and accepted gameplay mutations."
+  }
+}

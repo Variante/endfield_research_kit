@@ -1,0 +1,67 @@
+{
+  "schema": "endfield.buff-effect-line-center-copy-rep-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-forward-copy-via-selected-rep-bulk-branches",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "bulkEntryRva": 3009824,
+  "blocks": {
+    "entry": {
+      "startRva": 3009824,
+      "endRva": 3009844,
+      "boundary": "complete original selection block inside parent authenticated bulk window"
+    },
+    "medium": {
+      "startRva": 3010112,
+      "endRva": 3010118,
+      "boundary": "complete original selection block inside parent authenticated bulk window"
+    },
+    "common": {
+      "startRva": 3010141,
+      "endRva": 3010205,
+      "boundary": "complete original selection block inside parent authenticated bulk window"
+    },
+    "low": {
+      "startRva": 3010912,
+      "endRva": 3010934,
+      "boundary": "complete original selection block inside parent authenticated bulk window"
+    }
+  },
+  "leafWindow": {
+    "startRva": 3009808,
+    "endRva": 3009824,
+    "sha256": "25B23C83D168CCBE2481D06E4096E25D14B8D1745A23FA1A009F3C023F2D533F",
+    "boundary": "complete actual conditional target entry through its first RET; no invented unwind ownership"
+  },
+  "selectionConstants": {
+    "smallLimit": 15,
+    "mediumLimit": 32,
+    "modeThreshold": 3,
+    "highRepMinimum": 8192,
+    "highRepMaximum": 1572864,
+    "lowRepMinimum": 2048,
+    "optionMask": 2
+  },
+  "architectureReferences": [
+    {
+      "url": "https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-2b-manual.pdf",
+      "reference": "Intel SDM Volume 2B MOVS and REP entries",
+      "boundary": "ISA semantics of default-address F3 A4; no actual DF, memory validity or execution observation"
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/cpp/build/x64-software-conventions?view=msvc-170",
+      "reference": "Microsoft x64 direction-flag convention",
+      "boundary": "ABI expectation only; actual DF=0 remains an explicit conditional prerequisite"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Four complete current bulk-selection blocks and the actual REP target entry through RET, authenticated against current native inputs and parent full bulk window.",
+    "direct": "Actual entry sets the destination return value; unsigned size/mode, source/destination overlap and shared byte-option branches reach a leaf that saves RSI/RDI, forwards byte-copy operands to REP MOVSB, restores the registers and returns.",
+    "structuralOnly": "Mode dword and option byte are anonymous runtime selection cells; neither their provider names nor current values are established.",
+    "conditional": "Parent same-element copy selections, runtime Vector3 stride equal to the separately checked twelve-byte width, REP-selected length/mode/option, DF=0, valid stable non-wrapping memory, forward-safe overlap, disjoint caller frame and optional bitset, normal completion and successful optional bitset retry.",
+    "unresolved": "Other small/snapshot/vector/non-temporal/backward branches, observed DF/mode/option/array stride, allocation and alias lifetimes, general old-value preservation across resize, renderer and parent lifetime joins, and actual execution."
+  }
+}

@@ -45,34 +45,10 @@ def _native_fail(check: str, *, expected: Any, actual: Any, family: str,
 
 
 def _runtime_shape(image: Any, section: dict[str, Any], *, family: str) -> None:
-    runtime = section["runtimeType"]
-    actual = {"typeName": image.type_name(runtime["typeDefinition"]),
-              "fieldOffsets": runtime_type_field_offsets(image.metadata, image.pe, image.registration,
-                                                         runtime["typeDefinition"])}
-    expected = {key: runtime[key] for key in actual}
-    if actual != expected:
-        _native_fail("runtime-field-offsets", expected=expected, actual=actual, family=family)
-    for row in section["parameterTypes"]:
-        method = image.metadata.methods[row["setterMethodIndex"]]
-        if method.parameter_count != 1:
-            _native_fail("setter-arity", expected=1, actual=method.parameter_count,
-                         family=family, method=row["setterMethodIndex"])
-        parameter = image.metadata.parameters[method.parameter_start]
-        pointer = image.pe.u64_at_va(int(image.registration["types"], 16) + parameter.type_index * 8)
-        actual = {"parameterTypeIndex": parameter.type_index,
-                  "rawHex": image.pe.bytes_at_va(pointer, 16).hex().upper(),
-                  "typeName": runtime_type_name(image.pe, image.metadata, pointer)}
-        expected = {key: row[key] for key in actual}
-        if actual != expected:
-            _native_fail("setter-parameter-type", expected=expected, actual=actual,
-                         family=family, method=row["setterMethodIndex"])
-    image.check_instruction_windows(section["sourceAndDestinationInstructions"], label=LABEL)
-    for _rva, raw_hex, role in section["sourceAndDestinationInstructions"]:
-        if role.endswith(" destination"):
-            name = role.removesuffix(" destination")
-            if bytes.fromhex(raw_hex)[-1] != runtime["fieldOffsets"].get(name):
-                _native_fail("field-destination", expected={name: runtime["fieldOffsets"].get(name)},
-                             actual=bytes.fromhex(raw_hex)[-1], family=family)
+    from scripts.game_data.memorypack import named_native_records
+    def fail(check, expected, actual):
+        _native_fail(check, expected=expected, actual=actual, family=family)
+    named_native_records.check_runtime_shape(image, section, label=LABEL, fail=fail)
 
 
 def validate_current_native_contract() -> dict[str, Any]:
@@ -142,24 +118,9 @@ def validate_current_native_contract() -> dict[str, Any]:
                     family=family, method=dependency["methods"][section["methodRows"][-1]][0])
         _runtime_shape(image, section, family=family)
         orders[family] = section["readOrder"]
-    sequence = contract["sequence"]
-    dependency = json.loads((CONTRACTS_DIR / sequence["dependency"]).read_bytes())
-    if dependency.get("nativeInputs") != expected:
-        raise ValueError(f"{LABEL}.native:sequence-build")
-    source = dependency[sequence["section"]]
-    for row in source["methods"]:
-        image.validate_method_row(row, label=LABEL)
-    image.check_windows(source["codeWindows"], label=LABEL)
-    owner = image.metadata.types[source["wrapperTypeDefinition"]]
-    if (image.type_name(source["wrapperTypeDefinition"]) != source["wrapperName"]
-            or image.setter_methods(owner, parameter="typeName", label=LABEL) != source["setterMethods"]
-            or [r[0] for r in source["setterMethods"]] != [r["setterMethodIndex"] for r in sequence["parameterTypes"]]):
-        raise ValueError(f"{LABEL}.native:sequence-setters")
-    _runtime_shape(image, sequence, family="sequence")
-    sequence_order = [row[1].removeprefix("set___").removesuffix("__") for row in source["setterMethods"]]
-    if (orders != {"ability": ["abilityEvent", "actions"], "buff": ["actions", "buffEvent"]}
-            or sequence_order != ["actionData", "onlyExecuteWhenSourceIsGuard", "onlyExecuteWhenSourceIsMainChar"]
-            or sequence["parameterTypes"][0]["typeName"] != "Beyond.Gameplay.Core.AbilityAction+AbilityActionData[]"):
+    from scripts.game_data.memorypack import buff_sequence
+    sequence_order = buff_sequence.validate_selected_source(image, contract)
+    if orders != {"ability": ["abilityEvent", "actions"], "buff": ["actions", "buffEvent"]}:
         raise ValueError(f"{LABEL}.native:ordered-typed-plan")
     child = actions.validate_current_native_contract()
     if (child.get("status") != "validated" or any(child["nativeInputs"][k] != expected[k]
@@ -183,7 +144,24 @@ def contract_source_paths() -> list[Path]:
     seen = set()
     pending = [CONTRACT_PATH, actions.damage.CONTRACT_PATH, actions.aura_heal.CONTRACT_PATH,
                actions.skill_stack_interrupt.CONTRACT_PATH, actions.vitals.CONTRACT_PATH,
-               actions.data_transfer.CONTRACT_PATH]
+               actions.data_transfer.CONTRACT_PATH, actions.probability.CONTRACT_PATH,
+               actions.selector_children.distance_owner.CONTRACT_PATH, actions.entity_count.CONTRACT_PATH, actions.passive_ui.CONTRACT_PATH,
+               actions.cost.CONTRACT_PATH, actions.timed_marker.CONTRACT_PATH,
+               actions.armor_condition.CONTRACT_PATH, actions.debug_print.CONTRACT_PATH,
+               actions.curve_actions.CONTRACT_PATH, actions.animation_curve.CONTRACT_PATH,
+               actions.marker_mask_actions.CONTRACT_PATH, actions.tag_sequence_actions.CONTRACT_PATH,
+               actions.spawn_entity.CONTRACT_PATH, actions.camera_impulse.CONTRACT_PATH, actions.leaf_actions.CONTRACT_PATH,
+               actions.keyword_actions.CONTRACT_PATH, actions.launch_projectile.CONTRACT_PATH, actions.ignite_text.CONTRACT_PATH,
+               actions.global_creation.CONTRACT_PATH, actions.switch.CONTRACT_PATH, actions.weapon_visual.CONTRACT_PATH,
+               actions.random_point.CONTRACT_PATH, actions.recover_poise.CONTRACT_PATH,
+               actions.spell_infliction.CONTRACT_PATH,
+               actions.animation_sequences.CONTRACT_PATH,
+               actions.custom_event.CONTRACT_PATH, actions.direct_target_actions.CONTRACT_PATH,
+               actions.check_distance.CONTRACT_PATH, actions.shape_finder.CONTRACT_PATH,
+               actions.finish_global.CONTRACT_PATH, actions.blow_off.CONTRACT_PATH, actions.cast_skill.CONTRACT_PATH,
+               actions.animator_param.CONTRACT_PATH, actions.fixed_point.CONTRACT_PATH,
+               actions.postprocessors.CONTRACT_PATH, actions.direction_children.CONTRACT_PATH,
+               actions.camera_control_state.CONTRACT_PATH]
     def references(value: Any):
         if isinstance(value, dict):
             for child in value.values():
@@ -211,8 +189,10 @@ def validate_recorded_event_children(receipt: dict[str, Any], *, native_validati
                 "effectVectors", "direction", "selector", "characterTeamFinder",
                 "finish", "findSettings", "armor", "armorValues", "directTargetActions",
                 "ownerSpawnedFinder", "zeroValidators", "tagQueryValidator", "ifElse",
-                "compare", "modify", "checkStack", "buffIdActions", "blackboardString", "selectorGeometry",
-                "damage", "auraHeal", "skillStackInterrupt", "vitals", "dataTransfer")
+                "compare", "modify", "checkStack", "buffIdActions", "blackboardString", "selectorGeometry", "randomPointFinder", "recoverPoise", "spellInfliction",
+                "checkDistance", "shapeFinder", "colliderShape", "animationSequenceActions", "customAbilityEvent", "finishGlobal", "blowOff", "castSkill", "animatorParamAction", "cameraControlState", "fixedPointFinder", "selectorPostprocessors", "directionTargets",
+                "damage", "auraHeal", "skillStackInterrupt", "vitals", "dataTransfer", "probability", "distanceValidator", "entityCount", "passiveUi",
+                "cost", "timedMarker", "superArmorCondition", "debugPrint", "animationCurve", "curveActions", "markerMaskActions", "sequence", "tagSequenceActions", "spawnEntity", "cameraImpulse", "leafActions", "keywordActions", "launchProjectile", "igniteText", "globalCreation", "switch", "weaponVisual")
     children = native_validation.get("recursiveActions", {}).get("children", {})
     expected_inputs = root_native.get("nativeInputs") or {}
     failed_children = [key for key in required
@@ -268,41 +248,15 @@ def decode_event_map_list(data: bytes, *, source: str, logical_sha256: str,
     reader = Reader(data, source, end)
     reader.pos = start
     def read_sequence() -> dict[str, Any]:
+        from scripts.game_data.memorypack import buff_sequence
         begin = reader.pos
-        if reader.peek() == 0xFF:
-            reader.take(1, "null-sequence")
+        value = buff_sequence.decode_value(data, source, logical_sha256, begin, reader.limit,
+            native_validation["recursiveActions"], 0, require_end=False)
+        reader.pos = value["end"]
+        if value["status"] == "exact-null":
             return {"start": begin, "end": reader.pos, "status": "exact-null", "namedFields": []}
-        reader.header(3)
-        actions_start = reader.pos
-        count = reader.count(1, reserve=2, nullable=True)
-        elements = []
-        for _ in range(max(0, count)):
-            a = reader.pos
-            lead = reader.peek()
-            if lead == 0xFF:
-                reader.take(1, "null-action")
-                elements.append({"start": a, "end": reader.pos, "status": "exact-null"})
-                continue
-            tag = lead
-            if lead == 0xFA:
-                if a + 3 > reader.limit:
-                    raise ValueError(f"{LABEL}:truncated-extended-tag-at={a}")
-                tag = int.from_bytes(data[a + 1:a + 3], "little")
-            if tag not in actions.SUPPORTED_TAGS:
-                raise ValueError(f"{LABEL}:unsupported-action-at={a}; tag={tag}")
-            reader.action(1)
-            child = actions.decode_action(data, source=source, digest=logical_sha256,
-                                          start=a, end=reader.pos, tag=tag,
-                                          native_validation=native_validation["recursiveActions"])
-            if child.get("recursiveStoredSchemaExact") is not True or [child.get("start"), child.get("end")] != [a, reader.pos]:
-                raise ValueError(f"{LABEL}:incomplete-action-at={a}")
-            elements.append(child)
-        fields = [{"name": "actionData", "start": actions_start, "end": reader.pos,
-                   "count": count, "elements": elements}]
-        for name in native_validation["sequenceReadOrder"][1:]:
-            a = reader.pos
-            raw = reader.take(1, name)[0]
-            fields.append({"name": name, "start": a, "end": reader.pos, "rawByte": raw})
+        fields = [{"name": "actionData", "start": begin + 1, "end": value["flags"][0]["start"],
+                   "count": value["count"], "elements": value["actions"]}, *value["flags"]]
         return {"start": begin, "end": reader.pos, "status": "named-sequence-exact", "namedFields": fields}
     count = reader.count(1, nullable=True)
     maps = []

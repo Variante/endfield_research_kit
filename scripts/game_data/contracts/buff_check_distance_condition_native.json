@@ -1,0 +1,220 @@
+{
+  "schema": "endfield.buff-check-distance-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "checkDistance": {
+      "sourceContract": "buff_42_native.json",
+      "wrapperTypeDefinition": 16623,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckDistanceCondition_DataForMemoryPack",
+      "runtimeTypeDefinition": 9999,
+      "runtimeTypeName": "Beyond.Gameplay.Core.CheckDistanceCondition+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member10",
+      "readerMethod": [
+        124197,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckDistanceCondition_DataForMemoryPack",
+        "Deserialize",
+        64575904
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 64576075,
+            "rawHex": "884110",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 16,
+            "baseRegister": 1
+          },
+          "sourceCall": {
+            "rva": 64576048,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84B1010000488B4E104885C90F84A4010000"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 64576118,
+            "rawHex": "894114",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 20,
+            "baseRegister": 1
+          },
+          "sourceCall": {
+            "rva": 64576091,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F8486010000488B4E104885C90F8479010000",
+          "sourceContextInstructionRva": 64576081
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 64576154,
+            "rawHex": "894118",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 24,
+            "baseRegister": 1
+          },
+          "sourceCall": {
+            "rva": 64576127,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F8462010000488B4E104885C90F8455010000"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 64576190,
+            "rawHex": "89411C",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 28,
+            "baseRegister": 1
+          },
+          "sourceCall": {
+            "rva": 64576163,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F843E010000488B4E104885C90F8431010000"
+        },
+        {
+          "fieldName": "containsHittableObj",
+          "declaredType": "bool",
+          "setterMethodIndex": 124189,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64576222,
+            "targetRva": 64576512,
+            "methodIndex": 124189
+          },
+          "sourceCall": {
+            "rva": 64576199,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F841A0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "distance",
+          "declaredType": "float",
+          "setterMethodIndex": 124190,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64576256,
+            "targetRva": 64576560,
+            "methodIndex": 124190
+          },
+          "sourceCall": {
+            "rva": 64576233,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "4885F60F84F80000004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "includeTargetRadius",
+          "declaredType": "bool",
+          "setterMethodIndex": 124191,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64576290,
+            "targetRva": 64576608,
+            "methodIndex": 124191
+          },
+          "sourceCall": {
+            "rva": 64576267,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84D60000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "lessThan",
+          "declaredType": "bool",
+          "setterMethodIndex": 124192,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64576324,
+            "targetRva": 64576656,
+            "methodIndex": 124192
+          },
+          "sourceCall": {
+            "rva": 64576301,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84B40000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "source",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 124193,
+          "kind": "target",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64576365,
+            "targetRva": 64576704,
+            "methodIndex": 124193
+          },
+          "sourceCall": {
+            "rva": 64576342,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F848B0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64576329
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 124194,
+          "kind": "target",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64576402,
+            "targetRva": 64576752,
+            "methodIndex": 124194
+          },
+          "sourceCall": {
+            "rva": 64576383,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 64576370
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "66": "checkDistance"
+  },
+  "reviewedDependencies": {
+    "target": "buff_ec_native.json"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected dispatcher and ten named source/destination reads, including closed source/target TargetSettings types.",
+    "conditional": "Original source and target spans compose their independently admitted children. Flags and distance float bits remain raw.",
+    "unresolved": "Live branch/provider selection, target entities, distance calculation, radii and comparison results."
+  }
+}

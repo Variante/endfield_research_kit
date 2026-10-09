@@ -42,12 +42,13 @@ CONTRACT_PATH = CONTRACTS_DIR / "buff_aura_heal_actions_native.json"
 
 def _contract() -> dict[str, Any]:
     value, _ = read_reviewed_contract(CONTRACT_PATH,
-        schema="endfield.buff-aura-heal-actions-native-contract.v1",
+        schema="endfield.buff-aura-heal-actions-native-contract.v2",
         status="exact-current-build", label=LABEL)
     if (set(value.get("records", {})) != {"aura", "buffInput", "targetFilter", "colliderShape",
                                           "heal", "tagList", "tagElement"}
             or set(value.get("actionDispatch", {}).values()) != {"aura", "heal"}
-            or len(value["actionDispatch"]) != 2):
+            or len(value["actionDispatch"]) != 2
+            or value["records"]["tagElement"].get("valueWrapperDestination", {}).get("mode") != "inline-wrapper-value-rbx"):
         raise ValueError(f"{LABEL}.contract:shape")
     return value
 
@@ -221,3 +222,38 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
     return {"schema": "endfield.buff-aura-heal-action-receipt.v1", "source": source,
             "logicalSha256": digest.upper(), "tag": tag, "start": start, "end": end,
             "parent": parent, "recursiveStoredSchemaExact": True, "runtimeMeaningExact": False}
+
+
+def decode_tag_elements(data: bytes, *, source: str, digest: str, start: int, end: int,
+                        native_validation: dict[str, Any]) -> dict[str, Any]:
+    """Read a direct nullable list of source-proved GameplayTag wrappers.
+
+    The caller independently joins its List<GameplayTag> field and count loop.
+    There is no GameplayTagList object header and no raw DWORD-array shortcut.
+    """
+    contract = _contract()
+    if (native_validation.get("status") != "validated"
+            or native_validation.get("nativeInputs") != contract["nativeInputs"]
+            or native_validation.get("recordMembers") != _members(contract)
+            or not isinstance(data, bytes) or not source or not isinstance(digest, str)
+            or hashlib.sha256(data).hexdigest().upper() != digest.upper()
+            or type(start) is not int or type(end) is not int or not 0 <= start < end <= len(data)):
+        raise ValueError(f"{LABEL}.tags:native-source-or-span")
+    reader = Reader(data, source, end); reader.pos = start
+    count = reader.count(1, nullable=True); elements = []
+    for _ in range(max(0, count)):
+        begin = reader.pos; fields = []
+        if reader.peek() == 255:
+            reader.take(1, "null-tag-wrapper"); status = "exact-null"
+        else:
+            reader.header(1); at = reader.pos
+            raw = reader.take(4, "tagId"); status = "named-stored-members-exact-span"
+            fields = [{"fieldName": "tagId", "declaredType": "int", "kind": "scalar32",
+                       "start": at, "end": reader.pos, "rawHex": raw.hex().upper()}]
+        elements.append({"start": begin, "end": reader.pos, "status": status,
+                         "typeName": contract["records"]["tagElement"]["runtimeTypeName"],
+                         "namedFields": fields, "recursiveStoredSchemaExact": True})
+    if reader.pos != end:
+        raise ValueError(f"{LABEL}.tags:list-end={reader.pos}; expected={end}")
+    return {"start": start, "end": end, "count": count, "elements": elements,
+            "recursiveStoredSchemaExact": True, "runtimeMeaningExact": False}

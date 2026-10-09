@@ -779,7 +779,122 @@ def format_memory_operand(
     return f"[{base_name}]", pos
 
 
+def decode_byte_cmp_x64(data: bytes, offset: int, start_va: int):
+    pos=offset;rex=0
+    if pos<len(data) and 0x40<=data[pos]<=0x4f:rex=data[pos];pos+=1
+    if pos>=len(data) or data[pos] not in (0x38,0x3a):
+        return None
+    opcode=data[pos];pos+=1
+    if pos>=len(data):return None
+    mod,reg,rm=decode_modrm(data[pos]);pos+=1
+    rex_r=(rex>>2)&1;rex_b=rex&1
+    # The existing operand formatter does not represent REX.X SIB indices.
+    # Refuse those forms and every legacy prefix rather than misname them.
+    needed=0
+    if mod!=3 and rm==4:
+        if pos>=len(data) or rex&2:return None
+        sib=data[pos];needed+=1
+        if mod==0 and sib&7==5:needed+=4
+    if mod==1:needed+=1
+    elif mod==2 or mod==0 and rm==5:needed+=4
+    if pos+needed>len(data):return None
+    def byte_register(code):
+        if not rex and 4<=code<=7:return ('ah','ch','dh','bh')[code-4]
+        return reg_name(code,width=8)
+    register=byte_register(reg|(rex_r<<3))
+    if mod==3:operand=byte_register(rm|(rex_b<<3))
+    else:
+        operand,pos=rm_operand(data,pos,mod,rm,rex_b,width=8,start_va=start_va,offset=offset)
+    left,right=(operand,register) if opcode==0x38 else (register,operand)
+    return {'offset':offset,'va':hex(start_va+offset),'bytes':data[offset:pos].hex(' '),
+        'text':f'cmp {left}, {right}','write':None},pos
+
+
+# Bounded additional forms preserve real operands and declare every register
+# destination, including CMPXCHG's implicit accumulator. Unsupported shapes
+# remain with the existing decoder rather than receiving a partial boundary.
+def decode_extra_x64(data: bytes, offset: int, start_va: int):
+    pos=offset;prefixes=[]
+    while pos<len(data) and data[pos] in (0x66,0x67,0xf0,0xf2,0xf3):
+        prefixes.append(data[pos]);pos+=1
+    rex=0
+    if pos<len(data) and 0x40<=data[pos]<=0x4f:rex=data[pos];pos+=1
+    opcode=pos
+    def fallback():return None
+    def row(text,end,write=None):
+        return {'offset':offset,'va':hex(start_va+offset),'bytes':data[offset:end].hex(' '),
+                'text':text,'write':None if write is None else {'register':write,'value':'modified'}},end
+    def memory(at,mod,rm):
+        # Complete 64-bit base/index forms, including the independent REX.X
+        # index extension. Absent-base/address-size forms are not admitted.
+        base=reg_name(rm+(8 if rex&1 else 0));index=None;scale=1
+        if rm==4:
+            if at>=len(data):return None
+            sib=data[at];at+=1;sc,ix,b=sib>>6,(sib>>3)&7,sib&7
+            if mod==0 and b==5:return None
+            base=reg_name(b+(8 if rex&1 else 0));scale=1<<sc
+            if ix!=4 or rex&2:index=reg_name(ix+(8 if rex&2 else 0))
+        elif mod==0 and rm==5:
+            if at+4>len(data):return None
+            displacement=int.from_bytes(data[at:at+4],'little',signed=True);end=at+4
+            target=start_va+end+displacement
+            signed=f'-0x{-displacement:x}' if displacement<0 else f'+0x{displacement:x}'
+            return f'[rip{signed} => 0x{target:x}]',end
+        width=1 if mod==1 else 4 if mod==2 else 0
+        if at+width>len(data):return None
+        displacement=int.from_bytes(data[at:at+width],'little',signed=True) if width else 0;end=at+width
+        parts=base+('+'+index+'*'+str(scale) if index is not None else '')
+        if displacement:parts+=f'-0x{-displacement:x}' if displacement<0 else f'+0x{displacement:x}'
+        return '['+parts+']',end
+    if pos+2<=len(data) and data[pos] in (0x21,0x23) and not prefixes:
+        mod,reg,rm=decode_modrm(data[pos+1])
+        if mod==3:
+            width=64 if rex&8 else 32;rr=reg_name(reg+(8 if rex&4 else 0),width=width)
+            rm=reg_name(rm+(8 if rex&1 else 0),width=width)
+            left,right=(rm,rr) if data[pos]==0x21 else (rr,rm)
+            return row(f'and {left}, {right}',pos+2,left)
+    if pos+3>len(data) or data[pos]!=0x0f:return fallback()
+    second=data[pos+1];mod,reg,rm=decode_modrm(data[pos+2]);end=pos+3
+    if second==0xb1 and prefixes in ([],[0xf0]) and mod!=3:
+        operand=memory(end,mod,rm)
+        if operand is not None:
+            destination,end=operand;source=reg_name(reg+(8 if rex&4 else 0),width=64 if rex&8 else 32)
+            return row(('lock ' if prefixes else '')+f'cmpxchg {destination}, {source}',end,'rax' if rex&8 else 'eax')
+    if second in (0x6f,0x7f) and prefixes in ([0x66],[0xf3]):
+        mnemonic='movdqa' if prefixes==[0x66] else 'movdqu'
+        register=xmm_name(reg+(8 if rex&4 else 0))
+        if mod==3:operand=(xmm_name(rm+(8 if rex&1 else 0)),end)
+        else:operand=memory(end,mod,rm)
+        if operand is not None:
+            target,end=operand
+            if second==0x6f:return row(f'{mnemonic} {register}, {target}',end,register)
+            return row(f'{mnemonic} {target}, {register}',end,target if mod==3 else None)
+    if second==0x54 and mod==3 and prefixes in ([],[0x66]):
+        left=xmm_name(reg+(8 if rex&4 else 0));right=xmm_name(rm+(8 if rex&1 else 0))
+        return row(f'{"andpd" if prefixes else "andps"} {left}, {right}',end,left)
+    if second in (0x2e,0x2f) and mod==3 and prefixes in ([],[0x66]):
+        left=xmm_name(reg+(8 if rex&4 else 0));right=xmm_name(rm+(8 if rex&1 else 0))
+        mnemonic=('ucomi' if second==0x2e else 'comi')+('sd' if prefixes else 'ss')
+        return row(f'{mnemonic} {left}, {right}',end)
+    if second in (0x58,0x59,0x5c,0x5d) and mod==3 and prefixes in ([],[0x66],[0xf2],[0xf3]):
+        left=xmm_name(reg+(8 if rex&4 else 0));right=xmm_name(rm+(8 if rex&1 else 0))
+        suffix={(): 'ps',(0x66,):'pd',(0xf2,):'sd',(0xf3,):'ss'}[tuple(prefixes)]
+        mnemonic={0x58:'add',0x59:'mul',0x5c:'sub',0x5d:'min'}[second]+suffix
+        return row(f'{mnemonic} {left}, {right}',end,left)
+    if second==0xab and mod==3 and not prefixes:
+        left=reg_name(rm+(8 if rex&1 else 0),width=64 if rex&8 else 32)
+        right=reg_name(reg+(8 if rex&4 else 0),width=64 if rex&8 else 32)
+        return row(f'bts {left}, {right}',end,left)
+    return fallback()
+
+
 def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, Any], int]:
+    extra = decode_extra_x64(data, offset, start_va)
+    if extra is not None:
+        return extra
+    byte_comparison = decode_byte_cmp_x64(data, offset, start_va)
+    if byte_comparison is not None:
+        return byte_comparison
     pos = offset
     prefixes = []
     while pos < len(data) and data[pos] in (0x66, 0x67, 0xF0, 0xF2, 0xF3):
@@ -1044,6 +1159,15 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
     if opcode == 0x0F and pos < len(data):
         op2 = data[pos]
         pos += 1
+        if op2 == 0xA3 and not prefixes and pos < len(data):
+            # Register BT reads two operands and writes only flags. Memory
+            # bit strings and decorated forms require their own proof.
+            mod, reg, rm = decode_modrm(data[pos])
+            if mod == 3:
+                pos += 1
+                left = reg_name(rm | (rex_b << 3), width=width)
+                right = reg_name(reg | (rex_r << 3), width=width)
+                return result(f"bt {left}, {right}", None, pos)
         if op2 == 0x6E and 0x66 in prefixes and pos < len(data):
             # MOVD/MOVQ xmm, r/m carries scalar condition targets into the
             # Single comparator. Keep the typed field read visible to body
@@ -1079,6 +1203,8 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             }.get(op2, f"setcc/{op2:02x}")
             return result(f"{mnemonic} {dst}", (dst, "cc") if is_register_name(dst) else None, pos)
         if op2 == 0xAB and pos < len(data):
+            if prefixes not in ([], [0xF0]):
+                return result(f"db 0x{data[offset]:02x}", None, offset + 1)
             modrm = data[pos]
             pos += 1
             mod, reg, rm = decode_modrm(modrm)
@@ -1088,8 +1214,10 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
                 data, pos, mod, rm, rex_b,
                 width=width, start_va=start_va, offset=offset,
             )
+            if mod == 3 and prefixes:
+                return result(f"db 0x{data[offset]:02x}", None, offset + 1)
             prefix = "lock " if 0xF0 in prefixes else ""
-            return result(f"{prefix}bts {dst}, {src}", None, pos)
+            return result(f"{prefix}bts {dst}, {src}", (dst, "modified") if mod == 3 else None, pos)
         if op2 in (0xB6, 0xB7) and pos < len(data):
             modrm = data[pos]
             pos += 1
@@ -1104,6 +1232,8 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
             )
             return result(f"movzx {dst}, {src}", (dst, src), pos)
         if op2 in (0x2E, 0x2F) and pos < len(data):
+            if prefixes not in ([], [0x66]):
+                return result(f"db 0x{data[offset]:02x}", None, offset + 1)
             modrm = data[pos]
             pos += 1
             mod, reg, rm = decode_modrm(modrm)
@@ -1113,7 +1243,7 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
                 data, pos, mod, rm, rex_b,
                 width=64, start_va=start_va, offset=offset,
             )
-            mnemonic = "ucomisd" if op2 == 0x2E else "comisd"
+            mnemonic = ("ucomi" if op2 == 0x2E else "comi") + ("sd" if prefixes else "ss")
             return result(f"{mnemonic} {left}, {right}", None, pos)
         if op2 in (0x10, 0x11, 0x28, 0x29, 0x57, 0x58, 0x59, 0x5C, 0x5D) and pos < len(data):
             modrm = data[pos]
@@ -1161,12 +1291,10 @@ def decode_one_x64(data: bytes, offset: int, start_va: int) -> tuple[dict[str, A
                 return result(f"{mnemonic} {dst}, {src}", None, pos)
             dst = xmm_name(reg_code)
             if op2 in (0x58, 0x59, 0x5C, 0x5D):
-                mnemonic = {
-                    0x58: "addsd" if 0xF2 in prefixes else "addps",
-                    0x59: "mulsd" if 0xF2 in prefixes else "mulps",
-                    0x5C: "subsd" if 0xF2 in prefixes else "subps",
-                    0x5D: "minsd" if 0xF2 in prefixes else "minps",
-                }[op2]
+                if prefixes not in ([], [0x66], [0xF2], [0xF3]):
+                    return result(f"db 0x{data[offset]:02x}", None, offset + 1)
+                suffix = {(): "ps", (0x66,): "pd", (0xF2,): "sd", (0xF3,): "ss"}[tuple(prefixes)]
+                mnemonic = {0x58: "add", 0x59: "mul", 0x5C: "sub", 0x5D: "min"}[op2] + suffix
                 if mod == 3:
                     src = xmm_name(rm_code)
                 else:

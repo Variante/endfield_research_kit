@@ -17,7 +17,7 @@ from scripts.game_data.il2cpp.body_claims import BodyIndex, evaluate
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 
 CONTRACT_PATH = CONTRACTS_DIR / "buff_action_consumers_native.json"
-SCHEMA = "endfield.buff-action-consumer-claims.v1"
+SCHEMA = "endfield.buff-action-consumer-claims.v11"
 
 
 def load_consumer_claims(*, gameassembly: Path | None = None,

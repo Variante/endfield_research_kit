@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120863,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpToAction_DataForMemoryPack+Beyond_Gameplay_Core_JumpToAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      66224576
+    ],
+    [
+      120862,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpToAction_DataForMemoryPack",
+      "Deserialize",
+      66224672
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66224576,
+      "endRva": 66224669,
+      "sha256": "542613098EC7A71CA95B705B09CBE8287F93758B956DAF1FCF95C5BA37AF5B37",
+      "boundary": "exact: current generated reader or owned initialization/null/error rejoin bytes; branch execution remains conditional"
+    },
+    {
+      "startRva": 66224672,
+      "endRva": 66225114,
+      "sha256": "5E8C28475E806335D0546AFBCAE5834B3517281EF8B3587FBD36AAF065967F37",
+      "boundary": "exact: current generated reader or owned initialization/null/error rejoin bytes; branch execution remains conditional"
+    },
+    {
+      "startRva": 66224739,
+      "endRva": 66225025,
+      "sha256": "98B7C83AE0FDB543580296368857F558DB65227681C893B378E814156338EBDD",
+      "boundary": "exact: current generated reader or owned initialization/null/error rejoin bytes; branch execution remains conditional"
+    },
+    {
+      "startRva": 66225025,
+      "endRva": 66225108,
+      "sha256": "C746E2259400471A0823CB62D705F62E11B006E4ABE8E2464F9426A585BE0C0C",
+      "boundary": "exact: current generated reader or owned initialization/null/error rejoin bytes; branch execution remains conditional"
+    },
+    {
+      "startRva": 66225108,
+      "endRva": 66225114,
+      "sha256": "FBE7AD6D83F7A6BB103A5DA6B59DCBE4A512384F839F027B135F35110F632C90",
+      "boundary": "exact: current generated reader or owned initialization/null/error rejoin bytes; branch execution remains conditional"
+    },
+    {
+      "startRva": 83131090,
+      "endRva": 83131103,
+      "sha256": "BD0835E9B9F9BA6952367BC77D4E61E754F97A3616B7D1A789A417FEC505477F",
+      "boundary": "exact: current generated reader or owned initialization/null/error rejoin bytes; branch execution remains conditional"
+    },
+    {
+      "startRva": 83131103,
+      "endRva": 83131159,
+      "sha256": "A24E6692DBCCFF271C185528B988E41CA3419CC3030F6B8E73121146EA88D76A",
+      "boundary": "exact: current generated reader or owned initialization/null/error rejoin bytes; branch execution remains conditional"
+    },
+    {
+      "startRva": 83131159,
+      "endRva": 83131180,
+      "sha256": "372DD6FCAFA09A72797115F33929033F83653A08EC6B663A85ED9D7CB078FAB4",
+      "boundary": "exact: current generated reader or owned initialization/null/error rejoin bytes; branch execution remains conditional"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66224844,
+      "instructionHex": "488B15551B1609",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17,
+      "typeDefinition": 9194
+    },
+    {
+      "instructionRva": 66224950,
+      "instructionHex": "488B152BCB0C09",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "typeKind": 18,
+      "typeDefinition": 9202
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "sequence",
+      "scalar32"
+    ]
+  },
+  "boundary": "Current module/token, generated six-member wrapper and typed source contexts identify JumpToAction.Data. Its normal selected source order is the four inherited members, an independently typed SequenceActionData, then a required Int32 destFrame. The one-byte D9 discriminator and member-six wrapper are separate; FF clears the wrapper and returns, and other counts reach the owned mismatch path. Named source-result transfers establish the typed destinations without inferring a wire width from object size. exact: current reviewed code windows and contexts; direct: selected source order; structuralOnly: finite framing until independent recursive composition; unresolved: live provider/IFix choice, allocation/refill/error parity, sequence interpretation and evaluated frame jumps, parent ownership and complete Buff root EOF."
+}

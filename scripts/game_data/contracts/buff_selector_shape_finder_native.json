@@ -1,0 +1,248 @@
+{
+  "schema": "endfield.buff-selector-shape-finder-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceContract": "buff_7c_native.json",
+  "switchContract": "skill_selector_finder_typhoea_native.json",
+  "dispatcher": {
+    "switchTableRva": 59821652,
+    "switchEntryCount": 24,
+    "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+    "unionTag": 18,
+    "switchTargetRva": 59820138,
+    "routeWindow": {
+      "startRva": 59820138,
+      "endRva": 59820221,
+      "sha256": "54168287CDAF7B4EDACB29C777A5E53F91B1F0FDFBDCC369BBDE2868939A21AF",
+      "boundary": "selected ShapeFinder tag route to shared rejoin"
+    },
+    "usageCellRva": 217990560,
+    "usageRawHex": "7144032000000000",
+    "registeredTypeIndex": 107064,
+    "wrapperTypeDefinition": 23061,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShapeFinder_ShapeFinderDataForMemoryPack",
+    "typeLoadInstruction": [
+      59820150,
+      "488B15237D6D09"
+    ]
+  },
+  "records": {
+    "shapeFinder": {
+      "sourceContract": "buff_7c_native.json",
+      "wrapperTypeDefinition": 23061,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShapeFinder_ShapeFinderDataForMemoryPack",
+      "runtimeTypeDefinition": 10207,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Selector+ShapeFinder+ShapeFinderData",
+      "inheritedMemberCount": 11,
+      "sourceReadOrder": "finder18Member11",
+      "readerMethod": [
+        167256,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShapeFinder_ShapeFinderDataForMemoryPack",
+        "Deserialize",
+        61217168
+      ],
+      "members": [
+        {
+          "fieldName": "autoSetTargetFaction",
+          "declaredType": "bool",
+          "setterMethodIndex": 166998,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217335,
+            "targetRva": 61216240,
+            "methodIndex": 166998
+          },
+          "sourceCall": {
+            "rva": 61217312,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84D50100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "checkAlive",
+          "declaredType": "bool",
+          "setterMethodIndex": 166999,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217369,
+            "targetRva": 61216288,
+            "methodIndex": 166999
+          },
+          "sourceCall": {
+            "rva": 61217346,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84B30100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "containsUnMarkable",
+          "declaredType": "bool",
+          "setterMethodIndex": 167000,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217403,
+            "targetRva": 61216336,
+            "methodIndex": 167000
+          },
+          "sourceCall": {
+            "rva": 61217380,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84910100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "factionTarget",
+          "declaredType": "Beyond.Gameplay.Core.FactionTarget",
+          "setterMethodIndex": 167001,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217443,
+            "targetRva": 61216384,
+            "methodIndex": 167001
+          },
+          "sourceCall": {
+            "rva": 61217421,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84680100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "targetFactionType",
+          "declaredType": "Beyond.Gameplay.Core.FactionType",
+          "setterMethodIndex": 167002,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217483,
+            "targetRva": 61216432,
+            "methodIndex": 167002
+          },
+          "sourceCall": {
+            "rva": 61217461,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84400100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "angle",
+          "declaredType": "float",
+          "setterMethodIndex": 167230,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217517,
+            "targetRva": 61214032,
+            "methodIndex": 167230
+          },
+          "sourceCall": {
+            "rva": 61217494,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "4885F60F841F0100004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "angleKey",
+          "declaredType": "string",
+          "setterMethodIndex": 167231,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217551,
+            "targetRva": 61214080,
+            "methodIndex": 167231
+          },
+          "sourceCall": {
+            "rva": 61217528,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F84FD0000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "limitAngle",
+          "declaredType": "bool",
+          "setterMethodIndex": 167232,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217585,
+            "targetRva": 61214128,
+            "methodIndex": 167232
+          },
+          "sourceCall": {
+            "rva": 61217562,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84DB0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "limitHeight",
+          "declaredType": "bool",
+          "setterMethodIndex": 167233,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217619,
+            "targetRva": 61214176,
+            "methodIndex": 167233
+          },
+          "sourceCall": {
+            "rva": 61217596,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84B90000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "maxHeight",
+          "declaredType": "float",
+          "setterMethodIndex": 167234,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217653,
+            "targetRva": 61214224,
+            "methodIndex": 167234
+          },
+          "sourceCall": {
+            "rva": 61217630,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "4885F60F84970000004533C00F28C8488BCE"
+        },
+        {
+          "fieldName": "shapeData",
+          "declaredType": "Beyond.Gameplay.ColliderShapeData",
+          "setterMethodIndex": 167235,
+          "kind": "collider-shape-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 61217690,
+            "targetRva": 61214272,
+            "methodIndex": 167235
+          },
+          "sourceCall": {
+            "rva": 61217671,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB",
+          "sourceContextInstructionRva": 61217658
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "colliderShape": "buff_collider_shape_native.json"
+  },
+  "evidenceBoundary": {
+    "exact": "Current selected ShapeFinder route, eleven named source/destination reads and the closed ColliderShapeData source context.",
+    "conditional": "Original finder spans compose the independently admitted sixteen-member ColliderShapeData with raw Vector3 storage; complete roots require their own gates.",
+    "unresolved": "Live formatter selection, faction/angle/height filtering, shape evaluation and selected targets remain unresolved."
+  }
+}

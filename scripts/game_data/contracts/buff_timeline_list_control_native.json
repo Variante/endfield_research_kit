@@ -1,0 +1,1695 @@
+{
+  "schema": "endfield.buff-timeline-list-control-native-contract.v4",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "scope": "buffered-existing-reference-list-control-only",
+  "dependencies": {
+    "staticComposition": "buff_timeline_static_composition_native.json",
+    "rootList": "buff_timeline_empty_native.json",
+    "readerLayout": "buff_timeline_element_sources_native.json",
+    "formatterProvider": "buff_formatter_provider_native.json"
+  },
+  "sharedEntry": {
+    "method": [
+      428795,
+      "MemoryPack.Formatters.ListFormatter`1",
+      "Deserialize"
+    ],
+    "classArguments": [
+      "object"
+    ],
+    "methodArguments": [],
+    "registration": {
+      "pointer": 6489279504,
+      "methodSpecIndex": 215495,
+      "registration": {
+        "tableIndex": 203779,
+        "va": 6641931152,
+        "methodSpecIndex": 215495,
+        "rawHex": "C7490300C61A030042630000FFFFFFFF",
+        "indices": [
+          203462,
+          25410,
+          -1
+        ]
+      },
+      "classInstantiation": {
+        "index": 75,
+        "table_slot_va": 6625974776,
+        "record_va": 6626910416,
+        "argument_vector_va": 6669037504,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664879512,
+            "raw_type_record_hex": "068E00000000000000001C0000000000"
+          }
+        ]
+      },
+      "methodInstantiation": {
+        "index": -1,
+        "table_slot_va": null,
+        "record_va": null,
+        "argument_vector_va": null,
+        "padding_hex": "",
+        "arguments": []
+      },
+      "methodDefinitionIndices": [
+        428795
+      ],
+      "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+    },
+    "requestedElementType": "Beyond.Gameplay.Core.TimelineAction+TimelineActionData"
+  },
+  "readerFieldsUnboxedOffsets": {
+    "currentPtr": 80,
+    "bufferLength": 48,
+    "advancedCount": 64,
+    "consumed": 68,
+    "totalLength": 24
+  },
+  "programs": {
+    "singleElement": {
+      "codeWindows": [
+        {
+          "startRva": 46828560,
+          "endRva": 46828705,
+          "sha256": "0A8877C3E5A4F716AFF6259B75E98539DE3BC65E7FFF6C38BE71AF9147A6205F"
+        },
+        {
+          "startRva": 46828705,
+          "endRva": 46829399,
+          "sha256": "E88C68FA8E9312C067A2E4F68BC88CAD01EFD0FE7E5A450BB6C174739C32903F"
+        },
+        {
+          "startRva": 46829399,
+          "endRva": 46829524,
+          "sha256": "050CB93ABCF0906609637F22A60350F39A06D95C2E1CE2E66BE264BB60F8E963"
+        },
+        {
+          "startRva": 46829524,
+          "endRva": 46829536,
+          "sha256": "970B436425485980AE7E28CF973C188021D9894AA5E09798BB52E43DDE59E037"
+        }
+      ],
+      "program": [
+        [
+          46828560,
+          "48895C2420"
+        ],
+        [
+          46828565,
+          "55"
+        ],
+        [
+          46828566,
+          "56"
+        ],
+        [
+          46828567,
+          "57"
+        ],
+        [
+          46828568,
+          "4154"
+        ],
+        [
+          46828570,
+          "4156"
+        ],
+        [
+          46828572,
+          "4883EC30"
+        ],
+        [
+          46828576,
+          "4533E4"
+        ],
+        [
+          46828579,
+          "498BE9"
+        ],
+        [
+          46828582,
+          "837A3004"
+        ],
+        [
+          46828586,
+          "498BF0"
+        ],
+        [
+          46828589,
+          "4C8BF2"
+        ],
+        [
+          46828592,
+          "4C89642420"
+        ],
+        [
+          46828597,
+          "7D10"
+        ],
+        [
+          46828615,
+          "498B4650"
+        ],
+        [
+          46828619,
+          "486338"
+        ],
+        [
+          46828622,
+          "897C2468"
+        ],
+        [
+          46828626,
+          "418B5E30"
+        ],
+        [
+          46828630,
+          "83EB04"
+        ],
+        [
+          46828633,
+          "7911"
+        ],
+        [
+          46828652,
+          "4983465004"
+        ],
+        [
+          46828657,
+          "4183464004"
+        ],
+        [
+          46828662,
+          "4183464404"
+        ],
+        [
+          46828667,
+          "41895E30"
+        ],
+        [
+          46828671,
+          "49634644"
+        ],
+        [
+          46828675,
+          "498B4E18"
+        ],
+        [
+          46828679,
+          "482BC8"
+        ],
+        [
+          46828682,
+          "483BCF"
+        ],
+        [
+          46828685,
+          "0F8C37030000"
+        ],
+        [
+          46828691,
+          "83FFFF"
+        ],
+        [
+          46828694,
+          "0F95C0"
+        ],
+        [
+          46828697,
+          "84C0"
+        ],
+        [
+          46828699,
+          "0F84C7020000"
+        ],
+        [
+          46828705,
+          "4C897C2470"
+        ],
+        [
+          46828710,
+          "4C896C2460"
+        ],
+        [
+          46828715,
+          "4C8D3DCE33F50A"
+        ],
+        [
+          46828722,
+          "488B4520"
+        ],
+        [
+          46828726,
+          "4C3926"
+        ],
+        [
+          46828729,
+          "7441"
+        ],
+        [
+          46828731,
+          "488B90C0000000"
+        ],
+        [
+          46828738,
+          "488B1E"
+        ],
+        [
+          46828741,
+          "488B4210"
+        ],
+        [
+          46828745,
+          "4C396020"
+        ],
+        [
+          46828749,
+          "7511"
+        ],
+        [
+          46828768,
+          "488B4520"
+        ],
+        [
+          46828772,
+          "488BCB"
+        ],
+        [
+          46828775,
+          "488B90C0000000"
+        ],
+        [
+          46828782,
+          "488B5210"
+        ],
+        [
+          46828786,
+          "E889200C00"
+        ],
+        [
+          46828791,
+          "E9BD000000"
+        ],
+        [
+          46828985,
+          "488B0D3068440A"
+        ],
+        [
+          46828992,
+          "4439A1E0000000"
+        ],
+        [
+          46828999,
+          "7505"
+        ],
+        [
+          46829006,
+          "488B4520"
+        ],
+        [
+          46829010,
+          "488B88C0000000"
+        ],
+        [
+          46829017,
+          "488B4918"
+        ],
+        [
+          46829021,
+          "E87EB40F00"
+        ],
+        [
+          46829026,
+          "4C8BE8"
+        ],
+        [
+          46829029,
+          "458BFC"
+        ],
+        [
+          46829032,
+          "85FF"
+        ],
+        [
+          46829034,
+          "0F8E5D010000"
+        ],
+        [
+          46829040,
+          "4C89642420"
+        ],
+        [
+          46829045,
+          "4D85ED"
+        ],
+        [
+          46829048,
+          "0F84DC010000"
+        ],
+        [
+          46829054,
+          "498B4D00"
+        ],
+        [
+          46829058,
+          "E889BD35FD"
+        ],
+        [
+          46829063,
+          "498B4500"
+        ],
+        [
+          46829067,
+          "4C8D442420"
+        ],
+        [
+          46829072,
+          "498BD6"
+        ],
+        [
+          46829075,
+          "498BCD"
+        ],
+        [
+          46829078,
+          "4C8B8898010000"
+        ],
+        [
+          46829085,
+          "FF9090010000"
+        ],
+        [
+          46829091,
+          "488B1E"
+        ],
+        [
+          46829094,
+          "4C8B642420"
+        ],
+        [
+          46829099,
+          "4885DB"
+        ],
+        [
+          46829102,
+          "0F84A6010000"
+        ],
+        [
+          46829108,
+          "488B4520"
+        ],
+        [
+          46829112,
+          "488B88C0000000"
+        ],
+        [
+          46829119,
+          "488B4130"
+        ],
+        [
+          46829123,
+          "4883782000"
+        ],
+        [
+          46829128,
+          "7511"
+        ],
+        [
+          46829147,
+          "488B4520"
+        ],
+        [
+          46829151,
+          "48635318"
+        ],
+        [
+          46829155,
+          "488B88C0000000"
+        ],
+        [
+          46829162,
+          "488B7930"
+        ],
+        [
+          46829166,
+          "FF431C"
+        ],
+        [
+          46829169,
+          "488B4B10"
+        ],
+        [
+          46829173,
+          "4885C9"
+        ],
+        [
+          46829176,
+          "0F845C010000"
+        ],
+        [
+          46829182,
+          "3B5118"
+        ],
+        [
+          46829185,
+          "7243"
+        ],
+        [
+          46829254,
+          "8D4201"
+        ],
+        [
+          46829257,
+          "894318"
+        ],
+        [
+          46829260,
+          "3B5118"
+        ],
+        [
+          46829263,
+          "0F83FF000000"
+        ],
+        [
+          46829269,
+          "833D30631F0B00"
+        ],
+        [
+          46829276,
+          "4C8964D120"
+        ],
+        [
+          46829281,
+          "7456"
+        ],
+        [
+          46829369,
+          "41FFC7"
+        ],
+        [
+          46829372,
+          "41BC00000000"
+        ],
+        [
+          46829378,
+          "443B7C2468"
+        ],
+        [
+          46829383,
+          "0F8CA3FEFFFF"
+        ],
+        [
+          46829389,
+          "4C8B6C2460"
+        ],
+        [
+          46829394,
+          "4C8B7C2470"
+        ],
+        [
+          46829399,
+          "488B5C2478"
+        ],
+        [
+          46829404,
+          "4883C430"
+        ],
+        [
+          46829408,
+          "415E"
+        ],
+        [
+          46829410,
+          "415C"
+        ],
+        [
+          46829412,
+          "5F"
+        ],
+        [
+          46829413,
+          "5E"
+        ],
+        [
+          46829414,
+          "5D"
+        ],
+        [
+          46829415,
+          "C3"
+        ]
+      ]
+    },
+    "twoElements": {
+      "codeWindows": [
+        {
+          "startRva": 46828560,
+          "endRva": 46828705,
+          "sha256": "0A8877C3E5A4F716AFF6259B75E98539DE3BC65E7FFF6C38BE71AF9147A6205F"
+        },
+        {
+          "startRva": 46828705,
+          "endRva": 46829399,
+          "sha256": "E88C68FA8E9312C067A2E4F68BC88CAD01EFD0FE7E5A450BB6C174739C32903F"
+        },
+        {
+          "startRva": 46829399,
+          "endRva": 46829524,
+          "sha256": "050CB93ABCF0906609637F22A60350F39A06D95C2E1CE2E66BE264BB60F8E963"
+        },
+        {
+          "startRva": 46829524,
+          "endRva": 46829536,
+          "sha256": "970B436425485980AE7E28CF973C188021D9894AA5E09798BB52E43DDE59E037"
+        }
+      ],
+      "program": [
+        [
+          46828560,
+          "48895C2420"
+        ],
+        [
+          46828565,
+          "55"
+        ],
+        [
+          46828566,
+          "56"
+        ],
+        [
+          46828567,
+          "57"
+        ],
+        [
+          46828568,
+          "4154"
+        ],
+        [
+          46828570,
+          "4156"
+        ],
+        [
+          46828572,
+          "4883EC30"
+        ],
+        [
+          46828576,
+          "4533E4"
+        ],
+        [
+          46828579,
+          "498BE9"
+        ],
+        [
+          46828582,
+          "837A3004"
+        ],
+        [
+          46828586,
+          "498BF0"
+        ],
+        [
+          46828589,
+          "4C8BF2"
+        ],
+        [
+          46828592,
+          "4C89642420"
+        ],
+        [
+          46828597,
+          "7D10"
+        ],
+        [
+          46828615,
+          "498B4650"
+        ],
+        [
+          46828619,
+          "486338"
+        ],
+        [
+          46828622,
+          "897C2468"
+        ],
+        [
+          46828626,
+          "418B5E30"
+        ],
+        [
+          46828630,
+          "83EB04"
+        ],
+        [
+          46828633,
+          "7911"
+        ],
+        [
+          46828652,
+          "4983465004"
+        ],
+        [
+          46828657,
+          "4183464004"
+        ],
+        [
+          46828662,
+          "4183464404"
+        ],
+        [
+          46828667,
+          "41895E30"
+        ],
+        [
+          46828671,
+          "49634644"
+        ],
+        [
+          46828675,
+          "498B4E18"
+        ],
+        [
+          46828679,
+          "482BC8"
+        ],
+        [
+          46828682,
+          "483BCF"
+        ],
+        [
+          46828685,
+          "0F8C37030000"
+        ],
+        [
+          46828691,
+          "83FFFF"
+        ],
+        [
+          46828694,
+          "0F95C0"
+        ],
+        [
+          46828697,
+          "84C0"
+        ],
+        [
+          46828699,
+          "0F84C7020000"
+        ],
+        [
+          46828705,
+          "4C897C2470"
+        ],
+        [
+          46828710,
+          "4C896C2460"
+        ],
+        [
+          46828715,
+          "4C8D3DCE33F50A"
+        ],
+        [
+          46828722,
+          "488B4520"
+        ],
+        [
+          46828726,
+          "4C3926"
+        ],
+        [
+          46828729,
+          "7441"
+        ],
+        [
+          46828731,
+          "488B90C0000000"
+        ],
+        [
+          46828738,
+          "488B1E"
+        ],
+        [
+          46828741,
+          "488B4210"
+        ],
+        [
+          46828745,
+          "4C396020"
+        ],
+        [
+          46828749,
+          "7511"
+        ],
+        [
+          46828768,
+          "488B4520"
+        ],
+        [
+          46828772,
+          "488BCB"
+        ],
+        [
+          46828775,
+          "488B90C0000000"
+        ],
+        [
+          46828782,
+          "488B5210"
+        ],
+        [
+          46828786,
+          "E889200C00"
+        ],
+        [
+          46828791,
+          "E9BD000000"
+        ],
+        [
+          46828985,
+          "488B0D3068440A"
+        ],
+        [
+          46828992,
+          "4439A1E0000000"
+        ],
+        [
+          46828999,
+          "7505"
+        ],
+        [
+          46829006,
+          "488B4520"
+        ],
+        [
+          46829010,
+          "488B88C0000000"
+        ],
+        [
+          46829017,
+          "488B4918"
+        ],
+        [
+          46829021,
+          "E87EB40F00"
+        ],
+        [
+          46829026,
+          "4C8BE8"
+        ],
+        [
+          46829029,
+          "458BFC"
+        ],
+        [
+          46829032,
+          "85FF"
+        ],
+        [
+          46829034,
+          "0F8E5D010000"
+        ],
+        [
+          46829040,
+          "4C89642420"
+        ],
+        [
+          46829045,
+          "4D85ED"
+        ],
+        [
+          46829048,
+          "0F84DC010000"
+        ],
+        [
+          46829054,
+          "498B4D00"
+        ],
+        [
+          46829058,
+          "E889BD35FD"
+        ],
+        [
+          46829063,
+          "498B4500"
+        ],
+        [
+          46829067,
+          "4C8D442420"
+        ],
+        [
+          46829072,
+          "498BD6"
+        ],
+        [
+          46829075,
+          "498BCD"
+        ],
+        [
+          46829078,
+          "4C8B8898010000"
+        ],
+        [
+          46829085,
+          "FF9090010000"
+        ],
+        [
+          46829091,
+          "488B1E"
+        ],
+        [
+          46829094,
+          "4C8B642420"
+        ],
+        [
+          46829099,
+          "4885DB"
+        ],
+        [
+          46829102,
+          "0F84A6010000"
+        ],
+        [
+          46829108,
+          "488B4520"
+        ],
+        [
+          46829112,
+          "488B88C0000000"
+        ],
+        [
+          46829119,
+          "488B4130"
+        ],
+        [
+          46829123,
+          "4883782000"
+        ],
+        [
+          46829128,
+          "7511"
+        ],
+        [
+          46829147,
+          "488B4520"
+        ],
+        [
+          46829151,
+          "48635318"
+        ],
+        [
+          46829155,
+          "488B88C0000000"
+        ],
+        [
+          46829162,
+          "488B7930"
+        ],
+        [
+          46829166,
+          "FF431C"
+        ],
+        [
+          46829169,
+          "488B4B10"
+        ],
+        [
+          46829173,
+          "4885C9"
+        ],
+        [
+          46829176,
+          "0F845C010000"
+        ],
+        [
+          46829182,
+          "3B5118"
+        ],
+        [
+          46829185,
+          "7243"
+        ],
+        [
+          46829254,
+          "8D4201"
+        ],
+        [
+          46829257,
+          "894318"
+        ],
+        [
+          46829260,
+          "3B5118"
+        ],
+        [
+          46829263,
+          "0F83FF000000"
+        ],
+        [
+          46829269,
+          "833D30631F0B00"
+        ],
+        [
+          46829276,
+          "4C8964D120"
+        ],
+        [
+          46829281,
+          "7456"
+        ],
+        [
+          46829369,
+          "41FFC7"
+        ],
+        [
+          46829372,
+          "41BC00000000"
+        ],
+        [
+          46829378,
+          "443B7C2468"
+        ],
+        [
+          46829383,
+          "0F8CA3FEFFFF"
+        ],
+        [
+          46829040,
+          "4C89642420"
+        ],
+        [
+          46829045,
+          "4D85ED"
+        ],
+        [
+          46829048,
+          "0F84DC010000"
+        ],
+        [
+          46829054,
+          "498B4D00"
+        ],
+        [
+          46829058,
+          "E889BD35FD"
+        ],
+        [
+          46829063,
+          "498B4500"
+        ],
+        [
+          46829067,
+          "4C8D442420"
+        ],
+        [
+          46829072,
+          "498BD6"
+        ],
+        [
+          46829075,
+          "498BCD"
+        ],
+        [
+          46829078,
+          "4C8B8898010000"
+        ],
+        [
+          46829085,
+          "FF9090010000"
+        ],
+        [
+          46829091,
+          "488B1E"
+        ],
+        [
+          46829094,
+          "4C8B642420"
+        ],
+        [
+          46829099,
+          "4885DB"
+        ],
+        [
+          46829102,
+          "0F84A6010000"
+        ],
+        [
+          46829108,
+          "488B4520"
+        ],
+        [
+          46829112,
+          "488B88C0000000"
+        ],
+        [
+          46829119,
+          "488B4130"
+        ],
+        [
+          46829123,
+          "4883782000"
+        ],
+        [
+          46829128,
+          "7511"
+        ],
+        [
+          46829147,
+          "488B4520"
+        ],
+        [
+          46829151,
+          "48635318"
+        ],
+        [
+          46829155,
+          "488B88C0000000"
+        ],
+        [
+          46829162,
+          "488B7930"
+        ],
+        [
+          46829166,
+          "FF431C"
+        ],
+        [
+          46829169,
+          "488B4B10"
+        ],
+        [
+          46829173,
+          "4885C9"
+        ],
+        [
+          46829176,
+          "0F845C010000"
+        ],
+        [
+          46829182,
+          "3B5118"
+        ],
+        [
+          46829185,
+          "7243"
+        ],
+        [
+          46829254,
+          "8D4201"
+        ],
+        [
+          46829257,
+          "894318"
+        ],
+        [
+          46829260,
+          "3B5118"
+        ],
+        [
+          46829263,
+          "0F83FF000000"
+        ],
+        [
+          46829269,
+          "833D30631F0B00"
+        ],
+        [
+          46829276,
+          "4C8964D120"
+        ],
+        [
+          46829281,
+          "7456"
+        ],
+        [
+          46829369,
+          "41FFC7"
+        ],
+        [
+          46829372,
+          "41BC00000000"
+        ],
+        [
+          46829378,
+          "443B7C2468"
+        ],
+        [
+          46829383,
+          "0F8CA3FEFFFF"
+        ],
+        [
+          46829389,
+          "4C8B6C2460"
+        ],
+        [
+          46829394,
+          "4C8B7C2470"
+        ],
+        [
+          46829399,
+          "488B5C2478"
+        ],
+        [
+          46829404,
+          "4883C430"
+        ],
+        [
+          46829408,
+          "415E"
+        ],
+        [
+          46829410,
+          "415C"
+        ],
+        [
+          46829412,
+          "5F"
+        ],
+        [
+          46829413,
+          "5E"
+        ],
+        [
+          46829414,
+          "5D"
+        ],
+        [
+          46829415,
+          "C3"
+        ]
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Current physical shared registration and complete selected buffered header/loop programs, actual repeated block, metadata-owned Reader fields and reciprocal static element contexts. The actual physical formatter helper has an independently owned same-MethodInfo key/expected-class transfer and a complete selected typed-reference return.",
+    "conditional": "Selected physical helpers receive the existing list with its Clear context and the element GetFormatter context. Their normal returns, empty-list state and intended element formatter result are conditions, together with child dispatch, sufficient array capacity, initialized contexts, buffered input and no-GC-barrier branch outcomes. The saved signed count, index increment and reset prove selected control without replacing child cursor proofs; symbolic context names do not establish these helpers as registered managed entries. That return requires the selected initialized cache, stable non-aliasing contexts and correctly typed normal helper returns; indirect global/lock effects are not inferred.",
+    "structuralOnly": "Eight-byte runtime array references do not establish stored element widths.",
+    "unresolved": "Positive instance adapter, nullable source wrappers, recursive element grammar, parent ReadPackable dispatch, alternative initialization/cache/allocation/growth/refill/error/GC paths and actual runtime effects. No positive stored-list/root admission.",
+    "direct": "Exact caller-loop transfers plus actual physical helper index reset/version increment and nonpositive return; positive span-call arguments are independently authenticated."
+  },
+  "independentContextEntries": [
+    {
+      "relativeContextSlot": 2,
+      "method": [
+        286563,
+        "System.Collections.Generic.List`1",
+        "Clear"
+      ],
+      "classArguments": [
+        "object"
+      ],
+      "methodArguments": [],
+      "registration": {
+        "pointer": 6490078752,
+        "methodSpecIndex": 244213,
+        "registration": {
+          "tableIndex": 231332,
+          "va": 6642372000,
+          "methodSpecIndex": 244213,
+          "rawHex": "F5B903006786030010020100FFFFFFFF",
+          "indices": [
+            231015,
+            66064,
+            -1
+          ]
+        },
+        "classInstantiation": {
+          "index": 75,
+          "table_slot_va": 6625974776,
+          "record_va": 6626910416,
+          "argument_vector_va": 6669037504,
+          "padding_hex": "00000000",
+          "arguments": [
+            {
+              "index": 0,
+              "type_pointer_va": 6664879512,
+              "raw_type_record_hex": "068E00000000000000001C0000000000"
+            }
+          ]
+        },
+        "methodInstantiation": {
+          "index": -1,
+          "table_slot_va": null,
+          "record_va": null,
+          "argument_vector_va": null,
+          "padding_hex": "",
+          "arguments": []
+        },
+        "methodDefinitionIndices": [
+          286563
+        ],
+        "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+      },
+      "physicalCallField": "existingListContextCallRva"
+    },
+    {
+      "relativeContextSlot": 3,
+      "method": [
+        428394,
+        "MemoryPack.MemoryPackFormatterProvider",
+        "GetFormatter"
+      ],
+      "classArguments": [],
+      "methodArguments": [
+        "object"
+      ],
+      "registration": {
+        "pointer": 6553489636,
+        "methodSpecIndex": 516881,
+        "registration": {
+          "tableIndex": 488049,
+          "va": 6646479472,
+          "methodSpecIndex": 516881,
+          "rawHex": "11E30700BE70070022530100FFFFFFFF",
+          "indices": [
+            487614,
+            86818,
+            -1
+          ]
+        },
+        "classInstantiation": {
+          "index": -1,
+          "table_slot_va": null,
+          "record_va": null,
+          "argument_vector_va": null,
+          "padding_hex": "",
+          "arguments": []
+        },
+        "methodInstantiation": {
+          "index": 75,
+          "table_slot_va": 6625974776,
+          "record_va": 6626910416,
+          "argument_vector_va": 6669037504,
+          "padding_hex": "00000000",
+          "arguments": [
+            {
+              "index": 0,
+              "type_pointer_va": 6664879512,
+              "raw_type_record_hex": "068E00000000000000001C0000000000"
+            }
+          ]
+        },
+        "methodDefinitionIndices": [
+          428394
+        ],
+        "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+      },
+      "physicalCallField": "elementContextCallRva"
+    }
+  ],
+  "physicalListReset": {
+    "observedSlots": {
+      "count": 24,
+      "version": 28,
+      "items": 16,
+      "arrayLength": 24,
+      "arrayData": 32,
+      "arrayBounds": 16,
+      "classRankByte": 308,
+      "classStrideInt32": 256
+    },
+    "programs": {
+      "empty": {
+        "codeWindows": [
+          {
+            "startRva": 47623552,
+            "endRva": 47623579,
+            "sha256": "B6DA3DD0851DFEF307B1B04E22515F4290B13B338915DC5339CDF708518FE6EC"
+          },
+          {
+            "startRva": 47623579,
+            "endRva": 47623660,
+            "sha256": "A08F09294759E3D3A875CE7492C57A65477E7631080991F7CFF3B75CB2B4A1CE"
+          },
+          {
+            "startRva": 47623660,
+            "endRva": 47623727,
+            "sha256": "04DDCD50EF22647B89E560C626D957095D3A780B9F5CA5C9C45AC3F87B98BA64"
+          },
+          {
+            "startRva": 47623727,
+            "endRva": 47623781,
+            "sha256": "2871FC8A84AC3C2A1D19935EBBCC0BFA7DECF7E5F0DAEE675351FF286C022B3A"
+          },
+          {
+            "startRva": 47623781,
+            "endRva": 47623797,
+            "sha256": "31911B9644C6494CE7AB9A21766A44022913B428DA9B1F0C7D95D27EC73AD7D1"
+          },
+          {
+            "startRva": 78571214,
+            "endRva": 78571380,
+            "sha256": "DE6B27E6BFAA05E8779A6603D739751F54DDE4562ECC6974DF52ED13DACB7829"
+          },
+          {
+            "startRva": 78571380,
+            "endRva": 78571426,
+            "sha256": "54C1EAAED1D023A8AA694D2C7824DEA0558A36E5CE0FD3D41185F26CBA0AF07E"
+          },
+          {
+            "startRva": 78571426,
+            "endRva": 78571615,
+            "sha256": "9B4C8C1222EE7F317F06BC40D72D129C46AF1C8A10A801834E923B3A3C16C5F0"
+          }
+        ],
+        "program": [
+          [
+            47623552,
+            "4057"
+          ],
+          [
+            47623554,
+            "4883EC30"
+          ],
+          [
+            47623558,
+            "8B7918"
+          ],
+          [
+            47623561,
+            "33D2"
+          ],
+          [
+            47623563,
+            "FF411C"
+          ],
+          [
+            47623566,
+            "895118"
+          ],
+          [
+            47623569,
+            "85FF"
+          ],
+          [
+            47623571,
+            "7F06"
+          ],
+          [
+            47623573,
+            "4883C430"
+          ],
+          [
+            47623577,
+            "5F"
+          ],
+          [
+            47623578,
+            "C3"
+          ]
+        ]
+      },
+      "positive": {
+        "codeWindows": [
+          {
+            "startRva": 47623552,
+            "endRva": 47623579,
+            "sha256": "B6DA3DD0851DFEF307B1B04E22515F4290B13B338915DC5339CDF708518FE6EC"
+          },
+          {
+            "startRva": 47623579,
+            "endRva": 47623660,
+            "sha256": "A08F09294759E3D3A875CE7492C57A65477E7631080991F7CFF3B75CB2B4A1CE"
+          },
+          {
+            "startRva": 47623660,
+            "endRva": 47623727,
+            "sha256": "04DDCD50EF22647B89E560C626D957095D3A780B9F5CA5C9C45AC3F87B98BA64"
+          },
+          {
+            "startRva": 47623727,
+            "endRva": 47623781,
+            "sha256": "2871FC8A84AC3C2A1D19935EBBCC0BFA7DECF7E5F0DAEE675351FF286C022B3A"
+          },
+          {
+            "startRva": 47623781,
+            "endRva": 47623797,
+            "sha256": "31911B9644C6494CE7AB9A21766A44022913B428DA9B1F0C7D95D27EC73AD7D1"
+          },
+          {
+            "startRva": 78571214,
+            "endRva": 78571380,
+            "sha256": "DE6B27E6BFAA05E8779A6603D739751F54DDE4562ECC6974DF52ED13DACB7829"
+          },
+          {
+            "startRva": 78571380,
+            "endRva": 78571426,
+            "sha256": "54C1EAAED1D023A8AA694D2C7824DEA0558A36E5CE0FD3D41185F26CBA0AF07E"
+          },
+          {
+            "startRva": 78571426,
+            "endRva": 78571615,
+            "sha256": "9B4C8C1222EE7F317F06BC40D72D129C46AF1C8A10A801834E923B3A3C16C5F0"
+          }
+        ],
+        "program": [
+          [
+            47623552,
+            "4057"
+          ],
+          [
+            47623554,
+            "4883EC30"
+          ],
+          [
+            47623558,
+            "8B7918"
+          ],
+          [
+            47623561,
+            "33D2"
+          ],
+          [
+            47623563,
+            "FF411C"
+          ],
+          [
+            47623566,
+            "895118"
+          ],
+          [
+            47623569,
+            "85FF"
+          ],
+          [
+            47623571,
+            "7F06"
+          ],
+          [
+            47623579,
+            "48895C2440"
+          ],
+          [
+            47623584,
+            "488B5910"
+          ],
+          [
+            47623588,
+            "4889742450"
+          ],
+          [
+            47623593,
+            "4885DB"
+          ],
+          [
+            47623596,
+            "0F84593AD801"
+          ],
+          [
+            47623602,
+            "483913"
+          ],
+          [
+            47623605,
+            "0F841339D801"
+          ],
+          [
+            47623611,
+            "488B03"
+          ],
+          [
+            47623614,
+            "389034010000"
+          ],
+          [
+            47623620,
+            "0F86313AD801"
+          ],
+          [
+            47623626,
+            "48395310"
+          ],
+          [
+            47623630,
+            "0F851939D801"
+          ],
+          [
+            47623636,
+            "8BF2"
+          ],
+          [
+            47623638,
+            "F7DE"
+          ],
+          [
+            47623640,
+            "483913"
+          ],
+          [
+            47623643,
+            "0F847439D801"
+          ],
+          [
+            47623649,
+            "488B03"
+          ],
+          [
+            47623652,
+            "389034010000"
+          ],
+          [
+            47623658,
+            "7679"
+          ],
+          [
+            47623660,
+            "48896C2448"
+          ],
+          [
+            47623665,
+            "4C89742458"
+          ],
+          [
+            47623670,
+            "48395310"
+          ],
+          [
+            47623674,
+            "0F857439D801"
+          ],
+          [
+            47623680,
+            "488D6B18"
+          ],
+          [
+            47623684,
+            "488B6D00"
+          ],
+          [
+            47623688,
+            "41BE01000000"
+          ],
+          [
+            47623694,
+            "4438B034010000"
+          ],
+          [
+            47623701,
+            "0F876239D801"
+          ],
+          [
+            47623707,
+            "4C8B742458"
+          ],
+          [
+            47623712,
+            "2BEF"
+          ],
+          [
+            47623714,
+            "3BF5"
+          ],
+          [
+            47623716,
+            "488B6C2448"
+          ],
+          [
+            47623721,
+            "0F8F7339D801"
+          ],
+          [
+            47623727,
+            "488B03"
+          ],
+          [
+            47623730,
+            "33D2"
+          ],
+          [
+            47623732,
+            "48638800010000"
+          ],
+          [
+            47623739,
+            "8BC1"
+          ],
+          [
+            47623741,
+            "0FAFC7"
+          ],
+          [
+            47623744,
+            "4C63C0"
+          ],
+          [
+            47623747,
+            "4863C6"
+          ],
+          [
+            47623750,
+            "480FAFC8"
+          ],
+          [
+            47623754,
+            "4883C120"
+          ],
+          [
+            47623758,
+            "4803CB"
+          ],
+          [
+            47623761,
+            "E86A4557FD"
+          ],
+          [
+            47623766,
+            "488B742450"
+          ],
+          [
+            47623771,
+            "488B5C2440"
+          ],
+          [
+            47623776,
+            "E930FFFFFF"
+          ],
+          [
+            47623573,
+            "4883C430"
+          ],
+          [
+            47623577,
+            "5F"
+          ],
+          [
+            47623578,
+            "C3"
+          ]
+        ]
+      }
+    },
+    "evidenceBoundary": {
+      "direct": "The actual called body writes the caller index slot to zero and increments version before the old-count guard. The nonpositive path returns without calls.",
+      "conditional": "Selected positive rank-one/null-bounds guards pass array data, zero and a sign-extended Int32 product to the actual span helper and restore the frame through RET.",
+      "structuralOnly": "The anonymous class byte/Int32 and array header slots are proved only by these consumer instructions.",
+      "unresolved": "Span-callee writes, managed Clear body parity, alternate array paths and enclosing stored-list/root admission."
+    }
+  }
+}

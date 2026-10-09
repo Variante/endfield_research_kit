@@ -1,0 +1,405 @@
+{
+  "schema": "endfield.buff-effect-line-center-points-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-per-iteration-arithmetic-and-writeback",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "fields": [
+    {
+      "role": "points",
+      "field": "HG.Rendering.Runtime.VFXTrailPointsTool::points",
+      "owner": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "type": "System.Collections.Generic.List`1<UnityEngine.Vector3>",
+      "offset": 128
+    },
+    {
+      "role": "temp",
+      "field": "HG.Rendering.Runtime.VFXTrailPointsTool::m_tempPoints",
+      "owner": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "type": "System.Collections.Generic.List`1<UnityEngine.Vector3>",
+      "offset": 144
+    },
+    {
+      "role": "center",
+      "field": "HG.Rendering.Runtime.VFXTrailPointsTool::centerOffset",
+      "owner": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "type": "UnityEngine.Vector3",
+      "offset": 116
+    }
+  ],
+  "programs": {
+    "applyOffset": {
+      "entryRva": 103300900,
+      "windows": [
+        {
+          "startRva": 103300900,
+          "endRva": 103301653,
+          "sha256": "2C3CCF125FF2FA382CEC2FF5096690664DE7BD0C0D32446658A500950327A031"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "getItem": {
+      "entryRva": 49448240,
+      "windows": [
+        {
+          "startRva": 49448240,
+          "endRva": 49448322,
+          "sha256": "FBD7B4262D2D01D12ED1F1A993AFA57623289ECFAACB1A9B2B78957690A4B780"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "setItemWrapper": {
+      "entryRva": 3207488,
+      "windows": [
+        {
+          "startRva": 3207488,
+          "endRva": 3207526,
+          "sha256": "8F7CAAA7384DA2B7A236AD97A81F0243A7494E6F25C019728E04F1547B8E9EB1"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "setItem": {
+      "entryRva": 63014176,
+      "windows": [
+        {
+          "startRva": 63014176,
+          "endRva": 63014259,
+          "sha256": "EC1342A1E30C045AF203AE6E70BBF0F6B0B7DD77C2CF99D4901E2280D49AA7CC"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "transformPoint": {
+      "entryRva": 47533552,
+      "windows": [
+        {
+          "startRva": 47533552,
+          "endRva": 47533656,
+          "sha256": "E22E59E9417FEF1B26DE134D0C448D3ED0D5710FE42FD30C384DBC257769C217"
+        },
+        {
+          "startRva": 79965368,
+          "endRva": 79965391,
+          "sha256": "3E6E1C67C3385E42C39B83F59B6184C70B5C427F8B293996D2F402E79E1588DA"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    },
+    "inverseTransformPoint": {
+      "entryRva": 49833776,
+      "windows": [
+        {
+          "startRva": 49833776,
+          "endRva": 49833880,
+          "sha256": "3DE880776A20AA3F0B004F9B0A01F313618005D8086380A8358C72BDDDE34330"
+        },
+        {
+          "startRva": 80427686,
+          "endRva": 80427709,
+          "sha256": "21C96A9119197C335350F0034109C8F705C630637D76E3BADEF7DE8EA36CDE1D"
+        }
+      ],
+      "boundary": "complete selected unwind-owned primary and chained windows"
+    }
+  },
+  "leaves": {
+    "forward": {
+      "entryRva": 78072176,
+      "methodIndex": 358755,
+      "programBytes": 30,
+      "programSha256": "D60B12D183346A25B8FECEBE7455C824A9957B8795B420F0E6028F4E8836895C"
+    },
+    "right": {
+      "entryRva": 78072352,
+      "methodIndex": 358760,
+      "programBytes": 27,
+      "programSha256": "31988842A8948BF5F398F2A7349761927963D52AEE2A0D6817371B71FE9F940C"
+    },
+    "addition": {
+      "entryRva": 50478784,
+      "methodIndex": 358763,
+      "programBytes": 47,
+      "programSha256": "351ECA361095A4D58BA53CE1E46F9607234607755C5BC1CDE487D918794E2977"
+    },
+    "vector-times-scalar": {
+      "entryRva": 50478736,
+      "methodIndex": 358766,
+      "programBytes": 36,
+      "programSha256": "6D8F004CB69175CA921B4EB758DB8344AF753C24039C85A4A76579F838886F83"
+    }
+  },
+  "declarations": [
+    {
+      "method": [
+        690,
+        "HG.Rendering.Runtime.VFXTrailPointsTool",
+        "_ApplyCenterOffset",
+        103300900
+      ],
+      "flags": 129,
+      "returnType": "void",
+      "returnNativeTypeHex": "9D8D0000000000000000018000000000",
+      "parameters": []
+    },
+    {
+      "method": [
+        358755,
+        "UnityEngine.Vector3",
+        "get_forward",
+        78072176
+      ],
+      "flags": 2198,
+      "returnType": "UnityEngine.Vector3",
+      "returnNativeTypeHex": "C5AA0000000000000000118000000000",
+      "parameters": []
+    },
+    {
+      "method": [
+        358760,
+        "UnityEngine.Vector3",
+        "get_right",
+        78072352
+      ],
+      "flags": 2198,
+      "returnType": "UnityEngine.Vector3",
+      "returnNativeTypeHex": "C5AA0000000000000000118000000000",
+      "parameters": []
+    },
+    {
+      "method": [
+        358763,
+        "UnityEngine.Vector3",
+        "op_Addition",
+        50478784
+      ],
+      "flags": 2198,
+      "returnType": "UnityEngine.Vector3",
+      "returnNativeTypeHex": "C5AA0000000000000000118000000000",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "UnityEngine.Vector3",
+          "nativeTypeHex": "C5AA0000000000000000118000000000"
+        },
+        {
+          "name": "b",
+          "type": "UnityEngine.Vector3",
+          "nativeTypeHex": "C5AA0000000000000000118000000000"
+        }
+      ]
+    },
+    {
+      "method": [
+        358766,
+        "UnityEngine.Vector3",
+        "op_Multiply",
+        50478736
+      ],
+      "flags": 2198,
+      "returnType": "UnityEngine.Vector3",
+      "returnNativeTypeHex": "C5AA0000000000000000118000000000",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "UnityEngine.Vector3",
+          "nativeTypeHex": "C5AA0000000000000000118000000000"
+        },
+        {
+          "name": "d",
+          "type": "float",
+          "nativeTypeHex": "6B8D00000000000000000C8000000000"
+        }
+      ]
+    },
+    {
+      "method": [
+        360107,
+        "UnityEngine.Transform",
+        "TransformPoint",
+        47533552
+      ],
+      "flags": 134,
+      "returnType": "UnityEngine.Vector3",
+      "returnNativeTypeHex": "C5AA0000000000000000118000000000",
+      "parameters": [
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3",
+          "nativeTypeHex": "C5AA0000000000000000118000000000"
+        }
+      ]
+    },
+    {
+      "method": [
+        360109,
+        "UnityEngine.Transform",
+        "InverseTransformPoint",
+        49833776
+      ],
+      "flags": 134,
+      "returnType": "UnityEngine.Vector3",
+      "returnNativeTypeHex": "C5AA0000000000000000118000000000",
+      "parameters": [
+        {
+          "name": "position",
+          "type": "UnityEngine.Vector3",
+          "nativeTypeHex": "C5AA0000000000000000118000000000"
+        }
+      ]
+    }
+  ],
+  "listRepresentation": {
+    "itemsPointerSlot": 16,
+    "countSlot": 24,
+    "versionSlot": 28,
+    "arrayLengthSlot": 24,
+    "arrayDataOffset": 32,
+    "elementStride": 12,
+    "openGenericFieldOffsetsUsed": false,
+    "namedGenericFieldLayoutProved": false
+  },
+  "callTargets": {
+    "isPatched": 46758256,
+    "zeroPredicate": 103301892,
+    "getPoints": 103301656,
+    "getItem": 49448240,
+    "getTransform": 48127712,
+    "transformPoint": 47533552,
+    "right": 78072352,
+    "multiply": 50478736,
+    "addition": 50478784,
+    "forward": 78072176,
+    "inverseTransformPoint": 49833776,
+    "setItemWrapper": 3207488,
+    "getPatch": 105575644,
+    "fatal": 11199508,
+    "invokeVoid": 90860356,
+    "setItem": 63014176,
+    "resolveInternal": 127408,
+    "missingInternal": 2974920,
+    "throw": 75968,
+    "arrayIndexFailure": 74960,
+    "listIndexFailure": 159663536
+  },
+  "namedCallTargets": {
+    "isPatched": [
+      "IFix.WrappersManagerImpl.IsPatched"
+    ],
+    "zeroPredicate": [
+      "HG.Rendering.Runtime.VFXTrailPointsTool._IsCenterOffset"
+    ],
+    "getPoints": [
+      "HG.Rendering.Runtime.VFXTrailPointsTool._GetPoints"
+    ],
+    "getItem": [
+      "System.Collections.Generic.List`1.get_Item"
+    ],
+    "getTransform": [
+      "UnityEngine.Component.get_transform"
+    ],
+    "transformPoint": [
+      "UnityEngine.Transform.TransformPoint"
+    ],
+    "right": [
+      "UnityEngine.Vector3.get_right"
+    ],
+    "multiply": [
+      "UnityEngine.Vector3.op_Multiply"
+    ],
+    "addition": [
+      "UnityEngine.Vector3.op_Addition"
+    ],
+    "forward": [
+      "UnityEngine.Vector3.get_forward",
+      "UnityEngine.Vector3.get_fwd"
+    ],
+    "inverseTransformPoint": [
+      "UnityEngine.Transform.InverseTransformPoint"
+    ],
+    "getPatch": [
+      "IFix.WrappersManagerImpl.GetPatch"
+    ],
+    "invokeVoid": [
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_0",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_1",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_10",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_12",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_13",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_2",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_3",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_4",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_5",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_7",
+      "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_9"
+    ],
+    "setItem": [
+      "System.Collections.Generic.List`1.set_Item"
+    ],
+    "listIndexFailure": [
+      "System.ThrowHelper.ThrowArgumentOutOfRange_IndexException"
+    ]
+  },
+  "genericContexts": {
+    "getItem": {
+      "methodSpecIndex": 251558,
+      "definition": [
+        286550,
+        "System.Collections.Generic.List`1",
+        "get_Item"
+      ],
+      "recordRawHex": "565F04008C030000FFFFFFFF",
+      "classArgumentRawHex": [
+        "C5AA0000000000000000118000000000"
+      ]
+    },
+    "setItem": {
+      "methodSpecIndex": 251560,
+      "definition": [
+        286551,
+        "System.Collections.Generic.List`1",
+        "set_Item"
+      ],
+      "recordRawHex": "575F04008C030000FFFFFFFF",
+      "classArgumentRawHex": [
+        "C5AA0000000000000000118000000000"
+      ]
+    }
+  },
+  "genericMethodTableMatches": [
+    {
+      "tableIndex": 238547,
+      "methodSpecIndex": 251558,
+      "rawHex": "A6D6030096A20300B8BD0000FFFFFFFF",
+      "indices": [
+        238230,
+        48568,
+        -1
+      ],
+      "methodPointerRva": 49448240
+    },
+    {
+      "tableIndex": 238549,
+      "methodSpecIndex": 251560,
+      "rawHex": "A8D6030098A2030064700000FFFFFFFF",
+      "indices": [
+        238232,
+        28772,
+        -1
+      ],
+      "methodPointerRva": 63014176
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected current metadata, Vector3/List fields and complete caller/leaf/wrapper native windows.",
+    "direct": "Complete ordinary point loop preserves arithmetic operand order and distinct twelve-byte buffers, passes the named Transform/Inverse wrappers, and writes a bounded selected Vector3 list element through a proved copy wrapper.",
+    "structuralOnly": "List and array physical slots are proved by their selected compiled consumers; no open generic field-offset placeholder is promoted to a closed runtime layout.",
+    "conditional": "IFix-false continuation, compatible nonnull objects, checked list and array bounds, ABI-conforming normal helper returns, nonaliasing stack/value buffers and stable list count/storage across arithmetic leaves.",
+    "unresolved": "Initial _GetPoints population and list aliasing/lifetime, Unity internal-call geometry, parent effect configuration identity, generic runtime initialization, ApplyPoints renderer submission and actual execution."
+  }
+}

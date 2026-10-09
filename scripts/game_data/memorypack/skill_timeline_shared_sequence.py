@@ -834,9 +834,9 @@ class SharedSequenceReader(Reader):
     def damage_unit_profile(self) -> None:
         """Select the Skill-authenticated DamageUnit list readers.
 
-        The shared Buff reader deliberately leaves every positive first/third
-        DamageUnit list closed.  SkillData has separate selected native
-        contracts for the CostData and GameplayTag members.  The
+        The shared Buff reader retains the first-list cost refusal and now
+        frames the separately proved wrapped GameplayTag list. SkillData
+        preserves its own selected native CostData and GameplayTag receipts. The
         EffectActionCfg array retains the shared fail-closed behavior.
         """
         stack = getattr(self, "_skill_damage_unit_list_indices", None)
@@ -867,9 +867,10 @@ class SharedSequenceReader(Reader):
                     "damageUnitMemberIndex": FIRST_DAMAGE_UNIT_COST_LIST_MEMBER_INDEX,
                 })
                 return count
-            if list_index == 1:
-                return read_positive_member_ten_list(self)
         return super().empty_damage_collection(kind)
+
+    def damage_tag_collection(self) -> int:
+        return read_positive_member_ten_list(self)
 
     def _action(self, depth: int, tag: int, width: int) -> None:
         if tag in recursive_actions.READ_KINDS:

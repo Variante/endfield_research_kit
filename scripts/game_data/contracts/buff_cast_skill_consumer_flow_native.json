@@ -1,0 +1,125 @@
+{
+  "schema": "endfield.buff-cast-skill-consumer-flow-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "programs": [
+    {
+      "caller": [
+        57763,
+        "Beyond.Gameplay.Core.CastSkill",
+        "ExecuteInternal",
+        100489708
+      ],
+      "callee": [
+        56358,
+        "Beyond.Gameplay.Core.AbilitySystem",
+        "TryCastSkillDuringAction",
+        100346260
+      ],
+      "callerWindow": {
+        "startRva": 100489708,
+        "endRva": 100490074,
+        "sha256": "97BDE786E26D808781186C5F779A7BC152B900A6CDA19CAD7D52357779E8BB31",
+        "boundary": "Selected current complete method window. The independently checked entry, local void call, AL assignment, exit jump and complete matching epilogue prove only the named ordinary completion program."
+      },
+      "prologue": [
+        [
+          100489708,
+          "488BC4"
+        ],
+        [
+          100489711,
+          "48895808"
+        ],
+        [
+          100489715,
+          "48896810"
+        ],
+        [
+          100489719,
+          "48897018"
+        ],
+        [
+          100489723,
+          "48897820"
+        ],
+        [
+          100489727,
+          "4156"
+        ],
+        [
+          100489729,
+          "4883EC60"
+        ]
+      ],
+      "program": [
+        [
+          100489999,
+          "E880CEFDFF"
+        ],
+        [
+          100490004,
+          "B001"
+        ],
+        [
+          100490006,
+          "EB27"
+        ]
+      ],
+      "epilogue": [
+        [
+          100490047,
+          "4C8D5C2460"
+        ],
+        [
+          100490052,
+          "498B5B10"
+        ],
+        [
+          100490056,
+          "498B6B18"
+        ],
+        [
+          100490060,
+          "498B7320"
+        ],
+        [
+          100490064,
+          "498B7B28"
+        ],
+        [
+          100490068,
+          "498BE3"
+        ],
+        [
+          100490071,
+          "415E"
+        ],
+        [
+          100490073,
+          "C3"
+        ]
+      ],
+      "frame": {
+        "allocation": 96,
+        "savedEntrySlots": {
+          "rbx": 8,
+          "rbp": 16,
+          "rsi": 24,
+          "rdi": 32
+        }
+      },
+      "returnedBoolean": true
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native inputs, both declared return kinds, caller/callee metadata and registered pointers, current complete caller window hash and each selected instruction byte.",
+    "direct": "TryCastSkillDuringAction returns void. On its ordinary return the caller assigns true to AL and directly reaches its matching complete return epilogue, preserving that Boolean.",
+    "conditional": "Execution reaches the selected call with the checked caller frame and the call returns ordinarily. IFix and other branch/exit selection remain separate.",
+    "unresolved": "Runtime invocation, skill acceptance, cost/interrupt decisions and effects. The caller true value is not a returned success value of the void callee."
+  }
+}

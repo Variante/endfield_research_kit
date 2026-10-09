@@ -1,0 +1,716 @@
+{
+  "schema": "endfield.buff-selector-fixed-point-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceContract": "buff_119_native.json",
+  "switchContract": "skill_selector_finder_typhoea_native.json",
+  "dispatcher": {
+    "switchTableRva": 59821652,
+    "switchEntryCount": 24,
+    "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+    "unionTag": 3,
+    "switchTargetRva": 59819716,
+    "routeWindow": {
+      "startRva": 59819716,
+      "endRva": 59819816,
+      "sha256": "1F301DF4AF47CD5DD86016BED18B39394D60DC57783A2ECA490CD326491B7343",
+      "boundary": "selected current FixedPointFinder route to shared rejoin"
+    },
+    "usageCellRva": 217990376,
+    "usageRawHex": "3F44032000000000",
+    "registeredTypeIndex": 107039,
+    "wrapperTypeDefinition": 23031,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_FixedPointFinder_DataForMemoryPack",
+    "typeLoadInstruction": [
+      59819728,
+      "488B15117E6D09"
+    ]
+  },
+  "records": {
+    "fixedPointFinder": {
+      "sourceContract": "buff_119_native.json",
+      "wrapperTypeDefinition": 23031,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_FixedPointFinder_DataForMemoryPack",
+      "runtimeTypeDefinition": 10171,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Selector+FixedPointFinder+Data",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "finderUnion3",
+      "readerMethod": [
+        167061,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_FixedPointFinder_DataForMemoryPack",
+        "Deserialize",
+        52469568
+      ],
+      "members": [
+        {
+          "fieldName": "positionOffset",
+          "declaredType": "UnityEngine.Vector3",
+          "setterMethodIndex": 167055,
+          "kind": "raw12",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 52469822,
+            "rawHex": "F20F114010",
+            "fieldOwnerTypeDefinition": 10171,
+            "fieldOffset": 16,
+            "baseRegister": 0,
+            "tailStores": [
+              {
+                "rva": 52469827,
+                "rawHex": "44897018",
+                "offsetDelta": 8
+              }
+            ]
+          },
+          "inlineSource": {
+            "mode": "inline-cursor-struct12",
+            "width": 12,
+            "getterMethod": [
+              167050,
+              "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_FixedPointFinder_DataForMemoryPack",
+              "get___instance",
+              52470368
+            ],
+            "getterCall": {
+              "rva": 52469802,
+              "targetRva": 52470368
+            },
+            "instructions": [
+              [
+                52469729,
+                "837B300C"
+              ],
+              [
+                52469733,
+                "488B37"
+              ],
+              [
+                52469736,
+                "0F8CDBF2B201"
+              ],
+              [
+                52469742,
+                "488B4350"
+              ],
+              [
+                52469746,
+                "F20F1000"
+              ],
+              [
+                52469750,
+                "448B7008"
+              ],
+              [
+                52469754,
+                "F20F11442458"
+              ],
+              [
+                52469760,
+                "8B6B30"
+              ],
+              [
+                52469763,
+                "83ED0C"
+              ],
+              [
+                52469766,
+                "0F88D3F2B201"
+              ],
+              [
+                52469772,
+                "488343500C"
+              ],
+              [
+                52469777,
+                "8343400C"
+              ],
+              [
+                52469781,
+                "8343440C"
+              ],
+              [
+                52469785,
+                "896B30"
+              ],
+              [
+                52469788,
+                "4885F6"
+              ],
+              [
+                52469791,
+                "0F8468010000"
+              ],
+              [
+                52469797,
+                "33D2"
+              ],
+              [
+                52469799,
+                "488BCE"
+              ],
+              [
+                52469802,
+                "E831020000"
+              ],
+              [
+                52469807,
+                "4885C0"
+              ],
+              [
+                52469810,
+                "0F8455010000"
+              ],
+              [
+                52469816,
+                "F20F10442458"
+              ],
+              [
+                52469822,
+                "F20F114010"
+              ],
+              [
+                52469827,
+                "44897018"
+              ]
+            ],
+            "registerProfile": "wrapper-rsi-remaining-ebp",
+            "restoresReaderArgument": false,
+            "temporaryStackOffset": 88
+          }
+        },
+        {
+          "fieldName": "rotationOffset",
+          "declaredType": "UnityEngine.Quaternion",
+          "setterMethodIndex": 167056,
+          "kind": "raw16",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 52469920,
+            "rawHex": "0F11401C",
+            "fieldOwnerTypeDefinition": 10171,
+            "fieldOffset": 28,
+            "baseRegister": 0
+          },
+          "inlineSource": {
+            "mode": "inline-cursor-struct16",
+            "width": 16,
+            "getterMethod": [
+              167050,
+              "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_FixedPointFinder_DataForMemoryPack",
+              "get___instance",
+              52470368
+            ],
+            "getterCall": {
+              "rva": 52469898,
+              "targetRva": 52470368
+            },
+            "instructions": [
+              [
+                52469831,
+                "837B3010"
+              ],
+              [
+                52469835,
+                "488B2F"
+              ],
+              [
+                52469838,
+                "0F8CA5F2B201"
+              ],
+              [
+                52469844,
+                "488B4350"
+              ],
+              [
+                52469848,
+                "0F1000"
+              ],
+              [
+                52469851,
+                "0F11442420"
+              ],
+              [
+                52469856,
+                "8B7330"
+              ],
+              [
+                52469859,
+                "83EE10"
+              ],
+              [
+                52469862,
+                "0F88A3F2B201"
+              ],
+              [
+                52469868,
+                "4883435010"
+              ],
+              [
+                52469873,
+                "83434010"
+              ],
+              [
+                52469877,
+                "83434410"
+              ],
+              [
+                52469881,
+                "897330"
+              ],
+              [
+                52469884,
+                "4885ED"
+              ],
+              [
+                52469887,
+                "0F8408010000"
+              ],
+              [
+                52469893,
+                "33D2"
+              ],
+              [
+                52469895,
+                "488BCD"
+              ],
+              [
+                52469898,
+                "E8D1010000"
+              ],
+              [
+                52469903,
+                "4885C0"
+              ],
+              [
+                52469906,
+                "0F84F5000000"
+              ],
+              [
+                52469912,
+                "0F10442420"
+              ],
+              [
+                52469917,
+                "488BCB"
+              ],
+              [
+                52469920,
+                "0F11401C"
+              ]
+            ],
+            "destinationDisplacementBytes": 1
+          }
+        },
+        {
+          "fieldName": "sampleRadius",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 167057,
+          "kind": "scalarPayload",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 52469974,
+            "rawHex": "48896830",
+            "fieldOwnerTypeDefinition": 10171,
+            "fieldOffset": 48,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 52469934,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "488BE84885F60F84CE00000033D2488BCEE8970100004885C00F84BB000000488D4830",
+          "sourceContextInstructionRva": 52469924
+        },
+        {
+          "fieldName": "snapToNavmesh",
+          "declaredType": "bool",
+          "setterMethodIndex": 167058,
+          "kind": "byte",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 52470030,
+            "rawHex": "88582C",
+            "fieldOwnerTypeDefinition": 10171,
+            "fieldOffset": 44,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 52469989,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "0FB6D84885FF0F849700000033D2488BCFE8600100004885C00F84840000004C8B742450"
+        }
+      ],
+      "sourceArgumentRoles": {
+        "mode": "reader-rbx-wrapper-ref-rdi",
+        "normalProgram": [
+          [
+            52469568,
+            "48895C2418"
+          ],
+          [
+            52469573,
+            "55"
+          ],
+          [
+            52469574,
+            "56"
+          ],
+          [
+            52469575,
+            "57"
+          ],
+          [
+            52469576,
+            "4883EC30"
+          ],
+          [
+            52469580,
+            "803D2220CA0A00"
+          ],
+          [
+            52469587,
+            "488BFA"
+          ],
+          [
+            52469590,
+            "488BD9"
+          ],
+          [
+            52469593,
+            "0F84DA010000"
+          ],
+          [
+            52469599,
+            "488B0F"
+          ],
+          [
+            52469602,
+            "4885C9"
+          ],
+          [
+            52469605,
+            "0F8521F3B201"
+          ],
+          [
+            52469611,
+            "837B3001"
+          ],
+          [
+            52469615,
+            "0F8C24F3B201"
+          ],
+          [
+            52469621,
+            "488B4350"
+          ],
+          [
+            52469625,
+            "0FB628"
+          ],
+          [
+            52469628,
+            "8B7330"
+          ],
+          [
+            52469631,
+            "83EE01"
+          ],
+          [
+            52469634,
+            "0F8827F3B201"
+          ],
+          [
+            52469640,
+            "48FF4350"
+          ],
+          [
+            52469644,
+            "FF4340"
+          ],
+          [
+            52469647,
+            "FF4344"
+          ],
+          [
+            52469650,
+            "897330"
+          ],
+          [
+            52469653,
+            "4080FDFF"
+          ],
+          [
+            52469657,
+            "0F847F010000"
+          ],
+          [
+            52469663,
+            "4C89742450"
+          ],
+          [
+            52469668,
+            "48833F00"
+          ],
+          [
+            52469672,
+            "752D"
+          ],
+          [
+            52469674,
+            "488B0D37A5DD09"
+          ],
+          [
+            52469681,
+            "E8AAC0E1FC"
+          ],
+          [
+            52469686,
+            "488BF0"
+          ],
+          [
+            52469689,
+            "4885C0"
+          ],
+          [
+            52469692,
+            "0F84CB010000"
+          ],
+          [
+            52469698,
+            "33D2"
+          ],
+          [
+            52469700,
+            "488BC8"
+          ],
+          [
+            52469703,
+            "E8E4020000"
+          ],
+          [
+            52469708,
+            "488BCF"
+          ],
+          [
+            52469711,
+            "488937"
+          ],
+          [
+            52469714,
+            "E869CBE1FC"
+          ],
+          [
+            52469719,
+            "4080FD04"
+          ],
+          [
+            52469723,
+            "0F8548F3B201"
+          ],
+          [
+            52469729,
+            "837B300C"
+          ],
+          [
+            52469733,
+            "488B37"
+          ],
+          [
+            52469736,
+            "0F8CDBF2B201"
+          ],
+          [
+            52469742,
+            "488B4350"
+          ],
+          [
+            52469746,
+            "F20F1000"
+          ],
+          [
+            52469750,
+            "448B7008"
+          ],
+          [
+            52469754,
+            "F20F11442458"
+          ],
+          [
+            52469760,
+            "8B6B30"
+          ],
+          [
+            52469763,
+            "83ED0C"
+          ],
+          [
+            52469766,
+            "0F88D3F2B201"
+          ],
+          [
+            52469772,
+            "488343500C"
+          ],
+          [
+            52469777,
+            "8343400C"
+          ],
+          [
+            52469781,
+            "8343440C"
+          ],
+          [
+            52469785,
+            "896B30"
+          ],
+          [
+            52469788,
+            "4885F6"
+          ],
+          [
+            52469791,
+            "0F8468010000"
+          ],
+          [
+            52469797,
+            "33D2"
+          ],
+          [
+            52469799,
+            "488BCE"
+          ],
+          [
+            52469802,
+            "E831020000"
+          ],
+          [
+            52469807,
+            "4885C0"
+          ],
+          [
+            52469810,
+            "0F8455010000"
+          ],
+          [
+            52469816,
+            "F20F10442458"
+          ],
+          [
+            52469822,
+            "F20F114010"
+          ],
+          [
+            52469827,
+            "44897018"
+          ],
+          [
+            52469831,
+            "837B3010"
+          ],
+          [
+            52469835,
+            "488B2F"
+          ],
+          [
+            52469838,
+            "0F8CA5F2B201"
+          ],
+          [
+            52469844,
+            "488B4350"
+          ],
+          [
+            52469848,
+            "0F1000"
+          ],
+          [
+            52469851,
+            "0F11442420"
+          ],
+          [
+            52469856,
+            "8B7330"
+          ],
+          [
+            52469859,
+            "83EE10"
+          ],
+          [
+            52469862,
+            "0F88A3F2B201"
+          ],
+          [
+            52469868,
+            "4883435010"
+          ],
+          [
+            52469873,
+            "83434010"
+          ],
+          [
+            52469877,
+            "83434410"
+          ],
+          [
+            52469881,
+            "897330"
+          ],
+          [
+            52469884,
+            "4885ED"
+          ],
+          [
+            52469887,
+            "0F8408010000"
+          ],
+          [
+            52469893,
+            "33D2"
+          ],
+          [
+            52469895,
+            "488BCD"
+          ],
+          [
+            52469898,
+            "E8D1010000"
+          ],
+          [
+            52469903,
+            "4885C0"
+          ],
+          [
+            52469906,
+            "0F84F5000000"
+          ],
+          [
+            52469912,
+            "0F10442420"
+          ],
+          [
+            52469917,
+            "488BCB"
+          ],
+          [
+            52469920,
+            "0F11401C"
+          ]
+        ]
+      }
+    }
+  },
+  "dependencies": {
+    "scalar": "buff_adding_cooldown_ownership_native.json"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected current finder route, wrapper identity and complete authenticated reader source windows.",
+    "direct": "Named position, rotation, radius and snap fields. Two explicit inline programs read/advance twelve and sixteen bytes respectively and copy their complete temporary values through the typed wrapper getter to the original fields. The radius has its own closed BlackboardDouble source context.",
+    "conditional": "Ordinary buffered source paths, coherent reference-wrapper instance, and independently authenticated scalar child. Null states and raw vector/quaternion/flag bits remain distinct.",
+    "unresolved": "Evaluated geometry, radius and direction, navigation sampling/snapping, selected point or entity, live formatter allocation/refill/error paths and enclosing Buff root admission."
+  }
+}

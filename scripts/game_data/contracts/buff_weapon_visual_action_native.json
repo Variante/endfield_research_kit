@@ -1,0 +1,534 @@
+{
+  "schema": "endfield.buff-weapon-visual-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "charWeaponVisible": {
+      "sourceContract": "buff_37_native.json",
+      "wrapperTypeDefinition": 16009,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CharWeaponVisibleAction_CharWeaponVisibleActionDataForMemoryPack",
+      "runtimeTypeDefinition": 9333,
+      "runtimeTypeName": "Beyond.Gameplay.Core.CharWeaponVisibleAction+CharWeaponVisibleActionData",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member10",
+      "readerMethod": [
+        119420,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_CharWeaponVisibleAction_CharWeaponVisibleActionDataForMemoryPack",
+        "Deserialize",
+        65246848
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247015,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 65246992,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F849E0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247055,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 65247033,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84750100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 65247020
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247088,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 65247066,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84540100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247121,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 65247099,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84330100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "includeAllWeapons",
+          "declaredType": "bool",
+          "setterMethodIndex": 119412,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247155,
+            "targetRva": 65247440,
+            "methodIndex": 119412
+          },
+          "sourceCall": {
+            "rva": 65247132,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84120100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "overrideVFX",
+          "declaredType": "bool",
+          "setterMethodIndex": 119413,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247189,
+            "targetRva": 65247488,
+            "methodIndex": 119413
+          },
+          "sourceCall": {
+            "rva": 65247166,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84F00000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "showVFX",
+          "declaredType": "bool",
+          "setterMethodIndex": 119414,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247223,
+            "targetRva": 65247536,
+            "methodIndex": 119414
+          },
+          "sourceCall": {
+            "rva": 65247200,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84CE0000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "vfxOverrideConfig",
+          "declaredType": "Beyond.Gameplay.WeaponVFXOverrideConfig",
+          "setterMethodIndex": 119415,
+          "kind": "weapon-vfx-profile",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247264,
+            "targetRva": 65247584,
+            "methodIndex": 119415
+          },
+          "sourceCall": {
+            "rva": 65247241,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84A50000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 65247228
+        },
+        {
+          "fieldName": "visible",
+          "declaredType": "bool",
+          "setterMethodIndex": 119416,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247298,
+            "targetRva": 65247632,
+            "methodIndex": 119416
+          },
+          "sourceCall": {
+            "rva": 65247275,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84830000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "weaponIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 119417,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65247327,
+            "targetRva": 65247680,
+            "methodIndex": 119417
+          },
+          "sourceCall": {
+            "rva": 65247309,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885DB74654533C08BD0488BCB"
+        }
+      ]
+    },
+    "weaponVfxOverride": {
+      "sourceContract": "buff_37_native.json",
+      "wrapperTypeDefinition": 22429,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_WeaponVFXOverrideConfigForMemoryPack",
+      "runtimeTypeDefinition": 1312,
+      "runtimeTypeName": "Beyond.Gameplay.WeaponVFXOverrideConfig",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "weaponVfxHeader18",
+      "readerMethod": [
+        162833,
+        "Beyond.MemoryPack.Beyond_Gameplay_WeaponVFXOverrideConfigForMemoryPack",
+        "Deserialize",
+        65271440
+      ],
+      "members": [
+        {
+          "fieldName": "enableToFightAppearParticleFx",
+          "declaredType": "bool",
+          "setterMethodIndex": 162813,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271554,
+            "targetRva": 84413004,
+            "methodIndex": 162813
+          },
+          "sourceCall": {
+            "rva": 65271531,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84880200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "enableToFightAppearRendererFx",
+          "declaredType": "bool",
+          "setterMethodIndex": 162814,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271588,
+            "targetRva": 84406052,
+            "methodIndex": 162814
+          },
+          "sourceCall": {
+            "rva": 65271565,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84660200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "enableToIdleAppearParticleFx",
+          "declaredType": "bool",
+          "setterMethodIndex": 162815,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271622,
+            "targetRva": 84405996,
+            "methodIndex": 162815
+          },
+          "sourceCall": {
+            "rva": 65271599,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84440200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "enableToIdleAppearRendererFx",
+          "declaredType": "bool",
+          "setterMethodIndex": 162816,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271656,
+            "targetRva": 84405664,
+            "methodIndex": 162816
+          },
+          "sourceCall": {
+            "rva": 65271633,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84220200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "enableToIdleAppearRendererFx2",
+          "declaredType": "bool",
+          "setterMethodIndex": 162817,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271690,
+            "targetRva": 84401864,
+            "methodIndex": 162817
+          },
+          "sourceCall": {
+            "rva": 65271667,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84000200004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "enableToIdleAppearRendererFx3",
+          "declaredType": "bool",
+          "setterMethodIndex": 162818,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271724,
+            "targetRva": 84403124,
+            "methodIndex": 162818
+          },
+          "sourceCall": {
+            "rva": 65271701,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84DE0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "enableToIdleAppearRendererFx4",
+          "declaredType": "bool",
+          "setterMethodIndex": 162819,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271758,
+            "targetRva": 84406256,
+            "methodIndex": 162819
+          },
+          "sourceCall": {
+            "rva": 65271735,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84BC0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "enableToIdleDisappearParticleFx",
+          "declaredType": "bool",
+          "setterMethodIndex": 162820,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271792,
+            "targetRva": 84403704,
+            "methodIndex": 162820
+          },
+          "sourceCall": {
+            "rva": 65271769,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F849A0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "enableToIdleDisappearRendererFx",
+          "declaredType": "bool",
+          "setterMethodIndex": 162821,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271826,
+            "targetRva": 84403524,
+            "methodIndex": 162821
+          },
+          "sourceCall": {
+            "rva": 65271803,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84780100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "toFightAppearParticleFx",
+          "declaredType": "string",
+          "setterMethodIndex": 162822,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271860,
+            "targetRva": 52480064,
+            "methodIndex": 162822
+          },
+          "sourceCall": {
+            "rva": 65271837,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F84560100004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "toFightAppearRendererFx",
+          "declaredType": "string",
+          "setterMethodIndex": 162823,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271894,
+            "targetRva": 52480832,
+            "methodIndex": 162823
+          },
+          "sourceCall": {
+            "rva": 65271871,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F84340100004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "toIdleAppearParticleFx",
+          "declaredType": "string",
+          "setterMethodIndex": 162824,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271928,
+            "targetRva": 52469328,
+            "methodIndex": 162824
+          },
+          "sourceCall": {
+            "rva": 65271905,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F84120100004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "toIdleAppearRendererFx",
+          "declaredType": "string",
+          "setterMethodIndex": 162825,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271962,
+            "targetRva": 52472848,
+            "methodIndex": 162825
+          },
+          "sourceCall": {
+            "rva": 65271939,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F84F00000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "toIdleAppearRendererFx2",
+          "declaredType": "string",
+          "setterMethodIndex": 162826,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65271996,
+            "targetRva": 52468352,
+            "methodIndex": 162826
+          },
+          "sourceCall": {
+            "rva": 65271973,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F84CE0000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "toIdleAppearRendererFx3",
+          "declaredType": "string",
+          "setterMethodIndex": 162827,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65272030,
+            "targetRva": 52476416,
+            "methodIndex": 162827
+          },
+          "sourceCall": {
+            "rva": 65272007,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F84AC0000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "toIdleAppearRendererFx4",
+          "declaredType": "string",
+          "setterMethodIndex": 162828,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65272064,
+            "targetRva": 52476512,
+            "methodIndex": 162828
+          },
+          "sourceCall": {
+            "rva": 65272041,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F60F848A0000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "toIdleDisappearParticleFx",
+          "declaredType": "string",
+          "setterMethodIndex": 162829,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65272094,
+            "targetRva": 52480256,
+            "methodIndex": 162829
+          },
+          "sourceCall": {
+            "rva": 65272075,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885F6746C4533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "toIdleDisappearRendererFx",
+          "declaredType": "string",
+          "setterMethodIndex": 162830,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 65272124,
+            "targetRva": 52480448,
+            "methodIndex": 162830
+          },
+          "sourceCall": {
+            "rva": 65272105,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "4885DB744E4533C0488BD0488BCB"
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "55": "charWeaponVisible"
+  },
+  "childTypes": {
+    "weapon-vfx-profile": "Beyond.Gameplay.WeaponVFXOverrideConfig"
+  },
+  "evidenceBoundary": {
+    "direct": "Selected complete CharWeaponVisibleAction and WeaponVFXOverrideConfig readers, named fields, source-to-setter transfers and closed source contexts establish the stored parent and separate eighteen-member VFX configuration.",
+    "conditional": "Original-span composition preserves every raw flag/index and signed-length string byte payload. Null action wrapper, null VFX wrapper, null string and empty string remain distinct; in-memory string reference width is separate from wire framing.",
+    "unresolved": "String decoder parity, selected character/weapon receiver, VFX asset binding, show/override/all-weapons/index branch selection, visibility writes and runtime effects remain unproved. Whole Buff completeness belongs to the root receipt."
+  }
+}

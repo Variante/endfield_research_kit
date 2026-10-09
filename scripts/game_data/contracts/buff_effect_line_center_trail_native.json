@@ -1,0 +1,218 @@
+{
+  "schema": "endfield.buff-effect-line-center-trail-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-trail-forwarding-and-start-guards",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "fields": [
+    {
+      "role": "data",
+      "field": "Beyond.Gameplay.EffectInstance::m_data",
+      "owner": "Beyond.Gameplay.EffectInstance",
+      "type": "Beyond.Gameplay.EffectActionCfg",
+      "offset": 32
+    },
+    {
+      "role": "cfgCenter",
+      "field": "Beyond.Gameplay.EffectActionCfg::centerOffset",
+      "owner": "Beyond.Gameplay.EffectActionCfg",
+      "type": "UnityEngine.Vector3",
+      "offset": 112
+    },
+    {
+      "role": "trailCenter",
+      "field": "HG.Rendering.Runtime.VFXTrailPointsTool::centerOffset",
+      "owner": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "type": "UnityEngine.Vector3",
+      "offset": 116
+    },
+    {
+      "role": "erosion",
+      "field": "HG.Rendering.Runtime.VFXTrailPointsTool::isErosionLine",
+      "owner": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "type": "bool",
+      "offset": 136
+    }
+  ],
+  "programs": {
+    "forwarding": {
+      "method": [
+        24653,
+        "Beyond.Gameplay.BattleNormalEffect",
+        "_SetEffectCenterOffset",
+        52653744
+      ],
+      "window": {
+        "startRva": 52653744,
+        "endRva": 52654894,
+        "sha256": "A35D069FB5D6655ADCC9D3CB57E069F4CAB1389B31320A80490C478E3F7EF968"
+      }
+    },
+    "start": {
+      "method": [
+        687,
+        "HG.Rendering.Runtime.VFXTrailPointsTool",
+        "Start",
+        103299660
+      ],
+      "window": {
+        "startRva": 103299660,
+        "endRva": 103299761,
+        "sha256": "E5005A5A9BBCDCCBD26AEAF443BAEF80474BB20DD95B2B676B6F190DD1DB9CE0"
+      }
+    },
+    "zeroPredicate": {
+      "method": [
+        691,
+        "HG.Rendering.Runtime.VFXTrailPointsTool",
+        "_IsCenterOffset",
+        103301892
+      ],
+      "window": {
+        "startRva": 103301892,
+        "endRva": 103302012,
+        "sha256": "CE209CCCF2A8F453F45DD370D98C0D6F503701EDB7B54A89E17F2ACEB882D81D"
+      }
+    }
+  },
+  "callTargets": {
+    "isPatched": 46758256,
+    "effectObject": 52668192,
+    "classInit": 156352,
+    "objectInequality": 47532992,
+    "allocate": 46808816,
+    "query": 55135328,
+    "getEnumerator": 57285152,
+    "moveNext": 47254880,
+    "start": 103299660,
+    "applyOffset": 103300900,
+    "applyPoints": 103298996,
+    "getPatch": 105575644,
+    "fatal": 11199508,
+    "invokeVoid": 90860356,
+    "invokeBool": 90860148
+  },
+  "namedCallTargets": {
+    "isPatched": "IFix.WrappersManagerImpl.IsPatched",
+    "effectObject": "Beyond.Gameplay.EffectInstance.get_effectObj",
+    "objectInequality": "UnityEngine.Object.op_Inequality",
+    "query": "UnityEngine.GameObject.GetComponentsInChildren",
+    "getEnumerator": "System.Collections.Generic.List`1.GetEnumerator",
+    "moveNext": "System.Collections.Generic.List`1+Enumerator.MoveNext",
+    "start": "HG.Rendering.Runtime.VFXTrailPointsTool.Start",
+    "applyOffset": "HG.Rendering.Runtime.VFXTrailPointsTool._ApplyCenterOffset",
+    "applyPoints": "HG.Rendering.Runtime.VFXTrailPointsTool.ApplyPoints",
+    "getPatch": "IFix.WrappersManagerImpl.GetPatch"
+  },
+  "declarations": [
+    {
+      "methodIndex": 24653,
+      "type": "Beyond.Gameplay.BattleNormalEffect",
+      "method": "_SetEffectCenterOffset",
+      "flags": 129,
+      "returnType": "void",
+      "returnNativeTypeHex": "9D8D0000000000000000018000000000",
+      "parameters": []
+    },
+    {
+      "methodIndex": 687,
+      "type": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "method": "Start",
+      "flags": 134,
+      "returnType": "void",
+      "returnNativeTypeHex": "9D8D0000000000000000018000000000",
+      "parameters": []
+    },
+    {
+      "methodIndex": 691,
+      "type": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "method": "_IsCenterOffset",
+      "flags": 129,
+      "returnType": "bool",
+      "returnNativeTypeHex": "FA8C0000000000000000028000000000",
+      "parameters": []
+    },
+    {
+      "methodIndex": 690,
+      "type": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "method": "_ApplyCenterOffset",
+      "flags": 129,
+      "returnType": "void",
+      "returnNativeTypeHex": "9D8D0000000000000000018000000000",
+      "parameters": []
+    },
+    {
+      "methodIndex": 689,
+      "type": "HG.Rendering.Runtime.VFXTrailPointsTool",
+      "method": "ApplyPoints",
+      "flags": 134,
+      "returnType": "void",
+      "returnNativeTypeHex": "9D8D0000000000000000018000000000",
+      "parameters": []
+    }
+  ],
+  "genericContexts": {
+    "allocate": {
+      "methodSpecIndex": 566444,
+      "definition": [
+        247708,
+        "Beyond.PoolCore.ListPool`1",
+        "Allocate"
+      ],
+      "classArguments": [
+        "HG.Rendering.Runtime.VFXTrailPointsTool"
+      ],
+      "methodArguments": []
+    },
+    "query": {
+      "methodSpecIndex": 598601,
+      "definition": [
+        359384,
+        "UnityEngine.GameObject",
+        "GetComponentsInChildren"
+      ],
+      "classArguments": [],
+      "methodArguments": [
+        "HG.Rendering.Runtime.VFXTrailPointsTool"
+      ]
+    },
+    "getEnumerator": {
+      "methodSpecIndex": 572798,
+      "definition": [
+        286583,
+        "System.Collections.Generic.List`1",
+        "GetEnumerator"
+      ],
+      "classArguments": [
+        "HG.Rendering.Runtime.VFXTrailPointsTool"
+      ],
+      "methodArguments": []
+    },
+    "moveNext": {
+      "methodSpecIndex": 553794,
+      "definition": [
+        286615,
+        "System.Collections.Generic.List`1+Enumerator",
+        "MoveNext"
+      ],
+      "classArguments": [
+        "HG.Rendering.Runtime.VFXTrailPointsTool"
+      ],
+      "methodArguments": []
+    }
+  },
+  "epsilon": {
+    "rva": 176958656,
+    "rawHex": "FEE6DB2E",
+    "float32": 9.999999439624929e-11
+  },
+  "evidenceBoundary": {
+    "exact": "Selected native inputs, named storage fields, complete owned code bytes and static caller MethodSpec argument identities.",
+    "direct": "The ordinary checked prefix copies all three current configuration offset components into the current component receiver before Start.",
+    "conditional": "Forwarding requires the checked ordinary prefix and compatible provider/enum results; ordinary Start skips point calls for nonzero isErosionLine; _IsCenterOffset returns true for any nonzero or unordered component.",
+    "unresolved": "Initialized generic runtime object identity, actual component-query results and iteration, parent ExecuteInternal/configuration lifetime, point deformation, renderer submission and observed execution."
+  }
+}

@@ -22,7 +22,26 @@ from scripts.common import ROOT, canonical_json_sha256, resolve_installed_native
 from scripts.game_data.jsondata_source_provenance import authenticate_current_jsondata_receipt
 from scripts.game_data.memorypack.corpus_gate import _fingerprint, _package_import_closure
 
-SCHEMA = "endfield.buff-residual-census.v2"
+SCHEMA = "endfield.buff-residual-census.v3"
+
+
+def _recorded_shared_stop(refusal: Any) -> str | None:
+    """Group the reached refusal, preserving tags and structural expectations."""
+    if refusal is None or refusal == {} or refusal == "":
+        return None
+    if isinstance(refusal, str):
+        diagnostic = refusal
+    elif isinstance(refusal, dict):
+        actual = refusal.get("actual")
+        if isinstance(actual, str) and actual.startswith("ValueError:"):
+            diagnostic = actual
+        else:
+            diagnostic = json.dumps({key: "<n>" if key == "offset" else value
+                                     for key, value in refusal.items() if key != "source"},
+                                    sort_keys=True, ensure_ascii=False)
+    else:
+        raise ValueError("buffResidualCensus:recorded-shared-refusal-shape")
+    return re.sub(r"(offset[=:]|(?<!\w)at=)\d+", r"\1<n>", diagnostic)
 
 
 def _shared_replay_inputs(root: Any, maps: Any) -> list[dict[str, Any]]:
@@ -121,6 +140,8 @@ def summarize_residuals(report: dict[str, Any], *, export_root: Path) -> dict[st
     first: dict[tuple[str, str], set[str]] = defaultdict(set)
     unions: dict[tuple[str, int], set[str]] = defaultdict(set)
     union_instances: Counter[tuple[str, int]] = Counter()
+    shared_stops: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    without_shared_stop = 0
     residuals = []
     exact = 0
     for row in rows:
@@ -143,6 +164,12 @@ def summarize_residuals(report: dict[str, Any], *, export_root: Path) -> dict[st
         if row["wholeSchemaExact"]:
             exact += 1
             continue
+        shared_stop = _recorded_shared_stop(row.get("rootSharedEventRefusal"))
+        if shared_stop is None:
+            without_shared_stop += 1
+        else:
+            shared_stops[shared_stop].append({"source": source, "logicalSha256": row["logicalSha256"],
+                                             "refusal": row["rootSharedEventRefusal"]})
         candidates = row.get("candidates") or []
         source_obligations = set()
         source_first = set()
@@ -205,6 +232,15 @@ def summarize_residuals(report: dict[str, Any], *, export_root: Path) -> dict[st
                         "completedUnionCohorts": len(unions)},
             "firstObligations": rank(first), "allObligations": rank(obligations),
             "completedUnionCohorts": rank(unions, tags=True), "files": residuals,
+            "recordedSharedEventStops": {
+                "filesWithoutRecordedStop": without_shared_stop,
+                "firstStops": [{"diagnostic": diagnostic, "distinctFiles": len(sources),
+                                "examples": sorted(sources, key=lambda row: row["source"])[:8]}
+                               for diagnostic, sources in sorted(shared_stops.items(),
+                                   key=lambda item: (-len(item[1]), item[0]))],
+                "evidenceBoundary": "Recorded first reached shared-event refusals only; original source "
+                    "bytes are authenticated by this census. No current reader replay or schema admission. "
+                    "An absent recorded refusal is not proof of closure; counts cannot predict whole-file recovery."},
             "evidenceBoundary": "Counts concern unresolved files in the recorded complete family receipt. "
                 "All original logical bytes are rejoined, but changed readers are not replayed here. "
                 "Cohorts overlap; completed unions are stored spans, not first-stop claims, execution, "

@@ -1,0 +1,58 @@
+{
+  "schema": "endfield.buff-effect-line-center-copy-non-temporal-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-non-temporal-store-values-and-following-store-order",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "bulkEntryRva": 3009824,
+  "blocks": {
+    "loop": {
+      "startRva": 3010592,
+      "endRva": 3010728,
+      "boundary": "complete original selected block within authenticated parent bulk body"
+    },
+    "tail": {
+      "startRva": 3010728,
+      "endRva": 3010897,
+      "boundary": "complete original selected block within authenticated parent bulk body"
+    },
+    "fence": {
+      "startRva": 3010890,
+      "endRva": 3010893,
+      "boundary": "complete original selected block within authenticated parent bulk body"
+    }
+  },
+  "table": {
+    "startRva": 176961908,
+    "endRva": 176961944,
+    "tableRva": 176961908,
+    "sha256": "86E27B242C2C111DED6D1E058CACEB474342F150D0D42D2D0F98544AB4D27184",
+    "entries": [
+      3010886,
+      3010879,
+      3010865,
+      3010851,
+      3010837,
+      3010817,
+      3010797,
+      3010777,
+      3010757
+    ],
+    "boundary": "complete current native dword RVA table; every reachable indexed target must be an original instruction boundary"
+  },
+  "instructionReference": {
+    "title": "Intel 64 and IA-32 SDM Volume 2B, MOVNTDQ and SFENCE",
+    "url": "https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-2b-manual.pdf",
+    "boundary": "Architectural register-to-memory store values and required alignment; SFENCE orders preceding stores before following stores, not loads or observed return-time visibility."
+  },
+  "evidenceBoundary": {
+    "exact": "Current parent full-body authentication, complete original non-temporal loop and tail, exact SFENCE followed by vector cleanup and plain RET, and every indexed raw dword table target.",
+    "direct": "Checked parent aligned high-vector unsigned threshold edge enters the actual non-temporal loop. All checked stores carry the corresponding initial-source bytes; every reachable tail follows its final store with the original SFENCE/cleanup/return.",
+    "conditional": "Supported vector/fence state, valid stable non-wrapping compatible ordinary writable memory, selected high non-temporal branch, forward-safe overlap and all parent source/stride/frame/bitset conditions. Store-value coverage holds after the checked stores become visible; SFENCE orders them before following stores.",
+    "structuralOnly": "Anonymous mode/runtime stride/provider representations retain their parent boundary.",
+    "unresolved": "Visibility at RET, subsequent load ordering, actual parent publication-store join, backward copying, general bulk/resize preservation, live stride/CPU choices, allocation/alias lifetime, renderer/parent joins and observed execution."
+  }
+}

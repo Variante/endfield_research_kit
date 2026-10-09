@@ -1,0 +1,26 @@
+{
+  "schema": "endfield.buff-effect-line-center-copy-publication-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "conditional-non-temporal-publication-and-visible-old-point-read",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "joins": {
+    "publicationStartRva": 65483391,
+    "publicationEndRva": 65483442
+  },
+  "instructionReference": {
+    "title": "Intel 64 and IA-32 SDM Volume 2B, MOVSD and SFENCE",
+    "url": "https://www.intel.com/content/dam/www/public/us/en/documents/manuals/64-ia-32-architectures-software-developer-vol-2b-manual.pdf",
+    "boundary": "Legacy MOVSD memory transfer preserves exactly the low qword value; load clears bits 64..127, preserves above 127. SFENCE orders preceding stores before following stores, not loads or return-time visibility."
+  },
+  "evidenceBoundary": {
+    "exact": "Same selected native image revalidates complete parent programs, actual Array.Copy return frame, original allocation-to-publication span and full selected getter. Original qword reference transfers and all twelve getter output bytes are checked.",
+    "direct": "Actual positive-count Array.Copy returns directly to the qword store of the saved allocation result into the compiled items slot. The checked getter reads that same compiled slot and transfers eight plus four bytes at a twelve-byte indexed element address.",
+    "conditional": "All checked non-temporal, same-element, valid-memory, CPU, frame and bitset conditions; live array stride equals checked getter width; valid compatible allocation, stable compatible list and array, no overwrite or interfering alias. After the actual publication store is globally visible and the selected getter observes its reference with required ordering and old-index bounds, the complete getter output equals that copied old source element.",
+    "structuralOnly": "Anonymous runtime element-class/stride/provider representations retain their existing boundary.",
+    "unresolved": "Actual publication visibility and load ordering, runtime class stride, allocation freshness/nonaliasing lifetime, backward copying, general bulk/resize preservation, parent/renderer joins and observed execution."
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "schema": "endfield.buff-blow-off-consumer-flow-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "programs": [
+    {
+      "caller": [
+        57612,
+        "Beyond.Gameplay.Core.BlowOffCharacterAction",
+        "ExecuteInternal",
+        65681424
+      ],
+      "callee": [
+        78145,
+        "Beyond.Gameplay.Core.CharacterBlowOffComponent",
+        "ApplyBlowOff",
+        65675488
+      ],
+      "callerWindow": {
+        "startRva": 65681424,
+        "endRva": 65688552,
+        "sha256": "DD752DA67A72BF04889E09D9B76D1B6EAC94D79E15019940ACA5D8B16754060A",
+        "boundary": "Current complete caller bytes authenticate the selected call/loop program; unsupported earlier SIMD/atomic decode is not promoted."
+      },
+      "program": [
+        [
+          65687861,
+          "488B9424E8000000"
+        ],
+        [
+          65687869,
+          "488B8C2410010000"
+        ],
+        [
+          65687877,
+          "E896CFFFFF"
+        ],
+        [
+          65687882,
+          "8BBC24C0000000"
+        ],
+        [
+          65687889,
+          "FFC7"
+        ],
+        [
+          65687891,
+          "89BC24C0000000"
+        ],
+        [
+          65687898,
+          "8B8424E0000000"
+        ],
+        [
+          65687905,
+          "E93AE9FFFF"
+        ]
+      ],
+      "loopSlots": {
+        "source": 232,
+        "receiver": 272,
+        "index": 192,
+        "count": 224
+      },
+      "backEdgeTargetRva": 65682080
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native inputs, caller/callee metadata and method pointers, current caller body hash and complete selected local instruction bytes.",
+    "direct": "ApplyBlowOff is declared Boolean; the selected ordinary return program increments its loop index and replaces EAX with the loop count before the checked local back edge. It consumes no returned AL/EAX/RAX value.",
+    "conditional": "Execution reaches this local program and the named call returns ordinarily. Receiver identity and surrounding branch feasibility remain separate.",
+    "unresolved": "Accepted movement/replacement/armor effects and the action overall Boolean result. No full SIMD/atomic/body decode or gameplay success is inferred."
+  }
+}

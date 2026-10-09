@@ -11,6 +11,8 @@ from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.memorypack.action_dispatcher import load_action_routes
 from scripts.game_data.memorypack.buff_actions import Reader
 from scripts.game_data.memorypack.corpus_gate import CensusGateError
+from scripts.game_data.il2cpp.context_audit_memorypack import buff_action_read_order
+from scripts.game_data.memorypack import named_native_records as named
 
 LABEL = 'buffDirectTargetActions'
 SCHEMA = 'endfield.buff-direct-target-action-receipt.v1'
@@ -24,8 +26,11 @@ def _contracts():
     catalog = json.loads((CONTRACTS_DIR / contract['catalogContract']).read_bytes())
     expected = {'GameAssembly.dll': catalog['nativeInputs']['gameAssemblySha256'],
                 'global-metadata.dat': catalog['nativeInputs']['metadataSha256']}
-    if (contract.get('schema') != 'endfield.buff-direct-target-actions-native-contract.v1'
-            or contract.get('status') != 'exact-current-build' or contract.get('nativeInputs') != expected):
+    if (contract.get('schema') != 'endfield.buff-direct-target-actions-native-contract.v2'
+            or contract.get('status') != 'exact-current-build'
+            or set(contract.get('nativeInputs', {})) != set(expected) | {'UnityPlayer.dll'}
+            or any(contract['nativeInputs'].get(name) != value for name, value in expected.items())
+            or set(contract.get('namedRecords', {})) != {'forceHideHeadBar', 'recoverFromPoiseBreak'}):
         raise ValueError(f'{LABEL}.contract:shape-or-inputs')
     seen = set()
     for spec in contract['routes']:
@@ -39,6 +44,17 @@ def _contracts():
                 or len(spec['sourceContextIndices']) != len(spec['contextMemberIndices'])):
             raise ValueError(f'{LABEL}.contract:route={tag}')
         seen.add(tag)
+        if 'namedRecord' in spec:
+            record = contract['namedRecords'][spec['namedRecord']]
+            if (record['sourceContract'] != spec['sourceContract']
+                    or record['sourceReadOrder'] != spec['sourceReadOrder']
+                    or record['runtimeTypeName'] != spec['wrappedType']
+                    or [m['kind'] for m in record['members']] != kinds
+                    or record['members'][spec['targetFieldIndex']]['fieldName'] != spec['targetFieldName']
+                    or record['members'][spec['targetFieldIndex']]['declaredType'] != 'Beyond.Gameplay.Core.TargetSettings'):
+                raise ValueError(f'{LABEL}.contract:named-route={tag}')
+    if {spec.get('namedRecord') for spec in contract['routes'] if 'namedRecord' in spec} != set(contract['namedRecords']):
+        raise ValueError(f'{LABEL}.contract:named-route-set')
     return contract, catalog
 
 
@@ -46,9 +62,9 @@ def supported_tags():
     return frozenset(row['unionTag'] for row in _contracts()[0]['routes'])
 
 
-def _fail(check, *, tag, source, expected, actual):
+def _fail(check, *, tag, source, expected, actual, record='', field=''):
     error = CensusGateError(f'{LABEL}.{check}', source=source, expected=expected, actual=actual)
-    error.diagnostic['unionTag'] = tag
+    error.diagnostic.update(unionTag=tag, validator=LABEL, record=record, field=field)
     error.args = (json.dumps(error.diagnostic, sort_keys=True),)
     raise error
 
@@ -58,9 +74,14 @@ def validate_current_native_contract():
     gate = check_installed_native_inputs(expected['GameAssembly.dll'], expected['global-metadata.dat'])
     if gate.status != 'validated':
         return {'status': gate.status, 'detail': gate.detail, 'check': 'native-inputs', 'nativeInputs': expected}
+    unity = Path(gate.gameassembly).parent / 'UnityPlayer.dll'
+    if 'UnityPlayer.dll' in expected:
+        actual = hashlib.sha256(unity.read_bytes()).hexdigest().upper() if unity.is_file() else 'missing'
+        if actual != expected['UnityPlayer.dll']:
+            _fail('UnityPlayer.dll', tag=None, source=CONTRACT_PATH.as_posix(), expected=expected['UnityPlayer.dll'], actual=actual)
     routes, audit = load_action_routes(gameassembly=gate.gameassembly, metadata=gate.metadata)
-    if (audit.get('status') != 'validated' or any(str(audit.get('nativeInputs', {}).get(k, '')).upper() != v
-                                                for k, v in expected.items())):
+    if (audit.get('status') != 'validated' or any(str(audit.get('nativeInputs', {}).get(k, '')).upper() != expected[k]
+                                                for k in ('GameAssembly.dll', 'global-metadata.dat'))):
         _fail('dispatcher-native-inputs', tag=None, source=CONTRACT_PATH.as_posix(), expected=expected,
               actual={'status': audit.get('status'), 'nativeInputs': audit.get('nativeInputs')})
     image = open_native_image(gate.gameassembly, gate.metadata); proved = {}
@@ -113,10 +134,32 @@ def validate_current_native_contract():
                       'argumentRawHex': [context['argumentRawHex']]}
             if actual != wanted:
                 fail('method-spec-type', wanted, actual)
+        named_members = None
+        if 'namedRecord' in spec:
+            key = spec['namedRecord']; record = contract['namedRecords'][key]
+            if (route.wrapper_name != record['wrapperTypeName']
+                    or list(route.member_order) != [m['fieldName'] for m in record['members']]
+                    or list(route.member_declared_types) != [m['declaredType'] for m in record['members']]):
+                fail('named-dispatcher-members', record['runtimeTypeName'], list(route.member_order))
+            buff_action_read_order(image.pe, image.metadata, image.registration, image.instantiations,
+                image.modules, image.owners, source=str(gate.gameassembly), contract_path=path)
+            def named_fail(check, wanted, actual, *, record='', field=''):
+                _fail(check, tag=tag, source=path.as_posix(), expected=str(wanted)[:1024],
+                    actual=str(actual)[:1024], record=record, field=field)
+            named_members = named.validate_named_records(image, source, {key:record},
+                label=LABEL, fail=named_fail)[key]
         proved[tag] = {'status': 'validated', 'nativeInputs': expected, 'unionTag': tag,
                        'memberCount': len(kinds), 'memberNames': list(route.member_order), 'readKinds': kinds,
                        'typeName': reviewed['wrappedType'], 'targetBinding': {'fieldName': spec['targetFieldName'],
                        'index': target_index, 'declaredType': 'Beyond.Gameplay.Core.TargetSettings', 'kind': kinds[target_index]}}
+        if named_members is not None:
+            proved[tag].update(sourceRecord=spec['namedRecord'], recordMembers=named_members)
+    after = check_installed_native_inputs(expected['GameAssembly.dll'], expected['global-metadata.dat'],
+        gameassembly=gate.gameassembly, metadata=gate.metadata)
+    if after.status != 'validated':
+        return {'status': after.status, 'detail': after.detail, 'check':'native-inputs-after', 'nativeInputs':expected}
+    if 'UnityPlayer.dll' in expected and hashlib.sha256(unity.read_bytes()).hexdigest().upper() != expected['UnityPlayer.dll']:
+        _fail('UnityPlayer.dll-after', tag=None, source=CONTRACT_PATH.as_posix(), expected=expected['UnityPlayer.dll'], actual='mismatched')
     return {'status': 'validated', 'nativeInputs': expected, 'routes': proved}
 
 
@@ -129,6 +172,12 @@ def decode_action(data, *, source, logical_sha256, start, end, tag, native_valid
     kinds = source_contract['anonymousReadOrder'][spec['sourceReadOrder']]
     binding = {'fieldName': spec['targetFieldName'], 'index': spec['targetFieldIndex'],
                'declaredType': 'Beyond.Gameplay.Core.TargetSettings', 'kind': kinds[spec['targetFieldIndex']]}
+    if 'namedRecord' in spec:
+        record = contract['namedRecords'][spec['namedRecord']]
+        members = [{'fieldName':m['fieldName'], 'kind':m['kind']} for m in record['members']]
+        if (native.get('sourceRecord') != spec['namedRecord'] or native.get('recordMembers') != members
+                or native.get('memberNames') != [m['fieldName'] for m in record['members']]):
+            raise ValueError(f'{LABEL}:named-native-not-validated')
     if (native.get('status') != 'validated' or native.get('nativeInputs') != contract['nativeInputs']
             or native.get('unionTag') != tag or native.get('memberCount') != len(kinds)
             or native.get('readKinds') != kinds or len(native.get('memberNames', [])) != len(kinds)
@@ -139,9 +188,21 @@ def decode_action(data, *, source, logical_sha256, start, end, tag, native_valid
             or hashlib.sha256(data).hexdigest().upper() != logical_sha256.upper()):
         raise ValueError(f'{LABEL}:source-range-or-hash')
     reader = Reader(data, source, end); reader.pos = start
-    tag_bytes = bytes((tag,)) if tag < 0xFA else b'\xfa' + struct.pack('<H', tag)
-    if reader.take(len(tag_bytes), 'union-tag') != tag_bytes:
-        raise ValueError(f'{LABEL}:physical-tag')
+    if 'namedRecord' in spec:
+        if reader.nested_union_tag((tag,), 'direct-target-action') != tag:
+            raise ValueError(f'{LABEL}:physical-tag')
+    else:
+        tag_bytes = bytes((tag,)) if tag < 0xFA else b'\xfa' + struct.pack('<H', tag)
+        if reader.take(len(tag_bytes), 'union-tag') != tag_bytes:
+            raise ValueError(f'{LABEL}:physical-tag')
+    if 'namedRecord' in spec and reader.peek() == 255:
+        reader.take(1, 'null-action-wrapper')
+        if reader.pos != end:
+            raise ValueError(f'{LABEL}:action-end={reader.pos}; expected={end}')
+        return {'schema':SCHEMA, 'source':source, 'logicalSha256':logical_sha256.upper(),
+            'tag':tag, 'start':start, 'end':end, 'status':'exact-null-wrapper', 'isNull':True,
+            'memberCount':0, 'typeName':native['typeName'], 'namedFields':[],
+            'wholeActionByteSpanExact':True, 'recursiveNamedSchemaExact':False, 'wholeBuffDataExact':False}
     reader.header(native['memberCount']); fields = []
     for name, kind in zip(native['memberNames'], kinds, strict=True):
         begin = reader.pos; primitive = _KINDS[kind]
@@ -151,7 +212,8 @@ def decode_action(data, *, source, logical_sha256, start, end, tag, native_valid
             reader.byte_payload()
         else:
             reader.take(1 if primitive == 'byte' else 4, kind)
-        fields.append({'fieldName': name, 'kind': kind, 'start': begin, 'end': reader.pos})
+        fields.append({'fieldName': name, 'kind': kind, 'start': begin, 'end': reader.pos,
+            **({'rawHex':data[begin:reader.pos].hex().upper()} if primitive in ('byte','raw4') else {})})
     if reader.pos != end:
         raise ValueError(f'{LABEL}:action-end={reader.pos}; expected={end}')
     return {'schema': SCHEMA, 'source': source, 'logicalSha256': logical_sha256.upper(), 'tag': tag,

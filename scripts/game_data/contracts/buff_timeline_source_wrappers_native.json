@@ -1,0 +1,534 @@
+{
+  "schema": "endfield.buff-timeline-source-wrappers-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "buffered-source-null-and-conditional-constructor-transfer-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceDependency": "buff_timeline_element_sources_native.json",
+  "records": {
+    "timeline": {
+      "nullProgram": {
+        "codeWindows": [
+          {
+            "startRva": 53268336,
+            "endRva": 53269111,
+            "sha256": "CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688"
+          },
+          {
+            "startRva": 158528,
+            "endRva": 158594,
+            "sha256": "85A795057E58E98740A956859813BDF24BFF40D4E306B91068C21127D79711A8"
+          }
+        ],
+        "program": [
+          [
+            53268336,
+            "48895C2420"
+          ],
+          [
+            53268341,
+            "55"
+          ],
+          [
+            53268342,
+            "56"
+          ],
+          [
+            53268343,
+            "57"
+          ],
+          [
+            53268344,
+            "4883EC20"
+          ],
+          [
+            53268348,
+            "803DAFC0BD0A00"
+          ],
+          [
+            53268355,
+            "488BFA"
+          ],
+          [
+            53268358,
+            "488BD9"
+          ],
+          [
+            53268361,
+            "7543"
+          ],
+          [
+            53268430,
+            "837B3001"
+          ],
+          [
+            53268434,
+            "7D10"
+          ],
+          [
+            53268452,
+            "488B4350"
+          ],
+          [
+            53268456,
+            "0FB630"
+          ],
+          [
+            53268459,
+            "8B6B30"
+          ],
+          [
+            53268462,
+            "83ED01"
+          ],
+          [
+            53268465,
+            "7911"
+          ],
+          [
+            53268484,
+            "48FF4350"
+          ],
+          [
+            53268488,
+            "FF4340"
+          ],
+          [
+            53268491,
+            "FF4344"
+          ],
+          [
+            53268494,
+            "896B30"
+          ],
+          [
+            53268497,
+            "4080FEFF"
+          ],
+          [
+            53268501,
+            "0F84E5010000"
+          ],
+          [
+            53268992,
+            "488BCF"
+          ],
+          [
+            53268995,
+            "48C70700000000"
+          ],
+          [
+            53269002,
+            "488B5C2458"
+          ],
+          [
+            53269007,
+            "4883C420"
+          ],
+          [
+            53269011,
+            "5F"
+          ],
+          [
+            53269012,
+            "5E"
+          ],
+          [
+            53269013,
+            "5D"
+          ],
+          [
+            53269014,
+            "E92599D5FC"
+          ],
+          [
+            158528,
+            "833DC586E70D00"
+          ],
+          [
+            158535,
+            "4C8BC1"
+          ],
+          [
+            158538,
+            "7435"
+          ],
+          [
+            158593,
+            "C3"
+          ]
+        ]
+      },
+      "constructorProgram": {
+        "codeWindows": [
+          {
+            "startRva": 63881280,
+            "endRva": 63881426,
+            "sha256": "085674281B744C7B1A4B3A3E93C9C26991F008F893012A8FD4C92F66DFF6721A"
+          }
+        ],
+        "program": [
+          [
+            63881280,
+            "48895C2410"
+          ],
+          [
+            63881285,
+            "57"
+          ],
+          [
+            63881286,
+            "4883EC20"
+          ],
+          [
+            63881290,
+            "803DDFCF1B0A00"
+          ],
+          [
+            63881297,
+            "488BF9"
+          ],
+          [
+            63881300,
+            "7513"
+          ],
+          [
+            63881321,
+            "488B0DC84E3709"
+          ],
+          [
+            63881328,
+            "E8EB9F33FC"
+          ],
+          [
+            63881333,
+            "4885C0"
+          ],
+          [
+            63881336,
+            "7452"
+          ],
+          [
+            63881338,
+            "833D8B311B0A00"
+          ],
+          [
+            63881345,
+            "48894710"
+          ],
+          [
+            63881349,
+            "743A"
+          ],
+          [
+            63881409,
+            "488B5C2438"
+          ],
+          [
+            63881414,
+            "4883C420"
+          ],
+          [
+            63881418,
+            "5F"
+          ],
+          [
+            63881419,
+            "C3"
+          ]
+        ]
+      },
+      "constructorMethod": [
+        104642,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack",
+        ".ctor",
+        63881280
+      ],
+      "allocation": {
+        "instructionRva": 63881321,
+        "instructionHex": "488B0DC84E3709",
+        "usageCellRva": 218500920,
+        "usageRawHex": "8381052000000000",
+        "tag": 1,
+        "typeIndex": 180417,
+        "typeName": "Beyond.Gameplay.Core.TimelineAction+TimelineActionData",
+        "typeRawHex": "EF230000000000000000120000000000"
+      },
+      "nullLayout": "three-push-tail"
+    },
+    "forceSync": {
+      "nullProgram": {
+        "codeWindows": [
+          {
+            "startRva": 53273776,
+            "endRva": 53274461,
+            "sha256": "D41AFA6DCD0530EC01B02F13DC76B33D81D3568F81F3BFE009FE71777E92F70B"
+          }
+        ],
+        "program": [
+          [
+            53273776,
+            "48895C2410"
+          ],
+          [
+            53273781,
+            "48896C2418"
+          ],
+          [
+            53273786,
+            "4889742420"
+          ],
+          [
+            53273791,
+            "57"
+          ],
+          [
+            53273792,
+            "4883EC30"
+          ],
+          [
+            53273796,
+            "803DD1C8BD0A00"
+          ],
+          [
+            53273803,
+            "488BFA"
+          ],
+          [
+            53273806,
+            "488BD9"
+          ],
+          [
+            53273809,
+            "752B"
+          ],
+          [
+            53273854,
+            "837B3001"
+          ],
+          [
+            53273858,
+            "7D10"
+          ],
+          [
+            53273876,
+            "488B4350"
+          ],
+          [
+            53273880,
+            "0FB630"
+          ],
+          [
+            53273883,
+            "8B6B30"
+          ],
+          [
+            53273886,
+            "83ED01"
+          ],
+          [
+            53273889,
+            "7911"
+          ],
+          [
+            53273908,
+            "48FF4350"
+          ],
+          [
+            53273912,
+            "FF4340"
+          ],
+          [
+            53273915,
+            "FF4344"
+          ],
+          [
+            53273918,
+            "896B30"
+          ],
+          [
+            53273921,
+            "4080FEFF"
+          ],
+          [
+            53273925,
+            "0F84A5010000"
+          ],
+          [
+            53274352,
+            "488BCF"
+          ],
+          [
+            53274355,
+            "48C70700000000"
+          ],
+          [
+            53274362,
+            "E84184D5FC"
+          ],
+          [
+            53274367,
+            "EBDA"
+          ],
+          [
+            53274331,
+            "488B5C2448"
+          ],
+          [
+            53274336,
+            "488B6C2450"
+          ],
+          [
+            53274341,
+            "488B742458"
+          ],
+          [
+            53274346,
+            "4883C430"
+          ],
+          [
+            53274350,
+            "5F"
+          ],
+          [
+            53274351,
+            "C3"
+          ]
+        ]
+      },
+      "constructorProgram": {
+        "codeWindows": [
+          {
+            "startRva": 63881120,
+            "endRva": 63881266,
+            "sha256": "779FA1C5BF14EB5822C86D5B9977DDABB62F565484280E46538E8E72F92E3F0E"
+          }
+        ],
+        "program": [
+          [
+            63881120,
+            "48895C2410"
+          ],
+          [
+            63881125,
+            "57"
+          ],
+          [
+            63881126,
+            "4883EC20"
+          ],
+          [
+            63881130,
+            "803DE9ED1B0A00"
+          ],
+          [
+            63881137,
+            "488BF9"
+          ],
+          [
+            63881140,
+            "7513"
+          ],
+          [
+            63881161,
+            "488B0D78103809"
+          ],
+          [
+            63881168,
+            "E88BA033FC"
+          ],
+          [
+            63881173,
+            "4885C0"
+          ],
+          [
+            63881176,
+            "7452"
+          ],
+          [
+            63881178,
+            "833D2B321B0A00"
+          ],
+          [
+            63881185,
+            "48894710"
+          ],
+          [
+            63881189,
+            "743A"
+          ],
+          [
+            63881249,
+            "488B5C2438"
+          ],
+          [
+            63881254,
+            "4883C420"
+          ],
+          [
+            63881258,
+            "5F"
+          ],
+          [
+            63881259,
+            "C3"
+          ]
+        ]
+      },
+      "constructorMethod": [
+        107898,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack",
+        ".ctor",
+        63881120
+      ],
+      "allocation": {
+        "instructionRva": 63881161,
+        "instructionHex": "488B0D78103809",
+        "usageCellRva": 218550344,
+        "usageRawHex": "7D81052000000000",
+        "tag": 1,
+        "typeIndex": 180414,
+        "typeName": "Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData",
+        "typeRawHex": "EE230000000000000000120000000000"
+      },
+      "nullLayout": "one-push-call"
+    }
+  },
+  "barrierProgram": {
+    "codeWindows": [
+      {
+        "startRva": 158528,
+        "endRva": 158594,
+        "sha256": "85A795057E58E98740A956859813BDF24BFF40D4E306B91068C21127D79711A8"
+      }
+    ],
+    "program": [
+      [
+        158528,
+        "833DC586E70D00"
+      ],
+      [
+        158535,
+        "4C8BC1"
+      ],
+      [
+        158538,
+        "7435"
+      ],
+      [
+        158593,
+        "C3"
+      ]
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "Current concrete source ABI, Reader layout, buffered FF full-output clear/cursor/return and constructor original-type usage/receiver/store/return programs.",
+    "direct": "FF clears the wrapper reference itself, consumes exactly one byte and updates all four cursors. The selected constructor stores its same nonnull allocation result into its own typed original-instance field.",
+    "conditional": "Initialized metadata usage cells, available buffer, normal compatible allocator return and runtime disabled-barrier state. Actual constructor invocation and allocation/global effects remain unobserved.",
+    "structuralOnly": "Stored native type-usage descriptors and reference slots.",
+    "unresolved": "Full Activator/runtime invocation, allocation/cache/provider effects, active GC/refill/error paths, complete original nullable child/list/root composition and live behavior."
+  }
+}

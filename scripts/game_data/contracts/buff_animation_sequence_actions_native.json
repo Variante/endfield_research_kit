@@ -1,0 +1,470 @@
+{
+  "schema": "endfield.buff-animation-sequence-actions-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "playAnimation": {
+      "sourceContract": "buff_115_native.json",
+      "wrapperTypeDefinition": 16321,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPack",
+      "runtimeTypeDefinition": 9672,
+      "runtimeTypeName": "Beyond.Gameplay.Core.PlayAnimationAction+PlayAnimationActionData",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member16",
+      "readerMethod": [
+        121849,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPack",
+        "Deserialize",
+        58159072
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159274,
+            "rawHex": "884110",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 16,
+            "baseRegister": 1
+          },
+          "sourceCall": {
+            "rva": 58159247,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F843E030000488B4E104885C90F8431030000"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159317,
+            "rawHex": "894114",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 20,
+            "baseRegister": 1
+          },
+          "sourceCall": {
+            "rva": 58159290,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F8413030000488B4E104885C90F8406030000",
+          "sourceContextInstructionRva": 58159280
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159353,
+            "rawHex": "894118",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 24,
+            "baseRegister": 1
+          },
+          "sourceCall": {
+            "rva": 58159326,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84EF020000488B4E104885C90F84E2020000"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159389,
+            "rawHex": "89411C",
+            "fieldOwnerTypeDefinition": 9195,
+            "fieldOffset": 28,
+            "baseRegister": 1
+          },
+          "sourceCall": {
+            "rva": 58159362,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84CB020000488B4E104885C90F84BE020000"
+        },
+        {
+          "fieldName": "animName",
+          "declaredType": "string",
+          "setterMethodIndex": 121835,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159438,
+            "rawHex": "48896820",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 32,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159398,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "488BE84885F60F84A402000033D2488BCEE8EF0400004885C00F8491020000488D4820"
+        },
+        {
+          "fieldName": "blendDuration",
+          "declaredType": "float",
+          "setterMethodIndex": 121836,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159495,
+            "rawHex": "F30F117028",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 40,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159453,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "0F28F04885F60F846D02000033D2488BCEE8B80400004885C00F845A020000488B37488BCB"
+        },
+        {
+          "fieldName": "blendOut",
+          "declaredType": "float",
+          "setterMethodIndex": 121837,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159542,
+            "rawHex": "F30F11702C",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 44,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159500,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "0F28F04885F60F843E02000033D2488BCEE8890400004885C00F842B020000488B37488BCB"
+        },
+        {
+          "fieldName": "blendOutNextStateHash",
+          "declaredType": "int",
+          "setterMethodIndex": 121838,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159582,
+            "rawHex": "89684C",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 76,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159547,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "8BE84885F60F841002000033D2488BCEE85B0400004885C00F84FD010000"
+        },
+        {
+          "fieldName": "duration",
+          "declaredType": "float",
+          "setterMethodIndex": 121839,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159633,
+            "rawHex": "F30F117030",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 48,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159591,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "0F28F04885F60F84E301000033D2488BCEE82E0400004885C00F84D0010000488B37488BCB"
+        },
+        {
+          "fieldName": "executeOnNormalEndOnly",
+          "declaredType": "bool",
+          "setterMethodIndex": 121840,
+          "kind": "byte",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159674,
+            "rawHex": "40886858",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 88,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159638,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F84B401000033D2488BCEE8FF0300004885C00F84A1010000"
+        },
+        {
+          "fieldName": "exitToIdle",
+          "declaredType": "bool",
+          "setterMethodIndex": 121841,
+          "kind": "byte",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159720,
+            "rawHex": "40886848",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 72,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159684,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "0FB6E84885F60F848601000033D2488BCEE8D10300004885C00F8473010000"
+        },
+        {
+          "fieldName": "onEndAction",
+          "declaredType": "Beyond.Gameplay.Core.SequenceActionData",
+          "setterMethodIndex": 121842,
+          "kind": "sequence",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159777,
+            "rawHex": "48896850",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 80,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159737,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "488BE84885F60F845101000033D2488BCEE89C0300004885C00F843E010000488D4850",
+          "sourceContextInstructionRva": 58159727
+        },
+        {
+          "fieldName": "playbackSpeed",
+          "declaredType": "float",
+          "setterMethodIndex": 121843,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159834,
+            "rawHex": "F30F117034",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 52,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159792,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "0F28F04885F60F841A01000033D2488BCEE8650300004885C00F8407010000488B37488BCB"
+        },
+        {
+          "fieldName": "startTime",
+          "declaredType": "float",
+          "setterMethodIndex": 121844,
+          "kind": "raw4",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159881,
+            "rawHex": "F30F11703C",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 60,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159839,
+            "targetRva": 46828464
+          },
+          "sourceToDestinationHex": "0F28F04885F60F84EB00000033D2488BCEE8360300004885C00F84D8000000488B37488BCB"
+        },
+        {
+          "fieldName": "startTimeBlackboardKey",
+          "declaredType": "string",
+          "setterMethodIndex": 121845,
+          "kind": "byte-payload",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159926,
+            "rawHex": "48896840",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 64,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159886,
+            "targetRva": 46827264
+          },
+          "sourceToDestinationHex": "488BE84885F60F84BC00000033D2488BCEE8070300004885C00F84A9000000488D4840"
+        },
+        {
+          "fieldName": "useStartTimeBlackboardKey",
+          "declaredType": "bool",
+          "setterMethodIndex": 121846,
+          "kind": "byte",
+          "assignment": {
+            "kind": "direct-store",
+            "rva": 58159978,
+            "rawHex": "885838",
+            "fieldOwnerTypeDefinition": 9672,
+            "fieldOffset": 56,
+            "baseRegister": 0
+          },
+          "sourceCall": {
+            "rva": 58159941,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "0FB6D84885FF0F848500000033D2488BCFE8D00200004885C074760F28742420"
+        }
+      ]
+    },
+    "jumpTo": {
+      "sourceContract": "buff_d9_native.json",
+      "wrapperTypeDefinition": 16199,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpToAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9534,
+      "runtimeTypeName": "Beyond.Gameplay.Core.JumpToAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member6",
+      "readerMethod": [
+        120862,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpToAction_DataForMemoryPack",
+        "Deserialize",
+        66224672
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 66224839,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 66224816,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84160100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 66224879,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 66224857,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84ED0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 66224844
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 66224912,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 66224890,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84CC0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 66224945,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 66224923,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84AB0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "conditionAction",
+          "declaredType": "Beyond.Gameplay.Core.SequenceActionData",
+          "setterMethodIndex": 120858,
+          "kind": "sequence",
+          "assignment": {
+            "kind": "setter",
+            "rva": 66224986,
+            "targetRva": 66225120,
+            "methodIndex": 120858
+          },
+          "sourceCall": {
+            "rva": 66224963,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84830000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 66224950
+        },
+        {
+          "fieldName": "destFrame",
+          "declaredType": "int",
+          "setterMethodIndex": 120859,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 66225015,
+            "targetRva": 66225168,
+            "methodIndex": 120859
+          },
+          "sourceCall": {
+            "rva": 66224997,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885DB74654533C08BD0488BCB"
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "217": "jumpTo",
+    "277": "playAnimation"
+  },
+  "childTypes": {
+    "sequence": "Beyond.Gameplay.Core.SequenceActionData"
+  },
+  "sequenceSourceContract": "buff_event_maps_native.json",
+  "stringSourceContract": "memorypack_utf8_source_helper_native.json",
+  "evidenceBoundary": {
+    "exact": "Selected native generated members, source/destination transfers and current union dispatcher identities.",
+    "direct": "PlayAnimation onEndAction and JumpTo conditionAction each have their own closed SequenceActionData source; JumpTo destFrame follows it. Every string field has an independently authenticated UTF-8 source helper.",
+    "conditional": "Null wrappers, nullable sequence action arrays, null elements and positive recursively named children require bounded original spans; complete parent owners and Buff roots require independent whole-file gates.",
+    "unresolved": "Live provider/IFix choice, animation controller lookup, blended output, end callback selection and evaluated destination frame or sequence control effects."
+  }
+}

@@ -1,0 +1,270 @@
+{
+  "schema": "endfield.buff-selector-random-point-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceContract": "finder_10_native.json",
+  "switchContract": "skill_selector_finder_typhoea_native.json",
+  "dispatcher": {
+    "switchTableRva": 59821652,
+    "switchEntryCount": 24,
+    "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+    "unionTag": 16,
+    "switchTargetRva": 59819816,
+    "routeWindow": {
+      "startRva": 59819816,
+      "endRva": 59819863,
+      "sha256": "9FFF2815FE1188A9F8CCFCB4CBB91CE281EDD53D95EA96F42A00AC29986E58FB",
+      "boundary": "selected RandomPointFinder tag route to shared rejoin"
+    },
+    "usageCellRva": 217990640,
+    "usageRawHex": "6B44032000000000",
+    "registeredTypeIndex": 107061,
+    "wrapperTypeDefinition": 23057,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_RandomPointFinder_DataForMemoryPack",
+    "typeLoadInstruction": [
+      59819828,
+      "488B15B57E6D09"
+    ]
+  },
+  "records": {
+    "randomPoint": {
+      "sourceContract": "finder_10_native.json",
+      "wrapperTypeDefinition": 23057,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_RandomPointFinder_DataForMemoryPack",
+      "runtimeTypeDefinition": 10204,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Selector+RandomPointFinder+Data",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "finder16member9",
+      "readerMethod": [
+        167227,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_RandomPointFinder_DataForMemoryPack",
+        "Deserialize",
+        64280688
+      ],
+      "members": [
+        {
+          "fieldName": "angle",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 167216,
+          "kind": "BlackboardDouble",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64280888,
+            "targetRva": 64281360,
+            "methodIndex": 167216
+          },
+          "sourceCall": {
+            "rva": 64280865,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84CD0100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64280852
+        },
+        {
+          "fieldName": "extent2D",
+          "declaredType": "Beyond.Blackboard+BlackboardVector2",
+          "setterMethodIndex": 167217,
+          "kind": "BlackboardVector2",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64280929,
+            "targetRva": 64281408,
+            "methodIndex": 167217
+          },
+          "sourceCall": {
+            "rva": 64280906,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84A40100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64280893
+        },
+        {
+          "fieldName": "localPlaneRotationEulers",
+          "declaredType": "Beyond.Blackboard+BlackboardVector3",
+          "setterMethodIndex": 167218,
+          "kind": "BlackboardVector3",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64280970,
+            "targetRva": 64281456,
+            "methodIndex": 167218
+          },
+          "sourceCall": {
+            "rva": 64280947,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F847B0100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64280934
+        },
+        {
+          "fieldName": "minRadius",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 167219,
+          "kind": "BlackboardDouble",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64281011,
+            "targetRva": 64281504,
+            "methodIndex": 167219
+          },
+          "sourceCall": {
+            "rva": 64280988,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84520100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64280975
+        },
+        {
+          "fieldName": "pointNum",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 167220,
+          "kind": "BlackboardDouble",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64281052,
+            "targetRva": 64281552,
+            "methodIndex": 167220
+          },
+          "sourceCall": {
+            "rva": 64281029,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84290100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64281016
+        },
+        {
+          "fieldName": "radius",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 167221,
+          "kind": "BlackboardDouble",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64281093,
+            "targetRva": 64281600,
+            "methodIndex": 167221
+          },
+          "sourceCall": {
+            "rva": 64281070,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84000100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 64281057
+        },
+        {
+          "fieldName": "shape",
+          "declaredType": "Beyond.Gameplay.Shape",
+          "setterMethodIndex": 167222,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64281133,
+            "targetRva": 64281648,
+            "methodIndex": 167222
+          },
+          "sourceCall": {
+            "rva": 64281111,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84D70000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 64281098
+        },
+        {
+          "fieldName": "snapToNavMesh",
+          "declaredType": "bool",
+          "setterMethodIndex": 167223,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64281167,
+            "targetRva": 64281696,
+            "methodIndex": 167223
+          },
+          "sourceCall": {
+            "rva": 64281144,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84B60000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "useExtraJitter",
+          "declaredType": "bool",
+          "setterMethodIndex": 167224,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 64281201,
+            "targetRva": 64281744,
+            "methodIndex": 167224
+          },
+          "sourceCall": {
+            "rva": 64281178,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885FF0F84940000004533C00FB6D0488BCF"
+        }
+      ]
+    },
+    "blackboardVector2": {
+      "sourceContract": "finder_10_native.json",
+      "wrapperTypeDefinition": 23201,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardVector2ForMemoryPack",
+      "runtimeTypeDefinition": 175,
+      "runtimeTypeName": "Beyond.Blackboard+BlackboardVector2",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "vector2member2",
+      "readerMethod": [
+        168315,
+        "Beyond.MemoryPack.Beyond_Blackboard_BlackboardVector2ForMemoryPack",
+        "Deserialize",
+        66420400
+      ],
+      "members": [
+        {
+          "fieldName": "x",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 168310,
+          "kind": "BlackboardDouble",
+          "assignment": {
+            "kind": "setter",
+            "rva": 66420543,
+            "targetRva": 52460224,
+            "methodIndex": 168310
+          },
+          "sourceCall": {
+            "rva": 66420520,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885FF0F84950000004533C0488BD0488BCF",
+          "sourceContextInstructionRva": 66420507
+        },
+        {
+          "fieldName": "y",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 168311,
+          "kind": "BlackboardDouble",
+          "assignment": {
+            "kind": "setter",
+            "rva": 66420580,
+            "targetRva": 52469328,
+            "methodIndex": 168311
+          },
+          "sourceCall": {
+            "rva": 66420561,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885FF74704533C0488BD0488BCF",
+          "sourceContextInstructionRva": 66420548
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Current selected tag route, named source/destination reads and closed BlackboardDouble/Vector2/Vector3 source contexts.",
+    "conditional": "Original finder spans compose the independently admitted scalar and Vector3 children; Vector2 composes two scalar children. Whole Buff roots still require their own typed parents, original spans and complete gates.",
+    "unresolved": "Live formatter selection, evaluated blackboards, random choices, navigation snapping, jitter and selected coordinates."
+  }
+}

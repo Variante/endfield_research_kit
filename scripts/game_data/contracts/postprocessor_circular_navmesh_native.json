@@ -1,0 +1,360 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      166709,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CircularOrderSort_DataForMemoryPack",
+      "Deserialize",
+      71568560
+    ],
+    [
+      166696,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CircularOrderSort_DataForMemoryPack",
+      "get___instance",
+      71569328
+    ],
+    [
+      166701,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CircularOrderSort_DataForMemoryPack",
+      "set___desireCount__",
+      71569040
+    ],
+    [
+      166702,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CircularOrderSort_DataForMemoryPack",
+      "set___heightOffset__",
+      71569088
+    ],
+    [
+      166703,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CircularOrderSort_DataForMemoryPack",
+      "set___indexKey__",
+      71569136
+    ],
+    [
+      166704,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CircularOrderSort_DataForMemoryPack",
+      "set___rangeCheckTarget__",
+      71569184
+    ],
+    [
+      166705,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CircularOrderSort_DataForMemoryPack",
+      "set___rangeThreshold__",
+      71569232
+    ],
+    [
+      166706,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CircularOrderSort_DataForMemoryPack",
+      "set___reverseFlag__",
+      71569280
+    ],
+    [
+      166787,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "Deserialize",
+      70683360
+    ],
+    [
+      166772,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "get___instance",
+      70684240
+    ],
+    [
+      166777,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "set___allowCheckMainCharPosToDestPathAvailable__",
+      70683856
+    ],
+    [
+      166778,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "set___checkMaxDistance__",
+      70683904
+    ],
+    [
+      166779,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "set___clampDirToXZ__",
+      70683952
+    ],
+    [
+      166780,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "set___getNavPosInRangeRadius__",
+      70684000
+    ],
+    [
+      166781,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "set___ignoreNavmeshLink__",
+      70684048
+    ],
+    [
+      166782,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "set___maxDistance__",
+      70684096
+    ],
+    [
+      166783,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "set___snapToFloor__",
+      70684144
+    ],
+    [
+      166784,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+      "set___throughWall__",
+      70684192
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71568560,
+      "endRva": 71569039,
+      "sha256": "4A13D9F810B611B7EAEE813DFD80671F2CBE9788951BC222865B5EBAAEEF0A40",
+      "boundary": "current complete owned primary generated reader; cold fragments remain separate"
+    },
+    {
+      "startRva": 71569040,
+      "endRva": 71569085,
+      "sha256": "7ACC094CD258073B737A35506AEB107F2BC5E934BA28E91137C8BDF5B81701AB",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 71569088,
+      "endRva": 71569133,
+      "sha256": "A5243E094BBE8B3BA93F8C948D45B567E68ED08E86F5FFC733289D3D7A37423F",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 71569136,
+      "endRva": 71569181,
+      "sha256": "B4C0707C5DE503F26780659433ADDBCE491D7669063FC32D969E018917041C18",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 71569184,
+      "endRva": 71569229,
+      "sha256": "14721E8E30653E86DC915A3FEC2B22EF115AA1432BAD42DE2B16531135163835",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 71569232,
+      "endRva": 71569277,
+      "sha256": "FD7C59C5BBE5B12E15197F67E1ACD27332D3DEDE50FFEDD982B96C87E1818FE3",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 71569280,
+      "endRva": 71569325,
+      "sha256": "E0AE2B3CE4B34D53B29AD3B59E922C889EB1F61948A8CD9D7C048CB3581E61D9",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 71569328,
+      "endRva": 71569402,
+      "sha256": "A6CDFC892991AC262A04C53C75D0BC65DB41FA496811B8EC9983CA0B93F756D5",
+      "boundary": "current complete selected primary body; conditional ordinary path only"
+    },
+    {
+      "startRva": 70683360,
+      "endRva": 70683851,
+      "sha256": "1D7991588E1B65C9905A5BDF0EEE29DA757BBEDA71396BB5148256FE094AF400",
+      "boundary": "current complete owned primary generated reader; cold fragments remain separate"
+    },
+    {
+      "startRva": 70683856,
+      "endRva": 70683892,
+      "sha256": "6C8997882EB3FE35F5F69BF35C001492A3525A4B7021B567737A77366292A00B",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 70683904,
+      "endRva": 70683940,
+      "sha256": "B48D44FEBCB07CE6A884718E2FDE037CFF2A8A7E378616D1FBDB10944A1B9FCD",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 70683952,
+      "endRva": 70683988,
+      "sha256": "23C83AEE019F3D66AE4AA10D9D4FBAF436D122BAFA9A07D18E4341A607EA7828",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 70684000,
+      "endRva": 70684045,
+      "sha256": "CB9BBF1EF566D2B3173270C9C1B174AE9CB89EED1D1338D14303288C62329726",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 70684048,
+      "endRva": 70684084,
+      "sha256": "1A33586185D90A18B3116A94BB1EE8607F46E5A7153018BA31ACB22EA4A68F81",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 70684096,
+      "endRva": 70684141,
+      "sha256": "9543788943A70CC193F41D74BBF12095AD5BACA26947F7A2AACAE05D3DBEA111",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 70684144,
+      "endRva": 70684180,
+      "sha256": "41753D9D6B011A2C382C7FF53CD7AED6D38F8A03511C6F4D3C75588DDFB37DFD",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 70684192,
+      "endRva": 70684228,
+      "sha256": "B20C482BF1DCD2C283182785FEB0299EAC8714C55BDC67440A83C418324E47A1",
+      "boundary": "actual selected setter body"
+    },
+    {
+      "startRva": 70684240,
+      "endRva": 70684314,
+      "sha256": "9934E0020A2ACF2640B1AE6BE7B3263F9FC8C3587A0E284F2E3338EBC89D542E",
+      "boundary": "current complete selected primary body; conditional ordinary path only"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "current complete selected primary body; conditional ordinary path only"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "current complete selected primary body; conditional ordinary path only"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71568698,
+      "instructionHex": "488B15E738BB08",
+      "cellVa": 6660507176,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt",
+      "typeKind": 18,
+      "generic": null
+    },
+    {
+      "instructionRva": 71568739,
+      "instructionHex": "488B15B638BB08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18,
+      "generic": null
+    },
+    {
+      "instructionRva": 71568814,
+      "instructionHex": "488B155309C208",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18,
+      "generic": null
+    },
+    {
+      "instructionRva": 71568855,
+      "instructionHex": "488B154238BB08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18,
+      "generic": null
+    },
+    {
+      "instructionRva": 71568896,
+      "instructionHex": "488B151938BB08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18,
+      "generic": null
+    },
+    {
+      "instructionRva": 70683600,
+      "instructionHex": "488B1549BAC808",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18,
+      "generic": null
+    }
+  ],
+  "anonymousReadOrder": {
+    "postCircularMember6": [
+      "scalar-payload",
+      "scalar-payload",
+      "byte-payload",
+      "target-profile",
+      "scalar-payload",
+      "scalar-payload"
+    ],
+    "postNavMeshMember8": [
+      "byte",
+      "byte",
+      "byte",
+      "scalar-payload",
+      "byte",
+      "raw4",
+      "byte",
+      "byte"
+    ]
+  },
+  "boundary": "Reviewed current normal programs and metadata-owned destinations for CircularOrderSort/NavMeshPathPositionProcessor. Independent typed Blackboard/TargetSettings and source-string contracts own child framing; no runtime target processing is established."
+}

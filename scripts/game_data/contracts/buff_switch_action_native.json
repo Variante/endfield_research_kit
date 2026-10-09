@@ -1,0 +1,216 @@
+{
+  "schema": "endfield.buff-switch-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "switch": {
+      "sourceContract": "buff_176_native.json",
+      "wrapperTypeDefinition": 16509,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchAction_DataForMemoryPack",
+      "runtimeTypeDefinition": 9903,
+      "runtimeTypeName": "Beyond.Gameplay.Core.SwitchAction+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member7",
+      "readerMethod": [
+        123364,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchAction_DataForMemoryPack",
+        "Deserialize",
+        67560288
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67560455,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 67560432,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F844C0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67560495,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 67560473,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84230100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 67560460
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67560528,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 67560506,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84020100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67560561,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 67560539,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84E10000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "alwaysNext",
+          "declaredType": "bool",
+          "setterMethodIndex": 123359,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67560595,
+            "targetRva": 67560784,
+            "methodIndex": 123359
+          },
+          "sourceCall": {
+            "rva": 67560572,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84C00000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "choice",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 123360,
+          "kind": "scalar-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67560636,
+            "targetRva": 67560832,
+            "methodIndex": 123360
+          },
+          "sourceCall": {
+            "rva": 67560613,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84970000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 67560600
+        },
+        {
+          "fieldName": "options",
+          "declaredType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.SwitchAction+Option>",
+          "setterMethodIndex": 123361,
+          "kind": "nullable-sequence-scalar-list",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67560673,
+            "targetRva": 67560880,
+            "methodIndex": 123361
+          },
+          "sourceCall": {
+            "rva": 67560654,
+            "targetRva": 58849520
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB",
+          "sourceContextInstructionRva": 67560641
+        }
+      ]
+    },
+    "option": {
+      "sourceContract": "buff_176_native.json",
+      "wrapperTypeDefinition": 22475,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchAction_OptionForMemoryPack",
+      "runtimeTypeDefinition": 9902,
+      "runtimeTypeName": "Beyond.Gameplay.Core.SwitchAction+Option",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "member2-child",
+      "readerMethod": [
+        163192,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchAction_OptionForMemoryPack",
+        "Deserialize",
+        67314240
+      ],
+      "members": [
+        {
+          "fieldName": "actionData",
+          "declaredType": "Beyond.Gameplay.Core.SequenceActionData",
+          "setterMethodIndex": 163188,
+          "kind": "sequence",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67314361,
+            "targetRva": 52469328,
+            "methodIndex": 163188
+          },
+          "sourceCall": {
+            "rva": 67314338,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F848B0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 67314325
+        },
+        {
+          "fieldName": "value",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 163189,
+          "kind": "scalar-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 67314398,
+            "targetRva": 52460224,
+            "methodIndex": 163189
+          },
+          "sourceCall": {
+            "rva": 67314379,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 67314366
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "374": "switch"
+  },
+  "childTypes": {
+    "nullable-sequence-scalar-list": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.SwitchAction+Option>",
+    "sequence": "Beyond.Gameplay.Core.SequenceActionData",
+    "scalar-payload": "Beyond.Blackboard+BlackboardDouble"
+  },
+  "evidenceBoundary": {
+    "direct": "Selected complete parent and Option reader windows, named inherited members, source-to-destination transfers and closed source contexts establish stored SwitchAction Data and Option fields.",
+    "conditional": "Each reached Option composes its independently typed SequenceActionData and BlackboardDouble on the original source span with bounded recursion; null/empty lists and null wrappers remain distinct.",
+    "unresolved": "Choice evaluation, comparison, branch selection, alwaysNext behavior, sequence execution and whole Buff root completeness outside the owning root receipt."
+  }
+}

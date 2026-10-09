@@ -1,0 +1,164 @@
+{
+  "schema": "endfield.buff-super-armor-condition-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "actionDispatch": {
+    "123": "checkSuperArmor"
+  },
+  "reviewedDependencies": [
+    "buff_7b_native.json",
+    "buff_b4_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "records": {
+    "checkSuperArmor": {
+      "sourceContract": "buff_7b_native.json",
+      "wrapperTypeDefinition": 16695,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSuperArmor_DataForMemoryPack",
+      "runtimeTypeDefinition": 13558,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.CheckSuperArmor+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member7",
+      "readerMethod": [
+        124677,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSuperArmor_DataForMemoryPack",
+        "Deserialize",
+        58570144
+      ],
+      "readerWindowStart": 58570144,
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 58570288,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58570311,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F845E0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58570329,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58570351,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84350100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58570362,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58570384,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84140100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58570395,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58570417,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84F30000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "checkTarget",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 124672,
+          "kind": "target-profile",
+          "sourceCall": {
+            "rva": 58570435,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58570458,
+            "targetRva": 58569920,
+            "methodIndex": 124672
+          },
+          "sourceToDestinationHex": "4885F60F84CB0000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 58570422
+        },
+        {
+          "fieldName": "compareType",
+          "declaredType": "Beyond.CompareType",
+          "setterMethodIndex": 124673,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 58570476,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58570498,
+            "targetRva": 58569968,
+            "methodIndex": 124673
+          },
+          "sourceToDestinationHex": "4885F60F84A20000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "value",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 124674,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 58570516,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 58570535,
+            "targetRva": 58570016,
+            "methodIndex": 124674
+          },
+          "sourceToDestinationHex": "4885DB747E4533C0488BD0488BCB",
+          "sourceContextInstructionRva": 58570503
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected normal/null source framing and authenticated original spans.",
+    "direct": "Generated inherited and local member identities, ordered typed target and BlackboardDouble source calls and their exact runtime destinations.",
+    "conditional": "Parent composition requires independently validated target and scalar children on each original span.",
+    "unresolved": "Live target/provider selection, evaluated condition/log output, enum/color interpretation, short-segment error/refill parity and whole Buff root EOF."
+  }
+}

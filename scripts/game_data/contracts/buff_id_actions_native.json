@@ -1,9 +1,10 @@
 {
-  "schema": "endfield.buff-buff-id-actions-native-contract.v1",
+  "schema": "endfield.buff-buff-id-actions-native-contract.v2",
   "status": "exact-current-build",
   "nativeInputs": {
     "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
   },
   "catalogContract": "levelscript_union_tags.json",
   "routes": [
@@ -51,8 +52,193 @@
         "System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffId>",
         "Beyond.Gameplay.Core.GameplayTagQuery"
       ]
+    },
+    {
+      "unionTag": 68,
+      "sourceContract": "buff_44_native.json",
+      "sourceReadOrder": "member6",
+      "wrappedType": "Beyond.Gameplay.Core.CheckGlobalCDTimerAction+Data",
+      "contextMemberIndices": [
+        5
+      ],
+      "contextFieldNames": [
+        "target"
+      ],
+      "contextTypeNames": [
+        "Beyond.Gameplay.Core.TargetSettings"
+      ]
+    },
+    {
+      "unionTag": 10,
+      "sourceContract": "buff_0a_native.json",
+      "sourceReadOrder": "member7",
+      "wrappedType": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data",
+      "contextMemberIndices": [
+        5,
+        6
+      ],
+      "contextFieldNames": [
+        "cdTime",
+        "target"
+      ],
+      "contextTypeNames": [
+        "Beyond.Blackboard+BlackboardDouble",
+        "Beyond.Gameplay.Core.TargetSettings"
+      ],
+      "contextSourceIndices": [
+        1,
+        2
+      ],
+      "readKindAliases": {
+        "bytePayload": "byte-payload",
+        "scalarPayload": "scalar-payload",
+        "target": "target-profile"
+      },
+      "namedRecord": "addGlobalCooldown"
     }
   ],
+  "namedRecords": {
+    "addGlobalCooldown": {
+      "sourceContract": "buff_0a_native.json",
+      "wrapperTypeDefinition": 15903,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AddGlobalCDTimer_DataForMemoryPack",
+      "runtimeTypeDefinition": 9211,
+      "runtimeTypeName": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member7",
+      "readerMethod": [
+        118409,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_AddGlobalCDTimer_DataForMemoryPack",
+        "Deserialize",
+        69878176
+      ],
+      "readerWindowStart": 69878176,
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 69878320,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69878343,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F844C0100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 69878361,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69878383,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84230100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 69878348
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 69878394,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69878416,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84020100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 69878427,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69878449,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F84E10000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "buffId",
+          "declaredType": "string",
+          "setterMethodIndex": 118404,
+          "kind": "bytePayload",
+          "sourceCall": {
+            "rva": 69878460,
+            "targetRva": 46827264
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69878483,
+            "targetRva": 69878672,
+            "methodIndex": 118404
+          },
+          "sourceToDestinationHex": "4885F60F84C00000004533C0488BD0488BCE"
+        },
+        {
+          "fieldName": "cdTime",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 118405,
+          "kind": "scalarPayload",
+          "sourceCall": {
+            "rva": 69878501,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69878524,
+            "targetRva": 69878720,
+            "methodIndex": 118405
+          },
+          "sourceToDestinationHex": "4885F60F84970000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 69878488
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 118406,
+          "kind": "target",
+          "sourceCall": {
+            "rva": 69878542,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 69878561,
+            "targetRva": 69878768,
+            "methodIndex": 118406
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB",
+          "sourceContextInstructionRva": 69878529
+        }
+      ]
+    }
+  },
   "child": {
     "sourceContract": "buff_56_native.json",
     "sourceReadOrder": "member1",

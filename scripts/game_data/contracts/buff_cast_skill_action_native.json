@@ -1,0 +1,219 @@
+{
+  "schema": "endfield.buff-cast-skill-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "records": {
+    "castSkill": {
+      "sourceContract": "buff_27_native.json",
+      "wrapperTypeDefinition": 15977,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CastSkill_DataForMemoryPack",
+      "runtimeTypeDefinition": 9293,
+      "runtimeTypeName": "Beyond.Gameplay.Core.CastSkill+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member10",
+      "readerMethod": [
+        119169,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_CastSkill_DataForMemoryPack",
+        "Deserialize",
+        63360800
+      ],
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63360967,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceCall": {
+            "rva": 63360944,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84B90100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361007,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceCall": {
+            "rva": 63360985,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F84900100004533C08BD0488BCE",
+          "sourceContextInstructionRva": 63360972
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361040,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceCall": {
+            "rva": 63361018,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F846F0100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361073,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceCall": {
+            "rva": 63361051,
+            "targetRva": 46827184
+          },
+          "sourceToDestinationHex": "4885F60F844E0100004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "caster",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 119161,
+          "kind": "target",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361114,
+            "targetRva": 63364272,
+            "methodIndex": 119161
+          },
+          "sourceCall": {
+            "rva": 63361091,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84260100004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 63361078
+        },
+        {
+          "fieldName": "inheritSourceSkillCastId",
+          "declaredType": "bool",
+          "setterMethodIndex": 119162,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361148,
+            "targetRva": 63364320,
+            "methodIndex": 119162
+          },
+          "sourceCall": {
+            "rva": 63361125,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84040100004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "interruptCurSkillOnlyWhenTargetCastable",
+          "declaredType": "bool",
+          "setterMethodIndex": 119163,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361182,
+            "targetRva": 63364368,
+            "methodIndex": 119163
+          },
+          "sourceCall": {
+            "rva": 63361159,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84E20000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "skillId",
+          "declaredType": "Beyond.Blackboard+BlackboardString",
+          "setterMethodIndex": 119164,
+          "kind": "paired-payload",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361223,
+            "targetRva": 63364416,
+            "methodIndex": 119164
+          },
+          "sourceCall": {
+            "rva": 63361200,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885F60F84B90000004533C0488BD0488BCE",
+          "sourceContextInstructionRva": 63361187
+        },
+        {
+          "fieldName": "skipApplyCost",
+          "declaredType": "bool",
+          "setterMethodIndex": 119165,
+          "kind": "byte",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361257,
+            "targetRva": 63364464,
+            "methodIndex": 119165
+          },
+          "sourceCall": {
+            "rva": 63361234,
+            "targetRva": 46827712
+          },
+          "sourceToDestinationHex": "4885F60F84970000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "target",
+          "declaredType": "Beyond.Gameplay.Core.TargetSettings",
+          "setterMethodIndex": 119166,
+          "kind": "target",
+          "assignment": {
+            "kind": "setter",
+            "rva": 63361294,
+            "targetRva": 63364512,
+            "methodIndex": 119166
+          },
+          "sourceCall": {
+            "rva": 63361275,
+            "targetRva": 47864976
+          },
+          "sourceToDestinationHex": "4885DB74724533C0488BD0488BCB",
+          "sourceContextInstructionRva": 63361262
+        }
+      ]
+    }
+  },
+  "actionDispatch": {
+    "39": "castSkill"
+  },
+  "childTypes": {
+    "target": "Beyond.Gameplay.Core.TargetSettings",
+    "paired-payload": "Beyond.Blackboard+BlackboardString"
+  },
+  "dependencies": {
+    "target": "buff_ec_native.json",
+    "blackboardString": "buff_blackboard_string_child_native.json"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected current native inputs, complete CastSkill parent windows and dispatcher/member identities.",
+    "direct": "Ordered named source-result destinations and separate closed TargetSettings/BlackboardString contexts.",
+    "conditional": "Ordinary selected parent and independently authenticated child formatters; null wrappers and raw scalar/flag/payload bytes retain their stored distinctions.",
+    "unresolved": "Evaluated skill ID, caster and target selection, cost/interrupt decisions, actual skill invocation and enclosing root admission."
+  }
+}

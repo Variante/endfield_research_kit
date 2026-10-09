@@ -10,9 +10,10 @@ plan name ``clampToXZ``, ``customSourceAndTarget``, ``directionType``,
 ``invertDirection``, ``source``, ``sourceMountPoint``, ``target`` and
 ``targetMountPoint`` in direct stored order. Each parent target is reparsed
 and the direction reader must end at the independently fixed field extent.
-In the authenticated current corpus both nested ``TargetSettings``
-references are null markers; those nulls do not establish a future nonnull
-body, and no runtime direction selection is claimed.
+This direct receipt retains nonnull nested ``TargetSettings`` at the structural
+tier. ``buff_direction_target_children`` separately proves each reference
+transfer and composes its original child span; a null marker alone does not
+establish a nonnull body. No runtime direction selection is claimed.
 """
 from __future__ import annotations
 

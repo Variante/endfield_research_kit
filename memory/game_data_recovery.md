@@ -152,7 +152,238 @@ Current position of the families with active recovery:
   parent composition. Shared event-map actions now compose the reviewed
   damage-mask condition and main-character target condition, plus the advanced
   Buff-ID condition's independently proved BlackboardString subtype list and
-  GameplayTagQuery. Stored conditions still do not establish their evaluation.
+  GameplayTagQuery. DirectionSettings now composes independently owned source
+  and target references recursively; Selector postprocessors compose Projection,
+  shapes, ExcludeTarget's recursive target, PriorityFilter's BuffFindSettings
+  and ShuffleTarget's concrete BlackboardInt through separate typed parents.
+  CircularOrderSort and NavMeshPathPositionProcessor add owned generated-setter
+  transfers, typed scalar/target children and explicit primitive cursor reads;
+  their stored declarations do not establish ordering or navigation effects.
+  Positive Timeline/ForceSync source elements now have independent buffered
+  cursor and ordered owned-field programs; original-span element receipts
+  deliberately leave nullable runtime adapters, positive lists and root
+  admission open.
+  Their separate static composition now proves original-type adapter and
+  wrapper-formatter registration, concrete constructor contexts through shared
+  code thunks, typed GetValue/formatter forwarding and the root's identical
+  Timeline list carrier. The separate reference lane proves the buffered FF
+  null branch's complete cursor accounting and original output clear. Its
+  class-owned ABI distinguishes the non-null helper's by-value wrap from the
+  byref original output and reader. Its selected non-null helper now proves
+  the saved Reader reload, preserved input wrap slot, distinct owned generic
+  parameters, actual second-interface lookup and concrete formatter/getter
+  fallbacks through original output and return. This remains conditional on
+  compatible runtime contexts and the reviewed provider result. The separate
+  positive parent proof now preserves its own Reader/output saves, wrapper-owned
+  Activator MethodInfo and created local through child dispatch, conversion and
+  both complete returns. Provider and Activator MVARs have reciprocal ownership.
+  The concrete wrapper metadata selects the creation branch when runtime
+  attributes describe that same class; the abstract direct-zero alternative
+  cannot replace it. The actual CreateInstance call matches its registered
+  shared entry. A class-key prefix independently kills unused incoming byref
+  bits before use, without proving helper purity. Runtime class/metadata parity,
+  full creation/cache/provider effects remain open. A separate source-wrapper
+  proof now consumes the buffered FF byte, updates all four cursors and clears
+  the wrapper byref through a complete return under the disabled-barrier state.
+  Each selected concrete constructor preserves its receiver and stores its
+  original-type allocation result into the owned instance field. Allocation
+  contents, actual constructor invocation and active barrier behavior remain
+  conditional or unresolved; original nullable child/cursor composition is open.
+  The same positive Timeline/ForceSync source-field programs now continue through
+  complete no-call/no-object-write/no-Reader-write return suffixes, with exact
+  stack and nonvolatile restoration. This closes their earlier final-store
+  boundary while retaining the disabled-barrier and typed-call conditions.
+  Timeline's child calls carry separately closed ReadValue contexts. Their
+  actual helper now has a complete selected Reader/local-output/return proof
+  with reciprocal provider/formatter parameter ownership. Its separately
+  registered Object entry differs, leaving named body identity open. The
+  dispatcher matches the original adapter's first optimized case and inlines
+  it; complete selected FF and positive clear/conversion paths are separately
+  proved. This cannot reuse the ordinary fallback for that outer call. Sequence
+  concrete adapter/wrapper registration, closed constructor thunk and typed
+  source forwarding are now independently joined; its nested formatter/getter
+  pointers use the ordinary fallbacks. The actual formatter helper now has an
+  independently required same-MethodInfo key/class and complete typed-reference
+  return proof for both ReadValue and list control. The selected initialized
+  cache and correctly typed normal returns remain conditions; indirect global
+  calls and cache-miss effects remain unproved. Physical wrapper GetFormatter effects,
+  original child cursor composition and complete root composition remain open;
+  no child grammar, positive list or root is admitted by it.
+  Sequence's inline action-array source now has complete selected FF,
+  null/empty array and single/repeated positive-element programs through return,
+  with owned ReadArray overload/element-context joins, direct cursor transfers,
+  same-Reader child destinations and both normalized flags. Typed helper/child
+  returns and compatible runtime context selection remain conditions; actual
+  Empty/allocation identity/effects and child cursor composition remain open.
+  A selected buffered existing-list loop now proves the signed count/cursor,
+  null temporary reference, element dispatch, reference append and saved-count
+  back edge. The root's actual ReadPackable helper now has a complete selected
+  same-Reader/initialized-output/typed-dispatch/return proof, and a local caller
+  joins that return to the owned timeline field. Complete null/new-list paths
+  reuse the proved loop; the actual capacity constructor joins its owned class
+  contexts and preserves the capacity/allocation result through return. Open
+  generic field offsets do not name its observed reference slot. Fresh-list
+  zero count, array capacity, allocation/static-field effects and runtime
+  selection remain conditional or unresolved. Original element cursor
+  composition, full root entry/tail and physical span/provider effects remain
+  open. The actual reset helper's index-zero/version update is independently proved;
+  initialization and actual runtime selection are unobserved.
+  Nullable child framing now joins the actual ReadValue helper, concrete
+  forwarding and complete source returns: FF advances one byte; the positive
+  adapter peeks without consuming the source header. The direct Timeline,
+  Sequence and ForceSync overheads compose with their child advances, and an
+  audit checks the unchanged certified original storage spans against these
+  equations. Callback native advances, string-helper cursor/global effects,
+  stable Reader aliases and full list/root composition remain distinct;
+  source-only receipts gain no admission from the arithmetic check.
+  The action base and generated base wrapper are independently authenticated as
+  abstract. The original adapter's `InitEager` allocation/context/key/RegisterWrap
+  flow and concrete union formatter registration are now proved. The actual
+  tag helper has complete buffered one-byte and three-byte UInt16 paths plus
+  the high-marker zero/false path, with all four cursors and restored state.
+  Reserved markers gain no canonical null admission. The selected abstract
+  adapter branch now initializes a zero wrapper local without a direct Activator
+  call and preserves the same Reader/local through both complete child-output
+  returns. The union's AL-false branch clears its wrapper output and returns
+  through an actual jump to the independently proved disabled shared barrier.
+  Matching runtime attributes and initialized contexts remain conditions.
+  The action adapter's declared virtual slot and void/byref ABI now join the
+  exact original element, reciprocal generic parent and owned indexed array
+  output through the
+  [callback binding contract](../scripts/game_data/contracts/buff_action_array_callback_binding_native.json).
+  The abstract base's raw slot remains structural-only. A missing unique closed
+  compiled registration does not exclude runtime generic inflation; provider
+  cache identity and the live vtable/MethodInfo still require independent proof.
+  The [registration-state contract](../scripts/game_data/contracts/buff_formatter_registration_state_native.json)
+  now connects the complete RegisterWrap caller and public Type lookup to their
+  actual dictionary/result helpers. Setter and named lookup share the exact
+  closed dictionary context and static address expression; the selected named
+  hit returns its full reference output. Dictionary effects, physical inlined
+  lookup control and runtime state remain open, including provider loads from
+  storage without on-disk backing. The
+  [dictionary lookup contract](../scripts/game_data/contracts/buff_formatter_dictionary_lookup_native.json)
+  now checks the actual named caller target, sign-cleared word/remainder index,
+  unsigned guard, finite node route and full hit/miss output through restored
+  returns under explicit storage/helper/disabled-barrier conditions. Anonymous
+  slot meanings remain structural; hash/equality helper semantics, setter
+  mutation and live cache/class/callback selection are still unresolved.
+  The [comparer-dispatch contract](../scripts/game_data/contracts/buff_formatter_comparer_dispatch_native.json)
+  now connects the actual UInt16 selectors, unsigned record scan, signed offset
+  arithmetic, function/context pair and complete ordinary/specialized returns.
+  Runtime interface/slot identity and opaque object/payload child semantics
+  remain open; compiled target declarations do not establish live selection.
+  The [preparation/fallback contract](../scripts/game_data/contracts/buff_formatter_dispatch_fallback_native.json)
+  separately proves the actual load/tail transfer, stored-byte gates, original
+  receiver/context/UInt16 forwarding and conditional nonnull result returns.
+  Child search/initialization effects and deeper resolver code-versus-table
+  boundaries remain unproved; an owned native range is not automatically code.
+  Actual virtual callback/class/provider selection, positive union/child cursor
+  composition and global effects remain open; static registration does not
+  select a runtime object.
+  The selected new-child PickTarget union route now joins its current UInt16
+  table index, complete null-cast return, closed wrapper ReadPackable context
+  thunk, actual shared helper and full wrapper output/barrier/caller return.
+  The same Reader and generic parameter/local-output ownership are retained.
+  Old bundle tag ordinals are not reused. The maintained PickTarget storage
+  reader now joins its seven source results to inherited/concrete setters and
+  the separately owned BlackboardInt and recursive TargetSettings children.
+  BlackboardInt's complete ordinary program writes its key, flag and integer
+  through the same closed int/int base; VAR indices are resolved through their
+  owning generic container instead of being treated as argument ordinals.
+  The complete corpus and independent original-element/root replays now validate
+  that extension. Exact PickTarget action returns also survive as local receipts
+  when their enclosing Timeline element refuses at a following action; this
+  grants no enclosing list or root admission. Its named consumer independently
+  reads the owned Data key, target and index and forwards the index to GetValue.
+  Aggregate/key argument forwarding, evaluated index and target-group effects
+  remain separate. Reused-wrapper paths, allocation/refill/error parity, actual
+  array/provider selection and gameplay target selection remain open.
+  The reached EffectLineCenter child now has independently validated current
+  source/setter transfers across AbilityAction, EffectAction and its concrete
+  Data. Its current inherited declaration includes `bigEffectTarget`, absent
+  from the historical candidate. The complete buffered header and FF output-clear
+  return are now proved, and its bounded recursive decoder composes independently
+  owned target and effect-configuration values. Actual child wrapper instance
+  types must match each closed source context. Original source-element replay,
+  the complete current corpus gate and selected canonical root replay have now
+  passed with prior admissions retained. The derived action closes additional
+  source elements; related partial roots still stop at the positive Timeline
+  list boundary. Enclosing list/root admission and observed effect execution
+  remain separate.
+  The independent consumer contract now proves the closed Data reference and
+  fieldless derived receiver, complete preparation caller, conditional byref
+  target substitution and disjoint aggregate-buffer forwarding to the complete
+  Vector3 subtraction leaf. Under the unpatched caller and both getters' checked
+  primary returns, center-position minus source-position is written into the
+  unserialized `centerOffset`, distinct from persisted `positionOffset`.
+  Ordinary parent `OnCreate` caches the same loaded configuration reference.
+  Other getter/IFix paths, reference stability across the action lifetime,
+  parent execution consumption and observed effects remain open. Separate
+  current Data reloads are not assumed to denote the same object.
+  Independent trail point consumers now prove ordered Single deformation and
+  twelve-byte writeback, followed by conditional source copying, constructor
+  reference stores and append/growth control. Whole no-resize copying requires
+  stable source values and valid distinct-header/storage/capacity conditions;
+  Selected small/snapshot/bounded-vector, REP and aligned temporal-loop Array.Copy
+  paths now have conditional byte-preservation proofs, with explicit memory,
+  overlap, runtime stride/selection and parent return/frame/bitset conditions.
+  Non-temporal store coverage and ordering before following stores now also have
+  an independent proof, now joined to the actual parent array-reference
+  publication store and complete getter byte transfer. Old-point reads require
+  actual publication visibility and observation, stable compatible references,
+  live stride and the existing memory/frame/selection conditions; these remain
+  unproved runtime selections. The complete backward-overlap program now also
+  has a conditional byte proof, including delayed pipeline stores and every
+  tail remainder. All selected copy programs now join the complete actual
+  dispatch on one native image, with exact integer-domain coverage and both
+  option-false fallthroughs checked. This closes conditional complete store-value
+  coverage; only REP additionally requires clear DF, and non-temporal visibility
+  retains its explicit boundary. Actual publication/read observation, live stride,
+  general old-value preservation during resize, allocation/reference lifetime,
+  renderer submission and the parent configuration join remain open. Details
+  stay in the owning MemoryPack topic and reviewed consumer contracts.
+  TickInterval's existing current Skill normal-source contract and shared Buff
+  Sequence declaration provide a concrete parent/child recovery starting point.
+  Canonical zero/FF Finder children now have an independent source/type proof;
+  recursive Selector routing consumes it with fail-closed native gates.
+  TickInterval's complete conditional caller, inherited/concrete setters,
+  cached getter, FF return and formatter now join source returns to owned Data
+  fields. Its separate helper composition now joins the full physical Sequence
+  output and selected buffered primitive sources; the isolated stored-parent
+  reader completely replays original parents with independent metadata-boundary
+  agreement and unchanged recursive children. It supplies Tick and recursive
+  native proofs separately rather than extending a cached validator return.
+  The fresh zero-Finder family gate records complete-root gains without source
+  drift or regressions. Tick's complete current new-child union output/return
+  now has a separate reviewed proof, reusing the existing shared union facts.
+  Recursive registration requires both independently owned packets and matching
+  current wrapper/Data identities. Fresh complete native context, the full
+  family gate and original recursive parent/enclosing source-element replay
+  now pass after integration; original source identities and hashes are
+  preserved, with no Tick-integration root gains or regressions. Previous
+  cached evidence is not relabeled. Native action callback cursor equality
+  and positive-list/root admission remain open, along with
+  runtime context/provider selection and observed tick effects. The consumer
+  lane must prove the generic Data reference and frame/counter/timer guards
+  before stating scheduling behavior. The existing SSE lane decoder now
+  completely decodes the selected OnTick body, including signed count-to-Single
+  conversion; operand ownership and MXCSR/runtime selections remain separate.
+  Its separate named consumer claims prove only the false-IFix getter's
+  `AlwaysReturnTrue` policy. The strict closed-reference witness currently
+  refuses the concrete suffix gap; OnReset uses an Int32-backed ResetReason
+  enum, whose receiver/argument forwarding still needs proof.
+  Hurt-animation curves share the same recursive Direction owner. Camera-control
+  actions compose their named parent, AnimationCurve children and shared
+  nullable string-list context; string interpretation remains conditional.
+  Other reached children remain refusals until independently proved.
+  Resource-cost, timed-marker, stack-storage and scalar-calculation
+  parents now have named source/destination proofs and independent typed children.
+  GameplayTag width admission requires an explicit closed unmanaged source proof;
+    differing registered and optimized reader entries are authenticated separately.
+    Skill cooldown, mode switching, super-armor checks and debug printing also
+    have named source/destination proofs. Inline color storage requires its
+    own source-copy, cursor and destination proof; object size alone is insufficient.
+  Stored conditions still do not establish their evaluation.
   Positive damage, event-action and finder bodies retain
   their explicit recursive blockers.
 - **Audio packages.** The complete available AKPK roster now retains sector,
@@ -323,6 +554,43 @@ runtime question may improve understanding without decoding another file.
    obligations can overlap and reveal later blockers. The current family sweep
    includes the general shared event-map and AttributeModifier compositions;
    historical receipts from before those readers are coverage baselines only.
+   The shared AnimationCurve reader now names wrap modes and Keyframe words
+   through native source/cursor/destination copies; time-dilation and
+   hurt-animation parents compose it with independently proved targets,
+   direction and Blackboard providers. Shared directions now recursively compose
+   independently owned source and target references; unsupported nested target
+   variants remain refusals. Their compiled start/stop and animation calls
+   are separate consumer evidence, with live argument ownership and effects
+   still open. Reuse this curve child when recovering the remaining camera,
+   movement parents instead of creating another anonymous
+   curve grammar.
+   Timed-marker creation and tag/object/physical-infliction conditions now
+   compose independently typed providers, targets and queries. The query's
+   explicit stack-output-to-field proof distinguishes its runtime extent
+   from its variable-length serialized grammar. Reuse that distinction when
+   recovering other output-buffer transfers; an instance getter after a
+   typed source call is not another source read. Their consumer-call claims
+   remain separate from argument ownership, quantifiers and evaluated effects.
+   AddTag and ForEach now independently join source-proved tag elements and
+   the shared recursive sequence owner. GameplayTag's inline wrapper requires
+   an explicit reference-argument-to-receiver projection, rather than boxed
+   offset coincidence. SpawnAbilityEntity now composes named recursive fields
+   after separate raw12 return-buffer/registered-reader and inline raw16
+   cursor/copy proofs. Stored names, targets and lifecycle flags still leave
+   tag attachment, iteration order, entity ownership and live effects open.
+   CameraImpulse now has independent parent, impulse-definition and inline
+   envelope field proofs, including its inline vector cursor and complete
+   provider-result-buffer copy. Curves and targets close on original spans;
+   evaluated impulse shape, signal lookup and camera ownership remain open.
+   NotNextCheckAction's four inherited stored fields now have an independent
+   recursive action receipt outside the earlier selected damage pair. Its
+   returned control result and the enclosing sequence's interpretation still
+   require consumer evidence.
+   Selected fieldless condition consumers now independently prove their closed
+   generic data reference slot and incoming-instance path to a named target or
+   mask read. Reuse this strict witness only for fieldless immediate subclasses;
+   classes with their own fields, complete call arguments and evaluated mask
+   predicates require separate proofs.
 2. **LevelScript.** Native/source receipts feed the shared named reader. Only
    a complete owner at physical EOF can be promoted by the combined JsonData
    gate; closing an action may expose a later first stop. Rerank with

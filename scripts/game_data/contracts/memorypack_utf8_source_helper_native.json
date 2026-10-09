@@ -1,0 +1,178 @@
+{
+  "schema": "endfield.memorypack-utf8-source-helper-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "wireEncoding": "nullable-int32-byte-length-valid-utf8",
+  "sourceHelpers": [
+    46827264
+  ],
+  "methods": [
+    [
+      428447,
+      "MemoryPack.MemoryPackReader",
+      "ReadUtf8",
+      46828048
+    ],
+    [
+      280484,
+      "System.Text.Encoding",
+      "GetString",
+      46826272
+    ],
+    [
+      280353,
+      "System.Text.UTF8Encoding",
+      ".ctor",
+      50051872
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 46827264,
+      "endRva": 46827462,
+      "sha256": "B8944001C41E1AF65B44F7DDE366FCE5E4E8B35E2A32682E628C2E0A36145BEF"
+    },
+    {
+      "startRva": 78517122,
+      "endRva": 78517180,
+      "sha256": "2604D3A08B35B51A7CD94A7C8564A5EC9D40FB83B8EB4B8377A8094D206F7FD1"
+    },
+    {
+      "startRva": 46828048,
+      "endRva": 46828107,
+      "sha256": "0F8D2636D39BB9C15FE285129180FED5FEACA14C625FDE32D98F443530DE645F"
+    },
+    {
+      "startRva": 46828107,
+      "endRva": 46828262,
+      "sha256": "FD899788F10757E6DA207A97FC489520EFF14310F198D4C62390BF67E7B37756"
+    },
+    {
+      "startRva": 46828262,
+      "endRva": 46828272,
+      "sha256": "B92110B9E37DBD52DB22242C95C099D6D740FB59FE03BBD4453671FFF1A12315"
+    },
+    {
+      "startRva": 46828272,
+      "endRva": 46828285,
+      "sha256": "C2B839111658E3DF548C43138C8DFC17866AAC8D8C30B7F9408D9EF73C3D257A"
+    },
+    {
+      "startRva": 79834878,
+      "endRva": 79834894,
+      "sha256": "5916C84F233729A17F929F615F47B4EBDABE5642FE3B34DA8554530655565E65"
+    },
+    {
+      "startRva": 79834894,
+      "endRva": 79835009,
+      "sha256": "75FA6DE1E26D5A6CE590D89AC66843BB011A07653F1E3033E02675AEB0004332"
+    }
+  ],
+  "instructionWindows": [
+    [
+      46827305,
+      "488B4350486338",
+      "read signed four-byte length"
+    ],
+    [
+      46827324,
+      "48834350048343400483434404897330",
+      "advance reader past length"
+    ],
+    [
+      46827360,
+      "83FFFF743785FF7517",
+      "minus-one null and zero empty branches"
+    ],
+    [
+      46827369,
+      "488B0500D83F0A",
+      "empty branch loads empty literal usage cell"
+    ],
+    [
+      46827392,
+      "4533C08BD7488BCB488B5C2430488B7424384883C4205FE974020000",
+      "reader and byte length passed to ReadUtf8 tail call"
+    ],
+    [
+      46827420,
+      "488B5C243033C0488B7424384883C4205FC3",
+      "null branch returns zero"
+    ],
+    [
+      46828063,
+      "4863FA488BD93B79300F8FD0A4F701",
+      "ReadUtf8 keeps byte length and reader; checks available span"
+    ],
+    [
+      46828085,
+      "488B6B50",
+      "read payload pointer from reader"
+    ],
+    [
+      46828100,
+      "488B059DAB3D0A4889742430488B88B8000000488B4120F0830C24004885C00F84A5A4F701488B0578AB3D0A488B88B8000000488B7120F0830C24004885F67472",
+      "load and reuse cached encoding instance"
+    ],
+    [
+      79834918,
+      "4533C94533C0B201488BC8E8EA8B39FE",
+      "initialize actual UTF8Encoding with emit-BOM true and throw-invalid false"
+    ],
+    [
+      79834939,
+      "488B0DA6064608488B91B800000048897220488B0594064608488B88B80000004883C120E8DC3B40FB90",
+      "store constructed UTF8 encoding in same cache"
+    ],
+    [
+      46828183,
+      "4533C9448BC7488BD5488BCEE878F8FFFF",
+      "pass cached encoding, payload pointer and byte count to Encoding.GetString"
+    ],
+    [
+      46828207,
+      "8B73302BF70F88B0A4F70148017B50017B40017B44897330",
+      "advance reader past exactly the payload byte count"
+    ]
+  ],
+  "calls": [
+    {
+      "rva": 46827415,
+      "targetRva": 46828048,
+      "methodIndex": 428447,
+      "kind": "tail-jump"
+    },
+    {
+      "rva": 46828195,
+      "targetRva": 46826272,
+      "methodIndex": 280484,
+      "kind": "call"
+    },
+    {
+      "rva": 79834929,
+      "targetRva": 50051872,
+      "methodIndex": 280353,
+      "kind": "call"
+    }
+  ],
+  "emptyLiteral": {
+    "usageCellRva": 218783600,
+    "value": ""
+  },
+  "evidenceBoundary": {
+    "proved": "Reviewed normal source path reads signed Int32 byte length, uses -1 null and zero empty, and passes reader plus byte count to ReadUtf8. Its cache initialization constructs UTF8Encoding and the normal decode path passes that encoding, payload pointer and byte count to Encoding.GetString before advancing the cursor by the byte count.",
+    "decoderScope": "Exact original spans containing null, empty or valid UTF-8 only. Invalid byte sequences are refused rather than claiming parity with native replacement/error behavior.",
+    "callerRequirement": "The field source-to-destination proof must independently identify this helper. Naming a string field or finding a call elsewhere is insufficient.",
+    "unresolved": [
+      "runtime field selection",
+      "file loading",
+      "IFix or other runtime changes",
+      "evaluated blackboard values",
+      "effects"
+    ]
+  }
+}

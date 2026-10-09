@@ -1,0 +1,542 @@
+{
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "composition": {
+    "registrations": [
+      {
+        "originalType": "Beyond.Gameplay.Core.SequenceActionData",
+        "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+        "classInstantiation": 40303,
+        "adapterTypeIndex": 206875,
+        "keyTypeIndex": 140796,
+        "constructorMethodSpecIndex": 561552,
+        "constructorMethodSpec": [
+          102200,
+          40303,
+          -1
+        ]
+      }
+    ],
+    "interfaces": [
+      {
+        "originalType": "Beyond.Gameplay.Core.SequenceActionData",
+        "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+        "wrapperDefinition": 13867,
+        "interfaceTypeIndex": 48939,
+        "interfaceOffset": 4,
+        "getValueMethodIndex": 104339,
+        "formatterDefinition": 13866,
+        "formatterDeserializeMethodIndex": 104347
+      }
+    ],
+    "genericContexts": [
+      {
+        "definition": 13633,
+        "isMethod": false,
+        "token": 33554443,
+        "image": "MemoryPack.Beyond.dll",
+        "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+        "start": 4,
+        "count": 13,
+        "entries": [
+          {
+            "relativeSlot": 0,
+            "rawHex": "0300000000000000902C318C01000000",
+            "kind": 3,
+            "index": 165081,
+            "methodSpec": [
+              102196,
+              36656,
+              -1
+            ],
+            "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+            "methodName": "ReadIsNull"
+          },
+          {
+            "relativeSlot": 1,
+            "rawHex": "02000000000000008C2C318C01000000",
+            "kind": 2,
+            "index": 203228,
+            "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2<VAR[754],VAR[755]>"
+          },
+          {
+            "relativeSlot": 2,
+            "rawHex": "0200000000000000F497328C01000000",
+            "kind": 2,
+            "index": 60627,
+            "typeName": "MemoryPack.MemoryPackFormatter`1<VAR[754]>"
+          },
+          {
+            "relativeSlot": 3,
+            "rawHex": "0300000000000000942C318C01000000",
+            "kind": 3,
+            "index": 165080,
+            "methodSpec": [
+              102198,
+              36656,
+              -1
+            ],
+            "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+            "methodName": "DeserializeNotNull"
+          },
+          {
+            "relativeSlot": 4,
+            "rawHex": "0300000000000000449C328C01000000",
+            "kind": 3,
+            "index": 516791,
+            "methodSpec": [
+              428394,
+              -1,
+              41937
+            ],
+            "typeName": "MemoryPack.MemoryPackFormatterProvider",
+            "methodName": "GetFormatter"
+          },
+          {
+            "relativeSlot": 5,
+            "rawHex": "0200000000000000D097328C01000000",
+            "kind": 2,
+            "index": 211984,
+            "typeName": "MemoryPack.MemoryPackFormatter`1<VAR[755]>"
+          },
+          {
+            "relativeSlot": 6,
+            "rawHex": "0300000000000000D499328C01000000",
+            "kind": 3,
+            "index": 280221,
+            "methodSpec": [
+              428408,
+              41937,
+              -1
+            ],
+            "typeName": "MemoryPack.MemoryPackFormatter`1",
+            "methodName": "Deserialize"
+          },
+          {
+            "relativeSlot": 7,
+            "rawHex": "0200000000000000C056328C01000000",
+            "kind": 2,
+            "index": 10486,
+            "typeName": "VAR[755]"
+          },
+          {
+            "relativeSlot": 8,
+            "rawHex": "020000000000000004B6328C01000000",
+            "kind": 2,
+            "index": 45287,
+            "typeName": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1<VAR[754]>"
+          },
+          {
+            "relativeSlot": 9,
+            "rawHex": "030000000000000008B6328C01000000",
+            "kind": 3,
+            "index": 173212,
+            "methodSpec": [
+              249850,
+              12827,
+              -1
+            ],
+            "typeName": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1",
+            "methodName": "GetValue"
+          },
+          {
+            "relativeSlot": 10,
+            "rawHex": "0100000000000000C056328C01000000",
+            "kind": 1,
+            "index": 10486
+          },
+          {
+            "relativeSlot": 11,
+            "rawHex": "0300000000000000C470318C01000000",
+            "kind": 3,
+            "index": 459380,
+            "methodSpec": [
+              277939,
+              -1,
+              41937
+            ],
+            "typeName": "System.Activator",
+            "methodName": "CreateInstance"
+          },
+          {
+            "relativeSlot": 12,
+            "rawHex": "0300000000000000F09A328C01000000",
+            "kind": 3,
+            "index": 280194,
+            "methodSpec": [
+              428410,
+              12827,
+              -1
+            ],
+            "typeName": "MemoryPack.MemoryPackFormatter`1",
+            "methodName": ".ctor"
+          }
+        ]
+      }
+    ],
+    "methods": [
+      [
+        169297,
+        "Beyond.MemoryPack.MemoryPackGeneratedInit_Gameplay_Beyond",
+        "InitEager",
+        44413872
+      ],
+      [
+        104339,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+        "GetValue",
+        40763056
+      ],
+      [
+        104347,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter",
+        "Deserialize",
+        60582464
+      ],
+      [
+        104346,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+        "Deserialize",
+        60582560
+      ],
+      [
+        104345,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+        "RegisterFormatter",
+        75399104
+      ]
+    ],
+    "codeWindows": [
+      {
+        "startRva": 45140894,
+        "endRva": 45141009,
+        "sha256": "C89C5849BAB99A076EC99AE58C140E86C12A4FF94C483A07FE30C02AF1A92A37"
+      },
+      {
+        "startRva": 720640,
+        "endRva": 720652,
+        "sha256": "478FBF4FA95506619AAFAE45AD706A75F2DBE091051C69F4200992FF95517F88"
+      },
+      {
+        "startRva": 40763056,
+        "endRva": 40763061,
+        "sha256": "01B97D2DA374096B4359DFB781DA44EA9EB61BA0541DE9F2D557CFAD9ADEF8D3"
+      },
+      {
+        "startRva": 60582464,
+        "endRva": 60582529,
+        "sha256": "9C6DF8C00E93FDF120D52E9EDBD0D1DA8F6D3769C9D233F541E4A148E6E87CF2"
+      },
+      {
+        "startRva": 75399234,
+        "endRva": 75399304,
+        "sha256": "D926A9C75BC4633311729D15EC380DB2DE67ABA9B8C3D4FA1E3BCD0410B724F5"
+      }
+    ]
+  },
+  "eagerOwnerMethod": [
+    169297,
+    "Beyond.MemoryPack.MemoryPackGeneratedInit_Gameplay_Beyond",
+    "InitEager",
+    44413872
+  ],
+  "adapterRegistrationFlow": {
+    "originalType": "Beyond.Gameplay.Core.SequenceActionData",
+    "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+    "allocation": {
+      "instructionRva": 45140894,
+      "instructionHex": "488B0D4B4F5B0A",
+      "usageCellRva": 218897136,
+      "usageRawHex": "3750062000000000",
+      "tag": 1,
+      "typeIndex": 206875,
+      "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2<Beyond.Gameplay.Core.SequenceActionData,Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack>",
+      "typeRawHex": "F8123D8D010000000000150000000000"
+    },
+    "constructor": {
+      "instructionRva": 45140927,
+      "instructionHex": "488B156A8D5B0A",
+      "usageCellRva": 218913072,
+      "usageRawHex": "212311C000000000",
+      "tag": 6,
+      "methodSpecIndex": 561552,
+      "methodSpec": [
+        102200,
+        40303,
+        -1
+      ],
+      "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+      "methodName": ".ctor",
+      "classArguments": [
+        "Beyond.Gameplay.Core.SequenceActionData",
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack"
+      ],
+      "methodArguments": []
+    },
+    "key": {
+      "instructionRva": 45140947,
+      "instructionHex": "488B0566BD5A0A",
+      "usageCellRva": 218859840,
+      "usageRawHex": "F94B044000000000",
+      "tag": 2,
+      "typeIndex": 140796,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "typeRawHex": "F2230000000000000000120000000000"
+    },
+    "window": {
+      "startRva": 45140894,
+      "endRva": 45141009,
+      "sha256": "C89C5849BAB99A076EC99AE58C140E86C12A4FF94C483A07FE30C02AF1A92A37"
+    },
+    "actualCalls": {
+      "allocation": 233136,
+      "objectCheck": 13344,
+      "constructor": 720640,
+      "typeFromHandle": 47864048,
+      "registerWrap": 58721264
+    },
+    "helperMethods": {
+      "typeFromHandle": [
+        277291,
+        "System.Type",
+        "GetTypeFromHandle",
+        47864048
+      ],
+      "registerWrap": [
+        428386,
+        "MemoryPack.MemoryPackFormatterProvider",
+        "RegisterWrap",
+        58721264
+      ]
+    },
+    "constructorThunk": {
+      "window": {
+        "startRva": 720640,
+        "endRva": 720652,
+        "sha256": "478FBF4FA95506619AAFAE45AD706A75F2DBE091051C69F4200992FF95517F88"
+      },
+      "context": {
+        "instructionRva": 720640,
+        "instructionHex": "488B15295A010D",
+        "usageCellRva": 218913072,
+        "usageRawHex": "212311C000000000",
+        "tag": 6,
+        "methodSpecIndex": 561552,
+        "methodSpec": [
+          102200,
+          40303,
+          -1
+        ],
+        "typeName": "Beyond.MemoryPack.GenericMemoryPackFormatter`2",
+        "methodName": ".ctor",
+        "classArguments": [
+          "Beyond.Gameplay.Core.SequenceActionData",
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack"
+        ],
+        "methodArguments": []
+      },
+      "sharedTargetRva": 67650992
+    }
+  },
+  "wrapperRegistrationFlow": {
+    "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+    "formatterType": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter",
+    "wrapperDefinition": 13867,
+    "formatterDefinition": 13866,
+    "allocation": {
+      "instructionRva": 75399234,
+      "instructionHex": "488B0D479B8708",
+      "usageCellRva": 218504080,
+      "usageRawHex": "D7C7042000000000",
+      "tag": 1,
+      "typeIndex": 156651,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter",
+      "typeRawHex": "2A360000000000000000120000000000"
+    },
+    "provider": {
+      "instructionRva": 75399268,
+      "instructionHex": "488B0D85759008",
+      "usageCellRva": 219084272,
+      "usageRawHex": "FDFE032000000000",
+      "tag": 1,
+      "typeIndex": 130942,
+      "typeName": "MemoryPack.MemoryPackFormatterProvider",
+      "typeRawHex": "F1D20000000000000000120000000000"
+    },
+    "registration": {
+      "instructionRva": 75399289,
+      "instructionHex": "488B15209B8708",
+      "usageCellRva": 218504096,
+      "usageRawHex": "E59712C000000000",
+      "tag": 6,
+      "methodSpecIndex": 609266,
+      "methodSpec": [
+        428385,
+        -1,
+        25014
+      ],
+      "typeName": "MemoryPack.MemoryPackFormatterProvider",
+      "methodName": "Register",
+      "classArguments": [],
+      "methodArguments": [
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack"
+      ]
+    },
+    "window": {
+      "startRva": 75399234,
+      "endRva": 75399304,
+      "sha256": "D926A9C75BC4633311729D15EC380DB2DE67ABA9B8C3D4FA1E3BCD0410B724F5"
+    },
+    "actualCalls": {
+      "allocation": 155744,
+      "constructor": 75399424,
+      "classInit": 156352,
+      "registration": 58721808
+    },
+    "constructorMethod": [
+      104348,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter",
+      ".ctor",
+      75399424
+    ]
+  },
+  "wrapperConversion": {
+    "originalType": "Beyond.Gameplay.Core.SequenceActionData",
+    "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+    "getterMethod": [
+      104339,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+      "GetValue",
+      40763056
+    ],
+    "getterWindow": {
+      "startRva": 40763056,
+      "endRva": 40763061,
+      "sha256": "01B97D2DA374096B4359DFB781DA44EA9EB61BA0541DE9F2D557CFAD9ADEF8D3"
+    },
+    "formatterMethod": [
+      104347,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter",
+      "Deserialize",
+      60582464
+    ],
+    "forwardWindow": {
+      "startRva": 60582464,
+      "endRva": 60582529,
+      "sha256": "9C6DF8C00E93FDF120D52E9EDBD0D1DA8F6D3769C9D233F541E4A148E6E87CF2"
+    },
+    "sourceMethod": [
+      104346,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+      "Deserialize",
+      60582560
+    ]
+  },
+  "sharedConstructorEntry": {
+    "definition": 102200,
+    "classArguments": [
+      "object",
+      "object"
+    ],
+    "methodArguments": [],
+    "registration": {
+      "pointer": 6510101936,
+      "methodSpecIndex": 165332,
+      "registration": {
+        "tableIndex": 155712,
+        "va": 6641162080,
+        "methodSpecIndex": 165332,
+        "rawHex": "D4850200E35F020010020100FFFFFFFF",
+        "indices": [
+          155619,
+          66064,
+          -1
+        ]
+      },
+      "classInstantiation": {
+        "index": 1088,
+        "table_slot_va": 6625982880,
+        "record_va": 6626878256,
+        "argument_vector_va": 6669016080,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6664879512,
+            "raw_type_record_hex": "068E00000000000000001C0000000000"
+          },
+          {
+            "index": 1,
+            "type_pointer_va": 6664879512,
+            "raw_type_record_hex": "068E00000000000000001C0000000000"
+          }
+        ]
+      },
+      "methodInstantiation": {
+        "index": -1,
+        "table_slot_va": null,
+        "record_va": null,
+        "argument_vector_va": null,
+        "padding_hex": "",
+        "arguments": []
+      },
+      "methodDefinitionIndices": [
+        102200
+      ],
+      "boundary": "Selected registration and physical entry only; runtime closed type, MethodInfo selection and instantiated fields unproved."
+    },
+    "requestedConcreteArguments": [
+      "Beyond.Gameplay.Core.SequenceActionData",
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack"
+    ],
+    "conditionalInflationOnly": true
+  },
+  "interfacePairs": [
+    {
+      "ordinal": 0,
+      "typeIndex": 124932,
+      "offset": 4,
+      "typeName": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper"
+    },
+    {
+      "ordinal": 1,
+      "typeIndex": 48939,
+      "offset": 4,
+      "typeName": "Beyond.MemoryPack.IMemoryPackDeSerializeWrapper`1<Beyond.Gameplay.Core.SequenceActionData>"
+    },
+    {
+      "ordinal": 2,
+      "typeIndex": 124931,
+      "offset": 5,
+      "typeName": "Beyond.MemoryPack.IMemoryPackDeSerializeType"
+    }
+  ],
+  "wrapperMetadataFlags": {
+    "definition": 13867,
+    "wrapperType": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+    "flags": 1
+  },
+  "schema": "endfield.buff-sequence-static-composition-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "static-sequence-registration-and-nested-fallback-only",
+  "dependencies": {
+    "event": "buff_event_maps_native.json",
+    "reference": "buff_timeline_reference_native.json"
+  },
+  "wrapperRegistrationMethod": [
+    104345,
+    "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+    "RegisterFormatter",
+    75399104
+  ],
+  "evidenceBoundary": {
+    "exact": "Current concrete Sequence original/adapter/wrapper allocation and key identities, closed constructor thunk and shared entry, typed interface/getter/formatter vtables, complete static registration and warmed forwarding windows.",
+    "direct": "The same allocated adapter and original type key reach RegisterWrap. The concrete wrapper formatter reaches Register<Wrapper>. Its slot-five warmed forwarding reaches the independently proved Sequence source with the same Reader/output byrefs; the typed getter returns the owned original instance.",
+    "conditional": "The selected initialization paths, non-null allocations, compatible inflated contexts, reviewed provider objects, actual runtime interface tables and ordinary Win64 ABI/normal returns. Shared Object/Object registration identifies physical code while the actual closed original/wrapper context is retained. Wrapper metadata has the abstract mask clear; runtime attributes must describe that same class for the Activator branch.",
+    "structuralOnly": "Observed complete generic context and interface tables, checked as owned static representations; initialization/cache/provider state is unobserved.",
+    "unresolved": "Runtime initialization/provider selection, full allocation/constructor/global effects, original Sequence child cursor composition, physical wrapper GetFormatter effects and positive list/root admission."
+  }
+}

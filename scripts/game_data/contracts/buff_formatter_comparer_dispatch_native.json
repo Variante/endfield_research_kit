@@ -1,0 +1,59 @@
+{
+  "schema": "endfield.buff-formatter-comparer-dispatch-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "anonymous-record-selector-and-comparer-dispatch-control-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependency": "buff_formatter_dictionary_lookup_native.json",
+  "callerTransfers": {
+    "keyWordProducer": {"startRva": 47244300, "endRva": 47244319},
+    "candidatePredicate": {"startRva": 47244583, "endRva": 47244604}
+  },
+  "layout": {
+    "recordCount": 304,
+    "recordStorage": 176,
+    "recordOffsetWord": 8,
+    "pointerBytes": 8,
+    "pairArrayBiasUnits": 20,
+    "pairScaleShift": 4,
+    "payloadLength": 16,
+    "payloadStart": 20
+  },
+  "calls": {
+    "prepareClass": 19344,
+    "resolveSlot": 68480,
+    "objectWordInvoke": 21696,
+    "objectPredicateInvoke": 20496,
+    "payloadPredicate": 47274688,
+    "throwNullWord": 159663132
+  },
+  "specializations": {
+    "word": [55428608, 58257664, 61860816],
+    "predicate": [46761520, 47274432, 61429920]
+  },
+  "programs": {
+    "keyWordProducer": {
+      "entryRva": 238784,
+      "codeWindows": [
+        {"startRva": 238784, "endRva": 239040, "sha256": "E114AF06AA1BA0F17A2376B0822238D1079E990BD0EBB18A03C8CA53AE917DEF"},
+        {"startRva": 3048292, "endRva": 3048302, "sha256": "FD03C340085D8250C5C8AEB9BA11EEC52440DE9B2B5C3BC909DE7CC289F0938A"}
+      ]
+    },
+    "candidatePredicate": {
+      "entryRva": 239408,
+      "codeWindows": [
+        {"startRva": 239408, "endRva": 239744, "sha256": "E1CC0DB07646BC64CAF19A8D73533518CDCD563C6FBC18F750BC5AF166922274"}
+      ]
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Complete current unwind-owned helper bytes, integer widths and local branch grammar. Actual parent caller transfers supply selectors one and zero and the original compatible receiver/context/key arguments.",
+    "direct": "Unsigned16 count/counter record scan compares the stored context pointer, sign-extends the dword offset-plus-selector, computes a pair address and loads its function/context qwords together. Fallback arguments and ordinary indirect arguments/return are preserved. The pointer-identity predicate branch returns true or false in AL through the complete restored frame.",
+    "structuralOnly": "Anonymous class/record/pair/payload storage expressions. Compiler specialization addresses and interface-like selector patterns do not by themselves identify the live closed interface, slot, target or MethodInfo.",
+    "conditional": "Requires stable valid compatible nonnull receiver/class/context/record/pair/stack storage, normal compatible preparation/resolver/child returns and compatible selected payload buffers. Counter exhaustion before UInt16 wrap follows from its zero initialization, unsigned comparisons and count width. Active error/helper effects are inventoried but not inferred.",
+    "unresolved": "Named runtime interface/class/MethodInfo bridge, actual specialization choice, word hash and predicate equality meaning of opaque child calls, live cache and setter mutation, array callback target/cursor and positive list/root admission."
+  }
+}

@@ -33,25 +33,8 @@ def decode_decorate_mask(data,source,digest,start,end,native):
 
 
 def read_sequence(data,source,digest,start,end,native,depth):
-    from scripts.game_data.memorypack import buff_recursive_actions as base
-    if depth>SEQUENCE_RECURSION_LIMIT:raise ValueError('buffRecursiveControlActions.sequence:depth-limit')
-    reader=Reader(data,source,end);reader.pos=start;reader.header(3)
-    count=reader.count(1,reserve=2,nullable=True);elements=[]
-    for _ in range(max(0,count)):
-        begin=reader.pos;lead=reader.peek()
-        if lead==255:
-            reader.take(1,'null-action');elements.append({'start':begin,'end':reader.pos,'status':'exact-null'});continue
-        tag=int.from_bytes(data[begin+1:begin+3],'little') if lead==250 else lead
-        reader.action(depth+1)
-        child=base.decode_action(data,source=source,digest=digest,start=begin,end=reader.pos,tag=tag,native_validation=native,depth=depth+1)
-        if child.get('recursiveStoredSchemaExact') is not True or [child.get('start'),child.get('end')]!=[begin,reader.pos]:
-            raise ValueError('buffRecursiveControlActions.sequence:incomplete-child')
-        elements.append(child)
-    flags=[]
-    for name in ('onlyExecuteWhenSourceIsGuard','onlyExecuteWhenSourceIsMainChar'):
-        a=reader.pos;raw=reader.take(1,name)[0];flags.append({'name':name,'start':a,'end':reader.pos,'rawByte':raw})
-    if reader.pos!=end:raise ValueError('buffRecursiveControlActions.sequence:end')
-    return {'start':start,'end':end,'count':count,'actions':elements,'flags':flags,'recursiveStoredSchemaExact':True}
+    from scripts.game_data.memorypack import buff_sequence
+    return buff_sequence.decode_value(data,source,digest,start,end,native,depth)
 
 
 def decode_ifelse(data,source,digest,start,end,native,depth):

@@ -1,0 +1,105 @@
+{
+  "schema": "endfield.buff-selector-distance-validator-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "switchContract": "skill_selector_validator_in_screen_native.json",
+  "dispatcher": {
+    "unionTag": 4,
+    "switchTableRva": 66919388,
+    "switchEntryCount": 13,
+    "switchTableSha256": "C738323AAA09F0D3E1BA108B8FFD20300DB9249389D6CFAA684B8D2FC206C11F",
+    "switchTargetRva": 66918632,
+    "routeWindow": {
+      "startRva": 66918632,
+      "endRva": 66918696,
+      "sha256": "3F315FC54EE6C1EECF6432EBE9C102ED9988242E23044AF32555F01A21F038AB",
+      "boundary": "Complete selected DistanceValidator union branch through its rejoin"
+    },
+    "usageCellRva": 217991568,
+    "usageRawHex": "3744032000000000",
+    "registeredTypeIndex": 107035,
+    "wrapperTypeDefinition": 23005,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_DistanceValidator_DataForMemoryPack"
+  },
+  "sourceTypeLoad": [
+    66918644,
+    "488B1595300109"
+  ],
+  "records": {
+    "distance": {
+      "sourceContract": "buff_b2_native.json",
+      "wrapperTypeDefinition": 23005,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_DistanceValidator_DataForMemoryPack",
+      "runtimeTypeDefinition": 10252,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Selector+DistanceValidator+Data",
+      "inheritedMemberCount": 0,
+      "sourceReadOrder": "validator4Member3",
+      "readerMethod": [
+        166903,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_DistanceValidator_DataForMemoryPack",
+        "Deserialize",
+        72441824
+      ],
+      "readerWindowStart": 72441824,
+      "members": [
+        {
+          "fieldName": "clampToXZ",
+          "declaredType": "bool",
+          "setterMethodIndex": 166898,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 72441968,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72441991,
+            "targetRva": 72442176,
+            "methodIndex": 166898
+          },
+          "sourceToDestinationHex": "4885FF0F84B30000004533C00FB6D0488BCF"
+        },
+        {
+          "fieldName": "compareType",
+          "declaredType": "Beyond.CompareType",
+          "setterMethodIndex": 166899,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 72442009,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72442031,
+            "targetRva": 72442224,
+            "methodIndex": 166899
+          },
+          "sourceToDestinationHex": "4885FF0F848A0000004533C08BD0488BCF"
+        },
+        {
+          "fieldName": "value",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 166900,
+          "kind": "scalar-payload",
+          "sourceCall": {
+            "rva": 72442049,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 72442068,
+            "targetRva": 72442272,
+            "methodIndex": 166900
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 72442036
+        }
+      ]
+    }
+  },
+  "evidenceBoundary": "Direct named stored distance-validator members and closed BlackboardDouble child. Runtime entity positions, XZ projection, compare result and provider selection remain unresolved."
+}

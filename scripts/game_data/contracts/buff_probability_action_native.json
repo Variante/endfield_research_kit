@@ -1,0 +1,129 @@
+{
+  "schema": "endfield.buff-probability-action-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "actionDispatch": {
+    "136": "probability"
+  },
+  "records": {
+    "probability": {
+      "sourceContract": "buff_88_native.json",
+      "wrapperTypeDefinition": 16725,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_Probablity_DataForMemoryPack",
+      "runtimeTypeDefinition": 13587,
+      "runtimeTypeName": "Beyond.Gameplay.Core.Conditions.Probablity+Data",
+      "inheritedMemberCount": 4,
+      "sourceReadOrder": "member5",
+      "readerMethod": [
+        124890,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_Probablity_DataForMemoryPack",
+        "Deserialize",
+        67762864
+      ],
+      "readerWindowStart": 67762864,
+      "members": [
+        {
+          "fieldName": "isEnable",
+          "declaredType": "bool",
+          "setterMethodIndex": 107646,
+          "kind": "byte",
+          "sourceCall": {
+            "rva": 67763008,
+            "targetRva": 46827712
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67763031,
+            "targetRva": 52483776,
+            "methodIndex": 107646
+          },
+          "sourceToDestinationHex": "4885F60F84F50000004533C00FB6D0488BCE"
+        },
+        {
+          "fieldName": "priorityLevel",
+          "declaredType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "setterMethodIndex": 107647,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 67763049,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67763071,
+            "targetRva": 58153824,
+            "methodIndex": 107647
+          },
+          "sourceToDestinationHex": "4885F60F84CC0000004533C08BD0488BCE",
+          "sourceContextInstructionRva": 67763036
+        },
+        {
+          "fieldName": "priorityOffset",
+          "declaredType": "int",
+          "setterMethodIndex": 107648,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 67763082,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67763104,
+            "targetRva": 58153856,
+            "methodIndex": 107648
+          },
+          "sourceToDestinationHex": "4885F60F84AB0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "serverActionIndex",
+          "declaredType": "int",
+          "setterMethodIndex": 107649,
+          "kind": "scalar32",
+          "sourceCall": {
+            "rva": 67763115,
+            "targetRva": 46827184
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67763137,
+            "targetRva": 58153888,
+            "methodIndex": 107649
+          },
+          "sourceToDestinationHex": "4885F60F848A0000004533C08BD0488BCE"
+        },
+        {
+          "fieldName": "prob",
+          "declaredType": "Beyond.Blackboard+BlackboardDouble",
+          "setterMethodIndex": 124887,
+          "kind": "scalarPayload",
+          "sourceCall": {
+            "rva": 67763155,
+            "targetRva": 47864976
+          },
+          "assignment": {
+            "kind": "setter",
+            "rva": 67763174,
+            "targetRva": 67763280,
+            "methodIndex": 124887
+          },
+          "sourceToDestinationHex": "4885DB74664533C0488BD0488BCB",
+          "sourceContextInstructionRva": 67763142
+        }
+      ]
+    }
+  },
+  "reviewedDependencies": [
+    "buff_88_native.json",
+    "buff_adding_cooldown_ownership_native.json"
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected complete formatter windows and ordered result-to-setter transfers under nativeInputs.",
+    "direct": "Five stored Probablity fields in authenticated wrapper order, with prob declared BlackboardDouble.",
+    "conditional": "Original-span composition requires the exact stored BlackboardDouble reader and exact parent end.",
+    "unresolved": "Evaluated probability, random source, result, IFix selection, live provider selection and whole BuffData EOF."
+  }
+}

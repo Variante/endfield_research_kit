@@ -1,0 +1,2761 @@
+{
+  "schema": "endfield.mission-trace-capture-recipe.v7",
+  "status": "reviewed",
+  "hooks": [
+    {
+      "name": "buff.Buff.Reset",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "Reset",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "buffData",
+          "type": "Beyond.Gameplay.Core.BuffData"
+        },
+        {
+          "name": "buffOwner",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "buffSource",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        },
+        {
+          "name": "addBuffOption",
+          "type": "Beyond.Gameplay.Core.Buff+AddBuffOption"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedBuffId",
+          "argument": "buffData",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedBuffOwnerIdentity",
+          "argument": "buffOwner",
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedBuffSourceIdentity",
+          "argument": "buffSource",
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff._LoadActions",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "_LoadActions",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "buffActions",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffActionMap>"
+        },
+        {
+          "name": "abilityActions",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.AbilityActionMap>"
+        },
+        {
+          "name": "timelineActions",
+          "type": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.TimelineAction+TimelineActionData>"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff._LoadIgniteActions",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "_LoadIgniteActions",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff.OnStart",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "OnStart",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff.OnTrigger",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "OnTrigger",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff._ExecuteBuffAction",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "_ExecuteBuffAction",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "buffEvent",
+          "type": "Beyond.Gameplay.Core.Buff+Event"
+        },
+        {
+          "name": "target",
+          "type": "Beyond.Gameplay.Core.AbilitySystem"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedBuffEvent",
+          "argument": "buffEvent",
+          "type": "Beyond.Gameplay.Core.Buff+Event",
+          "role": "state"
+        },
+        {
+          "label": "suppliedTargetIdentity",
+          "argument": "target",
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.Buff.OnFinish",
+      "type": "Beyond.Gameplay.Core.Buff",
+      "method": "OnFinish",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "reason",
+          "type": "Beyond.Gameplay.Core.Buff+FinishReason"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<id>k__BackingField",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryInstanceUid",
+          "argument": "this",
+          "type": "uint",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::<instanceUid>k__BackingField",
+              "type": "uint",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryClientInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_clientInstId",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryTriggerCount",
+          "argument": "this",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_triggerCnt",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Buff::m_data",
+              "type": "Beyond.Gameplay.Core.BuffData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.BuffData::id",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedReason",
+          "argument": "reason",
+          "type": "Beyond.Gameplay.Core.Buff+FinishReason",
+          "role": "state"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.AbilityAction.Reset",
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "method": "Reset",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "reason",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ResetReason"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.AbilityAction.ReAssign",
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "method": "ReAssign",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedEnvironmentIdentity",
+          "argument": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.AbilityAction.AssignData",
+      "type": "Beyond.Gameplay.Core.AbilityAction",
+      "method": "AssignData",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "data",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData"
+        },
+        {
+          "name": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedServerActionIndex",
+          "argument": "data",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedEnvironmentIdentity",
+          "argument": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedDataIdentity",
+          "argument": "data",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient."
+    },
+    {
+      "name": "buff.SendBattleSignalToLevel.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.SendBattleSignalToLevel",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.SendBattleSignalToLevel+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SendBattleSignalToLevel+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.SendBattleSignalToLevel+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.SendBattleSignalToLevel"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SendBattleSignalToLevel+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.SendBattleSignalToLevel+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.SendBattleSignalToLevel"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredIsEnable",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SendBattleSignalToLevel+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.SendBattleSignalToLevel+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.SendBattleSignalToLevel"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::isEnable",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPriorityLevel",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SendBattleSignalToLevel+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.SendBattleSignalToLevel+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.SendBattleSignalToLevel"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityLevel",
+              "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPriorityOffset",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.SendBattleSignalToLevel+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.SendBattleSignalToLevel+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.SendBattleSignalToLevel"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityOffset",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    },
+    {
+      "name": "buff.ReadSkillSettingData.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.ReadSkillSettingData",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.ReadSkillSettingData+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.ReadSkillSettingData+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.ReadSkillSettingData+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.ReadSkillSettingData"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.ReadSkillSettingData+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.ReadSkillSettingData+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.ReadSkillSettingData"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredIsEnable",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.ReadSkillSettingData+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.ReadSkillSettingData+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.ReadSkillSettingData"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::isEnable",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPriorityLevel",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.ReadSkillSettingData+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.ReadSkillSettingData+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.ReadSkillSettingData"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityLevel",
+              "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPriorityOffset",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.ReadSkillSettingData+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.ReadSkillSettingData+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.ReadSkillSettingData"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityOffset",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    },
+    {
+      "name": "buff.CheckHp.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.Conditions.CheckHp",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Conditions.CheckHp+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckHp+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckHp+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckHp"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckHp+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckHp+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckHp"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredCompare",
+          "argument": "this",
+          "type": "Beyond.CompareType",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckHp+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckHp+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckHp"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Conditions.CheckHp+Data::compare",
+              "type": "Beyond.CompareType",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredIsRatio",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckHp+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckHp+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckHp"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Conditions.CheckHp+Data::isRatio",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredIsEnable",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckHp+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckHp+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckHp"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::isEnable",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    },
+    {
+      "name": "buff.CheckPoiseValue.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredCompare",
+          "argument": "this",
+          "type": "Beyond.CompareType",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data::compare",
+              "type": "Beyond.CompareType",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPoiseFallback",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data::returnValueIfDontHavePoise",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredIsEnable",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::isEnable",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    },
+    {
+      "name": "buff.AbilityAction.GenericAssignData",
+      "type": "Beyond.Gameplay.Core.AbilityAction`1",
+      "method": "AssignData",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "data",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData"
+        },
+        {
+          "name": "actionEnvironment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedServerActionIndex",
+          "argument": "data",
+          "type": "int",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedEnvironmentIdentity",
+          "argument": "actionEnvironment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedDataIdentity",
+          "argument": "data",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct registered generic entry and supplied data/environment/index observations only. The selected object instantiation authenticates this physical entry, not the runtime closed receiver type or MethodInfo. Only non-generic ancestor fields are read. No generic m_data offset, completed assignment, cast success, IFix branch, return or subsequent field-to-data ownership is inferred.",
+      "genericEntry": {
+        "classArguments": [
+          "object"
+        ],
+        "methodArguments": []
+      }
+    },
+    {
+      "name": "buff.GetTargetBuffBBAdvanced.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredDesiredKey",
+          "argument": "this",
+          "type": "string",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data::desiredKey",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredBlackboardKey",
+          "argument": "this",
+          "type": "string",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data::blackboardKey",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredIsEnable",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::isEnable",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    },
+    {
+      "name": "buff.StoreAttributeValue.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.StoreAttributeValue",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.StoreAttributeValue+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.StoreAttributeValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.StoreAttributeValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.StoreAttributeValue"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.StoreAttributeValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.StoreAttributeValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.StoreAttributeValue"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredAttributeType",
+          "argument": "this",
+          "type": "Beyond.GEnums.AttributeType",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.StoreAttributeValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.StoreAttributeValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.StoreAttributeValue"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.StoreAttributeValue+Data::attributeType",
+              "type": "Beyond.GEnums.AttributeType",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredStoreAttributeType",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.StoreAttributeValue+StoreAttributeType",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.StoreAttributeValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.StoreAttributeValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.StoreAttributeValue"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.StoreAttributeValue+Data::storeAttributeType",
+              "type": "Beyond.Gameplay.Core.StoreAttributeValue+StoreAttributeType",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredKey",
+          "argument": "this",
+          "type": "string",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.StoreAttributeValue+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.StoreAttributeValue+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.StoreAttributeValue"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.StoreAttributeValue+Data::key",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    },
+    {
+      "name": "buff.Probablity.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.Conditions.Probablity",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Conditions.Probablity+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.Probablity+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.Probablity+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.Probablity"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.Probablity+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.Probablity+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.Probablity"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredIsEnable",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.Probablity+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.Probablity+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.Probablity"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::isEnable",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPriorityLevel",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.Probablity+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.Probablity+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.Probablity"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityLevel",
+              "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPriorityOffset",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.Probablity+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.Probablity+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.Probablity"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityOffset",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    },
+    {
+      "name": "buff.AbilityActionData.NewAction",
+      "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+      "method": "NewAction",
+      "returnType": "Beyond.Gameplay.Core.AbilityAction",
+      "static": false,
+      "parameters": [
+        {
+          "name": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedEnvironmentIdentity",
+          "argument": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Explicit initialization arguments and separate stored skill carriers",
+      "evidenceBoundary": "Direct entry only. Supplied reference identities and stored skill identifiers remain separate. Constructor entry is not completion, a reference is not an object lifetime, and action creation does not retain the returned action or prove assignment, serialized-node identity, execution, IFix or server acceptance."
+    },
+    {
+      "name": "buff.SequenceAction.Init",
+      "type": "Beyond.Gameplay.Core.SequenceAction",
+      "method": "Init",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "sequenceActionData",
+          "type": "Beyond.Gameplay.Core.SequenceActionData"
+        },
+        {
+          "name": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment"
+        }
+      ],
+      "fields": [
+        {
+          "label": "suppliedSequenceDataIdentity",
+          "argument": "sequenceActionData",
+          "type": "Beyond.Gameplay.Core.SequenceActionData",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedEnvironmentIdentity",
+          "argument": "environment",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Explicit initialization arguments and separate stored skill carriers",
+      "evidenceBoundary": "Direct entry only. Supplied reference identities and stored skill identifiers remain separate. Constructor entry is not completion, a reference is not an object lifetime, and action creation does not retain the returned action or prove assignment, serialized-node identity, execution, IFix or server acceptance."
+    },
+    {
+      "name": "buff.SkillHighlightEnvironment.Constructor",
+      "type": "Beyond.Gameplay.Core.Skill+SkillHighlightEnvironment",
+      "method": ".ctor",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "skill",
+          "type": "Beyond.Gameplay.Core.Skill"
+        }
+      ],
+      "fields": [
+        {
+          "label": "suppliedSkillIdentity",
+          "argument": "skill",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedSkillStoredId",
+          "argument": "skill",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_skillId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedSkillDataId",
+          "argument": "skill",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_data",
+              "type": "Beyond.Gameplay.Core.SkillData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.SkillData::skillId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedSkillInstId",
+          "argument": "skill",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<instId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Explicit initialization arguments and separate stored skill carriers",
+      "evidenceBoundary": "Direct entry only. Supplied reference identities and stored skill identifiers remain separate. Constructor entry is not completion, a reference is not an object lifetime, and action creation does not retain the returned action or prove assignment, serialized-node identity, execution, IFix or server acceptance."
+    },
+    {
+      "name": "buff.Skill.Init",
+      "type": "Beyond.Gameplay.Core.Skill",
+      "method": "Init",
+      "returnType": "void",
+      "static": false,
+      "parameters": [],
+      "fields": [
+        {
+          "label": "entrySkillIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entrySkillStoredId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_skillId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entrySkillDataId",
+          "argument": "this",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_data",
+              "type": "Beyond.Gameplay.Core.SkillData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.SkillData::skillId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entrySkillInstId",
+          "argument": "this",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<instId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Explicit initialization arguments and separate stored skill carriers",
+      "evidenceBoundary": "Direct entry only. Supplied reference identities and stored skill identifiers remain separate. Constructor entry is not completion, a reference is not an object lifetime, and action creation does not retain the returned action or prove assignment, serialized-node identity, execution, IFix or server acceptance."
+    },
+    {
+      "name": "buff.Ability.Init",
+      "type": "Beyond.Gameplay.Core.Ability",
+      "method": "Init",
+      "returnType": "void",
+      "static": false,
+      "parameters": [
+        {
+          "name": "skill",
+          "type": "Beyond.Gameplay.Core.Skill"
+        },
+        {
+          "name": "data",
+          "type": "Beyond.Gameplay.Core.ActionGroupData"
+        },
+        {
+          "name": "input",
+          "type": "Beyond.ActionBlackboard"
+        }
+      ],
+      "fields": [
+        {
+          "label": "suppliedSkillIdentity",
+          "argument": "skill",
+          "type": "Beyond.Gameplay.Core.Skill",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "suppliedSkillStoredId",
+          "argument": "skill",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_skillId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedSkillDataId",
+          "argument": "skill",
+          "type": "string",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::m_data",
+              "type": "Beyond.Gameplay.Core.SkillData",
+              "mode": "reference"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.SkillData::skillId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedSkillInstId",
+          "argument": "skill",
+          "type": "ulong",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.Skill::<instId>k__BackingField",
+              "type": "ulong",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "suppliedActionGroupIdentity",
+          "argument": "data",
+          "type": "Beyond.Gameplay.Core.ActionGroupData",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity"
+        }
+      ],
+      "semanticRole": "Explicit initialization arguments and separate stored skill carriers",
+      "evidenceBoundary": "Direct entry only. Supplied reference identities and stored skill identifiers remain separate. Constructor entry is not completion, a reference is not an object lifetime, and action creation does not retain the returned action or prove assignment, serialized-node identity, execution, IFix or server acceptance."
+    },
+    {
+      "name": "buff.CheckEntityNum.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckEntityNum"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckEntityNum"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredCompareType",
+          "argument": "this",
+          "type": "Beyond.CompareType",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckEntityNum"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data::compareType",
+              "type": "Beyond.CompareType",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredMinNum",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckEntityNum"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data::minNum",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredStoreKey",
+          "argument": "this",
+          "type": "string",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.Conditions.CheckEntityNum"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.Conditions.CheckEntityNum+Data::storeKey",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    },
+    {
+      "name": "buff.AddGlobalCDTimer.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.AddGlobalCDTimer",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AddGlobalCDTimer+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.AddGlobalCDTimer"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AddGlobalCDTimer+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.AddGlobalCDTimer"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredBuffId",
+          "argument": "this",
+          "type": "string",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AddGlobalCDTimer+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.AddGlobalCDTimer"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data::buffId",
+              "type": "string",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredIsEnable",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AddGlobalCDTimer+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.AddGlobalCDTimer"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::isEnable",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPriorityOffset",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.AddGlobalCDTimer+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.AddGlobalCDTimer"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityOffset",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    },
+    {
+      "name": "buff.NotifyCharPassiveUIAction.ExecuteInternal",
+      "type": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction",
+      "method": "ExecuteInternal",
+      "returnType": "bool",
+      "static": false,
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView"
+        }
+      ],
+      "fields": [
+        {
+          "label": "entryExecuteResult",
+          "argument": "this",
+          "type": "bool",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::m_executeResult",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryExecutingState",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+          "role": "state",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<executingState>k__BackingField",
+              "type": "Beyond.Gameplay.Core.AbilityAction+ExecutingState",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryEnvironment",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.IActionEnvironment",
+          "role": "identity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+              "type": "Beyond.Gameplay.Core.IActionEnvironment",
+              "mode": "reference"
+            }
+          ],
+          "valueRepresentation": "referenceIdentity"
+        },
+        {
+          "label": "entryStoredDataIdentity",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data",
+          "role": "identity",
+          "valueRepresentation": "referenceIdentity",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredServerActionIndex",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::serverActionIndex",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredIsEnable",
+          "argument": "this",
+          "type": "bool",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::isEnable",
+              "type": "bool",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPriorityLevel",
+          "argument": "this",
+          "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityLevel",
+              "type": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+              "mode": "reference"
+            }
+          ]
+        },
+        {
+          "label": "entryStoredPriorityOffset",
+          "argument": "this",
+          "type": "int",
+          "role": "storedConfiguration",
+          "path": [
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data>::m_data",
+              "type": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction+Data",
+              "mode": "reference",
+              "layoutWitness": "Beyond.Gameplay.Core.NotifyCharPassiveUIAction"
+            },
+            {
+              "field": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData::priorityOffset",
+              "type": "int",
+              "mode": "reference"
+            }
+          ]
+        }
+      ],
+      "semanticRole": "Buff definition/instance lifecycle or explicitly assigned action entry",
+      "evidenceBoundary": "Direct method entry, supplied arguments and separate pre-entry stored carriers only. Raw receiver and reference-argument slots retain same-process pointer identities. Reset entry caches may belong to the previous pooled instance. Return values, actual writes, action completion, collection contents, targets, blackboard evaluation and server acceptance are not observed. A live ownership join requires an explicit Reset/ReAssign environment argument, matching receiver identities and lifecycle boundaries; timestamp proximity is insufficient. Bounded reads through the reviewed stored Data slot retain its index and selected configuration bytes. Declared field paths do not observe the runtime Data type, establish serialized-node selection, or evaluate blackboard values."
+    }
+  ],
+  "coverageGaps": [
+    "No managed getters or runtime collection enumeration.",
+    "Raw IActionEnvironment references need an explicit same-process instance/lifecycle join; pooled pointers alone do not establish ownership.",
+    "ExecuteInternal observations cover only the selected named consumers; absence is not proof that an action did not run.",
+    "No action return, float-register payload, dynamic blackboard, target resolution, IFix, server acceptance or final HP/attribute-write evidence.",
+    "BuffData and available SkillData source archives are byte identity only; canonical corpus receipts/native gates decide whether stored schema rows are current.",
+    "Per-frame _TriggerInternal is omitted; the journal does not measure continuous tick cadence.",
+    "Reset entry fields precede reassignment and may describe a previous pooled instance; supplied BuffData identity and subsequent stored identities remain separate.",
+    "Generic AssignData entry registration does not observe its runtime closed type, MethodInfo selection or assignment completion. Selected named consumers separately retain m_data through a current-native closed-layout witness; supplied and stored references remain separate and do not identify serialized nodes.",
+    "Initializer entries retain supplied data/environment/skill references. Unique earlier NewAction data/environment entry and later consumer stored references may agree; factory return, assignment completion, lifetime and serialized-node selection remain unobserved. The anonymous DispatchAssignData observer is withdrawn from the active profile after a Capture-only scene-load crash; static dispatch proof does not establish live observer safety.",
+    "Skill-environment constructor reference matches preserve incoming skill evidence, not constructor completion, object lifetime or runtime ownership; no IActionEnvironment downcast is permitted.",
+    "Selected consumer stored Data indices and bounded configuration leaves can be compared with factory entries and admitted stored-schema candidates. Index/type agreement is conditional; duplicate nodes, unavailable schema, changed payloads or missing reads cannot establish node selection. Dynamic blackboard values and collection contents remain unobserved.",
+    "This extension adds named entity-count, global-cooldown and passive-UI entries to the retained baseline recipe. Native preparation does not establish live loading safety or guarantee execution; configured leaves do not observe evaluated counts, durations or UI effects."
+  ],
+  "evidenceBoundary": "Direct bounded Buff lifecycle and selected action entries; stored definition/instance/environment carriers and supplied values remain distinct. Managed reference identity reads retain pointers without dereferencing their objects. Runtime effect meaning and server criteria remain unresolved."
+}

@@ -1,0 +1,60 @@
+{
+  "schema": "endfield.buff-formatter-dispatch-fallback-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "anonymous-prepare-byte-gates-and-resolver-result-transfer-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_formatter_comparer_dispatch_native.json",
+  "prepareEntryTransfer": {
+    "entryRva": 19344,
+    "endRva": 19353,
+    "sha256": "DB5C419A2B4E75588102831E9708E277ED22D7ADB26A57C0589AC2B82CBF16B3",
+    "targetRva": 19360,
+    "boundary": "Complete nine-byte load followed by an unconditional direct tail jump. No adjacent padding or inferred primary unwind extent is claimed."
+  },
+  "programs": {
+    "prepareTail": {
+      "entryRva": 19360,
+      "codeWindows": [{"startRva":19360,"endRva":19441,"sha256":"FE68386BBA4D76028A22896F6928D8397381C63EA6CA42EF65EEE0751AE7CF9E"}]
+    },
+    "resolver": {
+      "entryRva": 68480,
+      "codeWindows": [
+        {"startRva":68480,"endRva":68551,"sha256":"077087CB11211959574C989F625CD6A376E14A54D36B0A66239256A28B45BD0A"},
+        {"startRva":3039436,"endRva":3039512,"sha256":"8D9ABADE7C8AA85E88E37BB24FF9B20BD219B4E7A0596313567A0E32B3134116"}
+      ]
+    }
+  },
+  "layout": {
+    "prepareArgumentPointer": 120,
+    "prepareFirstFlagByte": 314,
+    "prepareFirstFlagMask": 8,
+    "prepareSecondFlagByte": 313,
+    "prepareSecondFlagMask": 32,
+    "resolverAlternateFlagByte": 313,
+    "resolverAlternateFlagMask": 16,
+    "resolverAlternateReceiverField": 16,
+    "alternateResultContextField": 8,
+    "alternateResultContextNestedField": 32
+  },
+  "prepareGlobalRva": 222598832,
+  "calls": {
+    "prepareFirst": 2688624,
+    "prepareSecond": 2919920,
+    "prepareThird": 2688720,
+    "resolverFirst": 68560,
+    "resolverAlternate": 11197616,
+    "alternateResultContinuation": 19488,
+    "resolverFailure": 2940064
+  },
+  "evidenceBoundary": {
+    "exact": "Current owned prepare-tail and resolver windows plus the complete actual entry load/tail transfer, byte widths, branches and actual callees. Parent comparer-dispatch callers are independently rechecked.",
+    "direct": "Prepare entry reads a qword pointer as its RCX argument. Its tail checks two stored bytes and conditionally forwards a global-address stack slot and original loaded argument. Resolver retains the original receiver/context and UInt16 selector, returns nonnull first or permitted alternate results through restored frames, and otherwise calls its failure helper followed by INT3.",
+    "structuralOnly": "Anonymous pointer, flag, global and nested-context expressions. Stored mask names, runtime class/interface/slot/MethodInfo and pair meaning are not assigned.",
+    "conditional": "Valid compatible stable receiver/context/flag/stack/result storage and normal ABI-compatible child returns. The second preparation child receives a stack-slot address and may change the subsequently forwarded value. Resolver direct-child search, alternate selection and failure/helper side effects remain opaque.",
+    "unresolved": "Complete resolver-child reachable code versus embedded data, class initialization and helper mutation meaning, actual runtime target, word hash/predicate equality, cache/setter effects, action callback cursor, positive lists and full root admission."
+  }
+}

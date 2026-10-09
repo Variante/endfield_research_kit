@@ -20,6 +20,8 @@ from scripts.common import check_installed_native_inputs, sha256_file
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.mission_trace_abi import prove_string_argument_mode
 from scripts.game_data.il2cpp.body_claims import BodyIndex
+from scripts.game_data.il2cpp.generic_entries import GenericEntries
+from scripts.game_data.il2cpp.reference_layouts import single_reference_generic_field
 from scripts.game_data.il2cpp.native_image import NativeImage
 from scripts.game_data.il2cpp.protocol import (
     field_defaults, read_compressed_int32, read_compressed_uint32,
@@ -31,6 +33,9 @@ RECIPE_PATH = CONTRACTS_DIR / "mission_trace_capture.json"
 PROFILE_RECIPES = {"mission": RECIPE_PATH, "buff": CONTRACTS_DIR / "buff_runtime_trace_capture.json"}
 RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v3"
 REFERENCE_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v4"
+GENERIC_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v5"
+ASSIGNMENT_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v6"
+LAYOUT_RECIPE_SCHEMA = "endfield.mission-trace-capture-recipe.v7"
 BUILD_SCHEMA = "endfieldCapture.missionTraceBuild.v1"
 ABI_ID = "win64.transparent_entry_snapshot.v1"
 NO_CHAIN = 4097
@@ -47,7 +52,7 @@ class PreparationError(ValueError):
 
 def read_recipe(path: Path = RECIPE_PATH) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict) or value.get("schema") not in {RECIPE_SCHEMA, REFERENCE_RECIPE_SCHEMA}:
+    if not isinstance(value, dict) or value.get("schema") not in {RECIPE_SCHEMA, REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA}:
         raise PreparationError("mission_trace.recipe: unsupported schema")
     hooks = value.get("hooks")
     if not isinstance(hooks, list) or not 1 <= len(hooks) <= MAX_HOOKS:
@@ -270,8 +275,30 @@ class SelectedMethods:
         if actual_return != hook["returnType"] or bool(method.flags & 0x10) != hook["static"]:
             raise PreparationError(f"{hook['name']}: return/static drift; expected {hook['returnType']}/{hook['static']}, actual {actual_return}/{bool(method.flags & 0x10)}")
         if actual_return not in {"void", "bool", "int", "uint", "long", "ulong"} and not self.is_enum(actual_return):
-            raise PreparationError(f"{hook['name']}: hidden return ABI unsupported for {actual_return}")
+            proof = self.reference_return_abi(method.return_type)
+            if proof is None:
+                raise PreparationError(f"{hook['name']}: hidden return ABI unsupported for {actual_return}")
+            if not hasattr(self, "_return_abi_proofs"):
+                self._return_abi_proofs = {}
+            self._return_abi_proofs[hook["name"]] = proof
         pointer = self.image.method_pointer_va(method)
+        generic = hook.get("genericEntry")
+        if generic is not None:
+            if pointer or not isinstance(generic, dict) or set(generic) != {"classArguments", "methodArguments"}:
+                raise PreparationError(f"{hook['name']}: generic entry requires a null normal slot and explicit instantiation arguments")
+            if any(not isinstance(generic[key], list) or len(generic[key]) > 64 or
+                   any(not isinstance(item, str) or not item for item in generic[key]) for key in generic):
+                raise PreparationError(f"{hook['name']}: invalid generic instantiation arguments")
+            try:
+                if not hasattr(self, "_generic_entries"):
+                    self._generic_entries = GenericEntries(self.image)
+                proof = self._generic_entries.resolve(method.index, generic["classArguments"], generic["methodArguments"])
+            except ValueError as exc:
+                raise PreparationError(f"{hook['name']}: {exc}") from exc
+            pointer = proof["pointer"]
+            if not hasattr(self, "_generic_proofs"):
+                self._generic_proofs = {}
+            self._generic_proofs[hook["name"]] = proof
         # Folded native bodies can receive unrelated instance types. Reject them
         # rather than applying one owner's field layout to another caller.
         aliases = self.index.names_by_pointer.get(pointer) or []
@@ -281,6 +308,32 @@ class SelectedMethods:
         if symbols != {expected} or alias_indices != {method.index}:
             raise PreparationError(f"{hook['name']}: shared or unregistered native body; aliases={sorted(symbols)!r}, methodIndices={sorted(str(index) for index in alias_indices)!r}")
         return method, parameters, pointer
+
+    def reference_return_abi(self, type_index: int) -> dict[str, Any] | None:
+        """A direct declared CLASS returns a pointer without a hidden buffer.
+
+        This admits no generic, decorated, byref, array or value-type return.
+        The observer does not read RAX or retain the returned reference.
+        """
+        registration = self.image.registration
+        if not 0 <= type_index < registration["typesCount"]:
+            raise PreparationError("mission_trace.return: type index outside selected table")
+        table = int(registration["types"], 16)
+        pointer = self.image.pe.u64_at_va(table + type_index * 8)
+        if not pointer:
+            raise PreparationError("mission_trace.return: missing selected native type")
+        raw = self.image.pe.bytes_at_va(pointer, 16)
+        if len(raw) != 16 or raw[10] != 0x12 or raw[11] != 0:
+            return None
+        definition_index = int.from_bytes(raw[:8], "little")
+        name = self.type_name(type_index)
+        td = self.index.types.get(name)
+        if td is None or td.index != definition_index or self.is_value_type(name):
+            return None
+        return {"mode": "directReference", "returnType": name,
+                "typeIndex": type_index, "typeDefinitionIndex": definition_index,
+                "evidence": "selected undecorated IL2CPP_TYPE_CLASS; Win64 pointer return has no hidden return-buffer argument",
+                "returnObserved": False}
 
     def argument(self, hook: dict[str, Any], name: str) -> tuple[int, str]:
         if name == "this":
@@ -330,7 +383,18 @@ class SelectedMethods:
             inline = True
         resolved_path: list[dict[str, Any]] = []
         for position, step in enumerate(path):
-            owner, actual_type, field_offset = self.field(step["field"])
+            layout_proof = None
+            if "layoutWitness" in step:
+                owner, separator, name = step["field"].partition("::")
+                if not separator or step["layoutWitness"] != current_type or inline:
+                    raise PreparationError(f"{hook['name']}.{spec['label']}: layout witness must be the current named reference receiver")
+                try:
+                    layout_proof = single_reference_generic_field(self, owner=owner, field=name, witness=current_type)
+                except ValueError as exc:
+                    raise PreparationError(f"{hook['name']}.{spec['label']}: {exc}") from exc
+                actual_type, field_offset = layout_proof["fieldType"], layout_proof["fieldOffset"]
+            else:
+                owner, actual_type, field_offset = self.field(step["field"])
             if not self.is_owner(current_type, owner) or actual_type != step["type"]:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: field path drift at {step['field']}; receiver={current_type}, actualType={actual_type}, expectedType={step['type']}")
             # Runtime offsets on a value type include the boxed object header.
@@ -346,7 +410,9 @@ class SelectedMethods:
             if not 0 <= offset <= 4096:
                 raise PreparationError(f"{hook['name']}.{spec['label']}: field offset outside 0..4096")
             resolved_path.append({"field": step["field"], "type": actual_type, "offset": field_offset})
-            if owner.endswith("<string>") and owner not in self.index.types:
+            if layout_proof is not None:
+                resolved_path[-1]["layoutProof"] = layout_proof
+            elif owner.endswith("<string>") and owner not in self.index.types:
                 resolved_path[-1]["layoutProof"] = self.string_value_layout(owner)
             current_type = actual_type
             if position != len(path) - 1:
@@ -416,16 +482,31 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
     hooks = []
     seen_rvas: set[int] = set()
     for spec in recipe["hooks"]:
-        if any(field.get("valueRepresentation") is not None for field in spec["fields"]) and recipe.get("schema") != REFERENCE_RECIPE_SCHEMA:
+        if spec.get("genericEntry") is not None and recipe.get("schema") not in {GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA}:
+            raise PreparationError("mission_trace.recipe: generic entries require recipe v5")
+        if any(field.get("valueRepresentation") is not None for field in spec["fields"]) and recipe.get("schema") not in {REFERENCE_RECIPE_SCHEMA, GENERIC_RECIPE_SCHEMA, ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA}:
             raise PreparationError("mission_trace.recipe: reference identities require recipe v4")
+        if spec.get("anonymousEntry") is not None and recipe.get("schema") not in {ASSIGNMENT_RECIPE_SCHEMA, LAYOUT_RECIPE_SCHEMA}:
+            raise PreparationError("mission_trace.recipe: anonymous assignment entries require recipe v6")
+        if any("layoutWitness" in step for field in spec["fields"] for step in field.get("path", [])) and recipe.get("schema") != LAYOUT_RECIPE_SCHEMA:
+            raise PreparationError("mission_trace.recipe: closed reference layout witnesses require recipe v7")
         method, _parameters, pointer = selected.resolve(spec)
+        entry = None
+        field_abi = spec
+        if spec.get("anonymousEntry") is not None:
+            from scripts.game_data.il2cpp.assignment_entry import resolve_assignment_entry
+            try:
+                entry = resolve_assignment_entry(selected.index, spec, caller_index=method.index, caller_pointer=pointer)
+            except (ValueError, RuntimeError) as exc:
+                raise PreparationError(f"{spec['name']}: {exc}") from exc
+            pointer, field_abi = entry["pointer"], entry["abi"]
         end = selected.index.extents.get(pointer)
         if end is None or not 16 <= end - pointer <= MAX_BODY_BYTES:
             raise PreparationError(f"{spec['name']}: missing bounded .pdata entry or body outside 16..{MAX_BODY_BYTES} bytes")
         body_size = end - pointer
         window_size = min(body_size, 64)
         body = selected.image.pe.bytes_at_va(pointer, body_size)
-        fields = [selected.compile_field(spec, field) for field in spec["fields"]]
+        fields = [selected.compile_field(field_abi, field) for field in spec["fields"]]
         labels = [f["label"] for f in fields]
         if len(fields) > 8 or len(set(labels)) != len(labels):
             raise PreparationError(f"{spec['name']}: more than eight fields or duplicate field labels")
@@ -442,6 +523,18 @@ def compile_hooks(selected: SelectedMethods, recipe: dict[str, Any]) -> list[dic
                       "receiverIdentity": None if spec["static"] else {"arg": 0, "type": spec["type"], "source": "raw entry argument"},
                       "semanticRole": spec.get("semanticRole", "named entry observation"),
                       "evidenceBoundary": spec["evidenceBoundary"]})
+        if spec.get("genericEntry") is not None:
+            hooks[-1]["genericEntryProof"] = selected._generic_proofs[spec["name"]]
+        if entry is not None:
+            hooks[-1].update(anonymousEntryProof=entry["proof"],
+                sourceCaller={"symbol": hooks[-1]["symbol"], "methodIndex": method.index,
+                              "returnType": spec["returnType"], "parameters": spec["parameters"]},
+                symbol=f"anonymous assignment via {hooks[-1]['symbol']}", methodIndex=None,
+                returnType="unobserved", parameters=field_abi["parameters"],
+                receiverIdentity={"arg": 1, "type": field_abi["parameters"][1]["type"],
+                                  "source": "proved helper entry action register; not a returned action"})
+        if entry is None and spec["name"] in getattr(selected, "_return_abi_proofs", {}):
+            hooks[-1]["returnAbiProof"] = selected._return_abi_proofs[spec["name"]]
     return hooks
 
 
@@ -500,6 +593,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--game-dir", type=Path, default=os.environ.get("ENDFIELD_GAME_ROOT"), required=not bool(os.environ.get("ENDFIELD_GAME_ROOT")))
     parser.add_argument("--mission", default="all", help="Offline analysis label only; native observations are unfiltered (default: all).")
     parser.add_argument("--profile", choices=tuple(PROFILE_RECIPES), default="mission", help="Reviewed observer recipe; buff records Buff lifecycle and selected action entries.")
+    parser.add_argument("--recipe", type=Path, help="Optional reviewed recipe under scripts/game_data/contracts/; profile still selects the recording scope.")
     parser.add_argument("--output", type=Path, default=REPO_ROOT / "reports/runtime_capture/mission-trace-build.json")
     parser.add_argument("--report", type=Path, default=REPO_ROOT / "reports/runtime_capture/mission-trace-preflight.json")
     args = parser.parse_args(argv)
@@ -508,7 +602,13 @@ def main(argv: list[str] | None = None) -> int:
     if output == report_path:
         raise PreparationError("mission_trace.output: profile and report must be distinct")
     try:
-        manifest = prepare(args.game_dir, args.mission, profile=args.profile)
+        recipe = None
+        if args.recipe is not None:
+            recipe_path = args.recipe.resolve()
+            if not recipe_path.is_relative_to(CONTRACTS_DIR.resolve()) or recipe_path.suffix != ".json":
+                raise PreparationError("mission_trace.recipe: override must be a JSON contract under scripts/game_data/contracts/")
+            recipe = read_recipe(recipe_path)
+        manifest = prepare(args.game_dir, args.mission, recipe=recipe, profile=args.profile)
     except (PreparationError, OSError, RuntimeError, KeyError, ValueError) as exc:
         report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text(json.dumps({"schema": "endfield.mission-trace-preparation.v1", "status": "failed", "focusMission": args.mission, "detail": str(exc)}, indent=2), encoding="utf-8")
@@ -520,7 +620,7 @@ def main(argv: list[str] | None = None) -> int:
     report_path.write_text(json.dumps({"schema": "endfield.mission-trace-preparation.v1", "status": "validated", "focusMission": args.mission,
                                       "profile": str(output), "hookCount": len(manifest["missionTraceHooks"]),
                                       "liveAttached": False, "evidenceBoundary": manifest["evidenceBoundary"]}, indent=2) + "\n", encoding="utf-8")
-    print(f"[mission_trace_capture_prepare] validated: {len(manifest['missionTraceHooks'])} named bounded hooks; offline only; {output}")
+    print(f"[mission_trace_capture_prepare] validated: {len(manifest['missionTraceHooks'])} bounded entry hooks; offline only; {output}")
     return 0
 
 

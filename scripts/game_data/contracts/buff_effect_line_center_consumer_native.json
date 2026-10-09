@@ -1,0 +1,356 @@
+{
+  "schema": "endfield.buff-effect-line-center-consumer-native-contract.v3",
+  "status": "exact-current-build",
+  "scope": "conditional-preparation-and-configuration-cache-flow",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dependencies": {
+    "actionSource": {
+      "contract": "buff_effect_line_center_action_native.json",
+      "schema": "endfield.buff-effect-line-center-action-native-contract.v2"
+    },
+    "configuration": {
+      "contract": "buff_effect_config_child_native.json",
+      "schema": "endfield.buff-effect-config-child-native-contract.v1"
+    }
+  },
+  "dataSlot": {
+    "closedOwner": "Beyond.Gameplay.Core.AbilityAction`1<Beyond.Gameplay.Core.EffectAction+EffectActionData>",
+    "field": "m_data",
+    "type": "Beyond.Gameplay.Core.EffectAction+EffectActionData",
+    "offset": 32,
+    "witnessType": "Beyond.Gameplay.Core.EffectAction",
+    "witnessInstanceBytes": 64
+  },
+  "receiver": {
+    "type": "Beyond.Gameplay.EffectLineCenterAction",
+    "parent": "Beyond.Gameplay.Core.EffectAction",
+    "instanceBytes": 64,
+    "declaredInstanceFields": 0
+  },
+  "fields": [
+    {
+      "field": "Beyond.Gameplay.EffectLineCenterAction+Data::effectCenter",
+      "owner": "Beyond.Gameplay.EffectLineCenterAction+Data",
+      "type": "Beyond.Gameplay.Core.TargetSettings",
+      "offset": 128
+    },
+    {
+      "field": "Beyond.Gameplay.Core.EffectAction+EffectActionData::effectSource",
+      "owner": "Beyond.Gameplay.Core.EffectAction+EffectActionData",
+      "type": "Beyond.Gameplay.Core.TargetSettings",
+      "offset": 48
+    },
+    {
+      "field": "Beyond.Gameplay.Core.EffectAction+EffectActionData::forceMainBody",
+      "owner": "Beyond.Gameplay.Core.EffectAction+EffectActionData",
+      "type": "bool",
+      "offset": 120
+    },
+    {
+      "field": "Beyond.Gameplay.Core.EffectAction+EffectActionData::effectActionCfg",
+      "owner": "Beyond.Gameplay.Core.EffectAction+EffectActionData",
+      "type": "Beyond.Gameplay.EffectActionCfg",
+      "offset": 104
+    },
+    {
+      "field": "Beyond.Gameplay.EffectActionCfg::centerOffset",
+      "owner": "Beyond.Gameplay.EffectActionCfg",
+      "type": "UnityEngine.Vector3",
+      "offset": 112
+    },
+    {
+      "field": "Beyond.Gameplay.EffectActionCfg::positionOffset",
+      "owner": "Beyond.Gameplay.EffectActionCfg",
+      "type": "UnityEngine.Vector3",
+      "offset": 256
+    },
+    {
+      "field": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+      "owner": "Beyond.Gameplay.Core.BaseComponent",
+      "type": "Beyond.Gameplay.Core.Entity",
+      "offset": 80
+    },
+    {
+      "field": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+      "owner": "Beyond.Gameplay.Core.AbilityAction",
+      "type": "Beyond.Gameplay.Core.IActionEnvironment",
+      "offset": 24
+    },
+    {
+      "field": "Beyond.Gameplay.Core.EffectAction::m_effectActionCfg",
+      "owner": "Beyond.Gameplay.Core.EffectAction",
+      "type": "Beyond.Gameplay.EffectActionCfg",
+      "offset": 40
+    }
+  ],
+  "methods": [
+    [
+      6977,
+      "Beyond.Gameplay.EffectLineCenterAction",
+      "PreExecuteInternal",
+      102657120
+    ],
+    [
+      57390,
+      "Beyond.Gameplay.Core.AbilityActionUtils",
+      "GetFirstTarget",
+      51381712
+    ],
+    [
+      57280,
+      "Beyond.Gameplay.Core.IActionEnvironment+Context",
+      "ResolveEnemyPartTransferTarget",
+      71323504
+    ],
+    [
+      81362,
+      "Beyond.Gameplay.Core.Entity",
+      "get_position",
+      52268064
+    ],
+    [
+      358764,
+      "UnityEngine.Vector3",
+      "op_Subtraction",
+      78072464
+    ],
+    [
+      58244,
+      "Beyond.Gameplay.Core.EffectAction",
+      "OnCreate",
+      51825424
+    ]
+  ],
+  "declarations": [
+    {
+      "methodIndex": 6977,
+      "type": "Beyond.Gameplay.EffectLineCenterAction",
+      "method": "PreExecuteInternal",
+      "flags": 196,
+      "returnType": "void",
+      "returnNativeTypeHex": "9D8D0000000000000000018000000000",
+      "parameters": [
+        {
+          "name": "targetHandle",
+          "type": "Beyond.Gameplay.Core.TargetHandleView",
+          "nativeTypeHex": "22280000000000000000118000000000"
+        }
+      ]
+    },
+    {
+      "methodIndex": 57390,
+      "type": "Beyond.Gameplay.Core.AbilityActionUtils",
+      "method": "GetFirstTarget",
+      "flags": 150,
+      "returnType": "Beyond.Gameplay.Core.AbilitySystem",
+      "returnNativeTypeHex": "DC230000000000000000120000000000",
+      "parameters": [
+        {
+          "name": "curAction",
+          "type": "Beyond.Gameplay.Core.AbilityAction",
+          "nativeTypeHex": "EC230000000000000000120000000000"
+        },
+        {
+          "name": "targetSettings",
+          "type": "Beyond.Gameplay.Core.TargetSettings",
+          "nativeTypeHex": "28280000000000000000120000000000"
+        },
+        {
+          "name": "inputTarget",
+          "type": "Beyond.Gameplay.Core.TargetHandleView",
+          "nativeTypeHex": "22280000000000000000118000000000"
+        }
+      ]
+    },
+    {
+      "methodIndex": 57280,
+      "type": "Beyond.Gameplay.Core.IActionEnvironment+Context",
+      "method": "ResolveEnemyPartTransferTarget",
+      "flags": 134,
+      "returnType": "bool",
+      "returnNativeTypeHex": "FA8C0000000000000000028000000000",
+      "parameters": [
+        {
+          "name": "target",
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "nativeTypeHex": "DC230000000000000000120000000000"
+        },
+        {
+          "name": "part",
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "nativeTypeHex": "DC230000000000000200122000000000"
+        }
+      ]
+    },
+    {
+      "methodIndex": 81362,
+      "type": "Beyond.Gameplay.Core.Entity",
+      "method": "get_position",
+      "flags": 2534,
+      "returnType": "UnityEngine.Vector3",
+      "returnNativeTypeHex": "C5AA0000000000000000118000000000",
+      "parameters": []
+    },
+    {
+      "methodIndex": 358764,
+      "type": "UnityEngine.Vector3",
+      "method": "op_Subtraction",
+      "flags": 2198,
+      "returnType": "UnityEngine.Vector3",
+      "returnNativeTypeHex": "C5AA0000000000000000118000000000",
+      "parameters": [
+        {
+          "name": "a",
+          "type": "UnityEngine.Vector3",
+          "nativeTypeHex": "C5AA0000000000000000118000000000"
+        },
+        {
+          "name": "b",
+          "type": "UnityEngine.Vector3",
+          "nativeTypeHex": "C5AA0000000000000000118000000000"
+        }
+      ]
+    }
+  ],
+  "vectorLeaf": {
+    "methodIndex": 358764,
+    "entryRva": 78072464,
+    "programBytes": 47,
+    "programSha256": "A73AC7CEB4311D373E6BFCB373B84A147AC218CE4075D5934D6627F108DA448E"
+  },
+  "codeWindows": [
+    {
+      "startRva": 102657120,
+      "endRva": 102657649,
+      "sha256": "07D95F35B1A2053773D676735D9A0C8D9D5290EFD0B29F66EA1BA881C5E67DA5"
+    },
+    {
+      "startRva": 14368,
+      "endRva": 14415,
+      "sha256": "B72D3A94376A8D6F5185D3FEBB84A9D292415C20DED784DE4FE8F417C4B7E855"
+    },
+    {
+      "startRva": 52268064,
+      "endRva": 52268293,
+      "sha256": "958FD51A499F15515AB238D3915A118D9543F06E2E0FC1E76FD03A7AF5767818"
+    },
+    {
+      "startRva": 51825424,
+      "endRva": 51825506,
+      "sha256": "5C028EBC6EDDEE8B5F70D769464F65978E2AF3DB4E95DC3CCE0C227ED5970A59"
+    },
+    {
+      "startRva": 78072464,
+      "endRva": 78072511,
+      "sha256": "A73AC7CEB4311D373E6BFCB373B84A147AC218CE4075D5934D6627F108DA448E"
+    }
+  ],
+  "callerArgumentOwnershipProved": true,
+  "centerOffsetWriteProved": true,
+  "evidenceBoundary": {
+    "exact": "Selected receiver/data/reference layouts, named field/method declarations, complete caller and reference-filter programs, primary aggregate getter return, current vector subtraction leaf and ordinary OnCreate reference-cache assignment.",
+    "direct": "The checked caller forwards source/center TargetSettings and the original input handle, conditionally selects byref target outputs on true, copies all three aggregate components, computes center-position minus source-position and writes twelve bytes to the configuration obtained from its final Data reload. Ordinary OnCreate stores the same loaded configuration reference in its cache.",
+    "conditional": "Caller IFix false; both Entity.get_position calls choose the validated primary fallthrough return; all guarded references are non-null. Each current forceMainBody zero branch alone enters its remap. Metadata/type declarations and call forwarding do not prove observed objects, target selection or callee branch outcomes.",
+    "unresolved": "Class predicate meaning, environment-context helper semantics, other Entity getter/IFix paths, observed targets/execution, lifetime stability between OnCreate and preparation, parent ExecuteInternal consumption and final effect creation."
+  },
+  "programs": {
+    "preparation": {
+      "window": {
+        "startRva": 102657120,
+        "endRva": 102657649,
+        "sha256": "07D95F35B1A2053773D676735D9A0C8D9D5290EFD0B29F66EA1BA881C5E67DA5"
+      },
+      "grammar": "selected-win64-ordinary-flow-v1",
+      "method": [
+        6977,
+        "Beyond.Gameplay.EffectLineCenterAction",
+        "PreExecuteInternal",
+        102657120
+      ]
+    },
+    "referenceFilter": {
+      "window": {
+        "startRva": 14368,
+        "endRva": 14415,
+        "sha256": "B72D3A94376A8D6F5185D3FEBB84A9D292415C20DED784DE4FE8F417C4B7E855"
+      },
+      "grammar": "selected-win64-ordinary-flow-v1"
+    },
+    "positionGetter": {
+      "window": {
+        "startRva": 52268064,
+        "endRva": 52268293,
+        "sha256": "958FD51A499F15515AB238D3915A118D9543F06E2E0FC1E76FD03A7AF5767818"
+      },
+      "grammar": "selected-win64-ordinary-flow-v1",
+      "method": [
+        81362,
+        "Beyond.Gameplay.Core.Entity",
+        "get_position",
+        52268064
+      ]
+    },
+    "configurationCache": {
+      "window": {
+        "startRva": 51825424,
+        "endRva": 51825506,
+        "sha256": "5C028EBC6EDDEE8B5F70D769464F65978E2AF3DB4E95DC3CCE0C227ED5970A59"
+      },
+      "grammar": "selected-win64-ordinary-flow-v1",
+      "method": [
+        58244,
+        "Beyond.Gameplay.Core.EffectAction",
+        "OnCreate",
+        51825424
+      ]
+    }
+  },
+  "callTargets": {
+    "initialize": 266848,
+    "isPatched": 46758256,
+    "referenceFilter": 14368,
+    "getFirstTarget": 51381712,
+    "context": 51373712,
+    "remap": 71323504,
+    "position": 52268064,
+    "subtract": 78072464,
+    "getPatch": 105575644,
+    "fatal": 11199508,
+    "invokePatch": 19096528,
+    "compatibility": 14416,
+    "baseOnCreate": 51825520,
+    "onCreate": 51825424,
+    "writeBarrier": 158528
+  },
+  "namedCallTargets": {
+    "isPatched": "IFix.WrappersManagerImpl.IsPatched",
+    "getFirstTarget": "Beyond.Gameplay.Core.AbilityActionUtils.GetFirstTarget",
+    "remap": "Beyond.Gameplay.Core.IActionEnvironment+Context.ResolveEnemyPartTransferTarget",
+    "position": "Beyond.Gameplay.Core.Entity.get_position",
+    "subtract": "UnityEngine.Vector3.op_Subtraction",
+    "getPatch": "IFix.WrappersManagerImpl.GetPatch",
+    "invokePatch": "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_1134",
+    "onCreate": "Beyond.Gameplay.Core.EffectAction.OnCreate"
+  },
+  "fieldRoles": {
+    "source": "Beyond.Gameplay.Core.EffectAction+EffectActionData::effectSource",
+    "center": "Beyond.Gameplay.EffectLineCenterAction+Data::effectCenter",
+    "force": "Beyond.Gameplay.Core.EffectAction+EffectActionData::forceMainBody",
+    "cfg": "Beyond.Gameplay.Core.EffectAction+EffectActionData::effectActionCfg",
+    "centerOffset": "Beyond.Gameplay.EffectActionCfg::centerOffset",
+    "entity": "Beyond.Gameplay.Core.BaseComponent::<entity>k__BackingField",
+    "environment": "Beyond.Gameplay.Core.AbilityAction::<actionEnvironment>k__BackingField",
+    "cache": "Beyond.Gameplay.Core.EffectAction::m_effectActionCfg"
+  },
+  "getterBackingOffset": 176,
+  "getterValueOffset": 144,
+  "targetHandle": {
+    "type": "Beyond.Gameplay.Core.TargetHandleView",
+    "field": "Beyond.Gameplay.Core.TargetHandleView::m_targetHandle",
+    "instanceBytes": 24
+  }
+}

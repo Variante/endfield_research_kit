@@ -24,21 +24,76 @@ from scripts.game_data.memorypack import (
     buff_find_settings_child_receipt as find,
     buff_direct_target_actions as direct_target_actions,
     buff_selector_finder_owner_spawned as owner_spawned,
+    buff_selector_zero_finders as zero_finders,
 )
 
 from scripts.game_data.memorypack import buff_selector_shared_children as selector_children
 from scripts.game_data.memorypack import buff_recursive_control_actions as control
 from scripts.game_data.memorypack import buff_selector_geometry as geometry
 from scripts.game_data.memorypack import buff_find_target_action as find_target
+from scripts.game_data.memorypack import buff_selector_postprocessors as postprocessors
+from scripts.game_data.memorypack import buff_direction_target_children as direction_children
 from scripts.game_data.memorypack import buff_damage_action as damage
 from scripts.game_data.memorypack import buff_aura_heal_actions as aura_heal
 from scripts.game_data.memorypack import buff_skill_stack_interrupt_actions as skill_stack_interrupt
 from scripts.game_data.memorypack import buff_vitals_actions as vitals
 from scripts.game_data.memorypack import buff_data_transfer_actions as data_transfer
+from scripts.game_data.memorypack import buff_probability_action as probability
+from scripts.game_data.memorypack import buff_entity_count_action as entity_count
+from scripts.game_data.memorypack import buff_notify_char_passive_ui_action as passive_ui
+from scripts.game_data.memorypack import buff_cost_action as cost
+from scripts.game_data.memorypack import buff_timed_marker_condition as timed_marker
+from scripts.game_data.memorypack import buff_super_armor_condition as armor_condition
+from scripts.game_data.memorypack import buff_debug_print_action as debug_print
+from scripts.game_data.memorypack import animation_curve
+from scripts.game_data.memorypack import buff_curve_actions as curve_actions
+from scripts.game_data.memorypack import buff_marker_mask_actions as marker_mask_actions
+from scripts.game_data.memorypack import buff_sequence
+from scripts.game_data.memorypack import buff_tag_sequence_actions as tag_sequence_actions
+from scripts.game_data.memorypack import buff_spawn_entity_action as spawn_entity
+from scripts.game_data.memorypack import buff_camera_impulse_action as camera_impulse
+from scripts.game_data.memorypack import buff_leaf_actions as leaf_actions
+from scripts.game_data.memorypack import buff_keyword_actions as keyword_actions
+from scripts.game_data.memorypack import buff_launch_projectile_action as launch_projectile
+from scripts.game_data.memorypack import buff_ignite_text_action as ignite_text
 from scripts.game_data.memorypack.buff_actions import SEQUENCE_RECURSION_LIMIT
+from scripts.game_data.memorypack import buff_global_creation_action as global_creation
+from scripts.game_data.memorypack import buff_finish_global_action as finish_global
+from scripts.game_data.memorypack import buff_blow_off_character_action as blow_off
+from scripts.game_data.memorypack import buff_cast_skill_action as cast_skill
+from scripts.game_data.memorypack import buff_animator_param_action as animator_param
+from scripts.game_data.memorypack import buff_camera_control_state_action as camera_control_state
+from scripts.game_data.memorypack import buff_selector_fixed_point_finder as fixed_point
+from scripts.game_data.memorypack import buff_switch_action as switch
+from scripts.game_data.memorypack import buff_weapon_visual_action as weapon_visual
+from scripts.game_data.memorypack import buff_selector_random_point_finder as random_point
+from scripts.game_data.memorypack import buff_recover_poise_action as recover_poise
+from scripts.game_data.memorypack import buff_spell_infliction_action as spell_infliction
+from scripts.game_data.memorypack import buff_custom_ability_event_condition as custom_event
+from scripts.game_data.memorypack import buff_animation_sequence_actions as animation_sequences
+from scripts.game_data.memorypack import buff_check_distance_condition as check_distance
+from scripts.game_data.memorypack import buff_selector_shape_finder as shape_finder
+from scripts.game_data.memorypack import buff_collider_shape as collider_shape
+from scripts.game_data.memorypack import buff_pick_target_action as pick_target
+from scripts.game_data.memorypack import buff_effect_line_center_action as effect_line_center
+from scripts.game_data.memorypack import buff_tick_interval_action as tick_interval
 
 LABEL = "buffRecursiveActions"
-SUPPORTED_TAGS = frozenset((create.TAG, effect.TAG, armor.TAG, finish.TAG, damage.TAG)) | direct_target_actions.supported_tags() | control.SUPPORTED_TAGS | find_target.supported_tags() | aura_heal.supported_tags() | skill_stack_interrupt.supported_tags() | vitals.supported_tags() | data_transfer.supported_tags()
+SUPPORTED_TAGS = frozenset((create.TAG, effect.TAG, armor.TAG, finish.TAG, damage.TAG)) | direct_target_actions.supported_tags() | control.SUPPORTED_TAGS | find_target.supported_tags() | aura_heal.supported_tags() | skill_stack_interrupt.supported_tags() | vitals.supported_tags() | data_transfer.supported_tags() | probability.supported_tags() | entity_count.supported_tags() | passive_ui.supported_tags() | cost.supported_tags() | timed_marker.supported_tags() | armor_condition.supported_tags() | debug_print.supported_tags() | curve_actions.supported_tags() | marker_mask_actions.supported_tags() | tag_sequence_actions.supported_tags() | spawn_entity.supported_tags() | camera_impulse.supported_tags() | leaf_actions.supported_tags() | keyword_actions.supported_tags() | launch_projectile.supported_tags() | ignite_text.supported_tags() | global_creation.supported_tags() | switch.supported_tags() | weapon_visual.supported_tags()
+
+SUPPORTED_TAGS |= recover_poise.supported_tags()
+SUPPORTED_TAGS |= spell_infliction.supported_tags()
+SUPPORTED_TAGS |= custom_event.supported_tags()
+SUPPORTED_TAGS |= animation_sequences.supported_tags()
+SUPPORTED_TAGS |= check_distance.supported_tags()
+SUPPORTED_TAGS |= pick_target.supported_tags()
+SUPPORTED_TAGS |= effect_line_center.supported_tags()
+SUPPORTED_TAGS |= finish_global.supported_tags()
+SUPPORTED_TAGS |= blow_off.supported_tags()
+SUPPORTED_TAGS |= cast_skill.supported_tags()
+SUPPORTED_TAGS |= animator_param.supported_tags()
+SUPPORTED_TAGS |= camera_control_state.supported_tags()
+SUPPORTED_TAGS |= tick_interval.supported_tags()
 
 def validate_current_native_contract() -> dict[str, Any]:
     children = {"create": create.validate_current_native_contract(),
@@ -50,6 +105,7 @@ def validate_current_native_contract() -> dict[str, Any]:
                 "effectVectors": vector.validate_current_native_contract()}
     children["direction"] = direction.validate_current_native_contract(target_native=children["target"])
     children["selector"] = selector.validate_current_native_contract(target_native=children["target"])
+    children["zeroFinders"] = zero_finders.validate_current_native_contract(selector_native=children["selector"])
     children["characterTeamFinder"] = character_team.validate_current_native_contract(selector_native=children["selector"])
     children["finish"] = children["target"]["parentNative"][finish.TAG]
     children["findSettings"] = find.validate_current_native_contract()
@@ -71,12 +127,57 @@ def validate_current_native_contract() -> dict[str, Any]:
         string_native=children["blackboardString"])
     children["selectorGeometry"] = geometry.validate_current_native_contract(
         selector_native=children["selector"], vector_native=children["effectVectors"])
+    children["randomPointFinder"] = random_point.validate_current_native_contract(
+        selector_native=children["selector"], vector_native=children["effectVectors"])
+    children["colliderShape"] = collider_shape.validate_current_native_contract()
+    children["shapeFinder"] = shape_finder.validate_current_native_contract(
+        selector_native=children["selector"], collider_native=children["colliderShape"])
+    children["fixedPointFinder"] = fixed_point.validate_current_native_contract(
+        selector_native=children["selector"], vector_native=children["effectVectors"])
+    children["selectorPostprocessors"] = postprocessors.validate_current_native_contract(children=children)
+    children["directionTargets"] = direction_children.validate_current_native_contract(children=children)
+    children["checkDistance"] = check_distance.validate_current_native_contract(children=children)
+    children["distanceValidator"] = selector_children.distance_owner.validate_current_native_contract(children=children)
     children["damage"] = damage.validate_current_native_contract(
         vector_native=children["effectVectors"], target_native=children["target"])
+    children["recoverPoise"] = recover_poise.validate_current_native_contract(children=children)
+    children["spellInfliction"] = spell_infliction.validate_current_native_contract(children=children)
+    children["customAbilityEvent"] = custom_event.validate_current_native_contract(children=children)
     children["auraHeal"] = aura_heal.validate_current_native_contract(children=children)
     children["skillStackInterrupt"] = skill_stack_interrupt.validate_current_native_contract(children=children)
     children["vitals"] = vitals.parent.validate_current_native_contract()
     children["dataTransfer"] = data_transfer.validate_current_native_contract(children=children)
+    children["probability"] = probability.validate_current_native_contract(children=children)
+    children["entityCount"] = entity_count.validate_current_native_contract(children=children)
+    children["passiveUi"] = passive_ui.validate_current_native_contract(children=children)
+    children["cost"] = cost.validate_current_native_contract(children=children)
+    children["timedMarker"] = timed_marker.validate_current_native_contract(children=children)
+    children["superArmorCondition"] = armor_condition.validate_current_native_contract(children=children)
+    children["debugPrint"] = debug_print.validate_current_native_contract(children=children)
+    children["animationCurve"] = animation_curve.validate_current_native_contract()
+    children["cameraControlState"] = camera_control_state.validate_current_native_contract(children=children)
+    children["curveActions"] = curve_actions.validate_current_native_contract(children=children)
+    children["markerMaskActions"] = marker_mask_actions.validate_current_native_contract(children=children)
+    children["sequence"] = buff_sequence.validate_current_native_contract()
+    children["animationSequenceActions"] = animation_sequences.validate_current_native_contract(children=children)
+    children["tagSequenceActions"] = tag_sequence_actions.validate_current_native_contract(children=children)
+    children["spawnEntity"] = spawn_entity.validate_current_native_contract(children=children)
+    children["cameraImpulse"] = camera_impulse.validate_current_native_contract(children=children)
+    children["leafActions"] = leaf_actions.validate_current_native_contract()
+    children["keywordActions"] = keyword_actions.validate_current_native_contract(children=children)
+    children["launchProjectile"] = launch_projectile.validate_current_native_contract(children=children)
+    children["igniteText"] = ignite_text.validate_current_native_contract(children=children)
+    children["globalCreation"] = global_creation.validate_current_native_contract(children=children)
+    children["finishGlobal"] = finish_global.validate_current_native_contract(children=children)
+    children["blowOff"] = blow_off.validate_current_native_contract(children=children)
+    children["castSkill"] = cast_skill.validate_current_native_contract(children=children)
+    children["animatorParamAction"] = animator_param.validate_current_native_contract()
+    children["switch"] = switch.validate_current_native_contract(children=children)
+    children["weaponVisual"] = weapon_visual.validate_current_native_contract()
+    children["pickTarget"] = pick_target.validate_current_native_contract(children=children)
+    children["effectLineCenter"] = effect_line_center.validate_current_native_contract(children=children)
+    children["tickInterval"] = tick_interval.composition.validate_current_native_contract()
+    children["tickIntervalUnionRoute"] = tick_interval.unions.validate_current_native_contract()
     armor_target_binding(children["armor"], children["target"])
     finish_settings_binding(children["finish"], children["findSettings"])
     expected = children["create"]["nativeInputs"]
@@ -169,45 +270,15 @@ def decode_create_action(
             or [selector_row["start"], selector_row["end"]]
             != [target_members["selectorData"]["start"],
                 target_members["selectorData"]["end"]]
-            or any(member.get("nestedTargetStatus") != "exact-null"
-                   for member in direction_row["namedMembers"]
-                   if member.get("kind") == "object")):
+):
         raise ValueError(f"{LABEL}.action:direction-or-selector-join")
-    selector_members = selector_row["namedMembers"]
-    if ([row["fieldName"] for row in selector_members]
-            != ["finderData", "postProcessorData", "validatorData"]
-            or selector_members[1].get("count") != 0):
-        raise ValueError(f"{LABEL}.action:selector-collections-not-empty")
-    validators = selector_members[2]
-    validator_receipt = {}
-    if validators.get('count') != 0:
-        validator_receipt['validators'] = selector_children.decode_validator_list(data, source=source, digest=digest,
-            start=validators['start'],end=validators['end'],children=children)
-    finder = selector_members[0]
-    finder_child = None
-    if finder.get("unionTag") is None:
-        if finder["end"] - finder["start"] != 1 or data[finder["start"]] != 0xFF:
-            raise ValueError(f"{LABEL}.action:finder-not-null")
-    elif finder.get("unionTag") == character_team.TAG:
-        finder_child = character_team.decode_character_team_finder_span(
-            data, source=source, logical_sha256=digest,
-            start=finder["start"], end=finder["end"],
-            native_validation=children["characterTeamFinder"],
-        )
-        if finder_child.get("status") != "named-zero-member-finder-exact-span":
-            raise ValueError(f"{LABEL}.action:finder-child")
-    elif finder.get("unionTag") == owner_spawned.TAG:
-        finder_child = owner_spawned.decode_owner_spawned_finder_span(
-            data, source=source, logical_sha256=digest, start=finder["start"], end=finder["end"],
-            native_validation=children["ownerSpawnedFinder"])
-    elif finder.get("unionTag") in geometry.finder_tags():
-        finder_child = geometry.decode_finder(data, source=source, digest=digest, start=finder["start"], end=finder["end"], context=children)
-    else:
-        raise ValueError(f"{LABEL}.action:unsupported-finder={finder.get('unionTag')}")
+    recursive = recursive_target(data,source,digest,fields['targetSettings'],children)
     return {"parent": parent, "iconDuration": icon, "inputList": inputs,
             "blackboard": blackboard_child, "target": target_child,
             "direction": direction_child, "selector": selector_child,
-            "finder": finder_child, "recursiveStoredSchemaExact": True, **validator_receipt}
+            "finder": recursive['finder'], "validators": recursive['validators'],
+            "postprocessors": recursive['postprocessors'], "recursiveTarget": recursive,
+            "recursiveStoredSchemaExact": True}
 
 
 def decode_effect_action(data: bytes, source: str, digest: str, start: int, end: int,
@@ -236,6 +307,7 @@ def decode_effect_action(data: bytes, source: str, digest: str, start: int, end:
         raise ValueError(f"{LABEL}.effect:child-cardinality")
     finders = []
     validator_receipts = []
+    recursive_targets = []
     for target_row in targets["targetChildren"]:
         parent_field = fields.get(target_row.get("parentField")) or {}
         if (target_row.get("status") != "named-direct-members-exact-span"
@@ -256,34 +328,14 @@ def decode_effect_action(data: bytes, source: str, digest: str, start: int, end:
                 != [members["advancedDirection"]["start"], members["advancedDirection"]["end"]]
                 or [selector_row["start"], selector_row["end"]]
                 != [members["selectorData"]["start"], members["selectorData"]["end"]]
-                or any(row.get("nestedTargetStatus") != "exact-null" for row in direction_row["namedMembers"]
-                       if row.get("kind") == "object")):
+):
             raise ValueError(f"{LABEL}.effect:direction-or-selector-join")
-        parts = selector_row["namedMembers"]
-        if ([row["fieldName"] for row in parts] != ["finderData", "postProcessorData", "validatorData"]
-                or parts[1].get("count") != 0):
-            raise ValueError(f"{LABEL}.effect:selector-collections-not-empty")
-        if parts[2].get('count') != 0:
-            validator_receipts.append(selector_children.decode_validator_list(data, source=source,digest=digest,
-                start=parts[2]['start'],end=parts[2]['end'],children=children))
-        finder = parts[0]
-        if finder.get("unionTag") is None:
-            if finder["end"] - finder["start"] != 1 or data[finder["start"]] != 0xFF:
-                raise ValueError(f"{LABEL}.effect:finder-not-null")
-        elif finder["unionTag"] == character_team.TAG:
-            finders.append(character_team.decode_character_team_finder_span(
-                data, source=source, logical_sha256=digest, start=finder["start"], end=finder["end"],
-                native_validation=children["characterTeamFinder"]))
-        elif finder["unionTag"] == owner_spawned.TAG:
-            finders.append(owner_spawned.decode_owner_spawned_finder_span(
-                data, source=source, logical_sha256=digest, start=finder["start"], end=finder["end"],
-                native_validation=children["ownerSpawnedFinder"]))
-        elif finder["unionTag"] in geometry.finder_tags():
-            finders.append(geometry.decode_finder(data, source=source, digest=digest, start=finder["start"], end=finder["end"], context=children))
-        else:
-            raise ValueError(f"{LABEL}.effect:unsupported-finder={finder['unionTag']}")
+        recursive=recursive_target(data,source,digest,parent_field,children)
+        recursive_targets.append(recursive)
+        if recursive['finder'] is not None:finders.append(recursive['finder'])
+        if recursive['validators'] is not None:validator_receipts.append(recursive['validators'])
     return {"parent": parent, "configVectors": vectors, "target": targets,
-            "direction": directions, "selector": selectors, "finders": finders,
+            "direction": directions, "selector": selectors, "finders": finders, "recursiveTargets": recursive_targets,
             "recursiveStoredSchemaExact": True, **({'validators':validator_receipts} if validator_receipts else {})}
 
 
@@ -293,12 +345,60 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
         raise ValueError(f"{LABEL}.action:depth-limit")
     if native_validation.get("status") != "validated":
         raise ValueError(f"{LABEL}.native:unvalidated")
+    if tag in tick_interval.supported_tags():
+        return tick_interval.decode_recursive_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation, depth=depth)
+    if tag in pick_target.supported_tags():
+        return pick_target.decode_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation, target_decoder=recursive_target, depth=depth)
+    if tag in effect_line_center.supported_tags():
+        return effect_line_center.decode_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation, target_decoder=recursive_target, depth=depth)
     decoders = {create.TAG: decode_create_action, effect.TAG: decode_effect_action,
                 armor.TAG: decode_armor_action, finish.TAG: decode_finish_action}
+    if tag in weapon_visual.supported_tags():
+        return weapon_visual.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation)
+    if tag in recover_poise.supported_tags():
+        return recover_poise.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in spell_infliction.supported_tags():
+        return spell_infliction.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in animation_sequences.supported_tags():
+        return animation_sequences.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, depth=depth)
+    if tag in custom_event.supported_tags():
+        return custom_event.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation)
+    if tag in check_distance.supported_tags():
+        return check_distance.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in global_creation.supported_tags():
+        return global_creation.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in finish_global.supported_tags():
+        return finish_global.decode_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation)
+    if tag in blow_off.supported_tags():
+        return blow_off.decode_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation, target_decoder=recursive_target)
+    if tag in cast_skill.supported_tags():
+        return cast_skill.decode_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation, target_decoder=recursive_target)
+    if tag in animator_param.supported_tags():
+        return animator_param.decode_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation)
+    if tag in camera_control_state.supported_tags():
+        return camera_control_state.decode_action(data, source=source, digest=digest, start=start, end=end,
+            tag=tag, native_validation=native_validation)
+    if tag in switch.supported_tags():
+        return switch.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, depth=depth)
     if tag in direct_target_actions.supported_tags():
         return decode_direct_target_action(data, source, digest, start, end, tag, native_validation)
     if tag in find_target.supported_tags():
-        return find_target.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag, native_validation=native_validation)
+        return find_target.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag, native_validation=native_validation,target_decoder=recursive_target)
     if tag == damage.TAG:
         return damage.decode_action(data, source=source, digest=digest, start=start, end=end,
                                     native_validation=native_validation, target_decoder=recursive_target)
@@ -313,6 +413,54 @@ def decode_action(data: bytes, *, source: str, digest: str, start: int, end: int
             native_validation=native_validation, target_decoder=recursive_target)
     if tag in data_transfer.supported_tags():
         return data_transfer.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in probability.supported_tags():
+        return probability.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in cost.supported_tags():
+        return cost.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in timed_marker.supported_tags():
+        return timed_marker.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in armor_condition.supported_tags():
+        return armor_condition.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in debug_print.supported_tags():
+        return debug_print.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in curve_actions.supported_tags():
+        return curve_actions.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in marker_mask_actions.supported_tags():
+        return marker_mask_actions.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in tag_sequence_actions.supported_tags():
+        return tag_sequence_actions.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target, depth=depth)
+    if tag in spawn_entity.supported_tags():
+        return spawn_entity.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in camera_impulse.supported_tags():
+        return camera_impulse.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in leaf_actions.supported_tags():
+        return leaf_actions.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation)
+    if tag in ignite_text.supported_tags():
+        return ignite_text.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+                                         native_validation=native_validation, target_decoder=recursive_target)
+    if tag in launch_projectile.supported_tags():
+        return launch_projectile.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+                                               native_validation=native_validation, target_decoder=recursive_target)
+    if tag in keyword_actions.supported_tags():
+        return keyword_actions.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+            native_validation=native_validation, target_decoder=recursive_target)
+    if tag in passive_ui.supported_tags():
+        return passive_ui.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
+                                       native_validation=native_validation, target_decoder=recursive_target)
+    if tag in entity_count.supported_tags():
+        return entity_count.decode_action(data, source=source, digest=digest, start=start, end=end, tag=tag,
             native_validation=native_validation, target_decoder=recursive_target)
     if tag not in decoders:
         return control.decode_action(data, source=source, digest=digest, start=start, end=end,
@@ -386,46 +534,20 @@ def target_value(data, source, digest, field, native):
     return value
 
 
-def recursive_target(data, source, digest, field, context):
-    target = target_value(data, source, digest, field, context['target'])
-    fields = {m['fieldName']: m for m in target['namedMembers']}
-    children = {}
-    for name, module, key, decoder in (
-        ('advancedDirection', direction, 'direction', direction.decode_direction_settings_value),
-        ('selectorData', selector, 'selector', selector.decode_selector_data_value),
-    ):
-        span = fields[name]
-        child = decoder(data, source=source, logical_sha256=digest, start=span['start'], end=span['end'],
-                        native_validation=context[key])
-        if child.get('status') != 'named-direct-members-exact-span':
-            raise ValueError('buffRecursiveActions.target:child-status')
-        children[name] = child
-    if any(m.get('nestedTargetStatus') != 'exact-null'
-           for m in children['advancedDirection']['namedMembers'] if m['kind'] == 'object'):
-        raise ValueError('buffRecursiveActions.target:positive-direction-target')
-    parts = children['selectorData']['namedMembers']
-    if [m['fieldName'] for m in parts] != ['finderData', 'postProcessorData', 'validatorData']:
-        raise ValueError('buffRecursiveActions.target:selector-members')
-    if parts[1].get('count') != 0:
-        raise ValueError('buffRecursiveActions.target:positive-selector-list')
-    if parts[2].get('count') != 0:
-        children['validators'] = selector_children.decode_validator_list(data, source=source,digest=digest,
-            start=parts[2]['start'],end=parts[2]['end'],children=context)
-    f = parts[0]
-    if f.get('unionTag') is None:
-        if data[f['start']:f['end']] != b'\xff':
-            raise ValueError('buffRecursiveActions.target:null-finder')
-    elif f['unionTag'] == character_team.TAG:
-        children['finder'] = character_team.decode_character_team_finder_span(data, source=source,
-            logical_sha256=digest, start=f['start'], end=f['end'], native_validation=context['characterTeamFinder'])
-    elif f['unionTag'] == owner_spawned.TAG:
-        children['finder'] = owner_spawned.decode_owner_spawned_finder_span(data, source=source,
-            logical_sha256=digest, start=f['start'], end=f['end'], native_validation=context['ownerSpawnedFinder'])
-    elif f["unionTag"] in geometry.finder_tags():
-        children["finder"] = geometry.decode_finder(data, source=source, digest=digest, start=f["start"], end=f["end"], context=context)
-    else:
-        raise ValueError(f"buffRecursiveActions.target:unsupported-finder={f['unionTag']}")
-    return {**target, **children, 'recursiveStoredSchemaExact': True}
+def recursive_target(data, source, digest, field, context, *, depth=0):
+    if type(depth)is not int or not 0<=depth<=direction_children.DEPTH_LIMIT:
+        raise ValueError('buffRecursiveActions.target:depth-limit')
+    target_row = target_value(data, source, digest, field, context['target'])
+    fields = {m['fieldName']: m for m in target_row['namedMembers']}
+    d,s = fields['advancedDirection'],fields['selectorData']
+    if not all(field['start']<m['start']<m['end']<=field['end'] for m in (d,s)):
+        raise ValueError('buffRecursiveActions.target:strict-child-span')
+    direction_row=direction_children.decode_direction(data,source=source,digest=digest,
+        start=d['start'],end=d['end'],children=context,target_decoder=recursive_target,depth=depth)
+    selected=find_target.decode_selector(data,source,digest,s['start'],s['end'],context,target_decoder=recursive_target,depth=depth)
+    return {**target_row,'advancedDirection':direction_row,'selectorData':selected['selector'],
+        'finder':selected['finder'],'validators':selected['validators'],'postprocessors':selected['postprocessors'],
+        'recursiveStoredSchemaExact':True}
 
 
 def decode_armor_action(data, source, digest, start, end, native):
@@ -483,14 +605,23 @@ def decode_finish_action(data, source, digest, start, end, native):
 def decode_direct_target_action(data, source, digest, start, end, tag, native_validation):
     context = native_validation["children"]
     native = context['directTargetActions']['routes'][tag]
-    if any(native['nativeInputs'][key] != context['target']['nativeInputs'][key]
-           for key in ('GameAssembly.dll', 'global-metadata.dat')):
+    if (context['target'].get('status') != 'validated'
+            or any(native['nativeInputs'][key] != context['target']['nativeInputs'][key]
+           for key in ('GameAssembly.dll', 'global-metadata.dat'))):
         raise ValueError('buffRecursiveActions.directTarget:native-input-join')
     parent = direct_target_actions.decode_action(data, source=source, logical_sha256=digest,
         start=start, end=end, tag=tag, native_validation=native)
+    if parent.get('isNull'):
+        return {'schema':'endfield.buff-recursive-action-receipt.v1', 'tag':tag,
+            'start':start, 'end':end, 'parent':parent, 'recursiveStoredSchemaExact':True}
     binding = native['targetBinding']; field = parent['namedFields'][binding['index']]
     if field['fieldName'] != binding['fieldName'] or field['kind'] != binding['kind']:
         raise ValueError('buffRecursiveActions.directTarget:target-parent-join')
-    child = recursive_target(data, source, digest, field, context)
+    child = ({**field, 'status':'exact-null', 'recursiveStoredSchemaExact':True}
+        if native.get('sourceRecord') and data[field['start']:field['end']] == b'\xff'
+        else recursive_target(data, source, digest, field, context))
+    if (child.get('recursiveStoredSchemaExact') is not True
+            or [child.get('start'),child.get('end')] != [field['start'],field['end']]):
+        raise ValueError('buffRecursiveActions.directTarget:target-child-span')
     return {'schema': 'endfield.buff-recursive-action-receipt.v1', 'tag': tag,
             'start': start, 'end': end, 'parent': parent, 'target': child, 'recursiveStoredSchemaExact': True}
