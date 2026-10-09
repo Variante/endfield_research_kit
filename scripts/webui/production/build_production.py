@@ -32,7 +32,8 @@ TABLE_NAMES = (
     "RewardTable", "WeaponBasicTable", "WeaponBreakThroughTemplateTable",
     "WeaponExpItemTable", "EquipEnhanceCostTable", "WikiGroupTable", "WikiEntryDataTable",
     "AchievementTable", "AchievementTypeTable", "LTItemTable", "UserAvatarTable",
-    "FullBottleTable", "FullGasJarTable",
+    "FullBottleTable", "FullGasJarTable", "FactoryEnvDisplayTable",
+    "ActivityLimitedFormulaTable", "LimitedFormulaCraftIdReverseTable",
 )
 BOUNDARY = (
     "Stored table configuration and exact identifier joins. Recipe groups retain their "
@@ -227,10 +228,24 @@ def build_catalog(tables: dict[str, dict[str, Any]], texts: dict[str, Any]) -> d
                 rounds, ms = row.get("progressRound"), craft_group.get("msPerRound")
                 if recipe_type == "machine" and _positive(rounds) and _positive(ms):
                     recipe["durationSeconds"] = rounds * ms / 1000
+            gas_env = recipe["conditions"].get("gasEnv")
+            if gas_env:
+                env = table("FactoryEnvDisplayTable").get(str(gas_env), {})
+                recipe["gasEnvironment"] = {"id": gas_env, "iconId": env.get("EnvIconAtlas", "")}
+                if env:
+                    recipe["sources"].append(source("FactoryEnvDisplayTable", str(gas_env)))
+            activity_id = table("LimitedFormulaCraftIdReverseTable").get(key)
+            if isinstance(activity_id, str) and activity_id:
+                activity = table("ActivityLimitedFormulaTable").get(activity_id, {})
+                recipe["activityId"] = activity_id
+                recipe["tags"].append("activity_only")
+                recipe["sources"].append(source("LimitedFormulaCraftIdReverseTable", key))
+                if key in activity.get("timeLimitFormula", []):
+                    recipe["sources"].append(source("ActivityLimitedFormulaTable", activity_id, "timeLimitFormula"))
             if machine_id:
                 if machine_id in machines:
                     machines[machine_id]["recipes"].append({field: recipe[field] for field in (
-                        "id", "title", "type", "ingredients", "outcomes", "durationSeconds",
+                        "id", "title", "type", "ingredients", "outcomes", "durationSeconds", "gasEnvironment", "activityId",
                     ) if field in recipe})
                 else:
                     unresolved.append({"table": table_name, "row": key, "field": "machineId", "target": machine_id})
@@ -244,10 +259,13 @@ def build_catalog(tables: dict[str, dict[str, Any]], texts: dict[str, Any]) -> d
                             "id": recipe_id, "title": title, "type": recipe_type,
                             "count": entry["count"], "group": group_index,
                             "machineId": machine_id, "machineName": recipe["machineName"],
+                            **({"gasEnvironment": recipe["gasEnvironment"]} if "gasEnvironment" in recipe else {}),
+                            **({"activityId": recipe["activityId"]} if "activityId" in recipe else {}),
                         }, table_name, key)
             if row.get("itemId"):
                 append_item(str(row["itemId"]), "upgrades", {
                     "type": "recipe_formula", "targetId": recipe_id, "targetKind": "recipes", "title": title,
+                    **({"gasEnvironment": recipe["gasEnvironment"]} if "gasEnvironment" in recipe else {}),
                     "sources": [source(table_name, key, "itemId")],
                 }, table_name, key)
 
@@ -379,6 +397,7 @@ def build_catalog(tables: dict[str, dict[str, Any]], texts: dict[str, Any]) -> d
         "records": {"items": items, "recipes": recipes, "machines": machines},
         "itemAliases": aliases,
         "recipeAliases": recipe_aliases,
+        "machineCategories": list(building_categories.values()),
         "stats": {"items": len(items), "recipes": len(recipes), "machines": len(machines),
                   "sourceItems": item_count, "medalGroups": sum("medalLevels" in row for row in items.values()),
                   "sourceRecipes": source_recipe_count, "recipeTypes": recipe_types,
@@ -406,6 +425,7 @@ def publish(catalog: dict[str, Any], language: str, out_dir: Path, inputs: list[
         "icons": catalog.get("icons", {}), "iconStatus": catalog.get("iconStatus", {}),
         "itemAliases": catalog.get("itemAliases", {}),
         "recipeAliases": catalog.get("recipeAliases", {}),
+        "machineCategories": catalog.get("machineCategories", []),
     }
     for kind, records in catalog["records"].items():
         shards: dict[str, dict[str, Any]] = defaultdict(dict)
@@ -422,6 +442,11 @@ def publish(catalog: dict[str, Any], language: str, out_dir: Path, inputs: list[
                 summary["counts"] = {field: len(row[field]) for field in ("producedBy", "usedBy", "shops", "upgrades")}
                 if row.get("medalLevels"):
                     summary["medalLevelCount"] = len({str(tier["level"]) for tier in row["medalLevels"]})
+                    summary["medalIcons"] = [
+                        {"iconId": tier["item"].get("iconId", ""),
+                         "level": tier["level"], "plated": tier["plated"]}
+                        for tier in row["medalLevels"]
+                    ]
             elif kind == "recipes":
                 summary.update({field: row[field] for field in ("ingredients", "outcomes", "machineId", "machineName")})
                 summary.update({field: row[field] for field in ("types", "machineNames", "machineIds", "durationSeconds")
@@ -461,6 +486,10 @@ def main(argv: list[str] | None = None) -> int:
     icon_ids.update(str(row.get("iconId") or "") for row in
                     tables["WikiGroupTable"].get("wiki_type_building", {}).get("list", []))
     icon_ids.update(str(row.get("icon") or "") for row in tables["ItemShowingTypeTable"].values())
+    # Presentation icons for the named gas environments, independent of the
+    # effect-atlas tokens stored by FactoryEnvDisplayTable.
+    icon_ids.update({"icon_gas_env_stable", "icon_gas_env_humidity",
+                     "icon_gas_env_acid", "icon_gas_env_xiranite"})
     square_icon_ids = {str(row["icon"]).rsplit("/", 1)[-1] for row in tables["UserAvatarTable"].values()
                        if str(row.get("itemId", "")).startswith("item_user_avatar_chr") and row.get("icon")}
     icon_ids.update(str(row["icon"]).rsplit("/", 1)[-1] for row in tables["UserAvatarTable"].values()

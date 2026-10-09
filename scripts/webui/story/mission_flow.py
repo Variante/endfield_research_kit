@@ -1245,6 +1245,8 @@ def load_mission_flow(mission_id: str) -> dict | None:
         "level": raw.get("levelId", ""),
         "quests": quests_out,
     }
+    if isinstance(raw.get("rewardId"), str) and raw["rewardId"]:
+        payload["rewardId"] = raw["rewardId"]
     mission_story_connections = _mission_accept_story_connections(mission_id)
     if mission_story_connections:
         payload["missionStoryConnections"] = mission_story_connections

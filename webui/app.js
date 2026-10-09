@@ -18,6 +18,11 @@
 //   * Source/debug blocks, Timeline evidence, cutscene diagnostics and the
 //     order-edit controls (#story-order-editor-row, #story-order-save-status)
 //     render only under Show debug info.
+//   * The mission summary includes notes and configured mission completion
+//     reward items and quantities, including missions without notes. Quest
+//     rewards are separate; unresolved reward rows remain visibly unavailable.
+//     Search includes localized reward names and item IDs before mission details
+//     are opened, using the language's search sidecar.
 //   * sns_emoji_* renders as ordinary inline emoji with no hover or modal
 //     preview; other SNS images and stickers keep natural proportions with
 //     bounded hover and modal previews.
@@ -8290,26 +8295,88 @@ function renderConv(conv) {
 }
 
 function renderMissionContext(missionExtras) {
-  if (!missionExtras || !(missionExtras.notes && missionExtras.notes.length)) {
+  const notes = missionExtras?.notes || [];
+  const reward = missionExtras?.completionReward;
+  if (!notes.length && !reward) {
     return null;
   }
 
   const box = document.createElement("div");
-  box.className = "summary-box";
+  box.className = "summary-box mission-summary-box";
 
   const label = document.createElement("div");
   label.className = "summary-label";
-  label.textContent = uiText("missionNotes");
+  label.textContent = uiText("missionSummary");
   box.appendChild(label);
 
-  if (missionExtras.notes && missionExtras.notes.length) {
-    for (const note of missionExtras.notes) {
+  if (notes.length) {
+    for (const note of notes) {
       const p = document.createElement("div");
       p.className = "summary-text";
       p.innerHTML = highlight(note.text || "", STATE.filters.q);
       box.appendChild(p);
       appendDebugTrace(p, note._debug, "mission note");
     }
+  }
+
+  if (reward) {
+    const section = document.createElement("div");
+    section.className = "mission-completion-rewards";
+    const heading = document.createElement("div");
+    heading.className = "summary-label";
+    heading.textContent = uiText("missionCompletionRewards");
+    section.appendChild(heading);
+    if (reward.status === "resolved") {
+      const list = document.createElement("div");
+      list.className = "mission-reward-items";
+      section.appendChild(list);
+      for (const item of reward.items || []) {
+        const link = document.createElement("a");
+        link.className = "mission-reward-item";
+        link.href = window.WebUI.gameplayTabs.pageUrl("item", item.id);
+        link.title = item.id;
+        const iconAsset = STATE.inlineImageAssetByStem.get(normalizeInlineImageId(item.iconId));
+        if (iconAsset) {
+          const icon = document.createElement("img");
+          icon.className = "mission-reward-icon";
+          icon.src = exportedAssetHref(iconAsset.rel);
+          icon.alt = "";
+          icon.loading = "lazy";
+          icon.decoding = "async";
+          icon.addEventListener("error", () => icon.remove(), { once: true });
+          link.appendChild(icon);
+        }
+        const name = document.createElement("span");
+        name.innerHTML = highlight(item.name || item.id, STATE.filters.q);
+        link.appendChild(name);
+        if (typeof item.count === "number") {
+          const count = document.createElement("span");
+          count.className = "mission-reward-count";
+          count.textContent = `× ${item.count.toLocaleString()}`;
+          link.appendChild(count);
+        }
+        link.addEventListener("click", (event) => {
+          if (event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+          event.preventDefault();
+          window.WebUI.gameplayTabs.open("item", item.id);
+        });
+        list.appendChild(link);
+        appendDebugTrace(section, item._debug, "reward item");
+      }
+      if (reward.hasRandomRewards || !list.childElementCount) {
+        const note = document.createElement("div");
+        note.className = "summary-text";
+        note.textContent = uiText(reward.hasRandomRewards ? "missionRandomRewards" : "missionNoRewardItems");
+        section.appendChild(note);
+      }
+    } else {
+      const note = document.createElement("div");
+      note.className = "summary-text";
+      note.textContent = `${uiText("missionRewardUnavailable")} (${reward.rewardId})`;
+      section.appendChild(note);
+    }
+    appendDebugTrace(section, reward._debug, "mission completion reward");
+    box.appendChild(section);
   }
 
   return box;

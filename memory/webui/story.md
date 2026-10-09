@@ -27,7 +27,7 @@ inference into one confidence class.
 The page has two export modes. `export.bat story` is text only (tables,
 JsonData and the Story Unity classes); the page renders text when media inputs
 are absent. `export.bat story-media` adds the `story_media` task
-(`build_assets --publish story-media`), which projects Story's inline, CG,
+(`build_assets --publish story-media`), which projects Story's reward icons, inline, CG,
 BigLogo and remote-comm images and its videos onto the exported Texture2D,
 Sprite and video. Voice belongs to neither: the Audio page publishes voice
 lines, event audio and dialog lifecycle hooks as
@@ -41,6 +41,19 @@ Story rebuild.
 `mission/*.json`, and, in media mode, `webui/data/assets/story_media.json`.
 Story's own `conv/*.json` never carries voice. Controls and rendering rules are
 in the header comment of `webui/app.js`.
+
+Mission sidecars also carry `extras.completionReward`: the exact mission-level
+`MissionRuntimeAsset.rewardId` joins `RewardTable.itemBundles` to localized
+`ItemTable` names, authored `iconId` values and stored quantities. Story media
+includes exact icon matches from these mission sidecars; focused media extraction
+uses the same icon collector. The summary renders it even without
+mission notes and links items to Gameplay. Quest-level rewards do not enter this
+completion list; missing reward rows stay unavailable and random bundles are
+identified separately. These are configured rewards, not observed player grants.
+The language's `search.json` includes the same localized item names and item/reward
+IDs for every entry owned by that mission, including in the lean profile. Reward
+search works before mission sidecars are loaded and retains existing regex and
+facet behavior.
 
 Observation-station entrusts also publish Story document cards, including in
 the lean profile. `scripts/webui/story/kite_station_tasks.py` projects each

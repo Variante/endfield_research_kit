@@ -256,6 +256,14 @@ def scan_source(
             f"{source}: no current published object index; rerun an explicit "
             "installed-game export with --animestudio-object-index"
         )
+    if summary.get("complete") is not True:
+        index_dir = animestudio_object_index_dir(output_root, source)
+        detail = "; ".join(str(error) for error in (summary.get("errors") or [])) or "incomplete summary"
+        raise AuditError(
+            f"{source}: object-index validation failed at {index_dir / 'summary.json'}: {detail}; "
+            f"expected source fingerprint={current_fingerprint}; "
+            "refresh the Story Unity inputs with export.bat story --from-game"
+        )
     output = (summary.get("outputs") or {}).get("objects") or {}
     relative_name = safe_key(output.get("path"))
     if not relative_name or Path(relative_name).name != relative_name:

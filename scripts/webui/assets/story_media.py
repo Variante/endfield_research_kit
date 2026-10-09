@@ -49,6 +49,7 @@ def build_story_media_payload(asset_payload: dict, video_payload: dict) -> dict:
 
     inline_image_ids = media_resolver.collect_inline_image_ids(webui_root)
     wiki_image_ids = media_resolver.collect_wiki_media_image_ids(webui_root)
+    reward_icon_ids = media_resolver.collect_story_reward_icon_ids(webui_root)
     video_refs = media_resolver.collect_wiki_video_refs(webui_root)
 
     by_stem, by_number = media_resolver.build_inline_image_lookup(asset_payload.get("entries") or [])
@@ -78,6 +79,14 @@ def build_story_media_payload(asset_payload: dict, video_payload: dict) -> dict:
             entry["r"] = candidate.rel
             selected_images[candidate.rel] = entry
 
+    for icon_id in sorted(reward_icon_ids):
+        candidate = by_stem.get(icon_id)
+        if candidate:
+            entry = dict(candidate.entry)
+            entry["k"] = "image"
+            entry["r"] = candidate.rel
+            selected_images[candidate.rel] = entry
+
     for video_id, device_type in sorted(video_refs):
         candidate = media_resolver.resolve_exact_video_asset(video_id, device_type, video_by_stem)
         if not candidate:
@@ -99,7 +108,7 @@ def build_story_media_payload(asset_payload: dict, video_payload: dict) -> dict:
             "total": len(entries),
             "image": len(images),
             "video": len(videos),
-            "imageIds": len(inline_image_ids | wiki_image_ids),
+            "imageIds": len(inline_image_ids | wiki_image_ids | reward_icon_ids),
             "storyFileImages": len(story_file_images),
             "cgImages": sum(stem.startswith("cg_image_") for stem in story_file_stems),
             "bigLogoImages": sum(stem.startswith("dlg_biglogo_") for stem in story_file_stems),

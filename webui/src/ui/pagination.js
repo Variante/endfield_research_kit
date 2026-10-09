@@ -15,24 +15,25 @@
       : { previous: "Previous", next: "Next", page: "Page", perPage: "Per page" };
   }
 
-  function normalizePageSize(value, fallback) {
+  function normalizePageSize(value, fallback, maximum = MAX_PAGE_SIZE) {
     const parsed = Number(value);
     if (!Number.isInteger(parsed) || parsed < MIN_PAGE_SIZE) return fallback;
-    return Math.min(parsed, MAX_PAGE_SIZE);
+    return Math.min(parsed, maximum);
   }
 
-  function storedPageSize(storageKey, fallback) {
-    return normalizePageSize(WebUI.storageGet?.(storageKey), fallback);
+  function storedPageSize(storageKey, fallback, maximum) {
+    return normalizePageSize(WebUI.storageGet?.(storageKey), fallback, maximum);
   }
 
-  function createPager({ container, storageKey, defaultPageSize = DEFAULT_PAGE_SIZE, onChange }) {
+  function createPager({ container, storageKey, defaultPageSize = DEFAULT_PAGE_SIZE, maxPageSize = MAX_PAGE_SIZE, onChange }) {
     const host = typeof container === "string" ? document.querySelector(container) : container;
     if (!host) return null;
-    const fallbackPageSize = normalizePageSize(defaultPageSize, DEFAULT_PAGE_SIZE);
+    const maximum = normalizePageSize(maxPageSize, MAX_PAGE_SIZE);
+    const fallbackPageSize = normalizePageSize(defaultPageSize, Math.min(DEFAULT_PAGE_SIZE, maximum), maximum);
     const suggestionsId = `list-pager-size-suggestions-${++pagerSequence}`;
     const state = {
       page: 0,
-      pageSize: storedPageSize(storageKey, fallbackPageSize),
+      pageSize: storedPageSize(storageKey, fallbackPageSize, maximum),
       total: 0,
     };
 
@@ -40,8 +41,8 @@
     host.innerHTML = `
       <button class="list-pager-prev" type="button"></button>
       <label class="list-pager-page"><span class="list-pager-page-prefix"></span><input type="number" min="1" step="1" inputmode="numeric"><span class="list-pager-page-total" aria-live="polite"></span></label>
-      <label class="list-pager-size"><span></span><input type="number" min="${MIN_PAGE_SIZE}" max="${MAX_PAGE_SIZE}" step="1" inputmode="numeric" list="${suggestionsId}"></label>
-      <datalist id="${suggestionsId}">${PAGE_SIZES.map((value) => `<option value="${value}"></option>`).join("")}</datalist>
+      <label class="list-pager-size"><span></span><input type="number" min="${MIN_PAGE_SIZE}" max="${maximum}" step="1" inputmode="numeric" list="${suggestionsId}"></label>
+      <datalist id="${suggestionsId}">${PAGE_SIZES.filter((value) => value <= maximum).map((value) => `<option value="${value}"></option>`).join("")}</datalist>
       <button class="list-pager-next" type="button"></button>`;
     const previous = host.querySelector(".list-pager-prev");
     const next = host.querySelector(".list-pager-next");
@@ -102,7 +103,7 @@
       pageInput.blur();
     });
     const commitPageSize = () => {
-      const pageSize = normalizePageSize(sizeInput.value, state.pageSize);
+      const pageSize = normalizePageSize(sizeInput.value, state.pageSize, maximum);
       sizeInput.value = String(pageSize);
       if (pageSize === state.pageSize) return;
       state.pageSize = pageSize;

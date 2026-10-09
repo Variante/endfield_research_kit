@@ -22,6 +22,7 @@
     machine: ui("Machine crafting", "设备制造"), hub: ui("Infrastructure equipment", "基建设备"),
     manual: ui("Manual crafting", "手动制造"), has_recipes: ui("Has recipes", "含配方"),
     needs_power: ui("Requires power", "需要供电"),
+    activity_only: ui("Activity-only formula", "活动限定配方"),
   })[tag] || tag;
   const useLabel = (type) => ({
     weapon_breakthrough: ui("Weapon breakthrough", "武器突破"), weapon_experience: ui("Weapon experience", "武器经验"),
@@ -44,6 +45,16 @@
     return url ? `<img class="production-icon ${className}" src="${esc(url)}" alt="" loading="lazy" decoding="async">` : "";
   };
   const rowIcon = (row, className = "") => {
+    const tiers = row.medalIcons || row.medalLevels?.map((tier) => ({
+      iconId: tier.item.iconId, level: tier.level, plated: tier.plated,
+    }));
+    if (tiers?.length) {
+      return `<span class="production-medal-icons">${tiers.map((tier) => {
+        const label = `${ui("Level", "等级")} ${tier.level}${tier.plated ? ` · ${ui("Plated", "镀层")}` : ""}`;
+        const image = iconHtml(tier.iconId, className);
+        return image ? `<span title="${esc(label)}" aria-label="${esc(label)}">${image}</span>` : "";
+      }).join("")}</span>`;
+    }
     const refs = row.kind === "recipes" ? (row.outcomes || []).flat() : [row];
     const ref = refs.find((value) => iconUrl(value.iconId));
     if (!ref) return "";
@@ -107,26 +118,54 @@
   const durationText = (row) => row.durationSeconds != null
     ? `${esc(number(row.durationSeconds))} ${esc(ui("s", "秒"))}` : esc(ui("Not specified", "未指定"));
 
-  function inlineRecipeGroups(groups) {
+  function gasRequirement(row) {
+    const env = row.gasEnvironment;
+    const id = env?.id ?? row.conditions?.gasEnv;
+    if (!id) return "";
+    const names = {
+      T_fx_icon_gas_stable_UI: ui("Stable", "稳定"),
+      T_fx_icon_gas_wet_UI: ui("Wet", "潮湿"),
+      T_fx_icon_gas_acidic_UI: ui("Acidic", "酸性"),
+      T_fx_icon_gas_xiranite_UI: ui("Xiranite", "息壤"),
+    };
+    const icons = {
+      T_fx_icon_gas_stable_UI: "icon_gas_env_stable",
+      T_fx_icon_gas_wet_UI: "icon_gas_env_humidity",
+      T_fx_icon_gas_acidic_UI: "icon_gas_env_acid",
+      T_fx_icon_gas_xiranite_UI: "icon_gas_env_xiranite",
+    };
+    return `<div class="production-gas-requirement"><strong>${esc(ui("Required gas environment", "所需气体环境"))}</strong>: ${iconHtml(icons[env?.iconId])} ${esc(names[env?.iconId] || String(id))}</div>`;
+  }
+
+  function activityTag(row) {
+    return row.activityId ? `<div class="production-activity-tag">${badge(tagLabel("activity_only"))} <code>${esc(row.activityId)}</code></div>` : "";
+  }
+
+  function rateText(ref, seconds) {
+    return Number.isFinite(seconds) && seconds > 0 && Number.isFinite(ref.count) && ref.count >= 0
+      ? `<span class="production-rate">${esc(number(ref.count * 60 / seconds))} ${esc(ui("/ min", "/ 分钟"))}</span>` : "";
+  }
+
+  function inlineRecipeGroups(groups, seconds) {
     if (!(groups || []).some((group) => group.length)) return esc(ui("No items recorded", "未记录物品"));
-    return groups.map((group) => `<span class="production-machine-group">${groups.length > 1 ? "(" : ""}${group.map(itemBundle).join(" <span class=production-plus>+</span> ")}${groups.length > 1 ? ")" : ""}</span>`).join(" · ");
+    return groups.map((group) => `<span class="production-machine-group">${groups.length > 1 ? "(" : ""}${group.map((ref) => `${itemBundle(ref)} ${rateText(ref, seconds)}`).join(" <span class=production-plus>+</span> ")}${groups.length > 1 ? ")" : ""}</span>`).join(" · ");
   }
 
   function renderMachineRecipe(recipe) {
     const formula = recipe.ingredients && recipe.outcomes
-      ? `${inlineRecipeGroups(recipe.ingredients)}<span class="production-machine-arrow" aria-hidden="true">→</span>${inlineRecipeGroups(recipe.outcomes)}`
+      ? `${inlineRecipeGroups(recipe.ingredients, recipe.durationSeconds)}<span class="production-machine-arrow" aria-hidden="true">→</span>${inlineRecipeGroups(recipe.outcomes, recipe.durationSeconds)}`
       : recordLink("recipes", recipe.id, recipe.title);
-    return `<article class="production-reference production-machine-recipe" data-production-recipe="${esc(recipe.id)}"><div class="production-machine-formula">${formula}</div><span class="production-machine-time">${esc(ui("Processing time", "处理时间"))}: ${durationText(recipe)}</span><a class="production-machine-recipe-link" href="${esc(pageUrl("recipes", recipe.id))}" data-production-kind="recipes" data-production-id="${esc(recipe.id)}" title="${esc(recipe.title)}">${esc(ui("Details", "详情"))}</a></article>`;
+    return `<article class="production-reference production-machine-recipe" data-production-recipe="${esc(recipe.id)}"><div class="production-machine-formula">${gasRequirement(recipe)}${activityTag(recipe)}${formula}</div><span class="production-machine-time">${esc(ui("Processing time", "处理时间"))}: ${durationText(recipe)}</span><a class="production-machine-recipe-link" href="${esc(pageUrl("recipes", recipe.id))}" data-production-kind="recipes" data-production-id="${esc(recipe.id)}" title="${esc(recipe.title)}">${esc(ui("Details", "详情"))}</a></article>`;
   }
 
-  function renderGroups(groups) {
+  function renderGroups(groups, seconds) {
     if (!(groups || []).some((group) => group.length)) return empty(ui("No items recorded.", "未记录物品。"));
-    return `<div class="production-groups">${groups.map((group, index) => `<div class="production-group">${groups.length > 1 ? `<small>${esc(ui("Group", "组"))} ${index + 1}</small>` : ""}${group.map(itemBundle).join(" <span class=production-plus>+</span> ")}</div>`).join("")}</div>`;
+    return `<div class="production-groups">${groups.map((group, index) => `<div class="production-group">${groups.length > 1 ? `<small>${esc(ui("Group", "组"))} ${index + 1}</small>` : ""}${group.map((ref) => `${itemBundle(ref)} ${rateText(ref, seconds)}`).join(" <span class=production-plus>+</span> ")}</div>`).join("")}</div>`;
   }
 
   function recipeRefs(rows, produced) {
     if (!rows.length) return empty(ui("No recipe links recovered in these tables.", "这些表中未恢复到配方关联。"));
-    return `<div class="production-references">${rows.map((row) => `<article class="production-reference">${recordLink("recipes", row.id, row.title)} ${badge(tagLabel(row.type))}<div>${esc(produced ? ui("Output", "产出") : ui("Ingredient", "投入"))}: ${number(row.count)}${row.machineId ? ` · ${recordLink("machines", row.machineId, row.machineName, state.data.machines.some((machine) => machine.id === row.machineId))}` : ""}</div></article>`).join("")}</div>`;
+    return `<div class="production-references">${rows.map((row) => `<article class="production-reference">${gasRequirement(row)}${activityTag(row)}${recordLink("recipes", row.id, row.title)} ${badge(tagLabel(row.type))}<div>${esc(produced ? ui("Output", "产出") : ui("Ingredient", "投入"))}: ${number(row.count)}${row.machineId ? ` · ${recordLink("machines", row.machineId, row.machineName, state.data.machines.some((machine) => machine.id === row.machineId))}` : ""}</div></article>`).join("")}</div>`;
   }
 
   function renderShop(row) {
@@ -149,7 +188,7 @@
     return [...groups].map(([type, group]) => `<details class="production-use-group"${group.length <= 5 ? " open" : ""}><summary>${esc(useLabel(type))} (${number(group.length)})</summary><div class="production-references">${group.map((row) => {
       const resolved = row.targetKind && state.records[row.targetKind]?.has(canonicalId(row.targetKind, row.targetId));
       const title = row.targetId ? recordLink(row.targetKind, row.targetId, row.title, resolved) : esc(row.title);
-      return `<article class="production-reference">${title}${row.count != null ? ` ${badge(`× ${number(row.count)}`)}` : ""}
+      return `<article class="production-reference">${gasRequirement(row)}${title}${row.count != null ? ` ${badge(`× ${number(row.count)}`)}` : ""}
         ${row.level != null ? `<div>${esc(ui("Breakthrough level", "突破等级"))}: ${esc(row.level)}${row.displayLevel != null ? ` · ${esc(ui("Displayed level", "显示等级"))}: ${esc(row.displayLevel)}` : ""}</div>` : ""}
         ${row.items?.length ? `<div>${row.items.map(itemBundle).join(" + ")}</div>` : ""}
         ${row.hasRandomRewards ? badge(ui("Also contains random rewards", "还含随机奖励")) : ""}
@@ -186,9 +225,10 @@
     if (row.recipeVariants?.length) {
       return section(ui("Production methods", "制作方式"), `<div class="production-recipe-variants">${row.recipeVariants.map((variant) => `<article class="production-recipe-variant"><h4>${esc(variant.title)}</h4>${renderRecipe(variant)}${sourceLinks(variant.sources)}</article>`).join("")}</div>`, row.recipeVariants.length);
     }
-    let html = `<div class="production-meta">${badge(tagLabel(row.type))}${(row.categories || []).map((category) => badge(category.title)).join("")}${row.machineId ? recordLink("machines", row.machineId, row.machineName, row.machineResolved) : ""}</div>`;
+    let html = `${gasRequirement(row)}${activityTag(row)}<div class="production-meta">${badge(tagLabel(row.type))}${(row.categories || []).map((category) => badge(category.title)).join("")}${row.machineId ? recordLink("machines", row.machineId, row.machineName, row.machineResolved) : ""}</div>`;
     html += `<p class="production-duration"><strong>${esc(ui("Production time", "生产时间"))}</strong>: ${durationText(row)}</p>`;
-    html += `<div class="production-flow">${section(ui("Ingredients", "原料"), renderGroups(row.ingredients))}<div class="production-arrow" aria-hidden="true">→</div>${section(ui("Outputs", "产物"), renderGroups(row.outcomes))}</div>`;
+    html += `<div class="production-flow">${section(ui("Ingredients", "原料"), renderGroups(row.ingredients, row.durationSeconds))}<div class="production-arrow" aria-hidden="true">→</div>${section(ui("Outputs", "产物"), renderGroups(row.outcomes, row.durationSeconds))}</div>`;
+    if (Number.isFinite(row.durationSeconds) && row.durationSeconds > 0) html += `<p class="production-note">${esc(ui("Nominal rates at continuous operation, calculated from the configured cycle time.", "每分钟用量与产量按配置周期、连续运行计算。"))}</p>`;
     if (row.formulaItem) html += section(ui("Formula item", "配方物品"), itemLink(row.formulaItem));
     html += `<div class="production-recipe-config">${properties(row.conditions, ui("Unlock and operating conditions", "解锁与运行条件"), true)}${properties({ ...(row.configuration || {}), ...(row.timing || {}) }, ui("Stored configuration", "存储配置"), true)}</div>`;
     return html;
@@ -209,14 +249,19 @@
     if (!panel) return;
     if (!row) { panel.innerHTML = empty(ui("Select an item, recipe or machine to explore its connections.", "选择物品、配方或设备以查看关联。")); return; }
     const updateId = `${row.kind}:${row.id}`;
-    panel.innerHTML = `<header class="production-detail-header"><div class="production-identity">${rowIcon(row, "production-icon-large")}<div><small>${esc(kindLabel(row.kind))}</small><h2>${esc(row.title)} ${W.updateBadges.html("production", updateId)}</h2><code>${esc(row.id)}</code></div></div><button type="button" class="panel-toggle" id="production-copy">${esc(ui("Copy link", "复制链接"))}</button></header>
+    panel.innerHTML = `<header class="production-detail-header"><div class="production-identity">${rowIcon(row, "production-icon-large")}<div><small>${esc(kindLabel(row.kind))}</small><h2>${esc(row.title)} ${W.updateBadges.html("production", updateId)}</h2><code>${esc(row.id)}</code></div></div><div class="production-detail-actions"><button id="production-reveal-current" class="panel-toggle" type="button">${esc(ui("Locate current file", "定位当前文件"))}</button></div></header>
       ${W.updateBadges.panel("production", updateId)}
+      ${row.kind === "items" && /^item_pic_/i.test(row.id) ? '<div data-gameplay-item-picture></div>' : ""}
       ${row.description ? `<div class="production-description">${richText(row.description)}</div>` : ""}
       ${row.kind === "items" ? renderItem(row) : row.kind === "recipes" ? renderRecipe(row) : renderMachine(row)}
       ${row.kind === "items" ? '<div class="production-gameplay-item" data-gameplay-item-content></div><div data-gameplay-item-assets></div>' : ""}${sourceLinks(row.sources)}`;
     if (row.kind === "items") {
       const contents = panel.querySelector("[data-gameplay-item-content]");
       const token = state.detailToken;
+      const picture = panel.querySelector("[data-gameplay-item-picture]");
+      if (picture) W.gameplay.itemGallery(row.id, state.language, { picture: true }).then((html) => {
+        if (token === state.detailToken && picture.isConnected) picture.innerHTML = html;
+      }).catch(() => {});
       W.gameplay.itemContent(row.id, state.language).then((html) => {
         if (token === state.detailToken && contents.isConnected) contents.innerHTML = html;
       }).catch(() => {
@@ -227,15 +272,8 @@
         if (token === state.detailToken && gallery.isConnected) gallery.innerHTML = html;
       }).catch(() => {});
     }
-    $("#production-copy").addEventListener("click", async (event) => {
-      const button = event.currentTarget;
-      try {
-        await navigator.clipboard.writeText(pageUrl(row.kind, row.id));
-        if (button.isConnected) button.textContent = ui("Copied", "已复制");
-      } catch (_error) {
-        if (button.isConnected) button.textContent = ui("Copy the address bar link", "请复制地址栏链接");
-      }
-    });
+    $("#production-reveal-current").addEventListener("click", revealSelectedInList);
+
   }
 
   async function select(id, { write = true } = {}) {
@@ -271,16 +309,56 @@
     ].filter(Boolean).join("\n");
   }
 
+  function productionListGroup(row) {
+    if (row.kind === "machines") return row.categories?.[0] || { id: "(none)", title: ui("Uncategorized", "未分类") };
+    const values = typeValue(row);
+    const id = Array.isArray(values) ? [...values].sort().join("|") : values;
+    return { id, title: row.kind === "recipes" ? (Array.isArray(values) ? values : [values]).map(tagLabel).join(" / ")
+      : row.typeName || ui("Uncategorized", "未分类") };
+  }
+
+  const collapsedListGroups = new Set();
+
   function renderList() {
     const host = $("#production-list");
     if (!host) return;
+    let previousCategory = null;
+    let groupOpen = false;
     host.innerHTML = state.pager.slice(state.filtered).map((row) => {
+      let heading = "";
+      const category = productionListGroup(row);
+      if (category.id !== previousCategory) {
+        previousCategory = category.id;
+        const count = state.filtered.filter((entry) => productionListGroup(entry).id === category.id).length;
+        heading = `${groupOpen ? "</details>" : ""}<details class="production-list-section" data-list-group="${esc(category.id)}"${collapsedListGroups.has(category.id) ? "" : " open"}><summary class="production-device-group">${iconHtml(category.iconId)}<strong>${esc(category.title)}</strong><span>${number(count)}</span></summary>`;
+        groupOpen = true;
+      }
       const subtitle = row.kind === "items" ? (row.medalLevelCount ? `${row.typeName} · ${(row.categories || []).map((category) => category.title).join(" · ")} · ${row.medalLevelCount} ${ui("tiers", "个等级")}` : `${row.typeName} · ${ui("Recipe sources", "制作来源")} ${row.counts.producedBy} · ${ui("Uses", "用途")} ${row.counts.usedBy + row.counts.upgrades}`)
-        : row.kind === "recipes" ? `${(row.types || [row.type]).map(tagLabel).join(" · ")} · ${(row.categories || []).map((category) => category.title).join(" · ")}${row.variantCount > 1 ? ` · ${row.variantCount} ${ui("methods", "种方式")}` : row.machineName ? ` · ${row.machineName}` : ""}`
+        : row.kind === "recipes" ? `${(row.types || [row.type]).map(tagLabel).join(" · ")} · ${(row.categories || []).map((category) => category.title).join(" · ")}${row.tags.includes("activity_only") ? ` · ${tagLabel("activity_only")}` : ""}${row.variantCount > 1 ? ` · ${row.variantCount} ${ui("methods", "种方式")}` : row.machineName ? ` · ${row.machineName}` : ""}`
           : `${(row.categories || []).map((category) => category.title).join(" · ") || ui("Uncategorized", "未分类")}${row.recipeCount ? ` · ${ui("Recipes", "配方")} ${row.recipeCount}` : ""}`;
-      return `<button type="button" class="production-row${row.id === state.selectedId ? " selected" : ""}" data-production-select="${esc(row.id)}" aria-pressed="${row.id === state.selectedId}">${rowIcon(row, "production-icon-list")}<span class="production-row-text"><strong>${esc(row.title)} ${W.updateBadges.html("production", `${row.kind}:${row.id}`)}</strong><span>${esc(subtitle)}</span><code>${esc(row.id)}</code></span></button>`;
-    }).join("") || empty(ui("No matching records. Reset filters to see the catalog.", "没有符合条件的记录；可重置筛选查看目录。"));
+      return `${heading}<button type="button" class="production-row${row.id === state.selectedId ? " selected" : ""}" data-production-select="${esc(row.id)}" aria-pressed="${row.id === state.selectedId}">${rowIcon(row, "production-icon-list")}<span class="production-row-text"><strong>${esc(row.title)} ${W.updateBadges.html("production", `${row.kind}:${row.id}`)}</strong><span>${esc(subtitle)}</span><code>${esc(row.id)}</code></span></button>`;
+    }).join("") + (groupOpen ? "</details>" : "") || empty(ui("No matching records. Reset filters to see the catalog.", "没有符合条件的记录；可重置筛选查看目录。"));
+    host.querySelectorAll("[data-list-group]").forEach((group) => {
+      group.addEventListener("toggle", () => {
+        if (group.open) collapsedListGroups.delete(group.dataset.listGroup);
+        else collapsedListGroups.add(group.dataset.listGroup);
+      });
+    });
     $("#production-count").textContent = `${number(state.filtered.length)} / ${number(state.rows.length)}`;
+    const locate = $("#production-reveal-current");
+    if (locate) locate.disabled = !state.selectedId;
+  }
+
+  function revealSelectedInList() {
+    if (!state.selectedId) return;
+    const index = state.filtered.findIndex((row) => row.id === state.selectedId);
+    if (index < 0) return;
+    if (state.pager.showIndex(index)) renderList();
+    const row = [...$("#production-list").querySelectorAll("[data-production-select]")]
+      .find((candidate) => candidate.dataset.productionSelect === state.selectedId);
+    const group = row?.closest("[data-list-group]");
+    if (group) { collapsedListGroups.delete(group.dataset.listGroup); group.open = true; }
+    row?.scrollIntoView({ block: "center", behavior: "smooth" });
   }
 
   function applyFilters(reset = true, write = true) {
@@ -294,7 +372,18 @@
       if (state.sort === "rarity-desc") return (b.rarity - a.rarity) || title;
       return title;
     });
-    scored.sort((a, b) => compare(a.row, b.row));
+    const categoryOrder = new Map((state.data.machineCategories || []).map((category, index) => [category.id, index]));
+    scored.sort((a, b) => {
+      const categoryA = productionListGroup(a.row).id;
+      const categoryB = productionListGroup(b.row).id;
+      if (state.kind === "machines") {
+        const order = (categoryOrder.get(categoryA) ?? Infinity) - (categoryOrder.get(categoryB) ?? Infinity);
+        if (order) return order;
+      }
+      if (categoryA !== categoryB) return categoryA === "(none)" ? 1 : categoryB === "(none)" ? -1
+        : productionListGroup(a.row).title.localeCompare(productionListGroup(b.row).title, undefined, { numeric: true });
+      return compare(a.row, b.row);
+    });
     state.filtered = scored.map((entry) => entry.row);
     state.pager.setTotal(state.filtered.length, { reset });
     renderList();
@@ -371,7 +460,7 @@
       <div class="filter-section-body filter-control-row"><label for="production-sort">${esc(ui("Sort", "排序"))}</label><select id="production-sort"><option value="title">${esc(ui("Name (A-Z)", "名称 (A-Z)"))}</option><option value="title-desc">${esc(ui("Name descending", "名称降序"))}</option><option value="rarity-asc">${esc(ui("Rarity ascending", "稀有度升序"))}</option><option value="rarity-desc">${esc(ui("Rarity descending", "稀有度降序"))}</option></select></div>
       <details class="filter-section" data-filter-section="production-type"><summary>${esc(state.kind === "machines" ? ui("Encyclopedia categories", "百科分类") : state.kind === "recipes" ? ui("Crafting method", "制作方式") : ui("Types", "类型"))}</summary><div id="production-type-filter" class="production-chips"></div></details>
       <details class="filter-section" data-filter-section="production-category"${state.kind === "machines" ? " hidden" : ""}><summary>${esc(state.kind === "recipes" ? ui("Output categories", "产物分类") : ui("Medal categories", "蚀刻章分类"))}</summary><div id="production-category-filter" class="production-chips"></div></details>
-      <details class="filter-section" data-filter-section="production-tag"${state.kind === "recipes" ? " hidden" : ""}><summary>${esc(ui("Relationships", "关联"))}</summary><div id="production-tag-filter" class="production-chips"></div></details>
+      <details class="filter-section" data-filter-section="production-tag"><summary>${esc(state.kind === "recipes" ? ui("Formula tags", "配方标签") : ui("Relationships", "关联"))}</summary><div id="production-tag-filter" class="production-chips"></div></details>
       ${W.updateBadges.filterSection("production")}
       <button id="production-reset" class="panel-toggle" type="button">${esc(ui("Reset filters", "重置筛选"))}</button></div>
       <div class="production-list-heading"><strong>${esc(kindLabel(state.kind))}</strong><span id="production-count" aria-live="polite"></span></div><div id="production-list"></div><footer id="production-pager"></footer></aside>

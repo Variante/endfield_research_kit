@@ -15,6 +15,10 @@ from pathlib import Path
 from pathlib import Path as _RadioContPath
 from scripts.webui.search import linked_file_search_text
 from scripts.webui.story.kite_station_tasks import project_kite_station_tasks
+from scripts.webui.story.mission_rewards import (
+    mission_completion_reward_search_text,
+    project_mission_completion_reward,
+)
 from scripts.webui.story.context import (
     ADMIN_ACTOR_IDS,
     ATMOS_CLUSTER_TABLE_PATH,
@@ -2073,6 +2077,7 @@ def build_language_bundle(
     dlg_opts = load("DialogOptionTable.json")
     summaries = load("DialogSummaryTable.json")
     mission_extra_info = load("MissionExtraInfoTable.json")
+    reward_rows = load("RewardTable.json")
     dungeons = load("DungeonTable.json")
     skill_patches = load("SkillPatchTable.json")
     char_growth = load("CharGrowthTable.json")
@@ -10261,13 +10266,24 @@ def build_language_bundle(
             if "envTalk" not in tags:
                 tags.append("envTalk")
     mission_extras_payload: dict[str, dict] = {}
+    mission_completion_rewards = {}
+    for mission in sorted(present_missions):
+        reward = project_mission_completion_reward(
+            mission, load_mission_flow(mission), reward_rows, item_rows,
+            translate=t, source_file=repo_rel(MRA_DIR / f"{mission}.json"),
+        )
+        if reward:
+            mission_completion_rewards[mission] = reward
     for mission in sorted(
         set(scene_env_talks_by_mission)
         | set(scene_bindings_by_mission)
         | set(mission_note_by_mission)
         | set(mission_level_refs)
+        | set(mission_completion_rewards)
     ):
-        extra: dict[str, list[dict]] = {}
+        extra: dict = {}
+        if mission in mission_completion_rewards:
+            extra["completionReward"] = mission_completion_rewards[mission]
         if mission in mission_note_by_mission:
             extra["notes"] = mission_note_by_mission[mission]
         if mission in mission_level_refs:
@@ -20038,8 +20054,15 @@ def build_language_bundle(
 
     generated = int(time.time())
     search_entries: list[dict] = []
+    reward_search_by_mission = {
+        mission: mission_completion_reward_search_text(extras.get("completionReward"))
+        for mission, extras in mission_extras_payload.items()
+    }
     for entry in index_entries:
-        search_text = str(entry.pop("x", "") or "").strip()
+        search_text = merge_search_text(
+            str(entry.pop("x", "") or "").strip(),
+            reward_search_by_mission.get(str(entry.get("m") or ""), ""),
+        )
         file_text = conv_file_search_text_by_key.get(str(entry.get("k") or ""), "")
         if search_text or file_text:
             search_entries.append({

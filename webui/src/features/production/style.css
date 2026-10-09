@@ -22,6 +22,13 @@
 .production-row strong { font-size: 13px; }
 .production-row span, .production-row code { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
 .production-row.selected { background: rgba(var(--accent-rgb), 0.09); box-shadow: inset 3px 0 var(--accent); }
+.production-device-group { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-2); border-bottom: 1px solid var(--border); font-size: 12px; }
+.production-device-group > span { margin-left: auto; color: var(--muted); }
+.production-list-section { flex: 0 0 auto; }
+.production-list-section > summary { cursor: pointer; }
+.production-list-section > summary::before { content: "▸"; }
+.production-list-section[open] > summary::before { content: "▾"; }
+.production-list-section > .production-row { width: 100%; box-sizing: border-box; }
 #production-pager { flex: 0 0 auto; grid-template-columns: auto minmax(70px, 1fr) auto; }
 #production-pager .list-pager-size { grid-column: 1 / -1; justify-content: center; }
 #production-pager .list-pager-next { grid-column: 3; grid-row: 1; }
@@ -34,11 +41,13 @@
 .production-detail-header h2 { margin: 4px 0 8px; font-size: 25px; }
 .production-detail-header small, .production-detail-header code { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
 .production-detail-header button { white-space: nowrap; }
+.production-detail-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .production-identity { display: flex; align-items: center; gap: 16px; min-width: 0; }
 .production-identity > div { min-width: 0; }
 .production-icon { display: inline-block; width: 26px; height: 26px; object-fit: contain; flex: 0 0 auto; vertical-align: middle; }
 .production-icon-list { width: 48px; height: 48px; }
 .production-icon-large { width: 88px; height: 88px; }
+.production-medal-icons { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
 .production-record-link { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; vertical-align: middle; }
 .production-record-link span { min-width: 0; }
 .production-category { display: inline-flex; align-items: center; gap: 5px; }
@@ -52,6 +61,8 @@
 .production-description, .production-lore p { white-space: pre-wrap; line-height: 1.8; font-size: 13px; overflow-wrap: anywhere; }
 .production-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .production-badge { display: inline-block; padding: 3px 7px; margin: 2px; border: 1px solid var(--border); border-radius: 5px; color: var(--muted); font-size: 11px; }
+.production-rate { display: inline-block; color: var(--accent); white-space: nowrap; margin: 0 5px; }
+.production-gas-requirement { margin: 8px 0; }
 .production-section { margin: 22px 0; min-width: 0; }
 .production-section h3 { font-size: 15px; margin: 0 0 10px; }
 .production-section h3 span { font-size: 12px; color: var(--muted); font-weight: normal; }

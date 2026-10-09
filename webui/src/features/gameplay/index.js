@@ -3850,11 +3850,22 @@
     ].join("");
   }
 
-  async function itemGallery(id, language) {
+  async function itemGallery(id, language, opts = {}) {
     const { entry } = await catalogItem(id, language);
     if (!entry) return "";
     const assets = await (itemAssets ||= fetchIntegrationJson(integrationPath("assets", language),
       (payload) => payload && payload.entries && typeof payload.entries === "object").catch(() => null));
+    if (opts.picture) {
+      if (!/^item_pic_/i.test(id)) return "";
+      const refs = assets?.tokens?.[id] || assets?.tokens?.[id.replace(/^item_pic_/i, "pic_")];
+      const asset = refs?.images?.find((candidate) => candidate?.rel);
+      return asset ? `<div class="gameplay-token-image-row">${renderGameplayImageButton(asset, {
+        className: "gameplay-item-picture",
+        alt: entry.title || id,
+        imageName: entry.title || id,
+        imageId: `${id}:picture`,
+      })}</div>` : "";
+    }
     return renderGameplayAssetGallery(entry, assets);
   }
 
@@ -4556,6 +4567,8 @@
     const key = `${STATE.selected.kind}:${STATE.selected.id}`;
     const row = [...list.querySelectorAll(".gameplay-row")].find((candidate) => candidate.dataset.key === key);
     if (!row) return false;
+    const group = row.closest("[data-list-group]");
+    if (group) { collapsedListGroups.delete(group.dataset.listGroup); group.open = true; }
     row.scrollIntoView({ block: "center", behavior: "smooth" });
     if (isMobileLayout()) {
       const left = gp$("#gameplay-left");
@@ -4609,7 +4622,7 @@
     if (empty) empty.hidden = true;
     detail.hidden = false;
     const title = entry.title || entry.id || "";
-    gp$("#gameplay-detail-title").innerHTML = highlightText(title) + window.WebUI.updateBadges.html("gameplay", `${entry.kind}:${entry.id}`);
+    gp$("#gameplay-detail-title").innerHTML = highlightText(title) + window.WebUI.updateBadges.html("gameplay", gameplayUpdateIds(entry));
     const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : entry.kind === "enemy" ? renderEnemyDetail(entry) : entry.kind === "item" ? renderItemDetail(entry) : renderCharacterDetail(entry);
     // The header already shows the title; drop any fact that merely repeats it
     // (e.g. file/internal name equal to the title) to avoid duplicated info.
@@ -4643,7 +4656,7 @@
       : `${rendered.body || ""}${STATE.showDebug && ["character", "enemy"].includes(entry.kind) ? window.WebUI.gameplaySkillRefs?.markup() || "" : ""}${renderIntegratedSections(entry)}`;
     gp$("#gameplay-detail-body").innerHTML = `${isCharacter ? renderCharacterViewSwitch(view) : ""}${readingView && view === "info" ? `<div class="gameplay-reading-view">${body}</div>` : body}`;
     if (readingView && view === "info") bindDetailContents(detail);
-    window.WebUI.updateBadges.mount(gp$("#gameplay-detail-body"), "gameplay", `${entry.kind}:${entry.id}`);
+    window.WebUI.updateBadges.mount(gp$("#gameplay-detail-body"), "gameplay", gameplayUpdateIds(entry));
     bindGameplayMediaPlayers(detail);
     bindIntegratedLinks(detail);
     bindLevelSliders(detail);
@@ -4716,11 +4729,17 @@
     return `<button class="gameplay-row${selected}" type="button" data-key="${escapeHtml(key)}">
       ${thumbnail}<span class="gameplay-row-text"><span class="gameplay-row-line1">
         <span class="badge ${badgeClass}">${escapeHtml(kindLabel(entry.kind))}</span>
-        ${window.WebUI.updateBadges.html("gameplay", key)}
+        ${window.WebUI.updateBadges.html("gameplay", gameplayUpdateIds(entry))}
         <span class="gameplay-row-name">${highlightText(entry.title || entry.id || "")}</span>
       </span>
       <span class="gameplay-row-meta">${highlightText(entrySubtitle(entry) || rowPathText(entry) || "")}</span></span>
     </button>`;
+  }
+
+  const collapsedListGroups = new Set();
+  function gameplayUpdateIds(entry) {
+    return [...new Set([entry.id, ...(entry.variants || []).map((variant) => variant.id)])]
+      .map((id) => `${entry.kind}:${id}`);
   }
 
   function renderList() {
@@ -4736,7 +4755,22 @@
 
     const selectedId = STATE.selected && `${STATE.selected.kind}:${STATE.selected.id}`;
     const pageEntries = STATE.pager ? STATE.pager.slice(STATE.filtered) : STATE.filtered;
-    list.innerHTML = pageEntries.map((entry) => renderRow(entry, selectedId)).join("");
+    const groups = new Map();
+    for (const entry of pageEntries) {
+      const group = gameplayListGroup(entry);
+      if (!groups.has(group)) groups.set(group, []);
+      groups.get(group).push(entry);
+    }
+    list.innerHTML = [...groups].map(([group, entries]) => {
+      const count = STATE.filtered.filter((row) => gameplayListGroup(row) === group).length;
+      return `<details class="gameplay-list-section" data-list-group="${escapeHtml(group)}"${collapsedListGroups.has(group) ? "" : " open"}><summary class="gameplay-list-group"><strong>${escapeHtml(group)}</strong><span>${formatNumber(count)}</span></summary>${entries.map((entry) => renderRow(entry, selectedId)).join("")}</details>`;
+    }).join("");
+    list.querySelectorAll("[data-list-group]").forEach((group) => {
+      group.addEventListener("toggle", () => {
+        if (group.open) collapsedListGroups.delete(group.dataset.listGroup);
+        else collapsedListGroups.add(group.dataset.listGroup);
+      });
+    });
 
     list.querySelectorAll(".gameplay-row").forEach((row) => {
       row.addEventListener("click", () => {
@@ -4857,6 +4891,11 @@
     return [kindLabel(entry && entry.kind), listTypeLabel(entry)].filter(Boolean).join(" / ");
   }
 
+  function gameplayListGroup(entry) {
+    return entry.kind === "character" ? jobFilterLabel(entry) || kindLabel(entry.kind)
+      : listTypeLabel(entry) || kindLabel(entry.kind);
+  }
+
   // Per-kind type groups are one cross-kind union: once any of them is
   // active, an entry passes only through its own kind's group, so a weapon
   // passes a character-property group exactly when its weapon-type group is
@@ -4901,7 +4940,7 @@
           label: kindLabel, className: (kind) => KIND_CHIP_CLASS[kind] || "kind-chip",
           order: (a, b) => kindRank(a) - kindRank(b) || a.localeCompare(b) },
         ...entryGroups,
-        window.WebUI.updateBadges.filterGroup("gameplay", (entry) => window.WebUI.updateBadges.status("gameplay", `${entry.kind}:${entry.id}`)),
+        window.WebUI.updateBadges.filterGroup("gameplay", (entry) => [...new Set(gameplayUpdateIds(entry).map((id) => window.WebUI.updateBadges.status("gameplay", id)).filter(Boolean))]),
         { id: "rarities", container: "#gameplay-rarity-filter", section: "gameplay-rarity", values: rarityFilterKey,
           label: rarityFilterLabel, order: (a, b) => Number(b) - Number(a),
           countMode: "faceted", hideEmpty: true },
@@ -4976,6 +5015,10 @@
       || collator.compare(a.id || "", b.id || "");
     const rankByScore = sort === "default" && tokens.length > 1;
     STATE.filtered.sort(window.WebUI.sorting.comparator("gameplay-sort", (a, b) => {
+      const groupOrder = kindRank(a.kind) - kindRank(b.kind)
+        || (a.kind === "enemy" ? enemyTypeRank(a) - enemyTypeRank(b) : 0)
+        || collator.compare(gameplayListGroup(a), gameplayListGroup(b));
+      if (groupOrder) return groupOrder;
       if (rankByScore) {
         const delta = (scores.get(b) || 0) - (scores.get(a) || 0);
         if (delta) return delta;

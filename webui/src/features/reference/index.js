@@ -15,6 +15,9 @@
 //   * Authored activity/achievement guides use `guide.sections`, with exact
 //     references rendered by the same field/link controls. Every guide value
 //     is searchable; the shared row pager does not truncate loaded data.
+//   * Raw JSON is a bounded streaming preview with original-file download.
+//     A partial preview stays verbatim; only complete small files are localized
+//     and formatted. Oversized rendered shards fail visibly before JSON.parse.
 (() => {
   const REF_TEXTS = {
     zh: {
@@ -57,6 +60,13 @@
       guideCodes: "条件配置字段",
       guideTexts: "其他本地化文本",
       showingRows: "当前显示",
+      rawPreview: "文件较大，仅显示开头部分。下载完整 JSON 可查看全部内容。",
+      rawVerbatim: "预览保留源文件格式。",
+      downloadJson: "下载完整 JSON",
+      tableTooLarge: "此表超过 32 MiB 渲染上限。请查看原始预览或下载完整 JSON。",
+      previousTexts: "上一组文本",
+      nextTexts: "下一组文本",
+      loadPreview: "加载预览",
     },
     en: {
       tab: "Text",
@@ -98,6 +108,13 @@
       guideCodes: "Stored condition fields",
       guideTexts: "Additional localized text",
       showingRows: "Showing",
+      rawPreview: "Showing the beginning of this large file. Download the full JSON to inspect all content.",
+      rawVerbatim: "Preview uses the original file formatting.",
+      downloadJson: "Download full JSON",
+      tableTooLarge: "This table exceeds the 32 MiB rendered-view limit. Use the raw preview or download the full JSON.",
+      previousTexts: "Previous texts",
+      nextTexts: "Next texts",
+      loadPreview: "Load preview",
     },
   };
   const FILTER_PANEL_STORAGE_KEY = "reference_browser_filters_collapsed";
@@ -112,6 +129,7 @@
     storageGet,
     storageSet,
   } = window.WebUI;
+  const { readText, createCache, MAX_PREVIEW_BYTES, MAX_PREVIEW_CHARS } = window.WebUI.referenceFiles;
   const REF_STATE = {
     language: "",
     dataGeneration: 0,
@@ -119,10 +137,11 @@
     tables: [],
     selectedTable: null,
     selectedPayload: null,
-    tableCache: new Map(),
+    tableCache: createCache(24 * 1024 * 1024, 8),
     tableLoads: new Map(),
-    rawTextCache: new Map(),
-    rawTextLoads: new Map(),
+    tableController: null,
+    rawController: null,
+    rawRenderToken: 0,
     i18nCache: new Map(),
     i18nLoads: new Map(),
     contentMatches: new Map(),
@@ -283,33 +302,30 @@
     return `${source || ""}\u0000${q || ""}`;
   }
 
-  async function fetchReferenceJson(relativePath, language = REF_STATE.language || currentLanguage()) {
-    const res = await fetch(referenceDataPath(relativePath, language));
+  async function fetchReferenceJson(relativePath, language = REF_STATE.language || currentLanguage(), signal) {
+    const res = await fetch(referenceDataPath(relativePath, language), { signal });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return res.json();
+    const result = await readText(res, { signal });
+    return { payload: JSON.parse(result.text), bytes: result.bytes };
   }
 
 
   async function fetchAbsoluteJson(path) {
     const res = await fetch(path);
     if (!res.ok) throw new Error(`${path} HTTP ${res.status}`);
-    return res.json();
+    return JSON.parse((await readText(res)).text);
   }
 
   function parseRawReferenceJson(text) {
     return JSON.parse(String(text || "").replace(/("id"\s*:\s*)(-?\d{15,})(?=\s*[,}])/g, "$1\"$2\""));
   }
 
-  async function fetchRawReferenceJson(relativePath, language) {
-    const res = await fetch(referenceDataPath(relativePath, language));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    return parseRawReferenceJson(await res.text());
-  }
-
-  async function fetchRawExportJson(path) {
-    const res = await fetch(path);
+  async function fetchRawReferencePreview(path, signal) {
+    // One extra byte distinguishes an exact-size file from a partial response.
+    // Hosts that ignore Range are still bounded by the streaming reader.
+    const res = await fetch(path, { signal, headers: { Range: `bytes=0-${MAX_PREVIEW_BYTES}` } });
     if (!res.ok) throw new Error(`${path} HTTP ${res.status}`);
-    return parseRawReferenceJson(await res.text());
+    return readText(res, { preview: true, maxBytes: MAX_PREVIEW_BYTES, signal });
   }
 
   function applyReferenceTableMetadata(payload, table) {
@@ -366,38 +382,40 @@
     return !!(matches && matches.has(referenceTableKey(table)));
   }
 
-  async function loadReferencePayload(table) {
+  async function loadReferencePayload(table, signal) {
     const generation = REF_STATE.dataGeneration;
     const language = REF_STATE.language || currentLanguage();
     const cacheKey = referenceTableKey(table);
     const cached = REF_STATE.tableCache.get(cacheKey);
     if (cached) return cached;
 
-    const pending = REF_STATE.tableLoads.get(cacheKey);
+    // Selection reads have their own abort signal. Background scans share only
+    // their own pending reads, so switching tables cannot cancel a search row.
+    const pending = !signal && REF_STATE.tableLoads.get(cacheKey);
     if (pending) return pending;
 
-    const promise = fetchReferenceJson(table.file, language)
-      .then(async (payload) => {
+    const promise = fetchReferenceJson(table.file, language, signal)
+      .then(async ({ payload, bytes }) => {
         if (payload && payload.baseFile) {
-          const basePayload = await fetchReferenceJson(payload.baseFile, language);
-          return mergeReferenceOverlay(basePayload, payload);
+          const base = await fetchReferenceJson(payload.baseFile, language, signal);
+          return { payload: mergeReferenceOverlay(base.payload, payload), bytes: bytes + base.bytes };
         }
-        return payload;
+        return { payload, bytes };
       })
-      .then((payload) => {
+      .then(({ payload, bytes }) => {
         const normalized = applyReferenceTableMetadata(payload, table);
         if (generation === REF_STATE.dataGeneration) {
-          REF_STATE.tableCache.set(cacheKey, normalized);
-          REF_STATE.tableLoads.delete(cacheKey);
+          REF_STATE.tableCache.set(cacheKey, normalized, bytes);
+          if (!signal) REF_STATE.tableLoads.delete(cacheKey);
         }
         return normalized;
       })
       .catch((error) => {
-        if (generation === REF_STATE.dataGeneration) REF_STATE.tableLoads.delete(cacheKey);
+        if (!signal && generation === REF_STATE.dataGeneration) REF_STATE.tableLoads.delete(cacheKey);
         throw error;
       });
 
-    REF_STATE.tableLoads.set(cacheKey, promise);
+    if (!signal) REF_STATE.tableLoads.set(cacheKey, promise);
     return promise;
   }
 
@@ -453,24 +471,6 @@
     return "";
   }
 
-  function resolveRawReferenceStructure(value, maps, preferredSource) {
-    if (Array.isArray(value)) {
-      return value.map((item) => resolveRawReferenceStructure(item, maps, preferredSource));
-    }
-    if (!value || typeof value !== "object") return value;
-
-    const isI18nText = Object.prototype.hasOwnProperty.call(value, "id")
-      && Object.prototype.hasOwnProperty.call(value, "text");
-    const resolvedText = isI18nText ? resolveReferenceI18nText(value.id, maps, preferredSource) : "";
-    const out = {};
-    for (const [key, child] of Object.entries(value)) {
-      out[key] = isI18nText && key === "text" && resolvedText
-        ? resolvedText
-        : resolveRawReferenceStructure(child, maps, preferredSource);
-    }
-    return out;
-  }
-
   function bundledRawReferencePayload(payload) {
     if (payload && payload.rawRows && typeof payload.rawRows === "object" && !Array.isArray(payload.rawRows)) {
       if ((Array.isArray(payload.rowOrder) && payload.rowOrder.length)
@@ -486,68 +486,70 @@
     return payload;
   }
 
-  function formatRawReferencePayload(payload) {
-    return JSON.stringify(payload == null ? null : payload, null, 2);
+  function formatRawReferencePayload(payload, maps, preferredSource) {
+    const depths = new WeakMap();
+    let remaining = MAX_PREVIEW_CHARS;
+    return JSON.stringify(payload == null ? null : payload, function (key, value) {
+      // Bound indentation growth as well as recursion. Deep documents retain
+      // their source preview instead of expanding into a huge string.
+      const depth = (depths.get(this) || 0) + 1;
+      if (depth > 32) throw new RangeError("JSON is too deep to format");
+      // Reserve worst-case string escaping and indentation before stringify
+      // allocates output, including localized strings repeated by many IDs.
+      remaining -= key.length * 6 + depth * 4 + 32
+        + (typeof value === "string" ? value.length * 6 : 0);
+      if (remaining < 0) throw new RangeError("JSON is too large to format");
+      if (!value || typeof value !== "object") return value;
+      depths.set(value, depth);
+      if (maps && Object.prototype.hasOwnProperty.call(value, "id")
+        && Object.prototype.hasOwnProperty.call(value, "text")) {
+        const text = resolveReferenceI18nText(value.id, maps, preferredSource);
+        if (text) {
+          const localized = { ...value, text };
+          depths.set(localized, depth);
+          return localized;
+        }
+      }
+      return value;
+    }, 2);
   }
 
-  async function loadReferenceRawDisplay(file, language) {
+  async function loadReferenceRawDisplay(file, language, signal) {
+    const paths = [
+      file.exportPath && { href: file.exportPath, displayPath: rawDisplayPath(file.exportPath), exported: true },
+      file.fallbackPath && { href: referenceDataPath(file.fallbackPath, language), displayPath: file.fallbackPath },
+    ].filter(Boolean);
     let sourceError = null;
-    if (file && file.exportPath) {
+    for (const path of paths) {
       try {
-        const payload = await fetchRawExportJson(file.exportPath);
-        const maps = await loadReferenceI18nMaps(file.sourceKey, language);
+        const preview = await fetchRawReferencePreview(path.href, signal);
+        let text = preview.text;
+        let verbatim = true;
+        if (!preview.truncated) {
+          try {
+            const payload = parseRawReferenceJson(text);
+            const maps = path.exported ? await loadReferenceI18nMaps(file.sourceKey, language) : null;
+            if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+            text = formatRawReferencePayload(path.exported ? payload : bundledRawReferencePayload(payload), maps, file.sourceKey);
+            verbatim = false;
+          } catch (error) {
+            if (error.name === "AbortError") throw error;
+            // Keep malformed/deep source JSON inspectable in its original form.
+          }
+        }
         return {
-          text: formatRawReferencePayload(resolveRawReferenceStructure(payload, maps, file.sourceKey)),
-          displayPath: rawDisplayPath(file.exportPath),
-          href: file.exportPath,
+          text: text.slice(0, MAX_PREVIEW_CHARS),
+          truncated: preview.truncated || text.length > MAX_PREVIEW_CHARS,
+          verbatim,
+          displayPath: path.displayPath,
+          href: path.href,
         };
       } catch (error) {
+        if (error.name === "AbortError") throw error;
         sourceError = error;
       }
     }
-
-    if (file && file.fallbackPath) {
-      const payload = await fetchRawReferenceJson(file.fallbackPath, language);
-      return {
-        text: formatRawReferencePayload(bundledRawReferencePayload(payload)),
-        displayPath: file.fallbackPath,
-        href: referenceDataPath(file.fallbackPath, language),
-      };
-    }
     throw sourceError || new Error(refText("rawUnavailable"));
-  }
-
-  async function loadReferenceRawText(file) {
-    const generation = REF_STATE.dataGeneration;
-    const language = REF_STATE.language || currentLanguage();
-    const cacheKey = JSON.stringify([
-      language,
-      file && file.sourceKey || "",
-      file && file.tableName || "",
-      file && file.exportPath || "",
-      file && file.fallbackPath || "",
-    ]);
-    const cached = REF_STATE.rawTextCache.get(cacheKey);
-    if (cached != null) return cached;
-
-    const pending = REF_STATE.rawTextLoads.get(cacheKey);
-    if (pending) return pending;
-
-    const promise = loadReferenceRawDisplay(file, language)
-      .then((display) => {
-        if (generation === REF_STATE.dataGeneration) {
-          REF_STATE.rawTextCache.set(cacheKey, display);
-          REF_STATE.rawTextLoads.delete(cacheKey);
-        }
-        return display;
-      })
-      .catch((error) => {
-        if (generation === REF_STATE.dataGeneration) REF_STATE.rawTextLoads.delete(cacheKey);
-        throw error;
-      });
-
-    REF_STATE.rawTextLoads.set(cacheKey, promise);
-    return promise;
   }
 
   function applyReferenceStrings() {
@@ -628,8 +630,11 @@
     referenceFacets().reset({ silent: true, only: ["group"] });
     REF_STATE.tableCache.clear();
     REF_STATE.tableLoads.clear();
-    REF_STATE.rawTextCache.clear();
-    REF_STATE.rawTextLoads.clear();
+    REF_STATE.tableController?.abort();
+    REF_STATE.tableController = null;
+    REF_STATE.rawController?.abort();
+    REF_STATE.rawController = null;
+    REF_STATE.rawRenderToken += 1;
     REF_STATE.i18nCache.clear();
     REF_STATE.i18nLoads.clear();
     REF_STATE.contentMatches.clear();
@@ -836,6 +841,13 @@
 
     const matches = REF_STATE.contentMatches.get(key) || new Set();
     REF_STATE.contentMatches.set(key, matches);
+    // Search results are small, but retaining every query is still unbounded.
+    if (REF_STATE.contentMatches.size > 8) {
+      const oldest = REF_STATE.contentMatches.keys().next().value;
+      REF_STATE.contentMatches.delete(oldest);
+      REF_STATE.contentScansDone.delete(oldest);
+    }
+    const tokens = window.WebUI.parseQuery(q);
 
     const tables = REF_STATE.tables.filter((table) => !sources.size || sources.has(table.source));
     let cursor = 0;
@@ -859,7 +871,7 @@
         try {
           const payload = await loadReferencePayload(table);
           if (REF_STATE.contentScanToken !== token) return;
-          if ((payload.rows || []).some((row) => rowMatches(row, q))) {
+          if ((payload.rows || []).some((row) => rowMatches(row, q, tokens))) {
             matches.add(referenceTableKey(table));
             queueRender();
           }
@@ -869,7 +881,7 @@
       }
     };
 
-    await Promise.all(Array.from({ length: Math.min(6, tables.length) }, worker));
+    await Promise.all(Array.from({ length: Math.min(2, tables.length) }, worker));
 
     if (REF_STATE.contentScanToken === token && REF_STATE.contentScanKey === key) {
       REF_STATE.contentScansDone.add(key);
@@ -931,6 +943,9 @@
 
   async function selectReferenceTable(table) {
     const generation = REF_STATE.dataGeneration;
+    REF_STATE.tableController?.abort();
+    const controller = new AbortController();
+    REF_STATE.tableController = controller;
     REF_STATE.selectedTable = table;
     REF_STATE.selectedPayload = null;
     renderReferenceList();
@@ -944,14 +959,15 @@
     renderReferenceRaw(table);
 
     try {
-      const payload = await loadReferencePayload(table);
-      if (generation !== REF_STATE.dataGeneration || REF_STATE.selectedTable !== table) return;
+      const payload = await loadReferencePayload(table, controller.signal);
+      if (controller.signal.aborted || generation !== REF_STATE.dataGeneration || REF_STATE.selectedTable !== table) return;
       REF_STATE.selectedPayload = payload;
       renderReferenceRows();
     } catch (error) {
-      if (generation !== REF_STATE.dataGeneration || REF_STATE.selectedTable !== table) return;
-      ref$("#reference-detail-meta").textContent =
-        refText("loadError") + (error && error.message ? error.message : String(error));
+      if (controller.signal.aborted || generation !== REF_STATE.dataGeneration || REF_STATE.selectedTable !== table) return;
+      ref$("#reference-detail-meta").textContent = error.code === "REFERENCE_FILE_TOO_LARGE"
+        ? refText("tableTooLarge")
+        : refText("loadError") + (error && error.message ? error.message : String(error));
     }
   }
 
@@ -1113,6 +1129,7 @@
       container: host,
       storageKey: "reference_rows_page_size",
       defaultPageSize: 100,
+      maxPageSize: 100,
       onChange: renderReferenceRows,
     });
     return REF_STATE.rowPager;
@@ -1134,8 +1151,7 @@
     return out;
   }
 
-  function rowMatches(row, q) {
-    const tokens = window.WebUI.parseQuery(q);
+  function rowMatches(row, q, tokens = window.WebUI.parseQuery(q)) {
     if (!tokens.length) return true;
     const haystack = [row.id, row.title, row.bucket];
     haystack.push(window.WebUI.linkedFileSearchText(row));
@@ -1146,20 +1162,66 @@
     return window.WebUI.queryMatches(haystack, tokens);
   }
 
+  function renderReferenceTexts(host, texts, tokens) {
+    if (!texts.length) return;
+    const pageSize = 100;
+    const firstMatch = tokens.length ? texts.findIndex((text) => window.WebUI.queryMatches(
+      [text.field, text.hint, text.path, text.i18nId, text.text], tokens,
+    )) : 0;
+    let page = Math.floor(Math.max(0, firstMatch) / pageSize);
+    const body = document.createElement("div");
+    host.appendChild(body);
+    const controls = document.createElement("div");
+    controls.className = "list-pager";
+    const previous = document.createElement("button");
+    previous.type = "button";
+    previous.textContent = refText("previousTexts");
+    const count = document.createElement("span");
+    const next = document.createElement("button");
+    next.type = "button";
+    next.textContent = refText("nextTexts");
+    if (texts.length > pageSize) {
+      controls.append(previous, count, next);
+      host.appendChild(controls);
+    }
+    const render = () => {
+      const start = page * pageSize;
+      const end = Math.min(start + pageSize, texts.length);
+      body.replaceChildren();
+      for (const text of texts.slice(start, end)) {
+        const textNode = document.createElement("div");
+        textNode.className = "reference-text";
+        const label = text.hint || text.field || "text";
+        textNode.innerHTML =
+          `<div class="reference-text-field">${escapeHtml(label)}</div>` +
+          `<div class="reference-text-path">${escapeHtml(text.path || "")}${text.i18nId ? " | " + escapeHtml(text.i18nId) : ""}</div>` +
+          `<div class="reference-text-body">${escapeHtml(text.text || "")}</div>`;
+        body.appendChild(textNode);
+      }
+      count.textContent = `${start + 1}–${end} / ${texts.length} ${refText("texts")}`;
+      previous.disabled = page === 0;
+      next.disabled = end === texts.length;
+    };
+    previous.addEventListener("click", () => { page -= 1; render(); });
+    next.addEventListener("click", () => { page += 1; render(); });
+    render();
+  }
+
   function renderReferenceRows() {
     const payload = REF_STATE.selectedPayload;
     const table = REF_STATE.selectedTable;
     if (!payload || !table) return;
 
     const q = referenceQuery();
+    const tokens = window.WebUI.parseQuery(q);
     // A row a maintained reference asked to focus stays visible even when the
     // active search would hide it. Explicit version-change filters still apply.
     const focusRowId = REF_STATE.focusRowId;
     const updates = referenceFacets().active("update");
     const rows = (payload.rows || []).filter((row) => {
-      const status = window.WebUI.updateBadges.status("reference", `${String(table.table || "").replace(/\.json$/, "")}/${row.id}`);
-      return (!updates.size || updates.has(status))
-        && (rowMatches(row, q) || (focusRowId && String(row.id || "") === focusRowId));
+      const statusMatches = !updates.size || updates.has(window.WebUI.updateBadges.status("reference", `${String(table.table || "").replace(/\.json$/, "")}/${row.id}`));
+      return statusMatches
+        && (rowMatches(row, q, tokens) || (focusRowId && String(row.id || "") === focusRowId));
     });
     const wrap = ref$("#reference-rows");
     const pager = ensureReferenceRowPager(wrap);
@@ -1211,16 +1273,7 @@
         textsHost.appendChild(summary);
         item.appendChild(textsHost);
       }
-      for (const text of row.texts || []) {
-        const textNode = document.createElement("div");
-        textNode.className = "reference-text";
-        const label = text.hint || text.field || "text";
-        textNode.innerHTML =
-          `<div class="reference-text-field">${escapeHtml(label)}</div>` +
-          `<div class="reference-text-path">${escapeHtml(text.path || "")}${text.i18nId ? " | " + escapeHtml(text.i18nId) : ""}</div>` +
-          `<div class="reference-text-body">${escapeHtml(text.text || "")}</div>`;
-        textsHost.appendChild(textNode);
-      }
+      renderReferenceTexts(textsHost, row.texts || [], tokens);
       wrap.appendChild(item);
       window.WebUI.updateBadges.decorate(item, "reference", updateId);
       item.insertAdjacentHTML("beforeend", window.WebUI.updateBadges.panel("reference", updateId));
@@ -1265,6 +1318,11 @@
   }
   async function renderReferenceRaw(table) {
     const generation = REF_STATE.dataGeneration;
+    REF_STATE.rawController?.abort();
+    const controller = new AbortController();
+    REF_STATE.rawController = controller;
+    const token = ++REF_STATE.rawRenderToken;
+    const language = REF_STATE.language || currentLanguage();
     const wrap = ref$("#reference-raw");
     if (!wrap) return;
     wrap.replaceChildren();
@@ -1280,25 +1338,11 @@
       return;
     }
 
-    const loading = document.createElement("div");
-    loading.className = "reference-raw-message";
-    loading.textContent = refText("rawLoading");
-    wrap.appendChild(loading);
-
-    const results = await Promise.all(files.map(async (file) => {
-      try {
-        return { ...file, ...(await loadReferenceRawText(file)) };
-      } catch (error) {
-        return {
-          ...file,
-          error: error && error.message ? error.message : String(error),
-        };
-      }
-    }));
-    if (generation !== REF_STATE.dataGeneration || !REF_STATE.selectedTable || referenceTableKey(REF_STATE.selectedTable) !== selectedKey) return;
-
-    wrap.replaceChildren();
-    for (const result of results) {
+    const current = () => !controller.signal.aborted && generation === REF_STATE.dataGeneration
+      && token === REF_STATE.rawRenderToken && REF_STATE.selectedTable
+      && referenceTableKey(REF_STATE.selectedTable) === selectedKey;
+    for (const [index, file] of files.entries()) {
+      if (!current()) return;
       const section = document.createElement("section");
       section.className = "reference-raw-file";
 
@@ -1307,23 +1351,55 @@
 
       const label = document.createElement("span");
       label.className = "reference-raw-label";
-      label.textContent = refText(result.labelKey);
+      label.textContent = refText(file.labelKey);
       head.appendChild(label);
 
       const link = document.createElement("a");
       link.className = "reference-raw-path";
-      link.href = result.href || "#";
+      link.href = file.exportPath || referenceDataPath(file.fallbackPath, language);
       link.target = "_blank";
       link.rel = "noopener";
-      link.textContent = result.displayPath || result.exportPath || result.fallbackPath || "";
+      link.textContent = file.exportPath || file.fallbackPath || "";
       head.appendChild(link);
+      const download = document.createElement("a");
+      download.href = link.href;
+      download.download = file.tableName || "table.json";
+      download.textContent = refText("downloadJson");
+      head.appendChild(download);
       section.appendChild(head);
 
       const body = document.createElement("pre");
       body.className = "reference-raw-body";
-      body.textContent = result.error ? `${refText("loadError")}${result.error}` : result.text;
+      body.hidden = true;
+      const note = document.createElement("div");
+      note.className = "reference-raw-message";
+      section.appendChild(note);
       section.appendChild(body);
+      const load = async () => {
+        note.textContent = refText("rawLoading");
+        try {
+          const result = await loadReferenceRawDisplay(file, language, controller.signal);
+          if (!current()) return;
+          link.href = download.href = result.href;
+          link.textContent = result.displayPath;
+          body.textContent = result.text;
+          body.hidden = false;
+          note.textContent = [result.truncated ? refText("rawPreview") : "", result.verbatim ? refText("rawVerbatim") : ""].filter(Boolean).join(" ");
+        } catch (error) {
+          if (!current() || error.name === "AbortError") return;
+          note.textContent = `${refText("loadError")}${error.message || error}`;
+        }
+      };
       wrap.appendChild(section);
+      if (index === 0) await load();
+      else {
+        // Identical-file aliases and legacy bases load only on demand.
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = refText("loadPreview");
+        button.addEventListener("click", () => { button.remove(); load(); }, { once: true });
+        note.appendChild(button);
+      }
     }
   }
 

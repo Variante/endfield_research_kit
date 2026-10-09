@@ -71,6 +71,12 @@ navigation are in the header comment of
 - The shared pager bounds rendered rows while all loaded guide fields and
   localized text remain searchable. Following a field reference selects the
   target's page and keeps the requested row visible under the existing search.
+- The raw pane reads a bounded prefix, never parses incomplete JSON, and offers
+  the complete original file as a download. Large/deep previews keep source
+  formatting; row and within-row text pagination bound DOM work without dropping
+  loaded search results. Size guards and bounded caches live in
+  `webui/src/features/reference/files.js`; these are browser limits, not evidence
+  of missing source rows.
 
 ## Focused refresh commands
 

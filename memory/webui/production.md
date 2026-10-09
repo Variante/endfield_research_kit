@@ -98,6 +98,28 @@ Character upgrade costs, gathering locations, task rewards, live shop state and
 resolved unlock-condition explanations remain outside this publication. Building
 renderer-template metadata is retained without inferring additional recipe
 ownership. The page does not calculate production chains or effective rates.
+The catalog index retains building wiki category order for device list grouping.
+Group headers use the exact published category joins, with uncategorized devices
+last; filtering and pagination still count device records, not group headings.
+Items and recipes group by their first domain filter, with combined crafting
+methods kept together. Recipe source/use references retain each original method's
+gas environment rather than borrowing one requirement from a grouped recipe.
+Activity-only formula tags use exact craft-ID membership in
+`LimitedFormulaCraftIdReverseTable`; matching activity `timeLimitFormula` lists
+provide the forward join. The exported `FactoryUtils.isTimeLimitedFormula`
+consumer checks this reverse table, and `FormulaCtrl` uses it for the limited-time
+marker. This establishes stored classification and a direct Lua UI consumer,
+not native-body validation or current runtime availability. Activity membership
+is retained per method; a combined recipe's tag means it contains an activity
+method, not that every method is activity-limited.
+Recipes and machine recipe rows display nominal quantities per minute as
+`count * 60 / durationSeconds`, preserving stored groups and method boundaries;
+unknown or nonpositive durations do not produce rates. Required `gasEnv` values
+join `FactoryEnvDisplayTable` exactly, retaining the numeric requirement and its
+environment icon token. The frontend names those authored display tokens and
+shows the corresponding exported `icon_gas_env_*` presentation icon; known
+requirements display only the icon and name, while unknown requirements stay
+visible by ID. This icon selection does not claim runtime asset ownership.
 
 ## Frontend contract
 

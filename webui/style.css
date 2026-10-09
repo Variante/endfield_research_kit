@@ -1997,6 +1997,23 @@ a.opt-target-chip { cursor: pointer; }
 }
 .summary-text { font-size: 13px; color: var(--text); }
 .summary-text + .summary-text { margin-top: 4px; }
+.mission-completion-rewards { margin-top: 12px; }
+.mission-summary-box > .summary-label + .mission-completion-rewards { margin-top: 0; }
+.mission-reward-items { display: flex; flex-wrap: wrap; gap: 6px; }
+.mission-reward-item {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 5px 9px; border: 1px solid var(--border); border-radius: 4px;
+  font-size: 13px; color: var(--text); text-decoration: none;
+}
+.mission-reward-item:hover { border-color: var(--accent); }
+.mission-reward-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.mission-reward-count { color: var(--accent); white-space: nowrap; }
+.mission-reward-items + .summary-text { margin-top: 6px; }
 .source-link-row {
   font-family: ui-monospace, Consolas, monospace;
   font-size: 12px;
@@ -5926,6 +5943,31 @@ body.is-resizing-filter * {
 
 /* Item picture cards are illustrations, not fixed-ratio icon tiles. Keep the
    source aspect ratio so a 2:1 or portrait picture is displayed naturally. */
+.gameplay-item-picture.gameplay-image-preview {
+  display: block;
+  width: min(480px, 100%) !important;
+  height: auto !important;
+  max-height: none;
+  padding: 0;
+  line-height: 0;
+}
+
+.gameplay-list-group { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--bg-2); border-bottom: 1px solid var(--border); font-size: 12px; }
+.gameplay-list-group > span { margin-left: auto; color: var(--muted); }
+.gameplay-list-section { flex: 0 0 auto; }
+.gameplay-list-section > summary { cursor: pointer; }
+.gameplay-list-section > summary::before { content: "▸"; }
+.gameplay-list-section[open] > summary::before { content: "▾"; }
+.gameplay-list-section > .gameplay-row { width: 100%; box-sizing: border-box; }
+
+.gameplay-item-picture.gameplay-image-preview img {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  max-height: none;
+  object-fit: contain;
+}
+
 .gameplay-potential-assets .gameplay-token-asset {
   box-sizing: border-box;
   width: min(180px, 100%) !important;

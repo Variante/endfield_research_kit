@@ -254,6 +254,25 @@ def collect_inline_image_ids(webui_root: Path) -> set[str]:
     return image_ids
 
 
+def collect_story_reward_icon_ids(webui_root: Path) -> set[str]:
+    """Collect authored item icons from published mission completion rewards."""
+    icon_ids: set[str] = set()
+    for root in _story_roots(webui_root, missions=True):
+        if root.name != "mission":
+            continue
+        for path in _json_files(root, "*.json"):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            reward = (payload.get("extras") or {}).get("completionReward") or {}
+            for item in reward.get("items") or []:
+                icon_id = normalize_inline_image_id(item.get("iconId") or "")
+                if icon_id:
+                    icon_ids.add(icon_id)
+    return icon_ids
+
+
 def wiki_media_candidate_ids(value: object) -> list[str]:
     normalized = normalize_inline_image_id(str(value or ""))
     if not normalized:

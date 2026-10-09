@@ -112,7 +112,7 @@ Load order, as `index.html` declares it:
 | `src/features/audio/{index.js,style.css}` | Audio evidence browser |
 | `src/features/map_recovery/{index.js,encounters.js,style.css}` | Map view and selection-only authored encounter overlays |
 | `src/features/next_views.js` | shared page-bootstrap wiring |
-| `src/features/reference/index.js` | localized Text Tables browser |
+| `src/features/reference/{files,index}.js` | bounded file reads/cache and localized Text Tables browser |
 | `src/features/updates/index.js` | Updates page |
 | `src/features/recovery/{index.js,style.css}` | debug-only Recovery progress page |
 | `src/features/data_inspector/{index.js,stores.js,style.css}` | Data page: `stores.js` owns the mode switch, deep links, and the Files/SQL modes; `index.js` is the decoded-dataset source (catalog, matching, row markup, record viewer) |
@@ -163,12 +163,35 @@ preserving each method's inputs, quantities and configured production time.
 Conditions and stored configuration stay expanded in two columns on desktop.
 Recipes also filter by their produced items' categories. Achievement medals
 share one entry per proved tier group, keeping every tier's description and
-target; medal filters use the authored achievement categories. Matching limited
+target; medal filters use the authored achievement categories. Medal list rows
+and detail headers show every tier and plated icon on the left. Matching limited
 items linked by `LTItemTable` also share an entry, combining their relationships
 and retaining navigation/search through either original identifier. These catalogs use
 the shared update badges and old/current source-field details. Gameplay list
 rows reuse its optional asset-reference images as lazy thumbnails; characters
 use horizontal face banners, following the selected Administrator gender.
+Item picture records (`item_pic_*`) also show their matching `pic_*` illustration
+above the description, preserving its proportions and shared image previews.
+Gameplay detail headers include Locate current file to open the selected record's list
+page and scroll it into view while preserving the active filters.
+Recipe methods and machine recipe rows show their required gas environment and
+nominal input/output quantities per minute when a positive cycle time is known.
+Rates preserve each method's stored groups and assume continuous operation.
+The device list groups records by authored wiki category in wiki category order,
+with uncategorized devices last and the chosen sort applied within each group.
+All Gameplay lists show group headings: other catalogs use their first domain
+filter (profession, weapon/equipment/enemy/item type, or crafting method).
+Multi-method recipe records form a combined method group. Sorts operate within
+groups; pagination counts records and repeats headings on continued groups.
+Group headings fold their records and retain their state while browsing;
+Locate current file opens the selected record's group. Enemy update filters,
+badges and detail evidence include every published variant ID in the group.
+Gas requirements also accompany recipe references in item source/use panels.
+The environment requirement appears first in reaction banners, before the
+formula or recipe information.
+Formula tags include Activity-only, derived from explicit craft-to-activity table
+links. Combined recipes match when any method is activity-only; each method and
+device recipe retains its own activity tag and ID.
 
 **Facet filters.** `src/ui/facets.js` (`WebUI.facets`) is the one model for a
 list page's chip groups: a page declares its groups once and the model owns
@@ -320,6 +343,15 @@ pages depend on.
 
 ### Story
 
+- Mission summaries show notes and localized completion reward items with
+  small item icons, quantities and links to Gameplay's Items catalog, including
+  missions without notes. `mission/*.json` carries `extras.completionReward`, joined from the
+  mission-level `MissionRuntimeAsset.rewardId` through `RewardTable` and
+  `ItemTable`; quest-step rewards are excluded. Missing referenced rewards
+  remain visibly unavailable; random rewards are labeled separately. Icons use
+  the authored `ItemTable.iconId` and the optional Story media lookup.
+  Story search includes completion reward names and item IDs for each mission's
+  entries, without opening mission details first.
 - Reset returns to Story sort and default filters while preserving expanded
   mission groups.
 - Source/debug blocks, Timeline evidence, cutscene diagnostics, and order-edit
@@ -636,9 +668,20 @@ Marker eligibility and render-layer grades:
   `.../game/Unity/Sprite/<name>.png`; `serve.py` answers with the crop
   document and `sprite_worker.js` renders it pixel-identical to AnimeStudio.
   Without the worker (no secure context) Sprites do not display.
-- Text keeps every row's raw JSON beside the rendered view, so an unsupported
-  shape stays searchable. Maintained `fields` link only to a resolved row in a
-  table present in the Text index; unresolved references are never linked.
+
+### Text
+
+Text keeps raw JSON access beside the rendered view, so unsupported fields
+remain inspectable. Maintained `fields` link only to a resolved row in a table
+present in the Text index; unresolved references are never linked.
+Raw files use a streaming preview capped at 256 KiB, with a full JSON download
+link; partial previews retain source formatting and state the limit. Complete
+small files retain localized formatting when it fits the preview budget.
+Additional same-content files load on demand, and switching tables cancels
+obsolete detail downloads. Rendered shards above 32 MiB show an explicit size
+limit; table caches retain at most eight entries within a 24 MiB source-byte
+budget. Text renders at most 100 rows per page and 100 text entries per row;
+both pagers retain access to all loaded entries, and search covers them all.
 
 ### Updates
 
@@ -647,7 +690,9 @@ exported text plus image, model, video, and decoded audio assets, never a
 change under `webui/`, `reports/`, `memory/`, or `scratch/`. A serialized
 payload diffs through its maintained reader and says so (`text_kind`); a
 changed file with no diff says why (`text_diff_note`). Path-only relocations
-with unchanged content are omitted. Build with `.\build_updates.bat OLD NEW`.
+with unchanged content are omitted. Build with `.\build_updates.bat OLD NEW`,
+or let `.\export.bat --changed-only` compare with the last successful sync.
+An unchanged sync preserves the last comparison and its badges.
 
 Optional `data/updates/{characters,story,map,gameplay,production,reference}.json` sidecars add Added/Modified
 badges to Story conversation titles, Map zone lists and the selected zone,
