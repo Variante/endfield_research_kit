@@ -26,6 +26,13 @@ from the existing export.
 
 ## Inputs and recovery flow
 
+Equipment manufacturing uses the exact EquipFormulaTable.level →
+EquipFormulaChainTable key join. Each chain retains its own currency and
+component quantities; the formula row alone does not contain those costs.
+The frontend shows component and currency quantities with thumbnails from
+Production's published item/icon lookup, without adding a cross-page build
+dependency. Component production costs and time are not displayed.
+
 `python -m scripts.webui.gameplay.build_gameplay` runs every stage; the stages
 are scheduled separately by the export graph
 ([`build_gameplay`](../../scripts/webui/gameplay/build_gameplay.py)).
@@ -58,6 +65,12 @@ a text row instead of falling back to full illustrations. Other kinds use their
 first representative image. Rows refresh when the sidecar arrives or the gender
 changes; missing or broken images leave the text usable. This adds no new
 publication dependency or inferred asset owner.
+Weapon list labels and their three skill facets come from the published
+skills, not a separate weapon-name mapping. Essences (Energy Alluvium groups)
+is projected by [gems.py](../../scripts/webui/gameplay/gems.py); its
+weapon-compatibility and region joins are authored-pool candidates, not drop
+probabilities (see [gameplay_semantics](../game_data/gameplay_semantics.md));
+UI behavior is in [`webui/README.md`](../../webui/README.md#gameplay).
 
 Character and enemy reading views prioritize parsed mechanisms and named
 attributes. `mechanics.js` turns gated DamageUnit operands, explicit projectile
@@ -69,7 +82,11 @@ execution order. Combat and base talents are separate; raw action parameters
 and the reference navigator remain in debug information. Enemy variants use neutral
 configuration numbers unless the publication supplies a distinct name. Their
 selection changes the attribute template, modifiers and initial Buffs together;
-it does not establish phases or difficulty order. Unnamed attributes stay
+it does not establish phases or difficulty order. Exact variant IDs and update
+badges are visible on selectors and comparison rows. Change panels separate each
+affected configuration, preserving its own previous/current source values. An
+added configuration is a new record relative to the previous export, not proof
+of release or runtime availability. Unnamed attributes stay
 unnamed, and template combat fields remain separate from independent attributes
 rather than being merged into final values. Buff effects and their recovery
 status remain visible in normal view.
@@ -94,6 +111,9 @@ subtypes derived from the authored display/type fields and AP table membership.
 The page registry already requires the complete `table` block for this stage.
 
 ## Evidence boundary
+
+Equipment suit groups use published suit IDs; matching names alone do not
+establish suit membership.
 
 - Authored stats and level points are shown as authored. The Loadout view
   computes final attributes only from the validated attribute formula (see

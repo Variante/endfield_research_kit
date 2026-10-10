@@ -6,11 +6,16 @@ identities, gameplay data, exported assets, localized text, and game-update
 comparisons into one searchable interface.
 
 <p>
-  <img src="res/story_screenshot.png" alt="Story browser showing text_e8m1_1 with its recovered reading image and dialog" height="150">
-  <img src="res/story_screenshot2.png" alt="Gameplay browser showing 诀 with character skills, progression, projectiles, and audio" height="150">
-  <img src="res/story_screenshot3.png" alt="Asset browser previewing the Endministrator female cloth OBJ model" height="150">
-  <img src="res/story_screenshot4.png" alt="Updates browser showing the modified m_cs_video_dlg_sm2l6m1_9.mp4 entry" height="150">
-  <img src="res/map_screenshot.png" alt="Map browser showing the full Wuling region with recovered elevation, color surface, and water layers" height="150">
+  <img src="res/story_screenshot.png" alt="Story browser with recovered reading image, dialog, and mission rewards" height="150">
+  <img src="res/story_screenshot2.png" alt="Gameplay browser with character skills, dataset tabs, and shared filters" height="150">
+  <img src="res/activities_screenshot.png" alt="Activities browser with configured schedules, prerequisites, targets, and rewards" height="150">
+  <img src="res/map_screenshot.png" alt="Map browser with recovered Wuling terrain and regional layers" height="150">
+  <img src="res/characters_screenshot.png" alt="Characters browser with identity evidence and source appearances" height="150">
+  <img src="res/text_screenshot.png" alt="Text browser with localized tables and structured row references" height="150">
+  <img src="res/audio_screenshot.png" alt="Audio browser with Wwise events and playback evidence" height="150">
+  <img src="res/story_screenshot3.png" alt="Assets browser with exported media and linked metadata" height="150">
+  <img src="res/data_screenshot.png" alt="Data browser with exported files and structured record details" height="150">
+  <img src="res/story_screenshot4.png" alt="Updates browser with version changes and selected entry details" height="150">
 </p>
 
 > [!CAUTION]

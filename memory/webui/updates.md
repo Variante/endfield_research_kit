@@ -110,7 +110,9 @@ so text-handle IDs retain their precision. Linked file comparisons reuse the fee
 maintained readers and preview limits, including coverage and truncation notes.
 The normal detail panels expose old/current values without enabling debug;
 grouped Map variants retain their source owners instead of overwriting a
-sibling variant's change. Status-only legacy sidecars retain their badges with
+sibling variant's change. Enemy detail comparisons are separated by exact
+configuration owner, matching the IDs and badges on the variant selectors; a
+shared-source change can appear under each affected owner. Status-only legacy sidecars retain their badges with
 an explicit missing-detail explanation.
 Page controls, the decoded-diff panel, and the client-side waveform view are in
 the header comment of `webui/src/features/updates/index.js`.

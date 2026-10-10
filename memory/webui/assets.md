@@ -31,7 +31,7 @@ evidence source for other pages, not proof that an asset was used at runtime.
 
 ## Primary generated outputs
 
-`webui/data/assets/{index,table_owners,videos}.json`
+`webui/data/assets/{index,table_owners,activity_media,videos}.json`
 (`build_assets --publish index`); Story media owns `story_media.json`
 (`--publish story-media`, the `story_media` task) and Gameplay owns
 `gameplay_refs.json`. Frontend behavior is in the header comment of
@@ -90,3 +90,9 @@ broad investigation; the index then also carries every debug class.
 
 See [`../game_data/unity_assets.md`](../game_data/unity_assets.md) for durable
 asset identity and binding semantics.
+
+Activity media is a compact Assets-owned publication from the existing full
+scan. It follows exact activity asset fields, instructionId into InstructionBook
+and fixed reward itemBundles into ItemTable; it prefers Sprite crops over
+duplicate Texture2D representations and preserves distinct Sprite identities.
+Activities reads the last publication without adding a cross-page dependency.

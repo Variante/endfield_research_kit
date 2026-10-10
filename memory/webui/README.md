@@ -7,6 +7,7 @@ its builder, generated contract, or frontend consumer.
 - [`map.md`](map.md): level ownership, spatial evidence, render layers, and Story links.
 - [`characters.md`](characters.md): identity merging, localization, models, and overrides.
 - [`gameplay.md`](gameplay.md): playable/enemy data, skills, buffs, projectiles, shared catalog navigation, and item effects.
+- [`activities.md`](activities.md): activity catalog and supporting tables from the shared Text publication.
 - [`text.md`](text.md): localized table discovery and row rendering.
 - [`audio.md`](audio.md): Wwise identity, decoded media, semantics, and annotations.
 - [`assets.md`](assets.md): exported resource inventory and semantic references.

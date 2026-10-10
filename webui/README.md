@@ -40,15 +40,16 @@ precedence; `WEBUI_PREVIOUS_EXPORT_ROOT` remains the server-specific override.
 
 ## Pages and routing
 
-Nine tabs, in navigation order. `data-view` is the tab token in `index.html`
+Ten tabs, in navigation order. `data-view` is the tab token in `index.html`
 and the value of `document.body.dataset.activeView`.
 
 | Page | `data-view` | Scope | Behavior contract |
 | --- | --- | --- | --- |
 | Story | `story` | Reconstructed dialog, SNS, radio, local branch overviews, cutscenes, media, and evidence-typed order | `app.js` |
+| Gameplay | `gameplay` | Characters, equipment, enemies, items and their effects, recipes, machines, progression, skills, projectiles, and assets | `src/features/gameplay/{tabs,index}.js`, `src/features/production/index.js` |
+| Activities | `activities` | All published activities, prerequisites, targets, rewards, and supporting activity tables | `src/features/activities/index.js` |
 | Map | `map-recovery` | Authored world-space evidence, encounters, patrols, NPCs and scene conditions with minimap, model, point, and water layers | `src/features/map_recovery/index.js` |
 | Characters | `characters` | Identity groups, complete source appearances, verified Story links, related assets, and live overrides | `src/features/characters/index.js` |
-| Gameplay | `gameplay` | Characters, equipment, enemies, items and their effects, recipes, machines, progression, skills, projectiles, and assets | `src/features/gameplay/{tabs,index}.js`, `src/features/production/index.js` |
 | Text | `reference` | Searchable localized table/reference rows and configured achievement/activity targets and rewards | `src/features/reference/index.js` |
 | Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state | `src/features/audio/index.js` |
 | Assets | `assets` | Exported images, models, video, and metadata | `assets.js` |
@@ -80,6 +81,7 @@ fall back to Story.
 | `?lang=` | data language |
 | `?story=` / `?conv=` | Story conversation key |
 | `?line=` / `?cid=` with `?story=` | Focus a rendered Story line or content ID and open containing disclosures; `cid` disambiguates repeated line IDs |
+| `?activity=` + `?activityTable=` | Activities row ID and published reference shard path; defaults to ActivityTable |
 | `?asset=` | Assets entry by relative path |
 | `?audio=` + `?audioKind=` | Audio record (`events` or a media shard) |
 | `?gameplayKind=` (+ `?gameplay=` / `?gameplayId=` / `?entry=`) | Gameplay dataset (`character`, `weapon`, `equipment`, `item`, `enemy`, `recipe`, `machine`) and selected entity; existing item links open the combined Items catalog |
@@ -131,6 +133,20 @@ and an earlier fade cannot hide a restarted loader.
 
 Gameplay separates characters, weapons, equipment, items, enemies, recipes and
 machines into dataset tabs; only the selected dataset's filters are shown.
+Equipment sidebar groups use authored suit IDs and localized names, retaining
+collapsible individual rows and filtered piece counts. Entries without a suit
+keep type grouping; filters and pagination still operate on individual pieces.
+Equipment rows also show their non-defense attribute names, using the same
+localized stat labels as details. Equipment attributes is a multi-select facet
+over those names, combined with type, rarity, search and suit grouping.
+Each selected equipment attribute adds a sort category using displayAttrs'
+base attrValue (level 1), defaulting to descending with the shared direction control.
+Suit groups retain their members: groups appear by their first sorted member,
+and members follow the attribute order within each group.
+Equipment crafting lists every cost chain joined by EquipFormulaTable.level
+to EquipFormulaChainTable, showing component and currency quantities with
+item thumbnails from the last published Production icon lookup. It does not
+expand component production ingredients, totals or time.
 Items uses the complete Production item catalog, adding the matching Gameplay
 publication's AP recovery, use effects, action blackboards, chest rewards,
 Story wiki links and optional asset gallery.
@@ -146,6 +162,9 @@ Gameplay uses a shared dataset bar above both catalog panes. Audio and Data use
 the same tab styling below their sidebar title. Reset keeps the selected
 Gameplay dataset; recipe, ingredient, machine and reward links switch to their
 target dataset. Browser history restores catalog selections and filters.
+Recipes use Formula tags for crafting types and activity-only tags, without a
+duplicate Crafting method facet. Legacy recipe `productionType` selections
+restore as `productionTag` selections.
 
 The item catalog merges type chips with identical localized labels and uses the
 in-game encyclopedia groups for building chips. Available item and group icons
@@ -184,7 +203,10 @@ filter (profession, weapon/equipment/enemy/item type, or crafting method).
 Multi-method recipe records form a combined method group. Sorts operate within
 groups; pagination counts records and repeats headings on continued groups.
 Group headings fold their records and retain their state while browsing;
-Locate current file opens the selected record's group. Enemy update filters,
+Locate current file opens the selected record's group. Enemy configuration selectors and comparison rows show exact variant IDs and
+per-variant update badges. Change details are separated by configuration, with
+previous/current source values; Added means absent from the previous export.
+Enemy update filters,
 badges and detail evidence include every published variant ID in the group.
 Gas requirements also accompany recipe references in item source/use panels.
 The environment requirement appears first in reaction banners, before the
@@ -229,7 +251,7 @@ webui/data/map_recovery/index.json
 webui/data/map_recovery/maps/<levelId>.json
 webui/data/map_recovery/encounters/{index,<levelId>,unplaced}.json
 webui/data/map_recovery/render/*.{json,png}
-webui/data/assets/{index,gameplay_refs,story_media,table_owners,videos}.json
+webui/data/assets/{index,gameplay_refs,story_media,table_owners,activity_media,videos}.json
 webui/data/data_inspector/index.json
 webui/data/data_inspector/datasets/<datasetId>/{index,records.*}.json
 webui/data/updates/latest.json
@@ -397,6 +419,26 @@ when that identity still matches, without re-rendering its detail on each input.
 
 ### Gameplay
 
+Weapon list rows show the three localized skill effects in authored order.
+Compact labels omit the middle-dot suffix and the first attribute's Chinese
+increase suffix; hover shows the full skill name. The Weapons dataset has three
+matching multi-select filter groups (Base attribute, Additional attribute,
+Weapon effect) sharing those labels: OR within each group, AND across groups
+and with weapon type, rarity and version changes. Switching datasets clears
+them with the existing kind-switch reset.
+Essences sits immediately after Weapons in the dataset bar. It lists authored
+Energy Alluvium groups with area and the same three term-pool filters, pool
+contents, world-level variants, recommended levels and stamina costs. Weapon
+details list compatible groups after Weapon effects, and group details link
+back to compatible weapons; the compatibility rule and its evidence limit are in
+[`memory/game_data/gameplay_semantics.md`](../memory/game_data/gameplay_semantics.md).
+Essence list thumbnails reuse each group's authored icon through the optional
+Gameplay asset sidecar; absent or broken images retain the text row.
+Reciprocal compatible-weapon and farming-location links also show the target's
+small icon inside the navigation button. The sidebar groups Essence rows by
+localized region ordered by sortId and offers a region facet; unresolved regions
+stay explicit, and no map coordinates are shown.
+
 Gameplay owns character progression, equipment, enemies, skills, Buffs,
 projectiles, and assets, and hosts the independently published Production item,
 recipe and machine catalogs. Dataset paths and builder ownership remain
@@ -420,6 +462,51 @@ Loadout view computes final attributes only from a validated
 `attributeCalculation` (`loadout.js`). Evidence limits:
 [`memory/webui/gameplay.md`](../memory/webui/gameplay.md) and
 [`memory/game_data/gameplay_semantics.md`](../memory/game_data/gameplay_semantics.md).
+
+### Activities
+
+Activities follows Gameplay in navigation and builds nothing of its own; its
+inputs, joins and evidence boundary are in
+[`memory/webui/activities.md`](../memory/webui/activities.md). The default
+filter is the authored ActivityTagTable name, followed by the technical type
+and the schedule facet (Permanent activity for no configured end, Limited-time
+activity for a configured end, unspecified when no ranges are stored; mixed
+range variants keep both labels). Search covers IDs, localized text,
+prerequisites, targets and rewards. OR applies within each facet group and AND
+across groups; counts are dataset totals. Filter sections, panel visibility,
+pagination, sorting and splitters use the shared catalog UI. Desktop sidebar
+width and filter height persist; a mobile horizontal divider resizes the list
+above the details with touch or keyboard controls.
+
+Opening time defaults to newest first, using the earliest valid authored
+opening among the stored time-range variants; both directions leave undated
+entries last. Name and authored display-order sorting remain available, and no
+recommendation or schedule grouping overrides the chosen sort. Lists show
+configured opening/closing times; details retain every authored range in source
+order, verbatim.
+
+List cards keep the shared flat structure: title, official categories and
+configured time on the left, the authored tabImg right-aligned at its intrinsic
+aspect ratio without cropping (an absent tabImg leaves a text-only card).
+Selection adds a yellow rail. Source IDs stay in tooltips and debug mode;
+completion marks are not synthesized without player-progress data. Update
+badges and field comparisons appear only in the right detail pane, whose
+header precedes the shared update panel as in Gameplay: title, concrete
+changes, then source identity and configured content.
+
+The authored bgImg becomes the detail-pane background with a readability
+overlay and clears when selection changes. The final detail section shows the
+authored tabImg and bgImg as previewable image assets. Exact referenced
+records, including reward items, receive one matching icon from
+`data/assets/activity_media.json` before their field value, with a source-field
+tooltip and shared image preview; Sprite crops are preferred over duplicate
+Texture2D representations. Missing media publication is reported inline.
+Check-in days and activity-keyed stage, task and milestone guides expand in
+the detail with their own reward quantities and item icons. Exact references
+open the owning row in Text. `activity`, `activityTable`, `activityQ`,
+`activitySort` and repeated `activityType`, `activityTag`, `activitySchedule`
+preserve selections and filters. Missing data and load failures remain visible;
+UI locale and data language follow the shared controls.
 
 ### Audio
 
@@ -694,7 +781,7 @@ with unchanged content are omitted. Build with `.\build_updates.bat OLD NEW`,
 or let `.\export.bat --changed-only` compare with the last successful sync.
 An unchanged sync preserves the last comparison and its badges.
 
-Optional `data/updates/{characters,story,map,gameplay,production,reference}.json` sidecars add Added/Modified
+Optional `data/updates/{characters,story,map,gameplay,production,reference,activities}.json` sidecars add Added/Modified
 badges to Story conversation titles, Map zone lists and the selected zone,
 and Gameplay entry lists and details. The shared `src/ui/update_badges.js`
 loads them without caching. Badges describe changes in linked authored source
@@ -715,7 +802,9 @@ Story, Text Tables, Map, Gameplay, Production catalogs, Audio and Assets share
 Characters' collapsible **Version changes** filter: Added, Modified and Deleted.
 Selections combine with existing filters; selecting multiple statuses matches
 any of them, and clearing the selection includes unchanged items again. Counts
-are dataset totals (tables for Text Tables), independent of other filters.
+are dataset totals (tables for Text Tables), independent of other filters,
+except Gameplay's Version changes counts, which follow the selected dataset
+and other facet filters while ignoring their own status selection and search.
 Text Tables narrows both the table list and its displayed rows. Map filters
 zone groups using the same combined variant status as their badge; Audio and
 Assets use the same linked-file status as their badges. Missing comparison

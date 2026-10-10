@@ -23,7 +23,7 @@ but does not imply narrative ownership.
    for fields that have no maintained presentation.
 6. [`reference_activity_guides`](../../scripts/webui/story/reference_activity_guides.py)
    projects achievement tiers and plating requirements, activity prerequisites,
-   authored stages/tasks/milestones, dungeon references and fixed reward items
+   authored stages/tasks/milestones, every CheckInRewardTable day, dungeon references and fixed reward items
    into `guide.sections`. The reference bundle publishes these rows even when
    they contain no localized text. The same row navigation, search and shared
    pagination cover guides and generic rows.

@@ -8,8 +8,8 @@ ownership, not by investigation date.
 - [`webui_recovery.md`](webui_recovery.md): WebUI-wide export flow, shared
   contracts, verification, and links to each page guide.
 - [`webui/`](webui/README.md): one recovery guide for each active WebUI page:
-  Story, Map, Characters, Gameplay, Text, Audio, Assets, Data, Updates, and
-  Recovery, plus
+  Story, Gameplay, Activities, Map, Characters, Text, Audio, Assets, Data,
+  Updates, and Recovery, plus
   [`webui/story_recovery.md`](webui/story_recovery.md): Story evidence,
   ownership, branches, ordering, validation, and remaining reconstruction gaps,
   shared by every consumer of Story evidence.

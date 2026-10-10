@@ -9,6 +9,7 @@ and behavior contracts remain in [`../webui/README.md`](../webui/README.md).
 | Page | Recovery guide | Primary builder |
 | --- | --- | --- |
 | Story | [`webui/story.md`](webui/story.md) | `scripts.webui.story` |
+| Activities | [`webui/activities.md`](webui/activities.md) | Reads Story/Text's last reference publication |
 | Map | [`webui/map.md`](webui/map.md) | `scripts.webui.map.build_map_recovery_data` |
 | Characters | [`webui/characters.md`](webui/characters.md) | `scripts.webui.characters.build_character_data` |
 | Gameplay | [`webui/gameplay.md`](webui/gameplay.md); [production catalogs](webui/production.md) | `scripts.webui.gameplay.build_gameplay`, `scripts.webui.production.build_production` |
@@ -22,14 +23,22 @@ Mission Pipeline is a standalone recovery workflow, not a WebUI page or normal
 export stage. Retired Progression and Combat & Projectiles pages stay retired;
 their useful data belongs to Gameplay.
 
+Activities reads the last Text reference publication for authored schedules and
+tags, plus Assets' optional compact activity_media.json for exact artwork and
+fixed-reward icons. Both builders retain their own output ownership; Activities
+adds no cross-page build dependency. See [Activities](webui/activities.md).
+
 Gameplay's production catalogs reuse Story's safe rich-text renderer and raw-tag display setting;
 shared facet chips accept optional decorative icons.
 Shared facet chip counts are dataset totals; combined groups and search can
 return no matches even when a chip has a positive count. Assets documents this
 in its chip tooltips and empty-list message (see [Assets](webui/assets.md)).
 
-Gameplay has one dataset bar for Characters, Weapons, Equipment, Items, Enemies,
-Recipes and Machines. Its Items tab combines the Production catalog with
+Gameplay has one dataset bar for Characters, Weapons, Essences, Equipment, Items, Enemies,
+Recipes and Machines. Equipment manufacturing reads Production's last published
+item/icon lookup for thumbnails; neither builder writes the other page's
+publication (see [Gameplay](webui/gameplay.md)).
+Its Items tab combines the Production catalog with
 Gameplay's published use effects and rewards in the same displayed language.
 Picture items reuse Gameplay's asset-token publication to show the corresponding
 `pic_*` illustration above the catalog description with the shared image preview.
@@ -213,6 +222,13 @@ resources last because its complete asset index replaces the compact
 media-only index. Decoded Data-page datasets are local output and are not
 packaged.
 
+Shared update panels accept optional owner labels so grouped Gameplay enemies
+retain each configuration’s identity alongside its source comparison.
+
 Shared frontend sorting uses adjacent category and direction selects through
 `webui/src/ui/sort.js`; direction has an accessible name without a visible label
 and remains selectable for every category, including default ordering.
+
+Updates owns the optional activities.json source-row comparison sidecar, reused
+from the gated Reference diff for Activity*Table and CheckInRewardTable. Activity
+change badges read this publication without modifying their current catalog.
