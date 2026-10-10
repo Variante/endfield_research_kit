@@ -6,7 +6,9 @@ with ``--mode default``, which the wrapper passes, so a direct run without it
 replaces the full index with the focused projection. It also writes
 ``webui/data/assets/table_owners.json`` from ``table_asset_owners``: exact
 table-row ownership for indexed assets, always derived from the complete scan
-even when the published index is the focused projection. The legacy economy,
+even when the published index is the focused projection. ``activity_media.json``
+is the compact exact activity/instruction/fixed-reward image lookup, derived
+from that same scan by ``activity_media``. The legacy economy,
 world, presentation and broad data index helpers are diagnostic only and feed
 no active page.
 
@@ -27,6 +29,7 @@ if __package__ in {None, ""}:
 
 from scripts.webui.assets.index import AssetScanResult, scan_exported_media_assets
 from scripts.webui.assets.story_media import build_story_media_payload, write_story_media_payload
+from scripts.webui.assets.activity_media import build_activity_media_payload
 from scripts.webui.assets.table_asset_owners import build_table_asset_owner_payload
 from scripts.common import ASSET_DIR, EXPORT_ROOT, ROOT, TABLE_DIR, require_export_layout, write_json
 
@@ -50,7 +53,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         choices=("all", "index", "story-media"),
         default="all",
         help=(
-            "`index` writes the Assets page's index.json and table_owners.json; "
+            "`index` writes the Assets page's index.json, table_owners.json and activity_media.json; "
             "`story-media` writes only the Story page's story_media.json (its "
             "images and videos); `all` writes both."
         ),
@@ -150,6 +153,7 @@ def main(argv: list[str] | None = None) -> None:
         TABLE_DIR,
     )
     write_json(owner_index_path, owner_payload)
+    write_json(ASSET_DIR / "activity_media.json", build_activity_media_payload(full_asset_payload["entries"], TABLE_DIR))
     owner_counts = owner_payload["counts"]
     print(
         "Table asset owners:",

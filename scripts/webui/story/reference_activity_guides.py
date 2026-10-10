@@ -22,7 +22,7 @@ from scripts.webui.story.reference_structured_fields import (
 
 GUIDE_TABLES = frozenset({
     "AchievementTable", "AchievementTypeTable", "AchievementStatisticTable",
-    "ActivityTable", "ActivityAchievementDataTable",
+    "ActivityTable", "ActivityAchievementDataTable", "CheckInRewardTable",
     "ActivityConditionalMultiStageTable", "ActivityConditionalMultiStageStageToActivityTable",
     "ActivityConditionalMultiStageConditionTable", "ActivityConditionalMultiStageCompleteConditionTable",
     "ActivityConditionalMultiStageTaskConfigTable", "ActivityConditionalMultiStageTaskCompleteConditionTable",
@@ -193,6 +193,10 @@ def activity_reference_guide(
             record = resolver.row_data(target, row_key)
             if isinstance(record, dict) and record.get("activityId") == row.get("id") == row_key:
                 add(fields, "id", label, zh, row_key, target)
+        checkin = resolver.row_data("CheckInRewardTable", row_key)
+        days = checkin.get("stageList", []) if isinstance(checkin, dict) else []
+        if days and all(isinstance(day, dict) and day.get("activityId") == row_key for day in days):
+            add(fields, "id", "Daily check-in rewards", "每日签到奖励", row_key, "CheckInRewardTable")
         for name, label, zh in (
             ("introMissionQuestId", "Introduction quest", "引导任务"),
             ("endMissionQuestId", "Ending quest", "结束任务"),
@@ -200,6 +204,15 @@ def activity_reference_guide(
             value = row.get(name)
             add(fields, name, label, zh, value, MISSION_SOURCE, row_id=quest_mission_id(value or ""))
         conditions(row.get("conditions"), "conditions", "Activity prerequisite", "活动前置条件")
+    elif stem == "CheckInRewardTable":
+        for key, day in _records(row.get("stageList")):
+            path = f"stageList.{key}"
+            fields = section("Daily check-in reward", "每日签到奖励", path, resolver.text(day.get("rewardName")))
+            add(fields, f"{path}.day", "Check-in day", "签到天数", day.get("day"))
+            common(fields, day, path)
+            add(fields, f"{path}.charId", "Character", "干员", day.get("charId"), "CharacterTable")
+            add(fields, f"{path}.weaponId", "Weapon", "武器", day.get("weaponId"), "WeaponBasicTable")
+            add(fields, f"{path}.isKeyReward", "Key reward", "重点奖励", day.get("isKeyReward"))
     elif stem in {"ActivityConditionalMultiStageConditionTable", "ActivityConditionalMultiStageCompleteConditionTable"}:
         conditions(row.get("conditionList"), "conditionList", "Stage condition", "阶段条件")
     elif stem == "ActivityConditionalMultiStageTaskCompleteConditionTable":

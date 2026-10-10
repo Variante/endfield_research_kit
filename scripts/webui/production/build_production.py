@@ -44,6 +44,15 @@ BOUNDARY = (
     "coverage is limited to the named source tables, not all possible item uses."
 )
 
+# Presentation icons for the four named gas environments. Name-based, not
+# table-derived: FactoryEnvDisplayTable stores effect-atlas tokens
+# (T_fx_icon_gas_*_UI), and the frontend maps those tokens to these icon ids
+# (webui/src/features/production/index.js). No table join establishes them.
+GAS_ENV_ICON_IDS = frozenset({
+    "icon_gas_env_stable", "icon_gas_env_humidity",
+    "icon_gas_env_acid", "icon_gas_env_xiranite",
+})
+
 
 def localized(value: Any, texts: dict[str, Any]) -> str:
     if isinstance(value, dict):
@@ -486,10 +495,7 @@ def main(argv: list[str] | None = None) -> int:
     icon_ids.update(str(row.get("iconId") or "") for row in
                     tables["WikiGroupTable"].get("wiki_type_building", {}).get("list", []))
     icon_ids.update(str(row.get("icon") or "") for row in tables["ItemShowingTypeTable"].values())
-    # Presentation icons for the named gas environments, independent of the
-    # effect-atlas tokens stored by FactoryEnvDisplayTable.
-    icon_ids.update({"icon_gas_env_stable", "icon_gas_env_humidity",
-                     "icon_gas_env_acid", "icon_gas_env_xiranite"})
+    icon_ids.update(GAS_ENV_ICON_IDS)
     square_icon_ids = {str(row["icon"]).rsplit("/", 1)[-1] for row in tables["UserAvatarTable"].values()
                        if str(row.get("itemId", "")).startswith("item_user_avatar_chr") and row.get("icon")}
     icon_ids.update(str(row["icon"]).rsplit("/", 1)[-1] for row in tables["UserAvatarTable"].values()

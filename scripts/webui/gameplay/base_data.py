@@ -23,7 +23,7 @@ from scripts.common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs,
 from scripts.game_data.memorypack.buff import buff_gameplay_semantics
 from scripts.game_data.attribute_formula_native import load_attribute_formula
 from scripts.game_data.il2cpp import protocol as il2cpp
-from scripts.webui.gameplay import loadout_data
+from scripts.webui.gameplay import loadout_data, gems
 from scripts.game_data.extraction.animestudio_index_io import is_effective_row
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 from scripts.game_data.unity_store import open_store_if_present
@@ -2370,6 +2370,9 @@ def build_equipment_entries(
         for row in formulas.values()
         if isinstance(row, dict) and normalize_id(row.get("outcomeEquipId"))
     }
+    chain_table = tables.get("EquipFormulaChainTable.json") or {}
+    if not isinstance(chain_table, dict):
+        chain_table = {}
     entries = []
     for equip_id, row in sorted(equips.items(), key=lambda item: (int_value((items.get(item[0]) or {}).get("rarity")) or 0, item[0])):
         if not isinstance(row, dict):
@@ -2382,7 +2385,23 @@ def build_equipment_entries(
         showing_type, part_label = equipment_part_label(item_row, showing_types, row.get("partType"), i18n, fallback_i18n)
         domain = equipment_domain_payload(row.get("domainId"), domains, i18n, fallback_i18n)
         suit = suit_lookup.get(equip_id) or ({"id": normalize_id(row.get("suitID")), "name": normalize_id(row.get("suitID")), "effects": []} if row.get("suitID") else {})
-        formula = equipment_formula_payload(formula_by_equip.get(equip_id) or {}, items, equip_packs, shop_channels, i18n, fallback_i18n)
+        formula_row = formula_by_equip.get(equip_id) or {}
+        formula = equipment_formula_payload(formula_row, items, equip_packs, shop_channels, i18n, fallback_i18n)
+        chain_level = normalize_id(formula_row.get("level"))
+        chain_entry = chain_table.get(chain_level) or {}
+        chain_rows = (chain_entry.get("chainList") or []) if isinstance(chain_entry, dict) else []
+        if formula:
+            formula["level"] = chain_level
+            formula["variants"] = [
+                {
+                    "chainId": chain.get("chainId"),
+                    "isDefault": bool(chain.get("isDefault")),
+                    # An empty chain record yields {} and so no costs.
+                    "costs": equipment_formula_payload(chain, items, equip_packs, shop_channels, i18n, fallback_i18n).get("costs", []),
+                    "source": {"table": "EquipFormulaChainTable.json", "id": chain_level},
+                }
+                for chain in chain_rows if isinstance(chain, dict)
+            ]
         stats = equipment_stat_payload(row, attr_meta)
         search = " ".join([
             equip_id,
@@ -3833,6 +3852,7 @@ def build_language_payload(
         "EquipItemTable.json",
         "EquipSuitTable.json",
         "EquipFormulaTable.json",
+        "EquipFormulaChainTable.json",
         "EquipEnhanceCostTable.json",
         "ItemShowingTypeTable.json",
         "EquipPackTable.json",
@@ -3854,6 +3874,7 @@ def build_language_payload(
         "WikiEnemyDropTable.json",
         "TextTable.json",
     ]
+    table_names.extend(name for name in gems.TABLE_NAMES if name not in table_names)
     tables = {name: load_merged_table(table_roots, name, {}) for name in table_names}
     global_const = tables.get("GlobalConst.json") or {}
     gold_item_id = normalize_id(global_const.get("goldItemId")) if isinstance(global_const, dict) else ""
@@ -3863,6 +3884,7 @@ def build_language_payload(
         gold_item["source"] = {"table": "GlobalConst.json", "field": "goldItemId", "itemId": gold_item_id}
         currency_items["gold"] = gold_item
     weapons = build_weapon_entries(tables, i18n, fallback_i18n)
+    gem_entries = gems.build_gem_entries(tables, weapons, lambda node: clean_text(i18n_text(i18n, node, fallback_i18n)))
     equipment = build_equipment_entries(tables, i18n, fallback_i18n)
     characters = build_character_entries(tables, i18n, fallback_i18n)
     enrich_potential_effect_names(characters, native_semantics)
@@ -3895,8 +3917,8 @@ def build_language_payload(
     )
     usable_items = build_usable_item_entries(tables, i18n, fallback_i18n, story_wiki_titles)
     entries = sorted(
-        [*weapons, *equipment, *characters, *enemies, *usable_items],
-        key=lambda item: ({"weapon": 0, "equipment": 1, "character": 2, "enemy": 3, "item": 4}.get(str(item.get("kind") or ""), 9), str(item.get("group") or ""), str(item.get("title") or "")),
+        [*weapons, *gem_entries, *equipment, *characters, *enemies, *usable_items],
+        key=lambda item: ({"weapon": 0, "gem": 1, "equipment": 2, "character": 3, "enemy": 4, "item": 5}.get(str(item.get("kind") or ""), 9), str(item.get("group") or ""), str(item.get("title") or "")),
     )
     gameplay_buff_ids = collect_gameplay_buff_ids(entries)
     resolved_export_root = export_root or table_roots[0][1].parents[2]
@@ -3971,6 +3993,7 @@ def build_language_payload(
         "counts": {
             "entries": len(entries),
             "weapons": len(weapons),
+            "gemSources": len(gem_entries),
             "characters": len(characters),
             "equipment": len(equipment),
             "enemies": len(enemies),

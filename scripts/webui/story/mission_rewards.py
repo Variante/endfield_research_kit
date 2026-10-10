@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
+from scripts.webui.game_tables import iter_reward_bundles
+
 
 def mission_completion_reward_search_text(reward: dict | None) -> str:
     """Index configured reward names and IDs without loading mission details."""
@@ -47,10 +49,7 @@ def project_mission_completion_reward(
     if not isinstance(reward, dict):
         return result
     result["hasRandomRewards"] = bool(reward.get("probItemBundles"))
-    for index, bundle in enumerate(reward.get("itemBundles") or []):
-        if not isinstance(bundle, dict) or not bundle.get("id"):
-            continue
-        item_id = str(bundle["id"])
+    for index, bundle, item_id in iter_reward_bundles(reward):
         item = items.get(item_id) or {}
         name = item.get("name") or {}
         label = (translate(name.get("id")) or name.get("text")) if isinstance(name, dict) else ""

@@ -101,6 +101,7 @@ from scripts.source_paths import (
 from scripts.webui.updates.scanner import ScanConfig, is_export_store_relative_path, scan_export_changes
 from scripts.webui.updates.characters import build_character_updates, comparison_character_catalog_dir
 from scripts.webui.updates.page_records import build_page_updates
+from scripts.webui.game_tables import is_activity_table
 
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
 DEFAULT_EXPORT_ROOT = EXPORT_ROOT
@@ -377,6 +378,8 @@ def classify_game_data_path(path: str) -> str:
     lower = normalized.lower()
     parts = [part for part in lower.split("/") if part]
     if parts[:1] == ["game"]:
+        if len(parts) == 3 and parts[1] == "table" and is_activity_table(parts[2].removesuffix(".json")):
+            return "activities"
         if len(parts) > 2 and parts[1] == "unity":
             return f"unity_{parts[2]}"
         return f"game_{parts[1]}" if len(parts) > 1 else "game"

@@ -12,12 +12,14 @@ import json
 import re
 import sqlite3
 import time
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
 from scripts.source_paths import ExportLayout, ExportLayoutError
 from scripts.webui.story.story_keys import canonical_cutscene_key
 from scripts.game_data.unity_store import UnityStoreError, open_store_if_present
+from scripts.webui.game_tables import is_activity_table
 from scripts.webui.updates.details import source_changes
 from scripts.webui.updates.production import production_source_records
 from scripts.webui.updates.scanner import (
@@ -369,4 +371,15 @@ def build_page_updates(previous_root: Path, current_root: Path) -> dict[str, dic
                 reference["totals"][status] += 1
         reference["totals"]["changed"] = len(reference["entries"])
     result["reference"] = reference
+    # Activities exposes these same authored rows. Reuse the reference diff;
+    # missing tables stay excluded by the common-catalog gate above.
+    activity_entries = [entry for entry in reference["entries"]
+                        if is_activity_table(entry["id"].split("/", 1)[0])]
+    counts = Counter(entry["status"] for entry in activity_entries)
+    activities = {**reference, "page": "activities", "entries": activity_entries,
+                  "totals": {**{status: counts[status] for status in ("added", "modified", "deleted")},
+                             "changed": len(activity_entries)}}
+    if "diagnostics" in reference:
+        activities["diagnostics"] = list(reference["diagnostics"])
+    result["activities"] = activities
     return result

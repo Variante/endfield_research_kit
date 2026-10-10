@@ -37,6 +37,22 @@ semantics stay unresolved (below).
   `BuffData` join skills to Buffs and Buffs to Buffs: authored references, not
   execution, skill ownership of every referenced Buff, or activation.
 
+Energy Alluvium's authored group rows store separate primary-attribute,
+secondary-attribute and skill term pools in WorldEnergyPointGroupTable.
+Its world-level map names WorldEnergyPointTable rows directly; their level IDs
+resolve through LevelDescTable, and GameMechanicTable supplies corresponding
+costs when the group owner agrees. Weapon SkillPatch tags resolve through
+GemTagIdTable to GemTable; unique tags at every published skill level and the
+expected term type establish an exact stored-reference join. Membership of all
+three terms in their respective pools is an authored compatibility candidate,
+not a consumer-proven probability or a guarantee that the combination drops.
+Missing or ambiguous mappings do not establish compatibility. Group identity
+is checked on both point and mechanic rows. Region comes from
+DomainDataTable.levelGroup only when ownership is unique across the group's
+level variants (label and sortId); otherwise it stays unresolved, and no map
+coordinates are inferred. The WebUI projection is owned by
+`scripts/webui/gameplay/gems.py`.
+
 ## BuffData root and union encoding
 
 - [`memorypack/buff_actions.py`](../../scripts/game_data/memorypack/buff_actions.py)
