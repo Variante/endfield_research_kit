@@ -1,0 +1,213 @@
+{
+  "schema": "endfield.buff-formatter-relation-import-control-native-contract.v1",
+  "status": "exact-current-build",
+  "scope": "selected-import-declarations-and-relation-argument-counter-control-only",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "parentContract": "buff_formatter_relation_control_native.json",
+  "entryRva": 15024,
+  "imports": [
+    {
+      "role": "Acquire",
+      "slotRva": 176355296
+    },
+    {
+      "role": "Release",
+      "slotRva": 176355304
+    },
+    {
+      "role": "ThreadId",
+      "slotRva": 176355312
+    }
+  ],
+  "importDeclarations": {
+    "selectedImports": [
+      {
+        "slotRva": 176355296,
+        "descriptorRva": 217640052,
+        "descriptorHex": "60 f4 f8 0c 00 00 00 00 00 00 00 00 8e 05 f9 0c c0 f7 82 0a",
+        "libraryNameRva": 217646478,
+        "libraryName": "baselib.dll",
+        "libraryNameHex": "62 61 73 65 6c 69 62 2e 64 6c 6c 00",
+        "originalThunkRva": 217642080,
+        "firstThunkRva": 176355264,
+        "thunkIndex": 4,
+        "actualThunkCount": 13,
+        "terminatedLookupBytes": 112,
+        "terminatedLookupSha256": "583E1E716F1E04F1C21B949EE7E13D89136E00F7057E4867D6F41EE3BB8F9E04",
+        "lookupEntryRva": 217642112,
+        "lookupEntryHex": "ec 00 f9 0c 00 00 00 00",
+        "iatEntryHex": "ec 00 f9 0c 00 00 00 00",
+        "hintNameRva": 217645292,
+        "hint": 77,
+        "hintHex": "4d 00",
+        "symbolName": "?Baselib_SystemSemaphore_Acquire@il2cpp_baselib@@YAXUBaselib_SystemSemaphore_Handle@1@@Z",
+        "symbolNameHex": "3f 42 61 73 65 6c 69 62 5f 53 79 73 74 65 6d 53 65 6d 61 70 68 6f 72 65 5f 41 63 71 75 69 72 65 40 69 6c 32 63 70 70 5f 62 61 73 65 6c 69 62 40 40 59 41 58 55 42 61 73 65 6c 69 62 5f 53 79 73 74 65 6d 53 65 6d 61 70 68 6f 72 65 5f 48 61 6e 64 6c 65 40 31 40 40 5a 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      },
+      {
+        "slotRva": 176355304,
+        "descriptorRva": 217640052,
+        "descriptorHex": "60 f4 f8 0c 00 00 00 00 00 00 00 00 8e 05 f9 0c c0 f7 82 0a",
+        "libraryNameRva": 217646478,
+        "libraryName": "baselib.dll",
+        "libraryNameHex": "62 61 73 65 6c 69 62 2e 64 6c 6c 00",
+        "originalThunkRva": 217642080,
+        "firstThunkRva": 176355264,
+        "thunkIndex": 5,
+        "actualThunkCount": 13,
+        "terminatedLookupBytes": 112,
+        "terminatedLookupSha256": "583E1E716F1E04F1C21B949EE7E13D89136E00F7057E4867D6F41EE3BB8F9E04",
+        "lookupEntryRva": 217642120,
+        "lookupEntryHex": "48 01 f9 0c 00 00 00 00",
+        "iatEntryHex": "48 01 f9 0c 00 00 00 00",
+        "hintNameRva": 217645384,
+        "hint": 82,
+        "hintHex": "52 00",
+        "symbolName": "?Baselib_SystemSemaphore_Release@il2cpp_baselib@@YAXUBaselib_SystemSemaphore_Handle@1@I@Z",
+        "symbolNameHex": "3f 42 61 73 65 6c 69 62 5f 53 79 73 74 65 6d 53 65 6d 61 70 68 6f 72 65 5f 52 65 6c 65 61 73 65 40 69 6c 32 63 70 70 5f 62 61 73 65 6c 69 62 40 40 59 41 58 55 42 61 73 65 6c 69 62 5f 53 79 73 74 65 6d 53 65 6d 61 70 68 6f 72 65 5f 48 61 6e 64 6c 65 40 31 40 49 40 5a 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      },
+      {
+        "slotRva": 176355312,
+        "descriptorRva": 217640052,
+        "descriptorHex": "60 f4 f8 0c 00 00 00 00 00 00 00 00 8e 05 f9 0c c0 f7 82 0a",
+        "libraryNameRva": 217646478,
+        "libraryName": "baselib.dll",
+        "libraryNameHex": "62 61 73 65 6c 69 62 2e 64 6c 6c 00",
+        "originalThunkRva": 217642080,
+        "firstThunkRva": 176355264,
+        "thunkIndex": 6,
+        "actualThunkCount": 13,
+        "terminatedLookupBytes": 112,
+        "terminatedLookupSha256": "583E1E716F1E04F1C21B949EE7E13D89136E00F7057E4867D6F41EE3BB8F9E04",
+        "lookupEntryRva": 217642128,
+        "lookupEntryHex": "a4 01 f9 0c 00 00 00 00",
+        "iatEntryHex": "a4 01 f9 0c 00 00 00 00",
+        "hintNameRva": 217645476,
+        "hint": 88,
+        "hintHex": "58 00",
+        "symbolName": "?Baselib_Thread_GetCurrentThreadId@il2cpp_baselib@@YA_JXZ",
+        "symbolNameHex": "3f 42 61 73 65 6c 69 62 5f 54 68 72 65 61 64 5f 47 65 74 43 75 72 72 65 6e 74 54 68 72 65 61 64 49 64 40 69 6c 32 63 70 70 5f 62 61 73 65 6c 69 62 40 40 59 41 5f 4a 58 5a 00",
+        "onDiskUnboundIatEqualsLookupProved": true,
+        "liveIatValueOrCalleeSelected": false
+      }
+    ],
+    "importDirectoryRva": 217639872,
+    "importDirectoryBytes": 220,
+    "importDirectoryHeader": {
+      "fileOffset": 456,
+      "rawHex": "c0 eb f8 0c dc 00 00 00"
+    },
+    "iatDirectoryRva": 176353280,
+    "iatDirectoryBytes": 2176,
+    "iatDirectoryHeader": {
+      "fileOffset": 544,
+      "rawHex": "00 f0 82 0a 80 08 00 00"
+    },
+    "walkedDescriptors": 10,
+    "descriptorNullTerminatorRva": 217640072,
+    "actualTerminatedTableOwnershipChecked": true,
+    "completeImportSymbolCatalogProved": false,
+    "liveIatValueOrCalleeSelected": false
+  },
+  "globalContextRva": 222598832,
+  "contextOffsets": {
+    "handle": 0,
+    "count": 8,
+    "limit": 12,
+    "owner": 72,
+    "reentry": 80
+  },
+  "blocks": [
+    {
+      "acquisitionStartRva": 15532,
+      "acquisitionEndRva": 15622,
+      "sameOwnerStartRva": 15719,
+      "contextJoinRva": 15725,
+      "releaseStartRva": 15742,
+      "releaseEndRva": 15842,
+      "ownerStoreRva": 15607,
+      "decrementReentryRva": 15838,
+      "retryRva": 15776,
+      "exchangeCandidateRva": 15797,
+      "exchangeSuccessRva": 15814,
+      "childRva": 2919712,
+      "stackOffset": 128,
+      "contextSource": "rax",
+      "counterInit": "ebp-before-compare",
+      "decrementRegister": "eax",
+      "decrementSource": "immediate",
+      "childReceiver": "r13",
+      "releaseStepRegister": "ebp",
+      "releaseStepSource": "existing-ebp",
+      "role": "context1",
+      "contextCallEndRva": 15742
+    },
+    {
+      "acquisitionStartRva": 17201,
+      "acquisitionEndRva": 17290,
+      "sameOwnerStartRva": 17403,
+      "contextJoinRva": 17409,
+      "releaseStartRva": 17431,
+      "releaseEndRva": 17544,
+      "ownerStoreRva": 17271,
+      "decrementReentryRva": 17540,
+      "retryRva": 17472,
+      "exchangeCandidateRva": 17495,
+      "exchangeSuccessRva": 17513,
+      "childRva": 2919920,
+      "stackOffset": 152,
+      "contextSource": "rax",
+      "counterInit": "immediate-store",
+      "decrementRegister": "ecx",
+      "decrementSource": "immediate",
+      "childReceiver": "stack",
+      "releaseStepRegister": "r9d",
+      "releaseStepSource": "one",
+      "role": "context2",
+      "contextCallEndRva": 17431,
+      "childReceiverStackOffset": 144
+    },
+    {
+      "acquisitionStartRva": 18517,
+      "acquisitionEndRva": 18589,
+      "sameOwnerStartRva": 18589,
+      "contextJoinRva": 18595,
+      "releaseStartRva": 18612,
+      "releaseEndRva": 18728,
+      "ownerStoreRva": 18574,
+      "decrementReentryRva": 18724,
+      "retryRva": 18656,
+      "exchangeCandidateRva": 18679,
+      "exchangeSuccessRva": 18697,
+      "childRva": 2919920,
+      "stackOffset": 128,
+      "contextSource": "r9",
+      "counterInit": "ebp-from-prefix",
+      "decrementRegister": "ecx",
+      "decrementSource": "r14d",
+      "childReceiver": "r13",
+      "releaseStepRegister": "r9d",
+      "releaseStepSource": "ebp",
+      "role": "context3",
+      "contextCallEndRva": 18612
+    }
+  ],
+  "conditions": [
+    "valid compatible stable selected storage and disjoint stack storage",
+    "normal ABI-compatible child/import returns preserve RDI/RBP/R14; R9 is treated as clobbered at every call",
+    "the fresh post-child stack-slot pointer is valid; its equality to the original global is not assumed",
+    "arithmetic is modulo 2^32 and comparisons are exactly the encoded signed/zero predicates; no loop termination or live binding is proved"
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected original PE descriptors, actual terminated lookup ownership, DLL/name/slot declarations and all nine physical indirect call cells.",
+    "conditional": "Three caller argument/counter programs and finite constant flow over the complete owned parent CFG under normal ABI-compatible returns.",
+    "unresolved": "Live IAT/library identity, imported implementations, context child slot mutation, initialized synchronization state, typed relation meaning, actual outcome, callback cursor/list/root admission."
+  }
+}

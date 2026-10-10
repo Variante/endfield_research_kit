@@ -2,6 +2,7 @@
 
 These facts preserve original x64 operands; runtime tag/field meaning is not
 inferred from an address, the instruction mnemonic or an indexed code table.
+Sign extension follows the Intel SDM MOVSX/MOVSXD entries.
 """
 from __future__ import annotations
 from typing import Any

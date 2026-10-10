@@ -3087,10 +3087,72 @@ other instructions. An unknown directive is recognized by its leading `db`,
 not a substring in a hex operand. Instruction facts follow Intel's
 [instruction reference](https://cdrdv2-public.intel.com/868137/325462-089-sdm-vol-1-2abcd-3abcd-4.pdf)
 and [TEST reference](https://cdrdv2-public.intel.com/874240/325462-090-sdm-vol-1-2abcd-3abcd-4.pdf).
-The deeper resolver owns a range containing apparent indexed dispatch tables;
-linear decoding of the entire owned range cannot certify reachable code or
-table boundaries. Those joins, object-word/predicate helper control and meaning,
-cache effects, callback cursor and list/root admission remain unresolved.
+An owned resolver range can mix executable code, indexed dispatch tables and
+padding; linear decoding of the whole range cannot certify that boundary. The
+four resolver-child control owners below each partition their complete
+primary/chained unwind-owned bytes into code, table data and padding, and check
+every original branch, terminal transfer, indirect dispatch site and stored
+table target against instruction boundaries. Their facts are `conditional`
+on compatible stable storage and normal ABI-compatible child returns; none
+extends the recursive storage reader's admission or the validated corpus
+reader, and each fails closed through the selected native/source gates.
+
+- **Resolver scan** --
+  [`buff_formatter_resolver_scan`](../../scripts/game_data/memorypack/buff_formatter_resolver_scan.py)
+  ([contract](../../scripts/game_data/contracts/buff_formatter_resolver_scan_native.json),
+  lane [`il2cpp/resolver_scan_control`](../../scripts/game_data/il2cpp/resolver_scan_control.py)).
+  Byte-selector/DWORD-target tables with guarded routes, non-wrapping record
+  (UInt16) and parameter (DWORD) counters, and two closed-return index leaves.
+  The resolver returns zero on missing context or exhausted records, else the
+  receiver-relative pair address (DWORD offset + UInt16 selector, biased and
+  scaled). Index arithmetic does not prove a live metadata header, bounds or
+  valid records.
+- **Carrier conversion** --
+  [`buff_formatter_carrier_conversion`](../../scripts/game_data/memorypack/buff_formatter_carrier_conversion.py)
+  ([contract](../../scripts/game_data/contracts/buff_formatter_carrier_conversion_native.json),
+  lane [`il2cpp/carrier_conversion_control`](../../scripts/game_data/il2cpp/carrier_conversion_control.py)).
+  A nonnull selected global returns unchanged; zero falls back to the input
+  tag; other routes tail-forward the input, its payload, or a recursively
+  obtained carrier with retained argument widths. No inline global/payload
+  writes. Because the resolver reads the same global expressions, returned
+  carriers support `conditional` value equality with the comparison carriers
+  while the globals stay stable; this identifies no initialized runtime type.
+  Recursive termination and tail-child effects are unproved.
+- **Relation control** --
+  [`buff_formatter_relation_control`](../../scripts/game_data/memorypack/buff_formatter_relation_control.py)
+  ([contract](../../scripts/game_data/contracts/buff_formatter_relation_control_native.json),
+  lane [`il2cpp/relation_control`](../../scripts/game_data/il2cpp/relation_control.py)).
+  Equal input pointers return true before any call; other paths carry
+  enumerated stack/global/context writes (locked exchange-add and
+  compare-exchange -- a failed CMPXCHG still writes -- plus ordinary stores),
+  so the relation is not read-only. Indirect calls prove only the storage
+  address. Corrected RIP-relative immediate-store decoding joins one store to
+  the shared global DWORD, not the adjacent cell the legacy display showed.
+- **Relation imports** --
+  [`buff_formatter_relation_import_control`](../../scripts/game_data/memorypack/buff_formatter_relation_import_control.py)
+  ([contract](../../scripts/game_data/contracts/buff_formatter_relation_import_control_native.json),
+  lanes [`il2cpp/relation_import_control`](../../scripts/game_data/il2cpp/relation_import_control.py)
+  and [`il2cpp/pe_imports`](../../scripts/game_data/il2cpp/pe_imports.py)).
+  The relation's indirect storage sites are `exact` on-disk import
+  declarations of `baselib.dll` thread-ID and system-semaphore acquire/release
+  (walked lookup tables and unbound IAT slots, never address proximity). The
+  call sites implement an owner/reentry counter around a semaphore handle;
+  this is declaration coverage, not a live IAT binding, initialized lock state
+  or an executed acquire. The context pointer reloaded after the child call is
+  treated as a fresh value.
+
+Instruction-width facts these owners depend on live in
+[`integer_tag_dispatch`](../../scripts/game_data/il2cpp/integer_tag_dispatch.py)
+(signed-extension/compare/increment operands),
+[`integer_decrement`](../../scripts/game_data/il2cpp/integer_decrement.py)
+and [`integer_effects`](../../scripts/game_data/il2cpp/integer_effects.py)
+(locked exchanges, unary arithmetic, physical write spans).
+
+Still `unresolved`: typed conversion/relation meaning, named
+class/interface/slot and inflated MethodInfo, initialization/cache/lock
+semantics, the Baselib export bodies and context children's stack-slot writes
+(next candidates; missing byte INC/OR decoding there is a tooling gap),
+callback cursor equivalence, and positive list/full-root admission.
 
 The union formatter's caller prefix saves its entry Reader and wrapper output,
 initializes a UInt16 stack local, passes the same Reader/local to the actual

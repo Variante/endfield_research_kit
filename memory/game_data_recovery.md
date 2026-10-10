@@ -275,8 +275,10 @@ Current position of the families with active recovery:
   The [preparation/fallback contract](../scripts/game_data/contracts/buff_formatter_dispatch_fallback_native.json)
   separately proves the actual load/tail transfer, stored-byte gates, original
   receiver/context/UInt16 forwarding and conditional nonnull result returns.
-  Child search/initialization effects and deeper resolver code-versus-table
-  boundaries remain unproved; an owned native range is not automatically code.
+  The four resolver-child control contracts (scan, carrier conversion,
+  relation, relation imports) and their open joins are summarized in
+  [serialization_memorypack](game_data/serialization_memorypack.md); owned
+  bytes alone do not establish executable code.
   Actual virtual callback/class/provider selection, positive union/child cursor
   composition and global effects remain open; static registration does not
   select a runtime object.
