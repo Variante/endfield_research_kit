@@ -24,5 +24,12 @@
     select.value = Array.from(select.options).some((option) => option.value === current) ? current : "";
   }
 
-  Object.assign(WebUI, { $, $$, rebuildSelect });
+  // True for an unmodified primary-button click: the only click a page should
+  // turn into in-app navigation. Modified or middle clicks keep the browser's
+  // own link behavior (new tab/window, download).
+  function isPlainClick(event) {
+    return event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey;
+  }
+
+  Object.assign(WebUI, { $, $$, rebuildSelect, isPlainClick });
 })();

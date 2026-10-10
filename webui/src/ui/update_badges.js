@@ -193,10 +193,11 @@
     });
     decorateFiles(root);
   }
-  function mount(root, page, id) {
+  function mount(root, page, id, { owners = null } = {}) {
     if (!root) return;
-    root.querySelectorAll(":scope > .version-update-details").forEach((node) => node.remove());
-    const content = panel(page, id);
+    root.querySelectorAll(":scope > .version-update-details, :scope > .version-update-owner").forEach((node) => node.remove());
+    const content = owners ? owners.filter((owner) => status(page, owner.id)).map((owner) =>
+      `<section class="version-update-owner"><h3>${esc(owner.label)} ${html(page, owner.id)}</h3><code>${esc(owner.code ?? owner.id.replace(/^enemy:/, ""))}</code>${panel(page, owner.id)}</section>`).join("") : panel(page, id);
     const header = root.firstElementChild?.tagName === "HEADER" ? root.firstElementChild : null;
     if (content) (header || root).insertAdjacentHTML(header ? "afterend" : "afterbegin", content);
     const reportedFiles = new Set(changes(page, id).map((row) => files.get(fileKey(row.source))).filter(Boolean));

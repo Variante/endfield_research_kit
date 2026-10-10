@@ -2,7 +2,7 @@
 // owns their shared navigation; each renderer retains its filters and details.
 (() => {
   const W = window.WebUI;
-  const kinds = ["character", "weapon", "equipment", "item", "enemy", "recipe", "machine"];
+  const kinds = ["character", "weapon", "gem", "equipment", "item", "enemy", "recipe", "machine"];
   const catalogs = { item: "items", recipe: "recipes", machine: "machines" };
   const catalogKinds = Object.fromEntries(Object.entries(catalogs).map(([kind, catalog]) => [catalog, kind]));
   let selected = "character";
@@ -24,8 +24,8 @@
   function label(kind) {
     const zh = String(window.WEBUI_UI_LOCALE || document.documentElement.lang || "zh").startsWith("zh");
     return (zh
-      ? { character: "角色", weapon: "武器", equipment: "装备", item: "物品", enemy: "敌人", recipe: "配方", machine: "设备与建筑" }
-      : { character: "Characters", weapon: "Weapons", equipment: "Equipment", item: "Items", enemy: "Enemies", recipe: "Recipes", machine: "Machines & buildings" })[kind];
+      ? { character: "角色", weapon: "武器", gem: "基质", equipment: "装备", item: "物品", enemy: "敌人", recipe: "配方", machine: "设备与建筑" }
+      : { character: "Characters", weapon: "Weapons", gem: "Essences", equipment: "Equipment", item: "Items", enemy: "Enemies", recipe: "Recipes", machine: "Machines & buildings" })[kind];
   }
 
   function render() {

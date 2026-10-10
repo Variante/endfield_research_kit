@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#21095;&#24773;&#23545;&#35805; &middot; &#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855;</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260701-gp5">
-<link rel="stylesheet" href="style.css?v=20261002-detail4">
+<link rel="stylesheet" href="style.css?v=20261009-review1">
   <link rel="stylesheet" href="src/features/characters/style.css?v=20261002-appearances2">
-  <link rel="stylesheet" href="src/features/production/style.css?v=20261002-machines1">
+  <link rel="stylesheet" href="src/features/production/style.css?v=20261009-review1">
   <link rel="stylesheet" href="src/features/story/branches.css?v=20261002-expansion1">
   <link rel="stylesheet" href="src/features/map_recovery/style.css?v=20261002-devices2">
   <link rel="stylesheet" href="src/features/audio/style.css?v=20261002-update-details3">
@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="src/features/recovery/style.css?v=20261002-update-details3">
   <link rel="stylesheet" href="src/features/gameplay/skill_refs.css?v=20261002-expansion1">
   <link rel="stylesheet" href="src/features/gameplay/style.css?v=20261002-catalogs1">
+  <link rel="stylesheet" href="src/features/activities/style.css?v=20261009-review1">
 </head>
 <body data-active-view="story">
 <a class="skip-link" href="#views">Skip to current view</a>
@@ -36,9 +37,10 @@
     <nav id="view-tabs" role="tablist" aria-label="Primary views" aria-describedby="view-tabs-hint" aria-orientation="horizontal">
       <span id="view-tabs-hint" class="sr-only">Use the left and right arrow keys to move between views.</span>
       <button id="story-tab" class="view-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="story-view" tabindex="0" data-view="story" data-i18n="storyTab">剧情</button>
+      <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay" data-i18n="gameplayTab">玩法</button>
+      <button id="activities-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="activities-view" tabindex="-1" data-view="activities" data-i18n="activitiesTab">活动</button>
       <button id="map-recovery-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="map-recovery-view" tabindex="-1" data-view="map-recovery" data-i18n="mapRecoveryTab">地图</button>
       <button id="characters-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="characters-view" tabindex="-1" data-view="characters" data-i18n="charactersTab">人物</button>
-      <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay" data-i18n="gameplayTab">玩法</button>
       <button id="reference-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="reference-view" tabindex="-1" data-view="reference" data-i18n="referenceTab">文本</button>
       <button id="audio-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="audio-view" tabindex="-1" data-view="audio" data-i18n="audioTab">&#38899;&#39057;</button>
       <button id="assets-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="assets-view" tabindex="-1" data-view="assets" data-i18n="assetsTab">资源</button>
@@ -206,6 +208,52 @@
       </div>
     </section>
 
+    <section id="activities-view" class="page-view" data-view="activities" role="tabpanel" aria-labelledby="activities-tab" tabindex="0" hidden>
+      <div id="activities-app">
+        <aside id="activities-left">
+          <header>
+            <h1 id="activities-title">Activities</h1>
+            <div class="panel-actions">
+              <button id="activities-filter-toggle" class="panel-toggle" type="button" aria-controls="activities-filter-panel" aria-expanded="true">Hide filters</button>
+              <button id="activities-reset" type="button">Reset filters</button>
+            </div>
+          </header>
+          <div id="activities-filter-panel" class="filters">
+            <section class="filter-section filter-section-basic" data-filter-section="activities-basic" data-fixed-open="1">
+              <div class="filter-section-body filter-section-body-stack">
+                <label id="activities-table-label" for="activities-table">Dataset</label>
+                <select id="activities-table"></select>
+                <input id="activities-q" type="search" aria-label="Search activities" placeholder="Search activities">
+                <label id="activities-sort-label" for="activities-sort">Sort</label>
+                <select id="activities-sort"><option value="time-desc">Opening time (newest first)</option><option value="time-asc">Opening time (oldest first)</option><option value="title">Name</option><option value="default">Display order</option></select>
+              </div>
+            </section>
+            <section class="filter-section" data-filter-section="activities-tag">
+              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="activities-tag-body"><span id="activities-tag-label">Tags</span></button>
+              <div id="activities-tag-body" class="filter-section-body"><div id="activities-tag-filter" class="chips" data-multi="1"></div></div>
+            </section>
+            <section class="filter-section" data-filter-section="activities-type">
+              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="activities-type-body"><span id="activities-type-label">Type</span></button>
+              <div id="activities-type-body" class="filter-section-body"><div id="activities-type-filter" class="chips" data-multi="1"></div></div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="activities-schedule" data-default-collapsed="1">
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="activities-schedule-body"><span id="activities-schedule-label">Schedule</span></button>
+              <div id="activities-schedule-body" class="filter-section-body" hidden><div id="activities-schedule-filter" class="chips" data-multi="1"></div></div>
+            </section>
+          </div>
+          <div id="activities-filter-splitter" class="filter-splitter" role="separator" aria-label="Resize activity filters" aria-orientation="horizontal" tabindex="0"></div>
+          <div id="activities-count" role="status"></div>
+          <div id="activities-list"></div>
+          <footer id="activities-pager"></footer>
+        </aside>
+        <div id="activities-mobile-splitter" class="filter-splitter activities-mobile-splitter" role="separator" aria-label="Resize activity list on mobile" aria-orientation="horizontal" tabindex="0"></div>
+        <div id="activities-splitter" class="pane-splitter" role="separator" aria-label="Resize activity sidebar" aria-orientation="vertical" tabindex="0"></div>
+        <main id="activities-right">
+          <p id="activities-boundary"></p>
+          <div id="activities-detail"></div>
+        </main>
+      </div>
+    </section>
     <section id="reference-view" class="page-view" data-view="reference" role="tabpanel" aria-labelledby="reference-tab" tabindex="0" hidden>
       <div id="reference-app">
         <aside id="reference-left">
@@ -352,12 +400,52 @@
                 <div id="gameplay-weapon-type-filter" class="chips" data-multi="1"></div>
               </div>
             </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-weapon-attribute" data-default-collapsed="1" hidden>
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-weapon-attribute-body">
+                <span id="gameplay-weapon-attribute-label">Base attribute</span>
+              </button>
+              <div id="gameplay-filter-section-weapon-attribute-body" class="filter-section-body" hidden>
+                <div id="gameplay-weapon-attribute-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-weapon-bonus" data-default-collapsed="1" hidden>
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-weapon-bonus-body">
+                <span id="gameplay-weapon-bonus-label">Additional attribute</span>
+              </button>
+              <div id="gameplay-filter-section-weapon-bonus-body" class="filter-section-body" hidden>
+                <div id="gameplay-weapon-bonus-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-weapon-passive" data-default-collapsed="1" hidden>
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-weapon-passive-body">
+                <span id="gameplay-weapon-passive-label">Weapon effect</span>
+              </button>
+              <div id="gameplay-filter-section-weapon-passive-body" class="filter-section-body" hidden>
+                <div id="gameplay-weapon-passive-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-gem-domain" data-default-collapsed="1" hidden>
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-gem-domain-body">
+                <span id="gameplay-gem-domain-label">Region</span>
+              </button>
+              <div id="gameplay-filter-section-gem-domain-body" class="filter-section-body" hidden>
+                <div id="gameplay-gem-domain-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
             <section class="filter-section is-collapsed" data-filter-section="gameplay-equipment-type" data-default-collapsed="1">
               <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-equipment-type-body">
                 <span id="gameplay-equipment-type-label">Equipment type</span>
               </button>
               <div id="gameplay-filter-section-equipment-type-body" class="filter-section-body" hidden>
                 <div id="gameplay-equipment-type-filter" class="chips" data-multi="1"></div>
+              </div>
+            </section>
+            <section class="filter-section is-collapsed" data-filter-section="gameplay-equipment-attribute" data-default-collapsed="1" hidden>
+              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="gameplay-filter-section-equipment-attribute-body">
+                <span id="gameplay-equipment-attribute-label">Equipment attributes</span>
+              </button>
+              <div id="gameplay-filter-section-equipment-attribute-body" class="filter-section-body" hidden>
+                <div id="gameplay-equipment-attribute-filter" class="chips" data-multi="1"></div>
               </div>
             </section>
             <section class="filter-section is-collapsed" data-filter-section="gameplay-enemy-type" data-default-collapsed="1">
@@ -699,43 +787,45 @@
 
 <script src="src/core/sprites.js?v=20260928-sprite-crop1"></script>
 <script src="src/core/namespace.js?v=20260701-gp5"></script>
-<script src="src/core/dom.js?v=20260701-gp5"></script>
-<script src="src/core/loader.js?v=20261003-simplify1"></script>
+<script src="src/core/dom.js?v=20261009-review1"></script>
+<script src="src/core/loader.js?v=20261009-activities"></script>
 <script src="src/core/storage.js?v=20260701-gp5"></script>
 <script src="src/core/text.js?v=20260701-gp5"></script>
 <script src="src/core/locale.js?v=20260701-gp5"></script>
 <script src="src/core/paths.js?v=20260925-data-merge1"></script>
 <script src="src/ui/media_player.js?v=20260812-multimedia5"></script>
-<script src="src/ui/splitter.js?v=20261003-simplify1"></script>
-<script src="src/ui/filters.js?v=20261003-simplify1"></script>
-<script src="src/ui/facets.js?v=20261002-production2"></script>
-<script src="src/ui/sort.js?v=20261002-expansion1"></script>
+<script src="src/ui/splitter.js?v=20261009-activities"></script>
+<script src="src/ui/filters.js?v=20261009-activities"></script>
+<script src="src/ui/facets.js?v=20261009-review1"></script>
+<script src="src/ui/sort.js?v=20261009-review1"></script>
 <script src="src/ui/pagination.js?v=20261009-text-limits1"></script>
-<script src="src/ui/update_badges.js?v=20261004-update-filters1"></script>
-<script src="app_labels.js?v=20261002-expansion1"></script>
-<script src="app_tree.js?v=20261004-update-filters1"></script>
+<script src="src/ui/list_groups.js?v=20261009-review1"></script>
+<script src="src/ui/update_badges.js?v=20261009-review1"></script>
+<script src="app_labels.js?v=20261009-review1"></script>
+<script src="app_tree.js?v=20261009-review1"></script>
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
-<script src="src/features/story/branches.js?v=20261003-simplify1"></script>
-<script src="app.js?v=20261003-simplify1"></script>
-<script src="assets.js?v=20261004-update-filters1"></script>
-<script src="src/features/characters/appearances.js?v=20261003-simplify1"></script>
-  <script src="src/features/characters/index.js?v=20261003-simplify1"></script>
-<script src="src/features/production/index.js?v=20261004-update-filters1"></script>
-<script src="src/features/gameplay/labels.js?v=20261002-mechanics2"></script>
+<script src="src/features/story/branches.js?v=20261009-review1"></script>
+<script src="app.js?v=20261009-review1"></script>
+<script src="assets.js?v=20261009-review1"></script>
+<script src="src/features/characters/appearances.js?v=20261009-activities"></script>
+  <script src="src/features/characters/index.js?v=20261009-activities"></script>
+<script src="src/features/production/index.js?v=20261009-review1"></script>
+<script src="src/features/gameplay/labels.js?v=20261009-review1"></script>
 <script src="src/features/gameplay/loadout.js?v=20260924-gp17"></script>
 <script src="src/features/gameplay/skill_refs.js?v=20261002-mechanics2"></script>
 <script src="src/features/gameplay/mechanics.js?v=20261002-mechanics2"></script>
-<script src="src/features/gameplay/index.js?v=20261004-update-filters1"></script>
-<script src="src/features/gameplay/tabs.js?v=20261002-catalogs1"></script>
+<script src="src/features/gameplay/index.js?v=20261009-review1"></script>
+<script src="src/features/gameplay/tabs.js?v=20261009-review1"></script>
 <script src="src/features/audio/index.js?v=20261004-update-filters1"></script>
 <script src="src/features/map_recovery/encounters.js?v=20261002-expansion1"></script>
   <script src="src/features/map_recovery/index.js?v=20261004-update-filters1"></script>
 <script src="src/features/next_views.js?v=20260821-map1"></script>
-<script src="src/features/reference/files.js?v=20261009-large-json1"></script>
-<script src="src/features/reference/index.js?v=20261009-large-json1"></script>
-<script src="src/features/updates/index.js?v=20261003-simplify1"></script>
+<script src="src/features/reference/files.js?v=20261009-review1"></script>
+<script src="src/features/reference/index.js?v=20261009-review1"></script>
+<script src="src/features/activities/index.js?v=20261009-review1"></script>
+<script src="src/features/updates/index.js?v=20261009-review1"></script>
 <script src="src/features/recovery/index.js?v=20260924-recovery10"></script>
-<script src="src/features/data_inspector/index.js?v=20261003-simplify1"></script>
-<script src="src/features/data_inspector/stores.js?v=20261003-simplify1"></script>
+<script src="src/features/data_inspector/index.js?v=20261009-activities"></script>
+<script src="src/features/data_inspector/stores.js?v=20261009-review1"></script>
 </body>
 </html>

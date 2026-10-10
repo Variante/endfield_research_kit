@@ -896,12 +896,12 @@ function bindEvents() {
     if (ev.key === "Escape") closeInlineImageModal();
   });
 
-  // Gameplay image buttons reuse the Story page's full-screen image modal.
-  // Keep this scoped to the Gameplay preview class so existing Story event
+  // Gameplay and Activities image buttons reuse the Story page's full-screen image modal.
+  // Keep this scoped to catalog preview classes so existing Story event
   // handling remains unchanged and image clicks never navigate to Assets.
   document.addEventListener("click", (ev) => {
     const imageTag = ev.target && ev.target.closest
-      ? ev.target.closest(".gameplay-image-preview")
+      ? ev.target.closest(".gameplay-image-preview, .activities-image-preview")
       : null;
     if (!imageTag || !handleInlineImageModalActivate(imageTag)) return;
     ev.preventDefault();
@@ -910,7 +910,7 @@ function bindEvents() {
   document.addEventListener("keydown", (ev) => {
     if (ev.key !== "Enter" && ev.key !== " ") return;
     const imageTag = ev.target && ev.target.closest
-      ? ev.target.closest(".gameplay-image-preview")
+      ? ev.target.closest(".gameplay-image-preview, .activities-image-preview")
       : null;
     if (!imageTag || !handleInlineImageModalActivate(imageTag)) return;
     ev.preventDefault();

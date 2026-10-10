@@ -10,9 +10,11 @@
     "asset-sort": { size: ["size-asc", "size-desc"] },
     "audio-sort": { duration: ["duration-asc", "duration-desc"] },
     "updates-sort": {}, "data-files-sort": {}, "reference-sort": {},
+    "activities-sort": { time: ["time-asc", "time-desc"] },
     "map-sort": {}, "recovery-sort": {},
   };
   const descending = new Set(["size-delta", "line-delta", "stories", "bytes", "files"]);
+  const defaultsDescending = (value) => descending.has(value) || value.startsWith("equipment-attribute:");
   const text = (en, zh) => window.WEBUI_UI_LOCALE === "en" ? en : zh;
   function sync(binding) {
     const { source, category, order: direction, pairs } = binding;
@@ -21,7 +23,7 @@
       const pair = Object.entries(pairs).find(([, values]) => values.includes(option.value));
       const key = pair ? pair[0] : option.value;
       if (groups.some((group) => group.key === key)) continue;
-      const label = pair ? ({ lines: text("Line count", "行数"), title: text("Name", "名称"), rarity: text("Rarity", "稀有度"), size: text("File size", "文件大小"), duration: text("Duration", "时长") })[key]
+      const label = pair ? ({ lines: text("Line count", "行数"), title: text("Name", "名称"), rarity: text("Rarity", "稀有度"), size: text("File size", "文件大小"), duration: text("Duration", "时长"), time: text("Opening time", "开始时间") })[key]
         : option.textContent.replace(/\s*\(A-Z\)/g, "");
       const disabled = pair ? pair[1].every((value) => [...source.options].find((item) => item.value === value)?.disabled) : option.disabled;
       groups.push({ key, label, disabled });
@@ -34,7 +36,7 @@
     const pair = Object.entries(pairs).find(([, values]) => values.includes(source.value));
     category.value = pair ? pair[0] : source.value;
     if (pair) binding.direction = pair[1].indexOf(source.value) ? "desc" : "asc";
-    else if (binding.value !== source.value) binding.direction = descending.has(source.value) ? "desc" : "asc";
+    else if (binding.value !== source.value) binding.direction = defaultsDescending(source.value) ? "desc" : "asc";
     binding.value = source.value;
     direction.options[0].textContent = text("Ascending ↑", "正序 ↑");
     direction.options[1].textContent = text("Descending ↓", "倒序 ↓");
@@ -76,7 +78,7 @@
     const notify = () => source.dispatchEvent(new Event("change", { bubbles: true }));
     category.addEventListener("change", () => {
       const values = pairs[category.value];
-      binding.direction = (values && category.value !== "title") || descending.has(category.value) ? "desc" : "asc";
+      binding.direction = (values && category.value !== "title") || defaultsDescending(category.value) ? "desc" : "asc";
       source.value = values ? values[binding.direction === "desc" ? 1 : 0] : category.value;
       sync(binding);
       notify();
@@ -102,7 +104,7 @@
     comparator(id, compare) {
       const binding = bindings.get(id);
       const paired = binding && Object.values(binding.pairs).some((values) => values.includes(binding.source.value));
-      const baseline = binding && descending.has(binding.source.value) ? "desc" : "asc";
+      const baseline = binding && defaultsDescending(binding.source.value) ? "desc" : "asc";
       const sign = binding && !paired && binding.direction !== baseline ? -1 : 1;
       return (a, b) => sign * compare(a, b);
     },

@@ -19,8 +19,8 @@
     ingredient: ui("Recipe ingredient", "配方原料"), shop_reward: ui("Shop listing", "商店配置"),
     other_uses: ui("Other linked uses", "其他用途引用"), building_item: ui("Building item", "建筑物品"),
     no_source_link: ui("No linked recipe or shop", "未关联配方或商店"),
-    machine: ui("Machine crafting", "设备制造"), hub: ui("Infrastructure equipment", "基建设备"),
-    manual: ui("Manual crafting", "手动制造"), has_recipes: ui("Has recipes", "含配方"),
+    machine: ui("Machine crafting", "由设备制造"), hub: ui("Infrastructure equipment", "制作设备的配方"),
+    manual: ui("Manual crafting", "简易制造"), has_recipes: ui("Has recipes", "含配方"),
     needs_power: ui("Requires power", "需要供电"),
     activity_only: ui("Activity-only formula", "活动限定配方"),
   })[tag] || tag;
@@ -46,7 +46,7 @@
   };
   const rowIcon = (row, className = "") => {
     const tiers = row.medalIcons || row.medalLevels?.map((tier) => ({
-      iconId: tier.item.iconId, level: tier.level, plated: tier.plated,
+      iconId: tier.item?.iconId, level: tier.level, plated: tier.plated,
     }));
     if (tiers?.length) {
       return `<span class="production-medal-icons">${tiers.map((tier) => {
@@ -122,19 +122,13 @@
     const env = row.gasEnvironment;
     const id = env?.id ?? row.conditions?.gasEnv;
     if (!id) return "";
-    const names = {
-      T_fx_icon_gas_stable_UI: ui("Stable", "稳定"),
-      T_fx_icon_gas_wet_UI: ui("Wet", "潮湿"),
-      T_fx_icon_gas_acidic_UI: ui("Acidic", "酸性"),
-      T_fx_icon_gas_xiranite_UI: ui("Xiranite", "息壤"),
-    };
-    const icons = {
-      T_fx_icon_gas_stable_UI: "icon_gas_env_stable",
-      T_fx_icon_gas_wet_UI: "icon_gas_env_humidity",
-      T_fx_icon_gas_acidic_UI: "icon_gas_env_acid",
-      T_fx_icon_gas_xiranite_UI: "icon_gas_env_xiranite",
-    };
-    return `<div class="production-gas-requirement"><strong>${esc(ui("Required gas environment", "所需气体环境"))}</strong>: ${iconHtml(icons[env?.iconId])} ${esc(names[env?.iconId] || String(id))}</div>`;
+    const gas = {
+      T_fx_icon_gas_stable_UI: { name: ui("Stable", "稳定"), icon: "icon_gas_env_stable" },
+      T_fx_icon_gas_wet_UI: { name: ui("Wet", "潮湿"), icon: "icon_gas_env_humidity" },
+      T_fx_icon_gas_acidic_UI: { name: ui("Acidic", "酸性"), icon: "icon_gas_env_acid" },
+      T_fx_icon_gas_xiranite_UI: { name: ui("Xiranite", "息壤"), icon: "icon_gas_env_xiranite" },
+    }[env?.iconId];
+    return `<div class="production-gas-requirement"><strong>${esc(ui("Required gas environment", "所需气体环境"))}</strong>: ${iconHtml(gas?.icon)} ${esc(gas?.name || String(id))}</div>`;
   }
 
   function activityTag(row) {
@@ -317,20 +311,20 @@
       : row.typeName || ui("Uncategorized", "未分类") };
   }
 
-  const collapsedListGroups = new Set();
+  const listGroups = W.listGroups.create();
 
   function renderList() {
     const host = $("#production-list");
     if (!host) return;
     let previousCategory = null;
     let groupOpen = false;
+    const counts = W.listGroups.counts(state.filtered, (entry) => productionListGroup(entry).id);
     host.innerHTML = state.pager.slice(state.filtered).map((row) => {
       let heading = "";
       const category = productionListGroup(row);
       if (category.id !== previousCategory) {
         previousCategory = category.id;
-        const count = state.filtered.filter((entry) => productionListGroup(entry).id === category.id).length;
-        heading = `${groupOpen ? "</details>" : ""}<details class="production-list-section" data-list-group="${esc(category.id)}"${collapsedListGroups.has(category.id) ? "" : " open"}><summary class="production-device-group">${iconHtml(category.iconId)}<strong>${esc(category.title)}</strong><span>${number(count)}</span></summary>`;
+        heading = `${groupOpen ? "</details>" : ""}${listGroups.section({ id: category.id, title: category.title, count: counts.get(category.id) || 0, icon: iconHtml(category.iconId), className: "production-list-section" })}`;
         groupOpen = true;
       }
       const subtitle = row.kind === "items" ? (row.medalLevelCount ? `${row.typeName} · ${(row.categories || []).map((category) => category.title).join(" · ")} · ${row.medalLevelCount} ${ui("tiers", "个等级")}` : `${row.typeName} · ${ui("Recipe sources", "制作来源")} ${row.counts.producedBy} · ${ui("Uses", "用途")} ${row.counts.usedBy + row.counts.upgrades}`)
@@ -338,12 +332,7 @@
           : `${(row.categories || []).map((category) => category.title).join(" · ") || ui("Uncategorized", "未分类")}${row.recipeCount ? ` · ${ui("Recipes", "配方")} ${row.recipeCount}` : ""}`;
       return `${heading}<button type="button" class="production-row${row.id === state.selectedId ? " selected" : ""}" data-production-select="${esc(row.id)}" aria-pressed="${row.id === state.selectedId}">${rowIcon(row, "production-icon-list")}<span class="production-row-text"><strong>${esc(row.title)} ${W.updateBadges.html("production", `${row.kind}:${row.id}`)}</strong><span>${esc(subtitle)}</span><code>${esc(row.id)}</code></span></button>`;
     }).join("") + (groupOpen ? "</details>" : "") || empty(ui("No matching records. Reset filters to see the catalog.", "没有符合条件的记录；可重置筛选查看目录。"));
-    host.querySelectorAll("[data-list-group]").forEach((group) => {
-      group.addEventListener("toggle", () => {
-        if (group.open) collapsedListGroups.delete(group.dataset.listGroup);
-        else collapsedListGroups.add(group.dataset.listGroup);
-      });
-    });
+    listGroups.bind(host);
     $("#production-count").textContent = `${number(state.filtered.length)} / ${number(state.rows.length)}`;
     const locate = $("#production-reveal-current");
     if (locate) locate.disabled = !state.selectedId;
@@ -356,15 +345,14 @@
     if (state.pager.showIndex(index)) renderList();
     const row = [...$("#production-list").querySelectorAll("[data-production-select]")]
       .find((candidate) => candidate.dataset.productionSelect === state.selectedId);
-    const group = row?.closest("[data-list-group]");
-    if (group) { collapsedListGroups.delete(group.dataset.listGroup); group.open = true; }
-    row?.scrollIntoView({ block: "center", behavior: "smooth" });
+    listGroups.reveal(row);
   }
 
   function applyFilters(reset = true, write = true) {
     const tokens = W.parseQuery(state.query);
     const scored = state.facets.filter(state.rows).map((row) => ({ row, score: W.queryScore(searchText(row), tokens) }))
-      .filter((entry) => !tokens.length || entry.score > 0);
+      .filter((entry) => !tokens.length || entry.score > 0)
+      .map((entry) => ({ ...entry, group: productionListGroup(entry.row) }));
     const compare = W.sorting.comparator("production-sort", (a, b) => {
       const title = a.title.localeCompare(b.title, undefined, { numeric: true, sensitivity: "base" }) || a.id.localeCompare(b.id);
       if (state.sort === "title-desc") return -title;
@@ -374,14 +362,14 @@
     });
     const categoryOrder = new Map((state.data.machineCategories || []).map((category, index) => [category.id, index]));
     scored.sort((a, b) => {
-      const categoryA = productionListGroup(a.row).id;
-      const categoryB = productionListGroup(b.row).id;
+      const categoryA = a.group.id;
+      const categoryB = b.group.id;
       if (state.kind === "machines") {
         const order = (categoryOrder.get(categoryA) ?? Infinity) - (categoryOrder.get(categoryB) ?? Infinity);
         if (order) return order;
       }
       if (categoryA !== categoryB) return categoryA === "(none)" ? 1 : categoryB === "(none)" ? -1
-        : productionListGroup(a.row).title.localeCompare(productionListGroup(b.row).title, undefined, { numeric: true });
+        : a.group.title.localeCompare(b.group.title, undefined, { numeric: true });
       return compare(a.row, b.row);
     });
     state.filtered = scored.map((entry) => entry.row);
@@ -458,7 +446,7 @@
       <aside id="production-sidebar" class="production-sidebar"><header><div class="production-toolbar"><h2>${esc(kindLabel(state.kind))}</h2><button id="production-filter-toggle" class="panel-toggle" type="button" aria-controls="production-filters" aria-expanded="true"></button></div></header>
       <div id="production-filters" class="filters"><div class="filter-control-row production-search-row"><label for="production-search">${esc(ui("Search names, IDs, ingredients or files", "搜索名称、标识符、原料或文件"))}</label><input id="production-search" type="search" value="${esc(state.query)}" placeholder="${esc(ui("Regex tokens; match any word", "正则词条；任一词匹配"))}"></div>
       <div class="filter-section-body filter-control-row"><label for="production-sort">${esc(ui("Sort", "排序"))}</label><select id="production-sort"><option value="title">${esc(ui("Name (A-Z)", "名称 (A-Z)"))}</option><option value="title-desc">${esc(ui("Name descending", "名称降序"))}</option><option value="rarity-asc">${esc(ui("Rarity ascending", "稀有度升序"))}</option><option value="rarity-desc">${esc(ui("Rarity descending", "稀有度降序"))}</option></select></div>
-      <details class="filter-section" data-filter-section="production-type"><summary>${esc(state.kind === "machines" ? ui("Encyclopedia categories", "百科分类") : state.kind === "recipes" ? ui("Crafting method", "制作方式") : ui("Types", "类型"))}</summary><div id="production-type-filter" class="production-chips"></div></details>
+      ${state.kind === "recipes" ? "" : `<details class="filter-section" data-filter-section="production-type"><summary>${esc(state.kind === "machines" ? ui("Encyclopedia categories", "百科分类") : ui("Types", "类型"))}</summary><div id="production-type-filter" class="production-chips"></div></details>`}
       <details class="filter-section" data-filter-section="production-category"${state.kind === "machines" ? " hidden" : ""}><summary>${esc(state.kind === "recipes" ? ui("Output categories", "产物分类") : ui("Medal categories", "蚀刻章分类"))}</summary><div id="production-category-filter" class="production-chips"></div></details>
       <details class="filter-section" data-filter-section="production-tag"><summary>${esc(state.kind === "recipes" ? ui("Formula tags", "配方标签") : ui("Relationships", "关联"))}</summary><div id="production-tag-filter" class="production-chips"></div></details>
       ${W.updateBadges.filterSection("production")}
@@ -474,14 +462,26 @@
     state.facets = W.facets.create({
       countMode: "total", groups: [
         W.updateBadges.filterGroup("production", (row) => W.updateBadges.status("production", `${row.kind}:${row.id}`), { param: "productionUpdate" }),
-        { id: "type", container: "#production-type-filter", section: "production-type", param: "productionType",
-          values: typeValue, label: (value) => state.kind === "recipes" ? tagLabel(value) : state.kind === "machines" ? categoryLabel(value) : state.rows.find((row) => typeValue(row) === value)?.typeName || value,
-          icon: (value) => state.kind === "machines" ? categoryIcon(value) : "" },
+        ...(state.kind === "recipes" ? [] : [{ id: "type", container: "#production-type-filter", section: "production-type", param: "productionType",
+          values: typeValue, label: (value) => state.kind === "machines" ? categoryLabel(value) : state.rows.find((row) => typeValue(row) === value)?.typeName || value,
+          icon: (value) => state.kind === "machines" ? categoryIcon(value) : "" }]),
         { id: "category", container: "#production-category-filter", section: "production-category", param: "productionCategory",
           values: (row) => state.kind === "machines" ? [] : (row.categories || []).map((category) => category.id), label: categoryLabel, icon: categoryIcon },
         { id: "tag", container: "#production-tag-filter", section: "production-tag", param: "productionTag", values: (row) => row.tags, label: tagLabel },
       ], onChange: () => applyFilters(),
     });
+    if (state.kind === "recipes") {
+      if (params) {
+        params = new URLSearchParams(params);
+        for (const value of params.getAll("productionType")) {
+          if (!params.getAll("productionTag").includes(value)) params.append("productionTag", value);
+        }
+        params.delete("productionType");
+      } else if (facetState?.type?.length) {
+        facetState.tag = [...new Set([...(facetState.tag || []), ...facetState.type])];
+        delete facetState.type;
+      }
+    }
     if (params) state.facets.fromParams(params, { silent: true });
     else if (facetState) state.facets.restore(facetState, { silent: true });
     W.updateBadges.syncFilter("production", "production", state.facets);
@@ -555,7 +555,7 @@
     state.root.dataset.productionBound = "1";
     state.root.addEventListener("click", (event) => {
       const link = event.target.closest("[data-production-kind]");
-      if (link && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.button === 0) { event.preventDefault(); open(link.dataset.productionKind, link.dataset.productionId); return; }
+      if (link && W.isPlainClick(event)) { event.preventDefault(); open(link.dataset.productionKind, link.dataset.productionId); return; }
       const reward = event.target.closest("[data-gameplay-related-key]");
       if (reward) { const [kind, ...id] = reward.dataset.gameplayRelatedKey.split(":"); W.gameplayTabs.open(kind, id.join(":")); return; }
       const selection = event.target.closest("[data-production-select]");

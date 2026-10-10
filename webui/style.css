@@ -5952,13 +5952,14 @@ body.is-resizing-filter * {
   line-height: 0;
 }
 
-.gameplay-list-group { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--bg-2); border-bottom: 1px solid var(--border); font-size: 12px; }
-.gameplay-list-group > span { margin-left: auto; color: var(--muted); }
-.gameplay-list-section { flex: 0 0 auto; }
-.gameplay-list-section > summary { cursor: pointer; }
-.gameplay-list-section > summary::before { content: "▸"; }
-.gameplay-list-section[open] > summary::before { content: "▾"; }
-.gameplay-list-section > .gameplay-row { width: 100%; box-sizing: border-box; }
+/* Collapsible catalog list groups (webui/src/ui/list_groups.js), shared by
+   Gameplay and Production; a page may override the summary padding. */
+.list-group-summary { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--bg-2); border-bottom: 1px solid var(--border); font-size: 12px; cursor: pointer; }
+.list-group-summary > span { margin-left: auto; color: var(--muted); }
+.list-group-summary::before { content: "▸"; }
+.list-group-section { flex: 0 0 auto; }
+.list-group-section[open] > .list-group-summary::before { content: "▾"; }
+.list-group-section > button { width: 100%; box-sizing: border-box; }
 
 .gameplay-item-picture.gameplay-image-preview img {
   display: block;
@@ -8837,6 +8838,16 @@ table {
   line-height: 1.4;
   vertical-align: middle;
   white-space: nowrap;
+}
+
+.gameplay-row-effects {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .version-update-badge[data-update-status="added"] { color: var(--status-added); }
 .version-update-badge[data-update-status="modified"] { color: var(--status-modified); }

@@ -539,8 +539,7 @@
 
   document.addEventListener("click", (event) => {
     const link = event.target.closest?.("a[data-data-page-link]");
-    if (!link || event.defaultPrevented || event.button !== 0
-        || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!link || event.defaultPrevented || !WebUI.isPlainClick(event)) return;
     event.preventDefault();
     openDataPageUrl(link.href);
   });

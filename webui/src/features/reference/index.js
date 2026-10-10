@@ -64,8 +64,6 @@
       rawVerbatim: "预览保留源文件格式。",
       downloadJson: "下载完整 JSON",
       tableTooLarge: "此表超过 32 MiB 渲染上限。请查看原始预览或下载完整 JSON。",
-      previousTexts: "上一组文本",
-      nextTexts: "下一组文本",
       loadPreview: "加载预览",
     },
     en: {
@@ -112,8 +110,6 @@
       rawVerbatim: "Preview uses the original file formatting.",
       downloadJson: "Download full JSON",
       tableTooLarge: "This table exceeds the 32 MiB rendered-view limit. Use the raw preview or download the full JSON.",
-      previousTexts: "Previous texts",
-      nextTexts: "Next texts",
       loadPreview: "Load preview",
     },
   };
@@ -144,8 +140,8 @@
     rawRenderToken: 0,
     i18nCache: new Map(),
     i18nLoads: new Map(),
-    contentMatches: new Map(),
-    contentScansDone: new Set(),
+    // Search results are small, but retaining every query is still unbounded.
+    contentMatches: createCache(Infinity, 8),
     contentScanTimer: 0,
     contentScanKey: "",
     contentScanToken: 0,
@@ -310,10 +306,13 @@
   }
 
 
+  // I18nTextTable_<lang>.json maps are lookup data, not rendered tables: the
+  // largest is already close to MAX_TABLE_BYTES, so they are read unbounded
+  // rather than silently dropping localization.
   async function fetchAbsoluteJson(path) {
     const res = await fetch(path);
     if (!res.ok) throw new Error(`${path} HTTP ${res.status}`);
-    return JSON.parse((await readText(res)).text);
+    return res.json();
   }
 
   function parseRawReferenceJson(text) {
@@ -382,6 +381,11 @@
     return !!(matches && matches.has(referenceTableKey(table)));
   }
 
+  // Completion lives on the cached match set, so evicting a query drops both.
+  function contentScanDone(key) {
+    return !!REF_STATE.contentMatches.get(key)?.done;
+  }
+
   async function loadReferencePayload(table, signal) {
     const generation = REF_STATE.dataGeneration;
     const language = REF_STATE.language || currentLanguage();
@@ -390,9 +394,15 @@
     if (cached) return cached;
 
     // Selection reads have their own abort signal. Background scans share only
-    // their own pending reads, so switching tables cannot cancel a search row.
-    const pending = !signal && REF_STATE.tableLoads.get(cacheKey);
-    if (pending) return pending;
+    // their own pending reads, so switching tables cannot cancel a search row;
+    // a selection still joins a pending scan read instead of downloading again.
+    const pending = REF_STATE.tableLoads.get(cacheKey);
+    if (pending) {
+      if (!signal) return pending;
+      const payload = await pending;
+      if (signal.aborted) throw new DOMException("Aborted", "AbortError");
+      return payload;
+    }
 
     const promise = fetchReferenceJson(table.file, language, signal)
       .then(async ({ payload, bytes }) => {
@@ -494,10 +504,12 @@
       // their source preview instead of expanding into a huge string.
       const depth = (depths.get(this) || 0) + 1;
       if (depth > 32) throw new RangeError("JSON is too deep to format");
-      // Reserve worst-case string escaping and indentation before stringify
-      // allocates output, including localized strings repeated by many IDs.
-      remaining -= key.length * 6 + depth * 4 + 32
-        + (typeof value === "string" ? value.length * 6 : 0);
+      // Reserve each member's quoted key, indentation and separators plus its
+      // string length before stringify allocates output, including localized
+      // strings repeated by many IDs. Escapes may exceed this estimate; the
+      // caller still slices the result to MAX_PREVIEW_CHARS.
+      remaining -= key.length + depth * 2 + 8
+        + (typeof value === "string" ? value.length + 2 : 0);
       if (remaining < 0) throw new RangeError("JSON is too large to format");
       if (!value || typeof value !== "object") return value;
       depths.set(value, depth);
@@ -638,7 +650,6 @@
     REF_STATE.i18nCache.clear();
     REF_STATE.i18nLoads.clear();
     REF_STATE.contentMatches.clear();
-    REF_STATE.contentScansDone.clear();
     REF_STATE.collapsedTablePrefixes.clear();
     REF_STATE.focusRowId = "";
     REF_STATE.rowPagerKey = "";
@@ -825,7 +836,7 @@
     if (!q || !REF_STATE.tables.length) return;
 
     const key = referenceSearchKey(q, sourceKey);
-    if (REF_STATE.contentScansDone.has(key) || REF_STATE.contentScanKey === key) return;
+    if (contentScanDone(key) || REF_STATE.contentScanKey === key) return;
     const scanSources = new Set(sources);
 
     clearTimeout(REF_STATE.contentScanTimer);
@@ -841,12 +852,6 @@
 
     const matches = REF_STATE.contentMatches.get(key) || new Set();
     REF_STATE.contentMatches.set(key, matches);
-    // Search results are small, but retaining every query is still unbounded.
-    if (REF_STATE.contentMatches.size > 8) {
-      const oldest = REF_STATE.contentMatches.keys().next().value;
-      REF_STATE.contentMatches.delete(oldest);
-      REF_STATE.contentScansDone.delete(oldest);
-    }
     const tokens = window.WebUI.parseQuery(q);
 
     const tables = REF_STATE.tables.filter((table) => !sources.size || sources.has(table.source));
@@ -884,7 +889,7 @@
     await Promise.all(Array.from({ length: Math.min(2, tables.length) }, worker));
 
     if (REF_STATE.contentScanToken === token && REF_STATE.contentScanKey === key) {
-      REF_STATE.contentScansDone.add(key);
+      matches.done = true;
       REF_STATE.contentScanKey = "";
       renderReferenceList();
     }
@@ -1018,7 +1023,10 @@
       button.className = "reference-field-link";
       button.title = `${refText("fieldOpenRow")}: ${ref.table} / ${ref.row}`;
       button.textContent = display + quantity;
-      button.addEventListener("click", () => focusReferenceRow(target, ref.row));
+      button.addEventListener("click", () => {
+        window.WebUI.setActiveView?.("reference");
+        focusReferenceRow(target, ref.row);
+      });
       node.appendChild(button);
     } else {
       const text = document.createElement("span");
@@ -1037,7 +1045,7 @@
     return node;
   }
 
-  function renderReferenceFields(item, row) {
+  function renderReferenceFields(item, row, options = {}) {
     const fields = Array.isArray(row && row.fields) ? row.fields : [];
     if (!fields.length) return;
     const section = document.createElement("div");
@@ -1057,6 +1065,7 @@
       label.title = String(field && field.field || "");
       line.appendChild(label);
       line.appendChild(renderReferenceFieldValue(field));
+      options.decorateField?.(line, field);
       section.appendChild(line);
     }
     item.appendChild(section);
@@ -1066,7 +1075,7 @@
     return String((refLocale() === "zh" && field?.labelZh) || field?.label || field?.field || "");
   }
 
-  function renderReferenceGuide(item, row) {
+  function renderReferenceGuide(item, row, options = {}) {
     const guide = row && row.guide;
     if (!Array.isArray(guide?.sections) || !guide.sections.length) return false;
     const block = document.createElement("div");
@@ -1101,6 +1110,7 @@
         label.textContent = referenceFieldLabel(field);
         label.title = String(field.field || "");
         line.append(label, renderReferenceFieldValue(field));
+        options.decorateField?.(line, field);
         if (field.technical) {
           if (!technical) {
             technical = document.createElement("details");
@@ -1162,33 +1172,19 @@
     return window.WebUI.queryMatches(haystack, tokens);
   }
 
+  const TEXTS_PAGE_SIZE = 100;
+
   function renderReferenceTexts(host, texts, tokens) {
     if (!texts.length) return;
-    const pageSize = 100;
     const firstMatch = tokens.length ? texts.findIndex((text) => window.WebUI.queryMatches(
       [text.field, text.hint, text.path, text.i18nId, text.text], tokens,
     )) : 0;
-    let page = Math.floor(Math.max(0, firstMatch) / pageSize);
     const body = document.createElement("div");
     host.appendChild(body);
-    const controls = document.createElement("div");
-    controls.className = "list-pager";
-    const previous = document.createElement("button");
-    previous.type = "button";
-    previous.textContent = refText("previousTexts");
-    const count = document.createElement("span");
-    const next = document.createElement("button");
-    next.type = "button";
-    next.textContent = refText("nextTexts");
-    if (texts.length > pageSize) {
-      controls.append(previous, count, next);
-      host.appendChild(controls);
-    }
+    let pager = null;
     const render = () => {
-      const start = page * pageSize;
-      const end = Math.min(start + pageSize, texts.length);
       body.replaceChildren();
-      for (const text of texts.slice(start, end)) {
+      for (const text of pager ? pager.slice(texts) : texts) {
         const textNode = document.createElement("div");
         textNode.className = "reference-text";
         const label = text.hint || text.field || "text";
@@ -1198,12 +1194,20 @@
           `<div class="reference-text-body">${escapeHtml(text.text || "")}</div>`;
         body.appendChild(textNode);
       }
-      count.textContent = `${start + 1}–${end} / ${texts.length} ${refText("texts")}`;
-      previous.disabled = page === 0;
-      next.disabled = end === texts.length;
     };
-    previous.addEventListener("click", () => { page -= 1; render(); });
-    next.addEventListener("click", () => { page += 1; render(); });
+    if (texts.length > TEXTS_PAGE_SIZE) {
+      const controls = document.createElement("div");
+      host.appendChild(controls);
+      pager = window.WebUI.pagination.createPager({
+        container: controls,
+        storageKey: "reference_texts_page_size",
+        defaultPageSize: TEXTS_PAGE_SIZE,
+        maxPageSize: TEXTS_PAGE_SIZE,
+        onChange: render,
+      });
+      pager.setTotal(texts.length);
+      pager.showIndex(Math.max(0, firstMatch));
+    }
     render();
   }
 
@@ -1359,7 +1363,7 @@
       link.href = file.exportPath || referenceDataPath(file.fallbackPath, language);
       link.target = "_blank";
       link.rel = "noopener";
-      link.textContent = file.exportPath || file.fallbackPath || "";
+      link.textContent = file.exportPath ? rawDisplayPath(file.exportPath) : file.fallbackPath || "";
       head.appendChild(link);
       const download = document.createElement("a");
       download.href = link.href;
@@ -1465,5 +1469,29 @@
     maybeLoadReference();
   }
 
+  // Activities consumes the same maintained guides and exact reference links.
+  window.WebUI.referenceRows = {
+    prepare(language) { return ensureReferenceIndex(language); },
+    // The published index's own table list (not the same-hash aggregate).
+    tables() { return Array.isArray(REF_STATE.index?.tables) ? REF_STATE.index.tables : []; },
+    async load(file, signal) {
+      const table = REF_STATE.tables.find((table) => table.file === file);
+      if (!table) throw new Error(`Reference table unavailable: ${file}`);
+      return loadReferencePayload(table, signal);
+    },
+    render(item, row, options = {}) {
+      const hasGuide = renderReferenceGuide(item, row, options);
+      renderReferenceFields(item, row, options);
+      let host = item;
+      if (hasGuide && row.texts?.length) {
+        host = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.textContent = refText("guideTexts");
+        host.appendChild(summary);
+        item.appendChild(host);
+      }
+      renderReferenceTexts(host, row.texts || [], []);
+    },
+  };
   initReference();
 })();

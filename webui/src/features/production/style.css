@@ -22,13 +22,7 @@
 .production-row strong { font-size: 13px; }
 .production-row span, .production-row code { font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
 .production-row.selected { background: rgba(var(--accent-rgb), 0.09); box-shadow: inset 3px 0 var(--accent); }
-.production-device-group { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--bg-2); border-bottom: 1px solid var(--border); font-size: 12px; }
-.production-device-group > span { margin-left: auto; color: var(--muted); }
-.production-list-section { flex: 0 0 auto; }
-.production-list-section > summary { cursor: pointer; }
-.production-list-section > summary::before { content: "▸"; }
-.production-list-section[open] > summary::before { content: "▾"; }
-.production-list-section > .production-row { width: 100%; box-sizing: border-box; }
+.production-list-section > .list-group-summary { padding: 10px 16px; }
 #production-pager { flex: 0 0 auto; grid-template-columns: auto minmax(70px, 1fr) auto; }
 #production-pager .list-pager-size { grid-column: 1 / -1; justify-content: center; }
 #production-pager .list-pager-next { grid-column: 3; grid-row: 1; }

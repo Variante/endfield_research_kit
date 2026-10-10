@@ -8356,7 +8356,7 @@ function renderMissionContext(missionExtras) {
           link.appendChild(count);
         }
         link.addEventListener("click", (event) => {
-          if (event.button || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+          if (!window.WebUI.isPlainClick(event)) return;
           event.preventDefault();
           window.WebUI.gameplayTabs.open("item", item.id);
         });
@@ -8372,7 +8372,7 @@ function renderMissionContext(missionExtras) {
     } else {
       const note = document.createElement("div");
       note.className = "summary-text";
-      note.textContent = `${uiText("missionRewardUnavailable")} (${reward.rewardId})`;
+      note.textContent = reward.rewardId ? `${uiText("missionRewardUnavailable")} (${reward.rewardId})` : uiText("missionRewardUnavailable");
       section.appendChild(note);
     }
     appendDebugTrace(section, reward._debug, "mission completion reward");

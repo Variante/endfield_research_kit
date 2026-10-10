@@ -1,0 +1,47 @@
+#activities-app { display: flex; height: 100%; min-height: 0; }
+#activities-left { display: flex; flex-direction: column; width: 420px; min-width: 320px; flex: 0 0 auto; min-height: 0; background: var(--bg-2); overflow: hidden; }
+#activities-left header { padding: 14px 16px 8px; border-bottom: 1px solid var(--border); }
+#activities-left h1 { margin: 0 0 4px; font-size: 16px; }
+#activities-filter-panel { flex: 0 0 auto; max-height: 55%; overflow: auto; }
+#activities-filter-panel[hidden] { display: none; }
+#activities-count { padding: 8px 16px; color: var(--muted); font-size: 12px; }
+#activities-list { overflow: auto; flex: 1; min-height: 0; padding: 8px; }
+.activities-entry span { font-size: 12px; opacity: .8; overflow-wrap: anywhere; }
+#activities-right { flex: 1; padding: 20px; overflow: auto; min-width: 0; }
+#activities-boundary { color: var(--muted); }
+#activities-detail { overflow-wrap: anywhere; }
+.activities-times { display: grid; gap: 8px; padding: 12px; margin: 12px 0; background: var(--bg-2); border: 1px solid var(--border); border-radius: 6px; }
+.activities-tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0; }
+@media (max-width: 760px) {
+  #activities-app { height: auto; min-height: 100vh; flex-direction: column; }
+  #activities-left { width: 100%; min-width: 0; overflow: visible; border-bottom: 1px solid var(--border); }
+  #activities-filter-panel { max-height: none; }
+  #activities-list { flex: none; min-height: 200px; max-height: 42vh; }
+  #activities-right { overflow: visible; padding: 12px; }
+}
+.activities-mobile-splitter { display: none; }
+@media (max-width: 760px) { .activities-mobile-splitter { display: block; flex: 0 0 14px; cursor: row-resize; touch-action: none; } }
+
+#activities-right.has-activity-background {
+  background-image: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 86%, transparent), color-mix(in srgb, var(--bg) 96%, transparent)), var(--activities-background);
+  background-size: cover; background-position: center top; background-repeat: no-repeat;
+}
+.activities-illustrated-field .reference-field-value { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.activities-illustrated-field .activities-image-preview { display: inline-flex; flex: 0 0 44px; width: 44px; height: 44px; padding: 0; border-radius: 4px; background: transparent; }
+.activities-illustrated-field .activities-image-preview img { width: 100%; height: 100%; object-fit: contain; border-radius: 0; }
+
+.activities-artwork { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.activities-artwork figure { margin: 16px 0; }
+.activities-artwork .activities-image-preview { display: block; width: fit-content; max-width: 100%; padding: 0; border-radius: 6px; background: transparent; }
+.activities-artwork img { display: block; max-width: 100%; max-height: 480px; width: auto; object-fit: contain; border-radius: 0; }
+.activities-artwork figcaption { margin-top: 6px; font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+
+/* Keep the shared list structure; show authored tab art without cropping. */
+.activities-entry { position: relative; display: flex; align-items: center; gap: 14px; width: 100%; padding: 8px; text-align: left; margin: 0 0 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-2); color: var(--text); overflow: hidden; }
+.activities-thumbnail { display: block; width: 44%; height: auto; max-height: none; object-fit: contain; flex: 0 0 44%; order: 2; margin-left: auto; border-radius: 6px 0 0 6px; }
+.activities-entry-body { display: flex; flex-direction: column; flex: 1; min-width: 0; gap: 7px; }
+.activities-entry-body strong { font-size: 16px; line-height: 1.35; }
+.activities-entry .activities-entry-schedule { font-size: 11px; line-height: 1.4; }
+.activities-entry-meta[hidden] { display: none; }
+.activities-entry.is-active { outline: 2px solid #d9cd38; outline-offset: -2px; box-shadow: inset 4px 0 #d9cd38; }
+.activities-entry:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }

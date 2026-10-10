@@ -91,12 +91,13 @@
     { gender: "m", characterId: "chr_0002_endminm" },
   ];
   // Fixed display order for the data-type groups in the list.
-  const KIND_ORDER = ["character", "weapon", "equipment", "item", "enemy"];
+  const KIND_ORDER = ["character", "weapon", "gem", "equipment", "item", "enemy"];
   // Enemy display types, ordered 领袖 > 头目 > 精英 > 进阶 > 普通 (by displayType id).
   const ENEMY_TYPE_RANK = { "2": 0, "4": 1, "1": 2, "3": 3, "0": 4 };
   // Reuse the story page's badge color sets for the kind filter chips, so each
   // data type reads with the same palette as the story badges (badge-env, ...).
   const KIND_CHIP_CLASS = {
+    gem: "kind-chip badge-radio",
     weapon: "kind-chip badge-cutscene",
     equipment: "kind-chip badge-radio",
     character: "kind-chip badge-env",
@@ -105,6 +106,7 @@
   };
   // Same palette as a plain badge chip for the list rows (story item style).
   const KIND_BADGE_CLASS = {
+    gem: "badge-radio",
     weapon: "badge-cutscene",
     equipment: "badge-radio",
     character: "badge-env",
@@ -383,6 +385,7 @@
   }
 
   function kindLabel(kind) {
+    if (kind === "gem") return text("gem");
     if (kind === "weapon") return text("weapon");
     if (kind === "equipment") return text("equipment");
     if (kind === "character") return text("character");
@@ -393,6 +396,7 @@
 
   function entrySubtitle(entry) {
     const parts = [];
+    if (entry.kind === "gem") parts.push(entry.location || "");
     if (entry.rarity) parts.push(`${text("rarity")} ${entry.rarity}`);
     if (entry.kind === "weapon" && entry.weaponTypeLabel) parts.push(entry.weaponTypeLabel);
     if (entry.kind === "equipment") {
@@ -2697,9 +2701,32 @@
       body: [
         section(text("weaponStats"), renderStats(entry.stats, statCostIndex(entry, "weapon"))),
         section(text("weaponSkills"), skills ? `<div class="gameplay-card-grid">${skills}</div>` : ""),
+        section(text("gemSources"), renderGemLinks(entry.gemSources, "gem") + `<p>${escapeHtml(text("gemPoolBoundary"))}</p>`),
       ].join(""),
     };
   }
+  function renderGemLinks(rows, kind) {
+    return rows?.length ? rows.map((row) => {
+      const key = `${kind}:${row.id}`;
+      const target = findGameplayEntry(key) || { id: row.id, kind };
+      const icon = renderGameplayItemIcon(target, row.title, { static: true });
+      return `<button type="button" class="gameplay-value-chip gameplay-item-chip gameplay-related-link" data-gameplay-related-key="${escapeHtml(key)}">${icon}<span>${escapeHtml(row.title)}</span></button>`;
+    }).join(" ") : `<p>${escapeHtml(text("gemNoMatch"))}</p>`;
+  }
+
+  function renderGemDetail(entry) {
+    const poolLabels = ["weaponAttributeFilter", "weaponBonusFilter", "weaponPassiveFilter"];
+    const pools = (entry.termPools || []).map((pool, index) => section(text(poolLabels[index]),
+      `<div class="chips">${pool.map((term) => `<span class="gameplay-value-chip" title="${escapeHtml(term.id)}">${escapeHtml(gemTermLabel(term, index))}</span>`).join(" ")}</div>`)).join("");
+    const rows = (entry.stages || []).map((row) => `<tr><td>${escapeHtml(row.worldLevel)}</td><td>${escapeHtml(row.location)}</td><td>${escapeHtml(row.recommendLv ?? "—")}</td><td>${escapeHtml(row.costStamina ?? "—")}</td></tr>`).join("");
+    return {
+      facts: [fact(text("gemRegion"), entry.domain?.name), fact(text("gemLocation"), entry.location)],
+      body: `<p>${escapeHtml(text("gemPoolBoundary"))}</p>${pools}`
+        + section(text("gemCompatibleWeapons"), renderGemLinks(entry.compatibleWeapons, "weapon"))
+        + section(text("gemStages"), `<div class="gameplay-table-scroll"><table class="gameplay-skill-table"><thead><tr>${["gemWorldLevel", "gemLocation", "recommendLevel", "gemStamina"].map((key) => `<th>${escapeHtml(text(key))}</th>`).join("")}</tr></thead><tbody>${rows}</tbody></table></div>`),
+    };
+  }
+
   function renderCharacterDetail(entry) {
     const variantEntry = endministratorVariantEntry(entry);
     const facts = [
@@ -3586,12 +3613,12 @@
     const head = columns.map((column) => `<th scope="col">${escapeHtml(column.label)}</th>`).join("");
     const options = variants.map((variant, index) => {
       const name = variant.name && variant.name !== entry.title && variant.name !== variant.id ? variant.name : `${text("enemyConfiguration")} ${index + 1}`;
-      return `<button type="button" class="gameplay-variant-row${index === selectedIndex ? " is-selected" : ""}" data-variant-index="${index}" aria-pressed="${index === selectedIndex}" title="${escapeHtml(variant.id || "")}">${escapeHtml(name)}</button>`;
+      return `<button type="button" class="gameplay-variant-row${index === selectedIndex ? " is-selected" : ""}" data-variant-index="${index}" aria-pressed="${index === selectedIndex}" title="${escapeHtml(variant.id || "")}">${escapeHtml(name)} ${window.WebUI.updateBadges.html("gameplay", `enemy:${variant.id}`)}<br><code>${escapeHtml(variant.id || "")}</code></button>`;
     }).join("");
     const rows = variants.map((variant, index) => {
       const cells = columns.map((column) => `<td>${renderVariantTableCell(column.value(variant))}</td>`).join("");
       return `<tr>
-        <th scope="row">${escapeHtml(text("enemyConfiguration"))} ${index + 1}<br><code>${escapeHtml(variant.id || "")}</code></th>${cells}
+        <th scope="row">${escapeHtml(text("enemyConfiguration"))} ${index + 1} ${window.WebUI.updateBadges.html("gameplay", `enemy:${variant.id}`)}<br><code>${escapeHtml(variant.id || "")}</code></th>${cells}
       </tr>`;
     }).join("");
     const comparison = columns.length ? `<div class="gameplay-variant-table-wrap"><table class="gameplay-variant-table">
@@ -3955,6 +3982,12 @@
   function gameplayAssetRefsForItem(item) {
     const itemId = String(item?.id || "").trim();
     if (!itemId) return null;
+    if (item.kind === "gem" && item.iconId) {
+      const refs = STATE.integration.assets?.entries?.[`enemy:${item.iconId}`];
+      if (refs?.images?.some((asset) => asset?.rel)) return refs;
+      const iconRefs = integrationAssetRefsForToken(item.iconId);
+      if (iconRefs?.images?.some((asset) => asset?.rel)) return iconRefs;
+    }
     const tokenRefs = integrationAssetRefsForToken(itemId);
     if (tokenRefs?.images?.some((asset) => asset?.rel)) return tokenRefs;
     const refsByKey = STATE.integration.assets?.entries || {};
@@ -4505,6 +4538,12 @@
       { label: text("unlock"), value: formula.unlockName || formula.unlockValue || formula.unlockType },
     ]);
     const costs = renderMaterialChips(formula.costs || []);
+    const variants = (formula.variants || []).map((variant) => {
+      const materials = (variant.costs || []).filter((cost) => cost.id?.startsWith("item_equip_script_"));
+      return `<article class="gameplay-skill-card"><header><div class="gameplay-skill-title">${escapeHtml(materials.map((cost) => cost.name || cost.id).join(" / ") || text("materials"))}</div></header>
+        ${renderEquipmentCostChips(variant.costs || [])}
+      </article>`;
+    }).join("");
     return `<article class="gameplay-skill-card">
       <header>
         <div class="gameplay-skill-title">${escapeHtml(formula.formulaName || formula.name || text("equipmentFormula"))}</div>
@@ -4512,7 +4551,37 @@
       </header>
       ${details}
       ${costs ? `<div class="gameplay-subheading">${escapeHtml(text("materials"))}</div>${costs}` : ""}
-    </article>`;
+    </article>${variants ? `<div class="gameplay-card-grid">${variants}</div>` : ""}`;
+  }
+
+  function renderEquipmentCostChips(costs) {
+    return `<div class="gameplay-blackboard">${costs.map((cost) => `<span class="gameplay-value-chip gameplay-item-chip"><span class="gameplay-item-chip-icon gameplay-item-chip-icon-static" data-equipment-cost-icon="${escapeHtml(cost.id)}"></span><b>${escapeHtml(cost.name || cost.id)}</b> × ${escapeHtml(formatValue(cost.count))}</span>`).join("")}</div>`;
+  }
+
+  const equipmentProductionIndexes = new Map();
+  async function mountEquipmentCostIcons(root, language) {
+    const slots = [...root.querySelectorAll("[data-equipment-cost-icon]")];
+    if (!slots.length) return;
+    try {
+      if (!equipmentProductionIndexes.has(language)) {
+        equipmentProductionIndexes.set(language, (async () => {
+          const response = await fetchWithProgress(`data/lang/${encodeURIComponent(language)}/production/index.json`);
+          if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+          return response.json();
+        })().catch((error) => { equipmentProductionIndexes.delete(language); throw error; }));
+      }
+      const data = await equipmentProductionIndexes.get(language);
+      const items = new Map((data.items || []).map((item) => [item.id, item]));
+      for (const slot of slots) {
+        if (!slot.isConnected) continue;
+        const id = slot.dataset.equipmentCostIcon;
+        const icon = data.icons?.[String(items.get(id)?.iconId || id).toLowerCase()];
+        if (icon?.r) slot.innerHTML = `<img src="${escapeHtml(gameplayAssetHref(icon.r))}" alt="" loading="lazy" onerror="this.parentElement.classList.add('is-missing')">`;
+        else slot.classList.add("is-missing");
+      }
+    } catch {
+      for (const slot of slots) if (slot.isConnected) slot.classList.add("is-missing");
+    }
   }
   function syncLevelCard(input) {
     const card = input.closest("[data-level-card]");
@@ -4567,9 +4636,7 @@
     const key = `${STATE.selected.kind}:${STATE.selected.id}`;
     const row = [...list.querySelectorAll(".gameplay-row")].find((candidate) => candidate.dataset.key === key);
     if (!row) return false;
-    const group = row.closest("[data-list-group]");
-    if (group) { collapsedListGroups.delete(group.dataset.listGroup); group.open = true; }
-    row.scrollIntoView({ block: "center", behavior: "smooth" });
+    listGroups.reveal(row);
     if (isMobileLayout()) {
       const left = gp$("#gameplay-left");
       if (left) left.scrollIntoView({ block: "start", behavior: "smooth" });
@@ -4581,7 +4648,7 @@
     if (!root) return;
     root.querySelectorAll("[data-gameplay-audio-event]").forEach((link) => {
       link.addEventListener("click", (event) => {
-        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        if (!window.WebUI.isPlainClick(event)) return;
         const audioTab = gp$('.view-tab[data-view="audio"]');
         if (!audioTab || audioTab.hidden) return;
         event.preventDefault();
@@ -4623,7 +4690,7 @@
     detail.hidden = false;
     const title = entry.title || entry.id || "";
     gp$("#gameplay-detail-title").innerHTML = highlightText(title) + window.WebUI.updateBadges.html("gameplay", gameplayUpdateIds(entry));
-    const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : entry.kind === "enemy" ? renderEnemyDetail(entry) : entry.kind === "item" ? renderItemDetail(entry) : renderCharacterDetail(entry);
+    const rendered = entry.kind === "gem" ? renderGemDetail(entry) : entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : entry.kind === "enemy" ? renderEnemyDetail(entry) : entry.kind === "item" ? renderItemDetail(entry) : renderCharacterDetail(entry);
     // The header already shows the title; drop any fact that merely repeats it
     // (e.g. file/internal name equal to the title) to avoid duplicated info.
     const detailTags = dedupeDetailTags([
@@ -4655,8 +4722,16 @@
       ? window.WebUI.gameplayLoadout.render(entry, loadoutHelpers())
       : `${rendered.body || ""}${STATE.showDebug && ["character", "enemy"].includes(entry.kind) ? window.WebUI.gameplaySkillRefs?.markup() || "" : ""}${renderIntegratedSections(entry)}`;
     gp$("#gameplay-detail-body").innerHTML = `${isCharacter ? renderCharacterViewSwitch(view) : ""}${readingView && view === "info" ? `<div class="gameplay-reading-view">${body}</div>` : body}`;
+    if (entry.kind === "equipment") void mountEquipmentCostIcons(gp$("#gameplay-detail-body"), STATE.language);
     if (readingView && view === "info") bindDetailContents(detail);
-    window.WebUI.updateBadges.mount(gp$("#gameplay-detail-body"), "gameplay", gameplayUpdateIds(entry));
+    const updateIds = gameplayUpdateIds(entry);
+    window.WebUI.updateBadges.mount(gp$("#gameplay-detail-body"), "gameplay", updateIds, {
+      owners: entry.kind === "enemy" ? updateIds.map((id) => {
+        const index = (entry.variants || []).findIndex((variant) => `enemy:${variant.id}` === id);
+        const variant = entry.variants?.[index];
+        return { id, code: id.slice("enemy:".length), label: index < 0 ? title : `${text("enemyConfiguration")} ${index + 1}${variant.name && variant.name !== title && variant.name !== variant.id ? ` · ${variant.name}` : ""}` };
+      }) : null,
+    });
     bindGameplayMediaPlayers(detail);
     bindIntegratedLinks(detail);
     bindLevelSliders(detail);
@@ -4714,6 +4789,58 @@
 
   // A single list row, copying the story file-list item style: a colored kind
   // badge chip, then the readable name, with the subtitle below.
+  function weaponEffectLabel(entry, index) {
+    return entry?.kind === "weapon" ? gemTermLabel({ name: entry.skills?.[index]?.name }, index) : "";
+  }
+
+  function gemTermLabel(term, index) {
+    const name = String(term.name || term.id || "").split("·")[0].trim();
+    return index === 0 ? name.replace(/提升$/, "") : name;
+  }
+
+  function gemPoolFilterValues(entry, index) {
+    return entry.kind === "gem" ? (entry.termPools?.[index] || []).map((term) => gemTermLabel(term, index)) : weaponEffectLabel(entry, index);
+  }
+
+  function equipmentAttributeLabels(entry) {
+    if (entry?.kind !== "equipment") return [];
+    const attrs = entry.stats?.propertyCurves?.length ? entry.stats.propertyCurves
+      : entry.stats?.displayAttrs || entry.stats?.rows?.[0]?.attrs || [];
+    return [...new Set(attrs.filter((attr) => attr.key !== "def" && Number(attr.type) !== 3)
+      .map(statAttrLabel).filter(Boolean))];
+  }
+
+  function equipmentBaseAttributeValue(entry, label) {
+    if (entry?.kind !== "equipment") return null;
+    // displayAttrs stores the base attrValue used by the level 1 curve row.
+    const attr = entry.stats?.displayAttrs?.find((item) => statAttrLabel(item) === label);
+    return attr && attr.value !== null && attr.value !== "" && Number.isFinite(Number(attr.value))
+      ? Number(attr.value) : null;
+  }
+
+  function syncEquipmentAttributeSort() {
+    const select = gp$("#gameplay-sort");
+    if (!select) return;
+    const previous = select.value;
+    const labels = STATE.facets.active("kinds").has("equipment")
+      ? [...STATE.facets.active("equipmentAttributes")] : [];
+    const options = labels.map((label) => ({
+      value: `equipment-attribute:${label}`,
+      label: `${label} · ${text("equipmentBaseAttributeSort")}`,
+    }));
+    const existing = [...select.querySelectorAll('[data-equipment-attribute-sort]')];
+    if (JSON.stringify(existing.map((option) => ({ value: option.value, label: option.textContent }))) !== JSON.stringify(options)) {
+      existing.forEach((option) => option.remove());
+      for (const item of options) {
+        const option = new Option(item.label, item.value);
+        option.dataset.equipmentAttributeSort = "1";
+        select.add(option);
+      }
+      select.value = [...select.options].some((option) => option.value === previous) ? previous : "default";
+      window.WebUI.sorting.refresh();
+    }
+  }
+
   function renderRow(entry, selectedId) {
     const key = `${entry.kind}:${entry.id}`;
     const selected = key === selectedId ? " is-selected" : "";
@@ -4726,20 +4853,29 @@
       ? images.find((image) => image.rel && image.height > 0 && image.width / image.height > 1.45)
       : images.find((image) => image.rel);
     const thumbnail = asset ? `<span class="gameplay-row-thumbnail${entry.kind === "character" ? " gameplay-row-banner" : ""}"><img src="${escapeHtml(gameplayAssetHref(asset.rel))}" alt="" loading="lazy" onerror="this.parentElement.classList.add('is-missing')"></span>` : "";
+    const weaponEffects = entry.kind === "weapon" ? (entry.skills || []).map((skill, index) => {
+      const name = String(skill.name || "").trim();
+      return name ? `<span title="${escapeHtml(name)}">${highlightText(weaponEffectLabel(entry, index))}</span>` : "";
+    }).filter(Boolean).join(" · ") : equipmentAttributeLabels(entry).map((label) => `<span>${highlightText(label)}</span>`).join(" · ");
     return `<button class="gameplay-row${selected}" type="button" data-key="${escapeHtml(key)}">
       ${thumbnail}<span class="gameplay-row-text"><span class="gameplay-row-line1">
         <span class="badge ${badgeClass}">${escapeHtml(kindLabel(entry.kind))}</span>
         ${window.WebUI.updateBadges.html("gameplay", gameplayUpdateIds(entry))}
         <span class="gameplay-row-name">${highlightText(entry.title || entry.id || "")}</span>
       </span>
-      <span class="gameplay-row-meta">${highlightText(entrySubtitle(entry) || rowPathText(entry) || "")}</span></span>
+      <span class="gameplay-row-meta">${highlightText(entrySubtitle(entry) || rowPathText(entry) || "")}</span>
+      ${weaponEffects ? `<span class="gameplay-row-effects">${weaponEffects}</span>` : ""}</span>
     </button>`;
   }
 
-  const collapsedListGroups = new Set();
+  const listGroups = window.WebUI.listGroups.create();
   function gameplayUpdateIds(entry) {
     return [...new Set([entry.id, ...(entry.variants || []).map((variant) => variant.id)])]
       .map((id) => `${entry.kind}:${id}`);
+  }
+
+  function gameplayUpdateStatuses(entry) {
+    return [...new Set(gameplayUpdateIds(entry).map((id) => window.WebUI.updateBadges.status("gameplay", id)).filter(Boolean))];
   }
 
   function renderList() {
@@ -4757,20 +4893,16 @@
     const pageEntries = STATE.pager ? STATE.pager.slice(STATE.filtered) : STATE.filtered;
     const groups = new Map();
     for (const entry of pageEntries) {
-      const group = gameplayListGroup(entry);
+      const group = gameplayListGroupKey(entry);
       if (!groups.has(group)) groups.set(group, []);
       groups.get(group).push(entry);
     }
-    list.innerHTML = [...groups].map(([group, entries]) => {
-      const count = STATE.filtered.filter((row) => gameplayListGroup(row) === group).length;
-      return `<details class="gameplay-list-section" data-list-group="${escapeHtml(group)}"${collapsedListGroups.has(group) ? "" : " open"}><summary class="gameplay-list-group"><strong>${escapeHtml(group)}</strong><span>${formatNumber(count)}</span></summary>${entries.map((entry) => renderRow(entry, selectedId)).join("")}</details>`;
-    }).join("");
-    list.querySelectorAll("[data-list-group]").forEach((group) => {
-      group.addEventListener("toggle", () => {
-        if (group.open) collapsedListGroups.delete(group.dataset.listGroup);
-        else collapsedListGroups.add(group.dataset.listGroup);
-      });
-    });
+    const counts = window.WebUI.listGroups.counts(STATE.filtered, gameplayListGroupKey);
+    list.innerHTML = [...groups].map(([group, entries]) => listGroups.section({
+      id: group, title: gameplayListGroup(entries[0]), count: counts.get(group) || 0, className: "gameplay-list-section",
+      body: entries.map((entry) => renderRow(entry, selectedId)).join(""),
+    })).join("");
+    listGroups.bind(list);
 
     list.querySelectorAll(".gameplay-row").forEach((row) => {
       row.addEventListener("click", () => {
@@ -4863,6 +4995,16 @@
       const section = gp$(`[data-filter-section="gameplay-${suffix}"]`);
       if (section) section.hidden = (kind || "character") !== active;
     }
+    for (const [, suffix] of WEAPON_EFFECT_FACET_GROUPS) {
+      const section = gp$(`[data-filter-section="gameplay-${suffix}"]`);
+      if (section) section.hidden = !["weapon", "gem"].includes(active);
+    }
+    const domain = gp$('[data-filter-section="gameplay-gem-domain"]');
+    if (domain) domain.hidden = active !== "gem";
+    const rarity = gp$('[data-filter-section="gameplay-rarity"]');
+    if (rarity) rarity.hidden = active === "gem";
+    const equipmentAttributes = gp$('[data-filter-section="gameplay-equipment-attribute"]');
+    if (equipmentAttributes) equipmentAttributes.hidden = active !== "equipment";
   }
 
   function selectKind(kind) {
@@ -4891,7 +5033,15 @@
     return [kindLabel(entry && entry.kind), listTypeLabel(entry)].filter(Boolean).join(" / ");
   }
 
+  function gameplayListGroupKey(entry) {
+    if (entry.kind === "gem") return `gem:domain:${entry.domain?.id || "unknown"}`;
+    return entry.kind === "equipment" && entry.suit?.id
+      ? `equipment:suit:${entry.suit.id}` : `${entry.kind}:${gameplayListGroup(entry)}`;
+  }
+
   function gameplayListGroup(entry) {
+    if (entry.kind === "gem") return entry.domain?.name || text("gemUnknownRegion");
+    if (entry.kind === "equipment" && entry.suit?.id) return entry.suit.name || entry.suit.id;
     return entry.kind === "character" ? jobFilterLabel(entry) || kindLabel(entry.kind)
       : listTypeLabel(entry) || kindLabel(entry.kind);
   }
@@ -4917,6 +5067,11 @@
     ["itemTypes", "item-type", itemTypeFilterKey, itemTypeFilterLabel, "item"],
   ];
   const facetLabels = new Map(); // group id -> Map(value -> label from the loaded entries)
+  const WEAPON_EFFECT_FACET_GROUPS = [
+    ["weaponAttributes", "weapon-attribute", "weaponAttributeFilter"],
+    ["weaponBonuses", "weapon-bonus", "weaponBonusFilter"],
+    ["weaponPassives", "weapon-passive", "weaponPassiveFilter"],
+  ];
 
   function createFacets() {
     const labelOf = (id) => (value) => facetLabels.get(id)?.get(value) || value;
@@ -4940,7 +5095,18 @@
           label: kindLabel, className: (kind) => KIND_CHIP_CLASS[kind] || "kind-chip",
           order: (a, b) => kindRank(a) - kindRank(b) || a.localeCompare(b) },
         ...entryGroups,
-        window.WebUI.updateBadges.filterGroup("gameplay", (entry) => [...new Set(gameplayUpdateIds(entry).map((id) => window.WebUI.updateBadges.status("gameplay", id)).filter(Boolean))]),
+        { id: "equipmentAttributes", container: "#gameplay-equipment-attribute-filter",
+          section: "gameplay-equipment-attribute", values: equipmentAttributeLabels, order: "natural" },
+        ...WEAPON_EFFECT_FACET_GROUPS.map(([id, suffix], index) => ({
+          id, container: `#gameplay-${suffix}-filter`, section: `gameplay-${suffix}`,
+          values: (entry) => gemPoolFilterValues(entry, index), countMode: "faceted", hideEmpty: true,
+        })),
+        { id: "gemDomains", container: "#gameplay-gem-domain-filter", section: "gameplay-gem-domain",
+          values: (entry) => entry.kind === "gem" ? entry.domain?.id || "unknown" : [],
+          label: (id) => gemDomains.get(id)?.name || text("gemUnknownRegion"),
+          order: (a, b) => (gemDomains.get(a)?.sortId ?? 999) - (gemDomains.get(b)?.sortId ?? 999) || a.localeCompare(b),
+          countMode: "faceted", hideEmpty: true },
+        window.WebUI.updateBadges.filterGroup("gameplay", gameplayUpdateStatuses, { countMode: "faceted" }),
         { id: "rarities", container: "#gameplay-rarity-filter", section: "gameplay-rarity", values: rarityFilterKey,
           label: rarityFilterLabel, order: (a, b) => Number(b) - Number(a),
           countMode: "faceted", hideEmpty: true },
@@ -4949,7 +5115,15 @@
     });
   }
 
+  // Gem domain id -> domain, rebuilt per load so chip labels and ordering
+  // do not rescan every entry per comparison.
+  const gemDomains = new Map();
+
   function buildFilterChips() {
+    gemDomains.clear();
+    for (const entry of STATE.entries) {
+      if (entry.kind === "gem" && entry.domain?.id && !gemDomains.has(entry.domain.id)) gemDomains.set(entry.domain.id, entry.domain);
+    }
     window.WebUI.updateBadges.syncFilter("gameplay", "gameplay", STATE.facets);
     for (const [id, , key, label] of ENTRY_FACET_GROUPS) {
       facetLabels.set(id, new Map(STATE.entries.map((entry) => [key(entry), label(entry)]).filter(([value]) => value)));
@@ -4987,6 +5161,7 @@
   function applyFilters() {
     if (!STATE.facets.isFiltered("kinds")) STATE.facets.set("kinds", [STATE.selected?.kind || "character"], { silent: true });
     renderKindTabs();
+    syncEquipmentAttributeSort();
     STATE.facets.render(STATE.entries);
     const rarityCounts = STATE.facets.counts("rarities");
     const validRarities = [...STATE.facets.active("rarities")].filter((value) => rarityCounts.get(value) > 0);
@@ -5014,11 +5189,14 @@
     const titleCompare = (a, b) => collator.compare(a.title || a.id || "", b.title || b.id || "")
       || collator.compare(a.id || "", b.id || "");
     const rankByScore = sort === "default" && tokens.length > 1;
-    STATE.filtered.sort(window.WebUI.sorting.comparator("gameplay-sort", (a, b) => {
-      const groupOrder = kindRank(a.kind) - kindRank(b.kind)
-        || (a.kind === "enemy" ? enemyTypeRank(a) - enemyTypeRank(b) : 0)
-        || collator.compare(gameplayListGroup(a), gameplayListGroup(b));
-      if (groupOrder) return groupOrder;
+    // Group order and "missing value last" placement stay outside the shared
+    // comparator, whose direction toggle flips the sign of everything inside.
+    const attributeLabel = sort.startsWith("equipment-attribute:") ? sort.slice("equipment-attribute:".length) : null;
+    const directed = window.WebUI.sorting.comparator("gameplay-sort", (a, b) => {
+      if (attributeLabel !== null) {
+        const av = equipmentBaseAttributeValue(a, attributeLabel), bv = equipmentBaseAttributeValue(b, attributeLabel);
+        return (av !== null && bv !== null ? bv - av : 0) || titleCompare(a, b);
+      }
       if (rankByScore) {
         const delta = (scores.get(b) || 0) - (scores.get(a) || 0);
         if (delta) return delta;
@@ -5037,7 +5215,20 @@
         : collator.compare(listTypeLabel(a), listTypeLabel(b))) || titleCompare(a, b);
       if (sort === "id") return collator.compare(a.id || "", b.id || "");
       return compareGameplayEntries(a, b);
-    }));
+    });
+    STATE.filtered.sort((a, b) => {
+      if (attributeLabel !== null) {
+        const aMissing = equipmentBaseAttributeValue(a, attributeLabel) === null;
+        const bMissing = equipmentBaseAttributeValue(b, attributeLabel) === null;
+        if (aMissing !== bMissing) return aMissing ? 1 : -1;
+        return directed(a, b);
+      }
+      return kindRank(a.kind) - kindRank(b.kind)
+        || (a.kind === "gem" ? (a.domain?.sortId ?? 999) - (b.domain?.sortId ?? 999) : 0)
+        || (a.kind === "enemy" ? enemyTypeRank(a) - enemyTypeRank(b) : 0)
+        || collator.compare(gameplayListGroup(a), gameplayListGroup(b))
+        || directed(a, b);
+    });
     if (STATE.selected && !STATE.filtered.includes(STATE.selected)) STATE.selected = null;
     renderList();
   }
@@ -5071,7 +5262,10 @@
       ["#gameplay-job-label", "job"],
       ["#gameplay-character-property-label", "characterPropertyFilter"],
       ["#gameplay-weapon-type-label", "weaponTypeFilter"],
+      ...WEAPON_EFFECT_FACET_GROUPS.map(([, suffix, label]) => [`#gameplay-${suffix}-label`, label]),
+      ["#gameplay-gem-domain-label", "gemRegion"],
       ["#gameplay-equipment-type-label", "equipmentTypeFilter"],
+      ["#gameplay-equipment-attribute-label", "equipmentAttributeFilter"],
       ["#gameplay-enemy-type-label", "enemyTypeFilter"],
       ["#gameplay-item-type-label", "itemTypeFilter"],
       ["#gameplay-rarity-label", "rareLevel"],
@@ -5089,6 +5283,7 @@
     ensurePanelToggle().sync();
     buildFilterChips();
     renderKindTabs();
+    syncEquipmentAttributeSort();
     if (STATE.entries.length) renderList();
   }
 

@@ -37,6 +37,7 @@
     "map-recovery",
     "assets",
     "reference",
+    "activities",
     "updates",
     "recovery",
     "data-inspector",

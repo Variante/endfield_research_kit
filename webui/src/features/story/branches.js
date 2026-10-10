@@ -131,7 +131,7 @@
       ${model.unresolved.length ? `<p class="story-branch-unresolved">${ui(`${model.unresolved.length} source-evidence gap(s) remain for this scene.`, `此场景仍有 ${model.unresolved.length} 项来源证据缺口。`)}</p>` : ""}`;
     if (typeof options.navigate === "function") container.addEventListener("click", (event) => {
       const anchor = event.target.closest("[data-branch-jump]");
-      if (!anchor || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+      if (!anchor || !WebUI.isPlainClick(event)) return;
       event.preventDefault();
       options.navigate(navigation[Number(anchor.dataset.branchJump)]);
     });

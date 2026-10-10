@@ -38,6 +38,7 @@
       gameFile: "\u6e38\u620f\u6587\u4ef6",
       textJson: "\u6587\u672c JSON",
       exportedAsset: "\u5bfc\u51fa\u8d44\u6e90",
+      categoryActivities: "\u6d3b\u52a8",
       domain: "\u8303\u56f4",
       assetKind: "\u8d44\u6e90\u7c7b\u578b",
       assetPath: "\u8d44\u6e90\u8def\u5f84",
@@ -127,6 +128,7 @@
       gameFile: "Game file",
       textJson: "Text JSON",
       exportedAsset: "Exported asset",
+      categoryActivities: "Activities",
       domain: "Domain",
       assetKind: "Asset kind",
       assetPath: "Asset path",
@@ -290,6 +292,7 @@
 
   function categoryLabel(category) {
     const value = String(category || "other");
+    if (value === "activities") return updateText("categoryActivities");
     if (value === "asset_image") return `${updateText("exportedAsset")} / image`;
     if (value === "asset_model") return `${updateText("exportedAsset")} / model`;
     if (value === "asset_video") return `${updateText("exportedAsset")} / video`;
@@ -503,6 +506,7 @@
         UPDATE_STATE.loaded = true;
         UPDATE_STATE.loading = null;
         UPDATE_STATE.payload = payload || {};
+        // build_updates.classify_game_data_path already assigns the "activities" category.
         UPDATE_STATE.entries = aggregateUpdateEntriesByHash(Array.isArray(payload && payload.entries) ? payload.entries : []);
         populateUpdateFilters();
         applyUpdateFilters();

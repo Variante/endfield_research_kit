@@ -27,7 +27,9 @@
 // Assets, Gameplay, Characters, Audio, Text, Updates and the Data page; Map's
 // layer checkboxes and Recovery are not filter groups):
 //   * chip counts are dataset totals (countMode: "total") on every page; the
-//     Data page's store groups carry server counts;
+//     Data page's store groups carry server counts; Gameplay's rarity,
+//     weapon-effect, gem-domain and update (version-change) groups override
+//     this with faceted counts;
 //   * search stays outside `predicate`, so typing never recounts chips (Audio
 //     media alone is tens of thousands of records); each page applies its
 //     search after facets.filter(), and ranking stays page-owned;
