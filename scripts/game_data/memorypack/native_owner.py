@@ -9,9 +9,10 @@ wrapper's own gate still decides the result:
 
 1. gate ``GameAssembly.dll``/``global-metadata.dat`` against ``nativeInputs``;
 2. check ``UnityPlayer.dll`` beside the selected GameAssembly;
-3. run the wrapper's selected-body proof, converting a decoder error into the
+3. check any explicitly selected additional native libraries, then run the
+   wrapper's selected-body proof, converting a decoder error into the
    wrapper's own named failure;
-4. re-gate all three inputs afterwards, so a build change during the proof
+4. re-gate every selected native input afterwards, so a build change during the proof
    discards its summary;
 5. refuse when any proof source or contract changed during the run.
 
@@ -42,47 +43,64 @@ def proof_sources(entry, path, parent_sources, mapper_path):
     return sorted({r['path']: r for r in rows}.values(), key=lambda r: r['path'])
 
 
-def _unity_hash(unity):
-    if not unity.is_file():
+def _file_hash(path):
+    if not path.is_file():
         return None
-    with unity.open('rb') as stream:
+    with path.open('rb') as stream:
         return hashlib.file_digest(stream, 'sha256').hexdigest().upper()
 
 
 def validate_owner(owner, *, gameassembly, metadata, open_claims, check, expected, phase,
-                   pass_native_inputs=True):
+                   pass_native_inputs=True, additional_inputs=None):
     """Run the shared gate sequence for wrapper module ``owner`` (see module docstring).
 
     ``open_claims`` are the result flags the wrapper never proves; ``check`` and
     ``expected`` name the failure raised when the selected proof errors; ``phase``
     names the validation in the native-drift detail. ``pass_native_inputs``
     forwards the pinned inputs to the wrapper's ``_fail`` diagnostics.
+    ``additional_inputs`` maps a declared library name to an explicit path, or
+    None to select that file beside the explicitly gated GameAssembly. Every
+    contract native input must be selected; an extra pin is never silently ignored.
+    With additional inputs, the selected-body proof receives ``selected_inputs``
+    containing their actual paths so an explicit selection cannot be discarded.
     """
     c = owner._contract(); pins = c['nativeInputs']; sources = owner._proof_sources()
     extra = {'native_inputs': pins} if pass_native_inputs else {}
+    additional_inputs = {} if additional_inputs is None else dict(additional_inputs)
+    standard = {'GameAssembly.dll', 'global-metadata.dat', 'UnityPlayer.dll'}
+    if (set(additional_inputs) & standard or set(pins) != standard | set(additional_inputs) or
+        any(type(name) != str or not name or '/' in name or '\\' in name or
+            name in ('.', '..') for name in additional_inputs)):
+        owner._fail('native-input-selection', 'every declared native input selected exactly once',
+                    sorted(pins), **extra)
     gate = owner.check_installed_native_inputs(pins['GameAssembly.dll'], pins['global-metadata.dat'],
                                                gameassembly=gameassembly, metadata=metadata)
     result = {'status': gate.status, 'scope': owner.SCOPE, 'nativeInputs': pins,
               'provenance': {'inputs': sources}, 'evidenceBoundary': c['evidenceBoundary'], **open_claims}
     if gate.status != 'validated':
         return {**result, 'detail': gate.detail}
-    unity = Path(gate.gameassembly).parent / 'UnityPlayer.dll'
-    current = _unity_hash(unity)
-    if current != pins['UnityPlayer.dll']:
-        return {**result, 'status': 'missing' if current is None else 'mismatched',
-                'detail': 'UnityPlayer.dll missing or mismatched'}
+    selected = {'UnityPlayer.dll': Path(gate.gameassembly).parent / 'UnityPlayer.dll'}
+    selected.update({name: Path(path) if path is not None else Path(gate.gameassembly).parent / name
+                     for name, path in sorted(additional_inputs.items())})
+    current = {name: _file_hash(path) for name, path in selected.items()}
+    for name, digest in current.items():
+        if digest != pins[name]:
+            return {**result, 'status': 'missing' if digest is None else 'mismatched',
+                    'detail': f'{name} missing or mismatched'}
     try:
-        summary = owner._validate_selected(gate.gameassembly, c)
+        summary = (owner._validate_selected(gate.gameassembly, c, selected_inputs=selected)
+                   if additional_inputs else owner._validate_selected(gate.gameassembly, c))
     except (ValueError, KeyError, IndexError, TypeError, OverflowError) as error:
         if isinstance(error, CensusGateError):
             raise
         owner._fail(check, expected, str(error), **extra)
     after = owner.check_installed_native_inputs(pins['GameAssembly.dll'], pins['global-metadata.dat'],
                                                 gameassembly=gate.gameassembly, metadata=gate.metadata)
-    current = _unity_hash(unity)
-    if after.status != 'validated' or current != pins['UnityPlayer.dll']:
+    current = {name: _file_hash(path) for name, path in selected.items()}
+    changed = [name for name, digest in current.items() if digest != pins[name]]
+    if after.status != 'validated' or changed:
         return {**result, 'status': after.status if after.status != 'validated' else (
-                'missing' if current is None else 'mismatched'),
+                'missing' if current[changed[0]] is None else 'mismatched'),
                 'detail': f'native inputs changed during {phase} validation'}
     drift = [r['path'] for r in sources if owner._fingerprint(Path(r['path'])) != r]
     if drift:

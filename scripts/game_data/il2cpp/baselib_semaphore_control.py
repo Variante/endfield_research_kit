@@ -88,17 +88,31 @@ def _same_eax(g):
 
 def validate_baselib_semaphore_control(index, contract):
     base = index.pe.image_base; imports = {r['role']:base+r['slotRva'] for r in contract['kernelImports']}
-    if set(imports) != {'GetLastError','ReleaseSemaphore','WaitForSingleObjectEx','GetCurrentThreadId'} or len(set(imports.values())) != 4:
+    if (set(imports) != {'GetLastError','ReleaseSemaphore','WaitForSingleObjectEx','GetCurrentThreadId'} or
+        len(contract['kernelImports']) != 4 or len(set(imports.values())) != 4):
         raise ValueError('baselibControl.kernel-import-roles')
     functions = {f['role']:f for f in contract['functions']}
     if set(functions) != {'Acquire','Release','ThreadId'} or len(functions) != len(contract['functions']):
         raise ValueError('baselibControl.function-roles')
     frame = contract['frames']; programs = {}; summaries = []
+    if (contract['infiniteWaitWord'] != 0xffffffff or contract['releaseLimitWord'] != 0x7fffffff or
+        any(type(value) != int or value < 0 for value in frame.values())):
+        raise ValueError('baselibControl.abi-words-or-frame-values')
+    leaf = frame['callBytes']; release_frame = frame['releaseBytes']
+    saved = frame['saveRbxEntryOffset']; delta = release_frame+8
+    slots = [(saved+delta,saved+delta+8), (frame['saveRsiOffset'],frame['saveRsiOffset']+8),
+             (frame['previousCountOffset'],frame['previousCountOffset']+4)]
+    if (leaf < 32 or leaf % 16 != 8 or release_frame < 32 or release_frame % 16 or
+        not 8 <= saved <= 32 or any(a < delta+8 or b > delta+40 for a,b in slots) or
+        any(a < d and c < b for n,(a,b) in enumerate(slots) for c,d in slots[n+1:])):
+        raise ValueError('baselibControl.abi-shadow-alignment-or-local-slots')
+    intervals = sorted((w['startRva'],w['endRva']) for f in functions.values() for w in f['ownedWindows'])
+    if any(a >= b for a,b in intervals) or any(b > c for (a,b),(c,d) in zip(intervals,intervals[1:])):
+        raise ValueError('baselibControl.overlapping-or-empty-owned-windows')
     for role,function in functions.items():
         rows = _owned_rows(index,function); programs[role] = rows
         summaries.append({'role':role,'ownedBytes':sum(w['endRva']-w['startRva'] for w in function['ownedWindows']),
                           **_graph(rows,base,function['entryRva'])})
-    leaf = frame['callBytes']; release_frame = frame['releaseBytes']
     g = ProgramGrammar(programs['ThreadId'],label='baselibControl.threadId')
     g.take(f'sub rsp, 0x{leaf:x}'); _import(g,imports['GetCurrentThreadId']); _same_eax(g)
     g.take(f'add rsp, 0x{leaf:x}','ret'); g.finish()
