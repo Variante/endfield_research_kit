@@ -1,5 +1,16 @@
 Agent notes for this repo. User-facing usage belongs in `README.md`.
 
+## Git Authorship
+
+- Every commit created, amended, cherry-picked, or rebased by an agent must use
+  `Variante <382086919@qq.com>` as its author. No other author name or email
+  is allowed; do not rely on inherited Git configuration or preserved authors.
+- Claude and Codex may be credited with `Co-authored-by` trailers. No other
+  coauthors are allowed.
+- Before committing, verify the effective author identity. Before pushing,
+  verify the author and coauthor trailers of every commit being pushed and
+  correct any violations first.
+
 ## Active Scope
 
 Keep root-level docs and workflow guidance focused on:
