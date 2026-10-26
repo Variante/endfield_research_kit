@@ -1700,6 +1700,20 @@ binding, nested call identity and side selection must be checked before using
 these observations to compare the formula; stored client HP is not a virtual
 part/main-body accessor or server acknowledgement.
 
+The [damage session reader](../../scripts/game_data/damage_runtime_inspect.py)
+reuses the maintained transport/pair inspector and requires the reviewed kernel
+hook and return-ABI selection. It groups observations only under their explicit
+same-thread DamageAction invocation ancestors, retains unrelated observations
+separately, and refuses incomplete calls, failed transport or changed retained
+inputs. Local-file inventories establish consistency of the retained files,
+not producer authenticity or a fresh native proof. Formula floating returns
+retain raw bits beside decoded values; modifier target identity fields remain
+observations at their own entry/return boundaries. A DamageAction enclosure is
+not automatically one normal attack, one hit or one target. Operator-declared
+solo Endminf/Rodin context cannot supply missing runtime actor/skill ownership,
+input acceptance, animation recovery or asynchronous descendants. No live
+observation is added by preparing the capture preset or running fixture tests.
+
 ## Character attribute formula
 
 [`attribute_formula_native.json`](../../scripts/game_data/contracts/attribute_formula_native.json)
