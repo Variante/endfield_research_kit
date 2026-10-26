@@ -1019,7 +1019,7 @@
           "encodedBytes": "d0000000"
         },
         {
-          "value": 64,
+          "value": 1073741824,
           "name": "IgnoreFromBakeNavmesh",
           "fieldIndex": 50000,
           "token": "0x0400c351",

@@ -33,7 +33,7 @@ Member lanes and their owners:
   ``enemyGroup``: ``combat``; ``dynamicOccludeAreas``:
   ``dynamic_occlusion``; ``guideHints``: ``guide_hints``;
   ``blackbox``: ``blackbox``; ``predefinedParams``: ``predefined_params``.
-- ``npcs``: ``npc_runtime`` (the 14 + 77 + 27 flattened
+- ``npcs``: ``npc_runtime`` (the 14 + 79 + 28 flattened
   ``NpcRuntimeProxyData`` row, also used by AtmosphericNpcData);
   ``npcAttractPointData``/``worldWayPointData``: ``npc``;
   ``npcPatrol``/``patrols``: ``patrol``; ``enemyPatrol``: ``enemy_patrol``;
@@ -66,6 +66,7 @@ from scripts.game_data.codecs.leveldata.levelscript_brief import (
 )
 from scripts.game_data.serialization_roots_native import check_root_native_inputs
 from scripts.game_data.string_pool import StringPool
+from scripts.game_data.memorypack.npc_runtime import require_selected_decoder
 from scripts.game_data.codecs.leveldata.spatial import (
     decode_level_camera_pose_list,
     decode_level_environment_volume_list,
@@ -91,7 +92,7 @@ from scripts.game_data.codecs.leveldata.npc_runtime import (
     LevelNpcCodecError,
     decode_npc_runtime_proxy_list,
 )
-from scripts.game_data.codecs.leveldata.patrol import decode_npc_patrol_list, decode_patrol_list
+from scripts.game_data.codecs.leveldata.patrol import decode_patrol_list
 from scripts.game_data.codecs.leveldata.enemy_patrol import decode_enemy_patrol_list
 from scripts.game_data.codecs.leveldata.guide_hints import decode_level_guide_hint_list
 from scripts.game_data.codecs.leveldata.predefined_params import (
@@ -239,13 +240,13 @@ def frame_leveldata_airwalls_prefix(data: bytes, *, strings: StringPool | None =
     }
 
 
-def _check_root_source() -> None:
-    gate = check_root_native_inputs()
+def _check_root_source(*, game_root=None) -> None:
+    gate = check_root_native_inputs(game_root=game_root)
     if gate.status != "validated":
         raise LevelDataTopLevelFramingError(f"leveldataRoot.native:{gate.status}:{gate.detail}")
 
 
-def frame_leveldata_named_prefix(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
+def frame_leveldata_named_prefix(data: bytes, *, strings: StringPool | None = None, game_root=None, patrol_decoder=None, npc_decoder=None) -> dict[str, Any]:
     """Advance the generated 43-field order through every supported shape.
 
     Null and empty collections always close. A nonempty collection closes
@@ -257,7 +258,7 @@ def frame_leveldata_named_prefix(data: bytes, *, strings: StringPool | None = No
     ``LevelFactoryPredefineData`` and ``LevelFunctionAreaData`` wrappers are
     also closed from their generated one- and four-list layouts.
     """
-    _check_root_source()
+    _check_root_source(game_root=game_root)
     airwalls = frame_leveldata_airwalls_prefix(data, strings=strings)
     cursor = int(airwalls["bytesConsumed"])
     fields: dict[str, Any] = {"airWalls": airwalls["airWalls"]}
@@ -386,7 +387,17 @@ def frame_leveldata_named_prefix(data: bytes, *, strings: StringPool | None = No
                     closed_fields.append(field)
                     continue
             if field == "npcPatrol":
-                decoded = decode_npc_patrol_list(data, cursor)
+                count = read_count(data, cursor)
+                if count is not None and count[0] in (-1, 0):
+                    read_simple_collection(field)
+                    continue
+                if patrol_decoder is None:
+                    open_field = {"name": field, "startOffset": cursor,
+                                  "status": "current-native-patrol-operation-required",
+                                  "diagnostic": "Positive npcPatrol requires its current native/pool lexical decoder"}
+                    fields[field] = dict(open_field)
+                    break
+                decoded = patrol_decoder(data, cursor)
                 if decoded is not None:
                     cursor = int(decoded["endOffset"])
                     fields[field] = decoded
@@ -394,7 +405,8 @@ def frame_leveldata_named_prefix(data: bytes, *, strings: StringPool | None = No
                     continue
             if field == "npcs":
                 try:
-                    decoded = decode_npc_runtime_proxy_list(data, cursor)
+                    if npc_decoder is not None:require_selected_decoder(npc_decoder,strings=strings,game_root=game_root)
+                    decoded = npc_decoder.collection(data, cursor) if npc_decoder is not None else decode_npc_runtime_proxy_list(data, cursor, strings=strings, game_root=game_root)
                 except LevelNpcCodecError:
                     decoded = None
                 if decoded is not None:
@@ -870,14 +882,14 @@ def frame_leveldata_named_prefix(data: bytes, *, strings: StringPool | None = No
     if not exact:
         for terminal_reader in (frame_leveldata_empty_tail, frame_leveldata_terminal_suffix):
             try:
-                result["independentTerminalFrame"] = terminal_reader(data, strings=strings)
+                result["independentTerminalFrame"] = terminal_reader(data, strings=strings, game_root=game_root)
                 break
             except LevelDataTopLevelFramingError:
                 continue
     return result
 
 
-def frame_leveldata_terminal_suffix(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
+def frame_leveldata_terminal_suffix(data: bytes, *, strings: StringPool | None = None, game_root=None) -> dict[str, Any]:
     """Frame the named final eight members of a 43-member LevelData.
 
     This is intentionally weaker than :func:`frame_leveldata_empty_tail`: it
@@ -886,7 +898,7 @@ def frame_leveldata_terminal_suffix(data: bytes, *, strings: StringPool | None =
     marker/value, string, two empty collections, null union, and three final
     empty collections must close at physical EOF, with exactly one candidate.
     """
-    _check_root_source()
+    _check_root_source(game_root=game_root)
     if not data:
         raise LevelDataTopLevelFramingError("truncated LevelData: empty payload")
     if data[0] != 43:
@@ -980,7 +992,7 @@ def frame_leveldata_terminal_suffix(data: bytes, *, strings: StringPool | None =
     }
 
 
-def frame_leveldata_empty_tail(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
+def frame_leveldata_empty_tail(data: bytes, *, strings: StringPool | None = None, game_root=None) -> dict[str, Any]:
     """Frame named members 21 through 43 in the known empty-tail shape.
 
     The current corpus contains a recurring tail made of a non-negative i32,
@@ -991,7 +1003,7 @@ def frame_leveldata_empty_tail(data: bytes, *, strings: StringPool | None = None
     to ``safeZone`` through ``worldWayPointData``. The preceding bytes remain
     one explicit opaque range.
     """
-    _check_root_source()
+    _check_root_source(game_root=game_root)
     if not data:
         raise LevelDataTopLevelFramingError("truncated LevelData: empty payload")
     if data[0] != 43:

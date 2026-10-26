@@ -1,152 +1,52 @@
-"""Build-gated FMV diagnostic fields; pooled source migration remains required."""
+"""Current pooled stored FMV fields and bounded conditional name candidates."""
+import hashlib,struct
+from scripts.game_data.levelscript_union_tags import short_name
+from scripts.game_data.codecs.levelscript.string_param import decode_string_param
 
-from __future__ import annotations
+def project_typed_fmv(node,payload_start,payload_end):
+ """Structural projection only; the owning reader gates complete parent/Param."""
+ action=short_name(node['wrapperName']);field={'PlayFmvAction':'moviePath','StartFmvAndTeleportAction':'fmvId'}.get(action)
+ if field is None or node.get('fieldTypes',{}).get(field)!='Param<string>':return None
+ param=node['fields'].get(field);span=node.get('fieldRanges',{}).get(field)
+ if(not isinstance(param,dict)or type(param.get('paramSource'))is not int or param['paramSource']!=0 or type(param.get('idRef'))is not int or not -(1<<31)<=param['idRef']<1<<31 or not isinstance(param.get('value'),str)or not param['value']or not isinstance(span,(list,tuple))or len(span)!=2 or any(type(at)is not int for at in span)or not payload_start<=span[0]<span[1]<=payload_end or span[1]-span[0]!=17):return None
+ return dict(action=action,fmvId=param['value'],sourceField='_'+field,fieldOffset=hex(span[0]),valueOffset=hex(span[0]+1),fieldEndOffset=hex(span[1]),payloadShape='fmv-stored-current-pooled-param',evidenceBoundary='structuralOnly')
 
-import struct
-from typing import Any
-from scripts.common import check_installed_native_inputs
-from scripts.game_data.contracts import CONTRACTS_DIR
-from scripts.game_data.il2cpp.native_image import read_reviewed_contract
-from scripts.game_data import levelscript_union_tags as union_tags
+def project_owner(data,frame,*,source,strings):
+ """Re-read exact typed fields after a fresh owning reader reaches physical EOF."""
+ if frame.get('schemaStatus')!='named_exact'or type(frame.get('bytesConsumed'))is not int or frame['bytesConsumed']!=len(data):raise ValueError('fmvOwner.complete-named-eof-required:'+source+':schema='+str(frame.get('schemaStatus'))+':consumed='+str(frame.get('bytesConsumed'))+':stop='+str(frame.get('stopField')))
+ action_map=frame.get('ranges',{}).get('actionMap',{})
+ if action_map.get('value','present')is None:return dict(rows=[],diagnostics=[])
+ data_map=action_map.get('dataMap',{});actions=data_map.get('actionList',[])
+ if type(data_map.get('actionListCount'))is not int or data_map['actionListCount']!=len(actions):raise ValueError('fmvOwner.complete-typed-action-list-required:'+source)
+ rows=[];diagnostics=[]
+ for node in actions:
+  name=short_name(node['wrapperName'])
+  if name not in('PlayFmvAction','StartFmvAndTeleportAction'):continue
+  spans=node.get('fieldRanges',{});fields=node['fields'];common=list(fields)[7]if len(fields)>=8 else None
+  if common not in spans:raise ValueError('fmvOwner.common-field-boundary:'+source)
+  start,end=node['sourceOffset'],node['endOffset'];payload_start=spans[common][1]
+  if type(start)is not int or type(end)is not int or not 0<=start<payload_start<=end<=len(data):raise ValueError('fmvOwner.action-boundary:'+source)
+  projection=project_typed_fmv(node,payload_start,end)
+  if projection is None:diagnostics.append(dict(action=name,actionStart=start,check='fmvOwner.stored-constant-projection-unavailable'));continue
+  at,stop=spans[projection['sourceField'][1:]];decoded=decode_string_param(data,at,strings=strings)
+  if decoded is None or decoded!=(fields[projection['sourceField'][1:]],stop):raise ValueError('fmvOwner.exact-pooled-field-join:'+source)
+  row=dict(source=source,sourceSha256=hashlib.sha256(data).hexdigest().upper(),ownerBytes=len(data),actionStart=start,actionEnd=end,unionTag=node['unionTag'],memberCount=node['memberCount'],fieldRange=[at,stop],valuePoolIndex=struct.unpack_from('<i',data,at+1)[0],pathPoolIndex=struct.unpack_from('<i',data,stop-4)[0],storedParam=fields[projection['sourceField'][1:]],projection=projection)
+  if name!='PlayFmvAction':diagnostics.append(dict(action=name,actionStart=start,check='fmvOwner.current-native-name-consumer-unproved'));continue
+  rows.append(row)
+ return dict(rows=rows,diagnostics=diagnostics)
 
+def name_candidates(movie,layout):
+ """Pure recipe; callers freshly authenticate the native gate for each operation.
 
-LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID = (
-    "gameassembly-2026-07-11-memorypack-play-fmv-action-fields"
-)
-
-PLAY_FMV_ACTION_SEMANTIC_KEYS = frozenset({
-    union_tags.action("PlayFmvAction"),
-})
-
-
-def check_fmv_source_native_inputs():
-    contract, _ = read_reviewed_contract(
-        CONTRACTS_DIR / 'levelscript_fmv_video_native.json',
-        schema='endfield.levelscript-fmv-video-native-contract.v1', status='validated', label='fmvSource',
-    )
-    pins = contract['nativeInputs']
-    return check_installed_native_inputs(pins['GameAssembly.dll'], pins['global-metadata.dat'])
-
-
-def _offset_hex(offset: int | None) -> str:
-    return f"0x{offset:x}" if isinstance(offset, int) and offset >= 0 else ""
-
-
-def _decode_tagged_string_parameter_at(
-    payload: bytes,
-    offset: int,
-) -> tuple[str, int] | None:
-    """Decode one exact constant-string ActionParam at ``offset``.
-
-    Current LevelScript ActionParam constants use a one-byte constant tag,
-    UTF-8 byte length, payload, then the shared 12-byte reference/source tail.
-    Returning the consumed end lets callers prove whether a field is the final
-    serialized member instead of selecting an arbitrary printable token.
-    """
-    param_tail = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
-    if offset < 0 or offset + 5 > len(payload) or payload[offset] != 0x04:
-        return None
-    size = struct.unpack_from("<I", payload, offset + 1)[0]
-    text_start = offset + 5
-    text_end = text_start + size
-    field_end = text_end + len(param_tail)
-    if size <= 0 or field_end > len(payload):
-        return None
-    if payload[text_end:field_end] != param_tail:
-        return None
-    try:
-        text = payload[text_start:text_end].decode("utf-8")
-    except UnicodeDecodeError:
-        return None
-    if not text or any(ord(char) < 0x20 or ord(char) == 0x7F for char in text):
-        return None
-    return text, field_end
-
-
-def decode_fmv_action(
-    payload: bytes,
-    payload_start: int,
-    semantic_key: tuple[int, int],
-    tagged_string_hits: list[dict[str, Any]],
-) -> dict[str, Any]:
-    """Decode an FMV hint only on the build that proved its inline layout.
-
-    IL2CPP metadata and the generated MemoryPack setters prove that
-    ``PlayFmvAction._moviePath`` is the first derived field, while
-    ``StartFmvAndTeleportAction._fmvId`` is the final derived field. The union
-    tag and member count in ``semantic_key`` are required together, so a tag
-    collision or a future payload shape fails closed.
-    """
-    if check_fmv_source_native_inputs().status != 'validated':return {}
-    tagged_strings = sorted(
-        (
-            hit
-            for hit in tagged_string_hits
-            if isinstance(hit, dict)
-            and isinstance(hit.get("offset"), int)
-            and isinstance(hit.get("text"), str)
-        ),
-        key=lambda hit: int(hit["offset"]),
-    )
-    if semantic_key in PLAY_FMV_ACTION_SEMANTIC_KEYS:
-        if len(tagged_strings) != 1:
-            return {}
-        hit = tagged_strings[0]
-        relative_offset = int(hit["offset"]) - payload_start
-        if relative_offset != 0:
-            return {}
-        decoded = _decode_tagged_string_parameter_at(payload, relative_offset)
-        if not decoded or decoded[0] != hit["text"]:
-            return {}
-        return {
-            "action": "PlayFmvAction",
-            "fmvId": decoded[0],
-            "sourceField": "_moviePath",
-            "fieldOffset": _offset_hex(int(hit["offset"])),
-            "payloadShape": "play-fmv-movie-path-first-derived-field",
-            "nativeMappingId": LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID,
-        }
-    if semantic_key == union_tags.action("StartFmvAndTeleportAction"):
-        if not tagged_strings:
-            return {}
-        hit = tagged_strings[-1]
-        relative_offset = int(hit["offset"]) - payload_start
-        decoded = _decode_tagged_string_parameter_at(payload, relative_offset)
-        if (
-            not decoded
-            or decoded[0] != hit["text"]
-            or decoded[1] != len(payload)
-        ):
-            return {}
-        return {
-            "action": "StartFmvAndTeleportAction",
-            "fmvId": decoded[0],
-            "sourceField": "_fmvId",
-            "fieldOffset": _offset_hex(int(hit["offset"])),
-            "payloadShape": "start-fmv-teleport-fmv-id-final-derived-field",
-            "nativeMappingId": LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID,
-        }
-    return {}
-
-
-def project_typed_fmv(node, payload_start, payload_end):
-    """Project a selected stored ID from a complete, independently decoded Param.
-
-    The typed reader authenticates the parent and complete pooled string Param.
-    This projection proves no video naming, provider choice or playback route.
-    """
-    from scripts.game_data.levelscript_union_tags import short_name
-    action = short_name(node['wrapperName'])
-    field = {'PlayFmvAction': 'moviePath', 'StartFmvAndTeleportAction': 'fmvId'}.get(action)
-    if field is None or node.get('fieldTypes', {}).get(field) != 'Param<string>':return None
-    param = node['fields'].get(field)
-    span = node.get('fieldRanges', {}).get(field)
-    if (not isinstance(param, dict) or param.get('paramSource') != 0
-            or type(param.get('idRef')) is not int or param['idRef'] < -1
-            or not isinstance(param.get('value'), str) or not param['value']
-            or not isinstance(span, (list, tuple)) or len(span) != 2
-            or any(type(at) is not int for at in span)
-            or not payload_start <= span[0] < span[1] <= payload_end or span[1]-span[0] != 17):return None
-    return dict(action=action, fmvId=param['value'], sourceField='_'+field,
-                fieldOffset=hex(span[0]), valueOffset=hex(span[0]+1), fieldEndOffset=hex(span[1]),
-                payloadShape='fmv-stored-current-pooled-param', evidenceBoundary='structuralOnly')
+ Each returned path has explicit gender/existence/suffix-result witnesses.
+ File matches establish neither those live results nor action execution.
+ """
+ if not isinstance(movie,str)or not movie or len(movie.encode('utf-16-le'))//2>layout['maxSourceUtf16Chars']:raise ValueError('fmvName.source-outside-proved-UTF16-bound')
+ rows=[]
+ for prefix in('',*layout['genderPrefixes']):
+  value=prefix+movie;subpath=layout['subpathTemplate'].format(value)
+  for has_suffix,template in zip((True,False),layout['templates']):
+   path=template.format(layout['root'],subpath)
+   if len(path.encode('utf-16-le'))//2>layout['maxIntermediateUtf16Chars']:raise ValueError('fmvName.intermediate-outside-proved-UTF16-bound')
+   rows.append(dict(path=path,variant=prefix[:-1]if prefix else'fallback',selectedPrefixExists=bool(prefix),effectiveGender='Female'if prefix=='f_'else'not-Female'if prefix else'candidate-missing',hasUsmSuffixComparison=has_suffix,evidenceBoundary='conditional'))
+ return rows

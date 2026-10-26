@@ -1,0 +1,91 @@
+{
+  "schema": "endfield.levelscript-music-compiled-call-claims.v1",
+  "status": "reviewed",
+  "evidenceBoundary": "direct",
+  "admission": "named-call-shape-only",
+  "methods": {
+    "execute": {
+      "type": "Beyond.Gameplay.Actions.PostMusicEvent",
+      "method": "Execute",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Actions.ParamExtensions.GetValue",
+            "Beyond.Gameplay.Actions.ParamExtensions.TryGetValue",
+            "Beyond.Gameplay.Actions.GameAction.PostMusicEvent",
+            "Beyond.Gameplay.Actions.ParamOutputExtensions.SetValue"
+          ],
+          "ordered": true
+        },
+        {
+          "readsField": "Beyond.Gameplay.Actions.PostMusicEvent::_musicEvent"
+        },
+        {
+          "readsField": "Beyond.Gameplay.Actions.PostMusicEvent::_musicEventType"
+        },
+        {
+          "readsField": "Beyond.Gameplay.Actions.PostMusicEvent::_playingId"
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.Actions.PostMusicEvent::_musicEvent",
+            "register": "rcx",
+            "call": "Beyond.Gameplay.Actions.ParamExtensions.GetValue"
+          }
+        }
+      ]
+    },
+    "release": {
+      "type": "Beyond.Gameplay.Actions.PostMusicEvent",
+      "method": "OnRelease",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Actions.ParamExtensions.GetValue",
+            "Beyond.Gameplay.Actions.GameAction.PostMusicEvent"
+          ],
+          "ordered": true
+        },
+        {
+          "readsField": "Beyond.Gameplay.Actions.PostMusicEvent::_musicEventOnRelease"
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.Actions.PostMusicEvent::_musicEventOnRelease",
+            "register": "rcx",
+            "call": "Beyond.Gameplay.Actions.ParamExtensions.GetValue"
+          }
+        }
+      ]
+    },
+    "facade": {
+      "type": "Beyond.Gameplay.Actions.GameAction",
+      "method": "PostMusicEvent",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Audio.AudioMusicSystem.PostMusicEvent"
+          ]
+        }
+      ]
+    },
+    "music": {
+      "type": "Beyond.Gameplay.Audio.AudioMusicSystem",
+      "method": "PostMusicEvent",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Audio.AudioMusicSystem.get_isCustomModeBlocking",
+            "Beyond.Gameplay.Audio.AudioMusicSystem.ForwardPendingCustomMode",
+            "Beyond.Gameplay.Audio.AudioMusicSystem._SetWwiseMusicState"
+          ]
+        }
+      ]
+    }
+  },
+  "unresolved": [
+    "Closed GetValue<string> typed MethodSpec, normal-return field-to-result selection and actual compiled result flow to facade.",
+    "Incoming facade argument/control and its concrete system instance + result, then music state/cue/Event branch and eventual sink.",
+    "No Event request, live control value, action execution, handle value or Wwise posting is established by call names/field reads alone."
+  ]
+}

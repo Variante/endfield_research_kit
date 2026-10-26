@@ -14,6 +14,14 @@ queries, standalone Mission Pipeline investigation, and validation reports;
 the Story page consumes those results but does not define their truth
 conditions.
 
+Lua playback admission replays the complete selected source census with current
+cinematic facts and native/source exit guards. A saved Lua audit is never its
+own admission proof; Mission Pipeline requires its current replay to agree.
+Story uses existing Data-owned Lua only after the installed export freshness
+gate passes, without extracting Lua itself. Missing/stale sources, invalid
+UTF-8 or unresolved cutscene arguments keep automatic-unused classification
+unresolved. Stored authored calls do not establish execution or Story order.
+
 ## Current status
 
 The maintained builders recover dialog, radio, SNS, cutscenes, options, inline

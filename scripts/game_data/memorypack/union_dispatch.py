@@ -42,7 +42,9 @@ Each ``test``/``cmp`` on the one tag register pairs an immediate with its
 the not-equal path (``PatrolSubActionData``).  A chain is read only when no
 table resolves, is accepted under the same one-for-one rule, and must name
 tags ``0..N-1``; any other compare shape (a binary-search tree, a range test)
-is refused, not guessed.  A chain has no table, so its ``tableVa`` is
+is refused, not guessed. An owned DWORD test/JE, SUB-one/JE chain ending
+with CMP-one/JE is also accepted under the same exact family bijection.
+A chain has no table, so its ``tableVa`` is
 ``None``.
 
 Run as: python -m scripts.game_data.memorypack.union_dispatch --base NAME
@@ -124,9 +126,9 @@ def _formatter_deserialize_va(image: NativeImage, base: str) -> int:
     owner = f"{base}+{short}Formatter"
     metadata = image.metadata
     matches = [
-        method for method in metadata.methods
+        method for definition in image.named_type_definitions.get(owner, ())
+        for method in image.methods_by_declaring_type.get(definition.index, ())
         if metadata.string(method.name_index) == "Deserialize"
-        and image.type_name(method.declaring_type) == owner
     ]
     if len(matches) != 1:
         raise UnionDispatchError(f"{owner}.Deserialize: expected one method, found {len(matches)}")
@@ -392,6 +394,47 @@ def _compare_chains(image: NativeImage, start: int, count: int) -> list[tuple[in
     return found
 
 
+def _decrement_chain(blob: bytes, start: int, count: int) -> dict[int, int] | None:
+    """Exact DWORD test/JE, SUB-one/JE links, final CMP-one/JE chain."""
+    first = _compare_at(blob, 0)
+    if count < 3 or first is None or first[0][0] != 32 or first[1:] != (0, 2) or blob[0] != 0x85:
+        return None
+    register, branches, at = first[0], {}, 0
+    for tag in range(count):
+        if tag == 0:
+            end = 2
+        elif tag == count - 1:
+            compare = _compare_at(blob, at)
+            if compare is None or compare[:2] != (register, 1):
+                return None
+            end = compare[2]
+        else:
+            # SUB changes the tested value, so tag k observes original tag-k.
+            expected = bytes((0x83, 0xE8 | register[1], 1))
+            if blob[at:at + 3] != expected:
+                return None
+            end = at + 3
+        jump = _equality_jump_at(blob, end, start)
+        if jump is None or not jump[0]:
+            return None
+        branches[tag] = jump[1]
+        at = jump[2] - start
+    return branches
+
+
+def _decrement_chains(image: NativeImage, start: int, count: int) -> list[tuple[int, dict[int, int]]]:
+    """Search only the dispatcher's owned primary unwind range."""
+    base = image.pe.image_base
+    ranges = image.unwind_index.family(start - base)['ranges']
+    primary = [r['runtimeTriple'][:2] for r in ranges if base + r['runtimeTriple'][0] == start]
+    if len(primary) != 1:
+        raise UnionDispatchError('decrement chain: expected one owned dispatcher entry')
+    a, z = primary[0]
+    blob = image.pe.bytes_at_va(base + a, z - a)
+    return [(start + at, branches) for at in range(len(blob))
+            if (branches := _decrement_chain(blob[at:], start + at, count)) is not None]
+
+
 def _resolves_onto(entries: list[SwitchEntry | None], family: set[int]) -> bool:
     """Every entry resolved, one-for-one onto the family, with no shared branch."""
     if any(entry is None for entry in entries):
@@ -421,9 +464,11 @@ def read_union_switch(
         entries = [_entry(image, table_va, tag) for tag in range(count)]
         if _resolves_onto(entries, family):
             accepted.append((table_va, entries))
-    if not accepted:
+    for find_chains in (_compare_chains, _decrement_chains):
+        if accepted:
+            break
         seen: set[tuple[tuple[int, int], ...]] = set()
-        for _start, branches in _compare_chains(image, dispatcher, len(family)):
+        for _start, branches in find_chains(image, dispatcher, len(family)):
             entries = [_entry_at(image, branches[tag], tag) for tag in range(len(family))]
             signature = tuple(sorted(branches.items()))
             if signature not in seen and _resolves_onto(entries, family):

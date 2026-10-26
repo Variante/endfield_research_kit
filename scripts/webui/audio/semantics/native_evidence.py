@@ -334,6 +334,8 @@ class NativeAudioEvidence:
     # by unit tests.  Only validate_native_audio_evidence sets this after the
     # explicit GameAssembly + metadata gate has measured the supplied files.
     gate_verified: bool = False
+    # Explicit lexical Audio operation only; never a saved or global proof.
+    catalog_operation: Any = None
 
     @property
     def validated(self) -> bool:

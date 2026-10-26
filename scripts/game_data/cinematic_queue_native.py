@@ -192,6 +192,12 @@ def load_cinematic_queue_contract(
             "expected": {"status": NATIVE_EVIDENCE_VALIDATED},
             "actual": {"status": native.status, "detail": native.detail},
         })
+    if not failures:
+        after=check_installed_native_inputs(str(sources['gameAssemblySha256']),str(sources['globalMetadataSha256']),gameassembly=native.gameassembly,metadata=native.metadata)
+        try:late_raw=path.read_bytes()
+        except OSError:late_raw=None
+        if after.status != NATIVE_EVIDENCE_VALIDATED or late_raw != raw:
+            failures.append(dict(validator='cinematicQueueNativeContract',gate='selected_native_or_contract_drift',sourceFile=source_file,expected='unchanged selected native inputs and reviewed contract',actual=dict(status=after.status,detail=after.detail)))
     source_sha256 = hashlib.sha256(raw).hexdigest().upper() if raw else ""
     if not failures:
         return project_cinematic_queue_contract(

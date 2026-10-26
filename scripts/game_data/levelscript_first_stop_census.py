@@ -3,8 +3,9 @@
 What it proves. Every ``LevelScriptData`` row the JsonData corpus receipt
 records as ``bounded_partial`` is reread from the structured export, checked
 against the receipt by length and logical SHA-256, and handed once to the
-LevelScript sequential owner
-(``codecs.levelscript.current_action_sequence.frame_levelscript_current_action_sequence_leader_enter``).
+LevelScript sequential owner the registry would select for its stored
+action-map root (empty, null or current map; see ``sequential_owner``), with
+the selected export's StringPool so pooled string members resolve.
 The owner's first refusal, with byte offsets normalized to ``offset=<n>``, is
 that file's first stop; a file the owner now frames is recorded as
 ``complete:<schemaStatus>`` (plus the stop field and first task-condition gate
@@ -37,6 +38,7 @@ first):
   on any other build every reviewed node would refuse at the build gate and
   the census would rank that refusal instead of a format stop;
 - every partial file exists and matches its ledger length and SHA-256;
+- the selected StringPool pages are unchanged across the replay;
 - no first stop is itself a native-gate refusal.
 
 A failed run preserves the last census and writes a ``status: failed`` report
@@ -97,7 +99,13 @@ from scripts.game_data.codecs.levelscript.current_action_sequence import (
 )
 from scripts.game_data.corpus_common import atomic_write_text
 from scripts.game_data import levelscript_union_tags as union_tags
+from scripts.game_data.levelscript_binary import (
+    frame_levelscript_empty_action_map_sequential,
+    frame_levelscript_null_action_map_sequential,
+)
+from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs
 from scripts.game_data.levelscript_template_binary import frame_levelscript_template
+from scripts.game_data.string_pool import StringPool, export_string_pool
 from scripts.repo_paths import REPO_ROOT
 
 
@@ -116,6 +124,8 @@ DEFAULT_LEDGER = REPO_ROOT / "reports/animestudio/jsondata_current_files_latest.
 DEFAULT_EXPORT = REPO_ROOT / "export_full/game/Json"
 DEFAULT_OUTPUT = REPO_ROOT / "reports/game_data/levelscript_partial_first_stops_current.json"
 TOP_STOPS = 100
+EMPTY_ACTION_MAP_PREFIX = bytes((28, 2, 3)) + bytes(12)
+NULL_ACTION_MAP_PREFIX = bytes((28, 0xFF))
 MAX_REPORTED_FAILURES = 25
 OFFSET = re.compile(r"offset=\d+")
 TEMPLATE_RECORD = re.compile(r"(\.lists\[\d+\])\[\d+\]")
@@ -269,11 +279,35 @@ def module_first_stop(frame: dict[str, Any]) -> str | None:
     return stop
 
 
-def first_stop(data: bytes, family: str = FAMILY, *, diagnostics: list[dict[str, Any]] | None = None) -> str:
-    """The sequential owner's first refusal, or its completion status."""
+def sequential_owner(data: bytes, *, strings: StringPool | None = None) -> dict[str, Any]:
+    """Frame with the registry's sequential owner selected by the stored action-map root.
+
+    ``frame_levelscript_named`` tries the empty, null and current action-map
+    sequential owners in that order. Their root guards select disjointly: an
+    exact empty three-list map (``1c 02 03`` plus three zero counts, which the
+    registry gives to the empty owner first), a one-byte ``0xff`` null union,
+    and otherwise the current map owner. The census replays the same selection
+    so a null or empty map is not ranked as a current-map root mismatch, and
+    reports the selected owner's own refusal.
+    """
+    if data[:15] == EMPTY_ACTION_MAP_PREFIX:
+        return frame_levelscript_empty_action_map_sequential(data, strings=strings)
+    if data[:2] == NULL_ACTION_MAP_PREFIX:
+        return frame_levelscript_null_action_map_sequential(data, strings=strings)
+    return frame_levelscript_current_action_sequence_leader_enter(data, strings=strings)
+
+
+def first_stop(data: bytes, family: str = FAMILY, *, diagnostics: list[dict[str, Any]] | None = None,
+               strings: StringPool | None = None) -> str:
+    """The sequential owner's first refusal, or its completion status.
+
+    ``strings`` is the selected export's StringPool; without it every pooled
+    string member refuses with ``matching-StringPool-required`` and the census
+    would rank the missing input instead of a format stop.
+    """
     try:
-        frame = (frame_levelscript_template(data) if family == "LevelScriptTemplateData"
-                 else frame_levelscript_current_action_sequence_leader_enter(data))
+        frame = (frame_levelscript_template(data, strings=strings) if family == "LevelScriptTemplateData"
+                 else sequential_owner(data, strings=strings))
     except ValueError as error:
         from scripts.game_data.levelscript_corpus import _diagnostic_messages
         messages = [str(error), *_diagnostic_messages(getattr(error, "diagnostics", []))]
@@ -311,6 +345,15 @@ def first_stop(data: bytes, family: str = FAMILY, *, diagnostics: list[dict[str,
     return stop
 
 
+def _pool_drift(export_root: Path, before: dict[str, Any]) -> list[dict[str, Any]]:
+    """Refuse a replay whose selected StringPool pages changed while it ran."""
+    after = snapshot_string_pool_inputs(export_root)
+    if after == before:
+        return []
+    return [_failure("string-pool-inputs-drift", Path(export_root) / "StringPool",
+                     _bounded(json.dumps(before["files"])), _bounded(json.dumps(after["files"])))]
+
+
 def build_census(
     *,
     summary_path: Path = DEFAULT_SUMMARY,
@@ -332,6 +375,8 @@ def build_census(
     partial, failures = _read_ledger(ledger_path, summary_path, summary, family)
     if failures:
         raise CensusError(failures)
+    pool_before = snapshot_string_pool_inputs(export_root)
+    strings = export_string_pool(export_root)
 
     rows: list[dict[str, Any]] = []
     for item in partial:
@@ -351,13 +396,14 @@ def build_census(
             ))
             continue
         stop_details: list[dict[str, Any]] = []
-        stop = first_stop(data, family, diagnostics=stop_details)
+        stop = first_stop(data, family, diagnostics=stop_details, strings=strings)
         if NATIVE_REFUSAL.search(stop):
             failures.append(_failure("native-refusal-stop", source, "a format stop",
                                      _bounded(stop), sha256=digest))
             continue
         rows.append({"path": name, "sha256": digest, "firstStop": stop,
                      **({"stopDetail": stop_details[0]} if stop_details else {})})
+    failures += _pool_drift(export_root, pool_before)
     if failures:
         raise CensusError(failures)
 
@@ -396,6 +442,8 @@ def build_family_census(*, receipt_path: Path, expected_receipt_sha256: str,
     receipt = verify_family_receipt(receipt_path, **options)
     partial = [row for row in receipt["rows"] if row["family"] == family and row["status"] == PARTIAL_STATUS]
     rows, failures = [], []
+    pool_before = snapshot_string_pool_inputs(export_root)
+    strings = export_string_pool(export_root)
     for item in partial:
         name = item["exportRelativePath"]
         data = read_game_file(game_export, "Json/" + name)
@@ -406,12 +454,13 @@ def build_family_census(*, receipt_path: Path, expected_receipt_sha256: str,
                 {"length": len(data), "sha256": digest}))
             continue
         stop_details: list[dict[str, Any]] = []
-        stop = first_stop(data, family, diagnostics=stop_details)
+        stop = first_stop(data, family, diagnostics=stop_details, strings=strings)
         if NATIVE_REFUSAL.search(stop):
             failures.append(_failure("native-refusal-stop", name, "a format stop", _bounded(stop), sha256=digest))
             continue
         rows.append({"path": name, "sha256": digest, "firstStop": stop,
                      **({"stopDetail": stop_details[0]} if stop_details else {})})
+    failures += _pool_drift(export_root, pool_before)
     if failures:
         raise CensusError(failures)
     verify_family_receipt(receipt_path, **options)

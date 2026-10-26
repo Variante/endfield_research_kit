@@ -25,11 +25,11 @@ uses heuristic filename matching.
     link as dialog Timelines, but they are not always present in the smaller
     `timeline_extract/` diagnostic tree.
 
-  Graph D: LevelScript PlayFmvAction -> video file.
-    The exact decoded native `_moviePath` / `_fmvId` field names the canonical
-    video id. The typed action occurrence normalizes that same value to its
-    `cutscene_*` Story key, providing an authoritative binding even when no
-    Timeline playable was exported.
+  Graph D: LevelScript PlayFmvAction -> conditional video names.
+    Fresh complete typed owners select pooled Param<string> movie fields. The
+    bounded current native source/name gate supplies explicit runtime branch
+    conditions; VFS file matches prove neither activation nor playback. The
+    separate StartFmvAndTeleport consumer remains unproved.
 
 This script joins:
   - Every `BeyondFMVPlayableAsset*.json` (and clones) under
@@ -702,6 +702,26 @@ def walk_check_fmv_finish(node: Any) -> Iterable[str]:
             yield from walk_check_fmv_finish(item)
 
 
+def current_pooled_levelscript_fmv_sources(level_script_root: Path,*,game_root=None):
+    """Freshly replay a current typed source plan; no semantic/native success cache."""
+    from scripts.game_data.levelscript_fmv_video_corpus import replay_report,DEFAULT_REPORT
+    from scripts.common import rel_path
+    root=Path(level_script_root);out=defaultdict(list)
+    try:report=replay_report(export_root=root.parents[2],game_root=game_root)
+    except(OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError)as error:return {},[dict(validator='pooledFmvSource',gate='current_pooled_owner_receipt',source=str(DEFAULT_REPORT),expected='fresh current complete pooled owner/StringPool/native/raw receipt',actual=str(error)[:1400])]
+    failures=[dict(validator='pooledFmvSource',**row)for row in report['diagnostics']]
+    failures.append(dict(validator='pooledFmvSource',gate='complete_FMV_consumer_coverage',source=str(DEFAULT_REPORT),expected='independently complete source/consumer coverage',actual=report['coverage']))
+    for row in report['rows']:
+        projection=row['projection'];movie=projection['fmvId']
+        if not row['videoFiles']or not re.fullmatch(r'cs_video_[A-Za-z0-9][A-Za-z0-9_]*',movie):continue
+        relative=Path(row['source']);source_file=(root.parent/relative).resolve()
+        if not source_file.is_relative_to(root.resolve()):continue
+        key='cutscene_'+movie[len('cs_video_'):];field=int(projection['fieldOffset'],16)
+        fmv_action=dict(projection,nativeMappingId=row['nativeMappingId'],evidenceBoundary='conditional',conditions=report['conditions'],nameCandidates=row['nameCandidates'],videoFiles=row['videoFiles'])
+        out[key].append(dict(levelId=relative.parent.name,scriptId=relative.stem,sourceFile=rel_path(source_file),actionMapRole='actionList',recordOffset=row['actionStart'],stringOffsets=[field],allStoryKeysInRecord=[key],sourceMissionishRefs=[],actionCode=hex(row['unionTag']),actionKind=hex(row['memberCount']),localId=None,nextId=None,actionName='PlayFmvAction',recordClass='play_fmv',playbackExecutionRole='conditional_name_resolution',triggerPlaybackBindingEligible=False,nativeMappingId=row['nativeMappingId'],evidenceBoundary='conditional',fmvAction=fmv_action))
+    return dict(out),failures
+
+
 def collect_levelscript_fmv_actions(
     occurrences: dict[str, list[dict[str, Any]]] | None = None,
 ) -> list[dict[str, Any]]:
@@ -751,6 +771,8 @@ def collect_levelscript_fmv_actions(
                 continue
             seen.add(identity)
             rows.append({
+                "evidenceBoundary": fmv_action.get("evidenceBoundary", "conditional"),
+                "conditions": fmv_action.get("conditions", []),
                 "fmvId": fmv_id,
                 "storyKey": story_key,
                 "levelId": str(occurrence.get("levelId") or ""),
@@ -773,6 +795,7 @@ def collect_levelscript_fmv_actions(
                         "fieldOffset",
                         "payloadShape",
                         "nativeMappingId",
+                        "evidenceBoundary", "conditions", "nameCandidates", "videoFiles",
                     )
                     if fmv_action.get(key) not in (None, "")
                 },

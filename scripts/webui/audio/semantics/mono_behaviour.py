@@ -50,6 +50,7 @@ from scripts.game_data.extraction.animestudio_index_io import (
     published_object_index_path,
 )
 from scripts.common import sha256_file as file_sha256
+from scripts.game_data.il2cpp.protocol import read_compressed_uint32
 
 
 def _native_transition_callback(
@@ -198,7 +199,7 @@ MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS = tuple(sorted(
 
 MONO_BEHAVIOUR_AUDIO_CONTEXT_CACHE_SCHEMA_VERSION = 4
 
-RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 109
+RUNTIME_MODEL_CACHE_SCHEMA_VERSION = 110
 
 METADATA_EVENT_SYMBOL_SCHEMA_VERSION = 1
 
@@ -2791,31 +2792,6 @@ def _runtime_cache_hit(cache: dict[str, Any], sha256: str, size: int) -> dict[st
         return None
     return runtime
 
-def _read_compressed_uint32(data: bytes, offset: int) -> int | None:
-    """Decode the integer form used by current IL2CPP metadata defaults."""
-
-    if offset < 0 or offset >= len(data):
-        return None
-    first = data[offset]
-    if first < 0x80:
-        return first
-    if first < 0xC0 and offset + 1 < len(data):
-        return ((first & 0x3F) << 8) | data[offset + 1]
-    if first < 0xE0 and offset + 3 < len(data):
-        return (
-            ((first & 0x1F) << 24)
-            | (data[offset + 1] << 16)
-            | (data[offset + 2] << 8)
-            | data[offset + 3]
-        )
-    if first == 0xF0 and offset + 4 < len(data):
-        return struct.unpack_from(">I", data, offset + 1)[0]
-    if first == 0xFE:
-        return 0xFFFFFFFE
-    if first == 0xFF:
-        return 0xFFFFFFFF
-    return None
-
 def _metadata_enum_values(module: Any, md: Any, type_def: Any) -> dict[str, int]:
     """Read exact enum constants from field-default records when available."""
 
@@ -2834,8 +2810,9 @@ def _metadata_enum_values(module: Any, md: Any, type_def: Any) -> dict[str, int]
         field_name = fields.get(field_index)
         if not field_name or field_name == "value__" or data_index < 0:
             continue
-        raw = _read_compressed_uint32(md.buf, data_section.offset + data_index)
-        if raw is None:
+        try:
+            raw, _ = read_compressed_uint32(md.buf, data_section.offset + data_index)
+        except (ValueError, IndexError, struct.error):
             continue
         type_name = md.type_name_by_metadata_type_index.get(metadata_type_index, "")
         if type_name in {"System.SByte", "System.Int16", "System.Int32", "System.Int64"}:

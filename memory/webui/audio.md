@@ -6,6 +6,14 @@ Audio is an evidence browser over decoded media, Wwise Events, authored
 consumers, semantic controls, and bounded runtime observations. It also stores
 user research notes without modifying generated evidence.
 
+Authored LevelScript Audio fields and LevelSequence ID candidates share one
+fresh owner-framing operation during semantic publication. Independent pure
+projections keep their own refusal diagnostics; a source, native, pool or reader
+bookend failure withholds both outputs. No owner frames or native/schema proof
+successes are saved for another operation. The standalone sequence collector
+opens its own fresh operation, and stored IDs still do not prove compiled
+triggers or Wwise requests.
+
 ## Inputs and recovery flow
 
 1. AnimeStudio reads AKPK/Wwise payloads from StreamingAssets with Persistent
@@ -27,6 +35,21 @@ Story relinking reads Story's published `conv/*.json` and writes only Audio's
 own sidecars: the relink owns their line, conversation-event and cutscene
 fields, the semantic refresh owns the dialog lifecycle hooks, and each replaces
 only its own. Without published Story, Audio builds and links no voice lines.
+
+CharInteract recovery examines every exported owner through the current
+native-gated decoder using Audio's explicitly selected GameAssembly and
+metadata pair. It never chooses candidates by a previous action tag. An empty
+action list records successful framing without an audio request; unproved
+positive actions produce diagnostics and no Event binding.
+
+Authored pooled sources use the StringPool beside the selected export. Missing
+pages withhold decoded-member names and the focused Skill/Buff action audit;
+they do not select inline strings. Refused records retain bounded source-hash
+and cursor diagnostics. Spawner pre-warning recovery supplies that same pool
+and Audio's explicit native pair, checking native inputs and pool pages again
+before returning contexts. These joins establish stored requests or naming
+candidates within the owning reader's scope; live spawning, Wwise execution
+and complete Skill/Buff schema coverage remain separate.
 
 ## Primary generated outputs
 
@@ -69,17 +92,45 @@ reference is required before its reads appear on an Event or media detail.
   paths; surviving rows do not establish complete-window counts or new links.
 - Story-line binding can close purpose investigation for a media record, but
   does not prove playback in a captured session.
+- Current LevelSequence references use the authenticated pooled LevelScript
+  owner and its named physical EOF. Literal IDs retain their exact stored text;
+  dynamic or null operands remain unresolved. Stored ID matches with Timeline
+  owners stay structural candidates until the current compiled Param evaluation
+  and Director trigger are proved. They do not establish Event requests, Wwise
+  posting or runtime activation; source failures cannot establish absence.
 - Manual notes are user annotations and never upgrade confidence.
+- Current LevelData Patrol candidates use the selected native pair, matching
+  StringPool and authenticated sequential owner with named physical EOF.
+  Signed stored AudioIds retain their source ranges and current typed action
+  cases. Source failures remain explicit, and positive unproved blackboard
+  children stop decoding. These are structural candidates: the compiled Audio
+  sink remains unresolved, so no Event request, playback or absence follows
+  from a stored value or zero emitted contexts.
 - A decoded `soundEvent` member is a naming candidate even when it carries prose
   or outer whitespace; the page gains an Event name from it only on a selected
   HIRC Event-object hash match, and other authored references stay visible with
   `foundInWwise=false`. Use `decodedPayloadEventNameRecovery.promotedNames` or
   the final `eventNames`, not the raw `eventNameSources`, to tell whether that
   source supplied an identity.
+- SkillData VoiceTriggerAction needs a current pooled owning action frame and
+  an independently authenticated compiled Audio consumer. Historical byte-pattern
+  matches and compatible AudioDialog names produce no current trigger links.
+  Its unresolved coverage does not establish action absence.
 - Exact SkillData/BuffData PlaySound actions stay in the Gameplay sound sidecar
   with raw literals, action paths, frame/event slots, native enum labels and
   typed target settings; only HIRC-matched actions join Event contexts, and an
   unlinked Buff action can show its trigger slot without gaining an owner.
+- Current LevelScript authored sources require the standalone pooled family
+  receipt, matching StringPool and selected native paths, followed by fresh
+  named-owner EOF. Source, pool, native and complete reader inputs are checked
+  on both sides of each operation. A refused owner or unavailable receipt stays
+  diagnostic; zero emitted rows do not prove that audio actions are absent.
+  Typed controls, voice keys, radio definitions and dynamic bindings retain
+  their separate identities. Stored Event, cue and property strings remain
+  candidates until current compiled field/result-to-consumer joins establish
+  the request role; a music string can denote a control rather than Wwise
+  posting. Property resolution also requires its own current LevelData owner
+  source proof, and lifecycle joins require an independently proved topology.
 - The selected `PlayVoiceNarrative` LevelScript reader now proves a stored
   `voId` voice key and `voiceHandle` output path in a ledger-joined source.
   The Audio page's authored voice-path relation remains separate from event
@@ -240,8 +291,13 @@ The frontend renders these tokens verbatim (listed in the header comment of
 ModelView native route summaries distinguish full reviewed route audits from
 `currentBuildCallsitesOnly` re-derivations. A successful current method/callsite
 check cannot retain a prior build's stronger branch, endpoint or async statuses;
-those remain `notReprovedOnSelectedBuild`. Authored definitions and possible
-media links are independent of this native proof depth.
+those remain `notReprovedOnSelectedBuild`. Stored ModelView frames retain their audio fields and model/layer/state owner
+chain through the selected pool and a fresh native operation. Audio publishes
+these rows under `controlCatalog.modelViewStateStoredBehaviors`; stored bank
+IDs and names do not create Event/media links or prove a native sink. Refused
+or unavailable sources do not establish absence. The operation rechecks native,
+reader and pool inputs on exit, and collection also rechecks source bytes and
+membership before retaining any inventory.
 
 ## Focused refresh commands
 

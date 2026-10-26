@@ -113,7 +113,7 @@ def selected_native_signature(*, family: str = "LevelScript") -> tuple[dict[str,
     return signature, "" if gate.validated else f"{family} native {gate.status}: {gate.detail or gate.status}"
 
 
-def levelscript_record(path: Path, export_root: Path) -> dict[str, Any]:
+def levelscript_record(path: Path, export_root: Path, *, game_root=None) -> dict[str, Any]:
     """Keep exact/bounded status, opaque ranges and refused-profile evidence."""
     relative = path.relative_to(export_root).as_posix()
     source = source_descriptor(path, export_root=export_root, media_type="application/octet-stream")
@@ -122,7 +122,7 @@ def levelscript_record(path: Path, export_root: Path) -> dict[str, Any]:
         "tags": ["level", "levelscript", "memorypack"],
     }
     try:
-        decoded = frame_levelscript_named(path.read_bytes(), source=relative, strings=export_string_pool(export_root/'game'/'Json'))
+        decoded = frame_levelscript_named(path.read_bytes(), source=relative, strings=export_string_pool(export_root/'game'/'Json'), game_root=game_root)
     except (OSError, LevelScriptTopLevelFramingError, ValueError) as exc:
         record = {
             **base, "status": "decode_error", "summary": str(exc)[:1200],

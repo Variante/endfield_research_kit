@@ -30,7 +30,7 @@ from scripts.game_data.game_file_store import iter_game_tree, read_game_file
 from scripts.game_data.levelscript_binary import frame_levelscript_named
 from scripts.game_data.levelscript_template_binary import frame_levelscript_template
 from scripts.game_data.levelscript_reader_inputs import (
-    complete_reader_input_paths, snapshot_complete_reader_inputs, reader_input_changes,
+    complete_reader_input_paths, snapshot_complete_reader_inputs, snapshot_string_pool_inputs, reader_input_changes,
 )
 from scripts.game_data.levelscript_first_stop_census import (
     LAYOUT_CONTRACT_PATH, NATIVE_REFUSAL, TEMPLATE_RECORD, module_first_stop,
@@ -41,10 +41,11 @@ from scripts.game_data.memorypack.corpus_gate import (
     _chunk_selection_snapshot, _discover_blc_paths,
     _stream_tool_snapshot, family_rows,
 )
+from scripts.game_data.string_pool import export_string_pool
 from scripts.repo_paths import REPO_ROOT
 from scripts.source_paths import ExportLayout
 
-FORMAT = "endfield-levelscript-current-corpus-v1"
+FORMAT = "endfield-levelscript-current-corpus-v2"
 FAMILIES = ("LevelScriptData", "LevelScriptTemplateData")
 DEFAULT_EXPORT = REPO_ROOT / "export_full"
 DEFAULT_OUTPUT = REPO_ROOT / "reports/game_data/levelscript_current_latest.json"
@@ -138,13 +139,13 @@ def _first_stop(frame: dict[str, Any], family: str) -> str:
     return TEMPLATE_RECORD.sub(r"\1[<n>]", stop) if family == "LevelScriptTemplateData" else stop
 
 
-def _classify(data: bytes, family: str, source: str) -> dict[str, Any]:
+def _classify(data: bytes, family: str, source: str, *, strings=None, game_root=None, null_list_params=None) -> dict[str, Any]:
     reader = (frame_levelscript_named if family == "LevelScriptData"
               else frame_levelscript_template)
     owner = ("scripts.game_data.levelscript_binary.frame_levelscript_named" if family == "LevelScriptData"
              else "scripts.game_data.levelscript_template_binary.frame_levelscript_template")
     try:
-        frame = reader(data, source=source) if family == "LevelScriptData" else reader(data)
+        frame = reader(data, source=source, strings=strings, game_root=game_root, null_list_params=null_list_params) if family == "LevelScriptData" else reader(data, strings=strings)
     except ValueError as exc:
         diagnostic = str(exc)[:1500]
         details = getattr(exc, "diagnostics", [])
@@ -232,6 +233,30 @@ def _read_vfs_sources(cli: Path, outer: dict[str, Any], selected: list[dict[str,
     return result
 
 
+def _pool_sources(ledger_rows, outer, export_root):
+    selected = family_rows(ledger_rows, expected_input=outer['inputSetSha256'],
+        prefix='Data/Json/StringPool/', pattern=re.compile(r'Data/Json/StringPool/StringPool[0-9]+[.]byte'), label='LevelScript StringPool')
+    snapshot = snapshot_string_pool_inputs(ExportLayout(export_root).json_dir)
+    expected = {Path(row['virtualPath']).name: row for row in selected}
+    actual = {Path(row['path']).name: row for row in snapshot['files']}
+    if not expected or set(expected) != set(actual):
+        _fail('string-pool-path-set', export_root, sorted(expected), sorted(actual))
+    for name, source in expected.items():
+        data = read_game_file(export_root, 'Json/StringPool/' + name)
+        measured = {'length': len(data), 'md5': hashlib.md5(data).hexdigest().upper()}
+        wanted = {'length': source['length'], 'md5': source['recomputedFileDataMd5'].upper()}
+        if measured != wanted:
+            _fail('string-pool-ledger-identity', name, wanted, measured)
+    return selected, snapshot
+
+
+def _require_pool_unchanged(export_root, provenance):
+    expected = provenance.get('levelscriptStringPoolInputs')
+    actual = snapshot_string_pool_inputs(ExportLayout(export_root).json_dir)
+    if expected != actual:
+        _fail('string-pool-inputs-drift', export_root, 'unchanged complete selected StringPool snapshot', {'expectedRoot':expected.get('root') if isinstance(expected,dict) else None,'actualRoot':actual.get('root'),'changes':reader_input_changes(expected,actual,limit=2) if isinstance(expected,dict) and isinstance(expected.get('files'),list) else 'missing snapshot'})
+
+
 def build_report(*, outer_path: Path, ledger_path: Path, export_root: Path,
                  expected_input_set_sha256: str, gameassembly: Path | None = None,
                  metadata: Path | None = None, cli_path: Path = DEFAULT_CLI,
@@ -255,7 +280,9 @@ def build_report(*, outer_path: Path, ledger_path: Path, export_root: Path,
             prefix=prefix, pattern=re.compile(re.escape(prefix) + r"[^\x00\\:]+\.json"),
             label=family))
     selected.sort(key=lambda row: row["virtualPath"])
+    pool_sources, pool_inputs = _pool_sources(ledger_rows, outer, export_root)
     del ledger_rows
+    strings = export_string_pool(ExportLayout(export_root).json_dir)
     relatives = {}
     seen = set()
     for source in selected:
@@ -272,39 +299,41 @@ def build_report(*, outer_path: Path, ledger_path: Path, export_root: Path,
         _fail("complete-export-path-set", export_root,
               {"count": len(expected_paths), "missing": sorted(expected_paths-exported)[:8]},
               {"count": len(exported), "extra": sorted(exported-expected_paths)[:8]})
-    resolution = _chunk_selection_snapshot(selected, outer)
+    resolution = _chunk_selection_snapshot(selected + pool_sources, outer)
     # Streaming SHA-256 pins the physical inputs without materializing an
     # entire VFS chunk. Logical MD5 joins below still authenticate each payload.
     announce(f"selected sources={len(selected)}; fingerprinting physical chunks={len(resolution)}")
     chunks = [_fingerprint(path) for path in sorted({Path(row["selectedPath"]).resolve() for row in resolution})]
     provenance.update({"nativeInputs": native, "selectedChunkResolution": resolution,
                        "selectedChunkFingerprints": chunks, "readerInputs": inputs_before,
-                       "streamToolFingerprints": tool})
+                       "streamToolFingerprints": tool, "levelscriptStringPoolInputs": pool_inputs})
     announce("streaming selected logical VFS bytes; no export writes")
     current_vfs = _read_vfs_sources(cli_path, outer, selected)
     rows = []
     announce("decoding selected sources with owning readers")
-    for ordinal, source in enumerate(selected, 1):
-        relative = relatives[source["virtualPath"]]
-        family = relative.split("/")[0]
-        data = read_game_file(export_root, "Json/" + relative)
-        digest = hashlib.sha256(data).hexdigest().upper()
-        md5 = hashlib.md5(data).hexdigest().upper()
-        if len(data) != source["length"] or md5 != source["recomputedFileDataMd5"].upper():
-            _fail("export-byte-identity", relative,
-                  {"length": source["length"], "md5": source["recomputedFileDataMd5"]},
-                  {"length": len(data), "md5": md5, "sha256": digest})
-        vfs_data = current_vfs.pop(source["virtualPath"])
-        if data != vfs_data:
-            _fail("export-vfs-byte-identity", relative,
-                  {"length": len(vfs_data), "sha256": hashlib.sha256(vfs_data).hexdigest().upper()},
-                  {"length": len(data), "sha256": digest})
-        classification = _classify(data, family, relative)
-        rows.append({"virtualPath": source["virtualPath"], "exportRelativePath": relative,
-                     "family": family, "length": len(data), "logicalMd5": md5,
-                     "logicalSha256": digest, **classification})
-        if ordinal % 1000 == 0:
-            announce(f"decoded sources={ordinal}/{len(selected)}; publication still pending")
+    from scripts.game_data.levelscript_null_list_param_native import current_null_list_params
+    with current_null_list_params(game_root=Path(outer["primaryAssets"]).parent,strings=strings) as null_list_params:
+        for ordinal, source in enumerate(selected, 1):
+            relative = relatives[source["virtualPath"]]
+            family = relative.split("/")[0]
+            data = read_game_file(export_root, "Json/" + relative)
+            digest = hashlib.sha256(data).hexdigest().upper()
+            md5 = hashlib.md5(data).hexdigest().upper()
+            if len(data) != source["length"] or md5 != source["recomputedFileDataMd5"].upper():
+                _fail("export-byte-identity", relative,
+                      {"length": source["length"], "md5": source["recomputedFileDataMd5"]},
+                      {"length": len(data), "md5": md5, "sha256": digest})
+            vfs_data = current_vfs.pop(source["virtualPath"])
+            if data != vfs_data:
+                _fail("export-vfs-byte-identity", relative,
+                      {"length": len(vfs_data), "sha256": hashlib.sha256(vfs_data).hexdigest().upper()},
+                      {"length": len(data), "sha256": digest})
+            classification = _classify(data, family, relative, strings=strings, game_root=Path(outer["primaryAssets"]).parent, null_list_params=null_list_params)
+            rows.append({"virtualPath": source["virtualPath"], "exportRelativePath": relative,
+                         "family": family, "length": len(data), "logicalMd5": md5,
+                         "logicalSha256": digest, **classification})
+            if ordinal % 1000 == 0:
+                announce(f"decoded sources={ordinal}/{len(selected)}; publication still pending")
     announce("rechecking physical, logical and complete reader inputs before publication")
     for role in ("outer", "ledger"):
         _snapshot_pinned_files([provenance[role]], label=role)
@@ -312,21 +341,22 @@ def build_report(*, outer_path: Path, ledger_path: Path, export_root: Path,
         _snapshot_pinned_files(provenance[role], label=role)
     if _discover_blc_paths(outer) != provenance["blcPaths"]:
         _fail("blc-path-set-drift", "VFS roots", provenance["blcPaths"], _discover_blc_paths(outer))
-    if _chunk_selection_snapshot(selected, outer) != resolution:
+    if _chunk_selection_snapshot(selected + pool_sources, outer) != resolution:
         _fail("chunk-selection-drift", "VFS roots", resolution, "selection changed")
     _require_export_identity(export_root, rows)
+    _require_pool_unchanged(export_root, provenance)
     inputs_after = snapshot_complete_reader_inputs()
     if inputs_after != inputs_before:
         _fail("complete-reader-inputs-drift", "complete raw-package reader scope",
               "unchanged", reader_input_changes(inputs_before, inputs_after))
-    return {"format": FORMAT, "schemaVersion": 1, "status": "complete",
+    return {"format": FORMAT, "schemaVersion": 2, "status": "complete",
             "inputSetSha256": outer["inputSetSha256"], "exportRoot": (export_root / "game/Json").resolve().as_posix(),
             "families": list(FAMILIES), "provenance": provenance, "rows": rows,
             "summary": {"filesSelected": len(rows), "filesJoined": len(rows), "families": {
                 family: {"files": sum(row["family"] == family for row in rows),
                          **dict(Counter(row["status"] for row in rows if row["family"] == family))}
                 for family in FAMILIES}},
-            "evidenceBoundary": "Current complete LevelScript family identities joined to export bytes under authenticated native and complete reader-input gates. Named owners close only at physical EOF; partial and refused sources stay distinct. This receipt is not the complete JsonData registry, a WebUI publication, runtime execution or mission ordering."}
+            "evidenceBoundary": "Current complete LevelScript family identities joined to export bytes under authenticated native, matching complete StringPool and complete reader-input gates. Named owners close only at physical EOF; partial and refused sources stay distinct. This receipt is not the complete JsonData registry, a WebUI publication, runtime execution or mission ordering."}
 
 
 def _guard_output(output: Path, inputs: list[Path]) -> None:
@@ -339,8 +369,9 @@ def _guard_output(output: Path, inputs: list[Path]) -> None:
 
 
 def _require_provenance_unchanged(provenance: dict[str, Any], outer: dict[str, Any],
-                                  selected: list[dict[str, Any]]) -> None:
+                                  selected: list[dict[str, Any]], *, export_root: Path) -> None:
     """Close the verification interval after all logical export reads."""
+    _require_pool_unchanged(export_root, provenance)
     for role in ("outer", "ledger"):
         _snapshot_pinned_files([provenance[role]], label=role)
     for role in ("sourceFingerprints", "buildFingerprints", "selectedChunkFingerprints",
@@ -370,7 +401,7 @@ def verify_family_receipt(receipt_path: Path, *, expected_sha256: str,
     report = json.loads(receipt_path.read_bytes())
     if not isinstance(report, dict):
         _fail("family-receipt-object", receipt_path, "JSON object", type(report).__name__)
-    for field, expected in (("format", FORMAT), ("schemaVersion", 1), ("status", "complete"),
+    for field, expected in (("format", FORMAT), ("schemaVersion", 2), ("status", "complete"),
                             ("inputSetSha256", expected_input_set_sha256.upper()),
                             ("families", list(FAMILIES))):
         if report.get(field) != expected:
@@ -407,7 +438,10 @@ def verify_family_receipt(receipt_path: Path, *, expected_sha256: str,
     selected = [row for family in FAMILIES for row in family_rows(ledger_rows,
         expected_input=outer["inputSetSha256"], prefix=f"Data/Json/{family}/",
         pattern=re.compile(re.escape(f"Data/Json/{family}/") + r"[^\x00\\:]+\.json"), label=family)]
-    resolution = _chunk_selection_snapshot(selected, outer)
+    pool_sources, pool_inputs = _pool_sources(ledger_rows, outer, export_root)
+    if pool_inputs != provenance.get('levelscriptStringPoolInputs'):
+        _fail('family-receipt-string-pool-inputs', receipt_path, 'current complete StringPool snapshot', 'missing or changed recorded pool')
+    resolution = _chunk_selection_snapshot(selected + pool_sources, outer)
     if resolution != provenance.get("selectedChunkResolution"):
         _fail("family-receipt-chunk-selection", receipt_path, resolution, provenance.get("selectedChunkResolution"))
     expected_chunks = {Path(row["selectedPath"]).resolve() for row in resolution}
@@ -455,7 +489,7 @@ def verify_family_receipt(receipt_path: Path, *, expected_sha256: str,
     if report.get("summary") != summary:
         _fail("family-receipt-summary", receipt_path, summary, report.get("summary"))
     _require_export_identity(export_root, rows)
-    _require_provenance_unchanged(provenance, outer, selected)
+    _require_provenance_unchanged(provenance, outer, selected + pool_sources, export_root=export_root)
     _snapshot_pinned_files([fingerprint], label="family receipt")
     final_readers = snapshot_complete_reader_inputs()
     if current_readers != final_readers:
@@ -493,6 +527,7 @@ def main(argv: list[str] | None = None) -> int:
             protected.extend(args.export_root / "game" / entry.path
                              for entry in iter_game_tree(args.export_root, "Json/" + family)
                              if not entry.packed)
+        protected.extend(Path(row['path']) for row in snapshot_string_pool_inputs(ExportLayout(args.export_root).json_dir)['files'])
         protected.append(ExportLayout(args.export_root).game_file_store_path)
         for gate in (check_installed_native_inputs(gameassembly=args.gameassembly, metadata=args.metadata),
                      check_installed_native_inputs()):
@@ -521,7 +556,7 @@ def main(argv: list[str] | None = None) -> int:
                        "physicalChunkPath": row["selectedPath"], "physicalChunkSource": row["selectedRole"],
                        "physicalChunkRoot": outer["primaryAssets" if row["selectedRole"] == "primary" else "fallbackAssets"]}
                       for row in provenance["selectedChunkResolution"]]
-        _require_provenance_unchanged(provenance, outer, chunk_rows)
+        _require_provenance_unchanged(provenance, outer, chunk_rows, export_root=args.export_root)
         current = snapshot_complete_reader_inputs()
         if current != reader_snapshot:
             _fail("publication-reader-inputs-drift", "complete reader scope", "unchanged",

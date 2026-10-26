@@ -144,6 +144,17 @@ class NativeImage:
         return MappingProxyType({name:tuple(rows) for name,rows in groups.items()})
 
     @cached_property
+    def methods_by_declaring_type(self):
+        """Immutable raw declarations; callers still check names and pointers."""
+        from types import MappingProxyType
+        groups = {}
+        for method in self.metadata.methods:
+            if type(method.declaring_type) is not int or not 0 <= method.declaring_type < len(self.metadata.types):
+                raise ValueError(f'{self.label}.native:method-declaring-type={method.declaring_type}')
+            groups.setdefault(method.declaring_type, []).append(method)
+        return MappingProxyType({owner:tuple(rows) for owner,rows in groups.items()})
+
+    @cached_property
     def named_types(self):
         """Share the existing last-declaration view; native gates remain fresh."""
         from types import MappingProxyType

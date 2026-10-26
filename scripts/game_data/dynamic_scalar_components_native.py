@@ -26,6 +26,8 @@ from scripts.game_data.dynamic_main_native import _checked_dump_path, validate_n
 from scripts.game_data.dynamic_stream_area_corpus import DEFAULT_CLI, DEFAULT_LEDGER, DEFAULT_OUTER, MAIN_NAME_RE, load_current_inputs
 from scripts.game_data.dynamic_streaming import _bounded_vector, _field_span, _root_layout, _table_layout, _validate_string_vector, parse_dynamic_file
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
+from scripts.game_data.il2cpp.protocol import canonical_type_name
 from scripts.repo_paths import REPO_ROOT
 
 
@@ -51,10 +53,12 @@ def _unique_immediate(raw: bytes, prefix: bytes, label: str) -> int:
 
 
 def _getter_offset(raw: bytes, label: str) -> int:
-    if raw.count(b"\x8b\x1b") != 1:  # mov ebx,[rbx]: inline carrier's position
+    if raw.count(b"\x8b\x1b") + raw.count(b"\x8b\x19") != 1:  # mov ebx,[rbx]: inline carrier's position
         raise DynamicScalarComponentsError(f"{label}: inline base read differs")
     if b"\x8d\x53" in raw:  # lea edx,[rbx+field offset]
         return _unique_immediate(raw, b"\x8d\x53", label)
+    if b"\x83\xc3" in raw:  # inlined span read retains the base in EBX
+        return _unique_immediate(raw, b"\x83\xc3", label)
     if b"\x8b\xd3" not in raw:  # mov edx,ebx: field at base; patched fallback may also move rdx
         raise DynamicScalarComponentsError(f"{label}: zero-offset read differs")
     return 0
@@ -104,7 +108,7 @@ def _gaps(record: dict[str, Any], *, inline_types: dict[str, dict[str, Any]] | N
 
 
 def _float32_getter_offset(raw: bytes, label: str) -> int:
-    for witness in (b"\x0f\x10\x73\x08", b"\x48\x63\x3b", b"\x66\x48\x0f\x7e\xf3"):
+    for witness in (b"\x0f\x10\x71\x08", b"\x48\x63\x39", b"\x66\x48\x0f\x7e\xf3"):
         if raw.count(witness) != 1:
             raise DynamicScalarComponentsError(f"{label}: float32 carrier base witness differs")
     zero, later = b"\xf3\x0f\x10\x04\x1f", b"\xf3\x0f\x10\x44\x1f"
@@ -116,7 +120,7 @@ def _float32_getter_offset(raw: bytes, label: str) -> int:
 
 
 def _nested_getter_offset(raw: bytes, label: str, helper: str) -> int:
-    base, increment = ((b"\x8b\x17", b"\x83\xc2") if helper == "initialize" else (b"\x44\x8b\x07", b"\x41\x83\xc0"))
+    base, increment = ((b"\x8b\x12", b"\x83\xc2") if helper == "initialize" else (b"\x45\x8b\x00", b"\x41\x83\xc0"))
     if raw.count(base) != 1:
         raise DynamicScalarComponentsError(f"{label}: nested carrier base witness differs")
     return _unique_immediate(raw, increment, label) if increment in raw else 0
@@ -266,6 +270,7 @@ def validate_native_layout(gameassembly: Path, metadata: Path) -> tuple[dict[str
     if layout["gridType"] != main["gridType"]:
         raise DynamicScalarComponentsError("scalar grid type differs from main layout")
     image = open_native_image(gameassembly, metadata)
+    selected = NativeReferenceContext(image)
     methods, raw = {}, {}
     for row in contract["methods"]:
         index = int(row["index"])
@@ -274,9 +279,9 @@ def validate_native_layout(gameassembly: Path, metadata: Path) -> tuple[dict[str
         image.validate_method_row([index, row["type"], row["method"], int(row["rva"])], label="dynamic_scalar_components")
         method = image.metadata.methods[index]
         parameters = image.metadata.parameters_for(method)
-        if ([image.metadata.metadata_type_name(p.type_index) for p in parameters] != row["parameters"]
+        if ([canonical_type_name(selected.type_name(p.type_index)) for p in parameters] != row["parameters"]
                 or [image.metadata.string(p.name_index) for p in parameters] != row["parameterNames"]
-                or image.metadata.metadata_type_name(method.return_type) != row["returnType"]):
+                or canonical_type_name(selected.type_name(method.return_type)) != row["returnType"]):
             raise DynamicScalarComponentsError(f"{row['type']}.{row['method']}: selected metadata signature differs")
         length = int(row["bodyExtent"])
         if not 0 < length <= 4096:

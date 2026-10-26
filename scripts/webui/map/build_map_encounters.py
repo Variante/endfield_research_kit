@@ -240,7 +240,7 @@ def project_records(datasets: dict[str, list[dict[str, Any]]]) -> list[dict[str,
     for record in datasets.get("atmospheric-npc", []):
         entries = (record.get("payload") or {}).get("entries") or []
         for index, entry in enumerate(entries):
-            named = entry.get("proxyBodyStatus") == "named_exact_npc_runtime_proxy"
+            named = record.get("status") == "named_exact" and entry.get("proxyBodyStatus") == "named_exact_npc_runtime_proxy"
             wrapper = entry.get("npcRuntimeProxyData") or {} if named else {}
             proxy = wrapper.get("npcRuntimeProxyData") or {}
             npc = wrapper.get("levelNpcData") or {}
@@ -248,7 +248,7 @@ def project_records(datasets: dict[str, list[dict[str, Any]]]) -> list[dict[str,
             level = str(proxy.get("levelId") or "")
             item = _base("atmospheric-npc", record, "npc", str(index), level, entity.get("position"))
             item.update(title=npc.get("npcName") or npc.get("npcId") or entry.get("key") or record.get("title"),
-                        fields={**_pick(npc, "npcId", "templateDataId", "npcName", "doPatrol", "defaultActivePatrol", "patrolIdNew", "defaultMontage"),
+                        fields={**_pick(npc, "npcId", "templateDataId", "npcName", "doPatrol", "defaultActivePatrol", "patrolId_New", "defaultMontage"),
                                 **_pick(proxy, "proxyId", "clusterId", "subDataParentId"),
                                 **_pick(entity, "levelLogicId", "rotation", "createState")},
                         envTalkIds=_compact(npc.get("envTalkIds") or {}),

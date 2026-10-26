@@ -52,7 +52,7 @@ def json_dump(path: Path, payload: Any) -> None:
             tmp_path.unlink()
 
 
-AUDIO_SEMANTIC_SCHEMA_VERSION = 133
+AUDIO_SEMANTIC_SCHEMA_VERSION = 135
 
 
 SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})

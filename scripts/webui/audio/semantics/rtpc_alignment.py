@@ -32,7 +32,6 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any, Iterable, Mapping
 
-from scripts.webui.audio.semantics import native_evidence
 from scripts.webui.audio.semantics.rtpc_contract import (
     CANONICAL_METADATA_PREFIX,
     CANONICAL_RTPC_HEX,
@@ -163,65 +162,10 @@ def _list_or_none(
 
 
 def _native_gate(native_context: Any) -> dict[str, Any]:
-    """Return a strict publication gate without trusting synthetic contexts."""
-
-    if native_context is None:
-        return {
-            "status": "missing",
-            "reason": "selected native inputs were not provided",
-            "gateVerified": False,
-        }
-    status = str(getattr(native_context, "status", "missing") or "missing")
-    metadata_sha = str(getattr(native_context, "metadata_sha256", "") or "")
-    gameassembly_sha = str(
-        getattr(native_context, "gameassembly_sha256", "") or ""
-    )
-    gate_verified = bool(getattr(native_context, "gate_verified", False))
-    if not gate_verified:
-        return {
-            "status": "unverified",
-            "reason": (
-                "native context did not record the explicit selected "
-                "global-metadata.dat + GameAssembly.dll gate"
-            ),
-            "gateVerified": False,
-            "metadataSha256": metadata_sha or None,
-            "gameAssemblySha256": gameassembly_sha or None,
-        }
-    if status != "validated":
-        return {
-            "status": status,
-            "reason": str(
-                getattr(native_context, "reason", "")
-                or "selected native inputs failed the exact hash gate"
-            ),
-            "gateVerified": True,
-            "metadataSha256": metadata_sha or None,
-            "gameAssemblySha256": gameassembly_sha or None,
-        }
-    if metadata_sha.casefold() != native_evidence.EXPECTED_METADATA_SHA256.casefold():
-        return {
-            "status": "mismatched",
-            "reason": "validated native context has an unexpected metadata hash",
-            "gateVerified": True,
-            "metadataSha256": metadata_sha or None,
-            "gameAssemblySha256": gameassembly_sha or None,
-        }
-    if gameassembly_sha.casefold() != native_evidence.EXPECTED_GAMEASSEMBLY_SHA256.casefold():
-        return {
-            "status": "mismatched",
-            "reason": "validated native context has an unexpected GameAssembly hash",
-            "gateVerified": True,
-            "metadataSha256": metadata_sha or None,
-            "gameAssemblySha256": gameassembly_sha or None,
-        }
-    return {
-        "status": "validated",
-        "reason": "explicit selected global-metadata.dat + GameAssembly.dll hashes",
-        "gateVerified": True,
-        "metadataSha256": metadata_sha,
-        "gameAssemblySha256": gameassembly_sha,
-    }
+    """Freshly authenticate the independent current static-name component."""
+    from scripts.webui.audio.semantics.rtpc_contract import selected_static_names
+    audit=selected_static_names(native_context)
+    return {"status":audit["status"],"reason":audit.get("detail","explicit selected current Audio static declarations"),"gateVerified":audit.get("gateVerified",False),**{k:audit[k]for k in("metadataSha256","gameAssemblySha256")if k in audit}}
 
 
 def _static_entries(

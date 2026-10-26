@@ -32,6 +32,7 @@ from scripts.game_data.il2cpp.levelscript_state_transfers import prove_levelscri
 from scripts.game_data.il2cpp.levelscript_selector import prove_levelscript_selector
 from scripts.game_data.il2cpp.levelscript_request_senders import prove_levelscript_request_senders
 from scripts.game_data.il2cpp.native_image import open_native_image
+from scripts.game_data.levelscript_null_list_param_native import NullListOperationError
 from scripts.common import (
     ROOT,
     check_installed_native_inputs,
@@ -782,7 +783,7 @@ def mission_event_asset_coverage(
     mission_runtime_root: Path,
     levelscript_roots: tuple[Path, ...],
     native_header_contract: dict[str, Any],
-    *, progress: bool = False,
+    *, progress: bool = False, game_root: Path | None = None,
 ) -> dict[str, Any]:
     """Measure serialized consumers of the native mission-event surface."""
     if not mission_runtime_root.is_dir():
@@ -862,26 +863,35 @@ def mission_event_asset_coverage(
     for root in levelscript_roots:
         if not root.is_dir():
             raise RuntimeError(f"LevelScript source root not found: {root}")
-        for path in sorted(root.rglob("*.json")):
-            levelscript_files += 1
-            if progress and (levelscript_files-1)%16==0:
-                print(f'[protocol-registry] LevelScript checked={levelscript_files-1} decoded={levelscript_decoded} unavailable={len(levelscript_failures)} next={path}',file=sys.stderr,flush=True)
-            data = path.read_bytes()
-            try:
-                records = extract_levelscript_uid_records(data, source_path=path)
-                _action_map, memberships = levelscript_action_map_membership(data, records)
-                candidates = list(summarize_levelscript_native_header_records(records, memberships, names=target_header_names))
-            except ValueError as error:
-                levelscript_failures.append(dict(status='unavailable_fail_closed',validator='protocolRegistryMissionEventAssets',
-                    gate='typedActionMap',sourceFile=str(path.resolve()),sourceHashes={'sha256':hashlib.sha256(data).hexdigest().upper()},
-                    expected='complete current typed action/getter/header lists',actual=str(error)[:1000],
-                    diagnostics=getattr(error,'diagnostics',None)))
-                continue
-            levelscript_decoded += 1
-            for row in candidates:
-                row = dict(row)
-                row["sourceFile"] = str(path.resolve())
-                levelscript_candidates.append(row)
+        from scripts.game_data.string_pool import export_string_pool
+        from scripts.game_data.levelscript_null_list_param_native import current_null_list_params
+        paths=sorted(root.rglob("*.json"));strings=export_string_pool(root.parent);scanned={}
+        with current_null_list_params(game_root=game_root,strings=strings) as null_list_params:
+            for path in paths:
+                levelscript_files += 1
+                if progress and (levelscript_files-1)%16==0:
+                    print(f'[protocol-registry] LevelScript checked={levelscript_files-1} decoded={levelscript_decoded} unavailable={len(levelscript_failures)} next={path}',file=sys.stderr,flush=True)
+                data = path.read_bytes()
+                scanned[path]=hashlib.sha256(data).hexdigest().upper()
+                try:
+                    records = extract_levelscript_uid_records(data, source_path=path,strings=strings,game_root=game_root,null_list_params=null_list_params)
+                    _action_map, memberships = levelscript_action_map_membership(data, records)
+                    candidates = list(summarize_levelscript_native_header_records(records, memberships, names=target_header_names))
+                except ValueError as error:
+                    levelscript_failures.append(dict(status='unavailable_fail_closed',validator='protocolRegistryMissionEventAssets',
+                        gate='typedActionMap',sourceFile=str(path.resolve()),sourceHashes={'sha256':hashlib.sha256(data).hexdigest().upper()},
+                        expected='complete current typed action/getter/header lists',actual=str(error)[:1000],
+                        diagnostics=getattr(error,'diagnostics',None)))
+                    continue
+                levelscript_decoded += 1
+                for row in candidates:
+                    row = dict(row)
+                    row["sourceFile"] = str(path.resolve())
+                    levelscript_candidates.append(row)
+        after=sorted(root.rglob("*.json"))
+        changed=[str(path)for path,digest in scanned.items()if not path.is_file()or file_sha256(path).upper()!=digest]
+        if paths!=after or changed:
+            raise ProtocolRegistryGateError(dict(validator='protocolRegistryMissionEventAssets',gate='authoredSourceBookend',sourceFile=str(root),expected=dict(files=len(paths),unchangedBytes=True),actual=dict(files=len(after),added=[str(p)for p in sorted(set(after)-set(paths))][:4],removed=[str(p)for p in sorted(set(paths)-set(after))][:4],changed=changed[:4])))
     if progress:
         print(f'[protocol-registry] LevelScript checked={levelscript_files} decoded={levelscript_decoded} unavailable={len(levelscript_failures)} complete',file=sys.stderr,flush=True)
     levelscript_candidate_count = sum(
@@ -7679,7 +7689,7 @@ def build_report(
             file_sha256(gameassembly_path),
             file_sha256(metadata_path),
         ),
-        progress=progress,
+        progress=progress, game_root=Path(metadata_path).resolve().parents[2],
     )
     cs = il2cpp.enum_members(metadata, defaults, "Proto.CSMessageID")
     sc = il2cpp.enum_members(metadata, defaults, "Proto.SCMessageID")
@@ -8956,7 +8966,7 @@ def main() -> int:
             mission_runtime_root=args.mission_runtime_root,
             progress=True,
         )
-    except ProtocolRegistryGateError as exc:
+    except (ProtocolRegistryGateError, NullListOperationError) as exc:
         return _write_validation_failure(args.json_output, [exc.diagnostic])
     except il2cpp.load_metadata_helper(args.helper).MetadataParseError as exc:
         # Re-deriving the registry is how a different client build is

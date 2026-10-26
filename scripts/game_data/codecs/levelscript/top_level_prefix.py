@@ -17,9 +17,11 @@ final five (``scriptId`` through ``triggerVolumes``) belong to
 ``top_level_tail``.  Shapes, signed enums (``END_TYPE_NAMES``,
 ``LEVEL_SCRIPT_TYPE_NAMES``, ``RESET_MODE_NAMES``), finite floats, strict
 booleans and explicitly pooled strings are validated at the physical cursor.  Positive
-``enemies``, ``interactiveLocks``, ``interactives``, ``modules`` and ``npcs``
+``enemies``, ``interactiveLocks`` and ``npcs``
 dictionaries stop before their count until their pooled child codecs are
-independently migrated; old inline string readers cannot admit current rows.  ``properties``, ``propertyIdToKeyMap`` and
+independently migrated; old inline string readers cannot admit current rows. The current sparse pooled Interactive dictionary has a separate selected-build gate and bounded nested children. Positive
+``modules`` use the current conditional RollingStone/Launcher native gate; other
+positive module types remain refused. ``properties``, ``propertyIdToKeyMap`` and
 ``refWorldEntityIdList`` are accepted only null or empty.
 """
 
@@ -34,7 +36,7 @@ from scripts.game_data.codecs.levelscript import (
     active_shapes,
     enemies,
     interactive_locks,
-    interactives,
+    pooled_interactives as interactives,
     modules,
     npcs,
 )
@@ -152,6 +154,7 @@ def decode_empty_action_map_owner_prefix(
     offset: int = 20,
     *,
     strings: StringPool | None = None,
+    gameassembly=None, metadata=None, npc_decoder=None,
 ) -> dict[str, Any]:
     """Decode members 2..23 after a complete empty action-map asset.
 
@@ -280,11 +283,11 @@ def decode_empty_action_map_owner_prefix(
     ranges["interactiveLocks"] = {"startOffset": start, "endOffset": cursor}
 
     start = cursor
-    if (stop := unmigrated_child("interactives")) is not None:
+    if _i32(data,cursor,"interactives.count")[0]>1 and (stop := unmigrated_child("interactives")) is not None:
         return stop
     try:
         interactive_rows, cursor = interactives.decode_interactive_dictionary(
-            data, cursor
+            data, cursor, strings=strings, gameassembly=gameassembly, metadata=metadata
         )
     except interactives.LevelInteractiveCodecError as error:
         raise LevelScriptPrefixCodecError(str(error)) from error
@@ -312,8 +315,6 @@ def decode_empty_action_map_owner_prefix(
 
     start = cursor
     module_diagnostics = []
-    if (stop := unmigrated_child("modules")) is not None:
-        return stop
     try:
         module_rows, module_end = modules.decode_module_dictionary(data, cursor, module_diagnostics)
     except modules.LevelScriptModuleCodecError as error:
@@ -339,27 +340,15 @@ def decode_empty_action_map_owner_prefix(
     cursor = module_end
 
     start = cursor
-    if (stop := unmigrated_child("npcs")) is not None:
-        return stop
-    try:
-        npc_rows, npc_end = npcs.decode_npc_dictionary(data, cursor)
-    except npcs.LevelScriptNpcCodecError as error:
-        raise LevelScriptPrefixCodecError(str(error)) from error
-    if npc_rows is None:
-        count, _ = _i32(data, cursor, "npcs.count")
-        return {
-            "startOffset": offset,
-            "endOffset": cursor,
-            "fields": fields,
-            "ranges": ranges,
-            "stopField": "npcs",
-            "stopDetail": {
-                "startOffset": cursor,
-                "endOffset": cursor,
-                "status": "unsupported-positive",
-                "count": count,
-            },
-        }
+    npc_rows, npc_end = _empty_collection(data, cursor, "npcs")
+    if npc_end is None:
+        try:
+            npc_rows, npc_end = npcs.decode_npc_dictionary(data, cursor, strings=strings, gameassembly=gameassembly, metadata=metadata, npc_decoder=npc_decoder)
+        except ValueError as error:
+            return {"startOffset": offset, "endOffset": cursor, "fields": fields, "ranges": ranges,
+                    "stopField": "npcs", "stopDetail": {"startOffset": cursor, "endOffset": cursor,
+                    "status": "current-npc-source-refused", "diagnostic": str(error)[:1200],
+                    "diagnostics": getattr(error, "diagnostic", {})}}
     fields["npcs"] = npc_rows
     ranges["npcs"] = {"startOffset": start, "endOffset": npc_end}
     cursor = npc_end

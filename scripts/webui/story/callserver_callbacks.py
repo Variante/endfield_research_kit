@@ -16,6 +16,7 @@ from typing import Any
 
 
 from scripts.game_data import levelscript_union_tags as union_tags
+from scripts.game_data.callserver_callback_native import load_callserver_callback_contract, CONTINUATION_GATE
 from scripts.common import (
     STORY_RECOVERY_REPORTS_DIR,
     md_escape,
@@ -26,7 +27,6 @@ from scripts.common import (
 )
 from scripts.webui.story.context import LEVELSCRIPT_DIR
 from scripts.webui.story.level_bindings import (
-    CALLSERVER_CALLBACK_CONTRACT_AUDIT,
     _levelscript_native_action_successors,
     _levelscript_native_callserver_callback_successors,
     _prepare_levelscript_native_control_context,
@@ -42,7 +42,7 @@ from scripts.game_data.levelscript_binary import (
 )
 
 
-SCHEMA = "levelScriptCallServerCallbackAudit.v2"
+SCHEMA = "levelScriptCallServerCallbackAudit.v3"
 CALLSERVER_PAIR = union_tags.action("CallServer")
 HEX_UID_RE = re.compile(r"[0-9a-fA-F]{8}")
 DEFAULT_JSON = STORY_RECOVERY_REPORTS_DIR / "levelscript_callserver_callback_audit.json"
@@ -129,6 +129,7 @@ def _callback_control_graph(
                 records_by_uid=records_by_uid,
                 membership=membership,
                 decode_record=detail,
+                native_audit=context.get("callServerCallbackNativeAudit"),
             ),
         ]))
         for edge_name, next_local_id in successors:
@@ -454,11 +455,15 @@ def validate_callserver_serialized_contract(
 def build_report(
     *,
     level_script_root: Path = LEVELSCRIPT_DIR,
+    gameassembly: Path | None = None,
+    metadata: Path | None = None,
 ) -> dict[str, Any]:
-    contract_audit = CALLSERVER_CALLBACK_CONTRACT_AUDIT
+    contract_audit = load_callserver_callback_contract(gameassembly=gameassembly, metadata=metadata)
     native_contract = dict(contract_audit.get("nativeContract") or {})
     native_contract.setdefault("schema", contract_audit.get("schema", ""))
-    native_contract.setdefault("status", contract_audit.get("status", ""))
+    native_contract["status"] = contract_audit.get("status", "")
+    native_contract["directCopyStatus"] = contract_audit.get("directCopyStatus", "")
+    native_contract["callbackContinuationProved"] = contract_audit.get("callbackContinuationProved", False)
     native_contract.update({
         "source": contract_audit.get("sourceFile", ""),
         "sourceSha256": contract_audit.get("sourceSha256", ""),
@@ -520,6 +525,7 @@ def build_report(
             records,
             membership,
         )
+        context["callServerCallbackNativeAudit"] = contract_audit
         records_by_uid: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for record in records:
             uid = str(record.get("uid") or "").casefold()
@@ -594,6 +600,11 @@ def build_report(
                     "index": index,
                     "headerUid": output_uid,
                 }
+                if contract_audit.get("callbackContinuationProved") is not True:
+                    callback.update(status="pending_current_wait_list_header_consumer", failureGate=CONTINUATION_GATE)
+                    unresolved_outputs.append({"sourceFile": source_file, "callServerLocalId": record.get("localId"), **callback})
+                    callback_rows.append(callback)
+                    continue
                 if not isinstance(output_uid, str) or not HEX_UID_RE.fullmatch(
                     output_uid
                 ):
@@ -712,6 +723,8 @@ def build_report(
                 "callbackOutputs": callback_rows,
             })
 
+    for key in ("decodedCallServerActions", "callServerActions", "exactCallbackHeaders", "callbackOutputUids", "callbackHeadersReachingStory"):
+        counts.setdefault(key, 0)
     counts["levelScriptFilesScanned"] = len(files)
     counts["unresolvedCallbackOutputs"] = len(unresolved_outputs)
     counts["validationFailures"] = len(validation_failures)
@@ -758,18 +771,10 @@ def build_report(
         "validationFailures": validation_failures,
         "missionOwnershipEvidence": False,
         "evidenceBoundary": (
-            "The installed binary makes each non-empty callClientOutputUIDs value a "
-            "possible sub-executor header UID. Exact UID/event/header/action links prove "
-            "conditional callback topology inside one LevelScript. Missing UIDs remain "
-            "dangling, and neither a callback nor its local actions identify a mission "
-            "owner. Exact callback headers retain a reverse typed action path when "
-            "one reaches a preceding Story action. Only when both that path and the "
-            "forward callback path reach Story actions may a caller promote a "
-            "same-LevelScript Story-to-Story order edge; absence remains unresolved. "
-            "The audit retains all six serialized "
-            "CallServer fields for every decoded action; their exact values are "
-            "runtime handoff parameters, not mission identity unless an independent "
-            "original-data contract proves that interpretation."
+            "Current typed source framing retains stored CallServer parameters and output UID candidates. "
+            "Fresh original Execute field-copy proof is separate from ActionExecutor wait-list consumption, "
+            "UID/header lookup and OnCustomEvent continuation, which remain pending current review. "
+            "Unproved candidates admit no callback control graph, Story order, mission ownership or runtime execution."
         ),
         "usesOcrOrManualOrder": False,
     }
@@ -822,11 +827,13 @@ def markdown_report(report: dict[str, Any]) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--level-script-root", type=Path, default=LEVELSCRIPT_DIR)
+    parser.add_argument("--gameassembly", type=Path)
+    parser.add_argument("--metadata", type=Path)
     parser.add_argument("--out", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MARKDOWN)
     args = parser.parse_args()
     report = build_report(
-        level_script_root=args.level_script_root,
+        level_script_root=args.level_script_root, gameassembly=args.gameassembly, metadata=args.metadata,
     )
     write_report_json(args.out, report)
     write_text_if_changed(args.markdown, markdown_report(report))

@@ -175,113 +175,16 @@ def decode_mission_area_table(
     }
 
 
-def frame_subgame_table(
-    data: bytes, *, strings: StringPool | None = None
-) -> dict[str, Any]:
-    if not data or data[0] != 1:
-        raise GameplayCompactDecodeError("SubGame table root member count is not 1")
-    count, offset = _count(data, 1, "dataTable")
-
-    def boolean(cursor: int, field: str) -> int:
-        _need(data, cursor, 1, field)
-        if data[cursor] not in (0, 1):
-            raise GameplayCompactDecodeError(f"{field}: invalid bool")
-        return cursor + 1
-
-    def nullable_list(cursor: int, field: str, item) -> tuple[int, int]:
-        raw_count, cursor = _u32(data, cursor, f"{field}.count")
-        if raw_count == 0xFFFFFFFF:
-            return 0, cursor
-        if raw_count > 4096:
-            raise GameplayCompactDecodeError(f"{field}: invalid count {raw_count}")
-        for item_index in range(raw_count):
-            cursor = item(cursor, f"{field}[{item_index}]")
-        return raw_count, cursor
-
-    def string_item(cursor: int, field: str) -> int:
-        _, cursor = _string(data, cursor, field, strings)
-        return cursor
-
-    def u64_item(cursor: int, field: str) -> int:
-        _need(data, cursor, 8, field)
-        return cursor + 8
-
-    def task_item(cursor: int, field: str) -> int:
-        if data[cursor] != 1:
-            raise GameplayCompactDecodeError(f"{field}: member count is not 1")
-        _, cursor = _string(data, cursor + 1, f"{field}.taskId", strings)
-        return cursor
-
-    def lang_key(cursor: int, field: str) -> int:
-        marker = data[cursor]
-        if marker == 0xFF:
-            return cursor + 1
-        if marker != 1:
-            raise GameplayCompactDecodeError(f"{field}: member count is not 1/null")
-        _, cursor = _string(data, cursor + 1, f"{field}.key", strings)
-        return cursor
-
-    rows: list[dict[str, Any]] = []
-    task_total = 0
-    for row_index in range(count):
-        start = offset
-        key, offset = _string(data, offset, f"dataTable[{row_index}].key", strings)
-        if not key or not _KEY_RE.fullmatch(key):
-            raise GameplayCompactDecodeError(f"dataTable[{row_index}]: invalid key")
-        _need(data, offset, 2, f"dataTable[{row_index}].union")
-        if (data[offset], data[offset + 1]) != (7, 35):
-            raise GameplayCompactDecodeError(f"dataTable[{row_index}]: expected union 7/member 35")
-        offset += 2
-        _need(data, offset, 8, "bindScriptId"); offset += 8
-        offset = boolean(offset, "canQuit")
-        _need(data, offset, 8, "countDownType/countingType"); offset += 8
-        offset = boolean(offset, "disableTracking")
-        _, offset = _string(data, offset, "dungeonMissionId", strings)
-        _, offset = nullable_list(offset, "extraTasks", task_item)
-        offset = lang_key(offset, "failInfo")
-        tasks, offset = nullable_list(offset, "failTasks", task_item); task_total += tasks
-        _need(data, offset, 4, "gameMechanicsType"); offset += 4
-        offset = boolean(boolean(boolean(offset, "hasTimeLimit"), "hasTimer"), "hideStageProgress")
-        row_id, offset = _string(data, offset, "id", strings)
-        if row_id != key:
-            raise GameplayCompactDecodeError(f"dataTable[{row_index}]: key/id mismatch")
-        offset = boolean(offset, "ignoreFinishToast")
-        _, offset = nullable_list(offset, "logicIdWhitelist", u64_item)
-        tasks, offset = nullable_list(offset, "mainTasks", task_item); task_total += tasks
-        offset = boolean(boolean(offset, "manualStartBanner"), "manualSyncTrackingStage")
-        _, offset = _string(data, offset, "modeId", strings)
-        _need(data, offset, 4, "modeType"); offset += 4
-        offset = boolean(offset, "noFailOnTeamAllDie")
-        _, offset = _string(data, offset, "preparePhaseUIType", strings)
-        _, offset = nullable_list(offset, "proxyWhitelist", string_item)
-        offset = lang_key(offset, "resetBtnName")
-        offset = boolean(offset, "showDesc")
-        _need(data, offset, 8, "subDataParentId"); offset += 8
-        offset = lang_key(offset, "successInfo")
-        _, offset = _string(data, offset, "taskGoalIconName", strings)
-        _need(data, offset, 4, "taskGoalStyle"); offset += 4
-        _, offset = _string(data, offset, "teamConfigId", strings)
-        _, offset = nullable_list(offset, "teamConfigIds", string_item)
-        offset = boolean(boolean(offset, "ignoreFailToastBeforeStart"), "showTimeInfoOnFinishToast")
-        spawners, offset = nullable_list(offset, "spawnerIds", u64_item)
-        rows.append({
-            "startOffset": start,
-            "endOffset": offset,
-            "key": key,
-            "unionTag": 7,
-            "memberCount": 35,
-            "spawnerIdCount": spawners,
-        })
-    if offset != len(data):
-        raise GameplayCompactDecodeError(f"SubGame table trailing bytes: {len(data) - offset}")
-    return {
-        "status": "exact",
-        "schemaStatus": "named_exact",
-        "bytesConsumed": offset,
-        "entryCount": count,
-        "taskCount": task_total,
-        "rows": rows,
-    }
+def frame_subgame_table(data: bytes, *, strings: StringPool | None = None, game_root=None) -> dict[str, Any]:
+    from scripts.game_data.gameplay_subgame_compact_native import validate
+    from scripts.game_data.memorypack.subgame_compact import frame, SubGameDecodeError
+    gate = validate(game_root=game_root)
+    if gate['status'] != 'validated':
+        raise GameplayCompactDecodeError('SubGame native gate: ' + str(gate))
+    try:
+        return frame(data, strings, gate)
+    except SubGameDecodeError as error:
+        raise GameplayCompactDecodeError(str(error)) from error
 
 
 def frame_world_entity_registry(

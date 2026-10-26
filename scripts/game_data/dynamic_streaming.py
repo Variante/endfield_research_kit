@@ -15,8 +15,8 @@ from typing import Any, Iterator, Mapping
 from scripts.game_data.inverted_lz4 import decompress_inverted_lz4
 
 
-OBSERVED_CHUNK_VERSION = 94
-OBSERVED_STREAMING_VERSION = 47
+OBSERVED_CHUNK_VERSION = 99
+OBSERVED_STREAMING_VERSION = 49
 SINGLE_GRID_FIELD_COUNT = 61
 COMPRESSED_DYNAMIC_KINDS = frozenset(("init", "streaming"))
 RAW_DYNAMIC_KINDS = frozenset(("main", "stream_area", "version"))

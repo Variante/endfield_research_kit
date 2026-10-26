@@ -18,7 +18,6 @@ from scripts.game_data.il2cpp.string_source_bindings import validate_encoding_bi
 from scripts.game_data.il2cpp.string_source_instructions import decode_utf8_decoder_instructions
 from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
 from scripts.game_data.il2cpp.protocol import runtime_type_field_offsets
-from scripts.game_data.il2cpp.unwind_chains import read_exception_directory, UnwindChainIndex
 from scripts.game_data.il2cpp.type_data_initialization_control import _complete
 from scripts.game_data.il2cpp.formatter_composition import _vtable
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
@@ -70,8 +69,7 @@ def _validate_native(image, contract):
     _vtable(image,initializer.declaring_type,initializer.slot,initializer.index,LABEL)
     roles={'readString','readUtf8','header','advance','spanCreation','spanGetString','encodingGetter','constructor','pointerString','virtualDispatch','count','fill'}
     _need('body-roles',roles,set(bodies))
-    rva,size,raw=read_exception_directory(image.pe)
-    unwind=UnwindChainIndex(raw,lambda r,n:image.pe.bytes_at_va(base+r,n),table_rva=rva,image_size=size)
+    unwind=image.unwind_index
     groups={}
     for role,body in bodies.items():
         windows=body['codeWindows'];family=unwind.family(body['entryRva'])

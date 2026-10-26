@@ -1,0 +1,721 @@
+{
+  "schema": "endfield.animation-masks-native.v1",
+  "status": "conditional-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "supportedCounts": [
+    -1,
+    0,
+    1
+  ],
+  "fieldOrder": [
+    "layerName",
+    "maskPath"
+  ],
+  "elementWireBytes": 13,
+  "profile": {
+    "types": {
+      "entry": "Beyond.Gameplay.View.Animation.AnimationConfigJson+BoneWeightMaskJsonEntry",
+      "wrapper": "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJson_BoneWeightMaskJsonEntryForMemoryPack",
+      "root": "Beyond.Gameplay.View.Animation.AnimationConfigJson",
+      "rootWrapper": "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJsonForMemoryPack"
+    },
+    "methods": {
+      "childRead": [
+        245526,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJson_BoneWeightMaskJsonEntryForMemoryPack",
+        "Deserialize",
+        114167856
+      ],
+      "getValue": [
+        245519,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJson_BoneWeightMaskJsonEntryForMemoryPack",
+        "GetValue",
+        71500928
+      ],
+      "default": [
+        245516,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJson_BoneWeightMaskJsonEntryForMemoryPack",
+        ".ctor",
+        119870672
+      ],
+      "create": [
+        245520,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJson_BoneWeightMaskJsonEntryForMemoryPack",
+        "CreateInstance",
+        119870672
+      ],
+      "childFormatter": [
+        245527,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJson_BoneWeightMaskJsonEntryForMemoryPack+Beyond_Gameplay_View_Animation_AnimationConfigJson_BoneWeightMaskJsonEntryForMemoryPackFormatter",
+        "Deserialize",
+        114167760
+      ],
+      "rootRead": [
+        243305,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJsonForMemoryPack",
+        "Deserialize",
+        108498144
+      ],
+      "rootFactory": [
+        243283,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJsonForMemoryPack",
+        ".ctor",
+        89922832
+      ],
+      "rootCreate": [
+        243287,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJsonForMemoryPack",
+        "CreateInstance",
+        204989780
+      ],
+      "init": [
+        245523,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJson_BoneWeightMaskJsonEntryForMemoryPack",
+        "Init",
+        78756592
+      ],
+      "setter0": [
+        243288,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJsonForMemoryPack",
+        "set____fallbackMontages__",
+        85897728
+      ],
+      "setter1": [
+        243289,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJsonForMemoryPack",
+        "set___avatarBlendProfilePath__",
+        126061384
+      ],
+      "setter2": [
+        243290,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJsonForMemoryPack",
+        "set___bakedBindingPath__",
+        126051284
+      ],
+      "setter3": [
+        243291,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJsonForMemoryPack",
+        "set___boneWeightMasks__",
+        85899872
+      ],
+      "setter4": [
+        243292,
+        "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_AnimationConfigJsonForMemoryPack",
+        "set___controllerPath__",
+        126046528
+      ],
+      "originalConstructor": [
+        57949,
+        "Beyond.Gameplay.View.Animation.AnimationConfigJson",
+        ".ctor",
+        89922320
+      ]
+    },
+    "sources": {
+      "child": {
+        "entryRva": 114167856,
+        "windows": [
+          {
+            "startRva": 114167856,
+            "endRva": 114167911,
+            "sha256": "41EEAAA0B3396E53C91990FCC82986F832263D279EA781E74FB35DA38DA3B002"
+          },
+          {
+            "startRva": 114167911,
+            "endRva": 114168002,
+            "sha256": "D79B4F8DCB9E4C859C7C2E0B8F32D1759514CF27900C21132992F34C899ED952"
+          },
+          {
+            "startRva": 114168002,
+            "endRva": 114168013,
+            "sha256": "5373E37BE86C7D6A23CCAAFF874B0E61EAEBCBB1FC3484E5DFCF363425AA1B8F"
+          },
+          {
+            "startRva": 114168013,
+            "endRva": 114168019,
+            "sha256": "611F63D9F4DC3E910EFE786EA8929189216E54EB9118617F5DB981511A9A0A18"
+          },
+          {
+            "startRva": 114168019,
+            "endRva": 114168079,
+            "sha256": "DB4DF263AAD3B609BE8FEB3D485941040F505AEC09682F6A316B9F6129E0EA62"
+          },
+          {
+            "startRva": 125429122,
+            "endRva": 125429223,
+            "sha256": "D7F90647A791C93E5E7D011A746ECF3A2F831A49B9320F0840424551D6376317"
+          },
+          {
+            "startRva": 125429223,
+            "endRva": 125429244,
+            "sha256": "E58E95470CFBD102BEF489D87E930D101873D65603EAFD40C307E0D9FF4E9350"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "getValue": {
+        "entryRva": 71500928,
+        "windows": [
+          {
+            "startRva": 71500928,
+            "endRva": 71500939,
+            "sha256": "2774E758FDFC19C1D0BDB91DFE39B10E4EC46B766219D39ADAF747E39AA0EC8F"
+          }
+        ],
+        "ownership": "closedSelectedLeaf"
+      },
+      "default": {
+        "entryRva": 119870672,
+        "windows": [
+          {
+            "startRva": 119870672,
+            "endRva": 119870680,
+            "sha256": "61726F0F061D9219C8FBE6AF739FF6E12626859673809D8583CE21F376CF361E"
+          }
+        ],
+        "ownership": "closedSelectedLeaf"
+      },
+      "create": {
+        "entryRva": 119870672,
+        "windows": [
+          {
+            "startRva": 119870672,
+            "endRva": 119870680,
+            "sha256": "61726F0F061D9219C8FBE6AF739FF6E12626859673809D8583CE21F376CF361E"
+          }
+        ],
+        "ownership": "closedSelectedLeaf"
+      },
+      "forwarder": {
+        "entryRva": 114167760,
+        "windows": [
+          {
+            "startRva": 114167760,
+            "endRva": 114167853,
+            "sha256": "B8293D8F08DCD913AC7953E2E37C2B869B6A04EFFE740CFECEA55CEF716A7CEF"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "root": {
+        "entryRva": 108498144,
+        "windows": [
+          {
+            "startRva": 108498144,
+            "endRva": 108498214,
+            "sha256": "A8D7DB1AFAA29A89AE096BBA792957A617467913D23F068353404C82931060F6"
+          },
+          {
+            "startRva": 108498214,
+            "endRva": 108498921,
+            "sha256": "21BC46E080C210A4556A150C0241D513F2931C2CAB8398FF071D42768C94CD23"
+          },
+          {
+            "startRva": 108498921,
+            "endRva": 108498929,
+            "sha256": "2430526324BB39BEEB5D2BFFA3BEAC25B45B4D758328DBDA8075A2BA634C12DA"
+          },
+          {
+            "startRva": 108498929,
+            "endRva": 108498935,
+            "sha256": "590010D4EB33D35811DA8DEF1FBA4C3215009534CE4BCA55974DBE0EC13527CB"
+          },
+          {
+            "startRva": 108498935,
+            "endRva": 108499127,
+            "sha256": "C35947262DF593B5E39F1F0867017553CDEAA214239787082727883543A4698D"
+          },
+          {
+            "startRva": 108499127,
+            "endRva": 108499157,
+            "sha256": "BB14A7980D888BAAD2ACC8C0866BF69AE8264585BA14C3911A7DC00C1A97BDB6"
+          },
+          {
+            "startRva": 124924032,
+            "endRva": 124924138,
+            "sha256": "1C5FB7645C53B75668A7549546656F4CF65110E3E1C4038DA8B1423D816F9F7D"
+          },
+          {
+            "startRva": 124924138,
+            "endRva": 124924155,
+            "sha256": "EC3CF7449A6474E51D583190475428DCA8D3D6E40F4A2F88E84A065B0EAD39AA"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "rootFactory": {
+        "entryRva": 89922832,
+        "windows": [
+          {
+            "startRva": 89922832,
+            "endRva": 89922934,
+            "sha256": "5B95A42626501F993ED0B36DF2C16EF9B2AA3E0D86D297008672AAE5D6822DC3"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "rootCreate": {
+        "entryRva": 204989780,
+        "windows": [
+          {
+            "startRva": 204989780,
+            "endRva": 204989880,
+            "sha256": "1EE86F830662A072063650EC4AD19FCC6B6B186773073221E3DFF25C92EC9183"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "init": {
+        "entryRva": 78756592,
+        "windows": [
+          {
+            "startRva": 78756592,
+            "endRva": 78756617,
+            "sha256": "DF1B05886C449A3C1FE6761F5EF4822057C5DA6AAB648B992DBB0EBFD883C1F7"
+          },
+          {
+            "startRva": 78756617,
+            "endRva": 78756623,
+            "sha256": "E2802F88B57D128645599ED9FCF6371F5A326CA3ADE9B59838D6C05B82A63B3D"
+          },
+          {
+            "startRva": 78756623,
+            "endRva": 78759383,
+            "sha256": "AC82919B27C36F1B116C0B549927A66BE5CF818DB04878BC851CA62CDD4743B0"
+          },
+          {
+            "startRva": 78759383,
+            "endRva": 78759423,
+            "sha256": "C49EA2A3CB0AA9013868688DC07580D26D1243B32D44B6B3A3785D690077D8C8"
+          },
+          {
+            "startRva": 78759423,
+            "endRva": 78759847,
+            "sha256": "0A5C8748886CDCDB5CA9FE01056AA1931C8AD6F2542F4862A93147B4ED01E475"
+          },
+          {
+            "startRva": 78759847,
+            "endRva": 78760760,
+            "sha256": "E11FAD87B5A33B69466AB5007D0E690FF3FF127076E918782139FA60749BA3E3"
+          },
+          {
+            "startRva": 78760760,
+            "endRva": 78761232,
+            "sha256": "C8A4AFF2337E32FAD9C3797696A668D344EC341F437D524DA3E49EDA360480D8"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "setter0": {
+        "entryRva": 85897728,
+        "windows": [
+          {
+            "startRva": 85897728,
+            "endRva": 85897764,
+            "sha256": "91DA0C44F4886FB3018A0C0AA17925B690224314DA7E501B836D38AACC5FE5FD"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "setter1": {
+        "entryRva": 126061384,
+        "windows": [
+          {
+            "startRva": 126061384,
+            "endRva": 126061412,
+            "sha256": "28803FCCA77788D92AED804D611C5005014B7913C7D34BA3CD1F9492DDB977BC"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "setter2": {
+        "entryRva": 126051284,
+        "windows": [
+          {
+            "startRva": 126051284,
+            "endRva": 126051312,
+            "sha256": "3A315F705A3BC1C2B270DA015DE76D184363A9B29BB55434F123002027ABA35B"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "setter3": {
+        "entryRva": 85899872,
+        "windows": [
+          {
+            "startRva": 85899872,
+            "endRva": 85899908,
+            "sha256": "6CBD6BF04A4E734541215455BDA5CD5BD8D90B046A3D0502FB1DAD4D97A6073F"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "setter4": {
+        "entryRva": 126046528,
+        "windows": [
+          {
+            "startRva": 126046528,
+            "endRva": 126046556,
+            "sha256": "08D91B7FCC908F97A091DD5D1C21664913E39B3E13001FA5D13A0E2F7990D1E7"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "hash": {
+        "entryRva": 103939152,
+        "windows": [
+          {
+            "startRva": 103939152,
+            "endRva": 103939234,
+            "sha256": "74C13BF78005DE05C4B4CDB32753A333EA2EC68F0803891AA71154E2E9B7E11A"
+          },
+          {
+            "startRva": 124549542,
+            "endRva": 124549587,
+            "sha256": "9463FCF6604D62094BE2B47C51B3FA578B4F3AAD385B941C473C9F3EA608FD64"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "peek": {
+        "entryRva": 83754304,
+        "windows": [
+          {
+            "startRva": 83754304,
+            "endRva": 83754339,
+            "sha256": "9D0352D51DB434BCFFBE158E8D9EA10DEDE1C65A3F50EBD019CDD8938E5CB541"
+          },
+          {
+            "startRva": 120410842,
+            "endRva": 120410861,
+            "sha256": "A643D289F6F40DB2A32901C5B4659EFF233704E6C6AEC72CA3EDAD620E2D8A43"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "list": {
+        "entryRva": 111562208,
+        "windows": [
+          {
+            "startRva": 111562208,
+            "endRva": 111562284,
+            "sha256": "3DABD4CA89E23C334DE98000B5BA5DDA518211B04B2A02F44F4F8AF4AAD6E90A"
+          },
+          {
+            "startRva": 111562284,
+            "endRva": 111562498,
+            "sha256": "0878A9755E6AE34973A2B176AFD4C0567634BADE7F7254BB35DF9B7A36C169C0"
+          },
+          {
+            "startRva": 111562498,
+            "endRva": 111562512,
+            "sha256": "C9B4A152E2D21A5E4EE364B1A1094A2ABBF6E598FCD10BDA5A0F294A8EE3EE0B"
+          },
+          {
+            "startRva": 111562512,
+            "endRva": 111562634,
+            "sha256": "3FEF0968215926E5988D546F9C2DC30F5C94010BB0A4754EFD986D299E6429EA"
+          },
+          {
+            "startRva": 111562634,
+            "endRva": 111562658,
+            "sha256": "C8D5ACDC5357460296A1F6C4E42C53C6E9F748E4AC3D34D9B2E832D7F9AE345E"
+          },
+          {
+            "startRva": 111562658,
+            "endRva": 111562668,
+            "sha256": "2ABDA39A335EDFDC71A5563A13398E1AF05419673A648F690D9F612956384620"
+          },
+          {
+            "startRva": 125177846,
+            "endRva": 125177962,
+            "sha256": "A1C074C0183CFF42934B907F62F6358CF015575841439272AA2D03D799D8319A"
+          },
+          {
+            "startRva": 125177962,
+            "endRva": 125177979,
+            "sha256": "2B3BE8BB577C717246F351DCE63FD95C70D3339691626BC768A85CB8C8A04FC1"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "adapter": {
+        "entryRva": 114477888,
+        "windows": [
+          {
+            "startRva": 114477888,
+            "endRva": 114477955,
+            "sha256": "25472B5AE520391EA124BC2DD4E66E58FD2E137B43D06BA6273426BD463517B4"
+          },
+          {
+            "startRva": 114477955,
+            "endRva": 114478011,
+            "sha256": "B16BA1F06C02CD99AEAA7937BBADE7E9E330A2DE0630FDB103B55625299CCCC1"
+          },
+          {
+            "startRva": 114478011,
+            "endRva": 114478114,
+            "sha256": "24BAAEC225F5EF527475B1501F23988920D4869B3F6FF1F3DE18B15965E331D5"
+          },
+          {
+            "startRva": 114478114,
+            "endRva": 114478124,
+            "sha256": "6B556E1FE8E488CD511E1FE9C47AD39DF53FB1D97FC221EA14BFE4697650FE46"
+          },
+          {
+            "startRva": 114478124,
+            "endRva": 114478134,
+            "sha256": "32C49B15C9C72F1DAACFBE59CD067423C32C15CFDD2E411830B3EEC25F0AF97F"
+          },
+          {
+            "startRva": 125458344,
+            "endRva": 125458356,
+            "sha256": "662C49ED5617EF12A53D30195D20F9F31693F9574F2739A503A227C0B8D4E30E"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "readNull": {
+        "entryRva": 103964032,
+        "windows": [
+          {
+            "startRva": 103964032,
+            "endRva": 103964065,
+            "sha256": "2E2607A237461C2A9DC0FF606B647DABBDCEFA09F4E69BC9E22BB85B124E1F2A"
+          },
+          {
+            "startRva": 121262116,
+            "endRva": 121262136,
+            "sha256": "1628474B702666BC5B5CBDE6A0F7EFDE22FE1D3FCEB6D9E3709136290291A25D"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "notNull": {
+        "entryRva": 113879456,
+        "windows": [
+          {
+            "startRva": 113879456,
+            "endRva": 113879704,
+            "sha256": "7C0CB271ACC9418FA6E1E8A96BE37907F03BDB32D3F81F2B0D89BD83690A0AEC"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "capacity": {
+        "entryRva": 101005072,
+        "windows": [
+          {
+            "startRva": 101005072,
+            "endRva": 101005221,
+            "sha256": "657D3BFD0FE86D8F7765752066C4A26159141B0AFA49C9CD2F0BA7308C3635B4"
+          },
+          {
+            "startRva": 121123810,
+            "endRva": 121123829,
+            "sha256": "A3FD9D1D060E40D4382A9BC882F3E8B084112814BE5DD956E3691A6C318881A2"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "clear": {
+        "entryRva": 104557376,
+        "windows": [
+          {
+            "startRva": 104557376,
+            "endRva": 104557410,
+            "sha256": "B75786364319F814330A8D0F745F655588159E0ED762A5D085452511B99DEA34"
+          }
+        ],
+        "ownership": "boundedSelectedLeaf"
+      },
+      "add": {
+        "entryRva": 104922848,
+        "windows": [
+          {
+            "startRva": 104922848,
+            "endRva": 104922972,
+            "sha256": "3E378DB36C9A645C7201A719A15EF43CB3271435293C6E7FE885662EBEE57107"
+          },
+          {
+            "startRva": 124632938,
+            "endRva": 124633019,
+            "sha256": "74FB5204BB38AF17EB7A043FFA5E83F47473B86E90C785A88F3E282C1383260A"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "conversion": {
+        "entryRva": 483136,
+        "windows": [
+          {
+            "startRva": 483136,
+            "endRva": 483307,
+            "sha256": "2F4C573D68D18AAD63FD6843806DB604B2854C0E4EAE2A7771CD1ACB19C4A850"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "dispatch": {
+        "entryRva": 841392,
+        "windows": [
+          {
+            "startRva": 841392,
+            "endRva": 841679,
+            "sha256": "7E5E0BBBB950C8921375C67BD7F4AC951BDD94A341F49E1C72AE6D58D693CE31"
+          },
+          {
+            "startRva": 7205798,
+            "endRva": 7205830,
+            "sha256": "6E2C8BF9625C456D3A6B9A1DAED840B271EDEBD28CB58472C71E53FA63DD515C"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "ordinaryDispatch": {
+        "entryRva": 232112,
+        "windows": [
+          {
+            "startRva": 232112,
+            "endRva": 234512,
+            "sha256": "5F6117E1BF3C06C207A4704F97FD5274379D0AB87E93631557C353FF7218E8CB"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "valueProvider": {
+        "entryRva": 105422928,
+        "windows": [
+          {
+            "startRva": 105422928,
+            "endRva": 105423125,
+            "sha256": "2534EBA6DF44FB68EC56F49F6133B48369116AA799BC851E3CDCE90BB9A273B7"
+          },
+          {
+            "startRva": 124690856,
+            "endRva": 124690894,
+            "sha256": "BBE0D78A617B0116268BBF80995A1CE22C9B1C30AEA418E7D3D1E188D4AA51BA"
+          },
+          {
+            "startRva": 124690894,
+            "endRva": 124691017,
+            "sha256": "B96F16EB6D89CB9476DA87FA45366BDFDEC53D39AA83FFF1BF82A9ADF0CE2BCB"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "wrapperProvider": {
+        "entryRva": 83902352,
+        "windows": [
+          {
+            "startRva": 83902352,
+            "endRva": 83903675,
+            "sha256": "463015EFFA8E4F1FE29B44299B2165BE7CB0779D675D5C467241717957BD901D"
+          },
+          {
+            "startRva": 120421540,
+            "endRva": 120421629,
+            "sha256": "4E9948678A37F58C81E6888BE51434B7D556C8DC0738D2479DB0449C11430A09"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "canonicalAdd": {
+        "entryRva": 180800460,
+        "windows": [
+          {
+            "startRva": 180800460,
+            "endRva": 180800637,
+            "sha256": "AC9A02A149F8EC7C7305A33164FB445746970102A9EA301EBFF645C037DA6969"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      },
+      "arrayStore": {
+        "entryRva": 662000,
+        "windows": [
+          {
+            "startRva": 662000,
+            "endRva": 662050,
+            "sha256": "2135005E849556EFB9889894D569138E92F1E3F40D9A2991DA9019B64E4C3A04"
+          }
+        ],
+        "ownership": "completeUnwindFamily"
+      }
+    },
+    "sourceMethods": {
+      "child": "childRead",
+      "getValue": "getValue",
+      "default": "default",
+      "create": "create",
+      "forwarder": "childFormatter",
+      "root": "rootRead",
+      "rootFactory": "rootFactory",
+      "rootCreate": "rootCreate",
+      "init": "init",
+      "setter0": "setter0",
+      "setter1": "setter1",
+      "setter2": "setter2",
+      "setter3": "setter3",
+      "setter4": "setter4"
+    },
+    "symbols": {
+      "arrayStore": 662000,
+      "objectHeader": 83754352,
+      "collectionHeader": 83754000,
+      "pooled": 85929408,
+      "hash": 103939152,
+      "barrier": 1065824,
+      "allocate": 89616,
+      "context": 1065680,
+      "constructor": 101005072,
+      "clear": 104557376,
+      "provider": 105422928,
+      "dispatch": 841392,
+      "add": 104922848,
+      "child": 114167856,
+      "forwarder": 114167760,
+      "peek": 83754304,
+      "prepare": 19440,
+      "adapter": 114477888,
+      "readNull": 103964032,
+      "typeHandle": 83483248,
+      "creationTest": 84261392,
+      "activate": 84248448,
+      "notNull": 113879456,
+      "resolve": 1065980,
+      "wrapperProvider": 83902352,
+      "ordinaryDispatch": 232112,
+      "conversion": 483136,
+      "arrayAllocate": 88848,
+      "registerWrap": 92647504,
+      "rootConstructor": 89922832,
+      "originalConstructor": 89922320
+    },
+    "rootReads": [
+      83900608,
+      103939152,
+      103939152,
+      96253232,
+      103939152
+    ],
+    "registrationStartRva": 78760760
+  },
+  "evidenceBoundary": {
+    "direct": "Current typed AnimationConfigJson first-five reader prefix and BoneWeightMaskJsonEntry generated MC2 layerName pool-index then raw signed64 maskPath; managed16 layout is hash8+one reference. Exact selected null/empty/one-element List, capacity/Add, wrappers, original Init key/adapter registration, canonical main/nonnull/inline and interface GetValue sources.",
+    "conditional": "Coherent initialized typed root/List/adapter/provider/conversion contexts, matching selected StringPool; canonical child,object sharing programs selected for reference W (exact child,W method entries absent). Normal allocator, original constructor, pool/header/type/activation/preparation/GC barrier helpers. Provider return/virtual method binding is explicitly supplied, not inferred from registration; dictionary/runtime selection, GC behavior and helper purity are unobserved. Reused List requires count0/capacity>=1; new List allocation zeroed and typed capacity1. Buffered inputs and no counter overflow.",
+    "unresolved": [
+      "counts above1",
+      "old positive Clear/growth",
+      "live provider/default/override selection and initialization execution",
+      "cold refill/error helpers",
+      "all AnimationConfig bytes after controllerPath",
+      "other Animation string fields/montages/curves/whole schemas",
+      "StringPathHash path resolution or playback"
+    ]
+  }
+}

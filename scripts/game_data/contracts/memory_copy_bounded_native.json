@@ -1,0 +1,54 @@
+{
+  "schema": "endfield.memory-copy-bounded-native-contract.v1",
+  "status": "reviewed-current-component",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "entryRva": 7056736,
+  "ownedWindows": [
+    {
+      "startRva": 7056736,
+      "endRva": 7058381,
+      "sha256": "FCDE666C3C6C2B58881835CE622836FB977432A45754313536E36E0A8E300DC2"
+    }
+  ],
+  "tables": [
+    {
+      "startRva": 229204144,
+      "endRva": 229204208,
+      "raw": "8ead6b0074ae6b00c8ad6b00ffad6b007aae6b005fae6b0050ae6b00d0ad6b006dae6b0035ae6b0026ae6b00b0ad6b0043ae6b0010ae6b00e8ad6b0090ad6b00",
+      "sha256": "1369959C020033478D649F71A6F60C8B86180BE5CAD61649A5393E34334C0BD6"
+    },
+    {
+      "startRva": 229204208,
+      "endRva": 229204244,
+      "raw": "56b06b004fb06b0041b06b0033b06b0025b06b0011b06b00fdaf6b00e9af6b00d5af6b00",
+      "sha256": "E5298C2F9B6EF4CC4FB41E31C7DD506F9EB816825024C1EBAEDC9CF0846847D5"
+    },
+    {
+      "startRva": 229204244,
+      "endRva": 229204280,
+      "raw": "86b16b007fb16b0071b16b0063b16b0055b16b0041b16b002db16b0019b16b0005b16b00",
+      "sha256": "314B64673A29F3BE6D4A582664398746DB2093BFD62F695F716DFC308A8925C1"
+    },
+    {
+      "startRva": 229204280,
+      "endRva": 229204316,
+      "raw": "e2b26b00dbb26b00cdb26b00bfb26b00b1b26b00a3b26b0095b26b0087b26b0079b26b00",
+      "sha256": "745FA854F87735633A3BA4BBF6920DCA9E1B0645B09C4CA51D9A76245009FF7C"
+    }
+  ],
+  "maxBytes": 256,
+  "evidenceBoundary": {
+    "exact": "Selected native input, complete owned method windows and current dispatch tables.",
+    "conditional": "Counts 0..256 only; valid stable ordinary nonwrapping source/destination disjoint from the call frame, forward-safe overlap, supported CPU state for selected native mode. Both mode classes and every relevant destination alignment residue are covered; no runtime mode value, backward overlap, larger count, REP or non-temporal path is admitted.",
+    "unresolved": [
+      "native caller/typed argument composition",
+      "runtime CPU and memory selection",
+      "larger counts and backward/REP/non-temporal paths",
+      "string/builder/LevelScript/whole-owner or video semantics"
+    ]
+  }
+}

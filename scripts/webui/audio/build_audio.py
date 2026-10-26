@@ -88,7 +88,7 @@ from scripts.webui.audio.semantics.decoded_payload_event_names import (
 )
 from scripts.webui.audio.semantics.table_contexts import collect_table_audio_events
 from scripts.webui.audio.semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
-from scripts.webui.audio.semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
+from scripts.webui.audio.semantics import rtpc_contract
 from scripts.webui.audio.semantics.context_utils import SELECTION_HIRC_TYPES, json_dump, load_json_strict, normalize_posix, iter_asset_map_objects, display_path
 from scripts.webui.audio.semantics.event_aliases import collect_audio_dialog_wwise_event_aliases, collect_skill_id_dictionary_wwise_event_aliases, collect_sns_voice_wwise_event_aliases, collect_typed_ui_table_wwise_event_aliases, collect_voice_table_wwise_event_aliases
 from scripts.webui.audio.semantics.cutscene_audio import collect_fmv_cutscene_audio_events, collect_levelseq_cutscene_audio_events, collect_timeline_cutscene_audio_events, collect_video_binding_audio_containers, mono_behaviour_json_by_path_id, story_key_from_fmv_id, story_key_from_video_binding, strip_fmv_gender_prefix, timeline_audio_container_for
@@ -211,25 +211,6 @@ HASHED_EVENT_KEY_RE = re.compile(r"^hashed-event:0x([0-9a-f]{8})$", re.IGNORECAS
 # value is a little-endian U16 whose high byte is the operation and low byte is
 # the action scope.  Only Play and PlayEvent introduce downward playback
 # edges; Stop and the other control actions must not be followed as media.
-# A small set of GameParameter names recovered from the installed client's
-# IL2CPP metadata and cross-matched against serialized HIRC RTPC IDs.  Keep
-# these separate from Wwise property labels: these are game-side parameter
-# symbols, not DSP/property names.  The metadata hash pins this catalog to the
-# audited client build (contracts/audio_native.json); an absent HIRC match is
-# intentionally not invented.
-HIRC_GAME_PARAMETER_NAME_EVIDENCE = {
-    "source": "il2cpp_data/Metadata/global-metadata.dat",
-    "metadataSha256": native_evidence.EXPECTED_METADATA_SHA256,
-    "evidence": "exactStaticFieldValueCrossMatchedToSerializedHircRtpcId",
-    "entries": CANONICAL_RTPC_ENTRIES,
-    "evidenceBoundary": (
-        "The six field names and 32-bit values are exact for the pinned metadata "
-        "file and each value is present in the exported HIRC RTPC inventory. "
-        "This catalog names game-side RTPC parameters only; it names no Wwise "
-        "AkPropID key, and it does not infer runtime setter order, live values, "
-        "or audibility."
-    ),
-}
 # v150 InitialParams uses AkPropID, whose numbering is distinct from the
 # RTPC/state parameter IDs above.  Keep this table separate so authored base
 # values are not mislabeled as runtime RTPC targets.
@@ -2635,20 +2616,12 @@ def collect_event_audio_index(
             if definition.get(key) is not None
         })
 
-    game_parameter_name_evidence = []
-    for source_row in HIRC_GAME_PARAMETER_NAME_EVIDENCE["entries"]:
-        row = dict(source_row)
-        parameter_id = int(row["parameterId"])
-        row["nodeRtpcCurveCount"] = int(
-            corpus_rtpc_id_counts.get(parameter_id, 0)
-        )
-        row["busRtpcCurveCount"] = int(
-            bus_rtpc_id_counts.get(parameter_id, 0)
-        )
-        row["serializedHircMatch"] = bool(
-            row["nodeRtpcCurveCount"] or row["busRtpcCurveCount"]
-        )
-        game_parameter_name_evidence.append(row)
+    selected_root=args.game_root
+    game_parameter_name_evidence=rtpc_contract.game_parameter_evidence(
+        gameassembly=selected_root.parent/"GameAssembly.dll" if selected_root else None,
+        metadata=getattr(args,"metadata",None) or (selected_root/"il2cpp_data/Metadata/global-metadata.dat" if selected_root else None),
+        node_counts=corpus_rtpc_id_counts,bus_counts=bus_rtpc_id_counts,
+    )
 
     if hirc_summary is not None:
         definition_only_media_objects = [
@@ -2817,17 +2790,7 @@ def collect_event_audio_index(
                 "rtpcParameterCounts": dict(
                     sorted(corpus_rtpc_parameter_counts.items())
                 ),
-                "gameParameterNameEvidence": {
-                    "source": HIRC_GAME_PARAMETER_NAME_EVIDENCE["source"],
-                    "metadataSha256": HIRC_GAME_PARAMETER_NAME_EVIDENCE[
-                        "metadataSha256"
-                    ],
-                    "evidence": HIRC_GAME_PARAMETER_NAME_EVIDENCE["evidence"],
-                    "entries": game_parameter_name_evidence,
-                    "evidenceBoundary": HIRC_GAME_PARAMETER_NAME_EVIDENCE[
-                        "evidenceBoundary"
-                    ],
-                },
+                "gameParameterNameEvidence": game_parameter_name_evidence,
                 "knownBusObjectIds": len(bus_catalog),
                 "busDefinitionCount": len(public_bus_definitions),
                 "busParentResolutionCounts": dict(

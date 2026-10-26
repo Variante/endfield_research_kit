@@ -82,6 +82,7 @@ gates; a build mismatch withholds only that family's classifications.
 from __future__ import annotations
 
 import argparse
+from contextlib import ExitStack
 import gzip
 import hashlib
 import json
@@ -102,7 +103,6 @@ from scripts.game_data.aether_energy_lock_binary import (
     decode_aether_energy_lock_table,
 )
 from scripts.game_data.atmospheric_npc_binary import (
-    AtmosphericNpcFramingError,
     frame_atmospheric_npc_table,
 )
 from scripts.game_data.char_interact_perform_binary import (
@@ -247,7 +247,7 @@ from scripts.game_data.schemas.ui_level_map_load_config import (
 )
 from scripts.game_data.memorypack.npc_montage import (
     NpcMontageFramingError,
-    frame_npc_montage,
+    frame_npc_montage, montage_decoder,
 )
 from scripts.game_data.spawner_binary import (
     frame_spawner_named,
@@ -2254,7 +2254,7 @@ def _run_reader(
 
 
 def _classify_binary(
-    relative: str, family: str, data: bytes, strings: StringPool | None = None
+    relative: str, family: str, data: bytes, strings: StringPool | None = None, *, native_game_root=None, montage_reader=None, null_list_params=None, model_view_reader=None, npc_decoder=None
 ) -> dict[str, Any]:
     if family == "StringPool":
         page = STRING_POOL_PAGE_RE.fullmatch(PurePosixPath(relative).name)
@@ -2282,7 +2282,7 @@ def _classify_binary(
         }
     if relative.startswith("NPC/MontageJson/MontageNew/"):
         ok, detail, diagnostic = _run_reader(
-            frame_npc_montage, data, (NpcMontageFramingError, ValueError)
+            montage_reader or (lambda payload: frame_npc_montage(payload, strings=strings)), data, (NpcMontageFramingError, ValueError)
         )
         return {
             "status": (
@@ -2296,7 +2296,7 @@ def _classify_binary(
         }
     if family == "CharInteractPerformCfgs":
         ok, detail, diagnostic = _run_reader(
-            decode_char_interact_complete_frame,
+            lambda payload: decode_char_interact_complete_frame(payload, strings=strings, game_root=native_game_root),
             data,
             (CharInteractPerformDecodeError, ValueError),
         )
@@ -2312,7 +2312,7 @@ def _classify_binary(
                 "diagnostic": None,
             }
         prefix_ok, prefix_detail, prefix_diagnostic = _run_reader(
-            frame_char_interact_prefix,
+            lambda payload: frame_char_interact_prefix(payload, strings=strings, game_root=native_game_root),
             data,
             (CharInteractPerformDecodeError, ValueError),
         )
@@ -2334,7 +2334,8 @@ def _classify_binary(
         }
     if family == "AnimationConfig":
         ok, detail, diagnostic = _run_reader(
-            frame_animation_config, data, (AnimationConfigFramingError, ValueError)
+            lambda payload: frame_animation_config(payload, strings=strings, game_root=native_game_root),
+            data, (AnimationConfigFramingError, ValueError)
         )
         status = "unclassified_binary"
         if ok and detail and detail.get("schemaStatus") == "named_exact":
@@ -2351,7 +2352,7 @@ def _classify_binary(
         }
     if family == "LevelScriptData":
         try:
-            detail = frame_levelscript_named(data, source=relative, strings=strings)
+            detail = frame_levelscript_named(data, source=relative, strings=strings, game_root=native_game_root, null_list_params=null_list_params, npc_decoder=npc_decoder)
         except (LevelScriptTopLevelFramingError, ValueError) as exc:
             return {
                 "status": "unclassified_binary", "reader": None,
@@ -2365,7 +2366,7 @@ def _classify_binary(
         }
     if family == "LevelData":
         ok, detail, diagnostic = _run_reader(
-            lambda payload: frame_leveldata_named_prefix(payload, strings=strings),
+            lambda payload: frame_leveldata_named_prefix(payload, strings=strings, game_root=native_game_root, npc_decoder=npc_decoder),
             data,
             (LevelDataTopLevelFramingError, ValueError),
         )
@@ -2434,9 +2435,9 @@ def _classify_binary(
         }
     if family == "AtmosphericNpcData":
         ok, detail, diagnostic = _run_reader(
-            lambda payload: frame_atmospheric_npc_table(payload, strings=strings),
+            lambda payload: frame_atmospheric_npc_table(payload, strings=strings, game_root=native_game_root, npc_decoder=npc_decoder),
             data,
-            (AtmosphericNpcFramingError, ValueError),
+            (ValueError,),
         )
         status = "unclassified_binary"
         if ok and detail and detail.get("schemaStatus") in ("exact", "named_exact"):
@@ -2563,8 +2564,11 @@ def _classify_binary(
     }
     if relative in compact_readers:
         reader, success_status = compact_readers[relative]
+        options = {"strings": strings}
+        if reader is frame_subgame_table:
+            options["game_root"] = native_game_root
         ok, detail, diagnostic = _run_reader(
-            lambda payload: reader(payload, strings=strings),
+            lambda payload: reader(payload, **options),
             data,
             (GameplayCompactDecodeError, ValueError),
         )
@@ -2604,7 +2608,7 @@ def _classify_binary(
         }
     if relative.startswith("Interactive/ModelViewStateControllerData/"):
         ok, detail, diagnostic = _run_reader(
-            lambda payload: decode_model_view_state_controller(payload, strings=strings),
+            lambda payload: decode_model_view_state_controller(payload, strings=strings, game_root=native_game_root, model_view_reader=model_view_reader),
             data,
             (InteractiveBinaryDecodeError, ValueError),
         )
@@ -2690,6 +2694,25 @@ def build_report(
     loaded_family_reports: dict[str, tuple[dict[str, Any], dict[str, Any]]] | None = None,
     progress: bool = False,
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    with ExitStack() as stack:
+        return _build_report(outer_path=outer_path, ledger_path=ledger_path, export_root=export_root,
+            expected_input_set_sha256=expected_input_set_sha256, buff_report_path=buff_report_path,
+            skill_report_path=skill_report_path, loaded_family_reports=loaded_family_reports,
+            progress=progress, _stack=stack)
+
+
+def _build_report(
+    *,
+    outer_path: Path,
+    ledger_path: Path,
+    export_root: Path,
+    expected_input_set_sha256: str,
+    buff_report_path: Path = DEFAULT_BUFF_REPORT,
+    skill_report_path: Path = DEFAULT_SKILL_REPORT,
+    loaded_family_reports: dict[str, tuple[dict[str, Any], dict[str, Any]]] | None = None,
+    progress: bool = False,
+    _stack: ExitStack,
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     levelscript_inputs_before = snapshot_complete_reader_inputs()
     pool_inputs_before = snapshot_string_pool_inputs(export_root)
     expected = expected_input_set_sha256.upper()
@@ -2707,6 +2730,19 @@ def build_report(
     selected.sort(key=lambda row: str(row["virtualPath"]))
     if not selected:
         raise ValueError("authenticated ledger has no JsonData rows")
+    montage_reader = None
+    if any(str(row['virtualPath']).startswith('Data/Json/NPC/MontageJson/MontageNew/') for row in selected):
+        try:
+            montage_reader = _stack.enter_context(montage_decoder(strings=strings, game_root=Path(outer['primaryAssets']).parent))
+        except NpcMontageFramingError as error:
+            def montage_reader(_data, failure=error): raise failure
+    model_view_reader = None
+    if any(str(row['virtualPath']).startswith('Data/Json/Interactive/ModelViewStateControllerData/') for row in selected):
+        from scripts.game_data.model_view_state_controller_binary import model_view_operation
+        try:
+            model_view_reader = _stack.enter_context(model_view_operation(strings, game_root=Path(outer['primaryAssets']).parent))
+        except ValueError as error:
+            def model_view_reader(_data, failure=error): raise failure
     lipsync_native_validation = (validate_lipsync_native_contract(game_root=Path(outer['primaryAssets']).parent)
         if any(str(row['virtualPath']).startswith('Data/Json/LipSync/') for row in selected) else None)
     for row in selected:
@@ -2789,6 +2825,12 @@ def build_report(
     seen_paths: set[str] = set()
     results: list[dict[str, Any]] = []
     progress_at=0.0
+    from scripts.game_data.levelscript_null_list_param_native import current_null_list_params
+    null_list_params=(_stack.enter_context(current_null_list_params(game_root=Path(outer["primaryAssets"]).parent,strings=strings))
+                      if any(str(row["virtualPath"]).startswith("Data/Json/LevelScriptData/") for row in selected) else None)
+    from scripts.game_data.memorypack.npc_runtime import npc_runtime_decoder
+    npc_decoder=(_stack.enter_context(npc_runtime_decoder(game_root=Path(outer["primaryAssets"]).parent,strings=strings))
+                 if any(str(row["virtualPath"]).startswith(("Data/Json/AtmosphericNpcData/","Data/Json/LevelData/"))for row in selected)else None)
     for number,ledger in enumerate(selected,1):
         virtual_path = str(ledger["virtualPath"])
         if progress and (time.monotonic()-progress_at>=10 or number==len(selected)):
@@ -2970,7 +3012,7 @@ def build_report(
                 "diagnostic": None,
             }
             if is_json
-            else _classify_binary(relative, family, data, strings)
+            else _classify_binary(relative, family, data, strings, native_game_root=Path(outer["primaryAssets"]).parent, montage_reader=montage_reader, null_list_params=null_list_params, npc_decoder=npc_decoder, model_view_reader=model_view_reader)
             )
         if not is_json and family in family_evidence and family not in unavailable_families:
             evidence = family_evidence[family][virtual_path]
@@ -3049,6 +3091,7 @@ def build_report(
             **classification,
         })
 
+    _stack.close()
     if buff_selected_root_context is not None:
         buff_selected_roots.recheck_sources(buff_selected_root_context)
         _snapshot_pinned_files([family_report_provenance["BuffData"]], label="Buff report after selected root replay")

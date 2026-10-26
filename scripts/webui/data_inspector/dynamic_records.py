@@ -18,6 +18,8 @@ from scripts.game_data.dynamic_root_comp_native import (
     validate_native_layout as validate_root_layout,
 )
 from scripts.webui.data_inspector.contract import source_descriptor
+from scripts.common import sha256_file_upper
+from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs
 
 
 def main_raw_files(root: Path) -> list[Path]:
@@ -54,6 +56,7 @@ def _attach_authored_owners(components: list[dict[str, Any]], references: list[d
 
 def dynamic_main_records(export_root: Path) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Recheck native inputs, the current roster and every raw byte join before reuse."""
+    reader_inputs = snapshot_complete_reader_inputs()
     gameassembly, metadata = resolve_installed_native_inputs()
     layout, main, digests, native_inputs = validate_native_layout(gameassembly, metadata)
     outer = json.loads(DEFAULT_OUTER.read_text(encoding="utf-8"))
@@ -122,6 +125,19 @@ def dynamic_main_records(export_root: Path) -> tuple[list[dict[str, Any]], dict[
                                      "runtimeEntityOwnership": "unresolved", "conditionEvaluation": "unresolved"},
             },
         })
+    # Recheck inputs, never reuse a semantic proof across operations.
+    expected = [(DEFAULT_OUTER, provenance["outerReportSha256"]),
+                (DEFAULT_LEDGER, provenance["ledgerSha256"]),
+                (DEFAULT_CLI, provenance["streamCliFingerprint"]["currentSha256"]),
+                (Path(gameassembly).parent / "UnityPlayer.dll", native_inputs["unityPlayerSha256"])]
+    expected.extend((Path(row["path"]), row["sha256"]) for row in
+                    provenance["sourceFingerprints"] + provenance["gameBuildFingerprints"])
+    expected.extend((_raw_path(export_root, row["path"]), row["sha256"]) for row in byte_receipts)
+    for path, digest in expected:
+        if not path.is_file() or sha256_file_upper(path) != digest.upper():
+            raise ValueError(f"dynamic components: late input drift: {path}")
+    if reader_inputs != snapshot_complete_reader_inputs():
+        raise ValueError("dynamic components: late reader/contract drift")
     return records, {
         "nativeStatus": "validated", "nativeInputs": native_inputs, **digests,
         "currentCorpus": provenance, "authenticatedFiles": byte_receipts,

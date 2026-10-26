@@ -43,6 +43,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import struct
 import sys
 from collections import Counter
@@ -64,7 +65,7 @@ from scripts.repo_paths import REPO_ROOT
 
 
 CONTRACT = CONTRACTS_DIR / "dynamic_main_vector_native.json"
-SCHEMA = "endfield.dynamic-main-vector-native-contract.v1"
+SCHEMA = "endfield.dynamic-main-vector-native-contract.v2"
 DEFAULT_JSON = REPO_ROOT / "reports/animestudio/dynamic_main_vector_native_latest.json"
 DEFAULT_MARKDOWN = REPO_ROOT / "reports/animestudio/dynamic_main_vector_native_latest.md"
 
@@ -73,24 +74,23 @@ class DynamicMainNativeError(ValueError):
     """The native contract, current corpus, or selected vector framing differs."""
 
 
-def _builder_vector_shape(raw: bytes, *, name: str) -> tuple[int, int]:
-    """Read the selected generated StartVector call's size and alignment."""
-    prefix = b"\x48\x83\x64\x24\x20\x00"  # clear the outgoing stack argument
-    start = raw.find(prefix)
-    if start < 0 or raw.find(prefix, start + 1) >= 0:
-        raise DynamicMainNativeError(f"{name}: generated vector builder prefix differs")
-    code = raw[start + len(prefix):]
-    if code.startswith(b"\xBA") and code[5:15] == b"\x44\x8B\xCA\x44\x8B\xC7\x48\x8B\xCB\xE8":
-        width = struct.unpack_from("<I", code, 1)[0]
-        return width, width
-    if code.startswith(b"\x41\xB9") and code[6:9] == b"\x44\x8B\xC7":
-        alignment = struct.unpack_from("<I", code, 2)[0]
-        if code[9:12] == b"\x48\x8B\xCB" and code[12:15] == b"\x41\x8D\x51" and code[16:17] == b"\xE8":
-            return alignment + struct.unpack_from("<b", code, 15)[0], alignment
-        # Larger widths load EDX before moving the builder pointer into RCX.
-        if code[9:10] == b"\xBA" and code[14:18] == b"\x48\x8B\xCB\xE8":
-            return struct.unpack_from("<I", code, 10)[0], alignment
-    raise DynamicMainNativeError(f"{name}: unreviewed generated vector builder shape")
+def _builder_vector_shape(raw: bytes, *, name: str) -> tuple[int, int, int]:
+    """Prove current width/alignment/count/MethodInfo arguments at one call."""
+    zero = re.escape(b"\x48\xc7\x44\x24\x20\x00\x00\x00\x00")
+    programs = (
+        (b"\xb8(.{4})" + zero + b"\x44\x8b\xc2\x44\x8b\xc8\x8b\xd0\xe8", "equal"),
+        (b"\x41\xb9(.{4})" + zero + b"\x44\x8b\xc2\x41\x8d\x51(.)\xe8", "delta"),
+        (b"\x44\x8b\xc2" + zero + b"\xba(.{4})\x41\xb9(.{4})\xe8", "direct"),
+    )
+    hits = [(hit, kind) for pattern, kind in programs for hit in re.finditer(pattern + b".{4}", raw, re.DOTALL)]
+    if len(hits) != 1:
+        raise DynamicMainNativeError(f"{name}: current vector argument program expected=1 actual={len(hits)}")
+    hit, kind = hits[0]
+    first = struct.unpack("<I", hit[1])[0]
+    width, alignment = ((first, first) if kind == "equal" else
+                        (first + struct.unpack("<b", hit[2])[0], first) if kind == "delta" else
+                        (first, struct.unpack("<I", hit[2])[0]))
+    return width, alignment, hit.end() - 5
 
 
 def validate_native_layout(gameassembly: Path, metadata: Path) -> tuple[dict[str, Any], str, dict[str, str]]:
@@ -133,7 +133,12 @@ def validate_native_layout(gameassembly: Path, metadata: Path) -> tuple[dict[str
     vectors = layout["vectors"]
     if len(vectors) != 59 or {row["fieldIndex"] for row in vectors} != set(range(1, 60)):
         raise DynamicMainNativeError("SingleGrid vector fields must cover 1..59 exactly")
-    used: set[int] = set()
+    allocation = methods[int(layout["vectorAllocationMethodIndex"])]
+    if (allocation["type"], allocation["method"], allocation["parameters"], allocation["returnType"]) != (
+            "Google.FlatBuffers.FlatBufferBuilder", "StartVector",
+            ["System.Int32", "System.Int32", "System.Int32"], "System.Void"):
+        raise DynamicMainNativeError("vector allocation method identity differs")
+    used: set[int] = {allocation["index"]}
     for row in vectors:
         name = row["name"]
         element_type = row["elementType"]
@@ -171,7 +176,11 @@ def validate_native_layout(gameassembly: Path, metadata: Path) -> tuple[dict[str
             kind = image.metadata.metadata_type_name(pointer[0].return_type).rsplit(".", 1)[-1].lower()
         if kind != row["elementKind"]:
             raise DynamicMainNativeError(f"element kind differs: {name}: expected={row['elementKind']} actual={kind}")
-        builder_width, builder_alignment = _builder_vector_shape(method_bytes[builder["index"]], name=name)
+        builder_width, builder_alignment, call_offset = _builder_vector_shape(method_bytes[builder["index"]], name=name)
+        code = method_bytes[builder["index"]]
+        target = int(builder["rva"]) + call_offset + 5 + struct.unpack_from("<i", code, call_offset + 1)[0]
+        if target != int(allocation["rva"]):
+            raise DynamicMainNativeError(f"{name}: vector allocation call target differs")
         if (builder_width, builder_alignment) != (width, alignment):
             raise DynamicMainNativeError(
                 f"{name}: builder size/alignment differs: expected={width}/{alignment} "

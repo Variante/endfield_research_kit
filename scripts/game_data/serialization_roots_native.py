@@ -32,9 +32,10 @@ def read_contract(*, allow_pending=False):
     return contract
 
 
-def check_root_native_inputs():
+def check_root_native_inputs(*,game_root=None):
     pins = read_contract()["nativeInputs"]
-    gate = check_installed_native_inputs(pins["GameAssembly.dll"], pins["global-metadata.dat"])
+    root=Path(game_root)if game_root is not None else None
+    gate = check_installed_native_inputs(pins["GameAssembly.dll"], pins["global-metadata.dat"],gameassembly=root.parent/"GameAssembly.dll"if root else None,metadata=root/"il2cpp_data/Metadata/global-metadata.dat"if root else None)
     if gate.status != "validated":
         return gate
     unity = gate.gameassembly.parent / "UnityPlayer.dll"

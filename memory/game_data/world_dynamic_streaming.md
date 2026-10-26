@@ -11,6 +11,14 @@ and root framing belong to
 names come from the reviewed [`contracts/`](../../scripts/game_data/contracts/)
 and the modules below, whose docstrings hold layouts and proof detail.
 
+The current main-vector contract explicitly names the allocation method and
+checks the complete width/alignment/count/MethodInfo argument program and direct
+call target. Scalar signatures resolve closed runtime types rather than opaque
+metadata-table indexes. Stored strides and nested carrier routes are derived
+again when code changes; anonymous bytes stay unassigned. Framing accepts the
+selected current header versions only. Other native consumer contracts retain
+their own gates and cannot inherit this stored-layout proof.
+
 ## Shared proof pattern
 
 Each native audit gates on the explicit installed `GameAssembly.dll` and
@@ -805,8 +813,9 @@ The ordinary records shift by two; the optional complex record shifts by one
 and its entry does not test a packed attachment bit. Covered native userdata
 construction and getter operands, plus selected metadata enum defaults, are
 authenticated by the ECS contract. Keep the words and unknown bits, and retain
-every enum alias: `AirWall` and `IgnoreFromBakeNavmesh` share a value, so a bit
-alone cannot choose their consumer context. The earlier provisional
+authentic enum aliases. `AirWall` and `IgnoreFromBakeNavmesh` are distinct flags
+after decoding the metadata-default F0 escape as a little-endian DWORD. The
+earlier provisional
 `surfaceWord`/`optionWord` labels are superseded; the current projection exposes
 `gameplayOptionsWord`, `tagConfigWord` and `surfaceTypeByte`. Capsule dimensions,
 high flag bits, tag lookup and native dimension normalization remain separate

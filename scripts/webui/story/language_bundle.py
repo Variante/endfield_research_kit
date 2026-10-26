@@ -150,7 +150,7 @@ from scripts.webui.story.level_bindings import (
     _scene_binding_search_text,
     build_entity_tracking_native_event_story_context,
     build_entity_tracking_world_interactive_dialog_contexts,
-    build_level_function_area_radio_trigger_story_contexts,
+    level_function_area_radio_trigger_status,
     build_level_interactive_narrative_mission_story_contexts,
     build_leveldata_airwall_mission_radio_contexts,
     build_leveldata_authoritative_scope_script_host_index,
@@ -365,7 +365,7 @@ from scripts.webui.story.cutscene_semantics import (
     merge_duplicate_cutscene_rows,
     normalize_cutscene_text_group,
     select_subtitle_text_group_from_display_names,
-    validated_lua_cutscene_playback_keys,
+    current_lua_cutscene_playback_keys,
 )
 from scripts.game_data.ability_binary import (
     build_battle_signal_producer_index,
@@ -15197,136 +15197,7 @@ def build_language_bundle(
         for row in rows
         if row.get("levelId") and row.get("scriptId")
     })
-    radio_trigger_zone_contexts = (
-        build_level_function_area_radio_trigger_story_contexts(
-            set(all_story_entry_keys),
-            mission_runtime_id_set,
-        )
-    )
-    for context in radio_trigger_zone_contexts:
-        route_story_key = resolve_scene_ref_out_key(
-            str(context.get("radioId") or ""),
-            all_story_entry_keys,
-        )
-        if not route_story_key:
-            continue
-        for target_mission in context.get("missionStateIds") or []:
-            target_mission = str(target_mission or "")
-            if target_mission not in mission_runtime_id_set:
-                continue
-            gate_roles = list(
-                (context.get("missionStateRolesById") or {}).get(target_mission)
-                or []
-            )
-            dependency = {
-                "key": route_story_key,
-                "kind": story_kind_by_key.get(route_story_key, "radio"),
-                "relation": "radio_trigger_zone_mission_state_dependency",
-                "direction": "dependency",
-                "phase": "mission_state_trigger_zone",
-                "confidence": "native_exact_level_function_area_radio_trigger",
-                "source": (
-                    "one exact installed-build LevelData RadioTriggerZoneData "
-                    "row co-carries this radioId and the named mission-state "
-                    "field; native OnEnter evaluates those fields before "
-                    "calling GameAction.PlayRadio"
-                ),
-                "storyOwnerMission": story_owner_by_key.get(route_story_key) or "",
-                "missionStateId": target_mission,
-                "missionStateGateRoles": gate_roles,
-                "missionStateGatePredicates": [
-                    f"RadioTriggerZoneData.{role} = {target_mission}"
-                    for role in gate_roles
-                ],
-                "questTriggerStatus": (
-                    "exact_level_function_area_radio_trigger_state_context_"
-                    "without_quest_identity"
-                ),
-                "storyBinding": False,
-                "ownership": False,
-                "dependencyOnly": True,
-                "executionSide": "client",
-                "networkRole": "reads_synchronized_local_mission_state",
-                "serverExchange": False,
-                "clientRequest": False,
-                "expectedClientReply": False,
-                "upstreamServerStateSources": [
-                    "SC_SYNC_ALL_MISSION",
-                    "SC_MISSION_STATE_UPDATE",
-                ],
-                "upstreamServerStateRole": (
-                    "independent server pushes populate the local MissionSystem "
-                    "cache; entering this zone sends no mission-state request"
-                ),
-                "serverEvidenceStatus": (
-                    "RadioTriggerZoneHandler.OnEnter reads the local mission "
-                    "cache and calls GameAction.PlayRadio; no direct request "
-                    "or reply belongs to this playback"
-                ),
-                "nativeMappingId": (
-                    "level-function-area-radio-trigger-zone-tag-9-v1d4"
-                ),
-                "nativeConsumer": context.get("nativeConsumer"),
-                "levelIds": [str(context.get("levelId") or "")],
-                "sourceFiles": [str(context.get("sourceFile") or "")],
-                "sourcePath": context.get("sourcePath"),
-                "recordOffset": context.get("recordOffset"),
-                "recordEndOffset": context.get("recordEndOffset"),
-                "unionTag": context.get("unionTag"),
-                "serializedMemberCount": context.get("serializedMemberCount"),
-                "specificDataListCount": context.get("specificDataListCount"),
-                "radioTriggerId": context.get("triggerId"),
-                "useRadioTriggerOnce": context.get("useRadioTriggerOnce"),
-                "prtsId": context.get("prtsId"),
-                "missionStateRolesById": context.get("missionStateRolesById"),
-            }
-            dependencies = mission_flows_payload[target_mission].setdefault(
-                "missionStateStoryDependencies",
-                [],
-            )
-            dependency_signature = (
-                route_story_key,
-                dependency["relation"],
-                target_mission,
-                str(dependency.get("radioTriggerId") or ""),
-            )
-            if not any((
-                str(existing.get("key") or ""),
-                str(existing.get("relation") or ""),
-                str(existing.get("missionStateId") or ""),
-                str(existing.get("radioTriggerId") or ""),
-            ) == dependency_signature for existing in dependencies if isinstance(existing, dict)):
-                dependencies.append(dependency)
-
-            connection = {
-                **dependency,
-                "relation": "radio_trigger_zone_mission_state_playback_context",
-                "direction": "context",
-                "confidence": "native_exact_serialized_co_carrier",
-                "evidenceTier": "direct",
-                "storyBinding": True,
-                "dependencyOnly": False,
-            }
-            connections = mission_flows_payload[target_mission].setdefault(
-                "missionStoryConnections",
-                [],
-            )
-            connection_signature = (
-                route_story_key,
-                connection["relation"],
-                target_mission,
-                str(connection.get("radioTriggerId") or ""),
-            )
-            if not any((
-                str(existing.get("key") or ""),
-                str(existing.get("relation") or ""),
-                str(existing.get("missionStateId") or ""),
-                str(existing.get("radioTriggerId") or ""),
-            ) == connection_signature for existing in connections if isinstance(existing, dict)):
-                connections.append(connection)
-            preexisting_attached_story_keys_by_mission[target_mission].add(
-                route_story_key
-            )
+    radio_trigger_zone_audit = level_function_area_radio_trigger_status()
     patrol_radio_contexts = build_leveldata_npc_patrol_radio_story_contexts(
         set(all_story_entry_keys),
     )
@@ -19981,20 +19852,7 @@ def build_language_bundle(
     cutscene_scan_failures: list[dict] = (
         build_levelscript_fmv_playback_scan_failures()
     )
-    lua_audit_path = (
-        REPO_ROOT
-        / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
-    )
-    try:
-        lua_audit = json.loads(lua_audit_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
-        lua_audit = {}
-        cutscene_scan_failures.append({
-            "gate": "read_lua_consumer_reference_audit",
-            "source": repo_rel(lua_audit_path),
-            "error": type(error).__name__,
-        })
-    lua_cutscene_keys, lua_cutscene_failures = validated_lua_cutscene_playback_keys(lua_audit)
+    lua_cutscene_keys, lua_cutscene_failures = current_lua_cutscene_playback_keys()
     playback_use_keys.update(lua_cutscene_keys)
     cutscene_scan_failures.extend(lua_cutscene_failures)
     if cutscene_out_keys and not action_story_occurrences:
@@ -20067,6 +19925,7 @@ def build_language_bundle(
         "missions": "missions.json",
         "search": "search.json",
         "entries": index_entries,
+        "nativeConsumerGaps": [radio_trigger_zone_audit],
         "cutscenePlaybackUse": {
             "status": "validated_complete" if not cutscene_scan_failures else "degraded",
             "summary": playback_use_summary,

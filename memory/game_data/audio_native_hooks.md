@@ -9,6 +9,16 @@ read-only probes are prepared against it, and why none of them yet joins a key
 to an opened file, a decoder stream, or audible PCM. It is the audio counterpart
 of [`native_read_path.md`](native_read_path.md).
 
+The LevelScript music compiled-call claims are a separate, limited source
+lane. They freshly check named Param-field reads and ordered call sites in
+`PostMusicEvent.Execute` and `OnRelease`, then the facade's call to
+`AudioMusicSystem.PostMusicEvent` and that system's named mode/state helpers.
+This establishes compiled call shape. It does not establish the closed Param
+context's evaluated value, unchanged result transfer, selected music branch or
+the eventual control, cue or Wwise sink. The public audit therefore withholds
+Event-request admission even when these claims pass; source names and a music
+method name never substitute for those joins.
+
 Live capture tooling is internal-only and is excluded from the public
 repository. The retained paired source bridge and owner/carrier recipes below
 support historical evidence validation. The separate saved `audio source-owner`

@@ -57,14 +57,15 @@ def _frame_levelscript_sequential_owner(
     action_map_boundary: str,
     partial_status: str,
     strings: Any = None,
+    game_root=None, npc_decoder=None,
 ) -> dict[str, Any]:
     """Advance members 2..28 after an independently exact action-map boundary."""
-    gate = check_root_native_inputs()
+    gate = check_root_native_inputs(game_root=game_root)
     if gate.status != "validated":
         raise LevelScriptTopLevelFramingError(f"levelscriptRoot.native:{gate.status}:{gate.detail}")
     try:
         owner = levelscript_top_level_prefix.decode_empty_action_map_owner_prefix(
-            data, owner_offset, strings=strings
+            data, owner_offset, strings=strings, gameassembly=gate.gameassembly, metadata=gate.metadata, npc_decoder=npc_decoder
         )
     except levelscript_top_level_prefix.LevelScriptPrefixCodecError as error:
         raise LevelScriptTopLevelFramingError(str(error)) from error

@@ -255,8 +255,9 @@ def enum_call_program(image,record,setters,constructor,*,width=4):
     return {name:target(n,b'\xe8') for name,n in (('header',20),('constValue',41),('idRef',50),('paramSource',59),('path',68),('barrier',92))}
 
 
-def initialized_enum_program(image,record,setters):
-    """Complete typed DWORD caller with initialization before its header read."""
+def initialized_enum_program(image,record,setters,*,width=4):
+    """Complete typed DWORD/QWORD caller with initialization before its header read."""
+    scalar.need(LABEL,'initializedTypedWidth',True,type(width) is int and width in (4,8))
     rows=record['instructions']
     expected=[b'\x48\x89\x5c\x24\x18',b'\x57',b'\x48\x83\xec\x20',None,b'\x48\x8b\xda',b'\x48\x8b\xf9',None,
         None,None,None,None,None,None,None,None,None,b'\x48\x8d\x54\x24\x30',b'\xc6\x44\x24\x30\x00',b'\x48\x8b\xcf',None,
@@ -265,6 +266,7 @@ def initialized_enum_program(image,record,setters):
     for _ in range(2):expected.extend([b'\x48\x8b\x33',b'\x48\x8b\xcf',None,b'\x48\x85\xf6',None,b'\x45\x33\xc0',b'\x8b\xd0',b'\x48\x8b\xce',None])
     expected.extend([b'\x48\x8b\x1b',b'\x48\x8b\xcf',None,b'\x48\x85\xdb',None,b'\x45\x33\xc0',b'\x48\x8b\xd0',b'\x48\x8b\xcb',None,
         b'\x48\x8b\x74\x24\x38',b'\x48\x8b\x5c\x24\x40',b'\x48\x83\xc4\x20',b'\x5f',b'\xc3'])
+    if width==8:expected[37]=b'\x48\x8b\xd0'
     scalar.program_extent(rows,record['window'],LABEL+'.initializedEnum');scalar.program(image,rows,expected,LABEL+'.initializedEnum')
     def target(n,opcode):
         rva,encoded=rows[n];raw=bytes.fromhex(encoded);size=len(opcode)+(1 if opcode in (b'\x75',b'\x74') else 4)
@@ -289,23 +291,33 @@ def initialized_enum_program(image,record,setters):
     return {name:target(n,b'\x0f\x84' if name=='null' else b'\xe8') for name,n in (('header',19),('null',21),('constValue',31),('idRef',42),('paramSource',51),('path',60))}
 
 
-def derive_parameter(image,inputs,primitive,*,value_type=None,enum_byte=False):
+def derive_parameter(image,inputs,primitive,*,value_type=None,enum_byte=False,unmanaged_qword=False):
     """Derive current declarations; never reuse an old RVA or generic heap offset."""
     if primitive not in ('bool','int','string','float','uint','ulong','vector2','vector3'):raise ValueError(LABEL+'.unsupported-primitive:'+str(primitive))
     width,kind={'bool':(1,2),'int':(4,8),'string':(8,14),'float':(4,12),'uint':(4,9),'ulong':(8,11),'vector2':(8,17),'vector3':(12,17)}[primitive]
     reference=primitive=='string';floating=primitive=='float';vector2=primitive=='vector2';vector3=primitive=='vector3';called=primitive in ('uint','ulong','vector2')
-    enum=value_type is not None
+    scalar.need(LABEL,"unmanagedQwordProfile",True,type(unmanaged_qword) is bool and (not unmanaged_qword or primitive=="ulong" and type(value_type) is str and not enum_byte))
+    enum=value_type is not None and not unmanaged_qword
     if enum and primitive!='int':raise ValueError(LABEL+'.enum-integer-profile-required')
     if enum_byte:
         scalar.need(LABEL,'byteEnumProfile',True,enum);width=1
-    typename=value_type if enum else 'UnityEngine.Vector'+primitive[-1] if vector2 or vector3 else primitive
-    if enum:kind=17;called=True
+    typename=value_type if value_type is not None else 'UnityEngine.Vector'+primitive[-1] if vector2 or vector3 else primitive
+    if enum or unmanaged_qword:kind=17;called=True
     wrapped='Beyond.Gameplay.Actions.Param`1<'+typename+'>'
     base=image.pe.image_base;md=image.metadata;ctx=NativeReferenceContext(image);index=image.body_index
     unwind=image.unwind_index if called else None
     matches=[w for w in derive_from_image(image).values() if w.wrapped_type==wrapped]
     scalar.need(LABEL,'wrapperCount',1,len(matches));wrapper=matches[0]
     scalar.need(LABEL,'memberTypes',[('constValue',typename),('idRef','int'),('paramSource','int'),('path','string')],[(m.name,m.declared_type) for m in wrapper.members])
+    if unmanaged_qword:
+        definition=ctx.index.types[typename]
+        fields=[(md.string(f.name_index),*ctx.field(typename+'::'+md.string(f.name_index))[1:]) for f in md.fields_for(definition) if not ctx.field_attributes(f.type_index)&16]
+        scalar.need(LABEL,'unmanagedQwordValue',True,ctx.is_value_type(typename))
+        scalar.need(LABEL,'unmanagedQwordField',[('id','ulong',16)],fields)
+        value_field,=[f for f in md.fields_for(definition) if not ctx.field_attributes(f.type_index)&16]
+        scalar.ordinary(image,ctx.type_pointer(value_field.type_index),11,LABEL+'.unmanagedQwordField')
+        sizes=image.pe.u64_at_va(int(image.registration['typeDefinitionsSizes'],16)+8*definition.index)
+        scalar.need(LABEL,'unmanagedQwordSizes',(24,8),(image.pe.u32_at_va(sizes),image.pe.u32_at_va(sizes+4)))
     if enum:
         scalar.need(LABEL,'enumConstantKind',('enum','scalar8' if enum_byte else 'scalar32',width),(wrapper.members[0].kind,wrapper.members[0].underlying_kind,wrapper.members[0].width))
         definition=ctx.index.types[typename];backing=[f for f in md.fields_for(definition) if md.string(f.name_index)=='value__']
@@ -351,14 +363,14 @@ def derive_parameter(image,inputs,primitive,*,value_type=None,enum_byte=False):
     offsets=scalar.reader_offsets(image,LABEL);extra={}
     if called:
         typed_enum=enum and len(methods['Deserialize']['instructions'])==73
-        initialized_enum=enum and len(methods['Deserialize']['instructions'])==72
+        initialized_typed=(enum or unmanaged_qword) and len(methods['Deserialize']['instructions'])==72
         owned_setters={n:methods['set___'+n+'__']['pointerRva'] for n in slots}
-        targets=(initialized_enum_program(image,methods['Deserialize'],owned_setters) if initialized_enum else
+        targets=(initialized_enum_program(image,methods['Deserialize'],owned_setters,width=width) if initialized_typed else
             enum_call_program(image,methods['Deserialize'],owned_setters,methods['.ctor']['pointerRva'],width=width) if enum and not typed_enum else
-            setter_call_program(image,methods['Deserialize'],{n:methods['set___'+n+'__']['pointerRva'] for n in slots},width=width,vector2=vector2,typed_enum=typed_enum))
+            setter_call_program(image,methods['Deserialize'],{n:methods['set___'+n+'__']['pointerRva'] for n in slots},width=width,vector2=vector2,typed_enum=typed_enum,typed_qword=unmanaged_qword))
         extra['headerSource']=record(base+targets['header']);object_header_source(image,extra['headerSource'],offsets)
-        if enum:
-            context=derive_typed_usage_context(image,methods['Deserialize']['instructions'][28 if initialized_enum else 19 if typed_enum else 38][0],label=LABEL)
+        if enum or unmanaged_qword:
+            context=derive_typed_usage_context(image,methods['Deserialize']['instructions'][28 if initialized_typed else 19 if typed_enum or unmanaged_qword else 38][0],label=LABEL)
             scalar.need(LABEL,'enumTypedReader',('MemoryPack.MemoryPackReader','ReadUnmanaged',[],[typename]),
                 (context['typeName'],context['methodName'],context['classArguments'],context['methodArguments']))
             arguments=image.instantiations.resolve(context['methodSpec'][2]).arguments
@@ -366,12 +378,12 @@ def derive_parameter(image,inputs,primitive,*,value_type=None,enum_byte=False):
             scalar.ordinary(image,arguments[0].type_pointer_va,17,LABEL+'.enumReadArgument')
             scalar.need(LABEL,'enumReaderDefinition',definition.index,int.from_bytes(bytes.fromhex(arguments[0].raw_type_record_hex)[:8],'little'))
             extra['constantReadContext']=context
-        if not enum or typed_enum or initialized_enum:
+        if not enum or typed_enum or initialized_typed:
             pointer=base+targets['null'];owner=base+methods['Deserialize']['pointerRva']
             ranges=[tuple(r['runtimeTriple'][:2]) for r in unwind.family(owner-base)['ranges'] if r['runtimeTriple'][0]<=pointer-base<r['runtimeTriple'][1]]
             scalar.need(LABEL,'oneOwnedNullFragment',1,len(ranges));start,end=ranges[0];size=end-start;start+=base
             extra['nullBranch']={**record(pointer,start+size-pointer),'ownerRva':owner-base,'fragmentStartRva':start-base,'fragmentEndRva':start+size-base}
-            targets['barrier']=null_output_program(image,extra['nullBranch'],methods['Deserialize']['instructions'][68 if initialized_enum else 57 if vector2 or typed_enum else 56][0])
+            targets['barrier']=null_output_program(image,extra['nullBranch'],methods['Deserialize']['instructions'][68 if initialized_typed else 57 if vector2 or typed_enum or unmanaged_qword else 56][0])
     else:targets=inline_program(image,methods['Deserialize'],slots,offsets,width=width,reference=reference,floating=floating,vector3=vector3)
     scalar.need(LABEL,'sameIntegerSource',targets['idRef'],targets['paramSource'])
     if vector2 or vector3:
@@ -382,6 +394,9 @@ def derive_parameter(image,inputs,primitive,*,value_type=None,enum_byte=False):
     else:constant=pooled_source_helper.validate_on_image(image,base+targets['constValue'],inputs) if reference else record(base+targets['constValue'])
     if enum_byte:
         scalar.raw_byte_source(image,constant,offsets)
+    elif unmanaged_qword:
+        from scripts.game_data.memorypack.unmanaged_qword_source import validate as validate_qword
+        constant['bufferedProgram']=validate_qword(image,base+targets['constValue'],offsets)
     elif primitive=='ulong':
         scalar.integer_source(image,constant,offsets,LABEL+'.constant',width=8)
     elif floating:single_source(image,constant,offsets)
@@ -397,12 +412,12 @@ def derive_parameter(image,inputs,primitive,*,value_type=None,enum_byte=False):
         scalar.need(LABEL,'samePooledSource',targets['path'],targets['constValue'])
         call=methods['set___constValue__']['instructions'][7];raw=bytes.fromhex(call[1])
         scalar.need(LABEL,'sameConstantSetterBarrier',targets['barrier'],call[0]+5+int.from_bytes(raw[1:],'little',signed=True))
-    return {'status':'validated','parameter':parameter,'booleanSource' if primitive=='bool' else 'constantSource':constant,'int32Source':integer,'readerFieldOffsets':offsets,'targets':targets,**extra,
+    return {'status':'validated',**({'valueType':typename,'valueFields':[list(f) for f in fields],'rawSize':8} if unmanaged_qword else {}),'parameter':parameter,'booleanSource' if primitive=='bool' else 'constantSource':constant,'int32Source':integer,'readerFieldOffsets':offsets,'targets':targets,**extra,
             'evidenceBoundary':{'direct':{'bool':'Named typed wrapper, owned constructor/store slots, complete selected inline read/store/return program, normalized byte source, two Int32 reads and pooled path.',
                 'int':('Named typed unsigned-byte enum backing, owned constructor/setter slots, complete selected header/caller/null program, exact enum ReadUnmanaged context, one raw byte, two raw DWORD reads and pooled path.' if enum_byte else 'Named typed signed-Int32 enum backing, owned constructor/setter slots, complete selected header/caller/null program, exact enum ReadUnmanaged context, three raw DWORD reads and pooled path.' if enum else 'Named typed Int32 wrapper, owned constructor/store slots, complete selected inline read/store/return program, three raw DWORD reads and pooled path.'),
                 'float':'Named typed Single wrapper, owned constructor/store slots, complete selected inline read/store/return program, raw XMM Single transfer, two Int32 reads and pooled path.',
                 'uint':'Named typed UInt32 wrapper, owned constructor/setter slots, complete selected buffered-header/setter-call program and owned null branch, raw DWORD transfers and pooled path.',
-                'ulong':'Named typed UInt64 wrapper, owned constructor/setter slots, complete selected buffered-header/setter-call program and owned null branch, full QWORD transfer and eight-byte cursor accounting with pooled path.',
+                'ulong':('Named typed unmanaged one-UInt64 value wrapper, exact closed ReadUnmanaged context, owned constructor/setter slots, complete selected caller/null branch, raw eight-byte transfer and owned Advance paths with pooled tail.' if unmanaged_qword else 'Named typed UInt64 wrapper, owned constructor/setter slots, complete selected buffered-header/setter-call program and owned null branch, full QWORD transfer and eight-byte cursor accounting with pooled path.'),
                 'vector3':'Named typed Vector3 wrapper, owned constructor/setter slots, complete selected caller with disjoint stack result and 8+4-byte field transfer, typed Vector3 source and pooled path.',
                 'vector2':'Named typed Vector2 wrapper, owned constructor/setter slots, complete typed caller/context, raw packed XY transfer, matching two-Single setter, buffered source and pooled path.',
                 'string':'Named typed String wrapper, owned constructor/store slots, complete selected inline read/store/return program, two pooled string reads, two Int32 reads and both reference barriers.'}[primitive],

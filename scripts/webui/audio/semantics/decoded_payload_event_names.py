@@ -80,6 +80,7 @@ from scripts.game_data.memorypack.derived_plans import (
     load_registry,
 )
 from scripts.common import resolve_installed_native_inputs
+from scripts.game_data.string_pool import export_string_pool
 from scripts.repo_paths import REPO_ROOT as REPO
 from scripts.source_paths import ExportLayout
 from scripts.webui.audio.semantics.play_sound_actions import (
@@ -137,6 +138,9 @@ def collect_decoded_event_names(
     )
     layout = (ExportLayout(root=export_root) if export_root is not None
               else ExportLayout.configured())
+    strings = export_string_pool(layout.json_dir)
+    if strings is None:
+        return {}, set(), [], dict(audit, status='unavailable', failedGate='matchingStringPool', families={})
     found: dict[str, set] = {}
     grammar_reachable: set[str] = set()
     action_rows: list[dict[str, Any]] = []
@@ -148,13 +152,14 @@ def collect_decoded_event_names(
             families[family] = {"status": "unavailable"}
             continue
         decoded = refused = action_count = 0
+        failures = []
         for path in sorted(directory.glob("*.json")):
             data = path.read_bytes()
             grammar_reachable.update(
                 length_prefixed_matches(data, GAMEPLAY_AUDIO_EVENT_BYTES_RE))
             try:
                 value, reached = derived_values.decode_file(
-                    data, definition, registry, source=path.name)
+                    data, definition, registry, source=path.name, strings=strings)
                 if reached != len(data):
                     raise ValueError(f"cursor={reached}, expected={len(data)}")
                 rows = (
@@ -171,7 +176,8 @@ def collect_decoded_event_names(
                     ]
                     if family in PLAY_SOUND_FAMILIES else []
                 )
-            except (ValueError, IndexError, struct.error, UnicodeDecodeError):
+            except (ValueError, IndexError, struct.error, UnicodeDecodeError) as error:
+                if len(failures)<4:failures.append(dict(source=path.relative_to(layout.root).as_posix(),sourceSha256=hashlib.sha256(data).hexdigest(),check='exactWholeRecordConsumption',expected='current typed record at physical EOF',actual=str(error)[:400]))
                 refused += 1
                 continue
             decoded += 1
@@ -180,7 +186,7 @@ def collect_decoded_event_names(
             collect_member_strings(value, found)
         families[family] = {
             "status": "read", "decoded": decoded, "refused": refused,
-            "playSoundActions": action_count,
+            "playSoundActions": action_count, "failureSamples": failures,
         }
     return found, grammar_reachable, action_rows, dict(audit, families=families)
 

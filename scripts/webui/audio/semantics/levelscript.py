@@ -5,11 +5,10 @@ binding is authored evidence; it does not establish that the action ran.
 
 Lifecycle producer/consumer links are admitted only for an exact
 same-LevelScript source-root and source-path identity with one active final
-serialized slot and one unique output path. ``scripts.webui.story.level_bindings``
-resolves ``ParamSource=200`` dynamic string properties only through the strict
-``LevelScriptBriefData`` property formatter; ``ParamSource=100`` and unknown
-sources stay runtime-unresolved and never become handles. All of it is
-authored topology, not runtime handle state, branch selection or audibility.
+serialized slot and one unique output path. Property values require their own
+current ``LevelScriptBriefData`` owner proof. ``ParamSource=100`` and unknown
+sources stay runtime-unresolved and never become handles. Stored fields alone
+do not establish topology, runtime handle state, branch selection or audibility.
 
 ``SetAudioCueVar`` rows are cue-variable writes. Their stored route is
 authenticated by ``scripts.game_data.levelscript_audio_cue_native`` and the
@@ -581,196 +580,51 @@ LEVELSCRIPT_RADIO_ACTION_NAMES = frozenset({
     "ToggleClearScreenButRadio",
 })
 
-def _load_levelscript_brief_property_sources(
-    export_root: Path,
-    levelscript_id: str,
-    preferred_source_root: str,
-    cache: dict[tuple[str, str], tuple[dict[str, Any] | None, str]],
-) -> tuple[dict[str, Any] | None, str]:
-    """Find one validated LevelScriptBriefData row for a script id.
-
-    LevelScriptData is overlaid by source-root-relative path, while LevelData
-    may remain in StreamingAssets when the winning script bytes are from
-    Persistent.  Search the winning source first and the other source second;
-    only a validated member-22 BriefData dictionary entry is accepted.
-    """
-    normalized_id = str(levelscript_id or "").replace("\\", "/").strip("/")
-    parts = PurePosixPath(normalized_id).parts
-    if len(parts) < 2 or not parts[-1].isdigit():
-        return None, ""
-    level_id = str(parts[-2])
-    script_id = int(parts[-1])
-    cache_key = (level_id, str(script_id))
-    if cache_key in cache:
-        return cache[cache_key]
-
-    from scripts.webui.story.level_bindings import (
-        parse_leveldata_levelscript_brief_dictionary,
-    )
-
-    source_roots = [str(preferred_source_root)]
-    source_roots.extend(
-        source for source in ("game",)
-        if source not in source_roots
-    )
-    for source_root in source_roots:
-        script_dir = (
-            ExportLayout(export_root).game / "Json"
-            / "LevelScriptData" / level_id
-        )
-        leveldata_dir = (
-            ExportLayout(export_root).game / "Json"
-            / "LevelData" / level_id
-        )
-        if not script_dir.is_dir() or not leveldata_dir.is_dir():
-            continue
-        candidate_script_ids = {
-            int(path.stem)
-            for path in script_dir.glob("*.json")
-            if path.stem.isdigit()
-        }
-        if script_id not in candidate_script_ids:
-            continue
-        script_needle = script_id.to_bytes(8, "little", signed=False)
-        for leveldata_path in sorted(leveldata_dir.glob("*.json")):
-            try:
-                data = leveldata_path.read_bytes()
-            except OSError:
-                continue
-            if script_needle not in data:
-                continue
-            brief_dictionary = parse_leveldata_levelscript_brief_dictionary(
-                data,
-                candidate_script_ids,
-            )
-            brief = brief_dictionary.get(script_id)
-            if not isinstance(brief, dict):
-                continue
-            source_path = normalize_posix(leveldata_path.relative_to(export_root))
-            result = (brief, source_path)
-            cache[cache_key] = result
+def collect_levelscript_audio_semantics(export_root, *, decode_file=None, cue_semantics=None,
+                                      gameassembly=None, metadata=None, family_receipt_path=None):
+    """Replay a current v2 family source plan; no saved schema/native success is reused."""
+    if decode_file is not None:
+        return _collect_levelscript_audio_semantics(export_root,decode_file=decode_file,cue_semantics=cue_semantics)
+    from scripts.webui.audio.semantics.levelscript_source import CurrentAudioSource,project_owner
+    from scripts.webui.audio.semantics.levelsequence import LevelSequenceActions
+    sequences=LevelSequenceActions(export_root)
+    names={*LEVELSCRIPT_AUDIO_EVENT_FIELDS,*LEVELSCRIPT_AUDIO_CONTROL_ROLES,*LEVELSCRIPT_RADIO_ACTION_NAMES,
+           "AnnounceAudioOnTarget","PlayVoice","PlayVoiceNarrative"}
+    options=dict(gameassembly=gameassembly,metadata=metadata,action_names=names)
+    if family_receipt_path is not None:options['receipt_path']=family_receipt_path
+    try:
+        with CurrentAudioSource(export_root,**options) as source:
+            def decode(path,data):
+                try:frame=source.frame(path,data)
+                except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:
+                    sequences.refuse(path,error);raise
+                sequences.project(path,data,frame)
+                relative=Path(path).resolve().relative_to(source.source.root.resolve()).as_posix()
+                return project_owner(data,frame,source=relative,action_names=names)
+            result=_collect_levelscript_audio_semantics(export_root,decode_file=decode,cue_semantics=cue_semantics)
+            result['sourceAudit']=source.audit()
+            result['levelSequencePlayActions']=sequences.result(result['sourceAudit'])
             return result
+    except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:
+        return dict(levelSequencePlayActions=sequences.result(error=error),eventContexts={},cueInvocations=[],dynamicEventBindings=[],resolvedDynamicEventBindings=[],
+                    radioInvocations=[],voiceInvocations=[],dynamicRadioBindings=[],resolvedDynamicRadioBindings=[],
+                    controlActions=[],dynamicControlBindings=[],unresolvedEventRequests=[],
+                    sourceAudit=dict(status='unavailable_fail_closed',audioActionAbsenceProved=False),
+                    sourceDiagnostics=[getattr(error,'diagnostic',dict(validator='audioLevelScriptSource',check='source-operation-refused',detail=str(error)[:1400]))],
+                    stats=dict(sourceFiles=0,targetAudioActionRecords=0,decodedAudioActionRecords=0,decodeFailures=1,audioActionAbsenceProved=False),
+                    evidenceBoundary='Current authored LevelScript source evidence unavailable; zero emitted rows do not establish absence.')
 
-    result = (None, "")
-    cache[cache_key] = result
-    return result
 
-def collect_levelscript_audio_semantics(
+def _collect_levelscript_audio_semantics(
     export_root: Path,
     *,
     decode_file: Any | None = None,
     cue_semantics: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Collect exact LevelScript Event/cue requests and dynamic bindings."""
+    """Collect typed authored fields, unresolved request candidates and bindings."""
 
     cue_semantics = cue_semantics or table_contexts.collect_audio_cue_semantics(export_root)
     cue_definitions = cue_semantics.get("cueDefinitions") or {}
-    from scripts.webui.story.level_bindings import (
-        resolve_levelscript_dynamic_property_string,
-        resolve_levelscript_dynamic_property_string_list,
-    )
-
-    if decode_file is None:
-        from scripts.game_data.levelscript_binary import (
-            decode_levelscript_record_payload,
-            extract_levelscript_uid_records,
-            levelscript_action_map_membership,
-            levelscript_record_semantic_key,
-        )
-        from scripts.webui.story.level_bindings import (
-            decode_levelscript_native_action_topology,
-        )
-        target_keys = {
-            # Audio ActionBase families registered by the current GameAssembly
-            # formatter table.  Keep the member count as part of the key:
-            # several non-ActionBase unions reuse the same numeric tag.
-            (0x0016, 0x09), (0x0028, 0x09), (0x0029, 0x09), (0x002A, 0x09),
-            (0x00B7, 0x08), (0x00E9, 0x08),
-            (0x0089, 0x0B), (0x0368, 0x0B), (0x0369, 0x0A), (0x036E, 0x14),
-            (0x0306, 0x09), (0x0307, 0x0B),
-            (0x034A, 0x14), (0x034B, 0x14), (0x034C, 0x0C),
-            (0x034E, 0x0B), (0x034F, 0x10), (0x0352, 0x0C),
-            (0x0363, 0x0D), (0x0364, 0x0D), (0x0367, 0x11),
-            (0x036B, 0x13),
-            (0x0371, 0x0B), (0x0372, 0x08), (0x0373, 0x0C), (0x03D5, 0x0F),
-            (0x04A7, 0x0E), (0x04AC, 0x0A), (0x04B4, 0x0B),
-            (0x04B5, 0x09), (0x04B7, 0x0A), (0x04BA, 0x09),
-            (0x04BC, 0x0B), (0x04CA, 0x09),
-        }
-
-        def decode_file(_path: Path, data: bytes) -> dict[str, Any]:
-            records = extract_levelscript_uid_records(data, source_path=_path)
-            _action_map, memberships = levelscript_action_map_membership(data, records)
-            topology, topology_diagnostic = decode_levelscript_native_action_topology(data, source_path=_path)
-            rows: list[dict[str, Any]] = []
-            string_list_getters: dict[int, dict[str, Any]] = {}
-            target_count = 0
-            non_action_target_count = 0
-            non_action_target_roles: Counter[str] = Counter()
-            for index, record in enumerate(records):
-                semantic_key = levelscript_record_semantic_key(record)
-                action_map_role = str(
-                    memberships.get(int(record.get("start") or 0)) or ""
-                )
-                if (
-                    semantic_key == (0x0347, 0x09)
-                    and action_map_role.startswith("getterList")
-                    and isinstance(record.get("localId"), int)
-                ):
-                    next_start = (
-                        int(records[index + 1].get("start") or 0)
-                        if index + 1 < len(records)
-                        else len(data)
-                    )
-                    detail = decode_levelscript_record_payload(
-                        data,
-                        record,
-                        next_start=next_start,
-                        action_map_role=action_map_role,
-                    )
-                    getter = detail.get("listGetValueString")
-                    if isinstance(getter, dict):
-                        string_list_getters[int(record["localId"])] = {
-                            "record": record,
-                            "actionMapRole": action_map_role,
-                            "getter": getter,
-                        }
-                    continue
-                if semantic_key not in target_keys:
-                    continue
-                if not action_map_role.startswith("actionList"):
-                    non_action_target_count += 1
-                    non_action_target_roles[action_map_role or "unknown"] += 1
-                    continue
-                target_count += 1
-                next_start = (
-                    int(records[index + 1].get("start") or 0)
-                    if index + 1 < len(records)
-                    else len(data)
-                )
-                detail = decode_levelscript_record_payload(
-                    data,
-                    record,
-                    next_start=next_start,
-                    action_map_role=memberships.get(int(record.get("start") or 0)),
-                )
-                audio_action = detail.get("audioAction") if isinstance(detail, dict) else None
-                if isinstance(audio_action, dict):
-                    rows.append({
-                        "record": record,
-                        "actionMapRole": str(memberships.get(int(record.get("start") or 0)) or ""),
-                        "audioAction": audio_action,
-                    })
-            return {
-                "targetCount": target_count,
-                "rows": rows,
-                "stringListGetters": string_list_getters,
-                "nonActionTargetCount": non_action_target_count,
-                "nonActionTargetRoles": dict(non_action_target_roles),
-                "topology": topology,
-                "topologyDiagnostic": topology_diagnostic,
-            }
-
     overlay: dict[str, tuple[str, Path]] = {}
     for source_root in ("game",):
         root = ExportLayout(export_root).game / "Json" / "LevelScriptData"
@@ -779,6 +633,8 @@ def collect_levelscript_audio_semantics(
         for path in root.rglob("*.json"):
             overlay[path.relative_to(root).as_posix()] = (source_root, path)
 
+    source_diagnostics = []
+    unresolved_event_requests = []
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     cue_invocations: list[dict[str, Any]] = []
@@ -798,10 +654,6 @@ def collect_levelscript_audio_semantics(
     decode_failures = 0
     non_action_target_records = 0
     non_action_target_roles: Counter[str] = Counter()
-    levelscript_brief_cache: dict[
-        tuple[str, str], tuple[dict[str, Any] | None, str]
-    ] = {}
-
     def compact_fields(fields: Any) -> dict[str, dict[str, Any]]:
         if not isinstance(fields, dict):
             return {}
@@ -822,11 +674,13 @@ def collect_levelscript_audio_semantics(
         }
 
     for relative_path, (source_root, path) in sorted(overlay.items()):
+        data = None
         try:
             data = path.read_bytes()
             decoded = decode_file(path, data) or {}
-        except (OSError, ValueError):
+        except (OSError, ValueError, KeyError, IndexError, TypeError) as error:
             decode_failures += 1
+            if len(source_diagnostics)<20:source_diagnostics.append({"source":str(path),"sourceSha256":hashlib.sha256(data).hexdigest().upper() if data is not None else None,**getattr(error,'diagnostic',dict(check='fresh-current-owner-refused',detail=str(error)[:1400]))})
             continue
         rows = (decoded.get("rows") or []) if isinstance(decoded, dict) else []
         topology = decoded.get("topology") if isinstance(decoded, dict) else None
@@ -892,22 +746,15 @@ def collect_levelscript_audio_semantics(
                 "nativeMappingId": str(action.get("nativeMappingId") or ""),
                 "payloadShape": str(action.get("payloadShape") or ""),
                 "fields": fields,
+                "requestConsumerStatus": action.get("requestConsumerStatus", "current-native-consumer-unproved"),
                 "runtimeActivationStatus": "levelScriptActionExecutionNotObserved",
             }
             lifecycle_action_rows.append({
                 **common,
                 "fields": fields,
             })
-            for binding in action.get("eventBindings") or []:
-                if not isinstance(binding, dict) or not str(binding.get("eventName") or ""):
-                    continue
-                _append_context(contexts, seen, binding["eventName"], {
-                    **common,
-                    "kind": "levelScriptAudioAction",
-                    "eventName": str(binding["eventName"]),
-                    "triggerRole": str(binding.get("role") or "play"),
-                    "sourceField": str(binding.get("sourceField") or ""),
-                })
+            for binding in action.get("eventBindingCandidates", action.get("eventBindings", [])):
+                unresolved_event_requests.append({**common, "kind": "levelScriptStoredEventCandidate", "candidate": binding, "resolutionStatus": "currentNativeEventConsumerUnproved"})
             for binding in action.get("voiceBindings") or []:
                 if not isinstance(binding, dict):
                     continue
@@ -958,40 +805,8 @@ def collect_levelscript_audio_semantics(
                     "sourceField": str(binding.get("sourceField") or ""),
                     **lookup,
                 })
-                if not isinstance(definition, dict):
-                    continue
-                for behavior in definition.get("behaviorEvents") or []:
-                    if not isinstance(behavior, dict) or not str(behavior.get("eventId") or ""):
-                        continue
-                    event_name = str(behavior["eventId"])
-                    cue_context = {
-                        **common,
-                        "kind": "levelScriptAudioCueBehaviorEvent",
-                        "semanticRole": "authoredLevelScriptCueBehaviorEventRequest",
-                        "eventName": event_name,
-                        "cueName": cue_name,
-                        "triggerRole": str(binding.get("role") or "invoke"),
-                        "sourceField": str(binding.get("sourceField") or ""),
-                        **lookup,
-                        "handlerScope": str(behavior.get("handlerScope") or ""),
-                        "handlerIndex": behavior.get("handlerIndex"),
-                        "expressionSide": str(behavior.get("expressionSide") or ""),
-                        "expressionPath": str(behavior.get("expressionPath") or ""),
-                        "exprType": behavior.get("exprType"),
-                        "evidence": "exactLevelScriptCueNameRuntimeHashAndCueBehaviorExpression",
-                        "triggerRequestEvidence": [
-                            "exactLevelScriptAudioCueName",
-                            "nativeAudioHashGeneratorCompute",
-                            "audioCueBehaviorExprType3",
-                        ],
-                        "triggerRuntimeActivationStatuses": [
-                            "levelScriptActionExecutionNotObserved",
-                            "cueInvocationAndExpressionEvaluationRequired",
-                        ],
-                    }
-                    if str(behavior.get("levelId") or ""):
-                        cue_context["levelId"] = str(behavior["levelId"])
-                    _append_context(contexts, seen, event_name, cue_context)
+                if isinstance(definition, dict):
+                    unresolved_event_requests.append({**common, "kind": "levelScriptStoredCueCandidate", "cueName": cue_name, "definition": lookup, "resolutionStatus": "currentNativeCueConsumerUnproved"})
             for binding in action.get("radioBindings") or []:
                 if not isinstance(binding, dict):
                     continue
@@ -1049,45 +864,9 @@ def collect_levelscript_audio_semantics(
                     else None
                 )
                 if isinstance(list_binding, dict):
-                    brief, brief_source_path = _load_levelscript_brief_property_sources(
-                        export_root,
-                        levelscript_id,
-                        source_root,
-                        levelscript_brief_cache,
-                    )
-                    resolution = resolve_levelscript_dynamic_property_string_list(
-                        brief,
-                        list_binding,
-                    )
-                    if resolution:
-                        getter_record = getter_row.get("record") or {}
-                        dynamic_radio_binding.update({
-                            "resolutionStatus": (
-                                "resolvedRadioCandidateSetRuntimeIndexUnobserved"
-                            ),
-                            "candidateRadioIds": resolution["values"],
-                            "selectionStatus": resolution["selectionStatus"],
-                            "getter": getter,
-                            "getterRecordLocalId": getter_record.get("localId"),
-                            "getterRecordUid": str(getter_record.get("uid") or ""),
-                            "getterActionMapRole": str(
-                                getter_row.get("actionMapRole") or ""
-                            ),
-                            "resolution": resolution,
-                            "resolutionSourcePath": brief_source_path,
-                            "triggerRequestEvidence": [
-                                "exactLevelScriptRadioActionUnionAndFields",
-                                "exactListGetValueStringGetterUnionAndFields",
-                                "exactLevelScriptBriefDataStringListProperty",
-                            ],
-                            "triggerRuntimeActivationStatuses": [
-                                "levelScriptActionExecutionNotObserved",
-                                "runtimeListIndexSelectionUnobserved",
-                            ],
-                        })
-                        resolved_dynamic_radio_bindings.append(
-                            dynamic_radio_binding
-                        )
+                    dynamic_radio_binding.update(getter=getter, storedListBinding=list_binding,
+                        getterRecordLocalId=(getter_row.get('record') or {}).get('localId'),
+                        resolutionStatus='currentGetterAndLevelDataPropertyConsumersUnproved')
                 dynamic_radio_bindings.append(dynamic_radio_binding)
             control_role = LEVELSCRIPT_AUDIO_CONTROL_ROLES.get(action_name)
             if control_role:
@@ -1129,66 +908,8 @@ def collect_levelscript_audio_semantics(
                         else "runtimeParamValueUnresolved"
                     ),
                 }
-                if (
-                    field.get("paramSource") == 200
-                    and field.get("idRef") == -1
-                    and isinstance(field.get("path"), str)
-                    and field.get("path")
-                ):
-                    brief, brief_source_path = _load_levelscript_brief_property_sources(
-                        export_root,
-                        levelscript_id,
-                        source_root,
-                        levelscript_brief_cache,
-                    )
-                    resolution = resolve_levelscript_dynamic_property_string(
-                        brief,
-                        field,
-                    )
-                    if resolution:
-                        resolved_event_name = str(resolution.get("value") or "").strip()
-                        if resolved_event_name:
-                            fields[field_name] = {
-                                **field,
-                                "resolutionStatus": "resolvedLevelScriptBriefProperty",
-                                "parameterStatus": "property_value_resolved",
-                                "resolvedValue": resolved_event_name,
-                            }
-                            dynamic_binding.update({
-                                "resolutionStatus": "resolvedLevelScriptBriefProperty",
-                                "sourceKind": "property",
-                                "binding": fields[field_name],
-                                "resolvedEventName": resolved_event_name,
-                                "resolvedValue": resolved_event_name,
-                                "resolution": resolution,
-                                "resolutionSourcePath": brief_source_path,
-                            })
-                            resolved_dynamic_event_bindings.append(dynamic_binding)
-                            _append_context(contexts, seen, resolved_event_name, {
-                                **common,
-                                "kind": "levelScriptAudioActionDynamicProperty",
-                                "semanticRole": (
-                                    "authoredLevelScriptAudioActionPropertyEvent"
-                                ),
-                                "eventName": resolved_event_name,
-                                "triggerRole": role,
-                                "sourceField": dynamic_binding["sourceField"],
-                                "dynamicBinding": field,
-                                "resolutionStatus": (
-                                    "resolvedLevelScriptBriefProperty"
-                                ),
-                                "resolution": resolution,
-                                "resolutionSourcePath": brief_source_path,
-                                "triggerRequestEvidence": [
-                                    "exactLevelScriptAudioActionUnionAndFields",
-                                    "exactLevelScriptParamSource200PropertyPath",
-                                    "exactLevelScriptBriefDataStringProperty",
-                                ],
-                                "triggerRuntimeActivationStatuses": [
-                                    "levelScriptActionExecutionNotObserved",
-                                    "resolvedEventRuntimePlaybackUnobserved",
-                                ],
-                            })
+                if field.get('paramSource') == 200:
+                    dynamic_binding['resolutionStatus']='currentLevelDataPropertySourceUnproved'
                 dynamic_event_bindings.append(dynamic_binding)
 
     lifecycle_details, lifecycle_summary = _build_levelscript_audio_lifecycle(
@@ -1255,6 +976,8 @@ def collect_levelscript_audio_semantics(
     )
     return {
         "eventContexts": dict(contexts),
+        "sourceDiagnostics": source_diagnostics,
+        "unresolvedEventRequests": unresolved_event_requests,
         "cueInvocations": cue_invocations,
         "dynamicEventBindings": dynamic_event_bindings,
         "resolvedDynamicEventBindings": resolved_dynamic_event_bindings,
@@ -1274,6 +997,8 @@ def collect_levelscript_audio_semantics(
         "lifecycleSummary": lifecycle_summary,
         "stats": {
             "sourceFiles": len(overlay),
+            "audioActionAbsenceProved": False,
+            "unresolvedEventRequests": len(unresolved_event_requests),
             "sourceFilesWithAudioActions": source_files_with_actions,
             "targetAudioActionRecords": target_records,
             "decodedAudioActionRecords": decoded_records,
@@ -1311,19 +1036,11 @@ def collect_levelscript_audio_semantics(
             ).items())),
         },
         "evidenceBoundary": (
-            "Exact union/member-count fields prove authored LevelScript requests and routing. "
-            "PlayVoice/PlayVoiceNarrative _voId values are AudioDialog path-stem selections, "
-            "not Wwise Events; an exact stem join proves the selected voice media identity. "
-            "Constant Event parameters and cue names joined through the native AudioHashGenerator and exact "
-            "AudioCue behavior expressions become Event contexts. Cue handler/condition evaluation, action "
-            "execution, unresolved dynamic Param values, state/variable writes, playback handles, and "
-            "placeholder-music ids are not observed. A resolved ParamSource=200 property still proves only "
-            "the authored property-to-action string join, not action execution or Wwise playback. A "
-            "resolved ListGetValueString radio binding proves its authored candidate set, while the "
-            "runtime-selected list index remains unobserved. LevelScript lifecycle rows join only "
-            "same-script exact serialized output paths to unique active producers; authored fades, "
-            "release flags, constants, and output-only cue handles remain serialized controls, not "
-            "current state or execution evidence."
+            "Current typed stored owners and Params establish authored fields and known action profiles. "
+            "Stored Event/cue/property strings remain candidates until their current native consumer joins "
+            "are proved. Voice keys, radio definitions, controls, dynamic bindings and lifecycle diagnostics "
+            "retain their distinct identities; runtime selection, handle state, execution and audibility "
+            "are unobserved. Refused owners and unavailable source receipts do not prove absence."
         ),
     }
 

@@ -14,42 +14,41 @@ CUTSCENE_SEMANTIC_SHAPES = frozenset({
 })
 
 
-def validated_lua_cutscene_playback_keys(report: Any) -> tuple[list[str], list[dict[str, Any]]]:
-    """Return authored Lua cutscene ids only from the complete census.
+def current_lua_cutscene_playback_keys(*,export_root=None,gameassembly=None,metadata=None):
+    """Replay existing Data-owned Lua sources; never trust saved success or Story ids."""
+    from scripts.common import check_installed_native_inputs
+    from scripts.source_paths import ExportLayout,configured_export_root
+    from scripts.game_data.extraction.verify_export_freshness import build_report,Requirements,DEFAULT_SUMMARY
+    from scripts.webui.story.lua_consumer_references import build_index
+    layout=ExportLayout(export_root if export_root is not None else configured_export_root())
+    try:
+        if (gameassembly is None)!=(metadata is None):raise ValueError('both selected native paths are required')
+        pair=check_installed_native_inputs(gameassembly=gameassembly,metadata=metadata)
+        if pair.status!='validated':raise ValueError('selected native pair: '+pair.status+': '+pair.detail)
+        def freshness():
+            report=build_report(game_root=pair.metadata.parents[2],output_root=layout.root,summary_path=DEFAULT_SUMMARY,sources=None,requirements=Requirements(structured=('lua','table')))
+            if not report.get('fresh'):raise ValueError('existing Lua/Table export is missing or stale; refresh the Data page inputs')
+        freshness()
+        report=build_index(lua_roots=[layout.lua_dir],table_roots=[layout.table_dir],gameassembly=pair.gameassembly,metadata=pair.metadata)
+        freshness()
+        return _lua_cutscene_playback_keys(report)
+    except (OSError,ValueError,RuntimeError,KeyError) as error:
+        return [],[dict(validator='luaCutsceneSource',gate='current_lua_source_native_replay',source=str(layout.root),expected='fresh complete source census with selected native exit guards',actual=str(error)[:1400])]
 
-    Recovery association is case-insensitive, so a reviewed case-mismatch row
-    is still positive playback evidence.  The caller's definition-identity
-    gate remains responsible for rejecting folded-name collisions.
-    """
-    if not isinstance(report, dict) or report.get("schemaVersion") != "luaConsumerReferenceAudit.v5":
-        return [], [{
-            "gate": "validated_lua_consumer_reference_audit_schema",
-            "expected": "luaConsumerReferenceAudit.v5",
-            "actual": report.get("schemaVersion") if isinstance(report, dict) else type(report).__name__,
-        }]
-    read_errors = report.get("readErrors")
-    if read_errors not in (None, []):
-        return [], [{
-            "gate": "complete_lua_consumer_reference_census",
-            "expected": [],
-            "actual": read_errors,
-        }]
-    game_action = report.get("gameActionAudit")
-    rows = game_action.get("authoredStoryPlaybackCalls") if isinstance(game_action, dict) else None
-    if not isinstance(rows, list):
-        return [], [{
-            "gate": "authored_lua_story_playback_calls_present",
-            "expected": "list",
-            "actual": type(rows).__name__,
-        }]
-    keys = sorted({
-        str(row.get("canonicalStoryKey") or row.get("resolvedLiteral") or "").strip()
-        for row in rows
-        if isinstance(row, dict)
-        and row.get("playbackKind") == "cutscene"
-        and str(row.get("canonicalStoryKey") or row.get("resolvedLiteral") or "").strip()
-    })
-    return keys, []
+
+def _lua_cutscene_playback_keys(report):
+    from scripts.webui.story.lua_consumer_references import SCHEMA_VERSION
+    if not isinstance(report,dict)or report.get('schemaVersion')!=SCHEMA_VERSION or report.get('readErrors')not in(None,[]):
+        return [],[dict(gate='complete_current_lua_census',expected=SCHEMA_VERSION,actual=report.get('schemaVersion')if isinstance(report,dict)else type(report).__name__)]
+    game=report.get('gameActionAudit');rows=game.get('authoredStoryPlaybackCalls')if isinstance(game,dict)else None
+    if not isinstance(rows,list):return [],[dict(gate='authored_lua_story_playback_calls_present',expected='list',actual=type(rows).__name__)]
+    keys=sorted({str(row.get('canonicalStoryKey')or row.get('resolvedLiteral')or'').strip()for row in rows if isinstance(row,dict)and row.get('playbackKind')=='cutscene'and str(row.get('canonicalStoryKey')or row.get('resolvedLiteral')or'').strip()})
+    calls=game.get('storyPlaybackCalls')
+    if not isinstance(calls,list)or any(not isinstance(row,dict)for row in rows+calls):
+        return [],[dict(gate='complete_typed_lua_playback_rows',expected='lists of typed calls',actual=type(calls).__name__)]
+    unresolved=sum(row.get('playbackKind')=='cutscene'and not(row.get('canonicalStoryKey')or row.get('resolvedLiteral'))for row in calls)
+    return keys,([dict(gate='unresolved_lua_cutscene_arguments',expected=0,actual=unresolved)]if unresolved else[])
+
 
 
 def classify_cutscene_playback_use(

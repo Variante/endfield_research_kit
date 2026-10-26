@@ -1,317 +1,89 @@
-"""Join authenticated LevelScript FMV ids to current Video VFS files.
+"""Join fresh typed pooled FMV owners to current verified Video names.
 
-The reviewed native contract pins the selected name-resolution route. This
-gate never infers playback or mission order from matching file names.
-
-It is a selected-native plus current VFS byte gate: each stored LevelScript
-``moviePath`` resolves to an exact base Video path or a complete gendered
-pair under the contract's two reviewed name prefixes. Runtime playback stays
-unresolved. ``--cursor`` and ``--replay`` name the LevelScript cursor and
-replay reports the join reads (defaults under ``reports/game_data/`` and
-``reports/animestudio/``); pass the VFS audit's
-``--expected-input-set-sha256``. The default report is
-``reports/story/recovery/current_levelscript_fmv_video_join.json``.
-
-Source side: the ``PlayFmvAction`` layout in ``levelscript_union_tags.json``
-and the strict ``codecs/levelscript/fmv.py`` decoder identify ``_moviePath``
-as a stored constant ``Param<string>``, read inside that action's own physical
-byte range, never inferred from a neighboring action. Each source is rechecked
-by export SHA256 and VFS data MD5. A ``cs_video_*`` id resolves to a base
-``<id>.usm`` or to one ``f_<id>`` and one ``m_<id>`` file under
-``Data/Video/PC/Narrative/Cutscene/``; a missing base or an incomplete gender
-pair fails rather than promoting a name match.
-
-Native side (``levelscript_fmv_video_native.json``, unpatched bodies):
-``PlayFmvAction.Execute`` reads ``_moviePath`` and calls ``GameAction.PlayFmv``
-(the route also listed in ``cinematic_queue.json``). That forwards the name to
-``NarrativeUtils.GetGenderedFMVId``, which prefixes literal ``f_`` or ``m_`` by
-narrative gender, checks the candidate with ``_CheckIfFMVExists`` and falls
-back to the unprefixed id; it then checks a ``GetCSVideoAssetSubPath`` result
-(``Narrative/Cutscene/{0}``) with ``VideoManager.CheckCanPlay``.
-``VideoManager.GetVideoAssetPath`` appends ``.usm`` when needed, and
-``TryGetVideoPlayFullPath`` calls
-``Beyond.VFS.VirtualFileSystem.TryGetAssetFullPathInfo``.
-
-This is ``conditional`` source-to-video name resolution: selected gender,
-iFix patch state, action activation, playback, mission ownership and order
-are not proved by static bytes or VFS matches.
+Requires the current v2 LevelScript family receipt, including complete reader,
+StringPool, selected raw chunks and logical export joins. Every operation
+replays its selected owners; saved positive schema/native results are not cached.
+The output is conditional source/name evidence and never unused-cutscene safety.
 """
-
-from __future__ import annotations
-
-import argparse
-import gzip
-import hashlib
-import json
-import re
-import struct
-from pathlib import Path, PurePosixPath
-from typing import Any
-
-from scripts.common import check_installed_native_inputs, sha256_file, write_report_json
-from scripts.game_data.contracts import CONTRACTS_DIR
-from scripts.game_data.memorypack.core import memorypack_union_header
+import argparse,gzip,hashlib,json
+from pathlib import Path
+from scripts.common import check_installed_native_inputs,write_report_json
+from scripts.game_data.levelscript_fmv_video_native import validate,CONTRACT_PATH,SCHEMA
+from scripts.game_data.levelscript_corpus import verify_family_receipt,DEFAULT_OUTPUT,_guard_output
+from scripts.game_data.levelscript_binary import frame_levelscript_named
+from scripts.game_data.levelscript_null_list_param_native import current_null_list_params
+from scripts.game_data.levelscript_source_receipts import SourceReader
+from scripts.game_data.codecs.levelscript import fmv
+from scripts.game_data.memorypack.corpus_gate import _fingerprint,_chunk_selection_snapshot,_chunk_fingerprints
 from scripts.repo_paths import REPO_ROOT
 
+REPORT_SCHEMA='endfield.levelscript-fmv-video-join.v2'
+DEFAULT_REPORT=REPO_ROOT/'reports/story/recovery/current_levelscript_fmv_video_join.json'
 
-ROOT = REPO_ROOT
-SCHEMA = "endfield.levelscript-fmv-video-native-contract.v1"
-REPORT_SCHEMA = "endfield.levelscript-fmv-video-join.v1"
-DEFAULT_CONTRACT = CONTRACTS_DIR / "levelscript_fmv_video_native.json"
-DEFAULT_AUDIT = ROOT / "reports/animestudio/vfs_understanding_latest.json"
-DEFAULT_LEDGER = ROOT / "reports/animestudio/vfs_understanding_files_latest.jsonl.gz"
-DEFAULT_CURSOR = ROOT / "reports/game_data/levelscript_fmv_cursor_current.json"
-DEFAULT_REPLAY = ROOT / "reports/animestudio/levelscript_fmv_replay_20260927.json"
-DEFAULT_NATIVE_PROOF = ROOT / "reports/game_data/levelscript_fmv_native_proof.json"
-DEFAULT_EXPORT = ROOT / "export_full"
-DEFAULT_REPORT = ROOT / "reports/story/recovery/current_levelscript_fmv_video_join.json"
-CONSTANT_TAIL = bytes.fromhex("ffffffff00000000ffffffff")
-MOVIE_ID = re.compile(r"[A-Za-z0-9_]+\Z")
+def _require(ok,check,source,**detail):
+ if not ok:
+  error=ValueError(check+':'+str(source)+':'+json.dumps(detail,sort_keys=True)[:1400]);error.diagnostic=dict(validator='levelscript_fmv_video_corpus',check=check,source=str(source),**detail);raise error
 
+def _video_rows(path,input_set,wanted):
+ found={}
+ with gzip.open(path,'rt',encoding='utf-8')as stream:
+  for line in stream:
+   r=json.loads(line);name=r.get('virtualPath')
+   if r.get('recordType')!='file'or name not in wanted:continue
+   _require(name not in found,'duplicate-video-path',name)
+   _require((r.get('blockName'),r.get('status'),r.get('boundaryStatus'),r.get('inputSetSha256'))==('Video','verified','boundary_verified',input_set),'video-ledger-row',name,actual={k:r.get(k)for k in('blockName','status','boundaryStatus','inputSetSha256')})
+   _require(r.get('fileNameHashDeclaredHex')==r.get('fileNameHashRecomputedHex')and r.get('declaredFileDataMd5LittleEndianHex')==r.get('recomputedFileDataMd5'),'video-ledger-hash-joins',name)
+   found[name]=r
+ return found
 
-class CorpusError(ValueError):
-    def __init__(self, check: str, source: str, expected: Any, actual: Any) -> None:
-        self.check = check
-        self.source = source
-        self.expected = expected
-        self.actual = actual
-        super().__init__(f"{check}: {source}: expected {expected!r}, actual {actual!r}")
+def _video_bytes(row):
+ path=Path(row['physicalChunkPath']);at,n=row['offset'],row['length'];_require(row.get('encrypted')is False and type(at)is int and type(n)is int and 0<=at and 0<n<=path.stat().st_size-at,'video-raw-slice',row['virtualPath'])
+ with path.open('rb')as stream:stream.seek(at);raw=stream.read(n)
+ actual=hashlib.md5(raw).hexdigest().upper();_require(len(raw)==n and actual==row['recomputedFileDataMd5'].upper(),'current-video-data-md5',row['virtualPath'],expected=row['recomputedFileDataMd5'],actual=actual)
+ return dict(path=row['virtualPath'],length=n,dataMd5=actual,fileNameHash=row['fileNameHashRecomputedHex'],physicalChunkPath=str(path),physicalChunkSource=row['physicalChunkSource'])
 
+def audit(*,expected_input_set_sha256,expected_family_receipt_sha256,family_receipt_path=DEFAULT_OUTPUT,export_root=REPO_ROOT/'export_full',game_root=None,sources=None,contract_path=CONTRACT_PATH):
+ gate=validate(game_root=game_root,contract_path=contract_path);_require(gate.get('status')=='validated','native-name-programs',contract_path,actual=gate)
+ export_root=Path(export_root);receipt_path=Path(family_receipt_path)
+ def receipt():return verify_family_receipt(receipt_path,expected_sha256=expected_family_receipt_sha256,expected_input_set_sha256=expected_input_set_sha256,export_root=export_root)
+ before=receipt();_require((before.get('format'),before.get('schemaVersion'))==('endfield-levelscript-current-corpus-v2',2),'current-pooled-family-receipt-required',receipt_path)
+ pins=gate['nativeInputs'];pair=check_installed_native_inputs(pins['GameAssembly.dll'],pins['global-metadata.dat'],gameassembly=Path(game_root).parent/'GameAssembly.dll'if game_root is not None else None,metadata=Path(game_root)/'il2cpp_data/Metadata/global-metadata.dat'if game_root is not None else None);_require(pair.status=='validated','selected-native-inputs',game_root,actual=pair.status,detail=pair.detail);selected_root=Path(pair.metadata).parents[2]
+ provenance=before['provenance'];outer=json.loads(Path(provenance['outer']['path']).read_bytes());_require(all(Path(outer[k]).resolve()==(selected_root/folder).resolve()for k,folder in(('primaryAssets','Persistent'),('fallbackAssets','StreamingAssets'))),'selected-native-vfs-roots',selected_root)
+ source=SourceReader(dict(status='complete',provenance=dict(levelscriptReaderInputs=provenance['readerInputs'],levelscriptStringPoolInputs=provenance['levelscriptStringPoolInputs'])),export_root/'game/Json',pins,game_root=selected_root)
+ universe={r['exportRelativePath']:r for r in before['rows']if r['family']=='LevelScriptData'};selected=sorted(universe)if sources is None else sorted(set(sources));_require(bool(selected)and all(p in universe for p in selected),'selected-owner-source-set',receipt_path,selected=selected[:8],unknown=sorted(set(selected)-set(universe))[:8])
+ projected=[];failures=[];files={};owners=0
+ with current_null_list_params(game_root=selected_root,strings=source.strings)as null_list_params:
+  for path in selected:
+   file=source.root/path;data=file.read_bytes();digest=hashlib.sha256(data).hexdigest().upper();logical=universe[path];_require([len(data),digest]==[logical['length'],logical['logicalSha256']],'owner-logical-byte-join',path,expected={k:logical[k]for k in('length','logicalSha256')},actual=dict(length=len(data),sha256=digest));files[file]=data
+   try:
+    frame=frame_levelscript_named(data,source=path,strings=source.strings,game_root=selected_root,null_list_params=null_list_params);out=fmv.project_owner(data,frame,source=path,strings=source.strings);owners+=1
+    for row in out['rows']:row['nameCandidates']=fmv.name_candidates(row['projection']['fmvId'],gate['layout']);projected.append(row)
+    failures.extend(dict(source=path,**r)for r in out['diagnostics'])
+   except(ValueError,KeyError,IndexError,TypeError)as error:failures.append(dict(source=path,check='fresh-typed-owner-or-name-refused',sourceSha256=digest,detail=str(error)[:1200]))
+ wanted={n['path']for r in projected for n in r['nameCandidates']};videos=_video_rows(Path(provenance['ledger']['path']),before['inputSetSha256'],wanted);video_rows=list(videos.values());resolution=_chunk_selection_snapshot(video_rows,outer);chunks=_chunk_fingerprints(video_rows);verified={name:_video_bytes(r)for name,r in videos.items()}
+ for row in projected:
+  row['videoFiles']=[dict(verified[n['path']],selection=n)for n in row['nameCandidates']if n['path']in verified];row['nativeMappingId']=SCHEMA;row['evidenceBoundary']='conditional'
+  if not row['videoFiles']:failures.append(dict(source=row['source'],actionStart=row['actionStart'],check='no-current-video-file-for-proved-conditional-candidates'))
+ source.check();_require(all(p.read_bytes()==raw for p,raw in files.items()),'owner-source-bookend',source.root);_require(chunks==_chunk_fingerprints(video_rows)and resolution==_chunk_selection_snapshot(video_rows,outer),'video-physical-bookend',provenance['ledger']['path']);_require(before==receipt(),'family-receipt-bookend',receipt_path)
+ return dict(schema=REPORT_SCHEMA,status='partial'if failures else'validated',inputSetSha256=before['inputSetSha256'],nativeInputs=pins,evidenceBoundary='conditional',conditions=gate['conditions'],familyReceipt=_fingerprint(receipt_path),exportRoot=export_root.resolve().as_posix(),sources=selected,coverage=dict(sourceUniverse=len(universe),sourcesSelected=len(selected),ownersClosed=owners,allSourcesSelected=set(selected)==set(universe),allOwnersClosed=owners==len(selected),unusedCutsceneSafe=False,unresolved='Other source/consumer families and live selection remain independent; this conditional name join never clears unused-cutscene safety.'),readerInputs=source.reader_inputs,stringPoolInputs=source.pool_inputs,videoChunkFingerprints=chunks,videoChunkResolution=resolution,diagnostics=failures,rows=projected)
 
-def _require(check: str, source: str, expected: Any, actual: Any) -> None:
-    if actual != expected:
-        raise CorpusError(check, source, expected, actual)
+def replay_report(report_path=DEFAULT_REPORT,*,export_root=REPO_ROOT/'export_full',game_root=None):
+ """Use a saved report only as a source selection; freshly replay every gate."""
+ path=Path(report_path);raw=path.read_bytes();saved=json.loads(raw);_require(saved.get('schema')==REPORT_SCHEMA and saved.get('exportRoot')==Path(export_root).resolve().as_posix(),'current-FMV-report-source-plan',path)
+ current=audit(expected_input_set_sha256=saved['inputSetSha256'],expected_family_receipt_sha256=saved['familyReceipt']['sha256'],family_receipt_path=Path(saved['familyReceipt']['path']),export_root=export_root,game_root=game_root,sources=saved['sources']);_require(path.read_bytes()==raw,'FMV-source-plan-bookend',path);return current
 
+def main():
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--expected-input-set-sha256',required=True);parser.add_argument('--expected-family-receipt-sha256',required=True)
+ for name,default in(('family-receipt',DEFAULT_OUTPUT),('export-root',REPO_ROOT/'export_full'),('game-root',None),('contract',CONTRACT_PATH),('report',DEFAULT_REPORT)):parser.add_argument('--'+name,type=Path,default=default)
+ parser.add_argument('--source',action='append');args=parser.parse_args()
+ family=json.loads(args.family_receipt.read_bytes());provenance=family['provenance'];protected=[Path(__file__),args.contract,args.family_receipt,args.export_root,*([args.game_root]if args.game_root is not None else[])]
+ protected.extend(Path(provenance[k]['path'])for k in('outer','ledger'))
+ protected.extend(Path(r['path'])for k in('sourceFingerprints','buildFingerprints','selectedChunkFingerprints','nativeInputs','streamToolFingerprints')for r in provenance.get(k,[]))
+ protected.extend(args.export_root/'game/Json'/r['exportRelativePath']for r in family['rows'])
+ protected.extend(Path(r['path'])for r in provenance['levelscriptStringPoolInputs']['files'])
+ _guard_output(args.report,protected)
+ try:result=audit(expected_input_set_sha256=args.expected_input_set_sha256,expected_family_receipt_sha256=args.expected_family_receipt_sha256,family_receipt_path=args.family_receipt,export_root=args.export_root,game_root=args.game_root,sources=args.source,contract_path=args.contract)
+ except(OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError)as error:result=dict(schema=REPORT_SCHEMA,status='failed',diagnostic=getattr(error,'diagnostic',dict(check='load-or-shape',detail=str(error)[:1400])))
+ write_report_json(args.report,result);print('levelscript_fmv_video_corpus: '+result['status']+': '+str(result.get('coverage',result.get('diagnostic')))[:1600]);return 0 if result['status']=='validated'else 1
 
-def _digest(data: bytes, name: str) -> str:
-    return hashlib.new(name, data).hexdigest().upper()
-
-
-def _load(path: Path) -> dict[str, Any]:
-    value = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        raise CorpusError("json_root", str(path), "object", type(value).__name__)
-    return value
-
-
-def _native_gate(contract: dict[str, Any]) -> None:
-    _require("contract_schema", str(DEFAULT_CONTRACT), SCHEMA, contract.get("schema"))
-    _require("contract_status", str(DEFAULT_CONTRACT), "validated", contract.get("status"))
-    _require("contract_boundary", str(DEFAULT_CONTRACT), "conditional", contract.get("evidenceBoundary"))
-    pins = contract["nativeInputs"]
-    native = check_installed_native_inputs(
-        pins["GameAssembly.dll"], pins["global-metadata.dat"]
-    )
-    _require("native_inputs", str(native.gameassembly), "validated", native.status)
-    unity = native.gameassembly.parent / "UnityPlayer.dll"
-    _require("unity_player_present", str(unity), True, unity.is_file())
-    _require(
-        "unity_player_sha256", str(unity), pins["UnityPlayer.dll"].upper(),
-        sha256_file(unity).upper(),
-    )
-
-
-def _file_rows(ledger: Path, input_set: str, wanted: set[str]) -> dict[str, dict[str, Any]]:
-    found: dict[str, dict[str, Any]] = {}
-    with gzip.open(ledger, "rt", encoding="utf-8") as source:
-        for line in source:
-            row = json.loads(line)
-            if row.get("recordType") != "file" or row.get("virtualPath") not in wanted:
-                continue
-            path = row["virtualPath"]
-            _require("ledger_unique_path", path, False, path in found)
-            _require("ledger_input_set", path, input_set, row.get("inputSetSha256"))
-            _require("ledger_status", path, "verified", row.get("status"))
-            _require("ledger_boundary", path, "boundary_verified", row.get("boundaryStatus"))
-            _require("ledger_path_hash", path, row.get("fileNameHashDeclaredHex"), row.get("fileNameHashRecomputedHex"))
-            _require("ledger_data_md5", path, row.get("declaredFileDataMd5LittleEndianHex"), row.get("recomputedFileDataMd5"))
-            found[path] = row
-    return found
-
-
-def _source_path(value: str) -> Path:
-    posix = PurePosixPath(value)
-    if (
-        not value.startswith("LevelScriptData/")
-        or not value.endswith(".json")
-        or "\\" in value
-        or posix.is_absolute()
-        or ".." in posix.parts
-    ):
-        raise CorpusError("source_path", value, "LevelScriptData/.../*.json", value)
-    return Path(*posix.parts)
-
-
-def audit(
-    *, contract_path: Path = DEFAULT_CONTRACT,
-    expected_input_set_sha256: str,
-    vfs_audit_path: Path = DEFAULT_AUDIT,
-    ledger_path: Path = DEFAULT_LEDGER,
-    cursor_path: Path = DEFAULT_CURSOR,
-    replay_path: Path = DEFAULT_REPLAY,
-    native_proof_path: Path = DEFAULT_NATIVE_PROOF,
-    export_root: Path = DEFAULT_EXPORT,
-) -> dict[str, Any]:
-    contract = _load(contract_path)
-    _native_gate(contract)
-    vfs = _load(vfs_audit_path)
-    cursor = _load(cursor_path)
-    replay = _load(replay_path)
-    native_proof = _load(native_proof_path)
-    input_set = vfs["inputSetSha256"]
-    _require("expected_input_set", str(vfs_audit_path), expected_input_set_sha256.upper(), input_set)
-    for path, report in ((cursor_path, cursor), (replay_path, replay)):
-        _require("input_set", str(path), input_set, report.get("inputSetSha256"))
-        _require("report_status", str(path), "validated", report.get("status"))
-    _require("native_proof_status", str(native_proof_path), "validated", native_proof.get("status"))
-    _require("native_proof_hash", str(native_proof_path), cursor.get("nativeProofSha256"), _digest(native_proof_path.read_bytes(), "sha256"))
-    for label, sha in contract["nativeInputs"].items():
-        if label in ("GameAssembly.dll", "global-metadata.dat"):
-            _require("native_proof_input", label, sha.upper(), native_proof["nativeInputs"].get(label, "").upper())
-    rows = cursor.get("rows")
-    if not isinstance(rows, list) or not rows:
-        raise CorpusError("cursor_rows", str(cursor_path), "nonempty list", type(rows).__name__)
-    _require("cursor_count", str(cursor_path), len({row["path"] for row in rows}), cursor.get("filesAdvanced"))
-
-    source = contract["source"]
-    _require("wide_union_marker", str(contract_path), "FA", source["wireUnionMarkerHex"].upper())
-    resolution = contract["resolution"]
-    prefixes = resolution["genderPrefixes"]
-    if not isinstance(prefixes, list) or len(prefixes) != 2 or any(
-        not isinstance(prefix, str) or not prefix.endswith("_") or not MOVIE_ID.fullmatch(prefix)
-        for prefix in prefixes
-    ):
-        raise CorpusError("gender_prefixes", str(contract_path), "two reviewed name prefixes", prefixes)
-    video_path = lambda variant, movie: resolution["vfsLogicalPrefix"] + resolution["videoSubPathFormat"].format(variant + movie) + resolution["videoExtension"]
-
-    wanted = set()
-    for row in rows:
-        rel = _source_path(row["path"])
-        movie = row["moviePath"]["value"]
-        if not MOVIE_ID.fullmatch(movie):
-            raise CorpusError("movie_id", row["path"], "ASCII alphanumeric or underscore", movie)
-        wanted.add("Data/Json/" + rel.as_posix())
-        wanted.update(video_path(prefix, movie) for prefix in ("", *prefixes))
-    ledger = _file_rows(ledger_path, input_set, wanted)
-    joined = []
-    for row in rows:
-        rel = _source_path(row["path"])
-        path = rel.as_posix()
-        logical = "Data/Json/" + path
-        if logical not in ledger:
-            raise CorpusError("source_vfs_missing", logical, "verified file row", None)
-        vfs_source = ledger[logical]
-        _require("source_block", logical, "JsonData", vfs_source.get("blockName"))
-        data = (export_root / "game/Json" / rel).read_bytes()
-        _require("source_sha256", path, row["sha256"].upper(), _digest(data, "sha256"))
-        _require("source_md5", path, vfs_source["recomputedFileDataMd5"], _digest(data, "md5"))
-        _require("source_length", path, vfs_source["length"], len(data))
-        start, end = row["actionStart"], row["actionEnd"]
-        if not isinstance(start, int) or not isinstance(end, int) or not 0 <= start < end <= len(data):
-            raise CorpusError("action_range", path, "bounded nonempty range", [start, end, len(data)])
-        header = memorypack_union_header(source["unionTag"], source["memberCount"])
-        _require("action_union_header", path, header.hex(), data[start:start + len(header)].hex())
-        movie = row["moviePath"]["value"]
-        raw = movie.encode("utf-8")
-        _require("movie_path_occurrences", path, 1, data[start:end].count(raw))
-        at = data.find(raw, start, end)
-        _require("movie_path_field_range", path, True,
-                 start + len(header) <= at - 5 and at + len(raw) + len(CONSTANT_TAIL) <= end)
-        _require("movie_path_tag", path, 4, data[at - 5])
-        _require("movie_path_length", path, len(raw), struct.unpack_from("<I", data, at - 4)[0])
-        _require("movie_path_constant_tail", path, CONSTANT_TAIL.hex(), data[at + len(raw):at + len(raw) + 12].hex())
-        param = row["moviePath"]
-        _require("movie_path_id_ref", path, source["constantIdRef"], param["idRef"])
-        _require("movie_path_param_source", path, source["constantParamSource"], param["paramSource"])
-        _require("movie_path_dynamic_path", path, None, param["path"])
-        candidates = []
-        for prefix in ("", *prefixes):
-            video = video_path(prefix, movie)
-            vfs_video = ledger.get(video)
-            if vfs_video is None:
-                continue
-            _require("video_block", video, "Video", vfs_video.get("blockName"))
-            candidates.append({
-                "variant": "base" if not prefix else prefix[:-1],
-                "path": video,
-                "length": vfs_video["length"],
-                "dataMd5": vfs_video["recomputedFileDataMd5"],
-                "fileNameHash": vfs_video["fileNameHashRecomputedHex"],
-                "physicalChunkSource": vfs_video["physicalChunkSource"],
-            })
-        kinds = {item["variant"] for item in candidates}
-        variant_kinds = {prefix[:-1] for prefix in prefixes}
-        if "base" not in kinds and kinds != variant_kinds:
-            raise CorpusError("video_resolution", path, "base file or complete gender pair", sorted(kinds))
-        joined.append({
-            "source": path,
-            "sourceSha256": row["sha256"],
-            "sourceMd5": vfs_source["recomputedFileDataMd5"],
-            "actionStart": start,
-            "actionEnd": end,
-            "moviePathFieldOffset": at - 5,
-            "moviePath": movie,
-            "videoFiles": candidates,
-        })
-    distinct_movies = len({row["moviePath"] for row in joined})
-    return {
-        "schema": REPORT_SCHEMA,
-        "status": "validated",
-        "inputSetSha256": input_set,
-        "contractSha256": _digest(contract_path.read_bytes(), "sha256"),
-        "cursorSha256": _digest(cursor_path.read_bytes(), "sha256"),
-        "replaySha256": _digest(replay_path.read_bytes(), "sha256"),
-        "vfsAuditSha256": _digest(vfs_audit_path.read_bytes(), "sha256"),
-        "vfsLedgerSha256": _digest(ledger_path.read_bytes(), "sha256"),
-        "summary": {
-            "sourceActionsAuthenticated": len(joined),
-            "uniqueMoviePaths": distinct_movies,
-            "baseVideoFiles": sum(any(v["variant"] == "base" for v in row["videoFiles"]) for row in joined),
-            "genderVariantPairs": sum({v["variant"] for v in row["videoFiles"]} == variant_kinds for row in joined),
-            "videoFilesBoundaryVerified": sum(len(row["videoFiles"]) for row in joined),
-        },
-        "evidenceBoundary": "conditional name resolution only; no runtime action activation, iFix patch state, selected gender, playback or Story order",
-        "rows": joined,
-    }
-
-
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
-    parser.add_argument("--expected-input-set-sha256", required=True)
-    parser.add_argument("--vfs-audit", type=Path, default=DEFAULT_AUDIT)
-    parser.add_argument("--ledger", type=Path, default=DEFAULT_LEDGER)
-    parser.add_argument("--cursor", type=Path, default=DEFAULT_CURSOR)
-    parser.add_argument("--replay", type=Path, default=DEFAULT_REPLAY)
-    parser.add_argument("--native-proof", type=Path, default=DEFAULT_NATIVE_PROOF)
-    parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT)
-    parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
-    args = parser.parse_args()
-    try:
-        result = audit(
-            contract_path=args.contract, expected_input_set_sha256=args.expected_input_set_sha256,
-            vfs_audit_path=args.vfs_audit,
-            ledger_path=args.ledger, cursor_path=args.cursor,
-            replay_path=args.replay, native_proof_path=args.native_proof,
-            export_root=args.export_root,
-        )
-    except (CorpusError, OSError, KeyError, ValueError) as error:
-        result = {
-            "schema": REPORT_SCHEMA, "status": "failed",
-            "firstFailure": (
-                {"check": error.check, "source": error.source,
-                 "expected": error.expected, "actual": error.actual}
-                if isinstance(error, CorpusError) else
-                {"check": "load_or_shape", "source": type(error).__name__, "detail": str(error)[:500]}
-            ),
-        }
-    write_report_json(args.report, result)
-    if result["status"] != "validated":
-        print(f"levelscript_fmv_video_corpus: {result['firstFailure']}")
-        return 1
-    print(f"levelscript_fmv_video_corpus: validated {result['summary']}")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+if __name__=='__main__':raise SystemExit(main())

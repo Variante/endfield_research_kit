@@ -42482,6 +42482,672 @@
         ]
       ],
       "nativeGate": "levelscript_on_squad_member_usp_fields_native"
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 16,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartDialogAndTeleportActionForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "afterMask",
+          "Param<CommonMaskBlendData>"
+        ],
+        [
+          "beforeMask",
+          "Param<CommonMaskBlendData>"
+        ],
+        [
+          "levelIdStr",
+          "Param<string>"
+        ],
+        [
+          "position",
+          "Param<Vector3>"
+        ],
+        [
+          "rotationEuler",
+          "Param<Vector3>"
+        ],
+        [
+          "teleportId",
+          "Param<string>"
+        ],
+        [
+          "teleportUIType",
+          "Param<TeleportUIType>"
+        ],
+        [
+          "dialogId",
+          "Param<string>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 17,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_BlackScreenFadeInForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "black",
+          "Param<bool>"
+        ],
+        [
+          "blockInput",
+          "Param<bool>"
+        ],
+        [
+          "customAudioFlags",
+          "Param<AudioBlackScreenBehaviour.ERetainFlag>"
+        ],
+        [
+          "duration",
+          "Param<float>"
+        ],
+        [
+          "presetAudioBehaviour",
+          "Param<AudioBlackScreenBehaviour.EPresetBehaviour>"
+        ],
+        [
+          "isOverrideFadeInTime",
+          "Param<bool>"
+        ],
+        [
+          "isOverrideFadeOutTime",
+          "Param<bool>"
+        ],
+        [
+          "overrideFadeInTimeSeconds",
+          "Param<float>"
+        ],
+        [
+          "overrideFadeOutTimeSeconds",
+          "Param<float>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 10,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_StartLevelCustomPerformanceForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "allowUnstuck",
+          "Param<bool>"
+        ],
+        [
+          "handle",
+          "ParamOutput<uint>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 10,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_ManualStartLevelScriptForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "levelId",
+          "Param<string>"
+        ],
+        [
+          "scriptId",
+          "Param<LevelScriptPtr>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 9,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_WaitForNpcProxyReadyForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "npcProxyId",
+          "Param<string>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 13,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayRadioAndWaitForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "fromBegin",
+          "Param<bool>"
+        ],
+        [
+          "index",
+          "Param<int>"
+        ],
+        [
+          "noFlushAfterLoading",
+          "Param<bool>"
+        ],
+        [
+          "onlyOnce",
+          "Param<bool>"
+        ],
+        [
+          "radioId",
+          "Param<string>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 11,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_BlackScreenFadeOutForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "black",
+          "Param<bool>"
+        ],
+        [
+          "blockInput",
+          "Param<bool>"
+        ],
+        [
+          "duration",
+          "Param<float>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 13,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyPatrolStartForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "forceIdle",
+          "Param<bool>"
+        ],
+        [
+          "levelId",
+          "Param<string>"
+        ],
+        [
+          "patrolId",
+          "Param<int>"
+        ],
+        [
+          "startFromBeginning",
+          "Param<bool>"
+        ],
+        [
+          "targetProxy",
+          "Param<string>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 11,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PlayAudioForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "audioPlayingId",
+          "ParamOutput<uint>"
+        ],
+        [
+          "key",
+          "Param<string>"
+        ],
+        [
+          "stopOnRelease",
+          "Param<bool>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
+    },
+    {
+      "family": "ActionBase",
+      "memberCount": 24,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_BlendToCameraTransformWithoutBackForMemoryPack",
+      "fields": [
+        [
+          "dontLogWarning",
+          "bool"
+        ],
+        [
+          "ID",
+          "int32"
+        ],
+        [
+          "releaseWhenExecutionFinished",
+          "bool"
+        ],
+        [
+          "uid",
+          "string"
+        ],
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "nextID",
+          "int32"
+        ],
+        [
+          "alternativeCameraPoses",
+          "Param<List<PosRot>>"
+        ],
+        [
+          "useAngleMin",
+          "Param<bool>"
+        ],
+        [
+          "advancedMode",
+          "Param<bool>"
+        ],
+        [
+          "blendCurveKey",
+          "Param<CameraBlendCurveKey>"
+        ],
+        [
+          "blendStyle",
+          "Param<CinemachineBlendDefinition.Style>"
+        ],
+        [
+          "duration",
+          "Param<float>"
+        ],
+        [
+          "fov",
+          "Param<float>"
+        ],
+        [
+          "ignoreProtect",
+          "Param<bool>"
+        ],
+        [
+          "needInterruptMainHudAction",
+          "Param<bool>"
+        ],
+        [
+          "overrideBlend",
+          "Param<bool>"
+        ],
+        [
+          "pos",
+          "Param<Vector3>"
+        ],
+        [
+          "rot",
+          "Param<Vector3>"
+        ],
+        [
+          "sceneViewOverrideFov",
+          "Param<bool>"
+        ],
+        [
+          "tweenTime",
+          "Param<float>"
+        ],
+        [
+          "useBlackScreen",
+          "Param<bool>"
+        ],
+        [
+          "useYawCheck",
+          "Param<bool>"
+        ]
+      ],
+      "nativeGate": "levelscript_residual_routes_native",
+      "nativeEvidence": {
+        "status": "exact-current-build",
+        "contract": "scripts/game_data/contracts/levelscript_residual_routes_native.json",
+        "boundary": "Current generated parent identity, complete reader, member count, typed read contexts and setters; child Param payloads use the reviewed typed child grammars; provider selection and runtime effects unresolved."
+      }
     }
   ],
   "primitiveEvidence": {

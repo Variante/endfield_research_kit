@@ -22,7 +22,7 @@ from scripts.game_data.corpus_common import atomic_write_text
 from scripts.repo_paths import REPO_ROOT
 
 FORMAT = "endfield-levelscript-receipt-comparison-v2"
-RECEIPT_FORMAT = "endfield-levelscript-current-corpus-v1"
+RECEIPT_FORMAT = "endfield-levelscript-current-corpus-v2"
 FAMILIES = ("LevelScriptData", "LevelScriptTemplateData")
 IDENTITY_FIELDS = ("family", "length", "logicalMd5", "logicalSha256", "exportRelativePath")
 
@@ -57,10 +57,17 @@ def _hex(value: Any, width: int, source: str) -> str:
 def _index(receipt: dict[str, Any], source: str) -> dict[str, dict[str, Any]]:
     _require("receipt-format", source, RECEIPT_FORMAT, receipt.get("format"))
     _require("receipt-version-type", source, "int", type(receipt.get("schemaVersion")).__name__)
-    _require("receipt-version", source, 1, receipt.get("schemaVersion"))
+    _require("receipt-version", source, 2, receipt.get("schemaVersion"))
     _require("receipt-complete", source, "complete", receipt.get("status"))
     _require("receipt-families", source, list(FAMILIES), receipt.get("families"))
     _hex(receipt.get("inputSetSha256"), 64, source + ".inputSetSha256")
+    pool=receipt.get('provenance',{}).get('levelscriptStringPoolInputs')
+    if not isinstance(pool,dict) or pool.get('schema')!='endfield.levelscript-string-pool-inputs.v1' or not isinstance(pool.get('root'),str) or not isinstance(pool.get('files'),list) or not pool['files']:
+        raise ReceiptComparisonError('receipt-string-pool',source,'complete selected StringPool snapshot',pool)
+    for page in pool['files']:
+        if not isinstance(page,dict) or not isinstance(page.get('path'),str) or type(page.get('length')) is not int or page['length']<=0:
+            raise ReceiptComparisonError('receipt-string-pool-page',source,'path/length/SHA256',page)
+        _hex(page.get('sha256'),64,source+'.pool')
     rows = receipt.get("rows")
     if not isinstance(rows, list):
         raise ReceiptComparisonError("receipt-rows", source, "row array", type(rows).__name__)
@@ -116,6 +123,7 @@ def compare_receipts(before: dict[str, Any], after: dict[str, Any], *,
                      before_source: str = "before", after_source: str = "after",
                      allow_audit_run_change: bool = False) -> dict[str, Any]:
     old, new = _index(before, before_source), _index(after, after_source)
+    _require('comparison-string-pool-inputs',after_source,before['provenance']['levelscriptStringPoolInputs'],after['provenance']['levelscriptStringPoolInputs'])
     if type(allow_audit_run_change) is not bool:
         raise ReceiptComparisonError("comparison-audit-run-policy-type", after_source, "builtin bool",
                                      {"actualType": type(allow_audit_run_change).__name__, "builtinBool": False})

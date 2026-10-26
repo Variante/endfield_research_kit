@@ -1,6 +1,6 @@
 """Exact current-wrapper codecs for authored LevelData NPC patrols.
 
-- ``npcPatrol`` (``decode_npc_patrol_list``): the generated ten-field
+- ``npcPatrol`` (internal pooled codec via ``npc_patrol_decoder``): the generated ten-field
   ``NpcPatrolData`` owner, three-field points and positive
   ``PatrolSubAction`` lists. The action codec follows all 26 generated
   members, including the four-field ``Beyond.Blackboard.DataPair`` order
@@ -8,7 +8,8 @@
   ``subActionData`` admits only null, tag-0 three-field
   ``PatrolSubActionEnvTalkData`` and tag-1 one-field
   ``PatrolSubPlayAudioData``; the latter stores ``AudioId._id`` as an
-  unsigned 32-bit value.
+  signed 32-bit value in the native-gated NPC Patrol profile; the separate
+  PatrolData stored-layout lane remains independently bounded.
 - ``patrols`` (``decode_patrol_list``): the authored patrol grammar also
   used by Spawner routes. ``PatrolData`` has 39 stored members, beginning
   with the action list and ending with ``worldOffset``; each
@@ -396,124 +397,83 @@ def decode_patrol_list(data: bytes, offset: int) -> dict[str, Any] | None:
     }
 
 
-def decode_npc_patrol_list(data: bytes, offset: int) -> dict[str, Any] | None:
-    """Decode ``List<NpcPatrolData>`` including current subaction union routes."""
+class NpcPatrolFramingError(ValueError):
+    def __init__(self, gate, field, offset, expected=None, actual=None):
+        self.diagnostic = dict(validator="leveldataNpcPatrol", gate=gate, field=field,
+                               offset=offset, expected=expected, actual=actual)
+        super().__init__(f"npcPatrol.{gate}: field={field} offset={offset} "
+                         f"expected={str(expected)[:250]} actual={str(actual)[:350]}")
 
-    start = offset
-    count_decoded = read_count(data, offset, max_count=100_000)
-    if count_decoded is None:
-        return None
-    count, cursor = count_decoded
-    rows: list[dict[str, Any]] = []
-    action_count_total = 0
-    subtype_counts: dict[str, int] = {}
-    for index in range(max(0, count)):
-        row_start = cursor
-        if cursor >= len(data) or data[cursor] != 10:
+
+def _decode_npc_patrol_list(data, offset, *, strings, layout):
+    """Internal current pooled codec, selected only by its lexical native operation."""
+    import math
+    import struct
+    from scripts.game_data.string_pool import resolve_string_pool_index
+
+    def scalar(fmt, field):
+        nonlocal offset
+        size = struct.calcsize("<" + fmt)
+        if not 0 <= offset <= len(data) - size:
+            raise NpcPatrolFramingError("truncated", field, offset, size, len(data) - offset)
+        value = struct.unpack_from("<" + fmt, data, offset)[0]
+        offset += size
+        if fmt == "f" and not math.isfinite(value):
+            raise NpcPatrolFramingError("nonfinite", field, offset - size, "finite", str(value))
+        return value
+
+    def collection(element, field, *, empty=False):
+        start = offset
+        count = scalar("i", field + ".count")
+        limit = 0 if empty else layout["countLimit"]
+        if not -1 <= count <= limit:
+            raise NpcPatrolFramingError("collection-elements-unproved" if empty else "count-unproved",
+                                        field, start, [-1, limit], count)
+        rows = [record(element, f"{field}[{i}]") for i in range(max(0, count))]
+        for index, row in enumerate(rows):
+            if row is not None:
+                row["indexInCollection"] = index
+        return dict(startOffset=start, endOffset=offset, count=count,
+                    value=None if count == -1 else rows, rows=rows)
+
+    def record(name, field, *, nullable=True):
+        start = offset
+        marker = scalar("B", field + ".memberCount")
+        if nullable and marker == 255:
             return None
-        cursor += 1
-        decoded = _read_fields(data, cursor, (
-            ("bornMoveStyleRaw", read_i32),
-            ("bornOverrideSpeed", read_f32),
-            ("enableBornAction", read_bool),
-            ("enableBornSpeedOverride", read_bool),
-            ("forbidNpcInteract", read_bool),
-            ("leadConfigSoName", read_string),
-            ("loopRaw", read_i32),
-            ("patrolId", read_i32),
-            ("pauseActionWhenPatrolDisabled", read_bool),
-        ))
-        if decoded is None:
-            return None
-        values, cursor = decoded
-        points_start = cursor
-        point_count_decoded = read_count(data, cursor, max_count=100_000)
-        if point_count_decoded is None:
-            return None
-        point_count, cursor = point_count_decoded
-        points: list[dict[str, Any]] = []
-        for point_index in range(max(0, point_count)):
-            point_start = cursor
-            if cursor >= len(data) or data[cursor] != 3:
-                return None
-            cursor += 1
-            actions_start = cursor
-            action_count_decoded = read_count(data, cursor, max_count=100_000)
-            if action_count_decoded is None:
-                return None
-            action_count, cursor = action_count_decoded
-            actions: list[dict[str, Any]] = []
-            for _ in range(max(0, action_count)):
-                action = _read_patrol_sub_action(data, cursor)
-                if action is None:
-                    return None
-                action_value, cursor = action
-                actions.append(action_value)
-                action_count_total += 1
-                subtype = action_value["typeName"] or f"raw:{action_value['typeRaw']}"
-                subtype_counts[subtype] = subtype_counts.get(subtype, 0) + 1
-            actions_end = cursor
-            enter_gait = read_i32(data, cursor)
-            if enter_gait is None:
-                return None
-            enter_gait_value, cursor = enter_gait
-            position = _read_vector3(data, cursor)
-            if position is None:
-                return None
-            position_value, cursor = position
-            points.append({
-                "indexInCollection": point_index,
-                "startOffset": point_start,
-                "endOffset": cursor,
-                "memberCount": 3,
-                "actions": {
-                    "startOffset": actions_start,
-                    "endOffset": actions_end,
-                    "count": action_count,
-                    "value": None if action_count == -1 else actions,
-                },
-                "enterGaitRaw": enter_gait_value,
-                "position": position_value,
-            })
-        rows.append({
-            "indexInCollection": index,
-            "startOffset": row_start,
-            "endOffset": cursor,
-            "memberCount": 10,
-            **values,
-            "points": {
-                "startOffset": points_start,
-                "endOffset": cursor,
-                "count": point_count,
-                "value": None if point_count == -1 else points,
-            },
-        })
-    return {
-        "startOffset": start,
-        "endOffset": cursor,
-        "count": count,
-        "value": None if count == -1 else rows,
-        "rows": rows,
-        "actionCount": action_count_total,
-        "actionTypeCounts": subtype_counts,
-        "itemFieldOrder": [
-            "bornMoveStyle", "bornOverrideSpeed", "enableBornAction",
-            "enableBornSpeedOverride", "forbidNpcInteract", "leadConfigSoName",
-            "loop", "patrolId", "pauseActionWhenPatrolDisabled", "points",
-        ],
-        "pointFieldOrder": ["actions", "enterGait", "position"],
-        "actionFieldOrder": [
-            "actionEndType", "animKeyTag", "animMaskType", "animName",
-            "configMovementStyle", "configSnap", "duration", "eventBBDataPairs",
-            "eventKey", "eventToLevelType", "ignoreAnimDis", "movementStyle",
-            "npcPlayAnimationTimeEndForceToIdle", "overrideSpeed",
-            "overrideSpeedValue", "radioId", "radioWaitTime", "radius",
-            "repeatAnim", "rootMotion", "rotationOffset", "rotationY",
-            "snapToGround", "subActionData", "type", "waitTime",
-        ],
-        "evidenceBoundary": (
-            "exact current generated wrappers; PatrolSubActionData accepts only null, "
-            "tag-0 EnvTalk member-3, and tag-1 PlayAudio member-1 routes"
-        ),
-        "fieldOrderSource": "current generated MemoryPack wrappers",
-    }
+        fields = layout["records"][name]
+        if marker != len(fields):
+            raise NpcPatrolFramingError("member-count", field, start, len(fields), marker)
+        values, spans, enum_names = {}, {}, {}
+        for row in fields:
+            key, wire, at = row["name"], row["wire"], offset
+            path = field + "." + key
+            if wire in ("i32", "f32", "bool"):
+                value = scalar({"i32": "i", "f32": "f", "bool": "B"}[wire], path)
+                if wire == "bool":
+                    value = bool(value)
+            elif wire == "pool":
+                value = resolve_string_pool_index(scalar("i", path), strings, path)
+            elif wire == "vector3":
+                value = [scalar("f", path + "." + axis) for axis in ("x", "y", "z")]
+            elif wire in ("list", "empty-list"):
+                value = collection(row["element"], path, empty=wire == "empty-list")
+            elif wire == "union":
+                tag = scalar("B", path + ".unionTag")
+                if tag == 255:
+                    value = None
+                elif str(tag) in layout["union"]:
+                    value = record(layout["union"][str(tag)], path, nullable=False)
+                    value["unionTag"] = tag
+                else:
+                    raise NpcPatrolFramingError("union-tag-unproved", path, at, [0, 1, 255], tag)
+            else:
+                raise NpcPatrolFramingError("wire-unproved", path, at, None, wire)
+            values[key], spans[key] = value, [at, offset]
+            enum = next((e for e in layout["enums"] if (e["parent"], e["field"]) == (name, key)), None)
+            if enum:
+                enum_names[key] = enum["values"].get(str(value))
+        return dict(startOffset=start, endOffset=offset, memberCount=marker,
+                    recordType=name, fieldRanges=spans, enumNames=enum_names, **values)
+
+    return collection(layout["root"], "npcPatrol")

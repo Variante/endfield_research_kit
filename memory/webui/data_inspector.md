@@ -1,4 +1,4 @@
-# Decoded page (数据解码: export stores and decoded datasets)
+# Decoded page (鏁版嵁瑙ｇ爜: export stores and decoded datasets)
 
 ## Purpose
 
@@ -19,6 +19,13 @@ FBX, decoded audio) are left out on both sides: `scripts/webui/pages.py`
 two equal. Sprite crop documents are Unity store rows, so the Decoded page lists
 them while Assets shows the images. Assets lists no exported JSON: every such
 document is a store row here.
+
+World component publication uses the current selected native layout and each
+authenticated VFS/raw byte join. Before returning rows it rechecks native,
+UnityPlayer, VFS, raw-file and reader/contract inputs; drift withholds the
+dataset. Optional authored-root associations keep their independent native gate
+and remain unresolved when it refuses. Stored fields do not establish runtime
+ownership, activation or condition execution.
 
 ## Inputs and recovery flow
 
@@ -53,11 +60,18 @@ document is a store row here.
 A static package has no store API: Files then lists only the decoded datasets
 with an explanation, and SQL explains that it needs `python serve.py`.
 
+ModelView rebuilds its decoded records on every publication through one freshly
+proved native operation. Its final source, StringPool, reader, publisher and
+selected native/Unity checks withhold rows after drift; refused frames remain
+explicit source records. The byte-coverage reader uses the same current graph,
+while other Interactive roots retain their own evidence tiers.
+
 ### Decoded datasets
 
 | Dataset | Owning reader / source | Published |
 | --- | --- | --- |
-| `animation-config` | `frame_animation_config` | complete reader result |
+| `model-view-state` | `model_view_state_controller_binary.model_view_operation` | complete current stored graph with native field names, model/layer/state owners and stored audio fields; no runtime or Event links |
+| `animation-config` | `frame_animation_config` | complete reader result; opaque suffixes omit unknown montage/curve counts |
 | `npc-montage` | `frame_npc_montage` | complete reader result |
 | `animator-controller`, `animator-override-controller` | AnimeStudio JSON in the Unity store | selected projection plus raw source link |
 | `level-config` | `decode_level_config` | complete reader result |
@@ -127,6 +141,11 @@ Publisher rules:
   mismatched inputs publish an unavailable dataset with a diagnostic, and the
   source signature includes the native hashes, so old shards are never reused
   across a client change.
+  One matching StringPool is required for the dataset operation; its exact
+  page signature participates in cache reuse, and pool/native drift after a
+  read or cache hit withholds values. CharInteract always rebuilds its records;
+  its own selected sparse native gate and complete raw-reader/pool signatures
+  must remain stable through publication.
   Optional `facts.canonicalRootEvidence` separately exposes source-matched
   canonical framing. Its receipt authenticates the complete family report,
   current parser and contract closure, selected native inputs, and every
@@ -283,3 +302,11 @@ native and source inputs. Summary-only rows cannot supply decoded values.
   schema, not silent truncation.
 - Add Characters deep links only after a decoder exposes an exact or explicitly
   typed character identity; filename resemblance is insufficient.
+
+Animation's pooled bone-mask projection is bounded to the independently gated
+first-five-field prefix. The page shows its layer names and numeric controller
+hash, while later fields stay opaque. It does not label an unread montage or
+curve collection empty. One matching pool is selected for the dataset, passed
+with the selected native root, signed before cache reuse and checked again
+with the current reader/native inputs before publication; late drift withholds
+records. The mask component does not certify the remaining Animation schema.

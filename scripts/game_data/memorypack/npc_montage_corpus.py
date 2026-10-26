@@ -28,9 +28,11 @@ from scripts.game_data.memorypack import corpus_gate as vfs
 from scripts.game_data.memorypack.npc_montage import (
     NPC_MONTAGE_RELATIVE_PREFIX,
     NpcMontageFramingError,
-    frame_npc_montage,
+    montage_decoder,
 )
-from scripts.common import canonical_json_sha256
+from scripts.common import canonical_json_sha256, EXPORT_ROOT
+from scripts.game_data.string_pool import export_string_pool
+from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs
 
 
 NPC_MONTAGE_PATTERN = re.compile(
@@ -86,8 +88,9 @@ def _iter_stream_rows(command: list[str]):
             errors="strict",
             bufsize=1,
         )
-        assert process.stdout is not None
         try:
+            if process.stdout is None:
+                vfs._fail("stream-stdout-missing", source=command[0])
             for line_number, line in enumerate(process.stdout, 1):
                 try:
                     row = json.loads(line)
@@ -120,7 +123,8 @@ def _iter_stream_rows(command: list[str]):
             if process.poll() is None:
                 process.kill()
                 process.wait()
-            process.stdout.close()
+            if process.stdout is not None:
+                process.stdout.close()
 
 
 def _join_and_frame(
@@ -128,6 +132,7 @@ def _join_and_frame(
     stream_rows: Iterable[Mapping[str, Any]],
     *,
     expected_input: str,
+    decode,
 ) -> list[dict[str, Any]]:
     """Join the complete selected family and frame each authenticated file."""
     ledger_by_path = {str(row["virtualPath"]): row for row in ledger_rows}
@@ -192,7 +197,7 @@ def _join_and_frame(
             "encrypted": ledger["encrypted"],
         }
         try:
-            frame = frame_npc_montage(data)
+            frame = decode(data)
         except NpcMontageFramingError as exc:
             results.append(
                 {
@@ -201,18 +206,18 @@ def _join_and_frame(
                     "boundaryClass": "unsupported",
                     "bytesConsumed": None,
                     "frameStatus": None,
-                    "member3RecordCount": None,
-                    "member3InnerRecordCount": None,
-                    "member18RecordCount": None,
-                    "bothCollectionsNonempty": None,
+                    "dynamicEntityCount": None,
+                    "decoEntityCount": None,
+                    "transitionOverrideCount": None,
                     "diagnostic": {
                         "code": "npc-montage-frame-not-closed",
                         "category": "unsupported",
                         "source": path,
                         "inputSetSha256": expected_input.upper(),
                         "logicalSha256": identity["logicalSha256"],
-                        "expected": "supported 3-member root and 24-member body through physical EOF",
+                        "expected": "current native-gated sparse root/body/clip and null/empty collections through physical EOF",
                         "actual": str(exc),
+                        "readerDiagnostic": exc.diagnostics,
                     },
                 }
             )
@@ -225,11 +230,6 @@ def _join_and_frame(
                 expected=length,
                 actual=frame.get("bytesConsumed"),
             )
-        member3_count = len(frame["member3Records"])
-        member3_inner_count = sum(
-            len(record["extraEffects"]) for record in frame["member3Records"]
-        )
-        member18_count = len(frame["member18Records"])
         results.append(
             {
                 **identity,
@@ -237,10 +237,9 @@ def _join_and_frame(
                 "boundaryClass": "exact-closed",
                 "bytesConsumed": frame["bytesConsumed"],
                 "frameStatus": frame["status"],
-                "member3RecordCount": member3_count,
-                "member3InnerRecordCount": member3_inner_count,
-                "member18RecordCount": member18_count,
-                "bothCollectionsNonempty": member3_count > 0 and member18_count > 0,
+                "dynamicEntityCount": frame["dynamicEntityCount"],
+                "decoEntityCount": frame["decoEntityCount"],
+                "transitionOverrideCount": frame["transitionOverrideCount"],
                 "diagnostic": None,
             }
         )
@@ -282,16 +281,13 @@ def _summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
         "frameStatusCounts": dict(sorted(
             Counter(str(row.get("frameStatus")) for row in successful).items()
         )),
-        "member3Files": sum(int(row["member3RecordCount"]) > 0 for row in successful),
-        "member3Records": sum(int(row["member3RecordCount"]) for row in successful),
-        "member3InnerRecords": sum(
-            int(row["member3InnerRecordCount"]) for row in successful
+        "dynamicEntityFiles": sum(int(row["dynamicEntityCount"]) > 0 for row in successful),
+        "dynamicEntities": sum(int(row["dynamicEntityCount"]) for row in successful),
+        "decoEntities": sum(
+            int(row["decoEntityCount"]) for row in successful
         ),
-        "member18Files": sum(int(row["member18RecordCount"]) > 0 for row in successful),
-        "member18Records": sum(int(row["member18RecordCount"]) for row in successful),
-        "bothCollectionsNonemptyFiles": sum(
-            bool(row["bothCollectionsNonempty"]) for row in successful
-        ),
+        "transitionOverrideFiles": sum(int(row["transitionOverrideCount"]) > 0 for row in successful),
+        "transitionOverrides": sum(int(row["transitionOverrideCount"]) for row in successful),
         "firstIssue": issues[0] if issues else None,
     }
 
@@ -325,6 +321,7 @@ def _input_paths_to_protect(
         snapshot["streamToolFingerprints"],
         snapshot["selectedChunkFingerprints"],
         snapshot["parser"],
+        snapshot["stringPool"]["files"],
     ):
         protected.extend(Path(row["path"]) for row in group)
     return protected
@@ -336,6 +333,7 @@ def build_current_census(
     ledger_path: Path,
     cli_path: Path,
     expected_input_set_sha256: str,
+    export_root: Path = EXPORT_ROOT,
     output_json: Path | None = None,
     output_md: Path | None = None,
 ) -> dict[str, Any]:
@@ -349,6 +347,22 @@ def build_current_census(
         expected_input_set_sha256=expected_input,
     )
     selected = select_rows(file_rows, expected_input=expected_input)
+    json_dir = Path(export_root).resolve() / 'game' / 'Json'
+    pool_rows = vfs.family_rows(file_rows, expected_input=expected_input, prefix='Data/Json/StringPool/',
+        pattern=re.compile(r'^Data/Json/StringPool/StringPool[0-9]+[.]byte$'), label='npc-montage-string-pool')
+    def pool_join():
+        pages = snapshot_string_pool_inputs(json_dir)
+        expected = {str(row['virtualPath']).removeprefix('Data/Json/'): row for row in pool_rows}
+        actual = {Path(row['path']).relative_to(json_dir).as_posix(): row for row in pages['files']}
+        if not expected or set(expected) != set(actual):
+            vfs._fail('string-pool-page-set', source=str(json_dir), expected=sorted(expected), actual=sorted(actual))
+        for name, row in expected.items():
+            raw = (json_dir / name).read_bytes()
+            if len(raw) != row['length'] or hashlib.md5(raw).hexdigest().upper() != str(row['recomputedFileDataMd5']).upper():
+                vfs._fail('string-pool-source-join', source=name, expected=[row['length'], row['recomputedFileDataMd5']], actual=[len(raw), hashlib.md5(raw).hexdigest().upper()])
+        return pages
+    pool_join()
+    strings = export_string_pool(json_dir)
 
     def snapshot() -> dict[str, Any]:
         return {
@@ -357,6 +371,7 @@ def build_current_census(
             "streamToolFingerprints": vfs._stream_tool_snapshot(cli_path),
             "parser": vfs._parser_source_snapshots(Path(__file__)),
             "corpusGate": vfs._fingerprint(Path(__file__)),
+            "stringPool": pool_join(),
         }
 
     snapshot_start = snapshot()
@@ -387,11 +402,9 @@ def build_current_census(
             output, protected + [path for path in outputs if path != output]
         )
 
-    rows = _join_and_frame(
-        selected,
-        _iter_stream_rows(_stream_command(cli_path, outer)),
-        expected_input=expected_input,
-    )
+    with montage_decoder(strings=strings, game_root=Path(outer['primaryAssets']).parent) as decode:
+        rows = _join_and_frame(selected, _iter_stream_rows(_stream_command(cli_path, outer)),
+            expected_input=expected_input, decode=decode)
 
     outer_end, _header_end, end_file_rows, provenance_end = vfs._read_outer_and_ledger(
         outer_path,
@@ -451,7 +464,7 @@ def build_current_census(
     ]
     return {
         "format": NPC_MONTAGE_REPORT_FORMAT,
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "status": "complete" if complete else "incomplete",
         "publicationEligible": complete,
         "inputSetSha256": expected_input,
@@ -473,9 +486,9 @@ def build_current_census(
             "authenticated outer VFS ledger to an AnimeStudio stream --verify-md5 "
             "row by path, length, and logical MD5. The maintained reader consumes "
             "the supported MemoryPack frame through physical EOF using explicit "
-            "collection counts and nested member markers. Nested strings, scalar "
-            "values, and fixed record bodies remain anonymous; this is not a claim "
-            "about field meaning or runtime use."
+            "collection counts and nested member markers. Selected StringPool pages independently join the same ledger. The current "
+            "native sparse profile refuses positive collections and records its generated-route/helper "
+            "conditions; no live provider/default selection or runtime playback follows."
         ),
         "files": rows,
     }
@@ -495,11 +508,8 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         f"`{summary['filesUnsupported']}`; ambiguous: `{summary['filesAmbiguous']}`; "
         f"failed: `{summary['filesFailed']}`; logical bytes: `{summary['logicalBytes']}`.",
         "",
-        f"Nonempty member 3 files/records/inner records: "
-        f"`{summary['member3Files']}` / `{summary['member3Records']}` / "
-        f"`{summary['member3InnerRecords']}`; nonempty member 18 files/records: "
-        f"`{summary['member18Files']}` / `{summary['member18Records']}`; both "
-        f"collections nonempty: `{summary['bothCollectionsNonemptyFiles']}`.",
+        f"Decoded Deco entities: `{summary['decoEntities']}`; Dynamic entities: "
+        f"`{summary['dynamicEntities']}`; transition overrides: `{summary['transitionOverrides']}`.",
         "",
         report["evidenceBoundary"],
         "",
@@ -538,6 +548,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--outer-ledger", type=Path, default=vfs.DEFAULT_LEDGER)
     parser.add_argument("--animestudio-cli", type=Path, default=vfs.DEFAULT_CLI)
     parser.add_argument("--expected-input-set-sha256", required=True)
+    parser.add_argument("--export-root", type=Path, default=EXPORT_ROOT, help="Export supplying current StringPool pages; joined to the authenticated VFS ledger")
     parser.add_argument("--output-json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--output-md", type=Path, default=DEFAULT_MD)
     args = parser.parse_args(argv)
@@ -547,6 +558,7 @@ def main(argv: list[str] | None = None) -> int:
             ledger_path=args.outer_ledger,
             cli_path=args.animestudio_cli,
             expected_input_set_sha256=args.expected_input_set_sha256,
+            export_root=args.export_root,
             output_json=args.output_json,
             output_md=args.output_md,
         )

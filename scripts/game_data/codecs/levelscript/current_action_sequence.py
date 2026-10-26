@@ -76,10 +76,10 @@ def _preload_cutscene_layout(member_count: int = 17) -> dict[str, Any]:
 
 
 def _read_reviewed_map_node(
-    data: bytes, cursor: int, family: str, original_error: ValueError | None = None, *, strings: Any = None,
+    data: bytes, cursor: int, family: str, original_error: ValueError | None = None, *, strings: Any = None, game_root=None, null_list_params=None,
 ) -> tuple[dict[str, Any], int]:
     try:
-        return levelscript_action_map.decode_reviewed_node(data, cursor, family, strings=strings)
+        return levelscript_action_map.decode_reviewed_node(data, cursor, family, strings=strings,game_root=game_root,null_list_params=null_list_params)
     except levelscript_action_map.ActionMapCodecError as error:
         if getattr(error, "diagnostics", {}).get("validator") == "levelscriptPreloadCutscene":
             refusal = LevelScriptTopLevelFramingError(
@@ -94,7 +94,7 @@ def _read_reviewed_map_node(
 
 def frame_levelscript_current_action_sequence_leader_enter(
     data: bytes,
-    *, strings: Any = None,
+    *, strings: Any = None, game_root=None, null_list_params=None, npc_decoder=None,
 ) -> dict[str, Any]:
     """Close selected current sequences, including reviewed shared union layouts."""
     if len(data) < 7 or data[:3] != b"\x1c\x02\x03":
@@ -105,7 +105,7 @@ def frame_levelscript_current_action_sequence_leader_enter(
     cursor = 7
     actions = []
     for _index in range(action_count):
-        action,cursor=_read_reviewed_map_node(data,cursor,'ActionBase',strings=strings)
+        action,cursor=_read_reviewed_map_node(data,cursor,'ActionBase',strings=strings,game_root=game_root,null_list_params=null_list_params)
         actions.append(action)
     if cursor + 4 > len(data):
         raise LevelScriptTopLevelFramingError("truncated getterList count")
@@ -117,7 +117,7 @@ def frame_levelscript_current_action_sequence_leader_enter(
     cursor += 4
     getters = []
     for _index in range(getter_count):
-        getter,cursor=_read_reviewed_map_node(data,cursor,'GetterBase',strings=strings)
+        getter,cursor=_read_reviewed_map_node(data,cursor,'GetterBase',strings=strings,game_root=game_root,null_list_params=null_list_params)
         getters.append(getter)
     if cursor + 4 > len(data):
         raise LevelScriptTopLevelFramingError("truncated headerList count")
@@ -130,10 +130,10 @@ def frame_levelscript_current_action_sequence_leader_enter(
     cursor += 4
     headers = []
     for _index in range(header_count):
-        header,cursor=_read_reviewed_map_node(data,cursor,'ActionHeader',strings=strings)
+        header,cursor=_read_reviewed_map_node(data,cursor,'ActionHeader',strings=strings,game_root=game_root,null_list_params=null_list_params)
         headers.append(header)
     try:
-        blackboard, action_map_end = decode_param_blackboard(data,cursor,strings=strings)
+        blackboard, action_map_end = decode_param_blackboard(data,cursor,strings=strings,game_root=game_root)
     except ParamGraphDecodeError as error:
         raise LevelScriptTopLevelFramingError(str(error)) from error
     action_map = {
@@ -160,5 +160,5 @@ def frame_levelscript_current_action_sequence_leader_enter(
         owner_offset=action_map_end,
         action_map_boundary="selected current action/getter/header sequence",
         partial_status="exact_named_current_action_sequence_owner_prefix",
-        strings=strings,
+        strings=strings,game_root=game_root,npc_decoder=npc_decoder,
     )

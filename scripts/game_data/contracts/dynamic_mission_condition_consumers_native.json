@@ -57,7 +57,7 @@
     },
     {
       "path": "dynamic_main_vector_native.json",
-      "schema": "endfield.dynamic-main-vector-native-contract.v1",
+      "schema": "endfield.dynamic-main-vector-native-contract.v2",
       "methodRoles": {
         "vector": {
           "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",

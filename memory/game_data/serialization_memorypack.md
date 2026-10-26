@@ -415,7 +415,11 @@ whole files at the first refusal; later unions stay hidden until that refusal
 is recovered. Native-gate failures are tooling/build diagnostics, not schema
 frontiers. Keep changing rankings and selected-source inventories in reports.
 Stored action, event, getter and task-condition inputs establish no execution,
-resolved target, property value or mission order.
+resolved target, property value or mission order. The census replays each
+residual through the owner its action-map root selects (empty, null or current
+sequence, as `frame_levelscript_named` does) with the gated export StringPool,
+snapshotted before and after the replay; a census without the pool ranks a
+StringPool-index refusal, not a format frontier.
 
 The same authenticated first-stop census now selects `LevelScriptTemplateData`
 with `--family`, retaining a separate owner and report. It joins that family's

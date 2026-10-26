@@ -1,218 +1,120 @@
-"""LevelSequence audio: play actions and the contexts they produce.
-
-Reads authored LevelSequence detail and the active LevelScript overlay. A decoded
-play action is authored evidence; sequence evaluation is unobserved."""
-
+"""Current pooled LevelSequence ID candidates; compiled triggers remain unproved."""
 from __future__ import annotations
-from scripts.source_paths import ExportLayout
-
 import hashlib
-import struct
-from collections import Counter, defaultdict
-from pathlib import Path, PurePosixPath
-from typing import Any, Iterable
+from collections import Counter,defaultdict
+from pathlib import Path,PurePosixPath
+from typing import Any,Iterable
+from scripts.source_paths import ExportLayout
+from scripts.game_data.levelscript_union_tags import short_name
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context,normalize_posix
+from scripts.webui.audio.semantics.levelscript_source import CurrentAudioSource,require,COMMON
 
-from scripts.webui.audio.semantics.context_utils import append_context as _append_context
-from scripts.webui.audio.semantics.context_utils import normalize_posix as normalize_posix
+ACTION_NAMES={'PlayLevelSequenceAction':'PlayLevelSequence',
+              'PlayLevelSequenceAndControlSceneObjectsAction':'PlayLevelSequenceAndControlSceneObjects'}
 
-LEVELSEQUENCE_PLAY_ACTION_DEFINITIONS = {
-    (0x0360, 0x0F): {
-        "action": "PlayLevelSequence",
-        "nativeMappingId": "PlayLevelSequenceAction.memberCount15",
-        "serializedField": "_levelSeqId",
-    },
-    (0x0361, 0x12): {
-        "action": "PlayLevelSequenceAndControlSceneObjects",
-        "nativeMappingId": (
-            "PlayLevelSequenceAndControlSceneObjectsAction.memberCount18"
-        ),
-        "serializedField": "_levelSeqId",
-    },
-}
 
-def _active_levelscript_overlay(
-    export_root: Path,
-    *,
-    levelscript_root: Path | None = None,
-) -> dict[str, tuple[str, Path]]:
-    """Return the active Persistent-over-Streaming LevelScript files."""
+def _levelsequence_fields_from_decoded_detail(detail):
+    """Pure typed projection only; historical tagged-string scans are refused."""
+    if not isinstance(detail,dict) or 'typedFields' not in detail:return []
+    value=detail.get('levelSequenceId')
+    return [dict(value=value,offset=detail.get('payloadStart'))] if isinstance(value,str) and value else []
 
-    if levelscript_root is not None:
-        root = Path(levelscript_root)
-        return {
-            path.relative_to(root).as_posix(): ("fixture", path)
-            for path in sorted(root.rglob("*.json"))
-        }
-    overlay: dict[str, tuple[str, Path]] = {}
-    for source_root in ("game",):
-        root = (
-            ExportLayout(export_root).game / "Json"
-            / "LevelScriptData"
-        )
-        if not root.is_dir():
-            continue
-        for path in root.rglob("*.json"):
-            overlay[path.relative_to(root).as_posix()] = (source_root, path)
-    return overlay
 
-def _levelsequence_fields_from_decoded_detail(detail: Any) -> list[dict[str, Any]]:
-    """Extract the unique tagged levelseq field from a validated action payload."""
+def project_source_rows(decoded,source):
+    rows=[];unresolved=[]
+    for row in decoded.get('rows',[]):
+        record=row['record'];node=record['typedNode'];name=short_name(node['wrapperName'])
+        require(name in ACTION_NAMES,'typed-LevelSequence-action',source,actual=name)
+        kind=node['fieldTypes'].get('levelSeqId');param=node['fields'].get('levelSeqId')
+        require(kind=='Param<string>' and (param is None or isinstance(param,dict)),
+                'typed-LevelSequence-id',source,expected='Param<string>',actual=kind)
+        literal=param.get('value') if isinstance(param,dict) and type(param.get('paramSource')) is int and param['paramSource']==0 else None
+        base=dict(record=record,action=ACTION_NAMES[name],levelSequenceFieldOffset=node['fieldRanges']['levelSeqId'][0],
+                  parameter=param,triggerConsumerProved=False,eventRequestsProved=False)
+        if isinstance(literal,str) and literal:rows.append(dict(base,levelSequenceId=literal))
+        else:unresolved.append(dict(base,reason='null-dynamic-or-empty-stored-LevelSequence-id'))
+    return dict(targetCount=decoded['targetCount'],rows=rows,unresolvedBindings=unresolved)
 
-    if not isinstance(detail, dict):
-        return []
-    if 'typedFields' in detail:
-        value=detail.get('levelSequenceId')
-        return [dict(value=value,offset=str(detail.get('payloadStart') or ''))] if isinstance(value,str) and value.startswith('levelseq_') else []
-    fields: list[dict[str, Any]] = []
-    for field in detail.get("taggedFields") or []:
-        if not isinstance(field, dict) or field.get("type") != "string":
-            continue
-        value = str(field.get("value") or "").strip()
-        if value.startswith("levelseq_") and not any(
-            row.get("value") == value for row in fields
-        ):
-            fields.append({
-                "value": value,
-                "offset": str(field.get("offset") or ""),
-            })
-    return fields if len(fields) == 1 else []
 
-def _levelsequence_ids_from_decoded_detail(detail: Any) -> list[str]:
-    """Compatibility helper returning only an unambiguous levelseq id."""
+def project_sequence_owner(data,frame,source):
+    require(frame.get('schemaStatus')=='named_exact' and type(frame.get('bytesConsumed')) is int and frame['bytesConsumed']==len(data),
+            'complete-named-eof-required',source)
+    asset=frame.get('ranges',{}).get('actionMap',{})
+    if asset.get('value','present') is None:return dict(targetCount=0,rows=[],unresolvedBindings=[])
+    mapping=asset.get('dataMap',{});nodes=mapping.get('actionList',[])
+    require(type(mapping.get('actionListCount')) is int and mapping['actionListCount']==len(nodes),
+            'complete-typed-action-list-required',source)
+    selected=[]
+    for node in nodes:
+        if short_name(node['wrapperName']) not in ACTION_NAMES:continue
+        fields=node['fields'];spans=node['fieldRanges'];start,end=node['sourceOffset'],node['endOffset']
+        require(tuple(fields)[:8]==COMMON and node['memberCount']==len(fields),
+                'current-LevelSequence-common-fields',source)
+        payload=spans[COMMON[-1]][1];span=spans.get('levelSeqId')
+        require(type(start) is int and type(end) is int and isinstance(span,(list,tuple)) and len(span)==2
+                and all(type(n) is int for n in span) and 0<=start<payload<=span[0]<span[1]<=end<=len(data),
+                'current-LevelSequence-field-range',source,actual=span)
+        selected.append(dict(record=dict(start=start,end=end,payloadStart=payload,localId=fields['ID'],uid=fields['uid'],
+            unionTag=node['unionTag'],serializedMemberCount=node['memberCount'],family='ActionBase',typedNode=node)))
+    return project_source_rows(dict(targetCount=len(selected),rows=selected),source)
 
-    return [str(row.get("value") or "") for row in _levelsequence_fields_from_decoded_detail(detail)]
 
-def collect_levelsequence_play_actions(
-    export_root: Path,
-    *,
-    levelscript_root: Path | None = None,
-    decode_file: Any | None = None,
-) -> dict[str, Any]:
-    """Collect exact active-overlay PlayLevelSequence id records.
+class LevelSequenceActions:
+    """Accumulate independent pure projections inside one caller-owned operation."""
+    def __init__(self,export_root):
+        self.root=Path(export_root).resolve();self.actions=defaultdict(list);self.unresolved=[];self.failures=[]
+        self.files=self.targets=self.decoded=self.files_with_actions=0
+    def refuse(self,path,error):
+        self.files+=1
+        self.failures.append(getattr(error,'diagnostic',dict(validator='audioLevelSequenceSource',check='owner-refused',source=str(path),detail=str(error)[:1000])))
+    def project(self,path,data,frame):
+        path=Path(path).resolve();relative=normalize_posix(path.relative_to(self.root))
+        try:result=project_sequence_owner(data,frame,relative)
+        except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:
+            self.refuse(relative,error);return
+        self.files+=1;self.targets+=result['targetCount'];self.files_with_actions+=bool(result['rows'])
+        identity=dict(levelScriptId=path.relative_to(self.root/'game/Json/LevelScriptData').with_suffix('').as_posix(),sourceRoot='game',sourcePath=relative,sourceSha256=hashlib.sha256(data).hexdigest().upper())
+        for row in result['rows']:
+            record=row['record'];self.decoded+=1
+            self.actions[row['levelSequenceId']].append(dict(identity,action=row['action'],levelSequenceId=row['levelSequenceId'],
+                recordStart=record['start'],recordUid=record['uid'],recordLocalId=record['localId'],
+                unionTag=record['unionTag'],serializedMemberCount=record['serializedMemberCount'],
+                serializedField='_levelSeqId',levelSequenceFieldOffset=row['levelSequenceFieldOffset'],parameter=row['parameter'],
+                evidence='current-native-owned-stored-LevelSequence-id-candidate',triggerConsumerProved=False,eventRequestsProved=False,
+                runtimeActivationStatus='playLevelSequenceActionExecutionNotObserved'))
+        self.unresolved.extend(dict(identity,recordStart=row['record']['start'],parameter=row['parameter'],reason=row['reason'])for row in result['unresolvedBindings'])
+    def result(self,audit=None,*,error=None):
+        if error is not None:
+            return dict(actionsByLevelSequenceId={},unresolvedBindings=[],sourceAudit=dict(status='unavailable_fail_closed',audioActionAbsenceProved=False),
+                sourceDiagnostics=[getattr(error,'diagnostic',dict(validator='audioLevelSequenceSource',check='source-operation-refused',detail=str(error)[:1400]))],
+                stats=dict(status='unavailable_fail_closed',sourceFiles=self.files,playLevelSequenceActionRecords=0,playLevelSequenceTargetRecords=0,
+                    uniquePlayLevelSequenceIds=0,decodeFailures=max(1,len(self.failures)),audioActionAbsenceProved=False,eventRequestsProved=False),
+                evidenceBoundary='Current LevelSequence source operation refused; zero emitted rows prove neither absence nor Event requests.')
+        return dict(actionsByLevelSequenceId=dict(self.actions),unresolvedBindings=self.unresolved,sourceAudit=audit,sourceDiagnostics=self.failures[:16],
+            stats=dict(status='partial'if self.failures else'current-authenticated-known-action-profile',sourceFiles=self.files,
+                sourceFilesWithPlayLevelSequenceActions=self.files_with_actions,playLevelSequenceActionRecords=self.decoded,
+                playLevelSequenceTargetRecords=self.targets,uniquePlayLevelSequenceIds=len(self.actions),decodeFailures=len(self.failures),
+                unresolvedLevelSequenceBindings=len(self.unresolved),audioActionAbsenceProved=False,eventRequestsProved=False),
+            evidenceBoundary='Current native-owned typed LevelScript fields and named-owner EOF establish stored ID candidates. Effective Param selection, compiled Director activation and Wwise posting remain unproved.')
 
-    The parser intentionally requires the current union tag/member count and
-    a tagged ``levelseq_*`` string.  It does not claim that the action ran or
-    that a Timeline Director eventually posted the Wwise Event.
-    """
 
-    if decode_file is None:
-        from scripts.game_data.levelscript_binary import (
-            decode_levelscript_record_payload,
-            extract_levelscript_uid_records,
-            levelscript_record_semantic_key,
-        )
+def collect_levelsequence_play_actions(export_root:Path,*,gameassembly=None,metadata=None,family_receipt_path=None):
+    """Standalone collection opens its own fresh operation."""
+    options=dict(gameassembly=gameassembly,metadata=metadata,action_names=set(ACTION_NAMES));projection=LevelSequenceActions(export_root)
+    if family_receipt_path is not None:options['receipt_path']=family_receipt_path
+    try:
+        with CurrentAudioSource(export_root,**options) as source:
+            root=ExportLayout(export_root).game/'Json/LevelScriptData'
+            for path in sorted(root.rglob('*.json'),key=lambda p:p.as_posix().lower()):
+                if not path.is_file():continue
+                try:data=path.read_bytes();frame=source.frame(path,data)
+                except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:
+                    projection.refuse(path,error);continue
+                projection.project(path,data,frame)
+            audit=source.audit()
+        return projection.result(audit)
+    except (OSError,ValueError,KeyError,IndexError,TypeError,RuntimeError) as error:return projection.result(error=error)
 
-        def decode_file(_path: Path, data: bytes) -> dict[str, Any]:
-            records = extract_levelscript_uid_records(data, source_path=_path)
-            rows: list[dict[str, Any]] = []
-            target_count = 0
-            for index, record in enumerate(records):
-                key = levelscript_record_semantic_key(record)
-                definition = LEVELSEQUENCE_PLAY_ACTION_DEFINITIONS.get(key)
-                if not definition:
-                    continue
-                target_count += 1
-                member_count = int(record.get("serializedMemberCount") or 0)
-                if member_count != key[1]:
-                    continue
-                next_start = (
-                    int(records[index + 1].get("start") or 0)
-                    if index + 1 < len(records)
-                    else len(data)
-                )
-                try:
-                    detail = decode_levelscript_record_payload(
-                        data, record, next_start=next_start
-                    )
-                except (ValueError, IndexError, struct.error):
-                    continue
-                fields = _levelsequence_fields_from_decoded_detail(detail)
-                for field in fields:
-                    value = str(field.get("value") or "")
-                    rows.append({
-                        "record": record,
-                        "recordIndex": index,
-                        "definition": definition,
-                        "levelSequenceId": value,
-                        "levelSequenceFieldOffset": field.get("offset"),
-                    })
-            return {"targetCount": target_count, "rows": rows}
-
-    actions: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    overlay = _active_levelscript_overlay(
-        export_root, levelscript_root=levelscript_root
-    )
-    target_records = 0
-    decoded_records = 0
-    decode_failures = 0
-    source_files_with_actions = 0
-    for relative_path, (source_root, path) in sorted(overlay.items()):
-        try:
-            data = path.read_bytes()
-            decoded = decode_file(path, data) or {}
-        except (OSError, ValueError, struct.error):
-            decode_failures += 1
-            continue
-        target_records += int(decoded.get("targetCount") or 0)
-        rows = decoded.get("rows") or []
-        if rows:
-            source_files_with_actions += 1
-        try:
-            source_path = normalize_posix(path.relative_to(export_root))
-        except ValueError:
-            source_path = normalize_posix(path)
-        source_sha256 = hashlib.sha256(data).hexdigest()
-        levelscript_id = str(PurePosixPath(relative_path).with_suffix(""))
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
-            sequence_id = str(row.get("levelSequenceId") or "").strip()
-            definition = row.get("definition")
-            record = row.get("record") if isinstance(row.get("record"), dict) else {}
-            if not sequence_id or not isinstance(definition, dict):
-                continue
-            decoded_records += 1
-            action = str(definition.get("action") or "")
-            actions[sequence_id].append({
-                "action": action,
-                "levelSequenceId": sequence_id,
-                "levelScriptId": levelscript_id,
-                "sourceRoot": source_root,
-                "sourcePath": source_path,
-                "sourceSha256": source_sha256,
-                "recordIndex": row.get("recordIndex"),
-                "recordStart": int(record.get("start") or 0),
-                "recordUid": str(record.get("uid") or ""),
-                "recordLocalId": record.get("localId"),
-                "unionTag": record.get("unionTag"),
-                "serializedMemberCount": record.get("serializedMemberCount"),
-                "nativeMappingId": str(definition.get("nativeMappingId") or ""),
-                "serializedField": str(definition.get("serializedField") or "_levelSeqId"),
-                "levelSequenceFieldOffset": str(row.get("levelSequenceFieldOffset") or ""),
-                "evidence": "exactCurrentActiveLevelScriptMemoryPackLevelSeqId",
-                "runtimeActivationStatus": "playLevelSequenceActionExecutionNotObserved",
-            })
-    for rows in actions.values():
-        rows.sort(key=lambda row: (
-            str(row.get("sourcePath") or ""),
-            int(row.get("recordStart") or 0),
-        ))
-    return {
-        "actionsByLevelSequenceId": dict(actions),
-        "stats": {
-            "sourceFiles": len(overlay),
-            "sourceFilesWithPlayLevelSequenceActions": source_files_with_actions,
-            "playLevelSequenceActionRecords": decoded_records,
-            "playLevelSequenceTargetRecords": target_records,
-            "uniquePlayLevelSequenceIds": len(actions),
-            "decodeFailures": decode_failures,
-        },
-        "evidenceBoundary": (
-            "Current active Persistent-over-Streaming LevelScript union tags and member counts, "
-            "plus tagged levelseq_* strings, prove authored _levelSeqId records. They do not prove "
-            "PlayLevelSequence execution, Director activation, or Wwise posting."
-        ),
-    }
 
 def build_levelsequence_audio_contexts(
     event_ids: Iterable[str],
@@ -227,7 +129,6 @@ def build_levelsequence_audio_contexts(
     actions_by_id = play_actions.get("actionsByLevelSequenceId") or {}
     stats = Counter()
     context_event_ids: set[str] = set()
-    exact_action_event_ids: set[str] = set()
     inferred_trigger_event_ids: set[str] = set()
     target_ids = sorted({str(value or "").strip().lower() for value in event_ids if str(value or "").strip()})
     for event_id in target_ids:
@@ -263,10 +164,10 @@ def build_levelsequence_audio_contexts(
             action_rows = [row for row in actions_by_id.get(sequence_id) or [] if isinstance(row, dict)]
             director_rows = [row for row in occurrence.get("playableDirectors") or [] if isinstance(row, dict)]
             has_director = bool(director_rows)
-            has_action = bool(action_rows)
-            confidence = "exact" if has_director and has_action else "inferred"
+            has_candidate = bool(action_rows)
+            confidence = "inferred"
             trigger_status = (
-                "exactLevelSequenceIdJoin" if has_action
+                "storedLevelSequenceIdCandidateJoin" if has_candidate
                 else "timelineParentNotLevelSequence" if not sequence_id
                 else "timelineDirectorPlaybackTriggerUnresolved"
             )
@@ -279,13 +180,15 @@ def build_levelsequence_audio_contexts(
                 "semanticRole": "authoredTimelineAudioEvent",
                 "confidence": confidence,
                 "ownershipEvidenceLevel": "exactSerializedTimelineCarrier",
-                "triggerEvidenceLevel": "exact" if has_action else "inferred",
+                "triggerEvidenceLevel": "structuralOnly" if has_candidate else "inferred",
+                "eventRequestsProved": False,
+                "levelSequenceConsumerStatus": "current-compiled-Param-to-Director-unproved",
                 "timelineOwnershipStatus": ownership_status,
                 "triggerBindingStatus": trigger_status,
                 "triggerRole": "PlayLevelSequence" if sequence_id else "TimelineAssetPlayback",
                 "runtimeActivationStatus": "playableDirectorRuntimeExecutionNotObserved",
                 "triggerRuntimeActivationStatuses": [
-                    "playLevelSequenceActionExecutionNotObserved" if has_action else (
+                    "playLevelSequenceCompiledConsumerUnproved" if has_candidate else (
                         "playLevelSequenceTriggerUnresolved" if sequence_id
                         else "timelineParentTriggerUnresolved"
                     ),
@@ -308,7 +211,7 @@ def build_levelsequence_audio_contexts(
                     "exactTimelineTrackPPtr",
                     "exactTimelineParentPPtr",
                     "exactPlayableDirectorPlayableAssetPPtr" if has_director else "playableDirectorPPtrUnresolved",
-                    "exactLevelScriptPlayLevelSequenceId" if has_action else (
+                    "storedLevelScriptLevelSequenceIdCandidate" if has_candidate else (
                         "levelScriptPlayLevelSequenceIdUnresolved" if sequence_id
                         else "notALevelSequenceParent"
                     ),
@@ -317,7 +220,7 @@ def build_levelsequence_audio_contexts(
                     "AudioEventPlayable",
                     "TimelineTrack",
                     "PlayableDirector" if has_director else "PlayableDirectorUnresolved",
-                    "LevelScriptPlayLevelSequence" if has_action else (
+                    "LevelScriptStoredLevelSequenceCandidate" if has_candidate else (
                         "LevelScriptPlayLevelSequenceUnresolved" if sequence_id
                         else "NonLevelSequenceTimelineParent"
                     ),
@@ -327,6 +230,7 @@ def build_levelsequence_audio_contexts(
                     "exactLevelSequenceAudioSuffix" if sequence_id else "nonLevelSequenceTimelineParent"
                 ),
                 "levelScriptActionCount": len(action_rows),
+                "levelScriptStoredCandidateCount": len(action_rows),
                 "levelScriptIds": sorted({
                     str(row.get("levelScriptId") or "")
                     for row in action_rows
@@ -411,17 +315,15 @@ def build_levelsequence_audio_contexts(
                 ],
                 "evidence": "exactSerializedTimelineDirectorChain" if has_director else "exactSerializedTimelineCarrier",
                 "evidenceBoundary": (
-                    "Static Timeline/Director and LevelScript identity joins are exact, but runtime "
-                    "action execution, Director activation, and Wwise playback are not observed."
+                    "Serialized Timeline/Director ownership remains separate from stored LevelScript "
+                    "ID candidates. Effective Param values, the compiled Director trigger and "
+                    "Wwise posting remain unproved; runtime execution is unobserved."
                 ),
             }
             _append_context(contexts, seen, event_id, context)
             stats["timelineContexts"] += 1
             context_event_ids.add(event_id)
-            if has_action:
-                exact_action_event_ids.add(event_id)
-            else:
-                inferred_trigger_event_ids.add(event_id)
+            inferred_trigger_event_ids.add(event_id)
             if has_director:
                 stats["contextsWithPlayableDirector"] += 1
             else:
@@ -430,7 +332,7 @@ def build_levelsequence_audio_contexts(
             stats["eventsWithMultipleTimelineOccurrences"] += 1
     stats["targetEvents"] = len(target_ids)
     stats["eventsWithTimelineContext"] = len(context_event_ids)
-    stats["eventsWithExactLevelSequenceAction"] = len(exact_action_event_ids)
+    stats["eventsWithExactLevelSequenceAction"] = 0
     stats["eventsWithInferredTimelineTrigger"] = len(inferred_trigger_event_ids)
     stats["eventsWithAnyTimelineCarrier"] = sum(bool(occurrences_by_event.get(event_id)) for event_id in target_ids)
     stats["eventsWithAnyContext"] = sum(bool(contexts.get(event_id)) for event_id in target_ids)
@@ -438,7 +340,7 @@ def build_levelsequence_audio_contexts(
         "eventContexts": dict(contexts),
         "stats": dict(stats),
         "evidenceBoundary": (
-            "Exact serialized Timeline ownership is separated from exact static LevelScript id joins. "
+            "Exact serialized Timeline ownership is separated from stored LevelScript ID candidates. "
             "Rows without a carrier remain an explicit gap; inferred rows never claim runtime execution "
             "or selected Wwise media."
         ),

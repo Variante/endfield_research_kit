@@ -184,7 +184,7 @@ def read_compressed_uint32(data: bytes, offset: int) -> tuple[int, int]:
             4,
         )
     if first == 0xF0:
-        return struct.unpack_from(">I", data, offset + 1)[0], 5
+        return struct.unpack_from("<I", data, offset + 1)[0], 5
     if first == 0xFE:
         return 0xFFFFFFFE, 1
     if first == 0xFF:

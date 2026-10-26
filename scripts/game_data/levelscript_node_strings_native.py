@@ -13,7 +13,7 @@ from scripts.common import check_installed_native_inputs, sha256_file_upper
 from scripts.game_data.contracts import CONTRACTS_DIR
 
 CONTRACT = CONTRACTS_DIR / "levelscript_node_strings_native.json"
-SCHEMA = "endfield.levelscript-node-string-sources-native.v2"
+SCHEMA = "endfield.levelscript-node-string-sources-native.v4"
 
 
 def read_contract(*, allow_pending=False):
@@ -66,6 +66,14 @@ def derive_record(build, reviewed):
         raise ValueError(f"nodeStrings.{check}:{wrapper.name}:expected={str(expected)[:200]}:actual={str(actual)[:300]}")
     check_reader_ref_wrapper_abi(image,{"readerMethod":method,"wrapperTypeDefinition":wrapper.type_definition},fail=fail)
     body = image.body_index.body(wrapper.name,"Deserialize")
+    from scripts.game_data.il2cpp.type_data_initialization_instructions import decode_type_data_initialization_instructions
+    rows = decode_type_data_initialization_instructions(image.mapper,image.pe.bytes_at_va(body.pointer,body.size),body.pointer) if reviewed.get("inlinePrefix") is True else body.rows
+    selection = None
+    if reviewed.get("initializedCachedPrefix") is True:
+        if reviewed.get("inlinePrefix") is not True:raise ValueError("nodeStrings.cachedPrefix:requires-inline-profile")
+        from scripts.game_data.memorypack.record_prefix_sources import selected_initialized_prefix
+        rows,selection=selected_initialized_prefix(build,wrapper)
+    elif "initializedCachedPrefix" in reviewed:raise ValueError("nodeStrings.cachedPrefix:explicit-true-profile")
     prefix = [["dontLogWarning","bool"],["ID","int32"],["releaseWhenExecutionFinished","bool"],["uid","string"]]
     if reviewed["fields"][:4] != prefix:
         raise ValueError(f"nodeStrings.prefixPlan:{wrapper.name}")
@@ -73,8 +81,10 @@ def derive_record(build, reviewed):
         if protocol.canonical_type_name(member.declared_type)!=kind:
             raise ValueError(f"nodeStrings.prefixDeclaration:{wrapper.name}:{member.name}:expected={kind}:actual={member.declared_type}")
     setters = [_method_row(image,[0,m.declaring_wrapper,f"set___{m.name}__",0]) for m in wrapper.members[:4]]
-    header,reads,writes,_ = select_calls(normal_source_rows(body.rows),len(wrapper.members),
-        [image.pe.image_base+row[3] for row in setters],prefix_count=4)
+    inline=reviewed.get("inlinePrefix",False)
+    if type(inline) is not bool:raise ValueError("nodeStrings.inlinePrefix:explicit-boolean")
+    header,reads,writes,_ = select_calls(normal_source_rows(rows),len(wrapper.members),
+        [image.pe.image_base+row[3] for row in setters],inline_members=range(4) if inline else (),prefix_count=4)
     prefix_reads = []
     helper_spans = set()
     for (field,kind),read,write,setter in zip(prefix,reads,writes,setters,strict=True):
@@ -83,8 +93,12 @@ def derive_record(build, reviewed):
             prove_primitive(image,pointer,"bool-byte" if kind=="bool" else "int32")
             helper_spans.add((pointer,image.body_index.extents[pointer]))
             helper_spans.update((p,p+n) for p,n in image.body_index.chained_fragments.get(pointer,()))
+        transfer={}
+        if inline:
+            from scripts.game_data.il2cpp.reference_field_programs import inlined_base_setter
+            transfer["inlineSetter"]=inlined_base_setter(image,build.body,build.wrappers,wrapper.members[len(prefix_reads)],rows,read,write)
         prefix_reads.append({"field":field,"kind":kind,"callRva":int(read["va"],16)-image.pe.image_base,
-            "targetRva":pointer-image.pe.image_base,"setter":setter,"setterCallRva":int(write["va"],16)-image.pe.image_base})
+            "targetRva":pointer-image.pe.image_base,"setter":setter,"setterCallRva":None if inline else int(write["va"],16)-image.pe.image_base,**transfer})
     sources = []
     for wire,native in reviewed["stringFields"]:
         if [wire,"string"] not in reviewed["fields"]:
@@ -92,13 +106,18 @@ def derive_record(build, reviewed):
         members = [m for m in wrapper.members if m.name==native]
         if len(members)!=1 or members[0].kind!="string":
             raise ValueError(f"nodeStrings.stringDeclaration:{wrapper.name}:{native}")
-        fact = setter_reference_source(build,body.rows,members[0])
+        if inline:
+            from scripts.game_data.memorypack.record_sources import return_field_source
+            transfer=prefix_reads[3]["inlineSetter"]
+            fact={**return_field_source(image,rows,native,transfer["fieldOffset"]),"inlineSetter":transfer}
+        else:fact = setter_reference_source(build,rows,members[0])
         if wire!="uid" or fact["callRva"]!=prefix_reads[3]["callRva"]:
             raise ValueError(f"nodeStrings.prefixSource:{wrapper.name}:{wire}")
         build.prove_pooled_string_target(image.pe.image_base+fact["targetRva"])
         sources.append({"field":wire,"source":fact})
     spans = {(body.pointer,body.pointer+body.size)}|{(p,p+n) for p,n in image.body_index.chained_fragments.get(body.pointer,())}
-    return {**{k:reviewed[k] for k in ("wrapperName","fields","nativeDeclaredTypes","stringFields")},
+    return {**{k:reviewed[k] for k in ("wrapperName","fields","nativeDeclaredTypes","stringFields")},**({"inlinePrefix":True} if inline else {}),
+        **({"initializedCachedPrefix":True,"prefixSelection":selection} if selection is not None else {}),
         "method":method,"stringSources":sources,
         "prefixReads":prefix_reads,"memberCountInstruction":[int(header['va'],16)-image.pe.image_base,header['bytes']],
         "primitiveWindows":[_window(image,a,b,"complete owned primitive bytes; buffered source proof only") for a,b in sorted(helper_spans)],

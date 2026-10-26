@@ -34,6 +34,18 @@ def _profiles(raw, schema):
         if set(pins)!={'GameAssembly.dll','global-metadata.dat','UnityPlayer.dll'}:
             raise ValueError('nodeString.source:native-pin-scope')
         for record in fact.get('records',[]):
+            if "initializedCachedPrefix" in record:
+                proof=record.get("prefixSelection",{})
+                if not isinstance(proof,dict):raise ValueError("nodeString.source:unproved-initialized-cached-prefix")
+                children=proof.get("children",[]);base=proof.get("imageBaseReference",0)
+                if (record["initializedCachedPrefix"] is not True or record.get("inlinePrefix") is not True
+                        or proof.get("prefixOnly") is not True or proof.get("wholeOwnerAdmitted") is not False
+                        or not proof.get("selectedBytes") or not proof.get("condition") or len(children)!=4
+                        or proof.get("header",0)-base!=record.get("memberCountInstruction",[None])[0]
+                        or any(child.get("call",0)-base!=read.get("callRva") or child.get("target",0)-base!=read.get("targetRva")
+                               for child,read in zip(children,record.get("prefixReads",[])))):
+                    raise ValueError("nodeString.source:unproved-initialized-cached-prefix")
+
             prefix=record.get('prefixReads',[])
             if (not record.get('codeWindows') or not record.get('stringSources') or not record.get('primitiveWindows')
                     or [(r.get('field'),r.get('kind')) for r in prefix] != [('dontLogWarning','bool'),('ID','int32'),('releaseWhenExecutionFinished','bool'),('uid','string')]):
@@ -42,9 +54,18 @@ def _profiles(raw, schema):
                 source=row['source'];field=row['field']
                 if ([field,'string'] not in record['fields'] or [field,source['field']] not in record['stringFields']
                         or not source.get('readerArgument') or not source.get('wrapperArgument')
-                        or not source.get('setter') or not source.get('setterWindows')
+                        or (not source.get('inlineSetter') if record.get('inlinePrefix') is True else not source.get('setter') or not source.get('setterWindows'))
                         or field!='uid' or source.get('callRva')!=prefix[3].get('callRva')):
                     raise ValueError('nodeString.source:unproved-field-transfer')
+                if record.get('inlinePrefix') is True:
+                    transfer=source['inlineSetter']
+                    if (transfer.get('transfer')!='directOwnedReferenceStore'
+                            or transfer.get('setterMetadataOnly') is not True
+                            or transfer.get('writeBarrierEquivalenceProved') is not False
+                            or transfer!=prefix[3].get('inlineSetter')
+                            or source.get('storeRva')!=transfer.get('storeRva')
+                            or source.get('fieldOffset')!=transfer.get('fieldOffset')):
+                        raise ValueError('nodeString.source:unproved-inline-reference-transfer')
                 profiles.append((record['wrapperName'],tuple(map(tuple,record['fields'])),source['targetRva'],
                                  tuple(sorted(pins.items())),(field,)))
         return tuple(profiles)

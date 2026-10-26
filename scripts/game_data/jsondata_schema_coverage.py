@@ -395,17 +395,10 @@ def npc_framers() -> tuple[tuple[Callable[[bytes], dict[str, Any]], ...], tuple[
     )
 
 
-def animation_config_framers() -> tuple[tuple[Callable[[bytes], dict[str, Any]], ...], tuple[type[BaseException], ...]]:
-    """AnimationConfig has a reviewed reader that already closes every file.
-
-    Registering the derived whole-root path here instead would report a far
-    lower figure for a family that is in fact exact, so the stronger reader
-    wins and the family is measured identically at both tiers.
-    """
-
+def animation_config_framers(*, strings=None, game_root=None) -> tuple[tuple[Callable[[bytes], dict[str, Any]], ...], tuple[type[BaseException], ...]]:
+    """Measure bounded current stored fields; opaque suffixes remain unnamed."""
     from scripts.game_data import animation_config_binary as animation
-
-    return ((animation.frame_animation_config,), (ValueError,))
+    return ((lambda data: animation.frame_animation_config(data, strings=strings, game_root=game_root),), (ValueError,))
 
 
 def char_interact_perform_framers() -> tuple[tuple[Callable[[bytes], dict[str, Any]], ...], tuple[type[BaseException], ...]]:
@@ -531,10 +524,29 @@ FAMILIES: dict[str, Callable[[], tuple[tuple[Callable[[bytes], dict[str, Any]], 
 }
 
 
+def _model_view_coverage(json_root, game_root):
+    """Measure the freshly proved graph; other Interactive roots keep their own tier."""
+    import hashlib
+    from scripts.game_data.string_pool import export_string_pool
+    from scripts.game_data.model_view_state_controller_binary import model_view_operation
+    root=Path(json_root)/'Interactive'
+    def sources():return {p:hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(root.rglob('*'))if p.is_file()}
+    before=sources()
+    try:
+        with model_view_operation(export_string_pool(Path(json_root)),game_root=game_root)as reader:
+            others,errors=FAMILIES['Interactive']()
+            result=sweep(root,(reader,*others),(ValueError,*errors))
+        if sources()!=before:raise CoverageError('Interactive source set or bytes changed during coverage')
+        return result
+    except ValueError as error:
+        raise CoverageError('Current ModelView coverage refused: '+str(error))from error
+
+
 def build_report(
     json_root: Path = DEFAULT_JSON_ROOT,
     families: Iterable[str] = (),
     declarations_report: Path | None = None,
+    *, game_root: Path | None = None,
 ) -> dict[str, Any]:
     global _DECLARATIONS
     _DECLARATIONS = None
@@ -561,7 +573,23 @@ def build_report(
         "families": {},
     }
     for name in selected:
-        framers, errors = FAMILIES[name]()
+        if name == 'Interactive':
+            report['families'][name]=_model_view_coverage(json_root,game_root)
+            continue
+        animation_inputs = None
+        if name == "AnimationConfig":
+            from scripts.game_data.string_pool import export_string_pool
+            from scripts.game_data.levelscript_reader_inputs import snapshot_string_pool_inputs, snapshot_complete_reader_inputs
+            from scripts.game_data.animation_masks_native import validate
+            animation_inputs = (snapshot_string_pool_inputs(Path(json_root)), snapshot_complete_reader_inputs(), validate(game_root=game_root))
+            strings = export_string_pool(Path(json_root))
+            if strings is None:
+                raise CoverageError("AnimationConfig requires a matching current StringPool")
+            if animation_inputs[2].get("status") != "validated":
+                raise CoverageError("Animation mask native source: " + str(animation_inputs[2])[:1000])
+            framers, errors = animation_config_framers(strings=strings, game_root=game_root)
+        else:
+            framers, errors = FAMILIES[name]()
         if not framers:
             # No framer claims this family at this tier. That is not zero
             # coverage -- it is an absence of measurement, and reporting it as
@@ -573,6 +601,11 @@ def build_report(
             }
             continue
         report["families"][name] = sweep(Path(json_root) / name, framers, errors)
+        if animation_inputs is not None:
+            after = (snapshot_string_pool_inputs(Path(json_root)), snapshot_complete_reader_inputs(), validate(game_root=game_root))
+            if animation_inputs != after or after[2].get("status") != "validated":
+                raise CoverageError("Animation pool/native/reader inputs changed during coverage")
+            report["families"][name]["selectedInputs"] = {"stringPool": after[0], "readerInputs": after[1], "native": after[2]}
     return report
 
 
@@ -595,6 +628,7 @@ def main(argv: list[str] | None = None) -> int:
         help="limit the sweep to this family; repeatable",
     )
     parser.add_argument("--report", type=Path)
+    parser.add_argument("--game-root", type=Path, help="Selected Endfield_Data for native-backed framers")
     parser.add_argument(
         "--declarations",
         type=Path,
@@ -606,7 +640,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        report = build_report(args.json_root, args.family, args.declarations)
+        report = build_report(args.json_root, args.family, args.declarations, game_root=args.game_root)
     except CoverageError as exc:
         print(f"JsonData coverage unavailable: {exc}", file=sys.stderr)
         return 2

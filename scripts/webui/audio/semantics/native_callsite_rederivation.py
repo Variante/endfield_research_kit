@@ -21,8 +21,9 @@ left empty rather than carried over. The reviewed prose beside a row (trigger
 role, branch condition) is a reading of the previous build; a verified row
 proves the literal and the playback path, not that prose.
 
-The evaluation opens the whole binary, so it is cached under ``reports/`` and
-reused only for the same build and the same catalog.
+Every operation re-proves the catalog against its selected native pair. A
+report records the evaluation and is never reused as proof. Audio shares one
+explicit lexical operation; standalone callers evaluate afresh.
 
 The same by-name re-derivation covers the other build-locked catalogs from
 ``build_contracts``: SwitchAudioCustomState callsites and voice-response
@@ -49,11 +50,14 @@ Authored and HIRC evidence is unaffected by any withheld row.
 from __future__ import annotations
 
 import bisect
+import copy
 import hashlib
 import json
 import re
 import struct
 from collections import defaultdict
+from contextlib import contextmanager
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
@@ -1060,7 +1064,7 @@ def rederive_catalogs(
     catalogs: Mapping[str, Mapping[str, Mapping[str, Any]]],
     *,
     routes: Mapping[str, Mapping[str, Any]] | None = None,
-    report_path: Path = DEFAULT_REPORT,
+    report_path: Path | None = DEFAULT_REPORT,
     index_factory: Any = None,
     gameassembly_path: Path | None = None,
     metadata_path: Path | None = None,
@@ -1086,12 +1090,7 @@ def rederive_catalogs(
         "gameAssemblySha256": native.gameassembly_sha256.upper(),
         "globalMetadataSha256": native.metadata_sha256.upper(),
     }
-    try:
-        cached = json.loads(Path(report_path).read_bytes())
-    except (OSError, ValueError):
-        cached = {}
-    if isinstance(cached, dict) and all(cached.get(k) == v for k, v in key.items()):
-        return {"status": "validated", **cached}
+    source_inputs = _source_inputs()
     if index_factory is None:
         from scripts.game_data.il2cpp.body_claims import BodyIndex
         from scripts.game_data.il2cpp.native_image import open_native_image
@@ -1116,7 +1115,12 @@ def rederive_catalogs(
         if current is None:
             withheld.setdefault("routes", {})[name] = reason
     result = {**key, "catalogs": verified, "routes": current_routes, "withheld": withheld}
-    write_canonical_json(Path(report_path), result)
+    detail = _exit_detail(native.gameassembly, native.metadata, key, source_inputs, catalogs, routes)
+    if detail:
+        return {"status": "mismatched", "detail": detail,
+                "catalogs": {name: {} for name in catalogs}, "routes": {name: None for name in routes or {}},
+                "withheld": {"operation": {"exit": detail}}}
+    if report_path is not None:write_canonical_json(Path(report_path), result)
     return {"status": "validated", **result}
 
 
@@ -1170,15 +1174,66 @@ def reviewed_catalogs() -> dict[str, Mapping[str, Mapping[str, Any]]]:
     }
 
 
+def _source_inputs():
+    from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs
+    return snapshot_complete_reader_inputs()
+
+
+def _exit_detail(gameassembly, metadata, key, source_inputs, catalogs, routes):
+    native = check_installed_native_inputs(key["gameAssemblySha256"], key["globalMetadataSha256"],
+                                          gameassembly=gameassembly, metadata=metadata)
+    if native.status != "validated":return "audioNativeCatalog.native-exit:" + native.status + ":" + str(native.detail)[:500]
+    if _source_inputs() != source_inputs:return "audioNativeCatalog.source-exit:complete reader/dependency bytes changed"
+    if _catalog_digest({"catalogs": catalogs, "routes": routes or {}}) != key["catalogSha256"]:
+        return "audioNativeCatalog.catalog-exit:reviewed catalog or route inputs changed"
+    return ""
+
+
+class _CurrentCatalogs:
+    def __init__(self,result):self.result=result;self.owner=None;self.active=True
+    def read(self,owner):
+        if not self.active or owner is not self.owner:raise ValueError("audioNativeCatalog.inactive-or-wrong-owner")
+        return copy.deepcopy(self.result)
+
+
+@contextmanager
+def current_catalogs_operation(native_context, *, report_path=DEFAULT_REPORT):
+    """One explicit Audio owner; no saved success or cross-operation admission."""
+    if getattr(native_context,"catalog_operation",None) is not None:
+        raise ValueError("audioNativeCatalog.nested-or-leaked-operation")
+    if not(native_context.gate_verified and native_context.status in {"validated","mismatched"}):
+        yield native_context
+        return
+    catalogs=reviewed_catalogs();routes=reviewed_routes();source_inputs=_source_inputs()
+    key={"gameAssemblySha256":native_context.gameassembly_sha256.upper(),
+         "globalMetadataSha256":native_context.metadata_sha256.upper(),
+         "catalogSha256":_catalog_digest({"catalogs":catalogs,"routes":routes})}
+    detail=_exit_detail(native_context.gameassembly_path,native_context.metadata_path,key,source_inputs,catalogs,routes)
+    if detail:raise ValueError("audioNativeCatalog.entry:"+detail)
+    result=rederive_catalogs(catalogs,routes=routes,report_path=None,
+                            gameassembly_path=native_context.gameassembly_path,metadata_path=native_context.metadata_path)
+    if result.get("status")!="validated":raise ValueError("audioNativeCatalog.proof:"+str(result.get("detail")or result.get("status"))[:500])
+    proof=_CurrentCatalogs(result);owner=replace(native_context,catalog_operation=proof);proof.owner=owner
+    try:
+        yield owner
+        detail=_exit_detail(owner.gameassembly_path,owner.metadata_path,key,source_inputs,catalogs,routes)
+        if detail:raise ValueError(detail)
+        if report_path is not None:write_canonical_json(Path(report_path),result)
+    finally:
+        proof.active=False;proof.result=None;proof.owner=None
+
+
 def current_catalogs(native_context: Any) -> dict[str, dict[str, Any]]:
     """The callsite rows to publish for the build ``native_context`` measured.
 
     The reviewed rows on the build they were reviewed on; on another installed
     build that the gate measured, the rows re-derived there; otherwise none.
-    All catalogs are evaluated together so one cached evaluation serves every
-    consumer.
+    All catalogs are evaluated once in an explicit Audio operation; standalone
+    callers re-prove them on every call.
     """
     catalogs = reviewed_catalogs()
+    operation=getattr(native_context,"catalog_operation",None)
+    if operation is not None:return {name:dict((operation.read(native_context).get("catalogs")or{}).get(name)or{})for name in catalogs}
     if native_context.validated:
         return {name: dict(rows) for name, rows in catalogs.items()}
     if not (native_context.gate_verified and native_context.status == "mismatched"):
@@ -1192,9 +1247,11 @@ def current_catalogs(native_context: Any) -> dict[str, dict[str, Any]]:
 def current_routes(native_context: Any) -> dict[str, dict[str, Any] | None]:
     """The native voice routes to publish; ``None`` for a route that does not hold.
 
-    Evaluated in the same cached pass as ``current_catalogs``.
+    Shares only the same active explicit operation as ``current_catalogs``.
     """
     routes = reviewed_routes()
+    operation=getattr(native_context,"catalog_operation",None)
+    if operation is not None:return {name:(operation.read(native_context).get("routes")or{}).get(name)for name in routes}
     if native_context.validated:
         return {name: dict(spec) for name, spec in routes.items()}
     if not (native_context.gate_verified and native_context.status == "mismatched"):

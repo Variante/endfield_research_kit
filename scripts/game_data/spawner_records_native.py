@@ -31,9 +31,9 @@ def read_contract():
     return contract
 
 
-def check_spawner_records_native_inputs():
+def check_spawner_records_native_inputs(*, gameassembly=None, metadata=None):
     pins = read_contract()["nativeInputs"]
-    gate = check_installed_native_inputs(pins["GameAssembly.dll"], pins["global-metadata.dat"])
+    gate = check_installed_native_inputs(pins["GameAssembly.dll"], pins["global-metadata.dat"], gameassembly=gameassembly, metadata=metadata)
     if gate.status != "validated":
         return gate
     unity = gate.gameassembly.parent / "UnityPlayer.dll"

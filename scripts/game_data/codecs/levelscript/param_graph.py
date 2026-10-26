@@ -41,13 +41,13 @@ def decode_param_key_value_list(data,offset,field='paramKeyValues',*,strings=Non
  return result,reader.offset
 
 
-def decode_param_blackboard(data,offset,*,strings=None):
+def decode_param_blackboard(data,offset,*,strings=None,game_root=None):
  reader=Reader(data,offset,strings,'actionMap.paramBlackboard');start=offset
  if not reader.member(reader.field,1):return None,reader.offset
  reader.need(4,reader.field+'.value.count');count=struct.unpack_from('<i',data,reader.offset)[0]
  if count>0:
   from scripts.game_data.levelscript_param_list_native import load_param_list_for_graph_contract
-  layout,audit=load_param_list_for_graph_contract()
+  layout,audit=load_param_list_for_graph_contract(game_root=game_root)
   if layout is None:raise ParamGraphDecodeError(f"{reader.field}.nativeContract: status={audit['status']}, count={count}, detail={audit.get('detail','')}")
  value=reader.items(reader.field+'.value',reader.key_value)
  return dict(startOffset=start,endOffset=reader.offset,serializedMemberCount=1,valueCount=value['count'],value=value['values']),reader.offset

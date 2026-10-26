@@ -31,6 +31,7 @@ from scripts.game_data.il2cpp.body_claims import BodyIndex, ClaimError
 from scripts.game_data.il2cpp.context import usage_method_spec, unresolved_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.game_data.il2cpp import static_dictionary
+from scripts.game_data.il2cpp.protocol import read_compressed_int32
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
@@ -183,39 +184,6 @@ def _validated_current_ifix_evidence(
     return current_ifix
 
 
-def _read_compressed_uint32(data: bytes, offset: int) -> tuple[int, int]:
-    first = data[offset]
-    if first < 0x80:
-        return first, 1
-    if first < 0xC0:
-        return ((first & 0x3F) << 8) | data[offset + 1], 2
-    if first < 0xE0:
-        return (
-            ((first & 0x1F) << 16) | (data[offset + 1] << 8) | data[offset + 2],
-            3,
-        )
-    if first < 0xF0:
-        return (
-            ((first & 0x0F) << 24)
-            | (data[offset + 1] << 16)
-            | (data[offset + 2] << 8)
-            | data[offset + 3],
-            4,
-        )
-    if first == 0xF0:
-        return struct.unpack_from(">I", data, offset + 1)[0], 5
-    if first == 0xFE:
-        return 0xFFFFFFFE, 1
-    if first == 0xFF:
-        return 0xFFFFFFFF, 1
-    raise ContractError(f"unsupported compressed integer prefix 0x{first:02x}")
-
-
-def _read_compressed_int32(data: bytes, offset: int) -> int:
-    unsigned, _size = _read_compressed_uint32(data, offset)
-    return (unsigned >> 1) ^ -(unsigned & 1)
-
-
 def _runtime_type_name(
     pe: Any,
     metadata: Any,
@@ -330,11 +298,18 @@ def _enum_members(metadata: Any, type_name: str) -> list[dict[str, Any]]:
         name = metadata.string(field.name_index)
         if name == "value__" or field.index not in defaults:
             continue
+        offset = data_section.offset + defaults[field.index]
+        try:
+            value, _ = read_compressed_int32(metadata.buf, offset)
+        except (ValueError, IndexError, struct.error) as error:
+            raise ContractError(
+                f"validator=dialog_tree_static_port_contract gate=enum_default "
+                f"enum={type_name} field={name} fieldIndex={field.index} "
+                f"source=fieldAndParameterDefaultValueData+{defaults[field.index]} "
+                f"expected=complete-current-compressed-Int32 actual={str(error)[:300]}"
+            ) from error
         members.append({
-            "value": _read_compressed_int32(
-                metadata.buf,
-                data_section.offset + defaults[field.index],
-            ),
+            "value": value,
             "name": name,
             "fieldIndex": field.index,
             "token": f"0x{field.token:08x}",

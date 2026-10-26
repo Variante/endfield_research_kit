@@ -42,6 +42,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import resolve_installed_native_inputs
+from scripts.game_data.string_pool import export_string_pool
 from scripts.game_data.memorypack import derived_values
 from scripts.game_data.memorypack.derived_plans import WHOLE_RECORD_FAMILIES, load_registry
 from scripts.repo_paths import REPO_ROOT
@@ -181,6 +182,8 @@ def build(
             expected_input_set_sha256=expected_input_set_sha256,
             json_dir=layout.json_dir,
         )
+    strings = export_string_pool(layout.json_dir)
+    if strings is None:raise ValueError('playSoundCurrentSource:matching-StringPool-required')
     actions: list[dict[str, Any]] = []
     families: dict[str, Any] = {}
     for family in FAMILIES:
@@ -214,7 +217,7 @@ def build(
                     )
             try:
                 value, reached = derived_values.decode_file(
-                    raw, definition, registry, source=source
+                    raw, definition, registry, source=source, strings=strings
                 )
                 if reached != len(raw):
                     raise ValueError(f"cursor={reached}, expected={len(raw)}")

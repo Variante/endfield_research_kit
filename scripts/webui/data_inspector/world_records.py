@@ -50,11 +50,11 @@ def spawner_record(path: Path, export_root: Path) -> dict[str, Any]:
     )
 
 
-def atmospheric_npc_record(path: Path, export_root: Path) -> dict[str, Any]:
+def atmospheric_npc_record(path: Path, export_root: Path, *, strings=None, game_root=None, npc_decoder=None) -> dict[str, Any]:
     return _record(
         path, export_root, family="atmospheric-npc",
         reader=lambda raw: frame_atmospheric_npc_table(
-            raw, strings=export_string_pool(export_root / "game" / "Json")
+            raw, strings=strings if strings is not None else export_string_pool(export_root / "game" / "Json"), game_root=game_root, npc_decoder=npc_decoder
         ),
         fact_keys=("entryCount", "namedNpcRuntimeProxyCount", "namedLevelEntityPrefixCount", "bytesConsumed"),
     )

@@ -1,69 +1,10 @@
-"""Sequential current LevelScript NPC dictionary over shared NPC proxy rows.
-
-The production sequential LevelScript owner reads positive `npcs` dictionary
-values through the shared 118-member `codecs.leveldata.npc_runtime` row
-codec. An unsupported nested row leaves the dictionary unread, so the owner
-stops at a named partial stop there; a whole-file result still requires the
-terminal cursor to reach physical EOF in the authenticated JsonData sweep.
-"""
-
-from __future__ import annotations
-
-import struct
-from typing import Any
-
-from scripts.game_data.codecs.leveldata.npc_runtime import (
-    LevelNpcCodecError,
-    decode_npc_runtime_proxy_at,
-)
+"""Selected current pooled uint-keyed NPC dictionary; no guessed row boundaries."""
+from scripts.game_data.memorypack.npc_runtime import npc_runtime_decoder,require_selected_decoder
 
 
-class LevelScriptNpcCodecError(ValueError):
-    """Malformed dictionary framing before a named NPC row."""
-
-
-_MAX_NPCS = 100_000
-
-
-def decode_npc_dictionary(
-    data: bytes, offset: int
-) -> tuple[dict[str, Any] | None, int]:
-    """Advance a uint-keyed NPC dictionary or stop at unsupported row data.
-
-    A row failure leaves the dictionary unread. No later byte is assigned to a
-    field until every entry has advanced with the shared 118-member reader.
-    """
-    if offset < 0 or offset + 4 > len(data):
-        raise LevelScriptNpcCodecError(f"truncated npcs count: offset={offset}")
-    count = struct.unpack_from("<i", data, offset)[0]
-    if count == -1:
-        return {
-            "status": "null", "count": None, "entries": None,
-            "startOffset": offset, "endOffset": offset + 4,
-        }, offset + 4
-    if count < 0 or count > _MAX_NPCS:
-        raise LevelScriptNpcCodecError(
-            f"invalid npcs count: offset={offset} value={count}"
-        )
-    cursor = offset + 4
-    entries: list[dict[str, Any]] = []
-    seen: set[int] = set()
-    for index in range(count):
-        if cursor + 4 > len(data):
-            raise LevelScriptNpcCodecError(
-                f"truncated npcs[{index}].key: offset={cursor}"
-            )
-        key = struct.unpack_from("<I", data, cursor)[0]
-        cursor += 4
-        if key in seen:
-            raise LevelScriptNpcCodecError(f"duplicate npcs key: value={key}")
-        seen.add(key)
-        try:
-            row, cursor = decode_npc_runtime_proxy_at(data, cursor, index)
-        except LevelNpcCodecError:
-            return None, offset
-        entries.append({"key": key, "value": row})
-    return {
-        "status": "present", "count": count, "entries": entries,
-        "startOffset": offset, "endOffset": cursor,
-    }, cursor
+def decode_npc_dictionary(data,offset,*,strings,gameassembly=None,metadata=None,npc_decoder=None):
+    if npc_decoder is not None:
+        require_selected_decoder(npc_decoder,strings=strings,gameassembly=gameassembly,metadata=metadata)
+        return npc_decoder.dictionary(data,offset,key_wire='uint')
+    with npc_runtime_decoder(strings=strings,gameassembly=gameassembly,metadata=metadata)as decode:
+        return decode.dictionary(data,offset,key_wire='uint')

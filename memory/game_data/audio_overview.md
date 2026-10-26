@@ -20,6 +20,12 @@ Evidence may advance only one layer at a time. A stronger downstream fact does
 not retroactively make every upstream candidate unique. Layers 5-6 need a host
 process or a bounded capture ([`audio_native_hooks.md`](audio_native_hooks.md)).
 
+Audio's runtime model reads stored enum constants with the shared IL2CPP
+metadata-default reader. Its F0 payload is a raw little-endian DWORD before
+the existing signed transform; the cache schema excludes older numeric
+projections. Music-state IDs and callback flags do not prove setter execution,
+active state or playback.
+
 Prioritize shared package, codec, HIRC and consumer rules by the current files
 or graph cohorts they can advance. A named voice is a possible representative,
 not the recovery unit. Reuse recorded observations and offline byte comparisons
@@ -129,6 +135,17 @@ Static possible Event reaches do not become the Event selected in the capture.
 The current projection preserves the broader boundary
 in `scripts/webui/audio/semantics/runtime_observations.py`; the request and
 native source evidence is documented in [`audio_native_hooks.md`](audio_native_hooks.md).
+
+Audio expression enum labels and selected game-side RTPC names have an independent
+current static-name contract. It authenticates the explicitly selected metadata
+and native type table, complete named enum declarations, typed literal fields,
+and the original selected default-value conversion. The full-width unsigned
+literal form reads its payload as little-endian bytes; the current source proof
+keeps other encodings and native dispatcher cases outside that admission. These
+static names do not validate old Audio callsite arrays, observe setters, choose
+live values, or establish DSP behavior. Serialized RTPC alignment also requires
+matching current source metadata and exact HIRC IDs; a native gate alone cannot
+refresh a stale generated Audio index.
 
 The native queue companion now authenticates the posted Event's exact registry
 lookup and the retained Event node/descriptor pair in one queue record. Its

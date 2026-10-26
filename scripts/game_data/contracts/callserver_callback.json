@@ -1,57 +1,18 @@
 {
-  "schema": "callServerCallbackNativeContract.v1",
-  "status": "validated",
-  "sources": {
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
-  },
-  "callServer": {
+  "schema": "callServerCallbackNativeContract.v2",
+  "status": "reviewed",
+  "copyClaim": {
     "type": "Beyond.Gameplay.Actions.CallServer",
-    "typeToken": "0x02001940",
-    "executeMethodToken": "0x06009579",
-    "executeMethodVa": "0x183a25f70",
-    "outputField": "_callClientOutputUIDs",
-    "outputFieldOffset": "this+0xd8",
-    "memoryPackSetter": "Beyond.MemoryPack.Beyond_Gameplay_Actions_CallServerForMemoryPack.set____callClientOutputUIDs__",
-    "memoryPackSetterMethodToken": "0x06009ee8",
-    "memoryPackSetterMethodVa": "0x183992730",
-    "callbackBranchVa": "0x184e918e6"
+    "method": "Execute",
+    "sourceField": "Beyond.Gameplay.Actions.CallServer::_callClientOutputUIDs",
+    "destinationField": "Beyond.Gameplay.Actions.ActionBase::m_waitForExtraUidList",
+    "fieldType": "System.Collections.Generic.List`1<string>",
+    "parameters": ["float"],
+    "returnType": "void"
   },
-  "actionBase": {
-    "type": "Beyond.Gameplay.Actions.ActionBase",
-    "typeToken": "0x02001314",
-    "setWaitMethod": "SetResultWaitForPossibleSubExecutor",
-    "setWaitMethodToken": "0x06008492",
-    "setWaitMethodVa": "0x1868f01b8",
-    "waitListField": "m_waitForExtraUidList",
-    "waitHeaderUidListOffset": "this+0x80"
+  "callbackContinuation": {
+    "status": "pendingReview",
+    "gate": "current_wait_list_to_on_custom_event_header_consumer"
   },
-  "validation": {
-    "byteGates": [
-      {
-        "label": "MemoryPack setter stores _callClientOutputUIDs at this+0xd8",
-        "va": "0x18399274c",
-        "bytes": "48 89 98 d8 00 00 00"
-      },
-      {
-        "label": "CallServer.Execute reads _callClientOutputUIDs from this+0xd8",
-        "va": "0x183a260b8",
-        "bytes": "48 8b 8b d8 00 00 00"
-      },
-      {
-        "label": "callback branch forwards the same list as argument two",
-        "va": "0x184e918e6",
-        "bytes": "48 8b 93 d8 00 00 00 45 33 c0 48 8b cb e8"
-      },
-      {
-        "label": "ActionBase stores the header UID wait list at this+0x80",
-        "va": "0x1868f01df",
-        "bytes": "48 89 bb 80 00 00 00"
-      }
-    ],
-    "setWaitCallTarget": "0x1868f01b8",
-    "validationFailures": []
-  },
-  "evidenceBoundary": "The installed binary proves that non-empty CallServer output strings are possible sub-executor header UIDs. They define callback control topology inside one LevelScript; they do not identify a mission owner or imply that every possible callback executes.",
-  "usesOcrOrManualOrder": false
+  "evidenceBoundary": "direct: fresh selected original Execute has a metadata-owned full reference copy from CallServer output UID list into inherited ActionBase wait-list storage. Conditional on reaching that original/IFix-bypass path with ordinary Win64 callees and valid stable heap. Owning current pooled ActionMap admission independently proves stored source fields. Unresolved: ActionExecutor wait-list enumeration, UID/header lookup and OnCustomEvent successor dispatch. This copy alone admits no callback edge, mission ownership, branch outcome or runtime execution."
 }

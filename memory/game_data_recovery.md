@@ -979,6 +979,14 @@ runtime question may improve understanding without decoding another file.
    CameraShake stays
    refused until its configuration wrapper's owned value slot, string store and
    optimized final-path receiver have an independent child composition proof.
+   Dialog-teleport, black-screen fade in/out, custom-performance start,
+   manual script start, NPC-proxy ready/patrol, radio-and-wait, audio play and
+   blend-camera-without-back routes share one reviewed parent contract
+   (`levelscript_residual_routes_native.json`). `AirWallEnable` stays refused:
+   its `Param<AirWallPtr>` constant is a three-field struct without a child
+   proof. Positive task/enemy/interactive/module/NPC maps stop at their
+   pooled child sources until those child codecs are proved on the current
+   build.
    The same authenticated first-stop census also supports
    `LevelScriptTemplateData`, with separate owner and report identities;
    template property/task refusals retain their diagnostics. A replayed EOF

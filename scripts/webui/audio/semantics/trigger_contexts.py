@@ -1410,93 +1410,6 @@ def _build_gameplay_config_trigger_contexts(
             })
     return contexts
 
-def _build_ability_voice_trigger_contexts(
-    event_rows: Iterable[dict[str, Any]],
-) -> list[dict[str, Any]]:
-    """Expose exact SkillData response-trigger actions without inventing playback."""
-
-    contexts: list[dict[str, Any]] = []
-    for event in event_rows:
-        if not isinstance(event, dict):
-            continue
-        event_id = str(event.get("id") or "").strip()
-        if not event_id:
-            continue
-        media_refs = [
-            ref for ref in (
-                _trigger_media_ref(row)
-                for row in event.get("media") or []
-                if isinstance(row, dict)
-            ) if ref
-        ]
-        for occurrence_index, context in enumerate(event.get("contexts") or []):
-            if (
-                not isinstance(context, dict)
-                or context.get("kind") != "abilityVoiceTriggerAction"
-            ):
-                continue
-            contexts.append({
-                "triggerId": (
-                    f"abilityVoiceTrigger:{context.get('configId')}:"
-                    f"{context.get('actionOffsetHex')}:{event_id}"
-                ),
-                "semanticKind": "abilityVoiceTriggerAction",
-                "triggerRole": "authoredAbilityVoiceResponseTrigger",
-                "situation": {
-                    "eventId": event_id,
-                    "eventHash": event.get("hash"),
-                    "ownerId": context.get("ownerId"),
-                    "configId": context.get("configId"),
-                    "triggerKey": context.get("triggerKey"),
-                    "speakerType": context.get("speakerType"),
-                },
-                "meaning": {
-                    "category": event.get("category"),
-                    "foundInWwise": bool(event.get("foundInWwise")),
-                    "possibleMediaCount": event.get("possibleMediaCount"),
-                    "eventSelectionStatus": context.get("eventSelectionStatus"),
-                },
-                "action": {
-                    "action": "VoiceTriggerAction",
-                    "unionTag": context.get("actionUnionTag"),
-                    "serializedMemberCount": context.get("serializedMemberCount"),
-                    "canInterruptTimeMs": context.get("canInterruptTimeMs"),
-                    "serverActionIndex": context.get("serverActionIndex"),
-                    "runtimeRoute": context.get("runtimeRoute"),
-                    "runtimeActivationStatus": context.get("runtimeActivationStatus"),
-                },
-                "owner": {
-                    "configKind": context.get("configKind"),
-                    "configId": context.get("configId"),
-                    "ownerId": context.get("ownerId"),
-                    "sourcePath": context.get("sourcePath"),
-                    "sourceSha256": context.get("sourceSha256"),
-                    "actionOffset": context.get("actionOffset"),
-                    "nativeMappingId": context.get("nativeMappingId"),
-                },
-                "selection": {
-                    "triggerBindingStatus": context.get("triggerBindingStatus"),
-                    "eventSelectionStatus": context.get("eventSelectionStatus"),
-                    "mediaSelectionStatus": (
-                        "wwiseEventMediaCandidates" if media_refs
-                        else "noDecodedMediaCandidate"
-                    ),
-                    "runtimeSelectionStatus": (
-                        "responsiveRuntimeSelectionUnobserved"
-                    ),
-                },
-                "mediaRefs": media_refs,
-                "evidence": {
-                    "definition": context.get("triggerRequestEvidence") or [],
-                    "owner": "exactSkillDataAbilityActionRecord",
-                    "media": "exactCurrentAudioDialogWwiseEventIdentity",
-                    "runtimeExecution": context.get("runtimeActivationStatus"),
-                },
-                "runtimeActivationStatus": context.get("runtimeActivationStatus"),
-                "sourceRefs": context.get("sourcePaths") or [],
-            })
-    return contexts
-
 def _build_responsive_voice_trigger_contexts(
     event_rows: Iterable[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -2398,7 +2311,6 @@ def build_trigger_context_catalog(
         "timelineAudio": _build_timeline_trigger_contexts(event_rows),
         "luaPostEvent": _build_lua_post_event_trigger_contexts(event_rows),
         "gameplayConfigAudio": _build_gameplay_config_trigger_contexts(event_rows),
-        "abilityVoiceTrigger": _build_ability_voice_trigger_contexts(event_rows),
         "responsiveVoiceTrigger": _build_responsive_voice_trigger_contexts(event_rows),
         "nativeVoiceTrigger": _build_native_voice_trigger_contexts(event_rows),
         "animationVoiceTrigger": _build_animation_voice_trigger_contexts(event_rows),
@@ -2475,10 +2387,13 @@ def build_trigger_context_catalog(
             "ownerStatus": "gameplayOwnerUnresolved",
         },
         "abilityVoiceTrigger": {
-            "source": "exact SkillData AbilityActionData VoiceTriggerAction records",
-            "storedTriggerContextRows": len(grouped["abilityVoiceTrigger"]),
-            "runtimeExecutionObserved": 0,
-            "runtimeSelectionStatus": "responsiveRuntimeSelectionUnobserved",
+            "status": "unresolved",
+            "source": "SkillData VoiceTriggerAction",
+            "requiredEvidence": ["current pooled owning action frame", "current compiled Audio consumer"],
+            "storedTriggerContextRows": 0,
+            "eventRequestsProved": False,
+            "audioActionAbsenceProved": False,
+            "evidenceBoundary": "An unowned byte-pattern match or AudioDialog name cannot prove a current action or Event request.",
         },
         "nativeVoiceTrigger": {
             "source": "fingerprint-locked current metadata literal handles and GameAssembly voice response callsites",

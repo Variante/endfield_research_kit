@@ -30,8 +30,9 @@ def derive_reference_parameter(image,pins,profile,value_type,*,reader_method):
   return dict(pointerRva=at-base,window=dict(startRva=at-base,endRva=end-base,sha256=hashlib.sha256(raw).hexdigest().upper()),instructions=[[int(r['va'],16)-base,bytes.fromhex(r['bytes']).hex().upper()] for r in rows])
  parent_entry=image.method_pointer_va(pm['Deserialize']);caller=record(parent_entry-base,fragments=True);primitive.reader_abi(image,ctx,pm['Deserialize'],parent)
  setters={n:image.method_pointer_va(pm['set___'+n+'__'])-base for n in ('constValue','idRef','paramSource','path')}
- targets=primitive.setter_call_program(image,caller,setters,width=8,typed_qword=True,integer_slots=profile['integerSlots'])
- usage=derive_typed_usage_context(image,caller['instructions'][19][0],label=LABEL)
+ initialized=profile.get('initializedHeader',False);scalar.need(LABEL,'initializedHeaderProfile',True,type(initialized) is bool and (not initialized or profile['integerSlots'] is None))
+ targets=primitive.initialized_enum_program(image,caller,setters,width=8) if initialized else primitive.setter_call_program(image,caller,setters,width=8,typed_qword=True,integer_slots=profile['integerSlots'])
+ usage=derive_typed_usage_context(image,caller['instructions'][28 if initialized else 19][0],label=LABEL)
  scalar.need(LABEL,'typedValueRead',('MemoryPack.MemoryPackReader',reader_method,[],[VALUE]),tuple(usage[k] for k in ('typeName','methodName','classArguments','methodArguments')))
  offsets=scalar.reader_offsets(image,LABEL);header=record(targets['header']);primitive.object_header_source(image,header,offsets)
  integer=record(targets['idRef']);scalar.integer_source(image,integer,offsets,LABEL+'.integer');scalar.need(LABEL,'sameInteger',targets['idRef'],targets['paramSource'])
@@ -50,7 +51,7 @@ def derive_reference_parameter(image,pins,profile,value_type,*,reader_method):
  scalar.need(LABEL,'allocatedParam',parent.wrapped_type,allocation['typeName']);scalar.allocation_bridge(image,ctx,dict(methods=own,ownedFieldSlots=slots,allocationContext=allocation),LABEL+'.allocation')
  pointer=base+targets['null'];fragment,=[p['runtimeTriple'][:2] for p in image.unwind_index.family(parent_entry-base)['ranges'] if p['runtimeTriple'][0]<=pointer-base<p['runtimeTriple'][1]]
  a,b=fragment;rows=image.body_index._decode(pointer,base+b-pointer);null=dict(window=dict(startRva=pointer-base,endRva=b,sha256=hashlib.sha256(image.pe.bytes_at_va(pointer,base+b-pointer)).hexdigest().upper()),instructions=[[int(r['va'],16)-base,bytes.fromhex(r['bytes']).hex().upper()] for r in rows],fragmentStartRva=a,fragmentEndRva=b)
- barrier=primitive.null_output_program(image,null,caller['instructions'][57][0])
+ barrier=primitive.null_output_program(image,null,caller['instructions'][68 if initialized else 57][0])
  def tail(r):
   (at,raw),=[row for row in r['instructions'] if bytes.fromhex(row[1])[:1]==b'\xe9'];raw=bytes.fromhex(raw);return at+5+int.from_bytes(raw[1:],'little',signed=True)
  scalar.need(LABEL,'parentReferenceBarriers',[barrier,barrier],[tail(own['set___constValue__']),tail(own['set___path__'])])

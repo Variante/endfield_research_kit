@@ -6,8 +6,9 @@ windows, native offsets and helper joins for ``FAnimationCurve`` and
 ``FKeyframe`` wrapper reads alphabetical setter order and stores into native
 offsets, while ``FAnimationCurve.keys`` is a counted bulk unmanaged array of
 32-byte elements in native struct order, followed by ``postWrapMode`` and
-``preWrapMode``. ``scripts.game_data.animation_config_binary`` loads the
-bulk layout from this contract and refuses a changed shape.
+``preWrapMode``. This standalone contract remains build-gated; the current
+AnimationConfig reader admits only its separately proved prefix and does not
+consume this historical curve layout.
 """
 
 from __future__ import annotations

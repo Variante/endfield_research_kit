@@ -5,7 +5,6 @@ from scripts.game_data.codecs.leveldata.memorypack import (
     read_count,
     read_i32,
     read_pooled_string,
-    read_string,
     read_u32,
     read_u64,
     skip_bytes,
@@ -217,52 +216,3 @@ def parse_airwall_groups(data: bytes, *, strings: StringPool | None = None) -> l
             "pushBackRadioId": pushback_radio_id,
         })
     return rows
-
-
-def parse_function_area_radio_trigger(data: bytes, offset: int) -> dict | None:
-    """Parse one exact LevelFunctionArea RadioTriggerZoneData union row."""
-    if (
-        offset < 4
-        or data[offset : offset + 2] != b"\x09\x07"
-        or int.from_bytes(data[offset - 4 : offset], "little", signed=True) != 1
-    ):
-        return None
-    cursor = offset + 2
-    values: list[str] = []
-    for _ in range(5):
-        decoded = read_string(data, cursor)
-        if decoded is None:
-            return None
-        value, cursor = decoded
-        values.append(value)
-    trigger_decoded = read_u64(data, cursor)
-    if trigger_decoded is None:
-        return None
-    trigger_id, cursor = trigger_decoded
-    if trigger_id <= 0 or cursor >= len(data) or data[cursor] not in (0, 1):
-        return None
-    use_once = bool(data[cursor])
-    cursor += 1
-    (
-        hide_after_mission_id,
-        hide_before_mission_id,
-        hide_complete_mission_id,
-        prts_id,
-        radio_id,
-    ) = values
-    if not isinstance(radio_id, str) or not radio_id.startswith("radio_"):
-        return None
-    return {
-        "recordOffset": offset,
-        "recordEndOffset": cursor,
-        "unionTag": 9,
-        "serializedMemberCount": 7,
-        "specificDataListCount": 1,
-        "hideAfterMissionId": hide_after_mission_id,
-        "hideBeforeMissionId": hide_before_mission_id,
-        "hideCompleteMissionId": hide_complete_mission_id,
-        "prtsId": prts_id,
-        "radioId": radio_id,
-        "triggerId": str(trigger_id),
-        "useRadioTriggerOnce": use_once,
-    }

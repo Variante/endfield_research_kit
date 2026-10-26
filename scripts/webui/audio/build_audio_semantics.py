@@ -55,8 +55,8 @@ from scripts.common import sha256_file as file_sha256
 from scripts.webui.audio.semantics import conversation_sidecar
 from scripts.webui.audio.semantics import package_catalog
 from scripts.webui.audio.semantics import native_callsite_rederivation
-from scripts.webui.audio.semantics.entity_contexts import build_custom_footstep_model, collect_ability_voice_trigger_contexts, collect_char_interact_audio_semantics, collect_gameplay_contexts, collect_patrol_sub_action_audio_semantics, collect_spawner_pre_warn_semantics
-from scripts.webui.audio.semantics.levelsequence import build_levelsequence_audio_contexts, collect_levelsequence_play_actions
+from scripts.webui.audio.semantics.entity_contexts import build_custom_footstep_model, collect_char_interact_audio_semantics, collect_gameplay_contexts, collect_patrol_sub_action_audio_semantics, collect_spawner_pre_warn_semantics
+from scripts.webui.audio.semantics.levelsequence import build_levelsequence_audio_contexts
 from scripts.webui.audio.semantics.mono_behaviour import build_runtime_model, collect_metadata_event_symbol_aliases, collect_mono_behaviour_audio_id_contexts, AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS
 from scripts.webui.audio.semantics.timeline import build_timeline_audio_cue_contexts, collect_timeline_audio_ownership, enrich_timeline_audio_ownership_from_raw_json, merge_timeline_audio_ownership, normalize_levelsequence_audio_id
 from scripts.webui.audio.semantics.levelscript import attach_levelscript_radio_contexts, collect_levelscript_audio_semantics
@@ -990,681 +990,679 @@ def build_audio_semantic_data(
         metadata_path,
         gameassembly_path,
     )
-    # Several legacy projections read the broad HIRC summary with ``.get``.
-    # Keep their working view bounded when an older/corrupt index has a
-    # malformed summary, while retaining the original for the strict RTPC
-    # validator and fail-closed publication below.
-    alignment_audio_index = audio_index
-    if not isinstance(audio_index, dict):
-        audio_index = {}
-    else:
-        raw_hirc_summary = audio_index.get("hircSummary")
-        if not isinstance(raw_hirc_summary, dict):
-            audio_index = dict(audio_index)
-            audio_index["hircSummary"] = {}
-        elif not isinstance(raw_hirc_summary.get("postProcessSummary"), dict):
-            audio_index = dict(audio_index)
-            safe_hirc_summary = dict(raw_hirc_summary)
-            safe_hirc_summary["postProcessSummary"] = {}
-            audio_index["hircSummary"] = safe_hirc_summary
-    if cutscene_events is None:
-        cached_cutscene_events = audio_index.get("cutsceneAudioEvents")
-        # The persisted map is the exact binary placement evidence. Published
-        # Story cards are only a compatibility fallback for older indexes;
-        # merging them would re-add line-bound audio whose purpose is already
-        # known and multiply generic timeline contexts across aliases.
-        cutscene_events = (
-            merge_cutscene_event_maps(cached_cutscene_events)
-            if isinstance(cached_cutscene_events, dict) and cached_cutscene_events
-            else collect_webui_cutscene_events(webui_root, language)
-        )
-    runtime_model = native_callsite_rederivation.overlay_runtime_model(
-        build_runtime_model(metadata_path, export_root), native_context,
-    )
-    static_provider_preparation = source_provider.build_static_provider_preparation(
-        gameassembly=gameassembly_path, metadata=metadata_path,
-    )
-    native_entry_observations = (
-        source_owner_capture.audit(native_entry_session, gameassembly=gameassembly_path, metadata=metadata_path,
-                                   package_index=native_entry_package_index, decode_witness=native_entry_decode_witness)
-        if native_entry_session is not None else {"status": "notRequested", "claimsAvailable": False}
-    )
-    current_wwise_event_hashes = {
-        int(row.get("eventHash")) & 0xFFFFFFFF
-        for row in audio_index.get("wwiseEventInventory") or []
-        if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
-    }
-    try:
-        scene_background_semantics = scene_backgrounds.collect_scene_background_semantics(
-            export_root,
-            audio_index,
-        )
-    except scene_backgrounds.SceneBackgroundError as exc:
-        scene_background_semantics = {
-            "schemaVersion": scene_backgrounds.SCHEMA_VERSION,
-            "status": "unavailable",
-            "error": str(exc),
-            "sources": [],
-            "counts": {},
-            "scenes": [],
-            "unresolvedSceneDefinitions": [],
-            "audioMaps": [],
-            "sceneEmitters": [],
-            "eventContexts": {},
-            "evidenceBoundary": (
-                "Scene background semantics were withheld because the published "
-                f"AnimeStudio object-index gate failed: {exc}"
-            ),
-        }
-    metadata_event_symbol_catalog = collect_metadata_event_symbol_aliases(
-        metadata_path,
-        current_wwise_event_hashes,
-    )
-    mono_behaviour_audio_id_semantics = collect_mono_behaviour_audio_id_contexts(
-        export_root,
-        current_wwise_event_hashes,
-    )
-    literal_context_index, managed_literal_names = managed_literals.collect_contexts(
-        metadata_path,
-        native_context=native_context,
-        current_wwise_event_hashes=current_wwise_event_hashes,
-    )
-    cue_semantics = table_contexts.collect_audio_cue_semantics(
-        export_root,
-        native_context=native_context,
-    )
-    global_controls = table_contexts.collect_audio_global_control_semantics(
-        export_root, cue_semantics
-    )
-    spawner_semantics = collect_spawner_pre_warn_semantics(export_root)
-    patrol_semantics = collect_patrol_sub_action_audio_semantics(export_root)
-    char_interact_semantics = collect_char_interact_audio_semantics(export_root)
-    physics_audio_semantics = authored_components.collect_physics_audio_semantics(
-        export_root
-    )
-    model_view_semantics = authored_components.collect_model_view_state_audio_semantics(
-        export_root
-    )
-    # Metadata-derived RTPC names are native/static facts.  Keep them behind
-    # the same explicit selected metadata + GameAssembly gate as the static
-    # six-field alignment; serialized table controls remain available when the
-    # gate is unavailable.
-    managed_rtpc_parameters = [{
-        "kind": "rtpcParameter",
-        "parameterName": name,
-        "source": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat:stringLiteral",
-        "evidence": "exactManagedStringLiteral",
-        "evidenceClass": "authoredStatic",
-        "wwiseEventStatus": "notApplicable",
-    } for name in (
-        # Names come from the installed metadata and match HIRC ids by hash;
-        # they carry no address of the reviewed build, so any measured build
-        # supplies them.
-        identifiers.collect_metadata_audio_literals(metadata_path)
-        if native_context.gate_verified and native_context.status in {"validated", "mismatched"}
-        else []
-    ) if identifiers.is_rtpc_parameter_name(name)]
-    rtpc_names_by_hex: dict[str, str] = {}
-    rtpc_name_collisions: set[str] = set()
-    for row in managed_rtpc_parameters:
-        parameter_name = str(row.get("parameterName") or "").strip()
-        if not parameter_name:
-            continue
-        parameter_hex = f"0x{identifiers.audio_hash_generator_compute(parameter_name):08x}"
-        previous = rtpc_names_by_hex.get(parameter_hex)
-        if previous and previous.casefold() != parameter_name.casefold():
-            rtpc_name_collisions.add(parameter_hex)
+    with native_callsite_rederivation.current_catalogs_operation(native_context) as native_context:
+        # Several legacy projections read the broad HIRC summary with ``.get``.
+        # Keep their working view bounded when an older/corrupt index has a
+        # malformed summary, while retaining the original for the strict RTPC
+        # validator and fail-closed publication below.
+        alignment_audio_index = audio_index
+        if not isinstance(audio_index, dict):
+            audio_index = {}
         else:
-            rtpc_names_by_hex[parameter_hex] = parameter_name
-    for parameter_hex in rtpc_name_collisions:
-        rtpc_names_by_hex.pop(parameter_hex, None)
-    levelscript_semantics = collect_levelscript_audio_semantics(
-        export_root,
-        cue_semantics=cue_semantics,
-    )
-    responsive_voice_contexts = responsive_voice.collect_responsive_voice_contexts(
-        export_root,
-        audio_index,
-        native_context=native_context,
-    )
-    ability_voice_trigger_contexts = collect_ability_voice_trigger_contexts(
-        export_root,
-        audio_index,
-    )
-    native_voice_trigger_contexts = voice_requests.collect_native_voice_trigger_contexts(
-        audio_index,
-        native_context,
-    )
-    animation_voice_trigger_contexts = voice_requests.collect_animation_voice_trigger_contexts(
-        export_root,
-        audio_index,
-        native_context,
-    )
-    voice_table_contexts = voice_table_event_contexts(audio_index)
-    typed_ui_table_contexts = typed_ui_table_event_contexts(audio_index)
-    sns_voice_contexts = sns_voice_event_contexts(audio_index)
-    base_contexts = merge_contexts(
-        collect_gameplay_contexts(webui_root, language),
-        collect_projectile_contexts(webui_root),
-        spawner_semantics.get("eventContexts") or {},
-        patrol_semantics.get("eventContexts") or {},
-        char_interact_semantics.get("eventContexts") or {},
-        physics_audio_semantics.get("eventContexts") or {},
-        model_view_semantics.get("eventContexts") or {},
-        scene_background_semantics.get("eventContexts") or {},
-        mono_behaviour_audio_id_semantics.get("eventContexts") or {},
-        levelscript_semantics.get("eventContexts") or {},
-        table_contexts.collect_table_contexts(
-            export_root,
-            runtime_model,
-            cue_semantics=cue_semantics,
-            global_controls=global_controls,
-        ),
-        cutscene_contexts(cutscene_events),
-        lua_audio_contexts(audio_index),
-        literal_context_index,
-        responsive_voice_contexts,
-        ability_voice_trigger_contexts,
-        native_voice_trigger_contexts,
-        animation_voice_trigger_contexts,
-        voice_table_contexts,
-        typed_ui_table_contexts,
-        sns_voice_contexts,
-    )
-    candidate_counts: Counter[str] = Counter()
-    candidate_hash_contexts: dict[str, set[str]] = defaultdict(set)
-    for entry in audio_index.get("events") or []:
-        if not isinstance(entry, dict):
-            continue
-        event_id = str(entry.get("eventId") or entry.get("id") or "").strip().lower()
-        if event_id:
-            candidate_counts[event_id] += 1
-            try:
-                event_hash = int(entry.get("eventHash")) & 0xFFFFFFFF
-            except (TypeError, ValueError):
-                event_hash = None
-            if event_hash is not None:
-                candidate_hash_contexts[event_id].add(identifiers.event_hash_context_key(event_hash))
-    timeline_target_event_ids = {
-        event_id for event_id, count in candidate_counts.items()
-        if count > 0
-        and event_id not in base_contexts
-        and not any(key in base_contexts for key in candidate_hash_contexts.get(event_id, set()))
-    }
-    levelsequence_play_actions = collect_levelsequence_play_actions(export_root)
-    timeline_ownership_parts: list[dict[str, Any]] = []
-    # Each installed layer's merged object index holds its MonoBehaviour and
-    # PlayableDirector rows together; the Timeline reader filters by classId.
-    layout = ExportLayout(export_root)
-    streaming_mono_index = layout.object_index_dir("StreamingAssets") / "objects.jsonl.gz"
-    streaming_director_index = streaming_mono_index
-    if streaming_mono_index.is_file():
-        timeline_ownership_parts.append(collect_timeline_audio_ownership(
-            export_root,
-            event_ids=timeline_target_event_ids,
-            mono_path=streaming_mono_index,
-            director_path=streaming_director_index,
-        ))
-    persistent_mono_index = layout.object_index_dir("Persistent") / "objects.jsonl.gz"
-    persistent_director_index = persistent_mono_index
-    if persistent_mono_index.is_file():
-        # Persistent carries the story Timeline assets that are absent from
-        # the StreamingAssets-only semantic pass.  Scan all authored Event
-        # keys so a key missing from the current Wwise index remains visible
-        # as an explicit authored request rather than disappearing.
-        timeline_ownership_parts.append(collect_timeline_audio_ownership(
-            export_root,
-            event_ids=None,
-            mono_path=persistent_mono_index,
-            director_path=persistent_director_index,
-        ))
-    if timeline_ownership_parts:
-        timeline_ownership = merge_timeline_audio_ownership(timeline_ownership_parts)
-        timeline_ownership = enrich_timeline_audio_ownership_from_raw_json(
-            export_root,
-            timeline_ownership,
-        )
-        timeline_ownership["objectIndexSources"] = [
-            source
-            for source, path in (
-                ("StreamingAssets", streaming_mono_index),
-                ("Persistent", persistent_mono_index),
+            raw_hirc_summary = audio_index.get("hircSummary")
+            if not isinstance(raw_hirc_summary, dict):
+                audio_index = dict(audio_index)
+                audio_index["hircSummary"] = {}
+            elif not isinstance(raw_hirc_summary.get("postProcessSummary"), dict):
+                audio_index = dict(audio_index)
+                safe_hirc_summary = dict(raw_hirc_summary)
+                safe_hirc_summary["postProcessSummary"] = {}
+                audio_index["hircSummary"] = safe_hirc_summary
+        if cutscene_events is None:
+            cached_cutscene_events = audio_index.get("cutsceneAudioEvents")
+            # The persisted map is the exact binary placement evidence. Published
+            # Story cards are only a compatibility fallback for older indexes;
+            # merging them would re-add line-bound audio whose purpose is already
+            # known and multiply generic timeline contexts across aliases.
+            cutscene_events = (
+                merge_cutscene_event_maps(cached_cutscene_events)
+                if isinstance(cached_cutscene_events, dict) and cached_cutscene_events
+                else collect_webui_cutscene_events(webui_root, language)
             )
-            if path.is_file()
-        ]
-    else:
-        timeline_ownership = collect_timeline_audio_ownership(
-            export_root,
-            event_ids=timeline_target_event_ids,
+        runtime_model = native_callsite_rederivation.overlay_runtime_model(
+            build_runtime_model(metadata_path, export_root), native_context,
         )
-    timeline_context_event_ids = timeline_target_event_ids | {
-        str(event_id or "").strip().lower()
-        for event_id in (timeline_ownership.get("occurrencesByEvent") or {})
-        if str(event_id or "").strip()
-    }
-    timeline_cue_semantics = build_timeline_audio_cue_contexts(
-        timeline_ownership,
-        cue_semantics,
-    )
-    levelsequence_semantics = build_levelsequence_audio_contexts(
-        timeline_context_event_ids,
-        timeline_ownership,
-        levelsequence_play_actions,
-    )
-    contexts = merge_contexts(
-        base_contexts,
-        levelsequence_semantics.get("eventContexts") or {},
-        timeline_cue_semantics.get("eventContexts") or {},
-    )
-    context_kind_counts = Counter(
-        str(context.get("kind") or "unknown")
-        for rows in contexts.values()
-        for context in rows
-        if isinstance(context, dict)
-    )
-    context_kind_event_counts = Counter(
-        kind
-        for rows in contexts.values()
-        for kind in {
-            str(context.get("kind") or "unknown")
-            for context in rows
-            if isinstance(context, dict)
+        static_provider_preparation = source_provider.build_static_provider_preparation(
+            gameassembly=gameassembly_path, metadata=metadata_path,
+        )
+        native_entry_observations = (
+            source_owner_capture.audit(native_entry_session, gameassembly=gameassembly_path, metadata=metadata_path,
+                                       package_index=native_entry_package_index, decode_witness=native_entry_decode_witness)
+            if native_entry_session is not None else {"status": "notRequested", "claimsAvailable": False}
+        )
+        current_wwise_event_hashes = {
+            int(row.get("eventHash")) & 0xFFFFFFFF
+            for row in audio_index.get("wwiseEventInventory") or []
+            if isinstance(row, dict) and isinstance(row.get("eventHash"), int)
         }
-    )
-    wwise_selector_groups = wwise_selector_group_catalog(native_context)
-    events, media_to_events, banks = event_projection.build_event_rows(
-        audio_index,
-        contexts,
-        selector_groups=wwise_selector_groups,
-        rtpc_names_by_hex=rtpc_names_by_hex,
-        metadata_event_symbols=metadata_event_symbol_catalog.get("entries") or [],
-    )
-    # Scene-global attribution is a compact projection of the already merged
-    # scene catalog and Event contexts.  The domain helper owns the exact
-    # producer/scene gates; this entrypoint only wires collected data through.
-    for event in events:
-        event.update(scene_backgrounds.project_scene_global_compact_attribution(
-            event.get("contexts") or [],
-            scene_background_semantics,
-            contexts_truncated=event.get("contextsTruncated") is not False,
-        ))
-        event.update(scene_backgrounds.project_scene_emitter_compact_attribution(
-            event.get("contexts") or [],
-            scene_background_semantics,
-            scene_background_semantics.get("streamingInstanceCatalog"),
-        ))
-    # Full AudioCue ASTs are detail-only.  Event list rows remain compact;
-    # ``event_summary`` intentionally does not project this payload.
-    for event in events:
-        cue_detail = table_contexts.audio_cue_expression_detail_for_contexts(
-            event.get("contexts") or [], cue_semantics
+        try:
+            scene_background_semantics = scene_backgrounds.collect_scene_background_semantics(
+                export_root,
+                audio_index,
+            )
+        except scene_backgrounds.SceneBackgroundError as exc:
+            scene_background_semantics = {
+                "schemaVersion": scene_backgrounds.SCHEMA_VERSION,
+                "status": "unavailable",
+                "error": str(exc),
+                "sources": [],
+                "counts": {},
+                "scenes": [],
+                "unresolvedSceneDefinitions": [],
+                "audioMaps": [],
+                "sceneEmitters": [],
+                "eventContexts": {},
+                "evidenceBoundary": (
+                    "Scene background semantics were withheld because the published "
+                    f"AnimeStudio object-index gate failed: {exc}"
+                ),
+            }
+        metadata_event_symbol_catalog = collect_metadata_event_symbol_aliases(
+            metadata_path,
+            current_wwise_event_hashes,
         )
-        if cue_detail:
-            event["audioCueExpressionDetail"] = cue_detail
-    character_audio_catalog = (
-        media_ownership.collect_character_audio_identity_catalog(export_root)
-    )
-    animation_action_ownership = (
-        media_ownership.annotate_event_animation_action_identity(events)
-    )
-    animation_callback_ownership = (
-        media_ownership.annotate_event_animation_callback_links(
-            events, export_root=export_root
+        mono_behaviour_audio_id_semantics = collect_mono_behaviour_audio_id_contexts(
+            export_root,
+            current_wwise_event_hashes,
         )
-    )
-    character_audio_ownership = (
-        media_ownership.annotate_event_character_audio_identity(
-            events,
-            character_audio_catalog,
+        literal_context_index, managed_literal_names = managed_literals.collect_contexts(
+            metadata_path,
+            native_context=native_context,
+            current_wwise_event_hashes=current_wwise_event_hashes,
         )
-    )
-    action_control_evidence_by_event = {
-        str(event.get("id") or ""): list(event.get("evidence") or [])
-        for event in events
-        if str(event.get("id") or "")
-    }
-    wwise_action_control_catalog = event_projection.annotate_wwise_action_control_evidence(
-        action_control_evidence_by_event,
-        wwise_selector_groups,
-        rtpc_names_by_hex,
-    )
-    wwise_initial_rtpc_catalog = event_projection.build_initial_rtpc_parameter_catalog(
-        events
-    )
-    shared_play_target_event_count = purpose.annotate_shared_wwise_play_targets(events)
-    shared_media_leaf_event_count = purpose.annotate_shared_wwise_media_leaves(events)
-    shared_media_leaf_category_event_count = sum(
-        row.get("categoryEvidence") == "exactCompleteWwiseMediaLeafSetCategory"
-        for row in events
-    )
-    authored_name_category_event_count = sum(
-        bool(row.get("categoryNameEvidence"))
-        for row in events
-    )
-    media = build_media_rows(
-        audio_index,
-        media_to_events,
-        {
-            str(event.get("id") or ""): str(event.get("category") or "unknown")
-            for event in events
-            if event.get("id")
-        },
-        event_rows=events,
-    )
-    runtime_observation_projection = (
-        runtime_observations.apply_verified_runtime_observations(
-            events,
-            media,
-            runtime_trace_bundle,
-            expected_language=language,
+        cue_semantics = table_contexts.collect_audio_cue_semantics(
+            export_root,
             native_context=native_context,
         )
-    )
-    character_namespace_gameplay = (
-        media_ownership.project_character_namespace_gameplay_audio(events)
-    )
-    static_rtpc_alignment = rtpc_alignment.build_static_rtpc_alignment(
-        alignment_audio_index,
-        events,
-        media,
-        native_context=native_context,
-    )
-    radio_catalog = attach_levelscript_radio_contexts(
-        media,
-        export_root,
-        levelscript_semantics,
-    )
-    trigger_context_catalog = build_trigger_context_catalog(
-        events,
-        media,
-        webui_root,
-        language,
-        export_root=export_root,
-        levelscript_semantics=levelscript_semantics,
-        mono_behaviour_audio_id_contexts=(
-            mono_behaviour_audio_id_semantics.get("eventContexts") or {}
-        ),
-        model_view_semantics=model_view_semantics,
-        native_context=native_context,
-    )
-    media_trigger_context_counts = annotate_media_trigger_contexts(
-        media,
-        trigger_context_catalog,
-    )
-    media_trigger_semantic_category_counts = annotate_media_trigger_semantic_categories(
-        media,
-        trigger_context_catalog,
-    )
-    media_post_process_counts = {
-        "mediaWithPostProcessDirectEffects": sum(
-            bool(row.get("postProcessDirectEffectCount"))
-            for row in media
-        ),
-        "mediaPostProcessDirectEffectOccurrences": sum(
-            int(row.get("postProcessDirectEffectOccurrences") or 0)
-            for row in media
-        ),
-        "mediaWithPostProcessRtpcControls": sum(
-            bool(row.get("postProcessRtpcControlCount"))
-            for row in media
-        ),
-        "mediaPostProcessRtpcControlCount": sum(
-            int(row.get("postProcessRtpcControlCount") or 0)
-            for row in media
-        ),
-        "mediaWithPostProcessStateControls": sum(
-            bool(row.get("postProcessStateControlCount"))
-            for row in media
-        ),
-        "mediaPostProcessStateControlCount": sum(
-            int(row.get("postProcessStateControlCount") or 0)
-            for row in media
-        ),
-        "mediaWithPostProcessEffectChain": sum(
-            bool(row.get("postProcessEffectChainCount"))
-            for row in media
-        ),
-        "mediaPostProcessEffectChainCount": sum(
-            int(row.get("postProcessEffectChainCount") or 0)
-            for row in media
-        ),
-        "mediaWithPostProcessBusControls": sum(
-            bool(row.get("postProcessBusControlCount"))
-            for row in media
-        ),
-        "mediaPostProcessBusControlCount": sum(
-            int(row.get("postProcessBusControlCount") or 0)
-            for row in media
-        ),
-        "mediaPostProcessBusRtpcCurveCount": sum(
-            int(control.get("rtpcCurveCount") or 0)
-            for row in media
-            for control in row.get("postProcessBusControls") or ()
-            if isinstance(control, dict)
-        ),
-        "mediaPostProcessBusStateValueCount": sum(
-            int(control.get("stateValueCount") or 0)
-            for row in media
-            for control in row.get("postProcessBusControls") or ()
-            if isinstance(control, dict)
-        ),
-        "mediaWithPostProcessBusDucking": sum(
-            bool(row.get("postProcessBusDuckCount"))
-            for row in media
-        ),
-        "mediaPostProcessBusDuckBusCount": sum(
-            int(row.get("postProcessBusDuckCount") or 0)
-            for row in media
-        ),
-        "mediaPostProcessBusDuckReferenceCount": sum(
-            int(duck.get("duckCount") or 0)
-            for row in media
-            for duck in row.get("postProcessBusDucks") or ()
-            if isinstance(duck, dict)
-        ),
-        "mediaWithPostProcessAuxSends": sum(
-            bool(row.get("postProcessAuxSendCount"))
-            for row in media
-        ),
-        "mediaPostProcessAuxSendCount": sum(
-            int(row.get("postProcessAuxSendCount") or 0)
-            for row in media
-        ),
-        "mediaPostProcessAuxSendOccurrences": sum(
-            int(row.get("postProcessAuxSendOccurrences") or 0)
-            for row in media
-        ),
-        "mediaWithPostProcessProperties": sum(
-            bool(row.get("postProcessPropertyCount"))
-            for row in media
-        ),
-        "mediaPostProcessPropertyCount": sum(
-            int(row.get("postProcessPropertyCount") or 0)
-            for row in media
-        ),
-        "mediaPostProcessPropertyOccurrences": sum(
-            int(row.get("postProcessPropertyOccurrences") or 0)
-            for row in media
-        ),
-        "mediaWithPostProcessRanges": sum(
-            bool(row.get("postProcessRangeCount"))
-            for row in media
-        ),
-        "mediaPostProcessRangeCount": sum(
-            int(row.get("postProcessRangeCount") or 0)
-            for row in media
-        ),
-        "mediaPostProcessRangeOccurrences": sum(
-            int(row.get("postProcessRangeOccurrences") or 0)
-            for row in media
-        ),
-        "mediaWithWwiseMediaGraphEvidence": sum(
-            bool(row.get("wwiseMediaGraphEvidence"))
-            for row in media
-        ),
-        "mediaWwiseMediaSelectionPathCount": sum(
-            int(row.get("wwiseMediaSelectionPathCount") or 0)
-            for row in media
-        ),
-        "mediaWithEventContextSummary": sum(
-            bool(row.get("eventContextSummaryEvidence"))
-            for row in media
-        ),
-        "mediaEventContextSummaryCount": sum(
-            int(row.get("eventContextCount") or 0)
-            for row in media
-        ),
-    }
-    media_playback_location_counts = purpose.annotate_media_playback_locations(
-        media,
-        events,
-    )
-    media_coarse_ownership = media_ownership.annotate_media_coarse_ownership(
-        media,
-        scene_background_semantics,
-        event_rows=events,
-    )
-    ai_bark_catalog = responsive_voice.build_ai_bark_catalog(
-        export_root,
-        audio_index,
-        media,
-        native_context=native_context,
-    )
-    custom_footstep_model = build_custom_footstep_model(events, webui_root, language, native_context)
-    spawner_event_rows = [
-        row for row in events
-        if any(
-            isinstance(context, dict) and context.get("kind") == "spawnerPreWarnAudio"
-            for context in row.get("contexts") or []
+        global_controls = table_contexts.collect_audio_global_control_semantics(
+            export_root, cue_semantics
         )
-    ]
-    patrol_event_rows = [
-        row for row in events
-        if any(
-            isinstance(context, dict) and context.get("kind") == "patrolSubActionPlayAudio"
-            for context in row.get("contexts") or []
+        spawner_semantics = collect_spawner_pre_warn_semantics(export_root,gameassembly_path=gameassembly_path,metadata_path=metadata_path)
+        patrol_semantics = collect_patrol_sub_action_audio_semantics(export_root, gameassembly_path=gameassembly_path, metadata_path=metadata_path)
+        char_interact_semantics = collect_char_interact_audio_semantics(
+            export_root, gameassembly_path=gameassembly_path, metadata_path=metadata_path)
+        physics_audio_semantics = authored_components.collect_physics_audio_semantics(
+            export_root
         )
-    ]
-    char_interact_event_rows = [
-        row for row in events
-        if any(
-            isinstance(context, dict) and context.get("kind") == "charInteractAudioEvent"
-            for context in row.get("contexts") or []
+        model_view_semantics = authored_components.collect_model_view_state_audio_semantics(
+            export_root, gameassembly=gameassembly_path, metadata=metadata_path
         )
-    ]
-    physics_audio_event_rows = [
-        row for row in events
-        if any(
-            isinstance(context, dict) and context.get("kind") == "physicsAudioComponentEvent"
-            for context in row.get("contexts") or []
+        # Metadata-derived RTPC names are native/static facts.  Keep them behind
+        # the same explicit selected metadata + GameAssembly gate as the static
+        # six-field alignment; serialized table controls remain available when the
+        # gate is unavailable.
+        managed_rtpc_parameters = [{
+            "kind": "rtpcParameter",
+            "parameterName": name,
+            "source": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat:stringLiteral",
+            "evidence": "exactManagedStringLiteral",
+            "evidenceClass": "authoredStatic",
+            "wwiseEventStatus": "notApplicable",
+        } for name in (
+            # Names come from the installed metadata and match HIRC ids by hash;
+            # they carry no address of the reviewed build, so any measured build
+            # supplies them.
+            identifiers.collect_metadata_audio_literals(metadata_path)
+            if native_context.gate_verified and native_context.status in {"validated", "mismatched"}
+            else []
+        ) if identifiers.is_rtpc_parameter_name(name)]
+        rtpc_names_by_hex: dict[str, str] = {}
+        rtpc_name_collisions: set[str] = set()
+        for row in managed_rtpc_parameters:
+            parameter_name = str(row.get("parameterName") or "").strip()
+            if not parameter_name:
+                continue
+            parameter_hex = f"0x{identifiers.audio_hash_generator_compute(parameter_name):08x}"
+            previous = rtpc_names_by_hex.get(parameter_hex)
+            if previous and previous.casefold() != parameter_name.casefold():
+                rtpc_name_collisions.add(parameter_hex)
+            else:
+                rtpc_names_by_hex[parameter_hex] = parameter_name
+        for parameter_hex in rtpc_name_collisions:
+            rtpc_names_by_hex.pop(parameter_hex, None)
+        levelscript_semantics = collect_levelscript_audio_semantics(
+            export_root, cue_semantics=cue_semantics,
+            gameassembly=gameassembly_path, metadata=metadata_path,
         )
-    ]
-    model_view_event_rows = [
-        row for row in events
-        if any(
-            isinstance(context, dict)
-            and context.get("kind") in {
-                "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"
+        responsive_voice_contexts = responsive_voice.collect_responsive_voice_contexts(
+            export_root,
+            audio_index,
+            native_context=native_context,
+        )
+        native_voice_trigger_contexts = voice_requests.collect_native_voice_trigger_contexts(
+            audio_index,
+            native_context,
+        )
+        animation_voice_trigger_contexts = voice_requests.collect_animation_voice_trigger_contexts(
+            export_root,
+            audio_index,
+            native_context,
+        )
+        voice_table_contexts = voice_table_event_contexts(audio_index)
+        typed_ui_table_contexts = typed_ui_table_event_contexts(audio_index)
+        sns_voice_contexts = sns_voice_event_contexts(audio_index)
+        base_contexts = merge_contexts(
+            collect_gameplay_contexts(webui_root, language),
+            collect_projectile_contexts(webui_root),
+            spawner_semantics.get("eventContexts") or {},
+            patrol_semantics.get("eventContexts") or {},
+            char_interact_semantics.get("eventContexts") or {},
+            physics_audio_semantics.get("eventContexts") or {},
+            model_view_semantics.get("eventContexts") or {},
+            scene_background_semantics.get("eventContexts") or {},
+            mono_behaviour_audio_id_semantics.get("eventContexts") or {},
+            levelscript_semantics.get("eventContexts") or {},
+            table_contexts.collect_table_contexts(
+                export_root,
+                runtime_model,
+                cue_semantics=cue_semantics,
+                global_controls=global_controls,
+            ),
+            cutscene_contexts(cutscene_events),
+            lua_audio_contexts(audio_index),
+            literal_context_index,
+            responsive_voice_contexts,
+            native_voice_trigger_contexts,
+            animation_voice_trigger_contexts,
+            voice_table_contexts,
+            typed_ui_table_contexts,
+            sns_voice_contexts,
+        )
+        candidate_counts: Counter[str] = Counter()
+        candidate_hash_contexts: dict[str, set[str]] = defaultdict(set)
+        for entry in audio_index.get("events") or []:
+            if not isinstance(entry, dict):
+                continue
+            event_id = str(entry.get("eventId") or entry.get("id") or "").strip().lower()
+            if event_id:
+                candidate_counts[event_id] += 1
+                try:
+                    event_hash = int(entry.get("eventHash")) & 0xFFFFFFFF
+                except (TypeError, ValueError):
+                    event_hash = None
+                if event_hash is not None:
+                    candidate_hash_contexts[event_id].add(identifiers.event_hash_context_key(event_hash))
+        timeline_target_event_ids = {
+            event_id for event_id, count in candidate_counts.items()
+            if count > 0
+            and event_id not in base_contexts
+            and not any(key in base_contexts for key in candidate_hash_contexts.get(event_id, set()))
+        }
+        levelsequence_play_actions = levelscript_semantics['levelSequencePlayActions']
+        timeline_ownership_parts: list[dict[str, Any]] = []
+        # Each installed layer's merged object index holds its MonoBehaviour and
+        # PlayableDirector rows together; the Timeline reader filters by classId.
+        layout = ExportLayout(export_root)
+        streaming_mono_index = layout.object_index_dir("StreamingAssets") / "objects.jsonl.gz"
+        streaming_director_index = streaming_mono_index
+        if streaming_mono_index.is_file():
+            timeline_ownership_parts.append(collect_timeline_audio_ownership(
+                export_root,
+                event_ids=timeline_target_event_ids,
+                mono_path=streaming_mono_index,
+                director_path=streaming_director_index,
+            ))
+        persistent_mono_index = layout.object_index_dir("Persistent") / "objects.jsonl.gz"
+        persistent_director_index = persistent_mono_index
+        if persistent_mono_index.is_file():
+            # Persistent carries the story Timeline assets that are absent from
+            # the StreamingAssets-only semantic pass.  Scan all authored Event
+            # keys so a key missing from the current Wwise index remains visible
+            # as an explicit authored request rather than disappearing.
+            timeline_ownership_parts.append(collect_timeline_audio_ownership(
+                export_root,
+                event_ids=None,
+                mono_path=persistent_mono_index,
+                director_path=persistent_director_index,
+            ))
+        if timeline_ownership_parts:
+            timeline_ownership = merge_timeline_audio_ownership(timeline_ownership_parts)
+            timeline_ownership = enrich_timeline_audio_ownership_from_raw_json(
+                export_root,
+                timeline_ownership,
+            )
+            timeline_ownership["objectIndexSources"] = [
+                source
+                for source, path in (
+                    ("StreamingAssets", streaming_mono_index),
+                    ("Persistent", persistent_mono_index),
+                )
+                if path.is_file()
+            ]
+        else:
+            timeline_ownership = collect_timeline_audio_ownership(
+                export_root,
+                event_ids=timeline_target_event_ids,
+            )
+        timeline_context_event_ids = timeline_target_event_ids | {
+            str(event_id or "").strip().lower()
+            for event_id in (timeline_ownership.get("occurrencesByEvent") or {})
+            if str(event_id or "").strip()
+        }
+        timeline_cue_semantics = build_timeline_audio_cue_contexts(
+            timeline_ownership,
+            cue_semantics,
+        )
+        levelsequence_semantics = build_levelsequence_audio_contexts(
+            timeline_context_event_ids,
+            timeline_ownership,
+            levelsequence_play_actions,
+        )
+        contexts = merge_contexts(
+            base_contexts,
+            levelsequence_semantics.get("eventContexts") or {},
+            timeline_cue_semantics.get("eventContexts") or {},
+        )
+        context_kind_counts = Counter(
+            str(context.get("kind") or "unknown")
+            for rows in contexts.values()
+            for context in rows
+            if isinstance(context, dict)
+        )
+        context_kind_event_counts = Counter(
+            kind
+            for rows in contexts.values()
+            for kind in {
+                str(context.get("kind") or "unknown")
+                for context in rows
+                if isinstance(context, dict)
             }
-            for context in row.get("contexts") or []
         )
-    ]
+        wwise_selector_groups = wwise_selector_group_catalog(native_context)
+        events, media_to_events, banks = event_projection.build_event_rows(
+            audio_index,
+            contexts,
+            selector_groups=wwise_selector_groups,
+            rtpc_names_by_hex=rtpc_names_by_hex,
+            metadata_event_symbols=metadata_event_symbol_catalog.get("entries") or [],
+        )
+        # Scene-global attribution is a compact projection of the already merged
+        # scene catalog and Event contexts.  The domain helper owns the exact
+        # producer/scene gates; this entrypoint only wires collected data through.
+        for event in events:
+            event.update(scene_backgrounds.project_scene_global_compact_attribution(
+                event.get("contexts") or [],
+                scene_background_semantics,
+                contexts_truncated=event.get("contextsTruncated") is not False,
+            ))
+            event.update(scene_backgrounds.project_scene_emitter_compact_attribution(
+                event.get("contexts") or [],
+                scene_background_semantics,
+                scene_background_semantics.get("streamingInstanceCatalog"),
+            ))
+        # Full AudioCue ASTs are detail-only.  Event list rows remain compact;
+        # ``event_summary`` intentionally does not project this payload.
+        for event in events:
+            cue_detail = table_contexts.audio_cue_expression_detail_for_contexts(
+                event.get("contexts") or [], cue_semantics
+            )
+            if cue_detail:
+                event["audioCueExpressionDetail"] = cue_detail
+        character_audio_catalog = (
+            media_ownership.collect_character_audio_identity_catalog(export_root)
+        )
+        animation_action_ownership = (
+            media_ownership.annotate_event_animation_action_identity(events)
+        )
+        animation_callback_ownership = (
+            media_ownership.annotate_event_animation_callback_links(
+                events, export_root=export_root
+            )
+        )
+        character_audio_ownership = (
+            media_ownership.annotate_event_character_audio_identity(
+                events,
+                character_audio_catalog,
+            )
+        )
+        action_control_evidence_by_event = {
+            str(event.get("id") or ""): list(event.get("evidence") or [])
+            for event in events
+            if str(event.get("id") or "")
+        }
+        wwise_action_control_catalog = event_projection.annotate_wwise_action_control_evidence(
+            action_control_evidence_by_event,
+            wwise_selector_groups,
+            rtpc_names_by_hex,
+        )
+        wwise_initial_rtpc_catalog = event_projection.build_initial_rtpc_parameter_catalog(
+            events
+        )
+        shared_play_target_event_count = purpose.annotate_shared_wwise_play_targets(events)
+        shared_media_leaf_event_count = purpose.annotate_shared_wwise_media_leaves(events)
+        shared_media_leaf_category_event_count = sum(
+            row.get("categoryEvidence") == "exactCompleteWwiseMediaLeafSetCategory"
+            for row in events
+        )
+        authored_name_category_event_count = sum(
+            bool(row.get("categoryNameEvidence"))
+            for row in events
+        )
+        media = build_media_rows(
+            audio_index,
+            media_to_events,
+            {
+                str(event.get("id") or ""): str(event.get("category") or "unknown")
+                for event in events
+                if event.get("id")
+            },
+            event_rows=events,
+        )
+        runtime_observation_projection = (
+            runtime_observations.apply_verified_runtime_observations(
+                events,
+                media,
+                runtime_trace_bundle,
+                expected_language=language,
+                native_context=native_context,
+            )
+        )
+        character_namespace_gameplay = (
+            media_ownership.project_character_namespace_gameplay_audio(events)
+        )
+        static_rtpc_alignment = rtpc_alignment.build_static_rtpc_alignment(
+            alignment_audio_index,
+            events,
+            media,
+            native_context=native_context,
+        )
+        radio_catalog = attach_levelscript_radio_contexts(
+            media,
+            export_root,
+            levelscript_semantics,
+        )
+        trigger_context_catalog = build_trigger_context_catalog(
+            events,
+            media,
+            webui_root,
+            language,
+            export_root=export_root,
+            levelscript_semantics=levelscript_semantics,
+            mono_behaviour_audio_id_contexts=(
+                mono_behaviour_audio_id_semantics.get("eventContexts") or {}
+            ),
+            model_view_semantics=model_view_semantics,
+            native_context=native_context,
+        )
+        media_trigger_context_counts = annotate_media_trigger_contexts(
+            media,
+            trigger_context_catalog,
+        )
+        media_trigger_semantic_category_counts = annotate_media_trigger_semantic_categories(
+            media,
+            trigger_context_catalog,
+        )
+        media_post_process_counts = {
+            "mediaWithPostProcessDirectEffects": sum(
+                bool(row.get("postProcessDirectEffectCount"))
+                for row in media
+            ),
+            "mediaPostProcessDirectEffectOccurrences": sum(
+                int(row.get("postProcessDirectEffectOccurrences") or 0)
+                for row in media
+            ),
+            "mediaWithPostProcessRtpcControls": sum(
+                bool(row.get("postProcessRtpcControlCount"))
+                for row in media
+            ),
+            "mediaPostProcessRtpcControlCount": sum(
+                int(row.get("postProcessRtpcControlCount") or 0)
+                for row in media
+            ),
+            "mediaWithPostProcessStateControls": sum(
+                bool(row.get("postProcessStateControlCount"))
+                for row in media
+            ),
+            "mediaPostProcessStateControlCount": sum(
+                int(row.get("postProcessStateControlCount") or 0)
+                for row in media
+            ),
+            "mediaWithPostProcessEffectChain": sum(
+                bool(row.get("postProcessEffectChainCount"))
+                for row in media
+            ),
+            "mediaPostProcessEffectChainCount": sum(
+                int(row.get("postProcessEffectChainCount") or 0)
+                for row in media
+            ),
+            "mediaWithPostProcessBusControls": sum(
+                bool(row.get("postProcessBusControlCount"))
+                for row in media
+            ),
+            "mediaPostProcessBusControlCount": sum(
+                int(row.get("postProcessBusControlCount") or 0)
+                for row in media
+            ),
+            "mediaPostProcessBusRtpcCurveCount": sum(
+                int(control.get("rtpcCurveCount") or 0)
+                for row in media
+                for control in row.get("postProcessBusControls") or ()
+                if isinstance(control, dict)
+            ),
+            "mediaPostProcessBusStateValueCount": sum(
+                int(control.get("stateValueCount") or 0)
+                for row in media
+                for control in row.get("postProcessBusControls") or ()
+                if isinstance(control, dict)
+            ),
+            "mediaWithPostProcessBusDucking": sum(
+                bool(row.get("postProcessBusDuckCount"))
+                for row in media
+            ),
+            "mediaPostProcessBusDuckBusCount": sum(
+                int(row.get("postProcessBusDuckCount") or 0)
+                for row in media
+            ),
+            "mediaPostProcessBusDuckReferenceCount": sum(
+                int(duck.get("duckCount") or 0)
+                for row in media
+                for duck in row.get("postProcessBusDucks") or ()
+                if isinstance(duck, dict)
+            ),
+            "mediaWithPostProcessAuxSends": sum(
+                bool(row.get("postProcessAuxSendCount"))
+                for row in media
+            ),
+            "mediaPostProcessAuxSendCount": sum(
+                int(row.get("postProcessAuxSendCount") or 0)
+                for row in media
+            ),
+            "mediaPostProcessAuxSendOccurrences": sum(
+                int(row.get("postProcessAuxSendOccurrences") or 0)
+                for row in media
+            ),
+            "mediaWithPostProcessProperties": sum(
+                bool(row.get("postProcessPropertyCount"))
+                for row in media
+            ),
+            "mediaPostProcessPropertyCount": sum(
+                int(row.get("postProcessPropertyCount") or 0)
+                for row in media
+            ),
+            "mediaPostProcessPropertyOccurrences": sum(
+                int(row.get("postProcessPropertyOccurrences") or 0)
+                for row in media
+            ),
+            "mediaWithPostProcessRanges": sum(
+                bool(row.get("postProcessRangeCount"))
+                for row in media
+            ),
+            "mediaPostProcessRangeCount": sum(
+                int(row.get("postProcessRangeCount") or 0)
+                for row in media
+            ),
+            "mediaPostProcessRangeOccurrences": sum(
+                int(row.get("postProcessRangeOccurrences") or 0)
+                for row in media
+            ),
+            "mediaWithWwiseMediaGraphEvidence": sum(
+                bool(row.get("wwiseMediaGraphEvidence"))
+                for row in media
+            ),
+            "mediaWwiseMediaSelectionPathCount": sum(
+                int(row.get("wwiseMediaSelectionPathCount") or 0)
+                for row in media
+            ),
+            "mediaWithEventContextSummary": sum(
+                bool(row.get("eventContextSummaryEvidence"))
+                for row in media
+            ),
+            "mediaEventContextSummaryCount": sum(
+                int(row.get("eventContextCount") or 0)
+                for row in media
+            ),
+        }
+        media_playback_location_counts = purpose.annotate_media_playback_locations(
+            media,
+            events,
+        )
+        media_coarse_ownership = media_ownership.annotate_media_coarse_ownership(
+            media,
+            scene_background_semantics,
+            event_rows=events,
+        )
+        ai_bark_catalog = responsive_voice.build_ai_bark_catalog(
+            export_root,
+            audio_index,
+            media,
+            native_context=native_context,
+        )
+        custom_footstep_model = build_custom_footstep_model(events, webui_root, language, native_context)
+        spawner_event_rows = [
+            row for row in events
+            if any(
+                isinstance(context, dict) and context.get("kind") == "spawnerPreWarnAudio"
+                for context in row.get("contexts") or []
+            )
+        ]
+        patrol_event_rows = [
+            row for row in events
+            if any(
+                isinstance(context, dict) and context.get("kind") == "patrolSubActionPlayAudio"
+                for context in row.get("contexts") or []
+            )
+        ]
+        char_interact_event_rows = [
+            row for row in events
+            if any(
+                isinstance(context, dict) and context.get("kind") == "charInteractAudioEvent"
+                for context in row.get("contexts") or []
+            )
+        ]
+        physics_audio_event_rows = [
+            row for row in events
+            if any(
+                isinstance(context, dict) and context.get("kind") == "physicsAudioComponentEvent"
+                for context in row.get("contexts") or []
+            )
+        ]
+        model_view_event_rows = [
+            row for row in events
+            if any(
+                isinstance(context, dict)
+                and context.get("kind") in {
+                    "modelViewStateAudioEvent", "modelViewStatePositionAudioEvent"
+                }
+                for context in row.get("contexts") or []
+            )
+        ]
 
-    named_event_ids = {
-        str(value or "").strip().lower()
-        for value in audio_index.get("eventNames") or []
-        if str(value or "").strip()
-    }
-    event_categories = Counter(str(row.get("category") or "unknown") for row in events)
-    media_categories = Counter(str(row.get("audioCategory") or "unknown") for row in media)
-    media_semantic_categories = Counter(
-        str(row.get("semanticCategory") or "unknown") for row in media
-    )
-    media_relations = Counter(
-        str(relation)
-        for row in events
-        for relation in row.get("mediaRelationTypes") or []
-    )
-    linked_events = sum(1 for row in events if row.get("foundInWwise"))
-    selection_events = sum(1 for row in events if row.get("selectionContainerTypes"))
-    managed_literal_keys = {name.lower() for name in managed_literal_names}
-    managed_literal_hirc_matches = sum(
-        1 for row in events
-        if row.get("id") in managed_literal_keys and row.get("foundInWwise")
-    )
-    table_event_hashes = {
-        int(value) & 0xFFFFFFFF
-        for value in audio_index.get("tableEventHashes") or []
-        if isinstance(value, int)
-    }
-    table_event_hash_matches = sum(
-        1 for row in events
-        if isinstance(row.get("hash"), int)
-        and (int(row["hash"]) & 0xFFFFFFFF) in table_event_hashes
-        and row.get("foundInWwise")
-    )
-    runtime_systems = runtime_model.get("systems") or []
-    runtime_layers = Counter(str(row.get("layer") or "unknown") for row in runtime_systems)
-    trigger_status_context_counts = Counter(
-        str(context.get("triggerBindingStatus") or "")
-        for row in events
-        for context in row.get("contexts") or []
-        if isinstance(context, dict) and context.get("triggerBindingStatus")
-    )
-    trigger_status_event_counts = Counter(
-        status
-        for row in events
-        for status in {
+        named_event_ids = {
+            str(value or "").strip().lower()
+            for value in audio_index.get("eventNames") or []
+            if str(value or "").strip()
+        }
+        event_categories = Counter(str(row.get("category") or "unknown") for row in events)
+        media_categories = Counter(str(row.get("audioCategory") or "unknown") for row in media)
+        media_semantic_categories = Counter(
+            str(row.get("semanticCategory") or "unknown") for row in media
+        )
+        media_relations = Counter(
+            str(relation)
+            for row in events
+            for relation in row.get("mediaRelationTypes") or []
+        )
+        linked_events = sum(1 for row in events if row.get("foundInWwise"))
+        selection_events = sum(1 for row in events if row.get("selectionContainerTypes"))
+        managed_literal_keys = {name.lower() for name in managed_literal_names}
+        managed_literal_hirc_matches = sum(
+            1 for row in events
+            if row.get("id") in managed_literal_keys and row.get("foundInWwise")
+        )
+        table_event_hashes = {
+            int(value) & 0xFFFFFFFF
+            for value in audio_index.get("tableEventHashes") or []
+            if isinstance(value, int)
+        }
+        table_event_hash_matches = sum(
+            1 for row in events
+            if isinstance(row.get("hash"), int)
+            and (int(row["hash"]) & 0xFFFFFFFF) in table_event_hashes
+            and row.get("foundInWwise")
+        )
+        runtime_systems = runtime_model.get("systems") or []
+        runtime_layers = Counter(str(row.get("layer") or "unknown") for row in runtime_systems)
+        trigger_status_context_counts = Counter(
             str(context.get("triggerBindingStatus") or "")
+            for row in events
             for context in row.get("contexts") or []
             if isinstance(context, dict) and context.get("triggerBindingStatus")
-        }
-    )
-    play_sound_action_contexts = sum(
-        context.get("kind") in {"buffPlaySoundAction", "skillPlaySoundAction"}
-        for row in events
-        for context in row.get("contexts") or []
-        if isinstance(context, dict) and context.get("triggerPlaySoundActionCount")
-    )
-    play_sound_action_events = sum(
-        any(
-            isinstance(context, dict)
-            and context.get("kind") in {"buffPlaySoundAction", "skillPlaySoundAction"}
-            and context.get("triggerPlaySoundActionCount")
-            for context in row.get("contexts") or []
         )
-        for row in events
-    )
-    play_sound_action_occurrences = sum(
-        int(context.get("triggerPlaySoundActionCount") or 0)
-        for row in events
-        for context in row.get("contexts") or []
-        if isinstance(context, dict) and context.get("kind") in {
-            "buffPlaySoundAction", "skillPlaySoundAction"
-        }
-    )
-    wwise_source_reference_counts: Counter[str] = Counter()
-    wwise_source_event_counts: Counter[str] = Counter()
-    wwise_source_plugin_counts: Counter[str] = Counter()
-    for event in events:
-        event_source_kinds: set[str] = set()
-        for evidence in event.get("evidence") or []:
-            if not isinstance(evidence, dict):
-                continue
-            summary = evidence.get("sourceObjectSummary") or {}
-            if not isinstance(summary, dict):
-                continue
-            for source_kind, count in (summary.get("sourceKindCounts") or {}).items():
-                source_kind = str(source_kind or "unknown")
-                wwise_source_reference_counts[source_kind] += int(count or 0)
-                if count:
-                    event_source_kinds.add(source_kind)
-            for plugin_id, count in (summary.get("pluginCounts") or {}).items():
-                wwise_source_plugin_counts[str(plugin_id)] += int(count or 0)
-        for source_kind in event_source_kinds:
-            wwise_source_event_counts[source_kind] += 1
+        trigger_status_event_counts = Counter(
+            status
+            for row in events
+            for status in {
+                str(context.get("triggerBindingStatus") or "")
+                for context in row.get("contexts") or []
+                if isinstance(context, dict) and context.get("triggerBindingStatus")
+            }
+        )
+        play_sound_action_contexts = sum(
+            context.get("kind") in {"buffPlaySoundAction", "skillPlaySoundAction"}
+            for row in events
+            for context in row.get("contexts") or []
+            if isinstance(context, dict) and context.get("triggerPlaySoundActionCount")
+        )
+        play_sound_action_events = sum(
+            any(
+                isinstance(context, dict)
+                and context.get("kind") in {"buffPlaySoundAction", "skillPlaySoundAction"}
+                and context.get("triggerPlaySoundActionCount")
+                for context in row.get("contexts") or []
+            )
+            for row in events
+        )
+        play_sound_action_occurrences = sum(
+            int(context.get("triggerPlaySoundActionCount") or 0)
+            for row in events
+            for context in row.get("contexts") or []
+            if isinstance(context, dict) and context.get("kind") in {
+                "buffPlaySoundAction", "skillPlaySoundAction"
+            }
+        )
+        wwise_source_reference_counts: Counter[str] = Counter()
+        wwise_source_event_counts: Counter[str] = Counter()
+        wwise_source_plugin_counts: Counter[str] = Counter()
+        for event in events:
+            event_source_kinds: set[str] = set()
+            for evidence in event.get("evidence") or []:
+                if not isinstance(evidence, dict):
+                    continue
+                summary = evidence.get("sourceObjectSummary") or {}
+                if not isinstance(summary, dict):
+                    continue
+                for source_kind, count in (summary.get("sourceKindCounts") or {}).items():
+                    source_kind = str(source_kind or "unknown")
+                    wwise_source_reference_counts[source_kind] += int(count or 0)
+                    if count:
+                        event_source_kinds.add(source_kind)
+                for plugin_id, count in (summary.get("pluginCounts") or {}).items():
+                    wwise_source_plugin_counts[str(plugin_id)] += int(count or 0)
+            for source_kind in event_source_kinds:
+                wwise_source_event_counts[source_kind] += 1
 
-    out_root = webui_root / f"data/lang/{language}/audio"
+        out_root = webui_root / f"data/lang/{language}/audio"
+        enemy_voice_action_route = native_callsite_rederivation.current_routes(native_context).get("enemyVoiceAction")
     json_dump(out_root / "record_media.json", record_media.build_record_media(events))
     events_name = "events.json"
     media_details: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -2019,13 +2017,14 @@ def build_audio_semantic_data(
         "triggerCatalog": {
             "aiBark": ai_bark_catalog,
             "enemyTriggerVoiceAction": (
-                native_callsite_rederivation.current_routes(native_context)["enemyVoiceAction"]
+                enemy_voice_action_route
                 or native_context.unavailable_contract(
                     str(native_evidence.ENEMY_TRIGGER_VOICE_ACTION_NATIVE["nativeMappingId"])
                 )
             ),
             "spawnerPreWarnAudio": spawner_semantics.get("stats") or {},
             "patrolSubActionPlayAudio": patrol_semantics.get("stats") or {},
+            "abilityVoiceTrigger": trigger_context_catalog["coverage"]["abilityVoiceTrigger"],
             "charInteractAudio": char_interact_semantics.get("stats") or {},
             "physicsAudio": {
                 **(physics_audio_semantics.get("stats") or {}),
@@ -2045,9 +2044,15 @@ def build_audio_semantic_data(
             "animationCallbackLink": animation_callback_ownership,
             "animationActionNameMatch": animation_action_ownership,
             "monoBehaviourAudioId": mono_behaviour_audio_id_semantics.get("stats") or {},
-            "levelScriptAudio": levelscript_semantics.get("stats") or {},
+            "levelScriptAudio": {
+                **(levelscript_semantics.get("stats") or {}),
+                "sourceAudit": levelscript_semantics.get("sourceAudit") or {},
+                "sourceDiagnostics": levelscript_semantics.get("sourceDiagnostics") or [],
+            },
             "levelSequenceAudio": {
                 **(levelsequence_play_actions.get("stats") or {}),
+                "sourceAudit": levelsequence_play_actions.get("sourceAudit") or {},
+                "sourceDiagnostics": levelsequence_play_actions.get("sourceDiagnostics") or [],
                 **(timeline_ownership.get("stats") or {}),
                 **(levelsequence_semantics.get("stats") or {}),
                 "targetEventCount": len(timeline_context_event_ids),
@@ -2067,6 +2072,7 @@ def build_audio_semantic_data(
         },
         "controlCatalog": {
             "schemaVersion": 2,
+            "patrolStoredAudioIdCandidates": patrol_semantics.get("storedAudioIdCandidates") or [],
             "audioCueExpressionSchemaVersion": int(
                 cue_semantics.get("audioCueExpressionSchemaVersion")
                 or table_contexts.AUDIO_CUE_EXPRESSION_SCHEMA_VERSION
@@ -2181,6 +2187,7 @@ def build_audio_semantic_data(
             "audioGlobalMusicCueRefs": global_controls.get("audioGlobalMusicCueRefs") or [],
             "rtpcParameters": (global_controls.get("rtpcParameters") or []) + managed_rtpc_parameters,
             "physicsAudioRtpcParameters": physics_audio_semantics.get("rtpcParameters") or [],
+            "modelViewStateStoredBehaviors": model_view_semantics.get("storedBehaviors") or [],
             "modelViewStateRtpcParameters": model_view_semantics.get("rtpcParameters") or [],
             "modelViewStateSpatialControls": model_view_semantics.get("spatialControls") or [],
             "modelViewStateCustomAudioControls": model_view_semantics.get("customAudioControls") or [],
@@ -2199,9 +2206,14 @@ def build_audio_semantic_data(
             "levelScriptAudioControls": _compact_levelscript_control_rows(
                 levelscript_semantics.get("controlActions")
             ),
+            "levelScriptUnresolvedEventRequests": _compact_levelscript_control_rows(
+                levelscript_semantics.get("unresolvedEventRequests")
+            ),
             "levelScriptDynamicControlBindings": _compact_levelscript_control_rows(
                 levelscript_semantics.get("dynamicControlBindings")
             ),
+            "levelSequenceStoredIdCandidates": levelsequence_play_actions.get("actionsByLevelSequenceId") or {},
+            "levelSequenceUnresolvedBindings": levelsequence_play_actions.get("unresolvedBindings") or [],
             "timelineAudioCueInvocations": timeline_cue_semantics.get("invocations") or [],
             "levelEventAudioConditions": [
                 dict(row) for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
@@ -2212,7 +2224,7 @@ def build_audio_semantic_data(
             "wwiseActionControls": wwise_action_control_catalog,
             "wwiseInitialRtpcParameters": wwise_initial_rtpc_catalog,
             "staticRtpcAlignment": static_rtpc_alignment,
-            "evidenceBoundary": "Cue behavior exprType=3 values, constant LevelScript Event parameters, LevelScript cue names joined by the native AudioHashGenerator to exact cue behavior expressions, non-empty PhysicsAudio Event properties, and normal ModelView Event plus positioned direct-position hashes are authored requests. Positioned custom/entity state rows are typed controls only and never Event ownership. Metadata-named InitialRTPC rows are exact ID/hash joins that preserve authored curve targets and controlled properties; they do not observe live RTPC updates or audibility. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two non-music Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only, and ten music State groups have exact current-metadata/native-setter joins. None reveal a live value, selected branch, or authored group name.",
+            "evidenceBoundary": "Cue behavior exprType=3 values, non-empty PhysicsAudio Event properties are authored requests. ModelView rows preserve current stored fields with unresolved native consumer joins. Current LevelScript stored Event/cue strings remain unresolved candidates until current native consumer joins are proved; unavailable source receipts and refused owners do not establish absence. Positioned custom/entity state rows are typed controls only and never Event ownership. Metadata-named InitialRTPC rows are exact ID/hash joins that preserve authored curve targets and controlled properties; they do not observe live RTPC updates or audibility. PhysicsAudio/ModelView RTPC names, ModelView spatial/custom-audio rows, cue/action execution, handler conditions, exprType=8 strings, dynamic Params, state/variable writes, playback handles, placeholder-music ids, unresolved cue hashes, and musicCue* values remain typed controls or unresolved runtime state. LevelEvent OnAudioStateChanged and OnMusicBeatEvent are current-build trigger-input definitions, not playback requests; exhaustive active-overlay scanning found zero authored occurrences. Two non-music Wwise selector groups have exact native setter callsites; three more have high-confidence semantic correlation only, and ten music State groups have exact current-metadata/native-setter joins. None reveal a live value, selected branch, or authored group name.",
         },
         "runtimeModel": runtime_model,
         "runtimeObservations": runtime_observation_projection,

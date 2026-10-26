@@ -32,12 +32,14 @@ from scripts.game_data.cinematic_queue_native import (
     DEFAULT_CONTRACT as DEFAULT_CINEMATIC_CONTRACT,
     load_cinematic_queue_contract,
 )
-from scripts.common import EXPORT_LAYOUT
+from scripts.common import EXPORT_LAYOUT, check_installed_native_inputs
+from scripts.source_paths import ExportLayout, configured_export_root
+from scripts.game_data.levelscript_reader_inputs import snapshot_complete_reader_inputs
 
 REPORT_DIR = ROOT / "reports" / "mission_order"
 DEFAULT_INDEX = REPORT_DIR / "lua_consumer_reference_audit.json"
 DEFAULT_MD = REPORT_DIR / "lua_consumer_reference_audit.md"
-SCHEMA_VERSION = "luaConsumerReferenceAudit.v5"
+SCHEMA_VERSION = "luaConsumerReferenceAudit.v6"
 DEFAULT_LUA_ROOTS = (EXPORT_LAYOUT.lua_dir,)
 DEFAULT_TABLE_ROOTS = (
     EXPORT_LAYOUT.table_dir,
@@ -565,7 +567,7 @@ def _build_payload(args: argparse.Namespace) -> dict[str, Any]:
     story_index = args.story_index.resolve()
     story_keys = load_story_keys(story_index)
     cinematic_runtime = load_cinematic_queue_contract(
-        args.cinematic_contract.resolve()
+        args.cinematic_contract.resolve(),gameassembly=args.gameassembly,metadata=args.metadata
     )
     if cinematic_runtime.get("status") != "validated":
         failures = cinematic_runtime.get("validationFailures") or []
@@ -590,8 +592,8 @@ def _build_payload(args: argparse.Namespace) -> dict[str, Any]:
         for path in files:
             try:
                 raw = path.read_bytes()
-                text = raw.decode("utf-8-sig", errors="replace")
-            except OSError as exc:
+                text = raw.decode("utf-8-sig")
+            except (OSError,UnicodeDecodeError) as exc:
                 read_errors.append({"path": repo_rel(path), "error": str(exc)})
                 continue
             byte_total += len(raw)
@@ -1006,6 +1008,8 @@ def build_index(
     table_roots: list[Path] | tuple[Path, ...] | None = None,
     story_index: Path = DEFAULT_STORY_INDEX,
     cinematic_contract: Path = DEFAULT_CINEMATIC_CONTRACT,
+    gameassembly: Path | None = None,
+    metadata: Path | None = None,
     focus: str = "sns,remotecomm,dialog,mapmark,mission",
     top_limit: int = 30,
     example_limit: int = 20,
@@ -1014,22 +1018,24 @@ def build_index(
     max_module_findings: int = 300,
     max_table_module_edges: int = 2500,
 ) -> dict[str, Any]:
-    """Scan current sources and return the canonical fingerprinted index."""
-    return _build_payload(
-        argparse.Namespace(
-            lua_root=list(lua_roots) if lua_roots is not None else None,
-            table_root=list(table_roots) if table_roots is not None else None,
-            story_index=story_index,
-            cinematic_contract=cinematic_contract,
-            focus=focus,
-            top_limit=top_limit,
-            example_limit=example_limit,
-            focus_example_limit=focus_example_limit,
-            max_focus_files=max_focus_files,
-            max_module_findings=max_module_findings,
-            max_table_module_edges=max_table_module_edges,
-        )
-    )
+    """Freshly scan selected sources; no saved semantic result admits this operation."""
+    if (gameassembly is None)!=(metadata is None):raise ValueError('Lua census requires both selected native paths')
+    native=check_installed_native_inputs(gameassembly=gameassembly,metadata=metadata)
+    if native.status!='validated':raise ValueError('Lua census selected native inputs: '+native.status+': '+native.detail)
+    layout=ExportLayout(configured_export_root());lua_roots=list(lua_roots)if lua_roots is not None else[layout.lua_dir];table_roots=list(table_roots)if table_roots is not None else[layout.table_dir]
+    def inputs():
+        files={Path(__file__),Path(__file__).parents[2]/'game_data/cinematic_queue_native.py',Path(cinematic_contract),native.gameassembly.parent/'UnityPlayer.dll'}
+        files.update(path for root in lua_roots for path in lua_files(Path(root)))
+        files.update(path for root in table_roots for path in table_files(Path(root)))
+        if Path(story_index).is_file():files.add(Path(story_index))
+        return dict(luaRoots=[str(Path(p).resolve())for p in lua_roots],tableRoots=[str(Path(p).resolve())for p in table_roots],storyIndex=str(Path(story_index).resolve()),files=[dict(path=str(p.resolve()),sha256=hashlib.sha256(p.read_bytes()).hexdigest().upper())for p in sorted(files)],readerInputs=snapshot_complete_reader_inputs())
+    before=inputs()
+    payload=_build_payload(argparse.Namespace(lua_root=lua_roots,table_root=table_roots,story_index=story_index,cinematic_contract=cinematic_contract,gameassembly=native.gameassembly,metadata=native.metadata,focus=focus,top_limit=top_limit,example_limit=example_limit,focus_example_limit=focus_example_limit,max_focus_files=max_focus_files,max_module_findings=max_module_findings,max_table_module_edges=max_table_module_edges))
+    after=check_installed_native_inputs(native.gameassembly_sha256,native.metadata_sha256,gameassembly=native.gameassembly,metadata=native.metadata)
+    if after.status!='validated':raise ValueError('Lua census native exit: '+after.status+': '+after.detail)
+    if before!=inputs():raise ValueError('Lua census source membership/bytes or reader inputs changed')
+    payload['provenance']=dict(before,nativeSources={'GameAssembly.dll':str(native.gameassembly),'global-metadata.dat':str(native.metadata)},nativeInputs={'GameAssembly.dll':native.gameassembly_sha256.upper(),'global-metadata.dat':native.metadata_sha256.upper()})
+    return payload
 
 
 def write_index(
@@ -1073,6 +1079,14 @@ def read_index(path: Path = DEFAULT_INDEX) -> dict[str, Any]:
     return payload
 
 
+def read_current_index(path: Path = DEFAULT_INDEX) -> dict[str, Any]:
+    """A saved census supplies no positive claims until its complete current replay agrees."""
+    saved=read_index(path);current=build_index()
+    clean=lambda value:{key:item for key,item in value.items()if key!='generatedAt'}
+    if clean(saved)!=clean(current):raise RuntimeError('validator=lua_consumer_reference gate=current_source_native_replay source='+str(path)+'; refresh the canonical Lua index')
+    return current
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lua-root", type=Path, action="append", help="Lua root to scan; repeatable")
@@ -1089,6 +1103,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=DEFAULT_CINEMATIC_CONTRACT,
         help="Reviewed installed-build cinematic queue contract",
     )
+    parser.add_argument("--gameassembly",type=Path)
+    parser.add_argument("--metadata",type=Path)
     parser.add_argument("--focus", default="sns,remotecomm,dialog,mapmark,mission")
     parser.add_argument(
         "--output",
@@ -1121,6 +1137,7 @@ def main(argv: list[str] | None = None) -> int:
         table_roots=args.table_root,
         story_index=args.story_index,
         cinematic_contract=args.cinematic_contract,
+        gameassembly=args.gameassembly,metadata=args.metadata,
         focus=args.focus,
         top_limit=args.top_limit,
         example_limit=args.example_limit,
