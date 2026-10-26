@@ -50,7 +50,24 @@ def contract_path(name):
     return CONTRACTS_DIR / name
 
 
+def derive_uniform_sources(image, pins):
+    """Reprove the finite owner set with one operation-local union scan.
+
+    The selected image and all per-owner comparisons remain unchanged. Do not
+    retain this setup across operations: each caller owns fresh native gates.
+    """
+    from scripts.game_data.buff_frontiers_regenerate import _read_switch
+    switch = _read_switch(image)
+    for owner in sorted(UNIFORM_OWNERS):
+        fact, joined = _derive_uniform_source(image, pins, owner, switch=switch)
+        yield owner, fact, joined
+
+
 def derive_uniform_source(image, pins, source_owner):
+    return _derive_uniform_source(image, pins, source_owner)
+
+
+def _derive_uniform_source(image, pins, source_owner, *, switch=None):
     """Reprove an existing reviewed source on this selected image, unchanged."""
     if source_owner not in UNIFORM_OWNERS:
         raise ValueError(LABEL + '.owner:unreviewed=' + str(source_owner))
@@ -69,7 +86,7 @@ def derive_uniform_source(image, pins, source_owner):
                 (image.pe.image_base + a, b - a)
                 for a, b, _ in (r['runtimeTriple'] for r in image.unwind_index.family(entry)['ranges'])
                 if a != entry]
-        actual = uniform.regenerate(fact, image, pins, switch=_read_switch(image),
+        actual = uniform.regenerate(fact, image, pins, switch=_read_switch(image) if switch is None else switch,
             extents=dict(image.mapper.pdata_function_extents(image.pe)),
             fragments=fragments, wrappers=image.memorypack_wrappers)
     validate_claims(fact, actual, label=LABEL + '.source:' + source_owner)

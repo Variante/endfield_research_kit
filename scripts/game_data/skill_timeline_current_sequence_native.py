@@ -854,8 +854,7 @@ def derive(image,inputs,*,retain_traces=False):
     proof={};programs=[];facts=[];requirements={}
     # Exact current source owners are deliberately finite. No catalog sweep
     # promotes an additional wrapper or similarly named historical route.
-    for owner in sorted(source.UNIFORM_OWNERS):
-        fact,joined=source.derive_uniform_source(image,inputs,owner)
+    for owner,fact,joined in source.derive_uniform_sources(image,inputs):
         fact=dict(fact,wrappedType=source._selected_wrapper(image,fact['dispatcher']['wrapperName']).wrapped_type)
         program=source.compile_uniform_program(owner,fact,wrapper_null_admitted=False)
         fact['sourceOwner']=owner

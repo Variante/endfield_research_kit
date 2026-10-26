@@ -149,6 +149,19 @@ whose exported `data` is empty; without `canvasGraph`, no compressed graph
 ordinal is admitted. Reuse the complete RID/PPtr requirements in
 `extend_data_graph_ai_corpus.py`; a similarly named graph cannot repair the gap.
 
+An empty exported graph reference is also an exporter-coverage diagnostic,
+not proof that its serialized payload has no fields. In the CLI `Exporter.cs`,
+`IsKnownRawPayloadMergeCandidate` excludes `Beyond.Gameplay.AI` from empty-data
+enrichment, although the guarded `EnemyBattleGraph/EnemyBattleGraphData` raw
+decoder reads `canvasGraph` and other fields. That decoder marks its result
+inferred; simply admitting it cannot satisfy the graph corpus's exact TypeTree
+gate. The existing serialized managed-reference TypeTree path requires a unique
+assembly/namespace/class match and complete payload consumption. AI graph types
+are absent from its early-preference list, so a successful inferred decoder may
+return before the later exact fallback. A repair must test these two dispatch
+boundaries without weakening exact admission. No missing Rodin pointer is
+recovered by this code-path observation alone.
+
 ## Open join: spawner entry to live enemy
 
 The default enemy identity reaches the AI through the protocol-derived

@@ -712,6 +712,16 @@ Historical `wholeSchemaExact` meant frame/EOF: registry `familyWholeSchemaExact`
 [Shared sequences](../../scripts/game_data/memorypack/skill_timeline_shared_sequence.py) own historical action/record/group/file rungs and independently gated Buff reuse; numeric tag equality never admits a route. [Recursive actions](../../scripts/game_data/memorypack/skill_timeline_recursive_actions.py) keep four-byte BlackboardDouble bits and independently typed bounded children.
 Current native/source/reader evidence is required at every rung; an exact action or ActionGroup cannot replace whole-file admission or a source-bound terminal selection.
 
+The current sequence operation prepares native evidence before consuming a
+selected file: it re-proves the finite source-owner set and composes its child
+capabilities. A single-file timeout therefore does not identify an unsupported
+record or failed cursor. `derive_uniform_sources` shares the ordinary uniform
+routes' AbilityActionData switch scan within one selected-image operation;
+every owner comparison still runs, and custom-root-motion and other child
+proofs retain their own setup. This is not a cross-operation proof cache or a
+measured guarantee about total decode time. Native/source/pool bookends and
+whole-file admission remain unchanged.
+
 ## SkillData live cursor evidence
 
 Historical complete loss-free target-set observations selected fields 43-47's earlier one-member terminal at EOF for witnessed sources only. [Cursor receipts](../../scripts/game_data/memorypack/skill_cursor_receipt.py) select source positions, not child names, provider/cache choice or gameplay semantics.
