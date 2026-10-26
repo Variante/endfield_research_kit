@@ -1,4 +1,24 @@
-"""Recover executable references from admitted selected Shader bodies."""
+"""Recover executable references from admitted selected Shader bodies.
+
+Evidence and admission boundary
+-------------------------------
+Exact token-framed DXBC disassembly uses the explicitly selected Windows system
+compiler. Checked packed-slot lanes are high byte for VS and next byte for PS;
+unused slots stay unused. Structured SRV/UAV declarations must match the stored
+writable bit and executable shape. Compiled register joins are direct syntactic
+references, not native binding calls or complete field names. Static anonymous
+byte offsets, dynamic indices and named scalar/vector fields remain distinct;
+supported operand masks/swizzles give bounded reads, while unsupported forms
+retain conservative possibilities and the independent straight-line output
+reader fails closed on control flow/unsupported operations.
+
+The studied minimal Lit keyword-superset candidate reads base/normal/detail/mask
+for RGB; mask colours blend B then G then R with independent weights, UV0/UV1
+and camera-dependent detail falloff. Conditional finite _DetailMode=1 cancels
+only detail colour weight, not detail normal/PBR. This is not proof of live
+variant/upload/mip, colour transport or deferred lighting and cannot establish
+a game-faithful base-texture/tint preview.
+"""
 if __name__=='__main__' and not __package__:
     raise SystemExit('Run python -m scripts.game_data.shader.instruction_corpus from the repository root')
 import argparse

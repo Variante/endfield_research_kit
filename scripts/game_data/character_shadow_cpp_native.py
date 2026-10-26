@@ -3,6 +3,38 @@
 Selected native bytes establish declarations and static operands only. The
 contract does not establish a live call, camera identity or matrix ownership.
 Callers select all three native files explicitly; drift produces no rows.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact selected GameAssembly/metadata/UnityPlayer checks authenticate native camera
+fields, unboxed settings, ABIs, caller and windows; missing/mismatched inputs
+withhold declarations. The CPP camera is opaque, not a managed Camera pointer.
+This loader does not observe cache updates, fit execution or uploads. Live
+admission separately needs original fit results, scoped matrix/quaternion
+intermediates and MXCSR, camera/frame identities and byte joins. Generic math
+need not be globally hooked when retained parent operands bound the operations.
+
+GetBounds reads a per-camera cache: retain dictionary/fallback identity,
+sphere/renderer and camera snapshots at its earlier update, not merely later
+GetMatrices getters. Exact caster/receiver replay does not prove cache inputs.
+Sphere/renderer-info arrays contain inline values; use unboxed offsets and native
+element sizes, keeping element and Transform/Renderer addresses separate.
+Fixtures must be independently declared, rather than reproduce observer offsets.
+A missing similarly named managed fit call cannot exclude the separate CPP fit.
+A direct HGCamera.BeforeCullingCPP getter stack is not a caster-matrix writer.
+
+An upload join needs buffer width, constant offset, Map generation, original
+Unmap completion and exact used slice; allocation size is not shader-used range.
+An upload caller is not the earlier arithmetic writer. Valid cache snapshots
+remain usable without optional entry calls and do not alone justify recapture.
+Corrected inline snapshots reproduce sphere unions and first getter matrices;
+that does not admit an independent source pose's fit. TransformPoint may differ
+from exported-matrix multiplication by a world-coordinate float32 step.
+Same-schema actor timeline links lack pose fields: only before/after rows carry
+them. Observed orthonormal camera inversion and explicit scalar-SSE float32
+boundaries are arithmetic controls, not proof of earlier field writers, source
+uploads, image parity or exclusive cache ownership.
 """
 from __future__ import annotations
 import hashlib

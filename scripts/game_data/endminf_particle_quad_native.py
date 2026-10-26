@@ -1,4 +1,23 @@
-"""Authenticate selected quad stages and complete size/getter read families."""
+"""Authenticate selected quad stages and complete size/getter read families.
+
+Evidence and admission boundary
+-------------------------------
+Exact authenticated windows extend the matrix loader to complete getter/unpack
+families and selected non-freeform stages, without certifying live execution.
+Public StartSize copies birth arrays; the renderer selects evaluated current
+size under another flag. The selected non-freeform helper does not read rotation.
+Conditional ordered replay with mathematical weighted curves matches head
+corners but fails tails. Isolated Unity curve evaluation reduces that discrepancy
+without proving the native curve evaluator or source simulation. In the retained
+consolidated recording, observed active sizes, optional velocity multiplier,
+flags, calibration and returned job parameters close all retained POSITION
+words, including a unique same-Play first-frame native-output/GPU match.
+Before/after equality is not atomicity; reciprocal-square-root replay remains
+current-CPU conditioned. Other attributes and source curves/simulation remain
+unresolved. Keep public-getter failures, capture stalls and missing closing
+palettes; observed birth/age values are diagnostics, not renderer inputs, and
+new movies inherit no older image scores.
+"""
 import hashlib
 import json
 from types import SimpleNamespace

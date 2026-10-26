@@ -44,6 +44,17 @@ reads the field-semantics report rather than the corpus, so it runs in
 seconds; ``--min-objects N`` works the corpus down by class size.
 
     python -m scripts.game_data.monobehaviour.table_keys --report reports/assets/monobehaviour_table_keys.json
+
+
+Evidence and admission boundary: structuralOnly membership is measured over the
+recorded value sample, not every distinct value or a live consumer. Story's
+DialogLipSyncPlayableAsset/ DialogTrunkPlayableAsset._trunkId match DialogTextTable;
+DialogOptionPlayableAsset.options[]._optionId matches DialogOptionTable and
+UIButton.hintTextId matches TextTable. UIStateController.states[].stateName
+matching one factory key is not a key field. UIText._textId mostly holds PH_*
+placeholders; SubtitlePlayableAsset._textId cutscene/FMV subtitle IDs remain
+unresolved. mostly_key_of exceptions may be another key space or absent content;
+this module does not choose.
 """
 
 from __future__ import annotations

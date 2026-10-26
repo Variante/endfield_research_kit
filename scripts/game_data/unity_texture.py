@@ -2,6 +2,16 @@
 
 No shader roles, normal reconstruction or colour-space conversion are inferred.
 The admitted generic body and its exact archive/inline bytes are the inputs.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact supported scope is unstripped single-image block-compressed Texture2D:
+every mip's dimensions/block footprint and the full byte census must agree with
+stored image size and the exact owner-archive range. Unsupported platform
+layouts, stripped mips and other dimensions remain unavailable. Stored UV set,
+transform, sampler and colour-space fields do not prove active shader roles,
+live sampling or runtime overrides.
 """
 import base64
 import struct

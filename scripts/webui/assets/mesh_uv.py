@@ -1,4 +1,12 @@
-"""Project admitted stored UV1 into mesh OBJs beside the original publication."""
+"""Project admitted stored UV1 into mesh OBJs beside the original publication.
+
+Evidence and admission boundary
+-------------------------------
+Fresh admitted Mesh buffers must reproduce the immutable published neutral UV0
+OBJ byte-for-byte before only texture coordinates change to stored UV1. This
+is an exact stored-channel projection, not live UV selection, shading or renewed
+renderer admission.
+"""
 if __name__=='__main__' and not __package__:
     raise SystemExit('Run python -m scripts.webui.assets.mesh_uv from the repository root')
 import argparse

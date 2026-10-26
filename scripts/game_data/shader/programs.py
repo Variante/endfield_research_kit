@@ -1,4 +1,14 @@
-"""Bounded segmented Shader program directories and Endfield code envelopes."""
+"""Bounded segmented Shader program directories and Endfield code envelopes.
+
+Evidence and admission boundary
+-------------------------------
+Exact framing consumes plain-LZ4 segments and complete compressed/decoded
+range censuses. Segment zero owns the directory; each record selects its actual
+data segment. D3D code-envelope ranges must close complete DXBC containers;
+token headers, not serialized carrier names, establish executable stage. One
+vertex carrier may hold both vertex and fragment executables. Unsupported
+non-D3D records remain opaque.
+"""
 import hashlib
 import struct
 from scripts.game_data.lz4_block import decompress_lz4

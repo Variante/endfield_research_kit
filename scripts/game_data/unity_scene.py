@@ -3,6 +3,18 @@
 These are stored GameObject, Transform, MeshCollider, BoxCollider and Rigidbody bodies, not runtime
 instances. Callers authenticate the serialized identity/raw bytes separately.
 External PPtrs remain unresolved; a matching name or bare PathID never joins.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact framing covers the selected Endfield player bodies through EOF, including
+GameObject tag/art-tag/active fields omitted by dedicated JSON. A binding needs
+component and GameObject backlinks, exactly one Transform and reciprocal full
+ancestor chains. Root-to-leaf TRS includes root rotation/scale; one position is
+not placement. Local Mesh PPtrs may join equal raw cooked-Mesh hashes. Each
+collider keeps its own transform even when several reference one Mesh; convex
+selects its cooked buffer. Stored float32 TRS composition does not prove live
+engine evaluation, activation, world instances or animation.
 """
 from __future__ import annotations
 

@@ -4,6 +4,20 @@ PPtrs select their own file's ordered external table, then a unique physical
 CAB/object in the admitted directory selection. CABMap is a location hint for
 additional extraction, never the ownership witness. Runtime selection, world
 instances and effective material/shader behavior remain separate.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact stored LOD membership uses actual LODGroup renderer PPtrs and reciprocal
+prefab hierarchies, never filename suffixes. Missing directories, absent objects
+in complete directories, unselected bodies and ambiguous CABs are separate
+gaps. Mathematical stored LOD assemblies do not establish camera selection,
+additional-stream application, deformation, appearance or world instances.
+Static-batch parts without a proved transform/range route remain excluded.
+Model-to-collider joins additionally require native-gated Model path hash,
+unique manifest asset path/logical Bundle, active physical Bundle and declared
+prefab root. Keep Model placement and prefab-local collider matrices separate;
+registration, parenting, instantiation and enable state remain unresolved.
 """
 from __future__ import annotations
 

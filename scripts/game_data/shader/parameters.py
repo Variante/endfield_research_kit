@@ -3,6 +3,16 @@
 Candidate boundaries only follow completely parsed CB rows. A unique suffix
 must close the entire resource and descriptor tables; arbitrary byte scanning
 never supplies a boundary. Uninterpreted header/descriptor words stay explicit.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact stored framing includes nested structs and whole constant-buffer rows.
+Descriptor-set IDs are keys and may be sparse, rather than row ordinals;
+duplicate/out-of-range IDs and malformed binding maxima fail closed. Sparse-ID
+support corrects a dedicated AnimeStudio parser defect; fixture validation is
+not a rebuilt production exporter or renewed corpus admission. Unknown header
+and packed words remain structuralOnly; no GPU slot/upload or sampler claim.
 """
 import struct
 from scripts.game_data.unity_scene import _Reader

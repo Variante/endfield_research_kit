@@ -4,6 +4,19 @@ Stored renderer/filter ownership and material slot order are exact. External
 slots may reuse witnesses from the same admitted physical serialized file;
 unwitnessed slots remain unresolved. Resource bodies outside the original
 scene scope and runtime draw/appearance are not claimed by this supplement.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact admission uses the shared supplement producer/source/census gates and
+reviewed field paths plus an independent EOF reader. Renderer and MeshFilter
+must share a reciprocal GameObject and a complete chain to the declared physical
+prefab root; a missing filter is a gap. Dedicated JSON lacks PPtr witnesses and
+omits the final Enlighten stream, whose raw tail remains authoritative. An
+external slot may reuse a checked MeshCollider witness only from that same
+physical file, with raw pointer, CAB/path and source hashes checked. Missing
+witnesses, excluded bodies and ambiguous CABs remain distinct. Other Renderer
+classes are outside scope; exact Mesh identity alone is not render geometry.
 """
 from __future__ import annotations
 

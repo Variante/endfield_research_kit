@@ -2,6 +2,20 @@
 
 The contract describes code and layout, not an observed live branch. A .data
 zero-fill address has no installed-file value; its initializer is separate.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact selected-input authentication covers the getter's packed branch flag and
+complete unwind families. Conditional numeric replay under recorded unsorted,
+zero-pivot mode and stable bracketing flags builds a scaled affine inverse from
+camera-to-world; substituting stored world-to-view changes float32 results.
+Ordered instructions reproduce retained head anchors, not full attributes, live
+branch execution, simulation or calibration. Reciprocal-square-root correction
+has a runtime initializer and zero-fill storage: a virtual-tail RVA has no file
+value. Require strict raw-backed PE reads and an explicit initializer/current-CPU
+condition; never read accidental bytes in the following section or feed observed
+runtime operands into source rendering.
 """
 from __future__ import annotations
 

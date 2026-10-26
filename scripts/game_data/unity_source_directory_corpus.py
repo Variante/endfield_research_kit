@@ -5,6 +5,15 @@ spans require the same selected ledger and current chunk hashes. A separate
 sidecar extracts metadata, generic JSON/raw bodies and owner-archive spans;
 independent readers recheck metadata EOF, body EOF/JSON and exact object census.
 Saved derived directory/resource rows never authorize a join.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact admission loads physical Bundles separately with explicit offsets and
+retains metadata, selected raw/generic bodies and owner-archive resource spans.
+The sidecar references admitted libraries without rebuilding the CLI. Complete
+directory/body admission closes stored Mesh/Material/Shader/Texture references;
+it does not establish runtime material overrides, selected LOD or instances.
 """
 from __future__ import annotations
 

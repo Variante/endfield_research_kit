@@ -3,6 +3,27 @@
 This is a source-declaration audit, not runtime visibility, shader deformation
 or a full vertex/skin equivalence proof. Mesh targets are retained as exact
 referring CAB/external-slot/PathID tuples; a missing mesh target is not empty.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact attachment comparison requires reciprocal source GameObject/Transform,
+MeshFilter and renderer declarations against FBX geometry attachments; external
+Mesh identities retain referring CAB, external slot and PathID. Count equality
+proves attachment coverage only. A selected independent sheep Mesh-body/FBX
+comparison matched vertices and triangles after X reflection/winding reversal:
+its horns are present despite bright preview emission and weapon-style names.
+That result does not prove other Animator payloads or final game appearance.
+
+Dependency closure can cross VFS layers, offsets within one physical chunk and
+loose built-in Resources. The selected-layer CAB map wins; fallback fills only
+absent names. Built-ins participate in cache/freshness inputs. Dependencies bypass
+source-object filters without becoming export targets; root offset filters do
+not narrow transitive closure. Duplicate sibling names require exact ImportedFrame
+identity for attachment; legacy producers retain path lookup, without implying
+new animation/morph/bone rules. Missing parsed Mesh targets warn by exact pointer.
+Remaining door CAB targets are absent from both current layer indexes and the
+saved previous indexes/Mesh PathIDs: partial exports must not invent geometry.
 """
 
 

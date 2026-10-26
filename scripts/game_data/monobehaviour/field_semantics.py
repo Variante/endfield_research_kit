@@ -68,6 +68,17 @@ timeout. The export's ``meta/cab_map`` is read from the same export root.
 corpus down by object count; ``--limit N`` is a bounded probe, not a census.
 
     python -m scripts.game_data.monobehaviour.field_semantics --names-report reports/assets/monobehaviour_script_names.json --progress 100000 --report reports/assets/monobehaviour_field_semantics.json
+
+
+Evidence and admission boundary: exact TypeTree/occupancy evidence is distinct
+from direct runtime use. Null-only or single-value fields record authored
+defaults, not variable configuration. UIImage.imgRefPath contains authored UI
+Sprite paths; filled m_Sprite references name containers. Timeline m_Clip fields
+on AnimationPlayableAsset/DialogNPCMorphPlayableAsset supply stored clip links;
+autoBindingPath on DialogSkeletalMorphTrack, DialogMuteAutoBlinkTrack and
+DialogLipSyncTrack names character/FacialMorphCtrlGO hierarchy bindings.
+CutsceneRootComponent._director resolves to exact exported PlayableDirector
+identity in the measured corpus. None establishes executed ownership.
 """
 
 from __future__ import annotations

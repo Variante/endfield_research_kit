@@ -1,4 +1,17 @@
-"""Join admitted stored programs to saved graphics draw observations."""
+"""Join admitted stored programs to saved graphics draw observations.
+
+Evidence and admission boundary
+-------------------------------
+Exact stored-body re-admission precedes saved shader archive/draw comparison.
+Creation/registration is not a draw, and program equality cannot identify a
+source Material. Constant prefixes must cover declared spans within bound ranges.
+Compressed texture content requires immutable hash-checked preview inputs and
+complete mip tails; same-draw content additionally needs copy phase, call/Present
+and bound object/view, not merely a frame-wide draw-local flag. Retained Lab
+shared-program examples do not close texture content for the studied preview;
+the lifter candidate cohort has no retained draw. Effective constants, formats,
+mip ranges, samplers and source ownership remain unresolved.
+"""
 import argparse
 from collections import Counter,defaultdict
 import hashlib

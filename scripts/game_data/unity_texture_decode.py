@@ -2,6 +2,15 @@
 
 The independent reader closes every stored mip before supplying only mip zero
 to the codec. This does not select shader roles, sampler states or live mip bias.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact source admission precedes this conditional codec projection. Managed and
+native codec libraries must come from the same admitted CLI closure, without
+filesystem fallback or rebuild. Complete output census, pixel lengths and
+hashes precede PNG publication; channels are retained with a row flip for export
+coordinates, without gamma conversion or normal reconstruction.
 """
 import hashlib
 import json

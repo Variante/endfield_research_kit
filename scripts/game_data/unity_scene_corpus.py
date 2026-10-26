@@ -6,6 +6,19 @@ serialized external-table slot and a unique fresh physical target CAB.
 The cooked-collision gate supplies the shared selected Unity/VFS authentication.
 Mesh selectors require that object in the export. AssetBundle selectors with
 PathID=0 select a physical Bundle span only; they assert no object identity.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact selected-body admission authenticates the VFS ledger, physical chunks,
+exporter closure, commands/logs and raw/typed object hashes. Independent reads
+compare PPtrs, TRS and settings; malformed bodies, warnings and incomplete Mesh
+coverage fail visibly. Export absence does not prove directory absence, and
+GameObject layer omission in dedicated JSON is not raw disagreement. External
+slots require their actual CAB/path witness; duplicate physical CABs remain
+ambiguous. Saved receipt replay recomputes joins with canonical ledger paths
+and consumption snapshots, without another export. Only actual AssetBundle
+container GameObject pointers label reciprocal hierarchy roots as prefabs.
 """
 from __future__ import annotations
 

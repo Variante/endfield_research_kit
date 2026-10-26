@@ -3,6 +3,17 @@
 This supplemental scope does not widen the scene/Mesh receipt. Only selected
 physical CABs participate; raw bodies and serialized type trees prove the box
 layout. Names, preloads and export absence do not establish ownership/absence.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact admission restricts extraction to physical AssetBundle spans in the
+original scene receipt and rechecks current exporter, Bundle hashes, commands,
+logs, raw/JSON coverage and consumption snapshots. Reviewed field paths and an
+independent EOF read establish GameObject/material pointers, options/tag words,
+surface/boolean fields, full size and local centre. Reciprocal components and
+complete Transform chains must reach an actual container-declared root. Stored
+corner projection does not prove live shear/nonuniform-scale PhysX handling.
 """
 from __future__ import annotations
 

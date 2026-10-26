@@ -23,6 +23,26 @@ original lengths, so node offsets stay valid and the file size is unchanged
 Geometry, materials, skins and transforms are untouched. Content that is
 genuinely different (other meshes, materials or nodes) stays different. A
 buffer that is not a binary FBX this reader understands is returned as is.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact normalization bounds node advancement within parents and full property
+blocks; unsupported/truncated/malformed trees return the original bytes, never
+a partial normalization. Normalized equality compares exported content, not
+Unity object identity.
+
+The conditional Assets resource key (fc) ignores current-export document URLs,
+matching scene-root labels and non-bone Null instance labels, local/geometric
+transforms/pivots, preferred joint angles, PoseNode matrices and Cluster
+Transform/TransformLink/TransformAssociateModel matrices. Cluster-linked Null
+bones keep labels. Typed matrix dimensions, graph links, mesh/bone names,
+geometry, material/texture records, skin indices/weights, animation and remaining
+properties participate. Strict framing failure withholds fingerprints. Ignoring
+bind matrices is pose-insensitive grouping, not equivalent deformation. The fv
+key retains pose/transform/bind values while ignoring the same instance labels;
+typed matrix decoding equates compressed/uncompressed encodings. Neither key
+changes original files/full hashes or proves identity/runtime use.
 """
 
 from __future__ import annotations

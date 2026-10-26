@@ -2,6 +2,15 @@
 
 Presence in a compiled parameter table does not prove a live upload or a shader
 instruction read. Offset alternatives stay separate instead of selecting one.
+
+
+Evidence and admission boundary
+-------------------------------
+StructuralOnly coverage separates explicit numeric Material overrides from
+Shader defaults and retains every named field-offset alternative per conditional
+LOD/pass cohort. Missing layouts remain counted; unknown keywords prevent
+candidate selection. Repeated named tables do not prove instruction use or
+effective upload. Fallback texture names are declarations, not decoded images.
 """
 from collections import Counter, defaultdict
 import json

@@ -1,4 +1,16 @@
-"""Admit selected Shader bodies and independently recover compiled metadata."""
+"""Admit selected Shader bodies and independently recover compiled metadata.
+
+Evidence and admission boundary
+-------------------------------
+Exact selected-source admission authenticates current bodies and compares every
+compressed segment and D3D record with admitted CLI libraries through a separate
+managed checker. Stored LOD/pass/player indices join code, keywords and parameter
+records. Rebuilding the CLI changes exporter provenance even with unchanged game
+bytes; fresh Shader admission does not renew older collision/render receipts.
+Keyword-superset candidates allow additional engine/global keywords and remain
+conditional; unknown valid stored keywords prevent shortlisting. Effective
+variant, pass execution and live bindings remain unresolved.
+"""
 if __name__=='__main__' and not __package__:
     raise SystemExit('Run python -m scripts.game_data.shader.corpus from the repository root')
 

@@ -2,6 +2,14 @@
 
 The dedicated AnimeStudio reader documents this prefix. Remaining bytes are
 retained as an opaque tail; container membership is not preload ownership.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact prefix framing bounds preload spans and retains unrelated tail bytes
+opaquely. A container's actual GameObject PPtr can label a checked hierarchy
+root; preload adjacency cannot. Raw/JSON prefix agreement proves stored prefab
+membership, not live loading, placement or ownership of every dependency.
 """
 from __future__ import annotations
 

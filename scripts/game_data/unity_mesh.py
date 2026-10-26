@@ -1,4 +1,15 @@
-"""Stored Endfield Mesh framing and bounded render vertex/index projections."""
+"""Stored Endfield Mesh framing and bounded render vertex/index projections.
+
+Evidence and admission boundary
+-------------------------------
+Exact framing omits CompressedMesh only when the preceding raw baked-collision
+boolean selects that Endfield branch. The bounded projection reads uncompressed
+vertex streams and complete triangle submesh ranges, including distinct UV0/UV1
+and signed-10 octahedral packed normals. Stream bytes must equal the declared
+range of the owning CAB archive resource; filesystem-search fallback cannot
+admit them. Runtime tangent frames, deformation and effective vertex-stream
+application remain outside this stored projection.
+"""
 import base64
 import math
 import struct

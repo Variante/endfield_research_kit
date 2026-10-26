@@ -3,6 +3,17 @@
 Only declared primitive, string, map, byte-buffer, array and compound layouts
 participate. Nodes come from authenticated metadata; unsupported shapes fail
 instead of inferring a schema or changing a class-specific reader's coverage.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact declared-field decoding consumes body EOF and checks complete generic
+JSON while preserving primitive float widths. Byte-buffer bounds and compound
+item budgets are distinct. Generic Material fields retain UV-set indices,
+double-sided GI and tails omitted by dedicated JSON. Matching texture keys to
+the exact Shader's declared properties is structuralOnly, not sampler binding
+or runtime keyword selection; parsed-form Shader names can exist when the root
+object name is empty.
 """
 from __future__ import annotations
 

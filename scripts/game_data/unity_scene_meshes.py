@@ -4,6 +4,17 @@ No extraction runs. A referring raw Mesh PPtr and its serialized external slot
 must select one physical CAB in the combined source set. Complete raw/cooked
 checks precede ownership; names, preloads and bare PathIDs never select a Mesh.
 The result has its own schema because its Mesh scope extends the scene census.
+
+
+Evidence and admission boundary
+-------------------------------
+Exact raw/cooked target checks require both selections from the same current
+input set. The referring PPtr, exact external slot and unique physical CAB are
+mandatory; missing or ambiguous targets stay unresolved. This extends only
+the Mesh join, not scene-body census. Stored assemblies keep each collider as
+a separate part and compose root and descendant TRS under a physical root;
+disabled definitions are included, while unadmitted primitive/custom bodies
+and live physics remain outside scope.
 """
 from __future__ import annotations
 
