@@ -16,7 +16,13 @@
     },
     "otherFinalScalar": {
       "Atk": "1 + sum over X in Str, Agi, Wisd, Will of floor(final X) * final AtkIncreaseFactorFromX",
-      "ComboSkillCooldownScalar": "final ComboSkillCooldownDecrease"
+      "ComboSkillCooldownScalar": "final ComboSkillCooldownDecrease",
+      "PhysicalDamageTakenScalar": "final PhysicalDamageTakenReduction",
+      "NaturalDamageTakenScalar": "final NaturalDamageTakenReduction",
+      "FireDamageTakenScalar": "final FireDamageTakenReduction",
+      "PulseDamageTakenScalar": "final PulseDamageTakenReduction",
+      "CrystDamageTakenScalar": "final CrystDamageTakenReduction",
+      "EtherDamageTakenScalar": "final EtherDamageTakenReduction"
     },
     "modifyAttributeTarget": {
       "Specific": "the modifier's own attributeType",
@@ -37,10 +43,10 @@
     }
   },
   "evidenceBoundary": {
-    "direct": "Every method claim below is re-proved on the installed build: the base/armed/final calculators call the named modifier-array readers and other-attribute hooks, the hooks call the named BattleConst getters and main/sub fields, and the weapon reader walks WeaponUpgradeDetailList. ModifierType and ModifyAttributeType members are compared exactly.",
+    "direct": "Every method claim below is re-proved on the installed build: the base/armed/final calculators call the named modifier-array readers and other-attribute hooks, the hooks (or the reviewed inlined movement conversion) call the named BattleConst getters and main/sub fields, and the weapon reader walks WeaponUpgradeDetailList. ModifierType and ModifyAttributeType members are compared exactly.",
     "conditional": "The arithmetic order in `formula` (initial values 0 for sums and 1 for multiplier sums and products, max(..., 0) on multiplier factors, Math.Floor on attributes before conversion, Math.Clamp to the per-attribute bounds, and the Main/Sub/All target selection) is a reviewed capstone reading of one build's method bodies. The stdlib decoder does not decode every SSE instruction, so a client update re-proves the call structure but not the arithmetic; review the bodies again when their hashes in the audit change. The newly authenticated conversion windows apply only to normal native paths without IFix replacements; exceptional paths and live combat modifiers remain outside this calculation.",
     "unresolved": "Runtime-only modifier sources (combat buffs, gem terms, team effects) and the enhancement level that selects an equipAttrModifiers attrValues index are outside this contract.",
-    "exact": "The added healing, resistance, movement and cooldown default-path arithmetic windows, their RIP-relative float literals and participating AttributeType IDs must match the selected native build. Changed bytes, literals or enum IDs fail closed pending review. Coefficients remain BattleConst table inputs."
+    "exact": "The complete base, armed and final bodies (including the inlined movement conversion), conversion dispatchers and healing/resistance bodies, their RIP-relative float literals and participating AttributeType IDs match the reviewed selected native bytes. Changed bytes, literals or enum IDs fail closed pending review. The final dispatcher also applies each element-specific DamageTakenReduction to its DamageTakenScalar. Coefficients remain BattleConst table inputs."
   },
   "enumClaims": {
     "Beyond.GEnums.ModifierType": {
@@ -89,13 +95,13 @@
     "Attributes._CalculateArmedAttributeValue": {
       "type": "Beyond.Gameplay.Core.Attributes",
       "method": "_CalculateArmedAttributeValue",
-      "contract": "Applies base multipliers, base final additions and base final scalars to the base value, then the other-attribute base final scalar.",
+      "contract": "Applies the reviewed armed-stage formula. The MoveSpeedScalar conversion is inlined: when the attribute is MoveSpeedScalar, subtract GetValue(SlowActionSpeedScalar) from one before multiplying. The complete armed body and its seed literal are authenticated by arithmeticWindows.",
       "claims": [
         {
           "calls": [
             "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.GetBaseValue",
             "Beyond.Gameplay.Core.Attributes._CalculateBaseAttributeValue",
-            "Beyond.Gameplay.Core.Attributes._GetOtherAttributeBaseFinalScalar"
+            "Beyond.Gameplay.Core.Attributes.GetValue"
           ],
           "ordered": true
         }
@@ -318,8 +324,8 @@
     {
       "type": "Beyond.Gameplay.Core.Attributes",
       "method": "GetPhysicalResistanceFromAgiAttribute",
-      "byteCount": 193,
-      "sha256": "eeffb8bb67c1f3f6da779343d137c268067b4f5fb8d22ac203df13f574f9a5f6",
+      "byteCount": 213,
+      "sha256": "c5d91f0c8427c4fd878db286bdf2f185d209aac9f9c1403765128a0d2668e276",
       "float64Literals": [
         {
           "instructionOffset": 129,
@@ -334,8 +340,8 @@
     {
       "type": "Beyond.Gameplay.Core.Attributes",
       "method": "GetEnergyResistanceFromWisdAttribute",
-      "byteCount": 193,
-      "sha256": "a98a5be9bd09b4d51c5085441d444427c7ad040e5f44ba284ad329df17d571a0",
+      "byteCount": 213,
+      "sha256": "2b9e2afd0ff4e5c7577de82de7901f506925cc3d8dec4a410787080405e99cd2",
       "float64Literals": [
         {
           "instructionOffset": 129,
@@ -350,36 +356,36 @@
     {
       "type": "Beyond.Gameplay.Core.Attributes",
       "method": "GetHealScalarFromWill",
-      "byteCount": 148,
-      "sha256": "5595367e1e0167435530dd096f4b38c8aea556cd752f39c8788c4c81aad63596",
+      "byteCount": 168,
+      "sha256": "519cc2aa98eded1d54613108b01c6cacbaeea279d7f17eab6a2d0771fd05aecc",
       "float64Literals": []
     },
     {
       "type": "Beyond.Gameplay.Core.Attributes",
       "method": "GetHealTakenScalarFromWill",
-      "byteCount": 148,
-      "sha256": "84c08d9babc38868e30166c63fe493adbeb5e260f422ea2f80add2f70e2e5799",
+      "byteCount": 168,
+      "sha256": "4fe6fdeffc66505d2dae961dd076b239ece1c8312b045ce2ae7668feece635ff",
       "float64Literals": []
     },
     {
       "type": "Beyond.Gameplay.Core.Attributes",
       "method": "_GetOtherAttributeBaseAdd",
-      "byteCount": 388,
-      "sha256": "e721ad77ce83f941adc09fbe3c385cd09d8c1490fa291be8a02f38876d9e260c",
+      "byteCount": 250,
+      "sha256": "d3bf006282d14b294f9634609f35ccf690c0c1bab49443b65e96c0590c21946c",
       "float64Literals": []
     },
     {
       "type": "Beyond.Gameplay.Core.Attributes",
       "method": "_GetOtherAttributeBaseFinalScalar",
-      "byteCount": 152,
-      "sha256": "f584d2126c05ddd1f0b0308911728de9e0d21fb9479a904dba4c6f863c77f242",
+      "byteCount": 78,
+      "sha256": "b19156fb82847369eac81802bc84f0e4a5287e51aa0467bf9dbe356254957e34",
       "float64Literals": [
         {
-          "instructionOffset": 65,
+          "instructionOffset": 32,
           "value": 1.0
         },
         {
-          "instructionOffset": 103,
+          "instructionOffset": 64,
           "value": 1.0
         }
       ]
@@ -387,11 +393,55 @@
     {
       "type": "Beyond.Gameplay.Core.Attributes",
       "method": "_GetOtherAttributeFinalScalar",
-      "byteCount": 285,
-      "sha256": "6f73d6c89161058a34389f4abf41e078b306b4cc3ca88ee5dc8349480fb125e2",
+      "byteCount": 396,
+      "sha256": "7e40aef9b5378b6ad59ee526c07f6d7d4db542c21aad4d9af3174a35b053340e",
       "float64Literals": [
         {
-          "instructionOffset": 81,
+          "instructionOffset": 52,
+          "value": 1.0
+        },
+        {
+          "instructionOffset": 200,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "_CalculateBaseAttributeValue",
+      "byteCount": 2332,
+      "sha256": "b9380e4ce828a0c454ec8e39b9eb7f3c5009fc7aa8dbfa0db6584453bddbaa88",
+      "float64Literals": [
+        {
+          "instructionOffset": 451,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "_CalculateArmedAttributeValue",
+      "byteCount": 2608,
+      "sha256": "eede89a8ff3c3aedec24a2934efedd69387db16bc1456257561cad24b8091fdb",
+      "float64Literals": [
+        {
+          "instructionOffset": 276,
+          "value": 1.0
+        },
+        {
+          "instructionOffset": 2147,
+          "value": 1.0
+        }
+      ]
+    },
+    {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "_CalculateFinalAttributeValue",
+      "byteCount": 2540,
+      "sha256": "d5a90dd82e5200f3bd39e951c0ea6526e59903dfe9c731c3a3db70fdd284624d",
+      "float64Literals": [
+        {
+          "instructionOffset": 303,
           "value": 1.0
         }
       ]
@@ -412,6 +462,18 @@
     "CrystResistance": 96,
     "PulseResistance": 97,
     "FireResistance": 98,
-    "EtherResistance": 99
+    "EtherResistance": 99,
+    "PhysicalDamageTakenScalar": 4,
+    "PhysicalDamageTakenReduction": 101,
+    "NaturalDamageTakenScalar": 48,
+    "NaturalDamageTakenReduction": 102,
+    "FireDamageTakenScalar": 5,
+    "FireDamageTakenReduction": 105,
+    "PulseDamageTakenScalar": 6,
+    "PulseDamageTakenReduction": 104,
+    "CrystDamageTakenScalar": 7,
+    "CrystDamageTakenReduction": 103,
+    "EtherDamageTakenScalar": 60,
+    "EtherDamageTakenReduction": 106
   }
 }

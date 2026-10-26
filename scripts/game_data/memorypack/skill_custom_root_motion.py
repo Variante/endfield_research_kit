@@ -5,11 +5,15 @@ MemoryPack profiles that the selected native source calls identify, and leaves
 all stored values anonymous to callers. A SkillData action is exact only when
 its enclosing timeline and top-level continuation independently rejoin.
 
-The route is Skill-only: the selected formatter reads a 24-member wrapper
+The route is Skill-only: the selected formatter reads a 25-member wrapper
 with bounded Blackboard, curve, target, LayerMask and byte-payload children.
 The reviewed contract rechecks the dispatcher, method bodies, ordered
 callsites and nested type instantiations.  Stored root-motion data does not
 establish live movement.
+
+Member 9 is the one-byte ``enableScaleZWithDistanceForRealPosition``.
+The v2 contract records the inlined LayerMask DWORD load and Advance(4)
+instructions; its source call is the advance, not an erased formatter.
 """
 from __future__ import annotations
 
@@ -34,7 +38,7 @@ LABEL = "skillCustomRootMotion"
 def _contract() -> dict[str, Any]:
     value, _digest = read_reviewed_contract(
         CONTRACT_PATH,
-        schema="endfield.skill-custom-root-motion-native-contract.v1",
+        schema="endfield.skill-custom-root-motion-native-contract.v2",
         label=LABEL,
         status="exact-current-build",
     )
@@ -44,7 +48,7 @@ def _contract() -> dict[str, Any]:
         or not reads
         or len(reads) != value.get("serializedMemberCount")
         or [row.get("memberIndex") for row in reads] != list(range(len(reads)))
-        or value.get("dispatcher", {}).get("unionTag") != _A("Core_CustomRootMotionAction_Data")
+        or value.get("dispatcher", {}).get("wrapperName") != "Beyond.MemoryPack.Beyond_Gameplay_Core_CustomRootMotionAction_DataForMemoryPack"
     ):
         raise ValueError(f"{LABEL}.contract:read-order-or-route")
     admitted = {
@@ -53,6 +57,9 @@ def _contract() -> dict[str, Any]:
     }
     if any(row.get("kind") not in admitted or not isinstance(row.get("fieldName"), str) for row in reads):
         raise ValueError(f"{LABEL}.contract:unsupported-read-kind")
+    if any(not isinstance(row.get("inlineSourceInstructions"), list) or
+           (row["kind"] == "raw4" and not row["inlineSourceInstructions"]) for row in reads):
+        raise ValueError(f"{LABEL}.contract:inline-source-shape")
     return value
 
 
@@ -65,6 +72,8 @@ def validate_current_native_contract() -> dict[str, Any]:
     )
     if gate.status != NATIVE_EVIDENCE_VALIDATED:
         raise ValueError(f"{LABEL}.native:{gate.status}:{gate.detail}")
+    if contract["dispatcher"]["unionTag"] != _A("Core_CustomRootMotionAction_Data"):
+        raise ValueError(f"{LABEL}.native:catalog-route-drift")
     unityplayer = gate.gameassembly.parent / "UnityPlayer.dll"
     if not unityplayer.is_file():
         raise ValueError(f"{LABEL}.native:UnityPlayer.dll:missing")
@@ -85,6 +94,10 @@ def validate_current_native_contract() -> dict[str, Any]:
 
     previous = -1
     for read in contract["orderedSourceReads"]:
+        inline = read.get("inlineSourceInstructions")
+        if not isinstance(inline, list) or (read["kind"] == "raw4" and not inline):
+            raise ValueError(f"{LABEL}.native:inline-source-shape")
+        image.check_instruction_windows(inline, label=LABEL)
         rva = read["sourceCallsiteRva"]
         if rva <= previous:
             raise ValueError(f"{LABEL}.native:source-order")
@@ -134,9 +147,11 @@ def validate_current_native_contract() -> dict[str, Any]:
 
 def decode_custom_root_motion_action(reader: Reader, depth: int, tag: int, width: int) -> None:
     """Consume one reached CustomRootMotionAction union; ``Reader.action`` records its range."""
-    del depth  # None of the selected 24 members is a recursive action list.
+    del depth  # None of the selected 25 members is a recursive action list.
     contract = _contract()
-    if tag != contract["dispatcher"]["unionTag"] or width != 1 or reader.peek() != tag:
+    if (tag != contract["dispatcher"]["unionTag"]
+        or tag != _A("Core_CustomRootMotionAction_Data")
+        or width != 1 or reader.peek() != tag):
         raise ValueError(f"{LABEL}.union-tag")
     reader.take(width, "union-tag")
     if reader.peek() == 0xFF:

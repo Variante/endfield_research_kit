@@ -147,8 +147,10 @@ def skill_attribute_modifiers(export_root: Path, skill_ids: set[str], context: d
         return {}
     from scripts.game_data.memorypack.buff_actions import Unsupported
     from scripts.game_data.memorypack.derived_values import decode_file, find_identifier
+    from scripts.game_data.string_pool import export_string_pool
 
     source_root = ExportLayout(export_root).json_dir / "SkillData"
+    strings = export_string_pool(source_root.parent)
     out: dict[str, Any] = {}
     for skill_id in sorted(skill_ids):
         if not re.fullmatch(r"[A-Za-z0-9_]+", skill_id):
@@ -159,7 +161,9 @@ def skill_attribute_modifiers(export_root: Path, skill_ids: set[str], context: d
             continue
         try:
             raw = path.read_bytes()
-            value, reached = decode_file(raw, context["root"], context["registry"], source=path.name)
+            value, reached = decode_file(
+                raw, context["root"], context["registry"], source=path.name, strings=strings,
+            )
             if reached != len(raw) or find_identifier(value) != skill_id:
                 raise ValueError(f"whole-record-or-identifier mismatch: {reached}/{len(raw)}")
             card = value.get("cardAttributeModifier") or {}

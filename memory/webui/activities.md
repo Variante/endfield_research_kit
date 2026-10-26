@@ -93,8 +93,14 @@ Text's maintained row renderers.
   asset-name prefix is treated as an activity ownership link. Assets publishes
   it from the same complete asset scan as its index, so it adds no extraction
   input.
-- Updates publishes an `activities.json` row-diff sidecar over Activity*Table
-  and CheckInRewardTable using the Reference comparison and freshness gate.
+- Updates publishes `updates/activities.json` schema 3. Individual supporting
+  rows retain their identities; each `ActivityTable/<id>` comparison also owns
+  the exact related-reward and maintained-guide joins displayed by the page.
+  Schedule, conditions, tasks, supply submissions and reward changes can mark
+  their owning activity without a change in ActivityTable itself. Related labels
+  are terminal and condition parameter strings never create ownership links.
+  Lists and detail titles show Added/Modified badges, details show source-field
+  comparisons, and Version changes uses the shared filter with other facets.
 
 ## Outputs
 

@@ -111,7 +111,6 @@ not named keep their previously generated data.
 | `.\export.bat story audio --from-game` | **Story**, **Text**, **Audio** | Text-only Story plus the Audio page, which also gives Story its voice lines |
 | `.\export.bat map --from-game` | **Map** | Extracts only Map's inputs |
 | `.\export.bat debug --from-game` | Every page except **Updates** | Extracts every supported structured block and Unity class, then builds every page |
-| `.\export.bat --changed-only` | Every page, including **Updates** | Syncs installed data and media, then compares with the last successful sync |
 | `.\build_updates.bat OLD NEW` | **Updates** | Compares two complete export folders |
 
 Page names for commands are `story`, `story-media`, `map`, `characters`,
@@ -119,6 +118,10 @@ Page names for commands are `story`, `story-media`, `map`, `characters`,
 `gameplay` builds all of its catalogs. Plain `export.bat` extracts nothing:
 it rebuilds from the existing export and refuses stale or missing inputs,
 naming the pages to re-extract. Use `--from-game` to refresh client data.
+
+For Updates, keep a complete previous export before refreshing the current
+export, then run `.\build_updates.bat OLD NEW` separately. Both folders must
+have a complete `layout.json` marker.
 
 ### Shared data, serving, and packaging
 

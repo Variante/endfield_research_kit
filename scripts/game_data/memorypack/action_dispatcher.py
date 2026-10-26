@@ -191,7 +191,11 @@ def reviewed_switch_table(
                 isinstance(catalog_route, dict)
                 and block.get("wrapperName") == catalog_route.get("wrapperName")
                 and block.get("wrapperName") is not None
+                and key[1] == len(action_family)
             ):
+                # An unchanged early tag can still match an older build's
+                # wrapper. Only the complete current family can identify its
+                # table; retain conflicts between pins for that same family.
                 selected_identities.add(key)
     if not selected_identities:
         raise ValueError("no reviewed contract pins an action dispatcher switch table")

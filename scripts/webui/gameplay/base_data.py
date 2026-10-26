@@ -20,10 +20,10 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
-from scripts.game_data.memorypack.buff import buff_gameplay_semantics
 from scripts.game_data.attribute_formula_native import load_attribute_formula
+from scripts.game_data.memorypack.buff_values import load_context as load_buff_context
 from scripts.game_data.il2cpp import protocol as il2cpp
-from scripts.webui.gameplay import loadout_data, gems
+from scripts.webui.gameplay import loadout_data, gems, buffs as buff_projection
 from scripts.game_data.extraction.animestudio_index_io import is_effective_row
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 from scripts.game_data.unity_store import open_store_if_present
@@ -1779,6 +1779,7 @@ def build_skill_damage_catalog(
     from scripts.game_data.memorypack.buff_actions import Unsupported
     from scripts.game_data.memorypack.derived_values import decode_file, find_identifier
     from scripts.game_data.memorypack.target_settings_corpus import walk_targets
+    from scripts.game_data.string_pool import export_string_pool
 
     registry = context["registry"]
     root = context["root"]
@@ -1787,6 +1788,7 @@ def build_skill_damage_catalog(
     calculation_enums = context["calculationEnums"]
     cache = context["cache"]
     source_root = ExportLayout(export_root).json_dir / "SkillData"
+    strings = export_string_pool(source_root.parent)
     catalog = {}
     for skill_id in sorted(skill_ids):
         if not re.fullmatch(r"[A-Za-z0-9_]+", skill_id):
@@ -1802,7 +1804,7 @@ def build_skill_damage_catalog(
         else:
             try:
                 raw = path.read_bytes()
-                value, reached = decode_file(raw, root, registry, source=path.name)
+                value, reached = decode_file(raw, root, registry, source=path.name, strings=strings)
                 if reached != len(raw) or find_identifier(value) != skill_id:
                     raise ValueError(
                         f"whole-record-or-identifier mismatch: {reached}/{len(raw)}"
@@ -2045,10 +2047,16 @@ def build_gameplay_buff_catalog(
     buff_ids: list[str],
     native_semantics: dict[str, Any] | None = None,
     gameplay_tag_registry: dict[str, Any] | None = None,
+    record_context: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Resolve referenced BuffData from the export's effective game/ tree."""
 
+    from scripts.game_data.memorypack.buff_values import load_context, read_record
+    from scripts.game_data.string_pool import export_string_pool
+
+    record_context = record_context or load_context()
     source_roots = (("game", ExportLayout(export_root).json_dir / "BuffData"),)
+    strings = export_string_pool(ExportLayout(export_root).json_dir)
     catalog: dict[str, Any] = {}
     for buff_id in buff_ids:
         selected: tuple[str, Path] | None = None
@@ -2065,16 +2073,15 @@ def build_gameplay_buff_catalog(
             continue
         source, path = selected
         try:
-            record = buff_gameplay_semantics(path)
-        except OSError as exc:
+            value = read_record(path, record_context, strings=strings)
+            record = buff_projection.project(value, record_context["enums"])
+        except (OSError, ValueError, RuntimeError, KeyError, IndexError, TypeError, struct.error) as exc:
             record = {
                 "id": buff_id,
-                "status": "read-error",
+                "status": "unavailable",
                 "evidenceStatus": "unresolved",
-                "error": str(exc),
+                "detail": f"{type(exc).__name__}: {exc}",
             }
-        enrich_buff_native_modifier_names(record, native_semantics)
-        enrich_buff_native_action_names(record, native_semantics)
         enrich_buff_target_settings_names(record, native_semantics)
         enrich_buff_gameplay_tag_details(record, gameplay_tag_registry)
         record["source"] = {"kind": source, "path": rel_path(path)}
@@ -3989,6 +3996,7 @@ def build_language_payload(
         gameplay_buff_ids,
         native_semantics,
         gameplay_tag_registry,
+        load_buff_context(registry=(skill_damage_context or {}).get("registry")),
     )
     story_wiki_link_count = apply_story_wiki_keys(entries, story_wiki_keys or set())
     enemy_stat_templates = {
@@ -4031,16 +4039,14 @@ def build_language_payload(
             "status": "unavailable", "detail": "selected DefiniteValue native audit was not loaded",
         },
         "buffEvidence": {
-            "status": "partial-memorypack-semantics",
+            "status": "stored-whole-record-values",
             "coverage": (
-                "Referenced BuffData ids, exact post-id lifecycle/stacking/trigger tail, "
-                "exact empty-ability-event prefix tags/attribute modifiers, exact "
-                "predefined GameplayTag names where the current registry covers them, "
-                "and keyed pre-id BlackboardDouble candidates"
+                "Identifier-matched BuffData consumed through EOF under the selected derived plan; "
+                "lifecycle, stacking and attribute modifiers, selected native enums and stored action fields"
             ),
             "boundary": (
-                "Non-empty pre-id ability-event action bodies remain unresolved; "
-                "a duration is shown only when one unique authored duration key is present; "
+                "Derived framing does not promote the reviewed whole-schema receipt lane. "
+                "Stored actions do not prove execution, runtime parameter values or final effects. "
                 "GameplayTag ids absent from the predefined registry remain raw."
             ),
         },
@@ -4080,7 +4086,7 @@ def build_language_payload(
             "gameplayBuffs": len(gameplay_buff_ids),
             "resolvedGameplayBuffs": sum(
                 1 for record in buffs.values()
-                if record.get("evidenceStatus") != "unresolved"
+                if buff_projection.resolved(record)
             ),
             "gameplayBuffAttributeModifiers": sum(
                 len(((record.get("attributeModifier") or {}).get("attributeModifiers") or []))

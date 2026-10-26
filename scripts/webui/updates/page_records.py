@@ -22,16 +22,15 @@ from scripts.game_data.unity_store import UnityStoreError, open_store_if_present
 from scripts.webui.game_tables import is_activity_table
 from scripts.webui.updates.details import source_changes
 from scripts.webui.updates.gameplay_items import item_source_records
+from scripts.webui.updates.gameplay_sources import PRIMARY_TABLES, entity_source_records
+from scripts.webui.updates.catalog_sources import activity_source_records
 from scripts.webui.updates.scanner import (
     TEXT_DIFF_MAX_BYTES, TEXT_KIND_BINARY, TEXT_KIND_DECODED_PARTIAL,
     TEXT_KIND_DECODED_WHOLE, build_text_diff, textual_form,
 )
 
 
-GAMEPLAY_TABLES = {
-    "character": "CharacterTable", "weapon": "WeaponBasicTable",
-    "equipment": "EquipTable", "enemy": "EnemyTable", "item": "UseItemTable",
-}
+GAMEPLAY_TABLES = PRIMARY_TABLES
 
 
 def _story_text_key(key: str) -> str:
@@ -76,20 +75,6 @@ def _values(value: Any):
         for item in value:
             yield from _values(item)
     else:
-        yield value
-
-
-def _string_references(value: Any):
-    if isinstance(value, dict):
-        # Text handles and rendered descriptions are not table row links.
-        if "id" in value and set(value) <= {"id", "text"}:
-            return
-        for item in value.values():
-            yield from _string_references(item)
-    elif isinstance(value, list):
-        for item in value:
-            yield from _string_references(item)
-    elif isinstance(value, str) and not re.fullmatch(r"[+-]?\d+(?:\.\d+)?", value):
         yield value
 
 
@@ -145,9 +130,12 @@ def _story(layout, tables, localization, *, include_unity=False):
                 chat = str(row.get("chatId") or "")
                 if chat in tables.get("SNSChatTable", {}):
                     _add(records, key, f"SNSChatTable/{chat}", tables["SNSChatTable"][chat], localization)
-                for option in _values(row):
-                    if isinstance(option, str) and option in tables.get("SNSDialogOptionTable", {}):
-                        _add(records, key, f"SNSDialogOptionTable/{option}", tables["SNSDialogOptionTable"][option], localization)
+                for content in (row.get('dialogContentData') or {}).values():
+                    if not isinstance(content, dict):
+                        continue
+                    for option in content.get('dialogOptionIds') or []:
+                        if isinstance(option, str) and option in tables.get("SNSDialogOptionTable", {}):
+                            _add(records, key, f"SNSDialogOptionTable/{option}", tables["SNSDialogOptionTable"][option], localization)
     store = open_store_if_present(layout.root) if include_unity else None
     if store is not None:
         with store:
@@ -166,39 +154,19 @@ def _story(layout, tables, localization, *, include_unity=False):
 def _gameplay(layout, tables, localization, *, file_families=()):
     records: dict[str, Any] = {}
     file_hashes: dict[Path, str] = {}
-    # Resolve authored string row references in tables used by Gameplay. Exact
-    # references capture shared skills, growth and equipment records; numeric
-    # enums and array positions are never treated as row identities.
-    domains = ("Item", "UseItem", "Weapon", "SkillPatch", "Character", "Char", "Equip", "Enemy", "PotentialTalent", "Reward", "RecoverAp", "UsableItem", "Spaceship")
-    index: dict[str, list[tuple[str, Any]]] = {}
-    for name, rows in tables.items():
-        if name.startswith(domains):
-            for key, row in rows.items():
-                index.setdefault(key, []).append((name, row))
-    for kind, name in GAMEPLAY_TABLES.items():
-        for key, row in tables.get(name, {}).items():
-            record_key = f"{kind}:{key}"
-            pending = [key]
-            seen = set()
-            while pending:
-                ref = pending.pop()
-                if ref in seen:
+    for record_key, sources in entity_source_records(tables).items():
+        for source, row in sources.items():
+            _add(records, record_key, source, row, localization)
+        # Serialized files are owned only by literal paths in admitted rows.
+        for value in list(_values(records.get(record_key, {}))):
+            if isinstance(value, str) and value.startswith("Data/Json/"):
+                if value.split("/")[2] not in file_families:
                     continue
-                seen.add(ref)
-                for table, linked in index.get(ref, []):
-                    _add(records, record_key, f"{table}/{ref}", linked, localization)
-                    pending.extend(value for value in _string_references(linked)
-                                   if value in index and value not in seen)
-            # Serialized SkillData and BuffData remain bytes, compared by hash.
-            for value in list(_values(records.get(record_key, {}))):
-                if isinstance(value, str) and value.startswith("Data/Json/"):
-                    if value.split("/")[2] not in file_families:
-                        continue
-                    path = layout.game_file(value)
-                    if path.is_file():
-                        if path not in file_hashes:
-                            file_hashes[path] = hashlib.sha256(path.read_bytes()).hexdigest()
-                        records[record_key][path.relative_to(layout.root).as_posix()] = file_hashes[path]
+                path = layout.game_file(value)
+                if path.is_file():
+                    if path not in file_hashes:
+                        file_hashes[path] = hashlib.sha256(path.read_bytes()).hexdigest()
+                    records[record_key][path.relative_to(layout.root).as_posix()] = file_hashes[path]
     for key, sources in item_source_records(tables).items():
         for source, row in sources.items():
             _add(records, key, source, row, localization)
@@ -261,8 +229,12 @@ def _file_comparison(source: str, status: str, roots: list[Path]) -> dict[str, A
     return result
 
 
-def build_page_updates(previous_root: Path, current_root: Path) -> dict[str, dict[str, Any]]:
+def build_page_updates(previous_root: Path, current_root: Path, *,
+                       pages: tuple[str, ...] | None = None) -> dict[str, dict[str, Any]]:
     """Return independently available, uncapped page sidecars for two exports."""
+    selected = set(pages) if pages is not None else {'story', 'gameplay', 'map', 'reference', 'activities'}
+    if selected - {'story', 'gameplay', 'map', 'reference', 'activities'}:
+        raise ValueError(f'unknown update page selection: {sorted(selected)}')
     result = {}
     layouts = [ExportLayout(previous_root), ExportLayout(current_root)]
     tables = []
@@ -295,6 +267,8 @@ def build_page_updates(previous_root: Path, current_root: Path) -> dict[str, dic
         ("gameplay", lambda layout, rows, text: _gameplay(layout, rows, text, file_families=file_families), (*GAMEPLAY_TABLES.values(), "ItemTable")),
         ("map", lambda layout, rows, text: _map(layout, rows, text, families=map_families), ()),
     ):
+        if page not in selected:
+            continue
         payload = {"schemaVersion": 3, "generated": int(time.time()),
                    "source": "export_source_record_diff", "page": page,
                    "previousSourceRoot": str(previous_root), "sourceRoot": str(current_root),
@@ -306,6 +280,8 @@ def build_page_updates(previous_root: Path, current_root: Path) -> dict[str, dic
             payload["comparedFamilies"] = map_families
             payload["skippedFamilies"] = [name for name in ("LevelConfig", "LevelData", "LevelScriptData", "MapConfig")
                                           if name not in map_families]
+        if page == 'gameplay':
+            payload['ownershipPolicy'] = 'explicit-gameplay-sources-v1'
         try:
             page_tables = tables
             if diagnostics:
@@ -341,6 +317,8 @@ def build_page_updates(previous_root: Path, current_root: Path) -> dict[str, dic
             payload["available"] = True
         except (OSError, ValueError, sqlite3.Error, UnityStoreError) as exc:
             payload.update(skipReason="missing_or_invalid_source_catalog", diagnostics=[str(exc)])
+    if not selected & {'reference', 'activities'}:
+        return result
     # Text exposes every table row, including its raw representation. Reuse
     # the collected tables and localization rather than scanning them again.
     reference = {"schemaVersion": 2, "generated": int(time.time()), "page": "reference",
@@ -352,6 +330,8 @@ def build_page_updates(previous_root: Path, current_root: Path) -> dict[str, dic
         reference.update(skipReason="missing_or_invalid_source_catalog", diagnostics=diagnostics)
     else:
         for table in sorted(common_tables):
+            if 'reference' not in selected and not is_activity_table(table):
+                continue
             # A language missing on either side is already excluded above.
             old, new = tables[0][table], tables[1][table]
             for key in sorted(old.keys() | new.keys()):
@@ -364,16 +344,36 @@ def build_page_updates(previous_root: Path, current_root: Path) -> dict[str, dic
                 reference["entries"].append({"id": source, "status": status, "changes": source_changes(before, after)})
                 reference["totals"][status] += 1
         reference["totals"]["changed"] = len(reference["entries"])
-    result["reference"] = reference
-    # Activities exposes these same authored rows. Reuse the reference diff;
-    # missing tables stay excluded by the common-catalog gate above.
+    if 'reference' in selected:
+        result["reference"] = reference
+    # Preserve supporting-row comparisons, then aggregate the page's admitted
+    # sources under each root activity. Common-catalog gates still apply.
     activity_entries = [entry for entry in reference["entries"]
                         if is_activity_table(entry["id"].split("/", 1)[0])]
+    if not diagnostics and 'activities' in selected:
+        snapshots = []
+        for rows, text in zip(tables, localization):
+            snapshot = {}
+            for identity, sources in activity_source_records(rows).items():
+                for source, row in sources.items():
+                    _add(snapshot, identity, source, row, text)
+            snapshots.append(snapshot)
+        # Keep individual supporting-row identities for Text/deep links, and
+        # replace each activity's root comparison with its bounded page sources.
+        activity_entries = [entry for entry in activity_entries if not entry['id'].startswith('ActivityTable/')]
+        for identity in sorted(snapshots[0].keys() | snapshots[1].keys()):
+            before, after = (snapshot.get(identity) for snapshot in snapshots)
+            if before == after:
+                continue
+            status = 'added' if before is None else 'deleted' if after is None else 'modified'
+            activity_entries.append({'id': identity, 'status': status, 'changes': source_changes(before, after)})
+        activity_entries.sort(key=lambda entry: entry['id'])
     counts = Counter(entry["status"] for entry in activity_entries)
-    activities = {**reference, "page": "activities", "entries": activity_entries,
+    activities = {**reference, "schemaVersion": 3, "page": "activities", "entries": activity_entries,
                   "totals": {**{status: counts[status] for status in ("added", "modified", "deleted")},
                              "changed": len(activity_entries)}}
     if "diagnostics" in reference:
         activities["diagnostics"] = list(reference["diagnostics"])
-    result["activities"] = activities
+    if 'activities' in selected:
+        result["activities"] = activities
     return result

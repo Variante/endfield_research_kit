@@ -8,27 +8,13 @@ WebUI source edits, generated reports, or scratch data as game updates.
 
 ## Inputs and recovery flow
 
-`export.bat --changed-only` automates this comparison after synchronizing all
-supported installed-game inputs and building the pages. It uses exact content
-hashes and its own cache under `reports/export/sync/`, leaving the manual
-comparison cache independent. The first run adopts a coherent current export
-as its old side; if the current export is partial or mixed, it uses the complete
-export named by `--previous-export-root` or `ENDFIELD_PREVIOUS_EXPORT_ROOT`.
-Without either, it initializes a baseline and emits no invented all-added feed.
-Subsequent comparisons use the last successful synchronization, never an
-intermediate failed export. Unchanged installed inputs keep the last feed.
-
-An adopted legacy export can cover fewer data families than the current
-all-page synchronization. Its first feed then includes export-coverage changes
-as well as game-content changes; do not attribute every added row to a client
-update without matching recorded coverage. Subsequent automatic snapshots use
-the same all-page scope.
-
-The orchestrator stages the feed and all sidecars together, then publishes the
-directory and records the new complete snapshot only after all stages succeed.
-Managed snapshots retain the last comparison's old side and the next baseline;
-they never delete the user-supplied old export. Snapshot storage and extraction
-ownership are documented in [the extraction pipeline](../game_data/extraction_pipeline.md).
+Keep a complete previous export before refreshing the current one, then use
+`build_updates.bat OLD NEW`. Both `layout.json` markers must declare `complete`.
+A `writing` marker blocks comparison because it can describe interrupted
+publication; establish that the export completed before repairing its marker.
+Compare matching extraction coverage: newly exported data families can appear
+as additions even when the client content did not change. Export runs do not
+automatically publish Updates or advance a comparison baseline.
 
 1. Resolve `OLD` and `NEW` complete export roots from the command line or
    `endfield_paths.bat`.
@@ -96,15 +82,56 @@ This check includes classified copies already present in the previous export.
 `page_records.py` compares the same export-only source projection on both
 sides: Story table conversations and available cutscene object documents;
 Map level definitions, per-level registry rows and authored level/config/script
-files; Gameplay primary rows and their exact string references to related
-tables and serialized files; Gameplay item catalog joins from raw item, recipe,
+files; Gameplay primary rows and explicit field-to-table ownership joins
+(`gameplay_sources.py`), plus literal serialized-file paths in admitted rows;
+Gameplay item catalog joins from raw item, recipe,
 building, shop, cost and achievement rows. Gameplay items reuse their catalog builder
 on both exports, retaining grouped medal identities, each original tier's source,
 and matching limited-item records with their explicit `LTItemTable` mapping.
 It compares direct displayed relationships without recursively following
-the entire recipe network. Numeric strings and I18nText wrappers do not
-create Gameplay table links: skill description values must not resolve to
-item-type catalogs and pull unrelated characters into an entry's comparison.
+the entire recipe network. String/key equality alone never creates a Gameplay
+table link. A character owns its growth, skills, potentials and factory talents,
+not recommended weapons or the production network of a required material.
+Default-weapon and cost-item labels are terminal projections. Set definitions
+do not acquire sibling equipment rows, and an enemy template reference does
+not acquire another EnemyTable variant. Shared definitions still affect every
+explicit owner. Item usage receipts honor their declared `field` selection,
+merging multiple selections without widening to the whole referenced row;
+related ingredient labels and machine footprints do not crawl their catalogs.
+SNS options join only through `dialogContentData.*.dialogOptionIds`, never an
+arbitrary string in the conversation. Numeric values and I18nText wrappers
+cannot create untyped links either.
+Equipment selects the same explicit `equipList` membership and formula outcome
+as the Gameplay builder, including its last-match selection. The set's `list`
+effect definitions belong to its members; the surrounding `equipList` is only
+a selector, so adding a sibling does not change existing equipment. Regional
+name/storage labels, formula-pack names and unlock-channel names are terminal
+projections; regional development levels, map capacity, shop inventories and
+pack configuration never become equipment updates. Recipe chains remain shared
+by their actual recipe owners, with cost-item labels kept terminal.
+Gameplay's `gem:<groupId>` comparison owns WorldEnergyPointGroupTable rows and
+uses the same pool, reciprocal stage and unambiguous region joins as the Gem
+page. Selected term/level/region labels are terminal; compatible weapon stats
+are not acquired as point updates. The group catalog must exist on both sides,
+so a missing prior export family is not treated as every point being new.
+Combat stages use `stage:<DungeonTable key>` in the Gameplay sidecar. Only the
+supported combat categories participate. The stage owns its Dungeon/Raid rows,
+selected series/type labels, field description, rewards, displayed enemy
+modifiers/Buff references, and exact activity-navigation slots. Sibling dungeon
+configurations and series membership lists are excluded. This source comparison
+does not authenticate runtime waves or promote stale recovered battle evidence.
+Activities schema 3 retains individual supporting-table identities and expands
+each `ActivityTable/<id>` identity with the page's exact related-reward slots
+and maintained guide references, including schedule, tag labels, conditions,
+tasks, supply submissions and rewards. Related item/dungeon/parent-activity
+labels remain terminal. Both subpages expose list/title badges, field details
+and the shared Version changes filter; absent comparisons clear that filter.
+The shared file collector and decorator also honor `data-update-files-exclude`.
+Gameplay loadout candidate lists carry it; their selected summary previews do
+not. Closed controls still have DOM images, so scanning every descendant image
+without this ownership boundary incorrectly reports the entire equipment catalog
+as the selected character's resource changes. Ordinary collapsed owner details
+remain eligible; visual collapse alone is not an ownership rule.
 Linked serialized files use canonical export-relative paths, so the same file
 comparison contract applies as on Map. Linked localization uses only common languages.
 These badges report authored-source changes, not final recovery parity or

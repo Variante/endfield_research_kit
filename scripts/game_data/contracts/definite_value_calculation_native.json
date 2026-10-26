@@ -1,78 +1,267 @@
 {
-  "schema": "endfield.definite-value-calculation-native-contract.v1",
+  "schema": "endfield.definite-value-calculation-native-contract.v2",
   "status": "validated",
+  "programVersion": 1,
   "nativeInputs": {
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
   },
-  "ownerType": "Beyond.Gameplay.Core.DefiniteValueCalculation",
   "methods": {
-    "evaluate": [60996, "Beyond.Gameplay.Core.DefiniteValueCalculation", "Evaluate", "0x4129cf0"],
-    "getDoubleValue": [1022, "Beyond.ActionBlackboardExtensions", "GetDoubleValue", "0x4129d90"],
-    "getValue": [1021, "Beyond.ActionBlackboardExtensions", "GetValue", "0x30ff5e0"],
-    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"],
-    "getPatch": [102180, "IFix.WrappersManagerImpl", "GetPatch", "0x64af4dc"],
-    "patchWrapper": [100320, "IFix.ILFixDynamicMethodWrapper", "__Gen_Wrap_8529", "0x22cb450"]
+    "evaluate": [
+      64103,
+      "Beyond.Gameplay.Core.DefiniteValueCalculation",
+      "Evaluate",
+      "0x66dc4c0"
+    ],
+    "getDoubleValue": [
+      1143,
+      "Beyond.ActionBlackboardExtensions",
+      "GetDoubleValue",
+      "0x66dc540"
+    ],
+    "blackboardValue": [
+      1142,
+      "Beyond.ActionBlackboardExtensions",
+      "GetValue",
+      "0x4fede70"
+    ]
   },
-  "evaluateParameters": [
-    ["attacker", "Beyond.Gameplay.Core.AbilitySystem"],
-    ["defender", "Beyond.Gameplay.Core.AbilitySystem"],
-    ["blackboard", "Beyond.ActionBlackboard"],
-    ["context", "Beyond.Gameplay.Core.IActionEnvironment+Context"],
-    ["attackerOverrideAttributes", "double[]"],
-    ["defenderOverrideAttributes", "double[]"],
-    ["argsForServer", "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"]
-  ],
-  "evaluateReturnType": "Beyond.Gameplay.Core.CalcResult",
-  "calleeSignatures": {
+  "signatures": {
+    "evaluate": {
+      "parameters": [
+        [
+          "attacker",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "defender",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ],
+        [
+          "context",
+          "Beyond.Gameplay.Core.IActionEnvironment+Context"
+        ],
+        [
+          "attackerOverrideAttributes",
+          "double[]"
+        ],
+        [
+          "defenderOverrideAttributes",
+          "double[]"
+        ],
+        [
+          "argsForServer",
+          "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+        ]
+      ],
+      "returnType": "Beyond.Gameplay.Core.CalcResult",
+      "static": false,
+      "byrefParameters": []
+    },
     "getDoubleValue": {
-      "parameters": [["param", "Beyond.Blackboard+BlackboardDouble"], ["blackboard", "Beyond.ActionBlackboard"]],
-      "returnType": "double"
+      "parameters": [
+        [
+          "param",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ]
+      ],
+      "returnType": "double",
+      "static": true,
+      "byrefParameters": []
     },
-    "getValue": {
-      "parameters": [["param", "Beyond.Blackboard+BlackboardDouble"], ["blackboard", "Beyond.ActionBlackboard"]],
-      "returnType": "float"
-    },
-    "patchWrapper": {"returnType": "Beyond.Gameplay.Core.CalcResult"}
+    "blackboardValue": {
+      "parameters": [
+        [
+          "param",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ]
+      ],
+      "returnType": "float",
+      "static": true,
+      "byrefParameters": []
+    }
   },
-  "resultValueField": ["Beyond.Gameplay.Core.CalcResult", "value", "double", "0x0400aed8"],
   "fields": [
-    {"name": "value", "type": "Beyond.Blackboard+BlackboardDouble", "offset": 16, "token": "0x0400af2b"},
-    {"name": "applyScale", "type": "bool", "offset": 24, "token": "0x0400af2c"},
-    {"name": "valueScale", "type": "Beyond.Blackboard+BlackboardDouble", "offset": 32, "token": "0x0400af2d"}
+    [
+      "Beyond.Gameplay.Core.DefiniteValueCalculation",
+      "value",
+      "Beyond.Blackboard+BlackboardDouble",
+      16,
+      "0x0400b774"
+    ],
+    [
+      "Beyond.Gameplay.Core.DefiniteValueCalculation",
+      "applyScale",
+      "bool",
+      24,
+      "0x0400b775"
+    ],
+    [
+      "Beyond.Gameplay.Core.DefiniteValueCalculation",
+      "valueScale",
+      "Beyond.Blackboard+BlackboardDouble",
+      32,
+      "0x0400b776"
+    ],
+    [
+      "Beyond.Gameplay.Core.CalcResult",
+      "value",
+      "double",
+      16,
+      "0x0400b721"
+    ]
   ],
-  "defaultScaleConstant": {"loadSiteRva": "0x4129d44", "float32": 1.0},
+  "enumMembers": [],
+  "entryRoles": [
+    "evaluate"
+  ],
   "codeWindows": [
-    {"startRva": "0x4129cf0", "endRva": "0x4129d88", "sha256": "795d5ce3764e6511f82c6667778f7caac42f17c052f945f7a5a86cff74c60565", "boundary": "Evaluate entry, value read, applyScale branch, no-scale return and iFix dispatch"},
-    {"startRva": "0x4f8094e", "endRva": "0x4f80970", "sha256": "6252a8877c22bb19964e1acc0701cdddc5be87572335194ccf2ed4f354d2a68f", "boundary": "valueScale GetValue and Double multiplication"},
-    {"startRva": "0x4f80970", "endRva": "0x4f809aa", "sha256": "fa2e9609d21b2283aa49c6cf290dfc757d33cc947524b53d35a96471abd28df0", "boundary": "optional server debug-args side path and normal return rejoin"},
-    {"startRva": "0x4f809aa", "endRva": "0x4f80a1a", "sha256": "a79bd167bd61202b1e93875d348b21d5c01944f01e201ca16c410dd7c62559ce", "boundary": "iFix GetPatch and wrapper result path bypassing normal value return"}
+    {
+      "startRva": "0x66dc4c0",
+      "endRva": "0x66dc540",
+      "sha256": "d0134fd2febfc7ab0bfc55a1a0b754e3da68810a93b22897c57f82372fa7c502",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
+    },
+    {
+      "startRva": "0x7718066",
+      "endRva": "0x77180d5",
+      "sha256": "67dc484c760a2c32c3b32599637d7eae44eeaa39a6dc07bfbe2006045e560aa5",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
+    },
+    {
+      "startRva": "0x77180d5",
+      "endRva": "0x7718148",
+      "sha256": "25f877f16028eb44aed84b2096d128bcdca8118a19e618c5ec0eff84090c17f0",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
+    }
   ],
   "instructionWindows": [
-    ["0x4129d2e", "488b4b104533c0488bd7e853000000", "value field and blackboard passed to GetDoubleValue"],
-    ["0x4129d3d", "807b18000f28f0f30f103d9c8f79060f85fc6be500", "applyScale branch after preserving resolved Double; default scale constant load"],
-    ["0x4f8094e", "488b4b204533c0488bd7e883ec17fe0f57c90f28f8f30f5ac8f20f59f1e9e2931aff", "valueScale GetValue Single converted to Double and multiplied by resolved value"],
-    ["0x4129d63", "66480f7ef0", "normal CalcResult numeric return copies resolved Double bits"]
+    [
+      "0x66dc4fd",
+      "807b1800",
+      "cmp byte ptr [rbx + 0x18], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x66dc528",
+      "66480f7ef0",
+      "movq rax, xmm6; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x77180ea",
+      "f30f5ac8",
+      "cvtss2sd xmm1, xmm0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x77180ee",
+      "f20f59f1",
+      "mulsd xmm6, xmm1; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x77180fe",
+      "83b9e000000000",
+      "cmp dword ptr [rcx + 0xe0], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x771812b",
+      "f30f5ac7",
+      "cvtss2sd xmm0, xmm7; reviewed default-path operand/branch/return witness"
+    ]
   ],
   "calls": [
-    {"siteRva": "0x4129d21", "method": "patchCheck"},
-    {"siteRva": "0x4129d38", "method": "getDoubleValue"},
-    {"siteRva": "0x4f80958", "method": "getValue"},
-    {"siteRva": "0x4f809b1", "method": "getPatch"},
-    {"siteRva": "0x4f80a09", "method": "patchWrapper"}
+    {
+      "siteRva": "0x66dc4f8",
+      "method": "getDoubleValue",
+      "opcode": "e8"
+    },
+    {
+      "siteRva": "0x77180df",
+      "method": "blackboardValue",
+      "opcode": "e8"
+    }
   ],
   "branches": [
-    {"siteRva": "0x4129d28", "opcode": "0f85", "targetRva": "0x4f809aa"},
-    {"siteRva": "0x4129d4c", "opcode": "0f85", "targetRva": "0x4f8094e"},
-    {"siteRva": "0x4129d5d", "opcode": "0f85", "targetRva": "0x4f80970"},
-    {"siteRva": "0x4f8096b", "opcode": "e9", "targetRva": "0x4129d52"},
-    {"siteRva": "0x4f809a5", "opcode": "e9", "targetRva": "0x4129d63"},
-    {"siteRva": "0x4f80a0f", "opcode": "e9", "targetRva": "0x4129d68"}
+    {
+      "siteRva": "0x66dc4de",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x7718066"
+    },
+    {
+      "siteRva": "0x66dc50c",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x77180d5"
+    },
+    {
+      "siteRva": "0x66dc51d",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x77180f7"
+    },
+    {
+      "siteRva": "0x7718070",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x66dc4e4"
+    },
+    {
+      "siteRva": "0x77180d0",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x66dc532"
+    },
+    {
+      "siteRva": "0x77180f2",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x66dc512"
+    },
+    {
+      "siteRva": "0x7718105",
+      "opcode": "75",
+      "displacementBytes": 1,
+      "targetRva": "0x771810c"
+    },
+    {
+      "siteRva": "0x771811b",
+      "opcode": "75",
+      "displacementBytes": 1,
+      "targetRva": "0x7718123"
+    },
+    {
+      "siteRva": "0x7718143",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x66dc523"
+    }
+  ],
+  "literals": [
+    {
+      "siteRva": "0x66dc504",
+      "instructionBytes": "f30f103df88f3b07",
+      "displacementOffset": 4,
+      "targetRva": "0xda95504",
+      "type": "float32",
+      "value": 1.0
+    }
   ],
   "evidenceBoundary": {
-    "exact": "The selected pair has the named Evaluate signature, stored field and callee types, direct call and branch targets, loaded default-scale constant, and reviewed main/split code bytes recorded here.",
+    "exact": "Selected native inputs authenticate the named methods and ordinary signatures, stored fields and enum identities, complete reviewed body windows, linked direct calls and branches, and arithmetic/return witnesses. These byte checks retain the reviewed interpretation; they do not discover new formulas.",
     "direct": "On normally returning unpatched Evaluate paths, value reaches GetDoubleValue. If applyScale is false its Double result becomes CalcResult.value directly. If applyScale is true, valueScale reaches GetValue, whose Single result is converted to Double and multiplied with the resolved value. The optional server debug-args branch rejoins the same numeric return.",
-    "conditional": "When Evaluate's iFix IsPatched branch is taken, it calls GetPatch and the selected wrapper, then bypasses the ordinary numeric return; this contract makes no formula claim for that path.",
+    "conditional": "The reviewed normal native patch-table guards must select the default path, all named providers must return normally, and any post-evaluation guard must allow the result copy. The current indirect patch path bypasses these calculations; its provider internals and live selection are not claimed.",
     "unresolved": "GetDoubleValue and GetValue provider internals, including their own patch state, live patch selection, authored action activation, mitigation and final damage remain unproved."
-  }
+  },
+  "addressTargets": []
 }

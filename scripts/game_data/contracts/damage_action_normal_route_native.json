@@ -1,75 +1,785 @@
 {
-  "schema": "endfield.damage-action-normal-route-native-contract.v2",
+  "schema": "endfield.damage-action-normal-route-native-contract.v3",
   "status": "validated",
+  "programVersion": 1,
   "nativeInputs": {
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
   },
   "methods": {
-    "normal": [58154, "Beyond.Gameplay.Core.DamageAction", "_CalculateDamageResultForNormalEntity", "0x3543110"],
-    "blackboardValue": [1021, "Beyond.ActionBlackboardExtensions", "GetValue", "0x30ff5e0"],
-    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"],
-    "getAttribute": [60906, "Beyond.Gameplay.Core.CalculationBase", "GetAttribute", "0x4891430"],
-    "getAttributes": [56128, "Beyond.Gameplay.Core.AbilitySystem", "get_attributes", "0x3201190"],
-    "attributeValue": [60513, "Beyond.Gameplay.Core.Attributes", "GetValue", "0x2d18740"]
+    "normal": [
+      61065,
+      "Beyond.Gameplay.Core.DamageAction",
+      "_CalculateDamageResultForNormalEntity",
+      "0x5355940"
+    ],
+    "getAttribute": [
+      64013,
+      "Beyond.Gameplay.Core.CalculationBase",
+      "GetAttribute",
+      "0x8efaa68"
+    ],
+    "getAttributes": [
+      58940,
+      "Beyond.Gameplay.Core.AbilitySystem",
+      "get_attributes",
+      "0x8e3b960"
+    ],
+    "attributeValue": [
+      63606,
+      "Beyond.Gameplay.Core.Attributes",
+      "GetValue",
+      "0x50bdf10"
+    ],
+    "blackboardValue": [
+      1142,
+      "Beyond.ActionBlackboardExtensions",
+      "GetValue",
+      "0x4fede70"
+    ],
+    "dispatchGetDouble": [
+      1143,
+      "Beyond.ActionBlackboardExtensions",
+      "GetDoubleValue",
+      "0x66dc540"
+    ],
+    "dispatchGetSingle": [
+      1142,
+      "Beyond.ActionBlackboardExtensions",
+      "GetValue",
+      "0x4fede70"
+    ],
+    "dispatchDefault": [
+      64103,
+      "Beyond.Gameplay.Core.DefiniteValueCalculation",
+      "Evaluate",
+      "0x66dc4c0"
+    ]
   },
-  "normalParameters": [
-    ["target", "Beyond.Gameplay.Core.AbilitySystem"],
-    ["attacker", "Beyond.Gameplay.Core.AbilitySystem"],
-    ["damageUnit", "Beyond.Gameplay.Core.DamageAction+DamageUnit"],
-    ["index", "int"],
-    ["damagePackData", "Beyond.Gameplay.Core.DamagePackData"],
-    ["serverDetails", "Proto.BATTLE_DAMAGE_DETAIL"],
-    ["calcSucceed", "bool"]
-  ],
-  "normalReturnType": "Beyond.Gameplay.Core.CalcResult",
+  "signatures": {
+    "normal": {
+      "parameters": [
+        [
+          "target",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "attacker",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "damageUnit",
+          "Beyond.Gameplay.Core.DamageAction+DamageUnit"
+        ],
+        [
+          "index",
+          "int"
+        ],
+        [
+          "damagePackData",
+          "Beyond.Gameplay.Core.DamagePackData"
+        ],
+        [
+          "serverDetails",
+          "Proto.BATTLE_DAMAGE_DETAIL"
+        ],
+        [
+          "calcSucceed",
+          "bool"
+        ]
+      ],
+      "returnType": "Beyond.Gameplay.Core.CalcResult",
+      "static": false,
+      "byrefParameters": [
+        "damagePackData",
+        "calcSucceed"
+      ]
+    },
+    "getAttribute": {
+      "parameters": [
+        [
+          "attrSource",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "attributeType",
+          "Beyond.GEnums.AttributeType"
+        ],
+        [
+          "attrArray",
+          "double[]"
+        ]
+      ],
+      "returnType": "double",
+      "static": false,
+      "byrefParameters": []
+    },
+    "getAttributes": {
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.Core.Attributes",
+      "static": false,
+      "byrefParameters": []
+    },
+    "attributeValue": {
+      "parameters": [
+        [
+          "attributeType",
+          "Beyond.GEnums.AttributeType"
+        ]
+      ],
+      "returnType": "double",
+      "static": false,
+      "byrefParameters": []
+    },
+    "blackboardValue": {
+      "parameters": [
+        [
+          "param",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ]
+      ],
+      "returnType": "float",
+      "static": true,
+      "byrefParameters": []
+    },
+    "dispatchGetDouble": {
+      "parameters": [
+        [
+          "param",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ]
+      ],
+      "returnType": "double",
+      "static": true,
+      "byrefParameters": []
+    },
+    "dispatchGetSingle": {
+      "parameters": [
+        [
+          "param",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ]
+      ],
+      "returnType": "float",
+      "static": true,
+      "byrefParameters": []
+    },
+    "dispatchDefault": {
+      "parameters": [
+        [
+          "attacker",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "defender",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ],
+        [
+          "context",
+          "Beyond.Gameplay.Core.IActionEnvironment+Context"
+        ],
+        [
+          "attackerOverrideAttributes",
+          "double[]"
+        ],
+        [
+          "defenderOverrideAttributes",
+          "double[]"
+        ],
+        [
+          "argsForServer",
+          "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+        ]
+      ],
+      "returnType": "Beyond.Gameplay.Core.CalcResult",
+      "static": false,
+      "byrefParameters": []
+    }
+  },
   "fields": [
-    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "simpleCalculation", "bool", 76, "0x0400a661"],
-    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "atkScale", "Beyond.Blackboard+BlackboardDouble", 80, "0x0400a662"],
-    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "atkCalculation", "Beyond.Gameplay.Core.CalculationBase", 88, "0x0400a663"],
-    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "takeAtkSnapshot", "bool", 96, "0x0400a664"],
-    ["Beyond.Gameplay.Core.DamagePackData", "attackerAttributes", "double[]", 136, "0x0400aef6"]
+    [
+      "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+      "simpleCalculation",
+      "bool",
+      84,
+      "0x0400ae49"
+    ],
+    [
+      "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+      "atkScale",
+      "Beyond.Blackboard+BlackboardDouble",
+      88,
+      "0x0400ae4a"
+    ],
+    [
+      "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+      "atkCalculation",
+      "Beyond.Gameplay.Core.CalculationBase",
+      96,
+      "0x0400ae4b"
+    ],
+    [
+      "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+      "takeAtkSnapshot",
+      "bool",
+      104,
+      "0x0400ae4c"
+    ],
+    [
+      "Beyond.Gameplay.Core.DamagePackData",
+      "attackerAttributes",
+      "double[]",
+      136,
+      "0x0400b73f"
+    ]
   ],
-  "damagePackDataByref": true,
-  "damagePackDataUnboxedAttackerAttributesOffset": 120,
+  "enumMembers": [],
+  "entryRoles": [
+    "normal"
+  ],
   "codeWindows": [
     {
-      "startRva": "0x3543110",
-      "endRva": "0x3543320",
-      "sha256": "8bcacb4db0bb9a724de9c8591833927a6fdcd5d2c12c0eb710bb412af1147390",
-      "boundary": "complete contiguous normal-entity entry, snapshot selector, simple scalar branch, calculation-object branch, debug rejoin and iFix bypass"
+      "startRva": "0x5355940",
+      "endRva": "0x5355aa3",
+      "sha256": "665897e828ffe5992d422ac89718dd86ce6f158f6ed1b3f5a61d206c52e40f3e",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
     },
     {
-      "startRva": "0x9cdc0",
-      "endRva": "0x9ce36",
-      "sha256": "9b59dc0a0374f08750044d4d186b988960a400cbaff12d54269cea9bd7d50616",
-      "boundary": "calculation-object helper entry and virtual-slot read only; full subtype dispatch remains outside this contract"
+      "startRva": "0x74a94e6",
+      "endRva": "0x74a9553",
+      "sha256": "22988099dd22acd6f7ed6e475288daacd9e66dda6fef54bce99fff9dc29b4101",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
     },
     {
-      "startRva": "0x4891430",
-      "endRva": "0x4891492",
-      "sha256": "16ef652004b823534fcbd0cee354eaf3a61a4e17bb7e0fb59998653b2a4228cd",
-      "boundary": "GetAttribute main null-array selector, length check, indexed Double load, and iFix branch"
+      "startRva": "0x74a9553",
+      "endRva": "0x74a9700",
+      "sha256": "d35e70b5e3d1ee61f0b72a5d556f512736ef252c77549f503f7f0c25fec93c73",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
     },
     {
-      "startRva": "0x504bb5e",
-      "endRva": "0x504bb85",
-      "sha256": "5ad725b59493d910758db135a9831bc964b325a7d6000c0f06000232c9079154",
-      "boundary": "GetAttribute null-array fallback through source attributes.GetValue and return rejoin"
+      "startRva": "0x8efaa68",
+      "endRva": "0x8efaaf9",
+      "sha256": "726c4e03a9aeb0beb47484e6bc04820f57f29a106094ed15c01c07f66f8ed247",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
+    },
+    {
+      "startRva": "0x23d0",
+      "endRva": "0x2493",
+      "sha256": "f99b1d8c8675c7b3eb5038fed437dfde3a67c26cbd6f891a0b11ac80cd818cc4",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
+    },
+    {
+      "startRva": "0x6ca7e8",
+      "endRva": "0x6ca925",
+      "sha256": "1cafc047c28297fcf0d23ff92e460eabc2954c8b03fed3eb92b48f5ae4212065",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
     }
   ],
-  "callTargets": [
-    ["0x3543153", "patchCheck"],
-    ["0x3543192", "blackboardValue"],
-    ["0x35432f0", "0x9cdc0"],
-    ["0x4891457", "patchCheck"],
-    ["0x504bb68", "getAttributes"],
-    ["0x504bb7a", "attributeValue"]
+  "instructionWindows": [
+    [
+      "0x5355990",
+      "4180796800",
+      "cmp byte ptr [r9 + 0x68], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x535599b",
+      "4180795400",
+      "cmp byte ptr [r9 + 0x54], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x53559df",
+      "83781802",
+      "cmp dword ptr [rax + 0x18], 2; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x53559f5",
+      "83b9e000000000",
+      "cmp dword ptr [rcx + 0xe0], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x5355a0c",
+      "f30f5ac7",
+      "cvtss2sd xmm0, xmm7; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x5355a17",
+      "f20f59c6",
+      "mulsd xmm0, xmm6; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x5355a33",
+      "80781000",
+      "cmp byte ptr [rax + 0x10], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x5355a45",
+      "66480f7ef0",
+      "movq rax, xmm6; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x74a9553",
+      "4983796000",
+      "cmp qword ptr [r9 + 0x60], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x74a9589",
+      "80781000",
+      "cmp byte ptr [rax + 0x10], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x74a9605",
+      "66480f6ef0",
+      "movq xmm6, rax; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x74a9654",
+      "83b8e000000000",
+      "cmp dword ptr [rax + 0xe0], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x74a9683",
+      "83b9e000000000",
+      "cmp dword ptr [rcx + 0xe0], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x74a96a9",
+      "f30f5ac7",
+      "cvtss2sd xmm0, xmm7; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x74a96bf",
+      "83791802",
+      "cmp dword ptr [rcx + 0x18], 2; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x8efaabd",
+      "453b5118",
+      "cmp r10d, dword ptr [r9 + 0x18]; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x2412",
+      "4c3bd0",
+      "cmp r10, rax; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x2446",
+      "807b1800",
+      "cmp byte ptr [rbx + 0x18], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x2480",
+      "66480f7ec0",
+      "movq rax, xmm0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x6ca851",
+      "66480f6ec8",
+      "movq xmm1, rax; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x6ca870",
+      "f30f5ac8",
+      "cvtss2sd xmm1, xmm0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x6ca874",
+      "f20f59f1",
+      "mulsd xmm6, xmm1; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x6ca884",
+      "83b9e000000000",
+      "cmp dword ptr [rcx + 0xe0], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x6ca8b1",
+      "f30f5ac7",
+      "cvtss2sd xmm0, xmm7; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x6ca91b",
+      "66480f6ec0",
+      "movq xmm0, rax; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x6ca918",
+      "41ffd2",
+      "virtual calculation dispatch"
+    ]
+  ],
+  "calls": [
+    {
+      "siteRva": "0x53559bd",
+      "method": "blackboardValue",
+      "opcode": "e8"
+    },
+    {
+      "siteRva": "0x8efaaee",
+      "method": "attributeValue",
+      "opcode": "e9"
+    },
+    {
+      "siteRva": "0x6ca865",
+      "method": "blackboardValue",
+      "opcode": "e8"
+    },
+    {
+      "siteRva": "0x2441",
+      "method": "dispatchGetDouble",
+      "opcode": "e8"
+    }
+  ],
+  "branches": [
+    {
+      "siteRva": "0x535595f",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x74a94e6"
+    },
+    {
+      "siteRva": "0x535598a",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x5355995",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a6c"
+    },
+    {
+      "siteRva": "0x53559a0",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x74a9553"
+    },
+    {
+      "siteRva": "0x53559d9",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x53559e3",
+      "opcode": "0f86",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a9d"
+    },
+    {
+      "siteRva": "0x53559fc",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a93"
+    },
+    {
+      "siteRva": "0x5355a25",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x5355a31",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x5355a37",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x74a967c"
+    },
+    {
+      "siteRva": "0x5355a73",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x5355a8b",
+      "opcode": "eb",
+      "displacementBytes": 1,
+      "targetRva": "0x5355a3d"
+    },
+    {
+      "siteRva": "0x5355a98",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a02"
+    },
+    {
+      "siteRva": "0x74a94f0",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355965"
+    },
+    {
+      "siteRva": "0x74a954e",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a64"
+    },
+    {
+      "siteRva": "0x74a9558",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x74a960f"
+    },
+    {
+      "siteRva": "0x74a9573",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x74a9583",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x74a958d",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x74a95a6"
+    },
+    {
+      "siteRva": "0x74a959a",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x74a95a4",
+      "opcode": "eb",
+      "displacementBytes": 1,
+      "targetRva": "0x74a95a8"
+    },
+    {
+      "siteRva": "0x74a95c0",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x74a960a",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a3d"
+    },
+    {
+      "siteRva": "0x74a961c",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x74a965b",
+      "opcode": "75",
+      "displacementBytes": 1,
+      "targetRva": "0x74a966c"
+    },
+    {
+      "siteRva": "0x74a9677",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a3d"
+    },
+    {
+      "siteRva": "0x74a968a",
+      "opcode": "75",
+      "displacementBytes": 1,
+      "targetRva": "0x74a9691"
+    },
+    {
+      "siteRva": "0x74a96a0",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x74a96b9",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x74a96c3",
+      "opcode": "0f86",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a9d"
+    },
+    {
+      "siteRva": "0x74a96dc",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x74a96e9",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a8d"
+    },
+    {
+      "siteRva": "0x74a96fb",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x5355a3d"
+    },
+    {
+      "siteRva": "0x8efaa82",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8efaab8"
+    },
+    {
+      "siteRva": "0x8efaa8e",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8efaab8"
+    },
+    {
+      "siteRva": "0x8efaabb",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8efaad2"
+    },
+    {
+      "siteRva": "0x8efaac1",
+      "opcode": "72",
+      "displacementBytes": 1,
+      "targetRva": "0x8efaac9"
+    },
+    {
+      "siteRva": "0x8efaad0",
+      "opcode": "eb",
+      "displacementBytes": 1,
+      "targetRva": "0x8efaab2"
+    },
+    {
+      "siteRva": "0x8efaad5",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8efaaf3"
+    },
+    {
+      "siteRva": "0x8efaae1",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8efaaf3"
+    },
+    {
+      "siteRva": "0x8efaaee",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x50bdf10"
+    },
+    {
+      "siteRva": "0x2415",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x6ca8ce"
+    },
+    {
+      "siteRva": "0x2429",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x6ca7e8"
+    },
+    {
+      "siteRva": "0x2455",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x6ca85b"
+    },
+    {
+      "siteRva": "0x2466",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x6ca87d"
+    },
+    {
+      "siteRva": "0x6ca7f2",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x242f"
+    },
+    {
+      "siteRva": "0x6ca856",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x246f"
+    },
+    {
+      "siteRva": "0x6ca878",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x245b"
+    },
+    {
+      "siteRva": "0x6ca88b",
+      "opcode": "75",
+      "displacementBytes": 1,
+      "targetRva": "0x6ca892"
+    },
+    {
+      "siteRva": "0x6ca8a1",
+      "opcode": "75",
+      "displacementBytes": 1,
+      "targetRva": "0x6ca8a9"
+    },
+    {
+      "siteRva": "0x6ca8c9",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x246c"
+    },
+    {
+      "siteRva": "0x6ca920",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x2472"
+    }
+  ],
+  "literals": [
+    {
+      "siteRva": "0x244d",
+      "instructionBytes": "f30f103daf30a90d",
+      "displacementOffset": 4,
+      "targetRva": "0xda95504",
+      "type": "float32",
+      "value": 1.0
+    }
   ],
   "evidenceBoundary": {
-    "exact": "The selected native pair has the named method and field identities, field offsets, parameter types, direct call targets, and reviewed body windows.",
+    "exact": "Selected native inputs authenticate the named methods and ordinary signatures, stored fields and enum identities, complete reviewed body windows, linked direct calls and branches, and arithmetic/return witnesses. These byte checks retain the reviewed interpretation; they do not discover new formulas.",
     "direct": "On the normally returning unpatched normal-entity path, takeAtkSnapshot is tested first. With that flag false, simpleCalculation true selects stored atkScale through GetValue and multiplies its Single result, converted to Double, by DamagePackData.attackerAttributes[2] as a Double, returning the intermediate CalcResult.value. With simpleCalculation false, a nonnull stored atkCalculation reaches the calculation-object dispatch helper instead of this simple scalar branch. In the selected unpatched CalculationBase.GetAttribute body, a supplied override array returns its indexed Double after a bounds check; only a null array falls back to source.attributes.GetValue(attributeType).",
-    "conditional": "The simple expression requires the normal-entity route, an invoked DamageUnit, an unpatched caller, takeAtkSnapshot false, simpleCalculation true, a nonnull attackerAttributes array with index 2, and normally returning provider/caller paths.",
+    "conditional": "The reviewed normal native patch-table guards must select the default path, all named providers must return normally, and any post-evaluation guard must allow the result copy. The current indirect patch path bypasses these calculations; its provider internals and live selection are not claimed.",
     "unresolved": "The authored action's execution, snapshot branch's semantics, blackboard provider result, override-array construction, live iFix state, calculation-object helper's complete dispatch, later processors, mitigation and final damage are not established."
-  }
+  },
+  "addressTargets": [
+    {
+      "siteRva": "0x240b",
+      "instructionBytes": "488d05aea06d06",
+      "method": "dispatchDefault"
+    }
+  ]
 }

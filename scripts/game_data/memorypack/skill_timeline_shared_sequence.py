@@ -766,7 +766,7 @@ TIMELINE_SOURCE_ROUTES = (
 FAC_BUILDING_PLAY_ANIMATION_TAG = 0x00B0
 CHECK_TWO_DIRECTION_ANGLE_TAG = 0x0082
 CHECK_TWO_DIRECTION_ANGLE_READ_KINDS = (
-    "byte", "scalar32", "scalar32", "scalar32", "enum32", "enum32",
+    "byte", "scalar32", "scalar32", "scalar32", "byte", "enum32", "enum32",
     "target-settings", "target-settings", "enum32", "target-settings",
     "target-settings", "blackboard-double",
 )
@@ -1219,8 +1219,11 @@ class SharedSequenceReader(Reader):
                 return
             self.header(len(CHECK_TWO_DIRECTION_ANGLE_READ_KINDS))
             self.take(1, "anonymous-nonzero-byte")
-            for _ in range(5):
+            for _ in range(3):
                 self.take(4, "anonymous-scalar32")
+            self.take(1, "clampToXZ")
+            for _ in range(2):
+                self.take(4, "anonymous-enum32")
             self.target_profile()
             self.target_profile()
             self.take(4, "anonymous-enum32")
@@ -1462,18 +1465,18 @@ def _contract() -> dict[str, Any]:
     if (
         not isinstance(motion_route, dict)
         or motion_route.get("typeName") != "Beyond.Gameplay.Core.CustomRootMotionAction+Data"
-        or motion_route.get("memberCount") != 24
+        or motion_route.get("memberCount") != 25
         or motion_route.get("sourceContract") != {
             "path": "skill_custom_root_motion_native.json",
-            "schema": "endfield.skill-custom-root-motion-native-contract.v1",
+            "schema": "endfield.skill-custom-root-motion-native-contract.v2",
             "orderedReadRef": "orderedSourceReads",
         }
-        or motion_contract.get("schema") != "endfield.skill-custom-root-motion-native-contract.v1"
+        or motion_contract.get("schema") != "endfield.skill-custom-root-motion-native-contract.v2"
         or motion_contract.get("status") != "exact-current-build"
         or motion_contract.get("dispatcher", {}).get("unionTag") != 0x0099
-        or motion_contract.get("serializedMemberCount") != 24
+        or motion_contract.get("serializedMemberCount") != 25
         or not isinstance(motion_reads, list)
-        or len(motion_reads) != 24
+        or len(motion_reads) != 25
     ):
         raise ValueError("skillTimelineSharedSequence.contract:custom-root-motion-source-drift")
     building_route = next(
@@ -2042,7 +2045,7 @@ def _contract() -> dict[str, Any]:
         not isinstance(save_angle_route, dict)
         or save_angle_route.get("typeName")
         != "Beyond.Gameplay.Core.SaveTwoDirectionAngle+Data"
-        or save_angle_route.get("memberCount") != 11
+        or save_angle_route.get("memberCount") != 12
         or save_angle_route.get("sourceContract") != {
             "path": "buff_frontier9.json",
             "schema": "endfield.buff-frontier9-native-contract.v1",
@@ -2050,9 +2053,9 @@ def _contract() -> dict[str, Any]:
         }
         or not isinstance(save_angle_source, dict)
         or save_angle_source.get("actualTypeName") != save_angle_route["typeName"]
-        or save_angle_source.get("serializedMemberCount") != 11
+        or save_angle_source.get("serializedMemberCount") != 12
         or tuple(save_angle_source.get("readOrder", ())) != (
-            "byte", "scalar32", "scalar32", "scalar32", "enum32",
+            "byte", "scalar32", "scalar32", "scalar32", "byte", "enum32",
             "target-settings", "target-settings", "enum32",
             "target-settings", "target-settings", "string",
         )

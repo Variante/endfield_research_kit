@@ -5,7 +5,7 @@ joins. Wave ids and dictionary order never establish execution order.
 """
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 import math
 from pathlib import Path
 
@@ -40,8 +40,22 @@ def load_evidence(data_root: Path, *, export_root: Path | None = None, game_root
             records, audit = load_published_snapshot(data_root, family, f"game/Json/{folder}", **kwargs)
         else:
             records, audit = load_dataset(data_root, export_root, family, f"game/Json/{folder}", **kwargs)
+        if family == 'spawner-config' and records:
+            statuses = Counter(str(row.get('status') or 'missing') for row in records)
+            usable = sum(row.get('status') == 'named_exact'
+                         and (row.get('payload') or {}).get('schemaStatus') == 'named_exact' for row in records)
+            audit = {**audit, 'publicationStatus': audit.get('status'),
+                     'usableRecordCount': usable, 'recordStatusCounts': dict(sorted(statuses.items()))}
+            if not usable:
+                first = next((str(row.get('diagnostic') or row.get('summary') or '')[:300]
+                              for row in records if row.get('diagnostic') or row.get('summary')), '')
+                audit.update(status='unavailable', diagnostic=(
+                    'SpawnerConfig publication has no complete named records: '
+                    + ', '.join(f'{name}={count}' for name, count in sorted(statuses.items()))
+                    + (f'; first diagnostic: {first}' if first else '')))
         datasets[family] = records
-        audits.append({key: audit[key] for key in ("datasetId", "status", "diagnostic", "recordCount", "manifestSha256") if key in audit})
+        audits.append({key: audit[key] for key in ("datasetId", "status", "diagnostic", "recordCount", "manifestSha256",
+            'publicationStatus', 'usableRecordCount', 'recordStatusCounts') if key in audit})
     return datasets, audits
 
 

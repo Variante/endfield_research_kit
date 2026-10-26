@@ -90,6 +90,15 @@ publishes its validated fields rather than only counts; duplicate JSON keys
 fail closed. These views expose authored storage, not observed spawning,
 action execution or condition results.
 
+The indexed-string client also adds `preprocessList` to SpawnerConfigData's
+root. The older five-member reader therefore refuses this export before its
+enemy library. A generic six-member derived plan alone does not repair it:
+positive current enemy-library records still encounter a nested framing
+disagreement. Keep that as a reader gap until independently proved; changing
+the header constant or accepting only the sparse files that happen to close
+would misrepresent the family. Stage publication reports zero usable named
+records explicitly even when the Data publication itself is fresh.
+
 ## LevelScriptData owner cursor
 
 `levelscript_binary.frame_levelscript_named` owns the shared reader order for
@@ -647,9 +656,10 @@ gate remain separate obligations.
 - Track-camera migration remains refused by `levelscript_track_camera_native.py`.
   Current DummyDll declarations and native parent reads establish the inserted
   custom name and target-type argument positions, but the shared erased
-  `ReadValue` body does not establish the closed `Param<ETrackCameraTargetType>`
-  formatter, its constant width, or its source/path tail. Prove that provider,
-  adapter and concrete formatter join before extending `track_camera.py`;
+  `ReadValue` body does not establish its selected formatter identity. A closed
+  `Param<ETrackCameraTargetType>` wrapper and generic adapter constructor exist,
+  but the provider/cache-to-adapter-to-wrapper join remains unproven. Prove it
+  before extending `track_camera.py`;
   matching Int32 enum backing and parent generic contexts alone do not admit
   the new wire form. The older source cursor receipts remain unvalidated on
   the changed layout.
@@ -747,6 +757,8 @@ gate remain separate obligations.
   or whole-owner EOF.
 
 ## BuffData
+
+Frontier 9's direction-angle actions read the one-byte `clampToXZ` at member 4; `buff_residual_actions.py` owns the stored framing, while historical source cursors still need a current-byte rejoin.
 
 The 30-member root readers (`memorypack/buff.py`, `buff_actions.py`,
 `buff_residual_actions.py`, `buff_icon_config.py`, and the top-level
@@ -2444,6 +2456,8 @@ and native validation. Registry publication additionally requires canonical
 export replay; the standalone diagnostics never supply that publication.
 
 ## SkillData
+
+`skill_custom_root_motion_regenerate.py` re-proves the v2 25-member plan, including member 9's added boolean and the inlined LayerMask DWORD/Advance(4); the enclosing shared timeline contract remains unmigrated and fail-closed.
 
 SkillData is one 48-member object: field 0 `ActionGroupData`, fields 1-42
 read by a sequential reader derived from the generated wrapper types, and a
@@ -8428,3 +8442,14 @@ items this topic owns.
   mutation tests before it leaves prototype. CharInteractPerform's
   `FAnimationCurve` now shares AnimationConfig's proven bulk-key reader; no
   current custom curve has positive keys to exercise it in that family.
+
+## Pooled string target boundary
+
+LevelScript formatter regeneration can recognize an anonymous optimized clone
+of `MemoryPackReaderExtensions.BeyondReadString` through the reviewed
+`memorypack_pooled_string_reader_native.json` fact. The native code consumes
+an Int32 pool index, returns empty/null for the two sentinels, and forwards
+the remaining index to the shared pool lookup. This establishes a string-valued
+read; it does not establish inline MemoryPack string wire compatibility or
+admit a current corpus. The selected build and complete native windows must
+match before the equivalence is used.

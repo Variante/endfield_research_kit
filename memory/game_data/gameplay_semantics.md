@@ -201,6 +201,28 @@ capture is specified in
   does not upgrade the bounded legacy readers, and the JsonData gate's BuffData
   `schema_decoded` state also needs a recorded root receipt (`jsondata_corpus`).
   Its PlaySound actions: [`audio_naming_coverage.md`](audio_naming_coverage.md).
+- Gameplay's compact Buff publication uses `memorypack.buff_values` with the
+  selected export's explicit indexed string pool. It requires complete EOF and
+  filename/id agreement, then joins lifecycle and stacking enum fields to their
+  selected native backing widths. Byte and signed Int16 defaults are raw bytes;
+  Int32 defaults retain their compressed encoding. This is derived-plan stored
+  evidence, not an independent whole-schema receipt or action execution proof.
+  A legacy missing-id-marker result is never a resolved Buff.
+  Optional derived union spans retain actual start/end cursors for action
+  summaries. They are labelled derived consumption, with matching counts and
+  type names; recording those ranges does not promote them to reviewed exact
+  action semantics.
+  An unnamed numeric ability-event value is retained without an invented enum
+  name and keeps the effect pending; complete stored framing and a known event
+  meaning are separate requirements.
+- The ATK-scale, Breaking Attack, Definite Value, normal-damage and Poise
+  contracts use `il2cpp.reviewed_program` to authenticate selected signatures
+  (including by-reference parameters), typed fields, enums, code windows,
+  linked calls/branches and literal operands. Split code sections and the
+  anonymous calculation dispatcher are reviewed explicitly. Native patch guards
+  can use indirect tables; old named IFix helper calls are not a current proof.
+  These contracts establish conditional arithmetic and stored routes, not final
+  damage or a live invocation. Build-specific declarations stay in their JSON.
 - [`buff_selected_roots.py`](../../scripts/game_data/memorypack/buff_selected_roots.py)
   composes independent positive-heal, scene-object event-map,
   attribute/condition and recursive sword-damage child receipts through all
@@ -1687,14 +1709,27 @@ structure on the installed build.
   `1 - final(SlowActionSpeedScalar)`. ComboSkillCooldownScalar's final-stage
   conversion multiplies by `final(ComboSkillCooldownDecrease)`; it does not
   derive directly from Agi. The recovery scalar is a separate attribute.
+- Each element's DamageTakenScalar also multiplies by the corresponding
+  final DamageTakenReduction. The reviewed final dispatcher supplies these
+  joins independently of the similarly named resistance attributes.
 - Call structure is `direct`; general arithmetic order remains a reviewed
   disassembly reading (`conditional`, the stdlib decoder skips some SSE forms).
-  The conversion dispatchers and healing/resistance normal paths additionally
-  authenticate reviewed native code windows, external float literals and enum
-  IDs from the v2 contract. Byte/literal/enum drift produces `pendingReview`
+  The complete base/armed/final bodies, conversion dispatchers and
+  healing/resistance paths additionally authenticate reviewed native code
+  windows, external float literals and enum IDs from the v2 contract. Movement
+  conversion can be inlined into the armed body: its GetValue call and pinned
+  arithmetic replace the obsolete requirement for a separate helper call.
+  Byte/literal/enum drift produces `pendingReview`
   instead of publishing an old formula. This covers default paths without
   IFix replacements; combat buffs, gems, team effects and exceptional paths
   remain outside the loadout inputs.
+- Loadout skill modifiers decode the selected export's pooled strings explicitly
+  when its StringPool exists; older exports retain inline strings. Publication
+  still requires the entire SkillData record through EOF and an identifier
+  matching its filename. Dispatcher-table selection requires both the catalog's
+  wrapper identity and complete family size, so an unchanged early tag in an
+  older, smaller family cannot select its stale table. Conflicting current
+  pins and native table-byte drift still withhold the plans.
 
 Projectile behavior is immutable authored data; skill/projectile ownership,
 event hashes, decoded media and asset references keep separate provenance.

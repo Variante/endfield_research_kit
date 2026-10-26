@@ -22,6 +22,9 @@
   const en = () => window.WEBUI_UI_LOCALE === 'en';
   const text = (english, chinese) => en() ? english : chinese;
   const path = (file) => `data/lang/${encodeURIComponent(state.language)}/reference/${file}`;
+  const updateId = (row) => `ActivityTable/${row.id}`;
+  $('filter-panel').insertAdjacentHTML('beforeend', W.updateBadges.filterSection('activities'));
+  W.updateBadges.bindFilter('activities');
 
   const panel = W.filters.createPanelToggle({
     panel: '#activities-filter-panel', toggle: '#activities-filter-toggle', left: '#activities-left',
@@ -33,6 +36,7 @@
       label: (id) => state.tags[id]?.name?.text || id, title: (id) => id },
     { id: 'schedule', container: '#activities-schedule-filter', section: 'activities-schedule', param: 'activitySchedule', values: (row) => row.scheduleTag,
       label: (id) => ({ permanent: text('Permanent activity', '常驻活动'), limited: text('Limited-time activity', '限时活动'), unknown: text('Unspecified time', '未指定时间') })[id] },
+    W.updateBadges.filterGroup('activities', (row) => W.updateBadges.status('activities', updateId(row))),
   ], onChange: () => { W.continuousList.reset($('list')); renderList(); writeUrl(); } });
   facets.fromParams(new URL(location.href).searchParams, { silent: true });
   W.setupListShellSplitters({ shell: $('app'), sidebar: $('left'), pane: $('splitter'), panel: $('filter-panel'), filter: $('filter-splitter'), list: $('list'),
@@ -435,6 +439,7 @@
     const media = mediaFor(row, stem);
     const heading = $('detail-title');
     heading.textContent = row.title || row.id;
+    heading.insertAdjacentHTML('beforeend', W.updateBadges.html('activities', updateId(row)));
     const meta = $('detail-meta');
     meta.textContent = W.gameplayDetail.metadata([
       { label: text('Type', '类型'), value: text('Activity', '活动') },
@@ -458,7 +463,6 @@
     }
     const debug = !!document.querySelector('#show-debug')?.checked;
     if (debug) host.append(id, source);
-    W.updateBadges.mount(host, 'activities', `${stem}/${row.id}`);
     renderTimes(host, row);
     renderBattleLinks(host, row);
     if (state.mediaError) { const note = document.createElement('p'); note.textContent = state.mediaError; host.appendChild(note); }
@@ -467,6 +471,7 @@
     renderRewardSummary(host, row, stem);
     renderRelatedRewards(host, row, stem);
     renderAssets(host, row, stem);
+    W.updateBadges.mount(host, 'activities', updateId(row));
     host.querySelectorAll('.reference-fields-title').forEach((title) => title.classList.add('gameplay-section-title'));
   }
 
@@ -493,6 +498,7 @@
   }
 
   function renderList() {
+    W.updateBadges.syncFilter('activities', 'activities', facets);
     const rows = sortedRows();
     W.locateCurrent?.sync($('locate-current'), Boolean(state.selected));
     $('count').textContent = `${rows.length} / ${state.rows.length}`;
@@ -505,6 +511,7 @@
       button.setAttribute('aria-pressed', String(String(row.id) === state.selected));
       const title = document.createElement('strong');
       title.textContent = row.title || row.id;
+      title.insertAdjacentHTML('beforeend', W.updateBadges.html('activities', updateId(row)));
       const heading = document.createElement('div'); heading.className = 'activities-entry-heading';
       heading.append(scheduleTags(row), title);
       const meta = document.createElement('span'); meta.className = 'activities-entry-meta'; meta.hidden = !document.querySelector('#show-debug')?.checked;
@@ -561,6 +568,7 @@
     facets.reset({ silent: true });
     facets.fromParams(params, { silent: true });
     if (!force && state.language === language() && state.table) {
+      await Promise.all([W.updateBadges.load('activities'), W.updateBadges.loadFiles()]);
       const wanted = params.get('activity');
       state.selected = state.rows.some((row) => String(row.id) === wanted) ? wanted : '';
       facets.render(state.rows); renderList(); renderDetail();
@@ -583,7 +591,7 @@
       const [times, tags, activities, media, related, story] = await Promise.all([load('TimeRangeTable'), load('ActivityTagTable'), load('ActivityTable'),
         fetch('data/assets/activity_media.json', { signal }).then((response) => { if (!response.ok) throw new Error(`HTTP ${response.status}`); return response.json(); })
           .catch((error) => { if (error.name === 'AbortError') throw error; return { rows: {}, error: error.message }; }), Promise.all(RELATED_TABLES.map(load)),
-        W.storyLinks.load(state.language).catch(() => null), W.updateBadges.load('activities')]);
+        W.storyLinks.load(state.language).catch(() => null), W.updateBadges.load('activities'), W.updateBadges.loadFiles()]);
       if (generation !== state.generation) return;
       state.times = times.rawRows || {}; state.tags = tags.rawRows || {}; state.activities = activities.rawRows || {}; state.media = media;
       facets.set('tag', [...new Set([...facets.active('tag')].map(categoryKey))], { silent: true });

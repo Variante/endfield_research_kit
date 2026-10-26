@@ -16,8 +16,8 @@ framing reader skips, and that interpretation is deliberately narrow:
   because the name would be a second inference and the number is the fact;
 * a blittable struct is kept as raw bytes, since its aligned layout is a
   struct rather than one number;
-* a string is the length-prefixed payload's bytes, decoded as UTF-8 when they
-  decode and kept as hex when they do not;
+* a string uses the explicitly supplied export StringPool's signed index,
+  or the older length-prefixed UTF-8 payload when no pool is selected;
 * a nested union records the tag it selected and the type that tag names.
 
 **What a decoded value is and is not.** It is the value the file stores, under
@@ -81,6 +81,7 @@ from scripts.game_data.memorypack.derived_schema import (
 )
 from scripts.repo_paths import REPO_ROOT as REPO
 from scripts.source_paths import ExportLayout
+from scripts.game_data.string_pool import StringPool
 
 
 DEFAULT_OUTPUT = REPO / "reports/game_data/memorypack_derived_values.json"
@@ -116,10 +117,16 @@ NESTED_DEPTH = 1
 class ValueReader(DerivedPlanMixin, _FrozenReader):
     """Executes a plan like the framing reader, and keeps what it reads.
 
-    It deliberately subclasses the framing reader rather than reimplementing
-    it, so the cursor is the same cursor. A value is only ever taken from bytes
-    the framing reader would have consumed at that point anyway.
+    It subclasses the framing reader for its bounded primitives. String members
+    select either the older inline framing or four-byte indices into the
+    explicitly supplied export pool; no failed read retries another framing.
     """
+
+    def __init__(self, *args: Any, strings: StringPool | None = None,
+                 retain_union_framing: bool = False, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+        self.strings = strings
+        self.retain_union_framing = retain_union_framing
 
     def read_record(self, definition: int) -> Any:
         """Decode one whole record of the planned type."""
@@ -178,6 +185,9 @@ class ValueReader(DerivedPlanMixin, _FrozenReader):
         return struct.unpack_from("<" + fmt, raw)[0]
 
     def _value_string(self) -> Any:
+        if self.strings is not None:
+            index = struct.unpack("<i", self.take(4, "string-pool-index"))[0]
+            return self.strings.resolve(index)
         start = self.pos
         self.byte_payload()
         span = self.data[start:self.pos]
@@ -232,6 +242,7 @@ class ValueReader(DerivedPlanMixin, _FrozenReader):
                 for _ in range(count)]
 
     def _value_union(self, base: int, depth: int) -> Any:
+        start = self.pos
         self._plan_depth_guard(depth)
         registry = self.plan_registry
         tags = registry.union_tag_maps.get(base) if registry is not None else None
@@ -255,14 +266,22 @@ class ValueReader(DerivedPlanMixin, _FrozenReader):
             raise Unsupported(
                 self.source, self.pos, "a planned union subtype", tag, "union-subtype")
         wrapper = registry.wrapped_names.get(definition) if registry is not None else None
-        return {"$tag": tag, "$type": wrapper, "$value": self._value_object(definition, depth + 1)}
+        value = self._value_object(definition, depth + 1)
+        result = {"$tag": tag, "$type": wrapper, "$value": value}
+        if self.retain_union_framing:
+            result['$framing'] = {'offset': hex(start), 'bytes': self.pos - start,
+                                  'memberCount': len(value) if value is not None else 0}
+        return result
 
 
 def decode_file(
-    data: bytes, definition: int, registry: PlanRegistry, *, source: str = "record"
+    data: bytes, definition: int, registry: PlanRegistry, *, source: str = "record",
+    strings: StringPool | None = None,
+    retain_union_framing: bool = False,
 ) -> tuple[Any, int]:
     """Decode one record, returning the value and the cursor it reached."""
-    reader = ValueReader(data, source, registry=registry)
+    reader = ValueReader(data, source, registry=registry, strings=strings,
+                         retain_union_framing=retain_union_framing)
     value = reader.read_record(definition)
     return value, reader.pos
 

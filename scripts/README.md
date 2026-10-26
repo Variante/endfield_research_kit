@@ -69,7 +69,6 @@ depth-computed repo root; run directly as a file it exits with the
 | Extract and build one page | `.\export.bat map --from-game` |
 | Lean Story/Text extraction and build | `.\export.bat story --from-game` |
 | Extract every structured block and Unity class | `.\export.bat debug --from-game` |
-| Sync installed game data and build every page, including Updates | `.\export.bat --changed-only` |
 | Story recovery loop | `python -m scripts.webui.story.build --languages CN --default-language CN` |
 | Mission Pipeline recovery (standalone, not WebUI) | `python -m scripts.webui.mission_pipeline.build_mission_pipeline_data --refresh-source-story-gap-queue` |
 | Compare exports for Updates | `.\build_updates.bat OLD NEW` |
@@ -136,17 +135,10 @@ Behaviour `--help` does not give you:
 - MonoBehaviour and PlayableDirector are always exported together, and every
   such run republishes the object index. `--animestudio-story-monobehaviour-names`
   is accepted only for `story` and stamps that export partial.
-- `--changed-only` applies the focused structured VFS delta, refreshes the
-  remaining structured inputs, Unity outputs, indexes and CN/shared audio,
-  then builds every page and Updates. Missing authenticated delta evidence
-  falls back to full extraction; failed reader commands stop the run. Managed snapshots under
-  `reports/export/sync/` keep the last successful sync as the comparison
-  baseline; failures retain it, and unchanged runs retain the last feed.
 - `--webui-jobs N` bounds builders and Map's workers, `--asset-jobs N`
   AnimeStudio workers; `--full-source-graph` adds exhaustive PathID work.
   Options the wrapper does not own go to `export_full_from_game` and require
-  `--from-game` or `--changed-only`; the latter owns the complete extraction
-  scope. Keep wrapper files CRLF. Timings and a process-tree
+  `--from-game`. Keep wrapper files CRLF. Timings and a process-tree
   benchmark go to `reports/export/`.
 
 ### Exporter scope, provenance and stores
@@ -188,7 +180,8 @@ python -m scripts.game_data.sprite_crops check
 
 | Area | Entry point | Main output |
 | --- | --- | --- |
-| Extraction, local delta and rolling snapshots | `game_data/extraction/export_full_from_game.py`, `export_changed_game_data.py`, `export_sync.py` | `export_full/`; delta state and managed snapshots under `reports/export/sync/` |
+| Extraction | `game_data/extraction/export_full_from_game.py` | `export_full/`; page scopes come from `webui/pages.py` |
+| Low-level delta and snapshot helpers | `game_data/extraction/export_changed_game_data.py`, `export_sync.py` | authenticated delta state and snapshot utilities; separate from the page export workflow |
 | Export freshness | `game_data/extraction/verify_export_freshness.py` | validation result |
 | Cooked collision readers | `python -m scripts.game_data.cooked_collision PAYLOAD --obj tmp/collision.obj`; `python -m scripts.game_data.cooked_convex PAYLOAD --obj tmp/hull.obj` | complete supported PhysX triangle/BV4 or convex/Gauss payload checks and local collision OBJ; triangle `--prefix-only` leaves its tail explicitly opaque |
 | Selected cooked collision corpus | `python -m scripts.game_data.cooked_collision_corpus --selection FILTER --outer-summary AUDIT --outer-ledger LEDGER --expected-input-set-sha256 SHA` | fresh identity-filtered Mesh JSON/raw export under `tmp/`, exact payload joins and complete-reader census under `reports/assets/`; selection and current VFS audit define coverage |
@@ -785,10 +778,9 @@ live emitter/listener identities or current control values.
 
 ## Updates
 
-`export.bat --changed-only` synchronizes the installed client, then calls the
-same Updates builder with an exact comparison against the last successful
-sync. Its initial old export can come from `ENDFIELD_PREVIOUS_EXPORT_ROOT`
-or `--previous-export-root`; later runs manage their own complete snapshots.
+Page export and Updates publication are separate commands. Keep a complete
+previous export before refreshing the current export with `export.bat
+--from-game`, then compare the saved pair.
 
 Updates compare two complete layout-v4 export folders. Pass `OLD NEW`, or
 configure `ENDFIELD_PREVIOUS_EXPORT_ROOT` and `ENDFIELD_EXPORT_ROOT` in
@@ -815,6 +807,12 @@ Characters sidecar rules are in `webui/updates/characters.py`;
 levels, Gameplay source records for optional page badges and previous/current
 field and linked-file comparisons, independently of asset flags and sample
 limits. Linked-file previews reuse the feed's bounded maintained readers.
+`gameplay_sources.py` owns typed entity joins; `gameplay_items.py` honors
+catalog source-field selections and keeps related item labels terminal.
+`catalog_sources.py` owns Combat stage sources and the Activities page's exact
+guide/related-reward joins; both subpages use the shared badges and filters.
+`build_page_updates(..., pages=(...))` permits focused sidecar maintenance
+without recomputing unrelated page comparisons.
 Pruning is
 destructive: preview with `--dry-run`; the guard rejects the current export
 and repository root and never touches a Unity object store.
@@ -1138,6 +1136,7 @@ are under `reports/animestudio/` unless another directory is shown.
 | `memorypack.buff_damage_sword_condition_receipt` | Explicit `--gameassembly`, `--metadata`, `--audit-report`, raw `--source-file` and `--output`: compose independently gated actions, nested IfElse children and sequence envelopes on the reviewed selected source | diagnostic under `reports/`; exact stored condition only; its owning modifier/root composition supplies canonical admission, with no runtime result |
 | `memorypack.buff_damage_sword_selected` | Explicit `--gameassembly`, `--metadata`, `--audit-report`, raw `--source-file`, authenticated `--outer-row` and `--output`: compose the recursive sword condition, processor and enum under typed parent joins; the sole root reader owns its thirty-field continuation | selected child diagnostic under `reports/`; canonical admission belongs to `buff_selected_roots` and the complete Buff gate |
 | `memorypack.{derived_schema,derived_plans,derived_actions,derived_values,union_subtypes,action_dispatcher,wrapper_members}` | build-derived read plans, dispatch and wrapper member orders (`derived_plans --corpus` is the adoption gate) | `reports/game_data/memorypack_*.json` |
+| `memorypack.buff_values`, `il2cpp.reviewed_program` | Gameplay's complete identifier-matched Buff values with an explicit export string pool and typed native enums; shared authentication of reviewed damage/Poise signatures, fields, code windows and linked witnesses | consumed by the Gameplay base and battle-stage builders; stored values and conditional arithmetic remain separate from runtime effects |
 | `memorypack.{target_settings,effect_config,damage_unit}_corpus` | selected enum labels over exact SkillData/BuffData records | `reports/game_data/memorypack_*.json` |
 | `memorypack.*_native` (multiply_attribute, atk_scale, definite_value, breaking_attack, damage_action_route, damage_action_poise_route, poise_result, buff_1b_action), `scripts.webui.gameplay.route_audit` | selected unpatched formula and route bodies; exact character damage-route partition | `reports/game_data/` |
 | `il2cpp.context_audit`, `native_union_atlas` | generic-instantiation contexts; reviewed JsonData union contracts; Atlas accepts a repeated `--contract` for focused audits and an explicit `--gameassembly`/`--metadata` pair, and rechecks native/proof sources before publication | `il2cpp_context_current_latest.*`, `jsondata_union_atlas_current.json`; failed Atlas checks preserve publication and identify the contract and affected native row |
@@ -1226,11 +1225,22 @@ python -m scripts.game_data.il2cpp.method_resolver --type "Ns.Type" --method "Me
 python -m scripts.game_data.il2cpp.method_resolver --from-contract path\to\contract.json --report reports\assets\character_recovery\<name>.json
 python -m scripts.game_data.callserver_callback_native --regenerate [--write]
 python -m scripts.game_data.cutscene_case_resolution_native --regenerate [--write]
+python -m scripts.game_data.buff_frontiers_regenerate --regenerate [--only frontier9] [--write]
+python -m scripts.game_data.skill_custom_root_motion_regenerate --regenerate [--write]
+python -m scripts.game_data.levelscript_family_regenerate --regenerate [--only CONTRACT_STEM] [--write] [--report reports/game_data/levelscript_regeneration.json]
 python -m scripts.game_data.ifix_patch_native --regenerate PATCH [--write]
 python -m scripts.webui.story_recovery.audit_native_carriers cinematic --write-contract
 python -m scripts.webui.story_recovery.audit_native_carriers generic --carrier-type Beyond.Gameplay.TeleportParam --focus-field missionId --focus-field levelScriptId --focus-field actionId --focus-field performId --write-contract
 python -m scripts.game_data.ifix_vm_operands_native --gameassembly GA --metadata META --input PATCH [--outer-summary OUTER --outer-ledger LEDGER --expected-input-set-sha256 SHA] --output reports/animestudio/ifix_vm_operands_current.json
 ```
+
+The LevelScript family command re-derives task-condition declaration/dispatch
+identity and attempts complete formatter and nested getter
+read/setter-pair proofs; auxiliary claims, unsupported ranges, and unresolved helper identities remain unchanged, with
+per-contract refusals in its report. Source cursor receipts are separately gated.
+String target resolution also accepts the reviewed pooled-index reader only
+when its native-input pins, named extension method and complete code windows
+validate against `memorypack_pooled_string_reader_native.json`.
 
 ## Output hygiene
 

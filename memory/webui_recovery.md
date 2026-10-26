@@ -250,7 +250,6 @@ Choose the smallest workflow that owns the changed input:
 | Extract and build one page | `.\export.bat map --from-game` |
 | Lean Story/Text extraction (the setup path) | `.\export.bat story --from-game` |
 | Extract every structured block and Unity class | `.\export.bat debug --from-game` |
-| Sync installed data and build every page plus Updates | `.\export.bat --changed-only` |
 | Compare two complete exports for Updates | `.\build_updates.bat OLD NEW` |
 | Serve / package | `python serve.py` / `python -m scripts.webui.package` |
 
@@ -317,15 +316,8 @@ The flow is:
 workers. `--asset-jobs N` limits AnimeStudio workers. Use
 `--full-source-graph` only for exhaustive Unity object/PathID investigation.
 
-`--changed-only` synchronizes the complete supported export scope before
-building every page and Updates. Structured files use the authenticated local
-delta where possible; Unity outputs, asset maps, the object index and CN/shared
-audio refresh through their normal producers and freshness gates. Updates
-compares against the last successful sync, using managed complete snapshots.
-Only a successful extraction, page build and comparison advances that baseline;
-failed runs retain it, and an unchanged run keeps the last feed. Initial mixed
-exports need a saved complete old export, or the first successful sync only
-initializes a baseline. See [Updates](webui/updates.md) for comparison ownership.
+Updates compares saved complete exports with `build_updates.bat OLD NEW`;
+export runs do not manage comparison snapshots or publish Updates.
 
 ## Shared contracts
 

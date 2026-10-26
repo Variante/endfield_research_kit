@@ -166,6 +166,12 @@ The Gameplay task declares Table inputs and optional JsonData; publication
 consumers add no cross-page build dependency. Supported categories are explicitly
 listed in the projector; sharing DungeonTable does not make puzzle, factory or
 racing records combat stages.
+Combat stage update identities are `stage:<DungeonTable key>` in
+`updates/gameplay.json`. Lists and detail titles show badges, details expose
+source-field changes, and Version changes combines with the stage facets.
+Comparisons follow the exact stage and selected shared definitions, with
+sibling configurations excluded; recovered/runtime wave parity is not inferred
+from an authored-source badge.
 
 DungeonTable's category and series ID own grouping, and an exact inclusion in
 DungeonSeriesTable.includeDungeonIds owns member ordering. DungeonRaidTable's
@@ -190,6 +196,13 @@ group backup counts and concurrent limits. Counts describe configured spawn
 actions for one execution, not observed population or a stage total. Timestamps
 are local offsets; tied times, wave IDs and dictionary order never establish
 runtime wave order. Unknown transitions retain an explicit recovery gap.
+
+Publication freshness and usable decoded Spawner records are separate checks.
+If a current Data publication contains no complete named SpawnerConfig records,
+Gameplay exposes it as unavailable with bounded decoder diagnostics and status
+counts. A fresh manifest must not hide a whole-family reader refusal. The
+indexed-string root and nested-layout migration remains owned by the raw reader;
+LevelScript native drift likewise keeps script-backed stage selection unavailable.
 
 Literal named Buff-application actions retain their trigger entries and target
 scope when linked through named getters/repeat-list pointers. Born Buffs remain
@@ -321,6 +334,15 @@ unnamed, and template combat fields remain separate from independent attributes
 rather than being merged into final values. Buff effects and their recovery
 status remain visible in normal view.
 
+SkillData and BuffData value readers receive the selected export's indexed
+string pool explicitly. Buff lifecycle and stacking names come from selected
+native enum fields with matching serialized widths. A Buff is counted as decoded
+only after physical EOF and filename/id agreement; the published evidence label
+remains `derived-plan-whole-record`. Raw action fields and additional effect
+families remain pending semantic recovery, including when a known duration or
+attribute modifier can already be displayed. A decoded Buff does not establish
+that its actions ran.
+
 Game descriptions are claims to check, not implementation evidence. The
 description audit distinguishes support for a named damage type or an exactly
 matched Poise parameter from unverified effects. Numeric comparison requires
@@ -350,6 +372,9 @@ establish suit membership.
   [`../game_data/gameplay_semantics.md`](../game_data/gameplay_semantics.md))
   over level, potential, weapon, weapon skills, equipment and set effects;
   combat Buffs, gems, team effects, IFix and display rounding stay uncomputed.
+  Reviewed element-specific damage-taken scalars include their corresponding
+  reduction factors. Weapon/set bonuses retain whole-record, identifier-matched
+  SkillData decoding with the selected export's StringPool when present.
 - Binary action chains publish only when typed fields consume to exact
   boundaries. Unknown unions, enums, tags, selectors, and payloads stay
   explicit.
@@ -722,6 +747,14 @@ common localized text. Item, recipe, machine and grouped medal identities use
 `<kind>:<id>` keys. Limited-item groups retain both raw item rows and their
 `LTItemTable` mapping in the same comparison identity. UI changes and icon
 display preferences create no game update.
+Usage receipts retain their declared source fields; a weapon's unrelated
+statistics do not become material changes. Ingredient labels and linked machine
+footprints are terminal views, so recipe comparisons do not traverse each
+ingredient's own production and usage network. Entity comparisons use explicit
+field-to-table ownership joins, with shared skills retained for each actual owner.
+Loadout picker option lists are excluded from shared resource-update collection
+and decoration. Only their selected summary previews participate, so unselected
+equipment does not become character resource changes.
 
 Fixture tests in the local `scripts/tests/test_build_production.py` cover exact
 joins, nested groups, zero-cost rejection, probabilistic shop boundaries,

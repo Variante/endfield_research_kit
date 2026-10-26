@@ -24,6 +24,7 @@
   const STR = 39, MAX_HP = 1, ATK = 2;
   const FOUR_ATTRS = [39, 40, 41, 42];
   const FACTOR_OF = { 39: 76, 40: 77, 41: 78, 42: 79 };
+  const DAMAGE_REDUCTION_OF = { 4: 101, 48: 102, 7: 103, 6: 104, 5: 105, 60: 106 };
   // Keep unmodelled derived hooks visible, but label their configuration-only
   // result rather than claiming the general modifier formula is complete.
   const CONVERSION_ATTRS = new Set([13, 29, 30, 47, 94, 95, 96, 97, 98, 99]);
@@ -105,6 +106,9 @@
     };
     const otherFinalScalar = (attr) => {
       if (conversionsReviewed && attr === 47) return final(100);
+      const reduction = DAMAGE_REDUCTION_OF[attr];
+      const nativeName = meta[String(attr)]?.nativeName;
+      if (reduction && nativeName && calc.formula?.otherFinalScalar?.[nativeName]) return final(reduction);
       if (attr !== ATK) return 1;
       return 1 + FOUR_ATTRS.reduce((total, id) => total + Math.floor(final(id)) * final(FACTOR_OF[id]), 0);
     };
@@ -389,7 +393,7 @@
       : `Lv${item.minWearLv || "?"} · ${item.title}${item.suit?.name ? ` · ${item.suit.name}` : ""}`;
     const image = (item) => item ? h.renderItemIcon(item, item.title, { static: true }) : "";
     const row = (item) => `<button type="button" class="gameplay-loadout-choice" data-picker-value="${h.escapeHtml(item?.id || "")}" aria-pressed="${(item?.id || "") === value}" data-picker-search="${h.escapeHtml(item ? pickerSearchText(item) : "")}">${image(item)}<span>${h.escapeHtml(item ? label(item) : h.text("loadoutNone"))}</span></button>`;
-    return `<details class="gameplay-loadout-picker" data-picker-kind="${kind}" data-picker-slot="${slot || ""}"><summary>${image(chosen)}<span>${h.escapeHtml(chosen ? label(chosen) : h.text("loadoutNone"))}</span></summary><label class="gameplay-loadout-search"><span>${h.escapeHtml(h.text("loadoutSearch"))}</span><input type="search" autocomplete="off" placeholder="${h.escapeHtml(h.text("loadoutSearch"))}"></label><div class="gameplay-loadout-choices">${row(null)}${options.map(row).join("")}</div><p class="muted" data-picker-empty hidden>${h.escapeHtml(h.text("loadoutSearchEmpty"))}</p></details>`;
+    return `<details class="gameplay-loadout-picker" data-picker-kind="${kind}" data-picker-slot="${slot || ""}"><summary>${image(chosen)}<span>${h.escapeHtml(chosen ? label(chosen) : h.text("loadoutNone"))}</span></summary><label class="gameplay-loadout-search"><span>${h.escapeHtml(h.text("loadoutSearch"))}</span><input type="search" autocomplete="off" placeholder="${h.escapeHtml(h.text("loadoutSearch"))}"></label><div class="gameplay-loadout-choices" data-update-files-exclude>${row(null)}${options.map(row).join("")}</div><p class="muted" data-picker-empty hidden>${h.escapeHtml(h.text("loadoutSearchEmpty"))}</p></details>`;
   }
 
   function renderWeaponControls(entry, state, inputs, h) {

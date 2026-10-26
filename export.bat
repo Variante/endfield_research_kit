@@ -13,7 +13,6 @@ rem   export.bat assets --from-game     Assets media; Animator FBX load their
 rem                                     dependency bundles (meshes) and skip
 rem                                     per-model textures, packed into Unity.sqlite
 rem   export.bat debug --from-game      every structured block and Unity class
-rem   export.bat --changed-only         sync installed data, build all + Updates
 rem   export.bat --help                 every option
 
 rem endfield_paths.bat supplies ENDFIELD_GAME_ROOT and ENDFIELD_EXPORT_ROOT;

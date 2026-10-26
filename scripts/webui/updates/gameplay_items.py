@@ -20,33 +20,49 @@ def item_source_records(tables: dict[str, dict[str, Any]]) -> dict[str, dict[str
     for kind, records in catalog.items():
         for key, record in records.items():
             sources = {}
+            full_sources = set()
 
-            def add(table, row_id):
+            def add(table, row_id, fields=None):
                 row_id = str(row_id)
                 if row_id in tables.get(table, {}):
-                    sources[f"{table}/{row_id}"] = tables[table][row_id]
+                    source = f'{table}/{row_id}'
+                    row = tables[table][row_id]
+                    if fields is None:
+                        sources[source] = row
+                        full_sources.add(source)
+                    elif source not in full_sources and isinstance(row, dict):
+                        sources[source] = {**sources.get(source, {}),
+                                           **{field: row[field] for field in fields if field in row}}
 
             def receipts(row):
                 for source in row.get("sources", []):
-                    add(source["table"], source["row"])
+                    fields = source.get('field')
+                    add(source["table"], source["row"],
+                        tuple(field.strip() for field in fields.split(',')) if fields else None)
 
             def building(building_id):
                 row = catalog["machines"].get(str(building_id), {})
-                receipts(row)
+                # A linked machine supplies its label/footprint, not ownership
+                # of that machine's complete recipes and configuration.
+                for source in row.get('sources', []):
+                    if source['table'] == 'FactoryBuildingTable':
+                        add(source['table'], source['row'], ('range',))
                 for ref in row.get("items", []):
-                    add("ItemTable", ref["id"])
+                    add("ItemTable", ref["id"], ('name', 'iconId', 'rarity', 'type'))
 
-            def item(item_id):
+            def item(item_id, *, owned=False):
                 item_id = str(item_id)
                 row = catalog["items"].get(aliases.get(item_id, item_id), {})
                 for source_id in sorted({item_id, row.get("id", item_id)}):
                     raw = tables.get("ItemTable", {}).get(source_id, {})
-                    add("ItemTable", source_id)
-                    add("ItemTypeTable", raw.get("type", ""))
-                    add("ItemShowingTypeTable", raw.get("showingType", ""))
-                receipts(row)
-                for building_id in row.get("buildingIds", []):
-                    building(building_id)
+                    add("ItemTable", source_id, None if owned else ('name', 'iconId', 'rarity', 'type'))
+                    if owned:
+                        add("ItemTypeTable", raw.get("type", ""))
+                        add("ItemShowingTypeTable", raw.get("showingType", ""))
+                if owned:
+                    receipts(row)
+                    for building_id in row.get("buildingIds", []):
+                        building(building_id)
 
             def visit(value):
                 if isinstance(value, list):
@@ -75,7 +91,7 @@ def item_source_records(tables: dict[str, dict[str, Any]]) -> dict[str, dict[str
 
             if kind == "items":
                 for item_id in record.get("aliases", [key]):
-                    item(item_id)
+                    item(item_id, owned=True)
             visit(record)
             result[f"{kind}:{key}"] = sources
     return result

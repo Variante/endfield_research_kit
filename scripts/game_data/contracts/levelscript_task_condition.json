@@ -2,35 +2,35 @@
   "schema": "endfield.levelscript-task-condition-native.v1",
   "status": "validated",
   "nativeInputs": {
-    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
-    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
-    "UnityPlayer.dll": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+    "GameAssembly.dll": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "global-metadata.dat": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca",
+    "UnityPlayer.dll": "9aa9397a6c5ee4fa083ea379b81ff14019eeba26a76d15446318d5947fb3d2d0"
   },
   "evidenceBoundary": {
-    "exact": "The current GameCondition formatter switch entry, tag-1 type usage, MetadataRegistration type pointer, generated wrapper inheritance and setter order establish this stored union layout.",
-    "direct": "The selected dispatcher branch constructs the registered wrapper for union tag 0x012f.",
-    "conditional": "The row applies only after the installed native-input and code-window gates validate and the serialized member count is eight.",
-    "unresolved": "Condition evaluation, server authority, entity resolution and gameplay outcome are not established by serialization."
+    "exact": "Selected GameCondition switch entry, type usage, registered type pointer, wrapper parent, member declarations and setter order.",
+    "direct": "The selected dispatcher branch loads the registered wrapper type for the recorded union tag.",
+    "conditional": "The stored row applies only after the selected native inputs and branch windows validate and the serialized member count matches.",
+    "unresolved": "Complete reader wire operations, condition evaluation, server authority, entity resolution and gameplay outcome are not established by this declaration and dispatch proof."
   },
   "dispatcher": {
-    "typeDefinition": 13922,
-    "methodToken": "0x060009fd",
-    "methodRva": "0x41825d0",
-    "switchTableRva": "0x41854e8",
-    "maxTag": "0x0139"
+    "typeDefinition": 47651,
+    "methodToken": "0x06000a5b",
+    "methodRva": "0x66932c0",
+    "switchTableRva": "0x669cb74",
+    "maxTag": "0x157"
   },
   "codeWindows": [
     {
-      "name": "GameCondition.tag_0x012f.branch",
-      "rva": "0x4f8b449",
-      "length": 88,
-      "sha256": "4e323a3c27738a3d57d1f5179a5d4be82342d69035fb14b10a84d16367246e13",
+      "name": "GameCondition.tag_0x14d.branch",
+      "rva": "0x669c7cd",
+      "length": 77,
+      "sha256": "408ccf1ccc8d99a65f1fbbb0b2ef4df68c5e63d5b3c00f08ac703e33e91a9274",
       "boundary": "Exact switch target through the next unique switch target."
     }
   ],
   "rows": [
     {
-      "tag": "0x012f",
+      "tag": "0x14d",
       "memberCount": 8,
       "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveCheckBoolForMemoryPack",
       "generatedDeclaration": "public class Beyond_Gameplay_InteractiveCheckBoolForMemoryPack : Beyond_Gameplay_GameConditionServerForMemoryPack, IMemoryPackDeSerializeWrapper, IMemoryPackDeSerializeWrapper<InteractiveCheckBool>, IMemoryPackDeSerializeType",
@@ -76,12 +76,12 @@
         ]
       ],
       "nativeIdentity": {
-        "switchTargetRva": "0x4f8b449",
-        "usageCellRva": "0xd0ab8f0",
-        "usageRawHex": "9546032000000000",
-        "registeredTypeIndex": 107338,
-        "typePointerRva": "0xd204c78",
-        "typeDefinition": 15017
+        "switchTargetRva": "0x669c7cd",
+        "usageCellRva": "0x106eceb8",
+        "usageRawHex": "4319032000000000",
+        "registeredTypeIndex": 101537,
+        "typePointerRva": "0x10953650",
+        "typeDefinition": 48860
       },
       "conditionType": "InteractiveCheckBool"
     }

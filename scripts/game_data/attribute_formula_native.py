@@ -42,10 +42,16 @@ def validate_arithmetic_windows(image, index, windows):
                 continue
             for literal in window.get("float64Literals", []):
                 offset = literal["instructionOffset"]
-                instruction = raw[offset:offset + 8]
-                if len(instruction) != 8 or instruction[:3] not in (b"\xf2\x0f\x10", b"\xf2\x0f\x59") or instruction[3] & 0xc7 != 0x05:
-                    raise ValueError(f"literal +{offset}: expected RIP-relative MOVSD/MULSD")
-                target = body.pointer + offset + 8 + struct.unpack_from("<i", instruction, 4)[0]
+                # REX.R selects XMM8-15 in the inlined conversion path.
+                rex = raw[offset + 1:offset + 2] == b"\x44"
+                opcode = offset + 1 + int(rex)
+                end = opcode + 7
+                if (raw[offset:offset + 1] != b"\xf2"
+                        or raw[opcode:opcode + 2] not in (b"\x0f\x10", b"\x0f\x58", b"\x0f\x59")
+                        or len(raw[opcode + 2:end]) != 5
+                        or raw[opcode + 2] & 0xc7 != 0x05):
+                    raise ValueError(f"literal +{offset}: expected RIP-relative MOVSD/ADDSD/MULSD")
+                target = body.pointer + end + struct.unpack_from("<i", raw, opcode + 3)[0]
                 value = struct.unpack("<d", image.pe.bytes_at_va(target, 8))[0]
                 if value != literal["value"]:
                     failures.append({"symbol": symbol, "claim": "float64Literal", "reason": f"offset {offset}: expected {literal['value']}, actual {value}"})

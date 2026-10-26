@@ -266,7 +266,7 @@ def native_enum_members(
     registration: dict[str, Any],
     type_name: str,
 ) -> list[dict[str, Any]]:
-    """Decode Int32- or byte-backed enum defaults with selected native types.
+    """Decode Int32-, byte- or Int16-backed enum defaults with selected native types.
 
     The caller must authenticate ``pe`` and ``metadata`` as the same selected
     installed build. Metadata default blobs do not identify their primitive
@@ -292,7 +292,7 @@ def native_enum_members(
         return runtime_type_name(pe, metadata, type_va)
 
     backing_type = primitive(backing[0].type_index)
-    if backing_type not in {"byte", "int"}:
+    if backing_type not in {"byte", "short", "int"}:
         raise RuntimeError(f"unsupported enum backing type: {type_name}:{backing_type}")
     section = metadata.sections["fieldAndParameterDefaultValueData"]
     rows: list[dict[str, Any]] = []
@@ -311,6 +311,10 @@ def native_enum_members(
             raise RuntimeError(f"enum member default offset outside blob: {type_name}.{name}")
         if backing_type == "byte":
             value = metadata.buf[offset]
+        elif backing_type == "short":
+            if offset + 2 > section.offset + section.size:
+                raise RuntimeError(f"enum member default exceeds blob: {type_name}.{name}")
+            value = struct.unpack_from("<h", metadata.buf, offset)[0]
         else:
             value, size = read_compressed_int32(metadata.buf, offset)
             if offset + size > section.offset + section.size:

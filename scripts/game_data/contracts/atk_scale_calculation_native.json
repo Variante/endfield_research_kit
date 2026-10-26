@@ -1,90 +1,236 @@
 {
-  "schema": "endfield.atk-scale-calculation-native-contract.v1",
+  "schema": "endfield.atk-scale-calculation-native-contract.v2",
   "status": "validated",
+  "programVersion": 1,
   "nativeInputs": {
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
   },
-  "ownerType": "Beyond.Gameplay.Core.AtkScaleCalculation",
   "methods": {
-    "evaluate": [60871, "Beyond.Gameplay.Core.AtkScaleCalculation", "Evaluate", "0x45a59a0"],
-    "blackboardValue": [1021, "Beyond.ActionBlackboardExtensions", "GetValue", "0x30ff5e0"],
-    "getAtk": [56224, "Beyond.Gameplay.Core.AbilitySystem", "get_atk", "0x42e2be0"],
-    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"]
+    "evaluate": [
+      63978,
+      "Beyond.Gameplay.Core.AtkScaleCalculation",
+      "Evaluate",
+      "0x8ef2c58"
+    ],
+    "getAtk": [
+      59040,
+      "Beyond.Gameplay.Core.AbilitySystem",
+      "get_atk",
+      "0x4f81060"
+    ],
+    "blackboardValue": [
+      1142,
+      "Beyond.ActionBlackboardExtensions",
+      "GetValue",
+      "0x4fede70"
+    ]
   },
-  "evaluateParameters": [
-    ["attacker", "Beyond.Gameplay.Core.AbilitySystem"],
-    ["defender", "Beyond.Gameplay.Core.AbilitySystem"],
-    ["blackboard", "Beyond.ActionBlackboard"],
-    ["context", "Beyond.Gameplay.Core.IActionEnvironment+Context"],
-    ["attackerOverrideAttributes", "double[]"],
-    ["defenderOverrideAttributes", "double[]"],
-    ["argsForServer", "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"]
-  ],
-  "evaluateReturnType": "Beyond.Gameplay.Core.CalcResult",
-  "calleeSignatures": {
-    "blackboardValue": {
-      "parameters": [["param", "Beyond.Blackboard+BlackboardDouble"], ["blackboard", "Beyond.ActionBlackboard"]],
-      "returnType": "float"
+  "signatures": {
+    "evaluate": {
+      "parameters": [
+        [
+          "attacker",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "defender",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ],
+        [
+          "context",
+          "Beyond.Gameplay.Core.IActionEnvironment+Context"
+        ],
+        [
+          "attackerOverrideAttributes",
+          "double[]"
+        ],
+        [
+          "defenderOverrideAttributes",
+          "double[]"
+        ],
+        [
+          "argsForServer",
+          "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+        ]
+      ],
+      "returnType": "Beyond.Gameplay.Core.CalcResult",
+      "static": false,
+      "byrefParameters": []
     },
-    "getAtk": {"parameters": [], "returnType": "double"}
+    "getAtk": {
+      "parameters": [],
+      "returnType": "double",
+      "static": false,
+      "byrefParameters": []
+    },
+    "blackboardValue": {
+      "parameters": [
+        [
+          "param",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ]
+      ],
+      "returnType": "float",
+      "static": true,
+      "byrefParameters": []
+    }
   },
-  "resultValueField": ["Beyond.Gameplay.Core.CalcResult", "value", "double", "0x0400aed8"],
-  "field": {
-    "name": "atkScale",
-    "type": "Beyond.Blackboard+BlackboardDouble",
-    "offset": 16,
-    "token": "0x0400aece"
-  },
-  "overrideIndexEnumMember": {
-    "type": "Beyond.GEnums.AttributeType",
-    "member": "Atk",
-    "id": 2,
-    "token": "0x040026ed"
-  },
+  "fields": [
+    [
+      "Beyond.Gameplay.Core.AtkScaleCalculation",
+      "atkScale",
+      "Beyond.Blackboard+BlackboardDouble",
+      16,
+      "0x0400b717"
+    ],
+    [
+      "Beyond.Gameplay.Core.CalcResult",
+      "value",
+      "double",
+      16,
+      "0x0400b721"
+    ]
+  ],
+  "enumMembers": [
+    [
+      "Beyond.GEnums.AttributeType",
+      "Atk",
+      2,
+      "0x040028a8"
+    ]
+  ],
+  "entryRoles": [
+    "evaluate"
+  ],
   "codeWindows": [
     {
-      "startRva": "0x45a59a0",
-      "endRva": "0x45a5a78",
-      "sha256": "68f7834b33471c212e04a17730d560f83118d338a42f7a51f1a1241f3baba5df",
-      "boundary": "complete contiguous Evaluate entry, override branch, GetValue call, and arithmetic return"
-    },
-    {
-      "startRva": "0x4ffafa2",
-      "endRva": "0x4ffafbd",
-      "sha256": "1bc67a7fd79d03a0f7f87008d0842ab5cd11ff432754ab9cfa0a22c2f38222f2",
-      "boundary": "split attacker getter fallback and return to scale resolution"
-    },
-    {
-      "startRva": "0x4ffafbd",
-      "endRva": "0x4ffaff7",
-      "sha256": "69415169703734ce107dd0b75bb43b76182d82a1127c4827655afadce28fae91",
-      "boundary": "optional server debug-args branch converging on the same arithmetic"
+      "startRva": "0x8ef2c58",
+      "endRva": "0x8ef2de9",
+      "sha256": "a36a7ed5280fa833737cd3d78dc108826d646f1be3d5e94c6357522d21a9cc69",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
     }
   ],
   "instructionWindows": [
-    ["0x45a59eb", "488b8424a80000004885c00f84a655a500837818027670f20f107030", "attackerOverrideAttributes null check, index-two bounds check and double load"],
-    ["0x4ffafa2", "4885ed0f84b600000033d2488bcde82b7c2eff0f28f0e94aaa5aff", "null-override attacker.get_atk fallback and rejoin"],
-    ["0x45a5a07", "488b4f104533c0488bd3e8ca9bb5fe", "atkScale BlackboardDouble and blackboard reach GetValue"],
-    ["0x45a5a2a", "0f57c0f30f5ac7f20f59c666480f7ec0", "Single scale converts to Double, multiplies selected attack, returns numeric bits"]
+    [
+      "0x8ef2c6c",
+      "803db442850800",
+      "cmp byte ptr [rip + 0x88542b4], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x8ef2d4e",
+      "83781802",
+      "cmp dword ptr [rax + 0x18], 2; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x8ef2db7",
+      "f30f5acf",
+      "cvtss2sd xmm1, xmm7; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x8ef2dd1",
+      "f30f5ac7",
+      "cvtss2sd xmm0, xmm7; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x8ef2dd5",
+      "f20f59c6",
+      "mulsd xmm0, xmm6; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x8ef2dd9",
+      "66480f7ec0",
+      "movq rax, xmm0; reviewed default-path operand/branch/return witness"
+    ]
   ],
   "calls": [
-    {"siteRva": "0x45a59de", "method": "patchCheck"},
-    {"siteRva": "0x45a5a11", "method": "blackboardValue"},
-    {"siteRva": "0x4ffafb0", "method": "getAtk"}
+    {
+      "siteRva": "0x8ef2d6b",
+      "method": "getAtk",
+      "opcode": "e8"
+    },
+    {
+      "siteRva": "0x8ef2d7d",
+      "method": "blackboardValue",
+      "opcode": "e8"
+    }
   ],
   "branches": [
-    {"siteRva": "0x45a59e5", "opcode": "0f85", "displacementBytes": 4, "targetRva": "0x4ffaff7"},
-    {"siteRva": "0x45a59f6", "opcode": "0f84", "displacementBytes": 4, "targetRva": "0x4ffafa2"},
-    {"siteRva": "0x45a5a00", "opcode": "76", "displacementBytes": 1, "targetRva": "0x45a5a72"},
-    {"siteRva": "0x45a5a24", "opcode": "0f85", "displacementBytes": 4, "targetRva": "0x4ffafbd"},
-    {"siteRva": "0x4ffafb8", "opcode": "e9", "displacementBytes": 4, "targetRva": "0x45a5a07"},
-    {"siteRva": "0x4ffaff2", "opcode": "e9", "displacementBytes": 4, "targetRva": "0x45a5a2a"}
+    {
+      "siteRva": "0x8ef2c87",
+      "opcode": "75",
+      "displacementBytes": 1,
+      "targetRva": "0x8ef2ca8"
+    },
+    {
+      "siteRva": "0x8ef2cb6",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x8ef2d41"
+    },
+    {
+      "siteRva": "0x8ef2cc6",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8ef2d41"
+    },
+    {
+      "siteRva": "0x8ef2d4c",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8ef2d61"
+    },
+    {
+      "siteRva": "0x8ef2d52",
+      "opcode": "77",
+      "displacementBytes": 1,
+      "targetRva": "0x8ef2d5a"
+    },
+    {
+      "siteRva": "0x8ef2d5f",
+      "opcode": "eb",
+      "displacementBytes": 1,
+      "targetRva": "0x8ef2d73"
+    },
+    {
+      "siteRva": "0x8ef2d64",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8ef2de3"
+    },
+    {
+      "siteRva": "0x8ef2d90",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8ef2dce"
+    },
+    {
+      "siteRva": "0x8ef2dad",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x8ef2de3"
+    },
+    {
+      "siteRva": "0x8ef2dde",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x8ef2d21"
+    }
   ],
+  "literals": [],
   "evidenceBoundary": {
-    "exact": "The selected build has the named Evaluate signature, atkScale field, AttributeType.Atk member, call targets, branch targets and reviewed unpatched code bytes recorded here.",
+    "exact": "Selected native inputs authenticate the named methods and ordinary signatures, stored fields and enum identities, complete reviewed body windows, linked direct calls and branches, and arithmetic/return witnesses. These byte checks retain the reviewed interpretation; they do not discover new formulas.",
     "direct": "On a normally returning unpatched Evaluate path, a nonnull attackerOverrideAttributes double[] supplies element 2 after a length check; when the array is null, attacker.get_atk supplies the base attack. atkScale reaches BlackboardDouble GetValue with the action blackboard. Its Single result is converted to Double and multiplied by the selected attack Double into CalcResult.value.",
-    "conditional": "The expression holds only when this subtype is invoked, the iFix patch branch is not taken, and any supplied override array contains element 2; a present short array takes a failure path rather than the getter fallback.",
+    "conditional": "The reviewed normal native patch-table guards must select the default path, all named providers must return normally, and any post-evaluation guard must allow the result copy. The current indirect patch path bypasses these calculations; its provider internals and live selection are not claimed.",
     "unresolved": "The BlackboardDouble provider, live patch state, authored action activation, attack getter internals, mitigation and final damage are not established."
-  }
+  },
+  "addressTargets": []
 }

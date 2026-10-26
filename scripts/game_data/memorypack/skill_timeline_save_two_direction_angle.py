@@ -1,4 +1,4 @@
-"""Current-build SkillData SaveTwoDirectionAngle action 0x0141 framing.
+"""Selected-build SkillData SaveTwoDirectionAngle framing, with name-resolved tag.
 
 The Buff frontier-nine contract authenticates the physical union route,
 ordered source reads, and four nested TargetSettings contexts.  SkillData
@@ -11,15 +11,16 @@ from typing import Any
 
 from scripts.game_data import buff_frontiers_native
 from scripts.game_data.memorypack.buff_actions import Reader
+from scripts.game_data.memorypack.buff import _ability_action_tag
 
 
 LABEL = "skillTimelineSaveTwoDirectionAngle"
-TAG = 0x0141
+TAG = _ability_action_tag("Core_SaveTwoDirectionAngle_Data")
 SOURCE_CONTRACT = "buff_frontier9.json"
 SOURCE_SCHEMA = "endfield.buff-frontier9-native-contract.v1"
 TYPE_NAME = "Beyond.Gameplay.Core.SaveTwoDirectionAngle+Data"
 READ_ORDER = (
-    "byte", "scalar32", "scalar32", "scalar32", "enum32",
+    "byte", "scalar32", "scalar32", "scalar32", "byte", "enum32",
     "target-settings", "target-settings", "enum32",
     "target-settings", "target-settings", "string",
 )
@@ -59,7 +60,7 @@ def validate_current_native_contract() -> dict[str, Any]:
 
 
 def decode_save_two_direction_angle_action(reader: Reader, depth: int, tag: int, width: int) -> None:
-    """Consume the exact eleven-member 0x0141 route with bounded children."""
+    """Consume twelve members, including the byte clampToXZ at member 4."""
     del depth
     _route()
     if tag != TAG or width != 3:
@@ -72,6 +73,7 @@ def decode_save_two_direction_angle_action(reader: Reader, depth: int, tag: int,
     reader.take(1, "SaveTwoDirectionAngle.anonymous-byte")
     for _ in range(3):
         reader.take(4, "SaveTwoDirectionAngle.anonymous-scalar32")
+    reader.take(1, "SaveTwoDirectionAngle.clampToXZ")
     reader.take(4, "SaveTwoDirectionAngle.anonymous-enum32")
     reader.target_profile()
     reader.target_profile()

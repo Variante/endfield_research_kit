@@ -559,21 +559,8 @@ point samples additionally require the Material JSON and Texture2D outputs
 provided by the default asset scope. A stream/sidecar failure stops the map
 task; it is not silently replaced by sparse registry points.
 
-`export.bat --changed-only` uses `vfs-index --jsonl` to compare focused
-structured logical files by decoded MD5, length, numeric type, path, and
-encryption identity. It dumps additions/modifications with exact full-path
-`--file-regex` filters, removes deleted outputs, and validates the staged file
-set. The wrapper also refreshes the remaining structured inputs, Unity outputs,
-asset maps, the merged object index and CN/shared audio, then builds every page
-and Updates. Missing authenticated delta evidence falls back to full extraction.
-Both the private VFS state and successful-sync baseline advance only after
-every stage succeeds. A retry after a later-stage failure may reuse
-already-applied structured files only when the aborted manifest matches the
-exact game root, output root, dump mode, and current source fingerprints. This
-mode keeps its complete comparison snapshots and cache under
-`reports/export/sync/`, comparing exactly against the last successful sync.
-Failures retain the old baseline, and unchanged inputs preserve the last feed.
-`build_updates.bat OLD NEW` remains available for manual comparisons.
+Use `export.bat --from-game` to refresh page inputs and
+`build_updates.bat OLD NEW` to compare saved complete exports.
 
 ## Wrapper Integration
 

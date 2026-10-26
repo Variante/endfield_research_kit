@@ -648,9 +648,13 @@ def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[s
     generated WebUI index and preserves bounded file/decode error samples.
     """
 
-    from scripts.game_data.memorypack.buff import buff_gameplay_semantics
+    from scripts.game_data.memorypack.buff_values import load_context, read_record
+    from scripts.game_data.string_pool import export_string_pool
+    from scripts.webui.gameplay.buffs import project
 
     export_root = export_root.resolve()
+    buff_context = load_context()
+    strings = export_string_pool(ExportLayout(export_root).json_dir)
 
     source_roots = {"game": ExportLayout(export_root).json_dir / "BuffData"}
     discovered: dict[str, dict[str, Path]] = {source: {} for source in source_roots}
@@ -684,7 +688,7 @@ def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[s
             "source": source,
             "file": relative(path),
             "relativePath": relative(path),
-            "expected": "canonical BuffData file decodable by buff_gameplay_semantics",
+            "expected": "selected BuffData plan reaches EOF and matches the filename identifier",
             "actual": str(detail)[:500],
             "size": size,
             "sha256": digest,
@@ -769,7 +773,7 @@ def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[s
         path = discovered[source][name]
         selected_sources[name] = source
         try:
-            record = buff_gameplay_semantics(path)
+            record = project(read_record(path, buff_context, strings=strings), buff_context["enums"])
             if not isinstance(record, dict):
                 add_error("decode-error", source, path, "decoder returned non-object")
                 record = {"id": name, "status": "decode-error", "evidenceStatus": "unresolved"}

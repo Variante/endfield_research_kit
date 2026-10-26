@@ -655,6 +655,10 @@ Map links require its exact `jumpId` join to `SystemJumpTable` with phase `Map`
 and an explicit `phaseArgs.levelId`; general-area rows remain plain labels.
 Energy Alluvium details link to maps using the published stages' exact
 `WorldEnergyPointTable.levelId`, with repeated world-level targets merged.
+Buff summaries distinguish complete stored framing from recovered effect behavior.
+Known modifiers, duration and stacking fields can render alongside a pending
+notice for unknown actions or unnamed event values; decoding a whole record
+does not establish runtime activation or final effects.
 Character metadata places ID immediately after kind, weapon type beside the
 default weapon. Weapon English names come from
 `WeaponBasicTable.engName`; they are not internal identifiers.
@@ -772,7 +776,10 @@ attributes and template fields remain expandable, and effect recovery status
 stays visible. Damage and Poise calculations retain their individual native
 gates and describe configuration inputs rather than final combat results. The
 Loadout view computes final attributes only from a validated
-`attributeCalculation` (`loadout.js`). Weapon and equipment pickers show published
+`attributeCalculation` (`loadout.js`), including reviewed element-specific
+damage-taken reduction factors. Weapon/set bonuses require complete,
+identifier-matched SkillData reads, resolving the export's StringPool when present.
+Weapon and equipment pickers show published
 asset thumbnails and filter names, suit names, aliases and pinyin initials
 (for example, 骑士精神 → qsjs). Weapon type and equipment slot restrictions
 remain in force. Missing images leave the name selectable. Pinyin initials use
@@ -1441,9 +1448,7 @@ exported text plus image, model, video, and decoded audio assets, never a
 change under `webui/`, `reports/`, `memory/`, or `scratch/`. A serialized
 payload diffs through its maintained reader and says so (`text_kind`); a
 changed file with no diff says why (`text_diff_note`). Path-only relocations
-with unchanged content are omitted. Build with `.\build_updates.bat OLD NEW`,
-or let `.\export.bat --changed-only` compare with the last successful sync.
-An unchanged sync preserves the last comparison and its badges.
+with unchanged content are omitted. Build with `.\build_updates.bat OLD NEW`.
 
 Optional `data/updates/{characters,story,map,gameplay,reference,activities}.json` sidecars add Added/Modified
 badges to Story conversation titles, Map zone lists and the selected zone,
@@ -1453,6 +1458,23 @@ records (including shared localized text), not recovered order, native evidence,
 or a diff of generated WebUI files. An unavailable or absent sidecar leaves
 the page usable without badges. Deleted IDs remain in the sidecars and do
 not create current Story conversations, Map zones or Gameplay entries.
+Gameplay comparisons follow explicit owner fields: related cost-item and
+default-weapon labels do not import other characters, weapon stats or recipes.
+Item usage comparisons keep their declared source-field scope. Shared skills
+and set definitions still appear for each actual owner.
+Equipment compares the selected set's effects, not its sibling membership
+list. Linked region, formula-pack and unlock-channel rows supply labels only;
+regional development and shop inventories do not count as equipment changes.
+Gem point badges use `gem:<groupId>` and compare their pool/stage definitions
+and linked labels, including Added for a newly authored point group.
+Combat stages use `stage:<DungeonTable key>` in the Gameplay sidecar and expose
+list/title badges, source-field comparisons and Version changes. Activities
+uses `ActivityTable/<id>` in its schema-3 sidecar, including the page's exact
+supporting schedule, stage/task, supply and reward joins. Related labels and
+navigation slots are scoped to their owner; sibling configurations are excluded.
+Resource comparisons exclude candidate subtrees marked `data-update-files-exclude`.
+Loadout pickers apply this to their option lists, while the selected preview
+remains eligible; unopened equipment choices are not character resource updates.
 Tagged details show an initially expanded, collapsible **What changed** panel
 with field paths and previous/current values, filtered to the selected data
 language. Added/deleted fields distinguish an absent member from `null`.

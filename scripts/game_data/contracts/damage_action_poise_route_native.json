@@ -1,80 +1,537 @@
 {
-  "schema": "endfield.damage-action-poise-route-native-contract.v1",
+  "schema": "endfield.damage-action-poise-route-native-contract.v2",
   "status": "validated",
+  "programVersion": 1,
   "nativeInputs": {
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+    "gameAssemblySha256": "ab00f1c41e13edf9816f142b166e3c2536d5bc7707992c39e5ed52d1cc888e2c",
+    "metadataSha256": "461321d9dca6a832bce3bd2390402efc7c83c145554e97a8058bb68fbec1c8ca"
   },
   "methods": {
-    "processDamage": [58146, "Beyond.Gameplay.Core.DamageAction", "_ProcessDamage", "0x34b71c0"],
-    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"],
-    "poisePackConstructor": [61099, "Beyond.Gameplay.Core.PoisePackData", ".ctor", "0x3ca9640"],
-    "applyPoiseModifier": [61100, "Beyond.Gameplay.Core.PoisePackData", "ApplyPoiseModifier", "0x3c0cb70"]
+    "processDamage": [
+      61057,
+      "Beyond.Gameplay.Core.DamageAction",
+      "_ProcessDamage",
+      "0x55f4f70"
+    ],
+    "poisePackConstructor": [
+      64206,
+      "Beyond.Gameplay.Core.PoisePackData",
+      ".ctor",
+      "0x6066010"
+    ],
+    "applyPoiseModifier": [
+      64207,
+      "Beyond.Gameplay.Core.PoisePackData",
+      "ApplyPoiseModifier",
+      "0x5ef27e0"
+    ],
+    "dispatchGetDouble": [
+      1143,
+      "Beyond.ActionBlackboardExtensions",
+      "GetDoubleValue",
+      "0x66dc540"
+    ],
+    "dispatchGetSingle": [
+      1142,
+      "Beyond.ActionBlackboardExtensions",
+      "GetValue",
+      "0x4fede70"
+    ],
+    "dispatchDefault": [
+      64103,
+      "Beyond.Gameplay.Core.DefiniteValueCalculation",
+      "Evaluate",
+      "0x66dc4c0"
+    ]
   },
-  "processDamageParameters": [
-    ["effectSource", "Beyond.Gameplay.Core.AbilitySystem"],
-    ["inputTarget", "Beyond.Gameplay.Core.TargetHandleView"],
-    ["targetWrapper", "Beyond.Gameplay.Core.BattleTargetWrapper"],
-    ["isExtraTarget", "bool"],
-    ["transferredSource", "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>"],
-    ["hitEnvCalcResult", "Beyond.Gameplay.Core.CalcResult"]
-  ],
-  "processDamageReturnType": "bool",
-  "applyPoiseModifierParameters": [["processTiming", "Beyond.Gameplay.Core.PoiseProcessorBase+ProcessTiming"]],
-  "beforeCalculationEnum": ["Beyond.Gameplay.Core.PoiseProcessorBase+ProcessTiming", "BeforeCalculation", 1, "0x0400af88"],
+  "signatures": {
+    "processDamage": {
+      "parameters": [
+        [
+          "effectSource",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "inputTarget",
+          "Beyond.Gameplay.Core.TargetHandleView"
+        ],
+        [
+          "targetWrapper",
+          "Beyond.Gameplay.Core.BattleTargetWrapper"
+        ],
+        [
+          "isExtraTarget",
+          "bool"
+        ],
+        [
+          "transferredSource",
+          "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>"
+        ],
+        [
+          "hitEnvCalcResult",
+          "Beyond.Gameplay.Core.CalcResult"
+        ]
+      ],
+      "returnType": "bool",
+      "static": false,
+      "byrefParameters": [
+        "targetWrapper"
+      ]
+    },
+    "poisePackConstructor": {
+      "parameters": [
+        [
+          "attacker",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "defender",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "mask",
+          "Beyond.Gameplay.DamageDecorateMask"
+        ],
+        [
+          "actionEnvironment",
+          "Beyond.Gameplay.Core.IActionEnvironment"
+        ]
+      ],
+      "returnType": "void",
+      "static": false,
+      "byrefParameters": []
+    },
+    "applyPoiseModifier": {
+      "parameters": [
+        [
+          "processTiming",
+          "Beyond.Gameplay.Core.PoiseProcessorBase+ProcessTiming"
+        ]
+      ],
+      "returnType": "void",
+      "static": false,
+      "byrefParameters": []
+    },
+    "dispatchGetDouble": {
+      "parameters": [
+        [
+          "param",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ]
+      ],
+      "returnType": "double",
+      "static": true,
+      "byrefParameters": []
+    },
+    "dispatchGetSingle": {
+      "parameters": [
+        [
+          "param",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ]
+      ],
+      "returnType": "float",
+      "static": true,
+      "byrefParameters": []
+    },
+    "dispatchDefault": {
+      "parameters": [
+        [
+          "attacker",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "defender",
+          "Beyond.Gameplay.Core.AbilitySystem"
+        ],
+        [
+          "blackboard",
+          "Beyond.ActionBlackboard"
+        ],
+        [
+          "context",
+          "Beyond.Gameplay.Core.IActionEnvironment+Context"
+        ],
+        [
+          "attackerOverrideAttributes",
+          "double[]"
+        ],
+        [
+          "defenderOverrideAttributes",
+          "double[]"
+        ],
+        [
+          "argsForServer",
+          "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"
+        ]
+      ],
+      "returnType": "Beyond.Gameplay.Core.CalcResult",
+      "static": false,
+      "byrefParameters": []
+    }
+  },
   "fields": [
-    ["Beyond.Gameplay.Core.DamageAction+DamageActionData", "damageUnits", "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageAction+DamageUnit>", 56, "0x0400a67c"],
-    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "poiseCalculation", "Beyond.Gameplay.Core.CalculationBase", 112, "0x0400a666"],
-    ["Beyond.Gameplay.Core.PoisePackData", "calcResult", "Beyond.Gameplay.Core.CalcResult", 48, "0x0400af80"],
-    ["Beyond.Gameplay.Core.CalcResult", "value", "double", 16, "0x0400aed8"]
+    [
+      "Beyond.Gameplay.Core.DamageAction+DamageActionData",
+      "damageUnits",
+      "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageAction+DamageUnit>",
+      56,
+      "0x0400ae64"
+    ],
+    [
+      "Beyond.Gameplay.Core.DamageAction+DamageUnit",
+      "poiseCalculation",
+      "Beyond.Gameplay.Core.CalculationBase",
+      120,
+      "0x0400ae4e"
+    ],
+    [
+      "Beyond.Gameplay.Core.PoisePackData",
+      "calcResult",
+      "Beyond.Gameplay.Core.CalcResult",
+      48,
+      "0x0400b7c9"
+    ],
+    [
+      "Beyond.Gameplay.Core.CalcResult",
+      "value",
+      "double",
+      16,
+      "0x0400b721"
+    ]
   ],
-  "processDamagePdataEndRva": "0x34bb0d0",
-  "dispatchHelperRva": "0x9cdc0",
-  "dispatchHelperPdataEndRva": "0x9ced0",
+  "enumMembers": [
+    [
+      "Beyond.Gameplay.Core.PoiseProcessorBase+ProcessTiming",
+      "BeforeCalculation",
+      1,
+      "0x0400b7d1"
+    ]
+  ],
+  "entryRoles": [
+    "processDamage"
+  ],
   "codeWindows": [
-    {"startRva": "0x34b73a3", "endRva": "0x34b73b9", "sha256": "81c8d8278d354f99b3d059894b1be020b9be5b63f374f1a6212e3c9bbf82e172", "boundary": "outer iFix check and normal-path branch"},
-    {"startRva": "0x34b75f0", "endRva": "0x34b7652", "sha256": "d3e199bfb6355c27f16a1101953c0f31117d8bff945d5fd070c3a792dce1302c", "boundary": "DamageActionData damageUnits list count/index read and indexed object saved at stack slot"},
-    {"startRva": "0x34b9b53", "endRva": "0x34b9b76", "sha256": "2c7a0703075800a6de5d42754accc3010e4c632a0823af67f57b59eb3b55d0aa", "boundary": "saved indexed DamageUnit loaded and nonnull poiseCalculation guard"},
-    {"startRva": "0x34b9d58", "endRva": "0x34b9dcc", "sha256": "932e4f31ec05fdd75a097b9bd487aa228d1968c885facbebc7c52281528b2952", "boundary": "PoisePackData constructor normal iFix branch and call"},
-    {"startRva": "0x34b9e99", "endRva": "0x34b9f1b", "sha256": "91a6923efa49d9904d199d68edd1af4aafc36966c4d30d07da1675eeb3d39e8c", "boundary": "before-calculation Poise modifier then stored calculation pointer dispatch"},
-    {"startRva": "0x34b9f1b", "endRva": "0x34b9f47", "sha256": "85632f2a01a5771d626912919cbdf1ff0982e152c67431f693720a1450745e88", "boundary": "post-evaluator guard that can divert before the result copy"},
-    {"startRva": "0x34b9f47", "endRva": "0x34b9fa5", "sha256": "3ed620a7295a732099ed8ab47092288a1f79bbfee10fd288f4b26df9f9ece141", "boundary": "normal calculation return placed at unboxed PoisePackData.calcResult.value"},
-    {"startRva": "0x9cdc0", "endRva": "0x9ced0", "sha256": "6c3ee044c69a1195a27e492c911caa1bcd27000d0e0febf5fe52748a7a4a0e8b", "boundary": "calculation-object helper complete normal return and virtual slot dispatch; concrete subtype target not joined"}
+    {
+      "startRva": "0x55f4f70",
+      "endRva": "0x55f8987",
+      "sha256": "5cb3b8ff3520f62b5b79c0d4e3a04563243caa87491b7079ead0f964febc8fa9",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
+    },
+    {
+      "startRva": "0x23d0",
+      "endRva": "0x2493",
+      "sha256": "f99b1d8c8675c7b3eb5038fed437dfde3a67c26cbd6f891a0b11ac80cd818cc4",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
+    },
+    {
+      "startRva": "0x6ca7e8",
+      "endRva": "0x6ca925",
+      "sha256": "1cafc047c28297fcf0d23ff92e460eabc2954c8b03fed3eb92b48f5ae4212065",
+      "boundary": "Reviewed default-path instructions; patch/provider behavior remains conditional."
+    }
   ],
-  "instructionWindows": {
-    "listField": ["0x34b7610", "488b5b38", "DamageActionData.damageUnits load"],
-    "indexedUnitStore": ["0x34b7632", "48898424a0000000", "indexed DamageUnit to saved stack slot"],
-    "savedUnitLoad": ["0x34b9b5b", "4c8bac24a0000000", "same saved DamageUnit to r13"],
-    "nonnullPoiseGuard": ["0x34b9b6b", "49837d7000", "nonnull DamageUnit.poiseCalculation guard"],
-    "beforeCalculationTiming": ["0x34b9e9c", "ba01000000", "ProcessTiming.BeforeCalculation value"],
-    "poisePackBase": ["0x34b9ea1", "488d8c24d0010000", "PoisePackData unboxed stack base"],
-    "poiseCalcLoad": ["0x34b9eae", "498b5d70", "stored DamageUnit.poiseCalculation to dispatch operand"],
-    "dispatchOperand": ["0x34b9f0e", "488bd3", "poise calculation pointer as dispatch argument"],
-    "returnValue": ["0x34b9f16", "66480f6ef0", "calculation result return to xmm6"],
-    "packValueMove": ["0x34b9f6f", "f20f10c6", "result forwarded to PoisePackData.calcResult.value copy"],
-    "packValueStore": ["0x34b9f73", "0f298424f0010000", "result copied into PoisePackData.calcResult.value slot"],
-    "helperIndirectCall": ["0x9cec6", "41ffd2", "calculation virtual target call"],
-    "helperIndirectReturn": ["0x9cec9", "66480f6ec0", "virtual result moved into xmm0"],
-    "helperReturn": ["0x9ce69", "66480f7ec0", "helper returns scalar bits in rax"]
-  },
-  "callTargets": [
-    ["0x34b73aa", "patchCheck"],
-    ["0x34b762a", "0x2c97700"],
-    ["0x34b9d74", "patchCheck"],
-    ["0x34b9dc7", "poisePackConstructor"],
-    ["0x34b9ea9", "applyPoiseModifier"],
-    ["0x34b9f11", "0x9cdc0"],
-    ["0x34b9f3a", "0x31ff200"]
+  "instructionWindows": [
+    [
+      "0x55f5016",
+      "7471",
+      "je 0x1855f5089; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f5022",
+      "7465",
+      "je 0x1855f5089; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f5430",
+      "488b4038",
+      "mov rax, qword ptr [rax + 0x38]; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f5461",
+      "4c8b7cc120",
+      "mov r15, qword ptr [rcx + rax*8 + 0x20]; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f5466",
+      "4c89bc24a8000000",
+      "mov qword ptr [rsp + 0xa8], r15; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f7800",
+      "bf01000000",
+      "mov edi, 1; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f783a",
+      "4c8bbc24a8000000",
+      "mov r15, qword ptr [rsp + 0xa8]; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f7865",
+      "33d2",
+      "xor edx, edx; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f786a",
+      "49395778",
+      "cmp qword ptr [r15 + 0x78], rdx; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f786e",
+      "0f84960f0000",
+      "je 0x1855f880a; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f78ab",
+      "743c",
+      "je 0x1855f78e9; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f7929",
+      "488d8c24c0000000",
+      "lea rcx, [rsp + 0xc0]; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f7931",
+      "e8dae6a600",
+      "call 0x186066010; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f798b",
+      "8bd7",
+      "mov edx, edi; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f798d",
+      "488d8c24d0010000",
+      "lea rcx, [rsp + 0x1d0]; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f7995",
+      "e846ae8f00",
+      "call 0x185ef27e0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f799a",
+      "498b5f78",
+      "mov rbx, qword ptr [r15 + 0x78]; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f79ef",
+      "4d8bcd",
+      "mov r9, r13; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f79f2",
+      "4d8bc6",
+      "mov r8, r14; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f79f5",
+      "488bd3",
+      "mov rdx, rbx; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f79f8",
+      "e8d3a9a0fa",
+      "call 0x1800023d0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f79fd",
+      "66480f6ef0",
+      "movq xmm6, rax; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f7a29",
+      "0f85920d0000",
+      "jne 0x1855f87c1; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f7a57",
+      "f20f10c6",
+      "movsd xmm0, xmm6; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x55f7a5b",
+      "0f298424f0010000",
+      "movaps xmmword ptr [rsp + 0x1f0], xmm0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x2412",
+      "4c3bd0",
+      "cmp r10, rax; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x2446",
+      "807b1800",
+      "cmp byte ptr [rbx + 0x18], 0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x2480",
+      "66480f7ec0",
+      "movq rax, xmm0; reviewed default-path operand/branch/return witness"
+    ],
+    [
+      "0x6ca918",
+      "41ffd2",
+      "virtual calculation dispatch"
+    ],
+    [
+      "0x6ca91b",
+      "66480f6ec0",
+      "virtual return bits to XMM0"
+    ]
   ],
-  "branchTargets": [
-    ["0x34b73b3", "0f85", 4, "0x34badcf"],
-    ["0x34b9b70", "0f84", 4, "0x34bad91"],
-    ["0x34b9f41", "0f85", 4, "0x34bad55"]
+  "calls": [
+    {
+      "siteRva": "0x55f7931",
+      "method": "poisePackConstructor",
+      "opcode": "e8"
+    },
+    {
+      "siteRva": "0x55f7995",
+      "method": "applyPoiseModifier",
+      "opcode": "e8"
+    },
+    {
+      "siteRva": "0x2441",
+      "method": "dispatchGetDouble",
+      "opcode": "e8"
+    },
+    {
+      "siteRva": "0x6ca865",
+      "method": "dispatchGetSingle",
+      "opcode": "e8"
+    }
+  ],
+  "branches": [
+    {
+      "siteRva": "0x55f5016",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x55f5089"
+    },
+    {
+      "siteRva": "0x55f5022",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x55f5089"
+    },
+    {
+      "siteRva": "0x55f786e",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x55f880a"
+    },
+    {
+      "siteRva": "0x55f78ab",
+      "opcode": "74",
+      "displacementBytes": 1,
+      "targetRva": "0x55f78e9"
+    },
+    {
+      "siteRva": "0x55f7a29",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x55f87c1"
+    },
+    {
+      "siteRva": "0x2415",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x6ca8ce"
+    },
+    {
+      "siteRva": "0x2429",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x6ca7e8"
+    },
+    {
+      "siteRva": "0x2455",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x6ca85b"
+    },
+    {
+      "siteRva": "0x2466",
+      "opcode": "0f85",
+      "displacementBytes": 4,
+      "targetRva": "0x6ca87d"
+    },
+    {
+      "siteRva": "0x6ca7f2",
+      "opcode": "0f84",
+      "displacementBytes": 4,
+      "targetRva": "0x242f"
+    },
+    {
+      "siteRva": "0x6ca856",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x246f"
+    },
+    {
+      "siteRva": "0x6ca878",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x245b"
+    },
+    {
+      "siteRva": "0x6ca88b",
+      "opcode": "75",
+      "displacementBytes": 1,
+      "targetRva": "0x6ca892"
+    },
+    {
+      "siteRva": "0x6ca8a1",
+      "opcode": "75",
+      "displacementBytes": 1,
+      "targetRva": "0x6ca8a9"
+    },
+    {
+      "siteRva": "0x6ca8c9",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x246c"
+    },
+    {
+      "siteRva": "0x6ca920",
+      "opcode": "e9",
+      "displacementBytes": 4,
+      "targetRva": "0x2472"
+    }
+  ],
+  "literals": [
+    {
+      "siteRva": "0x244d",
+      "instructionBytes": "f30f103daf30a90d",
+      "displacementOffset": 4,
+      "targetRva": "0xda95504",
+      "type": "float32",
+      "value": 1.0
+    }
   ],
   "evidenceBoundary": {
-    "exact": "The selected native pair has the named method, signatures and field identities, field offsets, direct call and branch targets, reviewed body windows, and the _ProcessDamage .pdata extent.",
+    "exact": "Selected native inputs authenticate the named methods and ordinary signatures, stored fields and enum identities, complete reviewed body windows, linked direct calls and branches, and arithmetic/return witnesses. These byte checks retain the reviewed interpretation; they do not discover new formulas.",
     "direct": "On the normally returning unpatched DamageAction._ProcessDamage path, the action's damageUnits list is indexed and saved. That same DamageUnit's nonnull poiseCalculation gates a separate PoisePackData path. After PoisePackData construction and its before-calculation ApplyPoiseModifier call, the stored poiseCalculation pointer is passed to the calculation-object dispatch helper. Its returned CalcResult.value is copied into the PoisePackData.calcResult.value slot. This route is independent of the DamageUnit.simpleCalculation attack selector.",
-    "conditional": "The relation requires _ProcessDamage to be entered, a selected DamageUnit reached in the list, nonnull poiseCalculation, the outer and relevant inner iFix checks to select the reviewed normal branches, normally returning provider, modifier, and calculation calls, and the post-evaluator guard to allow continuation to the result copy.",
+    "conditional": "The reviewed normal native patch-table guards must select the default path, all named providers must return normally, and any post-evaluation guard must allow the result copy. The current indirect patch path bypasses these calculations; its provider internals and live selection are not claimed.",
     "unresolved": "The virtual subtype target selected by the helper, exact live patch state, executed action, blackboard provider values, downstream Poise modifiers and factors, immunity handling, final applied or displayed Poise amount, and any final damage result remain unproved."
-  }
+  },
+  "addressTargets": [
+    {
+      "siteRva": "0x240b",
+      "instructionBytes": "488d05aea06d06",
+      "method": "dispatchDefault"
+    }
+  ]
 }

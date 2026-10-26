@@ -227,7 +227,7 @@
   }
   function linkedFiles(root) {
     return [...root.querySelectorAll("img[src], video[src], audio[src], source[src], a[href], [data-map-file-path]")]
-      .filter((node) => !node.closest(".version-update-details"))
+      .filter((node) => !node.closest(".version-update-details, [data-update-files-exclude]"))
       .map((node) => node.getAttribute("src") || node.getAttribute("href") || node.dataset.mapFilePath);
   }
   function mountFiles(root) {
@@ -355,7 +355,7 @@
     const own = new Set(fileEntries(exclude ?? []));
     const seen = new Set();
     root.querySelectorAll("img[src], video[src], audio[src], source[src], a[href], [data-map-file-path]").forEach((node) => {
-      if (node.closest(".version-update-details")) return;
+      if (node.closest(".version-update-details, [data-update-files-exclude]")) return;
       const value = node.getAttribute("src") || node.getAttribute("href") || node.dataset.mapFilePath;
       const entry = files.get(fileKey(value));
       if (!entry || own.has(entry) || node.dataset.versionUpdate) return;

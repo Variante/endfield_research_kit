@@ -767,6 +767,13 @@ is not identity.
   the scene-video runtime observes the original calls on their invoking thread,
   with identities, unscaled-time queries and render clocks. Retained direct
   call arguments remain separate from a visible portrait/source-curve join.
+  The wrapper's `_options` is an inline `FOptions` value type, whose first
+  field is `animEase`; the observer reads it in place. MetadataRegistration's
+  offsets for value-type fields include the boxed object header, which must
+  be removed when calculating an inline field's location.
+  Its recorded method byte windows cover the entry ranges from PE exception
+  data, not every normal-path or IFix fragment of the methods. The observer
+  checks the three unpatched portrait entries before creating either detour.
   Validate a reader's consumed unpatched APIs independently from method
   entries already replaced by another installed observer. Rechecking the full
   Animator entry set after Animator installation caused the first portrait
@@ -776,6 +783,40 @@ is not identity.
   improves with the earlier measured lead, but the remaining peak is not
   explained by that timing control. The shader's native 8-bit alpha rounding
   is now reproduced; no global fitted UI clock is promoted.
+- Initial-cloth capture declarations live in EndfieldCapture's
+  `config/animator-initial-cloth-native.json`; managed animator context has its
+  own `config/animator-context-native.json`. Their shared renderer is
+  `scripts/generate_animator_pins.py` inside that checkout. The selected
+  lifecycle signatures, job field layouts and source icall wrappers must be
+  re-derived independently of the main Animator header. Open generic
+  `NativeArray` field-offset rows can be all zero: derive the consumed pointer
+  and length offsets from instantiated getter bodies, and the inline slot
+  extent from the selected job layouts. The Burst export/dispatch-cell/CPU
+  variant chain proves native forwarding, but does not independently identify
+  the managed job behind an opaque export. Retained export/job labels remain
+  candidate selections until a caller or payload join proves them. Managed
+  context and initial CPU actor-pose reads do not establish the native ACL,
+  application, binding-selection or whole-actor native source layouts.
+  The partial native ACL port is recorded separately in EndfieldCapture's
+  `config/animator-native-acl-native.json` with `pendingReview`. Current native
+  sampler bodies show a larger decoder context, so matching entry shapes
+  cannot justify reusing the old context windows or cache/flag offsets. Named
+  descriptor serializers prove their own object-relative fields; that evidence
+  does not establish the descriptor's embedding in native AnimationClip. The
+  current outer-serializer containment chain is recorded separately, and its
+  input still needs a type/caller join to the sampler-enrolled native pointer.
+  Current application argument lanes and conversion input-plane caller
+  distinctions are recorded separately from the still-open carrier layouts.
+  Whole-actor Transform storage has its own reviewed declarations in
+  `config/animator-actor-source-native.json` inside EndfieldCapture. The current
+  getter's copy path proves the handle, index, hierarchy and rotation reads,
+  but its parallel name/function table pairing alone is only a candidate name
+  join. The observer requires the selected managed wrapper, populated cache,
+  named icall resolution and native entry window to agree before every raw
+  read; failure preserves the managed census with a native-read error. The
+  getter's dependency completion does not make the later observations atomic.
+  These facts do not close carrier, binding-selection or target-asset joins. Keep
+  that preset on its old manifest until those groups are re-proved.
 - Animation/effect activation and controller execution; broader exact
   audio/video trigger ownership, runtime-selected Wwise switch/random media,
   and stronger inferred skill/enemy sound ownership.

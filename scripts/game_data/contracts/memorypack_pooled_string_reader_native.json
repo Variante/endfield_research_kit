@@ -1,0 +1,165 @@
+{
+  "schema": "endfield.memorypack-pooled-string-reader-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "evidenceBoundary": {
+    "exact": "Complete pdata/chained windows of the anonymous optimized reader and metadata-named BeyondReadString, plus the shared lookup helper.",
+    "direct": "Both consume an Int32 index, return the same empty-string literal for -1 and null for -2, and tail-forward the remaining index and identical pool instance to the same lookup helper.",
+    "unresolved": "This proves a string-valued read, not inline MemoryPack string wire compatibility or current corpus admission."
+  },
+  "claim": "MemoryPack.MemoryPackReader.ReadString",
+  "equivalentMethod": [
+    353750,
+    "MemoryPack.MemoryPackReaderExtensions",
+    "BeyondReadString",
+    145448856
+  ],
+  "targetRva": 85929408,
+  "lookupRva": 85929664,
+  "codeWindows": [
+    {
+      "startRva": 85929408,
+      "endRva": 85929454,
+      "sha256": "1833ECD09C8E082EF0AE13AEE4FA6AEC15C4D8AEE69DF2CCE77AB71D1A4A6B2F",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929454,
+      "endRva": 85929518,
+      "sha256": "5EB89D972A1D5FD08EBFD6671397695EFE7757E8D294D3A7BC2F74B45CA52756",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929518,
+      "endRva": 85929565,
+      "sha256": "D75D8C34829566C99F370CF430BAB6A16B7CA75C7FEE89628D9585FCA61A060C",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929565,
+      "endRva": 85929577,
+      "sha256": "0F7ABA6E632207F893DD9D9317364FCB3D7182D434C8A5070B8658EB3466271F",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929577,
+      "endRva": 85929583,
+      "sha256": "B13C2122A4910AD1C7F40207D9561E5A2D3418BF2BC40C490E3F913641FD2989",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929583,
+      "endRva": 85929596,
+      "sha256": "757B8405DB9C976C49EB7808D2BFB1AB2E69D2C6D704CE0C5A4CF229147AAF28",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929596,
+      "endRva": 85929602,
+      "sha256": "0551B82B158375D27652496671344AE7A908A39571AA91EDE01E841E158C6155",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929602,
+      "endRva": 85929650,
+      "sha256": "B2D1F8B35A740E98E2DA29F90C7A990B6B3ADEA07E2B15DFE11B8D700F0D4E08",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 122091974,
+      "endRva": 122092022,
+      "sha256": "21C7EC78200E6948BE477A17DF6D3E61BADF3F32DCFCE16E9290F55F2FBED2FE",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 122092022,
+      "endRva": 122092036,
+      "sha256": "21DBC1433DF65B08782999AE9D9C92CDA6C9C9CB562F915ECFA04EDC8CA4BF05",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 145448856,
+      "endRva": 145449048,
+      "sha256": "C542398818DEBF9A9773211C356C06656B9861EF00BEB3A3FA4D331DCDDE3335",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929664,
+      "endRva": 85929731,
+      "sha256": "B29FB0A445440699B4C1CCD4E4E5100B644DB80FC2CCE1EFC682FD02887B1873",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929731,
+      "endRva": 85929805,
+      "sha256": "8717F2275BDA11F862CD915437D165740DEDC9B06B4AB1D8CEAB79FC7845632E",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85929805,
+      "endRva": 85930689,
+      "sha256": "6F27FB186B28BC407061621D609ED69A5E4198E2C1767E83096C1E9D965F376D",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85930689,
+      "endRva": 85930744,
+      "sha256": "EEA00B5F70014C63DB1EB033B8D280F47645C30DA3BBAA0B262173517E6BF7A7",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85930744,
+      "endRva": 85931159,
+      "sha256": "548D61C8DE76844D361B5528912F36EDFC17C73F2A4C8266E0BAABCDCE0C47D3",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85931159,
+      "endRva": 85931374,
+      "sha256": "B0DF67F0FDB4D40618B646AB4B1CC7F0628314429096B28A3E57FA7A35BED3D8",
+      "boundary": "complete pdata body or chained fragment"
+    },
+    {
+      "startRva": 85931374,
+      "endRva": 85931444,
+      "sha256": "66D387ABFDA9C89E9DDA1547595746FFDFBB2334EB816157BA0A39618A180028",
+      "boundary": "complete pdata body or chained fragment"
+    }
+  ],
+  "instructions": [
+    [
+      85929474,
+      "488B43508B388B733083C6FC0F88C8CB270248834350048343400483434404897330",
+      "index load and four-byte cursor advance"
+    ],
+    [
+      85929513,
+      "83FFFF742F83FFFE743C",
+      "sentinel branches"
+    ],
+    [
+      85929523,
+      "488B0576DD460B488B88B8000000488B094885C974334533C08BD7488B7C24384883C4205BE963000000",
+      "pool instance and index tail-forward"
+    ],
+    [
+      85929565,
+      "488B05B490550B488B7C24384883C4205BC3488B7C243833C04883C4205BC3",
+      "empty/null returns"
+    ],
+    [
+      145448965,
+      "8B54244083FAFE743883FAFF7426488B0596ABBA07488B88B8000000488B094885C97506E8128962F7CC4883C4205BE987CE73FC488B05D85E",
+      "named method sentinels and identical pool lookup"
+    ],
+    [
+      145449017,
+      "488B05D85EC9074883C4205BC333C04883C4205BC3",
+      "named empty/null returns"
+    ]
+  ]
+}

@@ -38,6 +38,11 @@ final frontier. Tags are keyed by wrapper name; a tag of 255 is read only with e
 (``FA FF 00``); a one-byte ``FF`` stays the null-union sentinel, and a null
 wrapper (``FF`` after the tag) is a separate state.
 
+Both direction-angle actions read ``clampToXZ`` at serialized member 4,
+before their first direction/compare enum. The selected native reader calls
+the same one-byte primitive as ``isEnable`` (byte load, cursor increment,
+nonzero normalization); declaration order is not serialized order.
+
 ``root_continuation`` retries the frozen members 1-5 reader with these
 routes only when the base reader stopped. ``frame_buff_named_middle`` retries
 the named middle only when the ``damageModifier`` list reaches a tag declared
@@ -259,9 +264,9 @@ class _ResidualReader(_BaseReader):
             decode_enable_move_collider_action(self, tag, width)
             return
         frontier9_counts = {
-            _A("Core_BlowOffEnemyAction_Data"): 14, _A("Core_Conditions_CheckTwoDirectionAngle_Data"): 12, _A("Core_CrushAction_Data"): 17, _A("Core_FinishBuffByTag_Data"): 12, _A("Core_FootStepChangeAction_FootStepChangeData"): 9,
+            _A("Core_BlowOffEnemyAction_Data"): 14, _A("Core_Conditions_CheckTwoDirectionAngle_Data"): 13, _A("Core_CrushAction_Data"): 17, _A("Core_FinishBuffByTag_Data"): 12, _A("Core_FootStepChangeAction_FootStepChangeData"): 9,
             _A("Core_FractureAction_Data"): 15, _A("Core_HurtAnimAction_Data"): 10, _A("Core_ImmuneTextAction_Data"): 9, _A("Core_KnockDownAction_Data"): 13, _A("Core_LogAction_LogActionData"): 10,
-            _A("Core_MarkInheritSkillCastIdOnNormalAttack_Data"): 4, _A("Core_OverrideCameraFollowAction_OverrideCameraFollowActionData"): 12, _A("Core_OverrideRawAttributeAction_Data"): 6, _A("Core_PreventBuffConsumeAction_Data"): 7, _A("Core_SaveTwoDirectionAngle_Data"): 11,
+            _A("Core_MarkInheritSkillCastIdOnNormalAttack_Data"): 4, _A("Core_OverrideCameraFollowAction_OverrideCameraFollowActionData"): 12, _A("Core_OverrideRawAttributeAction_Data"): 6, _A("Core_PreventBuffConsumeAction_Data"): 7, _A("Core_SaveTwoDirectionAngle_Data"): 12,
             _A("Core_SealAction_Data"): 11, _A("Core_TeleportPosSelectAction_Data"): 9, _A("Core_TemporaryUnlockAction_Data"): 8, _A("Core_TyphoeaArcheryTargetSelect_Data"): 11,
         }
         if tag in frontier9_counts:
@@ -276,6 +281,7 @@ class _ResidualReader(_BaseReader):
             if tag == _A("Core_BlowOffEnemyAction_Data"):
                 self.blow_off_fields()
             elif tag == _A("Core_Conditions_CheckTwoDirectionAngle_Data"):
+                self.take(1, "clampToXZ")
                 self.take(4, "anonymous-enum32")
                 self.take(4, "anonymous-enum32")
                 self.target_profile(); self.target_profile()
@@ -323,6 +329,7 @@ class _ResidualReader(_BaseReader):
             elif tag == _A("Core_PreventBuffConsumeAction_Data"):
                 self.buff_id_list(reserve=5); self.take(4, "anonymous-enum32"); self.query_profile()
             elif tag == _A("Core_SaveTwoDirectionAngle_Data"):
+                self.take(1, "clampToXZ")
                 self.take(4, "anonymous-enum32"); self.target_profile(); self.target_profile()
                 self.take(4, "anonymous-enum32"); self.target_profile(); self.target_profile()
                 self.byte_payload()

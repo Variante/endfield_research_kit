@@ -188,7 +188,7 @@
   function buffRows(record, { text, statAttrLabel, decodedActions, values = new Map(), stackingLabel = (name) => name }) {
     const rows = modifierRows(record, text, statAttrLabel, values);
     const events = { OnOwnerHpZero: tr("When HP reaches zero", "生命归零时"), OnTakeDamage: tr("When taking damage", "受到伤害时"), OnBeforeCastSkill: tr("Before casting", "施放技能前"), OnSkillEnd: tr("When a skill ends", "技能结束时"), OnAfterOutputWeaknessTriggered: tr("After triggering weakness", "触发弱点后") };
-    let unresolved = false;
+    let unresolved = Boolean(record.unresolvedEffects);
     for (const event of record.abilityEventActions || []) {
       const label = events[event.abilityEventName] || tr("Event response", "事件响应");
       for (const sequence of event.actions || []) {

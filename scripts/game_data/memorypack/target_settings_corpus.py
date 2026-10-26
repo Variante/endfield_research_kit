@@ -98,7 +98,7 @@ def selected_enum_fields(
         member = members.get(name)
         fields = [item for item in runtime_fields
                   if metadata.string(item.name_index) == name]
-        if member is None or len(fields) != 1 or member.kind != "fixed" or member.width != 4:
+        if member is None or len(fields) != 1 or member.kind != "fixed" or member.width not in (1, 2, 4):
             raise ValueError(f"selected-enum-field-unavailable={owner_type}.{name}")
         field = fields[0]
         if not 0 <= field.type_index < type_count:
@@ -107,6 +107,18 @@ def selected_enum_fields(
         if not type_va:
             raise ValueError(f"selected-enum-type-pointer={owner_type}.{name}")
         enum_type = runtime_type_name(pe, metadata, type_va)
+        enum_owners = [item for item in metadata.types if metadata.type_full_name(item) == enum_type]
+        backing = [item for owner in enum_owners for item in metadata.fields_for(owner)
+                   if metadata.string(item.name_index) == "value__"]
+        if len(enum_owners) != 1 or len(backing) != 1:
+            raise ValueError(f"selected-enum-backing-unavailable={enum_type}")
+        backing_index = backing[0].type_index
+        if not 0 <= backing_index < type_count:
+            raise ValueError(f"selected-enum-backing-index={enum_type}:{backing_index}")
+        backing_va = pe.u64_at_va(type_table + backing_index * 8)
+        backing_type = runtime_type_name(pe, metadata, backing_va) if backing_va else ""
+        if {"byte": 1, "short": 2, "int": 4}.get(backing_type) != member.width:
+            raise ValueError(f"selected-enum-width-mismatch={enum_type}:backing={backing_type}:plan={member.width}")
         rows = native_enum_members(metadata, defaults, pe, image.registration, enum_type)
         by_id: dict[int, str] = {}
         for row in rows:

@@ -16,7 +16,6 @@
 /reports/
 /webui/data/
 /standalone/
-/memory/network_capture/
 /memory/runtime_capture_requirements.md
 
 # CLAUDE.md is a local symlink to AGENTS.md; edit AGENTS.md.

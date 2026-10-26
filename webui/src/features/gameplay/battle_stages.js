@@ -22,6 +22,7 @@
   const SORTS = ['default', 'name', 'level-desc', 'level-asc'];
   const FACETS = ['category', 'mode', 'level'];
   const groups = W.listGroups.create();
+  const updateId = (row) => `stage:${row.id}`;
   let facets;
 
   const number = (value) => typeof value === 'number' ? Number(value.toFixed(4)).toLocaleString() : '?';
@@ -86,6 +87,7 @@
 
   function renderList() {
     if (!$('list')) return;
+    W.updateBadges.syncFilter('battle', 'gameplay', facets);
     const rows = filtered();
     $('stats').textContent = text(`${state.entries.length} stages`, `${state.entries.length} 个关卡`);
     $('list-meta').textContent = text(`${rows.length} shown`, `显示 ${rows.length} 个`);
@@ -94,7 +96,7 @@
       title: (row) => [...new Set([categoryLabel(row), row.seriesName || text('Ungrouped', '未分组')])].join(' · '),
       renderRow: (row) => {
       const art = row.art?.[0];
-      return `<button type="button" class="gameplay-row${row.id === state.selected ? ' is-selected' : ''}" data-stage="${esc(row.id)}" aria-pressed="${row.id === state.selected}">${art ? `<span class="gameplay-row-thumbnail battle-row-art"><img src="${esc(W.exportFullHref(art.rel))}" alt="" loading="lazy"></span>` : ''}<span class="gameplay-row-text"><span class="gameplay-row-name">${esc(row.name)}</span><span class="gameplay-row-meta">${esc(rowMeta(row))}</span></span></button>`;
+      return `<button type="button" class="gameplay-row${row.id === state.selected ? ' is-selected' : ''}" data-stage="${esc(row.id)}" aria-pressed="${row.id === state.selected}">${art ? `<span class="gameplay-row-thumbnail battle-row-art"><img src="${esc(W.exportFullHref(art.rel))}" alt="" loading="lazy"></span>` : ''}<span class="gameplay-row-text"><span class="gameplay-row-name">${esc(row.name)}${W.updateBadges.html('gameplay', updateId(row))}</span><span class="gameplay-row-meta">${esc(rowMeta(row))}</span></span></button>`;
       }, estimateHeight: 90,
     });
     W.locateCurrent?.sync($('locate-current'), filtered().some((row) => row.id === state.selected));
@@ -364,6 +366,7 @@
     if (row.stamina != null) facts.push({ label: text('Stamina', '体力'), value: row.stamina });
     if (row.hunterStamina > 0) facts.push({ label: text('Hunter stamina', '猎取体力'), value: row.hunterStamina });
     $('detail-title').textContent = row.name;
+    $('detail-title').insertAdjacentHTML('beforeend', W.updateBadges.html('gameplay', updateId(row)));
     $('detail-meta').innerHTML = esc(W.gameplayDetail.metadata([
       { label: text('Type', '类型'), value: text('Combat stage', '战斗关卡') },
       { label: 'ID', value: row.id },
@@ -408,10 +411,12 @@
     if (images.length) html += `<div id="battle-section-assets">${W.gameplay.assetGallery({ kind: 'stage', id: row.id, title: row.name }, { entries: { [`stage:${row.id}`]: { images } } })}</div>`;
     hideBuffPopup();
     $('detail-body').innerHTML = html;
+    W.updateBadges.mount($('detail-body'), 'gameplay', updateId(row));
   }
 
   async function load(force = false, { render = true } = {}) {
     if (!force && state.language === language()) {
+      await Promise.all([W.updateBadges.load('gameplay'), W.updateBadges.loadFiles()]);
       if (render) { strings(); restore(); facets.render(state.entries); renderList(); renderDetail(); }
       return true;
     }
@@ -423,7 +428,11 @@
     state.loadingLanguage = requested;
     const pending = (async () => {
       try {
-        const response = await fetch(`data/lang/${encodeURIComponent(requested)}/gameplay/battle_stages.json`, { signal: state.controller.signal, cache: force ? 'reload' : 'default' });
+        const [response] = await Promise.all([
+          fetch(`data/lang/${encodeURIComponent(requested)}/gameplay/battle_stages.json`, { signal: state.controller.signal, cache: force ? 'reload' : 'default' }),
+          W.updateBadges.load('gameplay'),
+          W.updateBadges.loadFiles(),
+        ]);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (generation !== state.generation) return false;
@@ -447,7 +456,7 @@
   function shellMarkup() {
     const facet = (id) => `<section class="filter-section is-collapsed" data-filter-section="battle-${id}" data-default-collapsed="1"><button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="battle-${id}-body"><span id="battle-${id}-label"></span></button><div id="battle-${id}-body" class="filter-section-body" hidden><div id="battle-${id}-filter" class="chips" data-multi="1"></div></div></section>`;
     return `<aside id="battle-left"><header><div id="battle-stats" aria-live="polite"></div><div class="sidebar-header-actions"><button id="battle-filter-toggle" type="button" class="panel-toggle" aria-controls="battle-filter-panel"></button><button id="battle-reset" type="button"></button></div></header>`
-      + `<div id="battle-filter-panel" class="filters"><section class="filter-section filter-section-basic" data-filter-section="battle-basic" data-fixed-open="1"><span id="battle-basic-label" class="filter-section-title"></span><div class="filter-section-body filter-section-body-stack"><input id="battle-q" type="search"><div class="filter-control-row"><label id="battle-sort-label" for="battle-sort"></label><select id="battle-sort">${SORTS.map((value) => `<option value="${value}"></option>`).join('')}</select></div></div></section>${FACETS.map(facet).join('')}</div>`
+      + `<div id="battle-filter-panel" class="filters"><section class="filter-section filter-section-basic" data-filter-section="battle-basic" data-fixed-open="1"><span id="battle-basic-label" class="filter-section-title"></span><div class="filter-section-body filter-section-body-stack"><input id="battle-q" type="search"><div class="filter-control-row"><label id="battle-sort-label" for="battle-sort"></label><select id="battle-sort">${SORTS.map((value) => `<option value="${value}"></option>`).join('')}</select></div></div></section>${FACETS.map(facet).join('')}${W.updateBadges.filterSection('battle')}</div>`
       + `<div id="battle-filter-splitter" class="filter-splitter" role="separator" aria-orientation="horizontal" tabindex="0"></div><div id="battle-list-meta"></div><div id="battle-list"></div></aside>`
       + `<div id="battle-splitter" class="pane-splitter" role="separator" aria-orientation="vertical" tabindex="0"></div>`
       + `<main id="battle-right"><p id="battle-boundary" class="muted"></p><button id="battle-retry" type="button" hidden></button><p id="battle-empty" class="muted"></p><header id="battle-detail-header" hidden><div id="battle-detail-header-main"><h2 id="battle-detail-title"></h2><div id="battle-detail-meta"></div></div><button id="battle-locate-current" class="locate-current-button" type="button" disabled></button></header><div id="battle-detail-body" class="gameplay-reading-view"></div><div id="battle-buff-pop" role="tooltip" hidden></div></main>`;
@@ -474,6 +483,7 @@
       { id: 'category', section: 'battle-category', container: '#battle-category-filter', param: 'battleCategory', values: (row) => row.category, label: (id) => { const row = state.entries.find((entry) => entry.category === id); return row ? categoryLabel(row) : id; } },
       { id: 'mode', section: 'battle-mode', container: '#battle-mode-filter', param: 'battleMode', values: (row) => row.mode, label: mode },
       { id: 'level', section: 'battle-level', container: '#battle-level-filter', param: 'battleLevel', values: (row) => row.recommendLevel > 0 ? String(row.recommendLevel) : 'unspecified', label: (id) => id === 'unspecified' ? text('Unspecified', '未指定') : id },
+      W.updateBadges.filterGroup('battle', (row) => W.updateBadges.status('gameplay', updateId(row))),
     ], onChange: () => { W.continuousList.reset($('list')); renderList(); writeUrl(); } });
     W.filters.createPanelToggle({ panel: '#battle-filter-panel', toggle: '#battle-filter-toggle', left: '#battle-left', storageKey: 'battle_filters_collapsed', labels: (collapsed) => collapsed ? text('Show filters', '显示筛选') : text('Hide filters', '隐藏筛选') });
     W.setupListShellSplitters({ shell: host, sidebar: $('left'), pane: $('splitter'), panel: $('filter-panel'), filter: $('filter-splitter'), list: $('list'),

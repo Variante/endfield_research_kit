@@ -37,7 +37,6 @@ and `sprite_crops.py`.
 | One page's inputs | `.\export.bat map --from-game` | exactly what that page's build tasks read (`scripts/webui/pages.py`) |
 | Every page's inputs | `.\export.bat --from-game` | the union of the pages' inputs, in one AnimeStudio run; with the Data page's files that is everything |
 | Everything | `.\export.bat debug --from-game` | `scope.EVERYTHING`: every structured block and Unity class |
-| Synchronize the installed client and compare with the last successful sync | `.\export.bat --changed-only` | focused VFS delta plus refreshed remaining structured inputs, Unity, indexes and CN/shared audio; every page and Updates built |
 
 An export is one `ExtractionScope` (`scope.py`): structured blocks plus Unity
 JSON and Convert classes, with named levels as presets. Decoded blocks publish
@@ -57,10 +56,9 @@ Audio by default. Updates compares two complete export trees.
 The low-level changed-file exporter (`export_changed_game_data.py`) compares
 against its private snapshot or a certified VFS ledger bound to the previous
 export summary, failing closed when the previous data cannot be authenticated.
-The `--changed-only` wrapper falls back to full extraction in that case. It
-refreshes the rest of the supported scope and verifies ordinary per-input
-freshness, including the merged object index; a structured delta cannot make
-an older Unity export current.
+The page wrapper uses full scoped extraction with `--from-game`; it does not
+orchestrate the low-level delta or rolling snapshots. A structured delta cannot
+make an older Unity export current.
 
 `EndfieldVfsLoader` supports catalog versions 1--5. Version 4 has 32-bit
 chunk/file tag slots; version 5 has 64-bit slots. Unknown values retain every
@@ -71,8 +69,8 @@ Unity can scan chunk containers independently, and failed index commands can
 leave old indexes on disk; neither successful Unity work nor `exists=True`
 authenticates a current catalog. The full exporter records a required-index
 failure and stops before overlay selection or workers, without refreshing
-published provenance. Delta reader-command failures return exit code 2 and stop
-the wrapper; missing baseline evidence still permits full-extraction fallback.
+published provenance. Delta reader-command failures return exit code 2; missing baseline evidence
+requires a caller to prepare an authenticated baseline or use full extraction.
 
 Per-asset Unity cache keys bind both the object's layer and all installed
 fallback layers, in addition to the overlay skip list, object Hash, CLI,
@@ -95,15 +93,18 @@ concurrency bounded when changing either side of this pipeline. The
 `packed-dump-stress` CLI test runs a synthetic packed corpus with a small
 thread pool and an external timeout, checking that every row is published.
 
-`export_sync.py` preserves independent complete export snapshots under
+The retained `export_sync.py` helper can preserve independent complete export
+snapshots under
 `reports/export/sync/`: mutable files and decoded audio are copied, SQLite
 stores use the backup API, and converted Unity media can be hardlinked because
 publication unlinks each old file before replacement. Only snapshots with the
 matching ownership receipt are pruned. The current export, the next comparison
 baseline and the previous comparison's old side remain available. Source
 identity is checked again before commit; a failed run retains its old baseline
-so retrying cannot compare against a half-published export. The Story guide
-consumer reports an incomplete object-index validator's original failure and
+so retrying cannot compare against a half-published export. Page exports use
+`export.bat [PAGE ...] --from-game`; Updates uses a separately saved complete
+export pair through `build_updates.bat OLD NEW`. The Story guide consumer
+reports an incomplete object-index validator's original failure and
 expected source fingerprint before trying to use its merged path.
 
 **Lua** is not a Story input: it ships with the Data page and every all-page
