@@ -1,4 +1,32 @@
-"""Bounded first-plane gain equation inside a completed master invocation."""
+"""Bounded first-plane gain equation inside a completed master invocation.
+
+Evidence and admission boundary:
+
+The `audio-master-stage` observation adds the first master input descriptor,
+retained gain pair, output format/mode/processed flags, entry rounding and
+before/after PCM to the accepted consumer/device observations. Its reviewed
+contract borrows authenticated master, padding and gain bodies from the
+existing pipeline owner. A constant first-plane comparison requires one
+matching stereo descriptor, ordinary unprocessed entry, unchanged input/gain
+fields, completed processing, identical conversion input and closed loss-free
+recording. The recipe distinguishes an intervening transformation before master
+entry from the master gain itself. A completed loss-free recording now admits
+the bounded first-plane equation and successful sink/device prefix chains. The
+retained master gains in this cohort are unity: observed input prefixes remain
+unchanged through master processing and match its nested conversion input.
+Independent original-row checks confirm descriptor/storage identity, processing
+flags, entry rounding, ordered nesting and byte-equal successful render-client
+handoffs. Unlinked master scopes remain unattributed. Last sampled same-bus
+mixes have matching descriptor/sample storage but different prefixes already at
+master entry. The differences therefore precede this master gain stage;
+sampling still prevents a complete generation join or attribution to a
+particular upstream writer or effect. The next offline review belongs to the
+post-mix bus task, descriptor/effect processing and its path into master entry,
+before another recipe is requested. Extended paths, ramps and incomplete reads
+remain withheld with named reasons. Full filters, all channels, concurrent
+allocation lifetimes and individual Event-to-device contribution remain open;
+accepted master and sink handoffs are reused without another identical run.
+"""
 from __future__ import annotations
 
 import math

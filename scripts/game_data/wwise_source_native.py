@@ -3,6 +3,62 @@
 The reviewed contract owns registers, structure spans and code witnesses. This
 reader proves them before any observer profile is emitted; it never chooses a
 game root or treats a historical SDK label as a current type-layout proof.
+
+Evidence and admission boundary:
+
+Its loader, `wwise_source_native.py`, authenticates the three
+`CAkSource::SetSource` overloads, `LockDataPtr`, their output-write helpers and
+two current managed post bridges against explicitly selected native inputs.
+Historical SDK matches supply method labels; the capture ABI and field flow
+come from the current instruction bytes, not from an assumed SDK structure
+layout.
+
+The memory/info overloads copy a pointer-backed 16-byte aggregate into the
+source's first four words, retain their unsigned argument in a separate source
+word, and the memory overload retains its pointer argument. The scalar-only
+overload instead sets the source's first word and resets the other observed
+fields. `LockDataPtr` chooses between a registry lookup using that first word
+and direct pointer/count forwarding using a flag bit. Its helpers write a
+bounded output reference containing pointers and a byte count. A registry early
+return may retain the incoming reference, so observing post-call fields alone
+does not prove a successful new lookup. None of these facts makes the external
+cookie, SetSource scalar or lookup word interchangeable.
+
+The same source contract now proves the anonymous owner behind an observed
+direct-pointer `LockDataPtr` callsite. Its complete chained exception-directory
+group resolves to the true function entry, rather than the interior segment
+containing the call. Current instructions retain the entry owner pointer, read
+its stored source pointer, and pass its embedded output reference to
+`LockDataPtr`. Only a strictly audited pair at that authenticated returnsite
+may project the owner from the captured output pointer and the contract's
+member displacement. This is a conditional owner/source/output relation; the
+owner was not independently sampled, and no SDK class, complete layout, source
+lifetime or voice-file identity follows. Neither this caller nor `LockDataPtr`
+reads the retained source argument into a codec selector, so that word remains
+anonymous. The default minimal observer profile remains unchanged. An explicit
+`--include-source-consumer` variant adds only the authenticated true entry and
+fixed owner-relative source/output fields. It records the actual caller and
+native parent lineage without interpreting a consumer return value or following
+the source pointer. The classic and consumer recipes remain exact generated
+profiles. Constructor/factory activation is outside those recipes; transporting
+a preselected source pointer does not prove its selection or lifetime. The
+optional source-bridge recipe below has its own additional gate.
+
+The reviewed contract also closes one earlier static producer step. An
+anonymous constructor retains its incoming source pointer and stores it in the
+primary owner's member corresponding to the consumer's source member. It
+addresses the embedded consumer owner explicitly and installs an address point
+containing the reviewed consumer; the consumer's own reverse pointer adjustment
+agrees with that storage relationship. One factory retains its incoming source
+argument and forwards it unchanged to the constructor, passing a
+storage-provider result as the primary owner. Current full code/unwind extents,
+bounded address-point bytes, the exact consumer slot and instruction witnesses
+gate these facts. They establish static transport of an already-selected source
+pointer, with no allocator classification or source initialization/copy proof.
+In saved classic and consumer recordings, constructor execution and producer
+address points were not observed; those recipes activate no producer hook.
+Persistent lifetime and the queued managed voice-path join remain open across
+all recipes.
 """
 from __future__ import annotations
 

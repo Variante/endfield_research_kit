@@ -1,4 +1,30 @@
-"""Exact nonzero planar prefixes against an explicitly interleaved float stream."""
+"""Exact nonzero planar prefixes against an explicitly interleaved float stream.
+
+Evidence and admission boundary:
+
+Later source-output pairs retain constructed primary addresses and their
+checked embedded-owner adjustment. This is conditional continuity: constructor
+entries are retained, but unobserved destruction, other constructor families
+and reuse remain lifetime gaps. Native single-descriptor selection also retains
+complete voice paths beyond the shorter managed text field. Truncated managed
+path text does not invalidate an intact Event/playing-ID pair; its text
+identity stays incomplete. Complete native paths match full external-sector
+keys through the selected-build hashing gate, while ordinary source words
+remain sound-sector low-word candidates. Sampled route records link PCM
+contexts with bus inputs, without proving a simultaneous complete mixer graph.
+
+A finite nonzero live voice PCM prefix now exactly matches float bytes produced
+by original native codec execution from the matching physical package WEM. This
+establishes sampled content agreement under the named ownership and package
+conditions. It does not establish the whole live buffer, allocation generation
+or chosen backing occurrence. The isolated run supplies allocation and a setup
+lock and covers a bounded decoded extent; it is not a live device run. Audio's
+`playback_pcm_witness` domain performs byte-exact channel-plane comparisons and
+rejects silence/nonfinite prefixes as identity witnesses. Device acceptance
+still requires direct output-buffer and COM result observation: the original
+sink ignores the release result, and a tolerated GetBuffer error can leave its
+invalid flag unchanged.
+"""
 from __future__ import annotations
 
 import hashlib

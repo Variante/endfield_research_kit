@@ -2,6 +2,62 @@
 
 The decoder-provider command supplies one explicit selected/opened native image.
 This module authenticates contracts; it does not create streams or decode media.
+
+Evidence and admission boundary:
+
+The standard-stream contract (`wwise_standard_stream_native.json`) separately
+authenticates the numeric factory and open-completion route, reusing the
+existing constructor, descriptor-storage/open and completion owners. The
+factory requires exactly one filename or non-sentinel numeric ID, copies the
+request into owned storage and returns the receiver's secondary interface. Its
+synchronous branch waits before checking a separate open-result word. Original
+asynchronous factory execution now admits a stream to a supplied device.
+Original package lookup supplies its descriptor before manual delivery of the
+original completion callback, which retains that descriptor and clears the
+owned request. The status reader changes from pending to no pending work; this
+status is distinct from the successful open-result word. Invalid descriptor
+forms and supplied allocation failure clear the output and return their own
+failure statuses. Device/resolver state, backend block size, available OS
+locks/events and completion delivery remain supplied. This separate cohort does
+not execute original standard-stream reads or synchronous worker scheduling,
+and must not be merged into the package-to-PCM cohort as if the same stream
+generation had produced its samples.
+
+A stronger cohort now executes original standard-stream read acceptance,
+transfer construction and queued receiver completion. The asynchronous read
+reports an accepted count while its destination is still unchanged. Original
+default I/O dispatch invokes Windows `ReadFileEx`; its original completion
+transforms the media bytes and forwards the retained receiver. Successful
+receiver accounting advances the byte cursor and clears the pending transfer.
+Logical EOF accepts no bytes and queues no transfer. A supplied invalid handle
+propagates through original OS failure and receiver completion without
+advancing the cursor or changing the destination.
+
+The complete numeric-output cohort also executes the synchronous factory/read
+branches: a supplied worker drives original open/read batches and alertable
+Windows completion handling while the original stream waits. These reads fill
+the allocation produced by original resident preparation. The actual OS byte
+count agrees with the requested span and the complete clear WEM hash. Original
+resident publication and source lookup then feed the original memory-provider
+factory, metadata/settings and buffer-view methods. That provider retains the
+same resident pointer/count. Removing all supplied memory-provider methods
+preserves complete native codec/context floats for the selected sources. This
+closes original stream-to-resident-to-provider-to-PCM computation under
+explicit read-only handle/metadata association, package-load calls, device/pool
+state, worker dispatch, allocation and owner-readiness conditions. It does not
+prove the game's scheduling, continuous Event generation, final teardown or
+device output. Package header reads retain their separate supplied stream
+interface.
+
+A bounded truncated-file cohort establishes a separate completeness boundary.
+The OS successfully returns fewer bytes, but the original completion chain does
+not reconcile that count: it transforms the requested span and accounts for
+that count, leaving a clear tail that differs from the authenticated WEM. This
+is distinct from an OS error or logical EOF. Native acceptance, success status
+or cursor alone cannot authenticate a complete read. Retain actual OS counts
+and independent full encoded/clear-byte hashes when admitting output; no PCM is
+admitted for the short-file cohort, and it does not establish a game defect or
+general malformed-input safety.
 """
 from __future__ import annotations
 

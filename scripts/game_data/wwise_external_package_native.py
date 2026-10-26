@@ -2,6 +2,44 @@
 
 This gate reuses the decoder-provider validator's opened images. Computed keys
 are conditional static identities; they never admit a captured lookup result.
+
+Evidence and admission boundary:
+
+The reviewed package contract (`wwise_external_package_native.json`) now owns
+the numeric branch and package lifecycle alongside external hashing. Numeric
+lookup retains the descriptor's DWORD file ID and compares ordered key/language
+pairs in stored rows. It uses the package's selected language only when
+requested, otherwise zero. Bank codec classes select a present nonempty bank
+table; a key miss in that table does not fall through to the sound table. Other
+classes, or an absent/empty bank table, use the sound table. Loaded packages
+are searched in linked-list order, with the first successful row winning;
+descriptor allocation failure terminates the search. The returned descriptor
+retains the package and stores the row's byte count and block geometry.
+
+Original package load now reads the admitted encrypted physical headers,
+executes the existing aligned XOR helper and assigns the original table
+pointers. Those tables agree byte-for-byte with the maintained reader. This
+cohort covers the selected four-sector header shape, available allocations,
+supplied standard-stream reads and existing notification-registration state; it
+does not generalize malformed-header safety. Successful load prepends its
+package. A separate exact package-ID routine moves the first matching package
+to the head, so newest load alone does not determine all later precedence.
+Removal unlinks the entry and releases the list reference; selected descriptors
+retain their own reference. Package-ID collision, destruction after the final
+release, language callback updates and concurrent list mutation remain
+separate.
+
+The stronger numeric-output cohort loads the physical headers through those
+original routines before forwarding the original source request unchanged to
+native package lookup. Its returned package pointer and geometry select the
+encoded bytes on disk. Original aligned media XOR produces exactly the
+independently authenticated clear WEM, which reaches original resident
+publication, preparation and context PCM with identical complete floats to the
+earlier cohort. Package-load call sequence, stream/device interfaces, available
+allocation and pointer lifetime remain supplied. Thus offline row selection,
+header admission and byte transformation are now original native computations;
+the game's actual load/reorder sequence and standard-stream scheduling still
+need closure. Event/queue execution remains a separately authenticated cohort.
 """
 from __future__ import annotations
 

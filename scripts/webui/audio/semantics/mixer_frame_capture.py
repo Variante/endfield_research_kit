@@ -1,4 +1,91 @@
-"""Retain observed source-write, publication and bus-reset intervals."""
+"""Retain observed source-write, publication and bus-reset intervals.
+
+Evidence and admission boundary:
+
+The same source descriptor/sample/format/frame storage can have different saved
+serial candidates within a capture. This is observed reuse, so an
+entire-session storage join cannot identify the mixer frame's Event. The
+prepared `wwise_mixer_frame_native.json` extension pairs actual bus mixing with
+completed first output descriptor/PCM reads, and observes every source
+sample/release, native descriptor publication and bus reset endpoint while
+recording is active. Its bus wrapper forwards all six integer/pointer arguments
+and preserves the caller result-storage return; publication and reset wrappers
+retain raw return-register bits without assigning an object meaning. Native
+publication supplies the exact context descriptor to route rows; completed
+reset clears retained bus input PCM and valid frames. The extension must be
+selected by its frame manifest. A newer recorder DLL with the earlier mixer
+manifest retains the earlier sampled observer, without the publication/reset
+endpoints. Use the frozen manifest, activation roster and endpoint counters to
+establish selection; loss-free transport is independent. The offline reviewer
+retains bounded reset examples and observed reset ordinals, checks
+source-write/release intervals, current publication identity and same-call
+input/output addresses, and rejects intentional endpoint skips. These ordinals
+are observed intervals rather than a native global frame counter. Other
+writers, concurrent ownership, all rows/channels/effects and device-frame
+attribution stay conditional or unresolved. A completion after stop cannot
+admit an interval join. The frame observer is now captured: completed native
+publication reads the same current owner/serial/source/allocation as the
+sampled PCM, and a subset of actual mix rows retains that published
+descriptor/sample/format/frame identity within the observed write/reset
+interval. A selected physical voice WEM reproduces a finite source prefix; its
+current identity also occurs in nonzero bus-mix output observations. This
+extends the conditional file/source-to-mixer-input path, without proving the
+gain/matrix/filter equation or later device-frame identity. Source and
+bus-output prefixes differ even for single-row scopes, so pointer continuity
+must not be described as an unchanged PCM copy.
+
+Return-storage leaf review establishes only anonymous word initialization and
+move/clear operations. These leaves neither schedule nor wait for work, and the
+returned caller storage is not evidence of an asynchronous task or dependency.
+The numeric declaration now captures incoming gain pairs, the previous/target
+matrix pointers and first words, and a filter target beside the mix call. It
+also reads a few second-plane words only under explicit stereo-format, capacity
+and valid-frame guards. Stored matrix words still need their selected
+consumer/layout and filter history before they can explain effective channel
+output. The native mix body multiplies each incoming previous/target gain by
+the corresponding row gain and writes the products back into the gain-pair
+array before filter/matrix dispatch. Entry reads precede those mutations.
+Independent IEEE nearest float32 products describe these captured operands, not
+observed effective output; the integer-only wrapper does not observe native
+MXCSR. Two matrix words are not a complete stereo matrix, and a zero filter
+target does not prove bypass or empty history.
+
+The numeric capture overflowed the recorder queue. Keep its completed
+same-invocation matrix/gain reads, source identities and sink-copy pairs as
+local observations, but withhold every source-write/publication/reset interval
+join from that session. The earlier loss-free frame scopes remain accepted
+separately. The reviewer now resolves coefficient reads through their recorded
+matrix pointers and accepts guarded-out argument fields without replacing the
+actual call register. It checks incoming gains against fifth-argument storage;
+stream diagnostics also invalidate previously retained absence-of-intervening
+write/reset claims. The recorder now buffers each JSON row through the shared
+worker writer instead of formatting each scalar and hex digit separately. A
+shorter repeat still needs zero losses; a successful build does not prove that
+transport condition.
+
+Code review withdraws the unchanged numeric repeat. The recipe's mix entry span
+contains row pointers rather than PCM at the native filter/matrix boundary; it
+reads only the first row, limited matrix words and a few second-plane samples.
+It also leaves master conversion and later sink submission as separate observed
+scopes without a carried buffer generation. Loss-free repetition alone cannot
+close either the numerical equation or Event-to-device attribution. Prove the
+native consumer read order and a sufficient bounded comparison offline first.
+The reviewer corrections now invalidate previous context/row projections on
+publication entry, require completed publication identity to agree with its
+entry and source write, and bind source ordinals to individual invocations.
+Overlapping, released, superseded and late calls cannot create a source
+interval. Primary descriptor and PCM span addresses are checked before counting
+source observations; guarded-out or failed reads cannot supply copied bytes.
+Bounded regression cases cover the reproduced failures. Both saved frame
+sessions have been replayed: the clean session retains its prior conditional
+candidates with no diagnostics, and the lossy session still withholds
+intervals. Those tests demonstrate corrected reader behavior, not that the
+fabricated failure cases occurred in the game. Native calls and waveform data
+were not changed. Keep direct call/storage and sink-copy witnesses separate.
+The dense endpoint policy runs throughout the provider lifetime, and automatic
+recording starts at runtime readiness; a short gameplay instruction does not
+bound loading-time observation or prove sufficient queue/drain capacity.
+"""
 from __future__ import annotations
 
 from collections import Counter

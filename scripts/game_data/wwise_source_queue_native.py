@@ -9,6 +9,113 @@ also authenticates the posted Event registry key and the Play Action target
 reader/setter/lookup, including a complete unwindless leaf and shared vtable slots.
 It does not establish live managed request ownership or pointer lifetime; the classic
 and source-consumer observer recipes remain unchanged.
+
+Evidence and admission boundary:
+
+The companion `wwise_source_queue_native.json` and
+`wwise_source_queue_native.py` now authenticate the descriptor's earlier native
+transport and a conditional selection route. The managed default body supplies
+the cookie and path through checked setter order. Native copying retains the
+descriptor and its text in an owned allocation, the event queue retains that
+allocation, and the checked dispatch case carries it into the action's playback
+argument blob. The reviewed node dispatch passes the same blob to a source
+selector. Its guarded branch clones the incoming source, matches its stored
+word against a descriptor, and prepares the selected source through the
+observed setter route. A checked config address point then forwards the
+selected pointer through the already reviewed factory and constructor before
+addressing the embedded consumer. Complete code and unwind extents, transport
+instructions, dispatch-table bytes and actual address-point targets gate this
+route; neighboring pointers supply no ownership claim. The selector branch,
+preparation success and chosen address points remain conditions, rather than
+observations of a runtime instance. Bank HIRC dispatch now binds authored
+Action and Event records to their native registration loaders. The Action
+category factory selects the normal Play constructor, preserving the full
+stored type; its target and per-class readers then populate the registered
+object. A newly inserted Event reads its high-chunk-first variable count and
+resolves the authored Action IDs in order against the shared Action registry.
+Each successful lookup retains that Action object and appends it through its
+intrusive next field to the Event head. These are the same head/next fields
+later read by the queue drain.
+
+This order correspondence requires distinct resolved Action objects and no
+later link mutation. A zero Action ID or missing registry entry stops reading,
+leaving the constructed prefix before failure handling. Duplicate IDs can
+create a cycle or shorten the visible list; another Event using the same Action
+can change its next link. Existing Event IDs reuse their current object and
+skip the new authored list. Neither registry is qualified by physical bank
+occurrence, so same-bank parser identity is stronger than the native global key
+match. Original-byte offline checks cover these distinctions, including
+complete registration loaders with explicit helper models.
+
+The posted Event ID has a direct native identity edge before queueing. The
+engine uses its unsigned remainder to choose a registry bucket, walks collision
+links, and compares the full Event DWORD. It retains the matching registered
+node and carries that node together with the external allocation in the same
+queue record. The admitted drain case walks that node's registered Action
+links. Each eligible, successfully allocated Action argument receives the same
+descriptor allocation and playback serial; missing required object data or
+failed allocation skips an Action and continues. The Event reference is
+released after traversal. Original-byte offline checks cover these branches.
+The registered-list correspondence above is conditional; neither it nor
+reference counter arithmetic proves live queue allocation generations or
+assigns a saved source capture to a posted Event.
+
+The normal Play Action now has a checked target edge as well. Its bank reader
+requires the constructed and stored Action types to agree, then passes the
+stored target DWORD and normalized nonzero target flag through the checked
+address-point setter. The setter replaces only the target registry-selection
+bit. Execution calls a lookup which selects one of two registry tables, tests
+the complete target key through its collision chain, retains the matching node
+and returns its primary object. A missing target has no fallback to the other
+namespace. The selected target supplies the existing preparation and node-play
+route. Complete code/unwind extents and a separately authenticated complete
+leaf setter gate this interpretation; offline checks also feed representative
+physical bank Action bytes through the original reader and target lookup.
+Target presence, node subtype, selected address points and preparation success
+remain conditions, rather than an observation of live bank selection.
+
+The queue companion now also authenticates the bank source-record reader and
+the node's bank-loading body. On the admitted codec branch, the reader takes
+the source ID from the typed bank prefix and copies it into both the lookup and
+match words of its temporary info aggregate. The node loader passes this
+aggregate and the separately read plug-in argument to the independently owned
+`sourceSetInfo` method. That setter installs the source words in the same
+node-relative source which the reviewed node-play wrapper supplies to the
+selector. This closes the stored source-ID to native match-word edge. For an
+External Source Sound, the ID is the descriptor cookie; it is not the key of a
+packaged voice file. The loader's node-type, reader-success and no-parameter
+branches remain explicit conditions, and this does not observe live bank
+loading or Event selection.
+
+The selector tests the original source argument's high word before entering
+external selection. It requires an allocation, clones the source, and scans the
+descriptors in stored order. A matching row is usable first by a nonzero
+selection word, otherwise by a wide-text pointer, otherwise by a nonzero byte
+count together with a memory pointer. A matching but unusable row is skipped;
+the first usable match wins. There is no choice of a voice path from the Event
+ID alone. Missing usable descriptors discard the clone; clone allocation
+failure has a different local status. The contract and its offline plan keep
+these outcomes separate from downstream construction and playback.
+
+Preparation changes the source's original match word: the ordinary wide-text
+and memory routes replace it with their sentinel, while the selection-word
+route installs that word. Therefore a later source snapshot need not retain the
+cookie which selected it. The lookup word is a separate field. The wide-text
+setter resets its storage and only installs the supplied argument when that
+lookup input is nonzero. It returns no status, and failed text allocation still
+rejoins the selector's provisional success branch. A selected descriptor is
+consequently insufficient evidence of a retained path, opened file or decoded
+output.
+
+The raw descriptor codec argument supplies the prepared source argument by
+moving its low halfword into the high halfword and adding the codec-kind tag in
+unsigned DWORD arithmetic. This is not a conversion through the managed enum's
+labels. Current authored raw values agree with the bank's Vorbis and Opus
+source arguments under this rule; saved native source chains corroborate the
+Vorbis conversion. The conditional implementation factory is now checked below,
+while the selected live decoder and its lifetime remain unproved. The exact
+operand declarations and bank/source joins live in
+`wwise_source_queue_native.json`, not in a second native catalog.
 """
 from __future__ import annotations
 

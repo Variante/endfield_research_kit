@@ -1,4 +1,54 @@
-"""Stream a playback capture without promoting partial phases into audible Events."""
+"""Stream a playback capture without promoting partial phases into audible Events.
+
+Evidence and admission boundary:
+
+The loaded authored bus ancestry remains a parameter/control graph. The mixer
+still uses a supplied single bus, identity channel matrix, ordered worker
+dispatch and finite endpoint interfaces. Special parameter bindings and
+State/Switch selection are excluded. Those offline conditions do not establish
+current object-specific parameters, game-created emitter/listener association,
+actual bus/effect topology or real device acceptance. The phase captures below
+partially address live selection. Existing saved source-entry profiles lack
+component/listener selection, later frame/mixer reads and output completion;
+replaying them cannot recover those phases. The concrete next capture and
+representative actions live in
+`runtime_capture_requirements.md#audio-event-owner-listener-and-output-selection`.
+The prepared `audio-playback` preset now uses the reviewed
+`wwise_playback_capture_native.json` declarations. It adds paired
+component/listener returns and bounded owner, parameter, route and source/sink
+buffer phases to the existing source-entry surface. Transparent consumers
+preserve their incoming integer/vector arguments; paired consumers use only
+reviewed pointer/integer prototypes, including the parameter lookup's fifth
+stack argument. Original calls execute once and exception unwinds remain
+separate from normal returns. Periodic pointer-bucket sampling and byte
+prefixes are explicit partial coverage; same-call results do not establish a
+complete cross-thread generation or an uncaptured device result. The preset
+opens a window automatically, closes it through normal stop, and uses existing
+loss accounting, stable drain and retained cleanup on nonquiescent callbacks.
+Saved phase captures now supply completed default and held-component getter
+calls, a nonempty listener selection, finite nonzero source PCM prefixes and
+normal sink-submit returns. A completed sink call does not expose each internal
+COM result or prove device acceptance. Audio queue loss and orphan phases kept
+the first session incomplete. The corrected session has a clean drain, closed
+native pairs and readable declared fields. Its periodic coverage remains
+conditional rather than a whole playback witness.
+
+Selector playback serials also match managed Event return IDs under the
+reviewed queue transport in `wwise_source_queue_native.json`. The corrected
+Action fields now match selector serial/allocation reads under completed
+same-thread Action nesting. Selector playback-blob identity and source input
+also match constructor inputs; the independently reviewed factory retains the
+parameter blob and forwards it into the constructor. The borrowed argument
+instructions and their register roles are authenticated by the playback
+declaration, without duplicating the complete source-owner body catalog. This
+narrows live Event/source ownership without observing the intervening queue
+allocation generation. One Event can retain several selected source words; keep
+those choices instead of replacing them with the last source. Matching
+sound-sector package key low words are supplied-corpus candidates with checked
+current headers, not proof of live package/language precedence or backing file
+selection. The generated phase review and package comparison are owned by
+Audio's `playback_capture` and `playback_package_candidates` domains.
+"""
 from __future__ import annotations
 
 import argparse

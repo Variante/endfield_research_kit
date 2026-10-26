@@ -1,4 +1,28 @@
-"""Bounded constant-matrix equation at the original unfiltered consumer input."""
+"""Bounded constant-matrix equation at the original unfiltered consumer input.
+
+Evidence and admission boundary:
+
+Offline consumer review now separates the earlier source snapshot from the
+actual unfiltered matrix-consumer input. The selected full bodies and read
+order are recorded in the existing mixer-frame contract and authenticated
+during preparation. That consumer takes a cohort of source indices, source
+descriptor and filter arrays, an output-descriptor reference, effective gain
+pairs and previous/target matrix arrays. It updates bypass filter history, then
+accumulates planar contributions into existing output. Matrix rows are padded
+to a vector-width boundary; the first two stored coefficients do not include
+the second input channel's row. Capturing the caller's row pointers does not
+observe this consumer's input PCM.
+
+Audio's `mixer_pcm_witness` checks a supplied bounded first-output equation:
+one first-row source, constant gain/matrix, one nonzero channel contribution,
+zero initial output and nearest native rounding. Ramps, cross-channel sums,
+unsupported float ranges and a source-sample boundary are withheld. Original
+isolated native filtered-source and submitted PCM reproduce nonzero prefixes
+under supplied identity-matrix/zero-bus/rounding conditions; silence and
+terminal gain ramps remain separate. This is a regression of the equation
+evaluator, not a live observation of the new consumer boundary or independent
+filter parity.
+"""
 from __future__ import annotations
 
 import math

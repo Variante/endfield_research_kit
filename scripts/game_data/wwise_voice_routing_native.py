@@ -2,6 +2,49 @@
 
 The voice pipeline supplies its authenticated contract and already opened image.
 This module does not construct routes, decode PCM or initialize an audio device.
+
+Evidence and admission boundary:
+
+The next join is reviewed in `wwise_voice_routing_native.json`. The codec
+gate's optional routing check authenticates it on the same opened image and
+reuses the existing frame-preparation, descriptor-publication and master-bus
+groups. Original attachment allocates a route and its first row, retains the
+source context and target bus, and links that same route into both lists using
+distinct link fields. The output-node selection and channel-cache admission
+execute natively. With a missing stereo cache and no cache-construction inputs,
+attachment fails and removes both links; it does not leave an admitted route
+behind. The successful cohort supplies a typed bus/output identity and matching
+cached channel state; the game's authored selection remains open.
+
+Original context gain refresh must precede route preparation. Context
+construction leaves that gain at zero; the refresh reads the original owner's
+level and effective gain and derives the linear value. Omitting it preserves
+decoded source PCM but produces a silent native bus buffer. Nonempty frame
+preparation now constructs route matrices and filter state and updates gains;
+original descriptor publication then stores the exact source descriptor. The
+native bus collector excludes routes whose two low status bits are both set or
+whose next status bit is set. Its row admission additionally requires a
+published sample/end descriptor and matrix storage. Each excluded condition
+produces no bus input in the bounded probes.
+
+The original collector, output-descriptor constructor and filter/matrix/gain
+mixer now create the bus PCM allocation directly from those native route rows.
+The helper no longer copies a source descriptor into a supplied bus row. The
+bus allocation differs from the source allocation, and the original master bus
+and sink consume it. Every logical sample value agrees with the prior native
+decoder output; byte equality is recorded separately because native addition
+can turn negative zero into positive zero. Final frame padding remains zero.
+Matching stereo layout, unit gain/rate, empty optional effects/auxiliary
+chains, an available transient arena block and finite COM surfaces are explicit
+conditions; no sample arithmetic is modeled.
+
+Original bus frame reset clears retained input buffer pointers and valid
+counts, resets descriptor status and removes ended input records. Omitting it
+makes the next native accumulation retain the previous frame; the isolated
+negative probe checks that sum before submitting the second frame. This closes
+the conditional source-route-to-bus transfer and frame reuse protocol, while
+authored topology, full engine scheduling/arena startup, concurrency and
+teardown remain open.
 """
 from __future__ import annotations
 

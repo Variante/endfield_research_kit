@@ -2,6 +2,111 @@
 
 The codec gate supplies its already opened selected native image. This validator
 does not construct an owner, decode samples, initialize a device or publish data.
+
+Evidence and admission boundary:
+
+The original source-attachment routine now stores the same wrapper in an active
+playback context and that context on its primary owner. Original resident
+readiness and virtual preparation set the wrapper's prepared flag. The whole
+active-context sample consumer uses the native initialized frame quantum and
+returns exactly the direct prepared-wrapper float bytes through the final
+frame. This closes a conditional downstream PCM transfer: voice admission is
+disabled for the offline cohort, prior transition state is empty, and no
+pending source or optional sample processor is present. Original failure,
+transition, cleanup and processing branches retain separate boundaries. The
+context sample buffer alone still does not establish mixer routing or device
+output.
+
+The stronger owner/frame/output lane is reviewed in
+`wwise_voice_pipeline_native.json` and authenticated by the codec gate's
+optional voice-pipeline check on the same opened image. It reuses the existing
+source owner and codec groups. The earlier helper called an embedded
+parameter-refresh interface "owner readiness"; that method refreshes playback
+parameters and its caller ignores the return value. Resident-reference
+readiness, codec preparation, policy admission and frame readiness are separate
+checks. Original parameter refresh now executes with authored parameter
+collection excluded by a supplied stored flag. This removes the owner callback
+from the admitted cohort without proving the game's authored owner setup.
+
+The complete cohort also executes the original primary and embedded owner
+constructors. They retain the same physical bank source and supplied node,
+initialize gain/rate/control defaults, and acquire the supplied object's and
+node's references. The primary constructor remains owned by the source
+transport contract; the voice-pipeline validator checks its direct call into
+the embedded constructor without copying that catalog. Opaque
+object/play-parameter storage and the constructor input that excludes authored
+collection remain supplied. Constructor execution removes hand-written owner
+defaults from the output witness; it does not identify a live posted object's
+generation or prove authored parameter/effect values.
+
+Original attachment with admission enabled reads inherited or cached policy,
+evaluates effective gain when required, and applies a strict frame-counter
+comparison against the native look-ahead limit. The boundary immediately below
+the limit admits; equality keeps a prepared wrapper attached but returns not
+ready. Under supplied silent parameter state, one policy rejects and cleans up
+the wrapper, while another returns success with an attached **unprepared**
+wrapper. Attachment success therefore does not imply media preparation or PCM.
+Policy-node inputs and the initial frame counter are explicit conditions;
+authored policy, stealing/virtualization and route ownership remain separate.
+
+Original context construction/start initializes an optional frame processor,
+retains the codec's packed format, and allocates native filter history. The
+original worker consumes the context descriptor, then frame publication stores
+that exact descriptor in routing records. A codec block is not yet a device
+frame: raw blocks can have variable capacities, and the channel configuration
+and requested output capacity must be populated. Whole native frame preparation
+first executed with an empty route list: it publishes those descriptor fields
+from the retained format and native quantum and returns an admitted result. The
+stronger route cohort below also executes nonempty preparation. Worker
+scheduling and the authored bus selection remain supplied. Clearing beyond the
+descriptor can erase retained context fields; requesting a larger capacity than
+the native output allocation is not an admitted ABI. Neither invalid helper
+state establishes a game defect.
+
+At matching source/engine rates and zero pitch, the original initialized frame
+converter assembles those blocks into the native output quantum. Frame
+preparation corrects a nonnegative initial frame counter by the native frame
+amount before the first sample. The complete prepared cohort emits exactly the
+prior native decoded PCM, with final zero padding. A separate cohort that omits
+frame preparation emits a quantum of leading silence from the converter's
+initial-offset calculation; it is not an unavoidable playback delay. The
+original frame release must run after consumption: omitting it replays the
+cached output instead of advancing the decoder. The current cohort executes
+that release, native planar tail padding and initialized filter-bypass/history
+methods. This proves frame assembly and buffer lifetime within the isolated
+loop, not the game's concurrent lifetime or varying pitch/rate/effect paths.
+
+In the earlier output cohort, the same processed allocation reaches original
+master-bus/output-consumer methods through a supplied single-input bus
+topology. Original sink input and channel dispatch interleave the planar float
+channels, and original frame-end submission obtains a render buffer, copies the
+prepared float span and releases it. Complete emitted frames, the decoded
+suffix and final zero padding are checked independently. A separate native
+bus-row traversal/constant-gain kernel sums two actual decoded frames with
+supplied routing records and gains. The render interface is identified by the
+binary service IID and the local Windows SDK's `IAudioRenderClient`
+declaration, not by function proximity. Its `GetBuffer`/`ReleaseBuffer`
+interfaces, audio-client padding and context status are supplied finite
+surfaces; no endpoint is initialized or heard.
+
+The sink's no-input branch releases a buffer with the SDK silence flag. Generic
+error or null render buffer sets the sink's invalid flag without releasing or
+admitting PCM. `AUDCLNT_E_BUFFER_TOO_LARGE` instead consults a context
+interface before deciding that flag; it is not the device-invalidated HRESULT.
+These branches and the real submission copy are native computations under
+supplied COM results. Authored bus topology, untested route admission branches,
+endpoint/format negotiation, original real COM execution and hardware
+audibility remain open. The normal submission method does not compare the
+release HRESULT locally, and its non-resampling frame-end caller clears
+input-present without inspecting that result. A supplied release failure still
+completes the byte copy and leaves the sink-invalid flag clear. Positive
+copy/submission receipts therefore require the supplied successful release
+result; buffer contents or input-flag clearing alone do not prove that the OS
+accepted a frame. This is a conditional error handling observation, not an
+observed endpoint failure or a game defect. The current generated voice-output
+receipt composes this stream-to-render-buffer cohort with the earlier
+separately authenticated Event/Action/Sound identity; it does not claim a
+continuously observed live Event generation.
 """
 from __future__ import annotations
 

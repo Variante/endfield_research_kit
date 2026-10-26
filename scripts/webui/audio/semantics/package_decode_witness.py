@@ -3,6 +3,44 @@
 This is a library used by recovery probes, not a second Audio command. Explicit
 decoder paths and one supplied indexed word-match row define the comparison.
 It never identifies a live file handle or promotes Event selection evidence.
+
+Evidence and admission boundary:
+
+Representative physical bank bytes now close the Event → Play Action → Sound →
+external slot chain, and selected path hashes resolve to complete external rows
+in a freshly authenticated package. Offline conversion of those encoded rows
+produces exactly the same PCM as the existing voice FLACs, covering both Vorbis
+and Opus. Each comparison retains package, sector, full key, row ordinal,
+language and extents plus separate encoded, clear-WEM, FLAC and PCM hashes.
+This establishes playable file content and conditional descriptor eligibility
+for the Event. Shared cookies or matching paths still do not assign a saved
+native source chain to a particular posted Event, connect separate capture
+sessions, or identify the live backing file. Changing cohorts and receipts are
+under `reports/audio/`; the native companion and shared package/codec readers
+own the durable rules.
+
+Representative ordinary codec Sounds now also have a complete physical-bank
+Event → Play Action → Sound → numeric sound-row → WEM → FLAC PCM comparison.
+These direct authored routes contain no container alternative or supplied
+external descriptor. The selected banks have no embedded media sections even
+though their sources are labelled memory; the complete audio bytes occur in a
+separate sound package. This checks the existing rule that stream type
+describes buffering policy, not physical media location. The source's stored
+media count agrees with the selected WEM extent, and offline PCM agrees exactly
+with the existing decoded file. Keep both bank and sound-package occurrence
+identities: the numeric media ID alone does not identify a physical file across
+packages, languages or overlays. This is authored playable-file provenance,
+with live media residency, source-pointer acquisition, voice admission and
+audible output still open. The reusable readers are `wwise_package.py`,
+`hirc_v150.py` and `package_decode_witness.py`.
+
+Selected physical bank records also pass one continuous offline native
+registration, post, drain, target-lookup and source-loading cohort. This joins
+the authored Event to the registered Action actually forwarded by the modeled
+scheduler. The Sound registry object and registration/queue helper outcomes are
+supplied conditions; this does not execute actual scheduling, voice admission
+or a live provider. Existing file-to-PCM receipts remain separate offline
+content evidence.
 """
 from __future__ import annotations
 

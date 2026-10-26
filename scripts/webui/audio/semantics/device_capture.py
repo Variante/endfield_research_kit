@@ -1,4 +1,38 @@
-"""Retain same-invocation render-buffer copies without inferring audibility."""
+"""Retain same-invocation render-buffer copies without inferring audibility.
+
+Evidence and admission boundary:
+
+The prepared `audio-device` preset extends these playback phases with actual
+render-client calls. Its reviewed `wwise_device_capture_native.json` borrows
+the complete sink caller, interface identity and virtual slots from the
+voice-pipeline owner. Preparation checks the virtual-call instructions against
+the explicitly selected native image. Caller return sites identify eligible
+observations; they are not static hook targets. The runtime discovers the
+retained client's implementation addresses, installs bounded SDK-typed hooks on
+the worker, and preserves each original call and result. GetBuffer captures
+HRESULT and reads the returned pointer only on success. ReleaseBuffer carries
+that same-client, same-sink GetBuffer identity, samples the copied bytes before
+forwarding and retains the actual release result. Late children remain in their
+sampled parent's window during normal stop. Bootstrap skips and target-capacity
+limits remain visible. Disabled trampolines and bounded target-module
+references remain resident until process exit. The device capture now supplies
+completed same-sink, same-client GetBuffer and ReleaseBuffer calls. Successful
+GetBuffer results return readable nonnull buffers, and the bytes sampled there
+before release exactly equal the sampled sink-input bytes. The observed
+releases succeed, while the sink retains its non-invalid state. This
+establishes the sampled interleaved PCM copy and Windows API submission result,
+beyond a normal native sink return. These invocations exercise the matched
+stereo format; other formats and failures remain uncovered. Audio's
+`device_capture` domain checks selected caller sites, ready implementation
+targets, parent/thread/window identity, the successful buffer link, frame
+bounds, declared reads, prefix equality and HRESULT bits in the existing
+streaming review. It preserves API errors without promoting them to accepted
+copies, and rejects missing or changed links. Prefixes and successful release
+results cannot prove whole buffers, endpoint processing, complete asynchronous
+lifetime or audibility. Individual Event contribution to a mixed device frame
+remains unresolved; an earlier source prefix or matching context address does
+not supply a frame join.
+"""
 from __future__ import annotations
 
 from collections import Counter

@@ -3,6 +3,123 @@
 This is an installed-format native validator, not a live decoder or WebUI builder.
 It accepts only an explicit selected binary triplet and preserves registration,
 provider/header, initialization and output conditions separately.
+
+Evidence and admission boundary:
+
+The independently owned codec factory contract
+(`wwise_codec_factory_native.json`) and validator
+(`wwise_codec_factory_native.py`) now authenticate the owner-held source read,
+source-kind extraction, full plugin-ID dispatch, static codec registration,
+wrapper construction and codec activation. The registry scans complete plugin
+keys in stored order. An earlier matching registration wins without replacing
+its factory pointers; source kind selects one of the retained factory slots. A
+separate built-in branch and a fallback header branch remain explicit,
+including the latter's ability to change the source argument or kind before
+dispatch.
+
+The selected authored Vorbis and Opus raw arguments register the same
+media-source wrapper factory shape with distinct codec instance factories. Both
+constructors retain the same primary owner and install the same wrapper address
+point. The wrapper stores its codec factory separately; preparation later calls
+it, stores the constructed codec instance and invokes that instance's
+initialization slot. These codec instances have distinct address points. This
+closes a conditional implementation route and distinguishes it from the
+separately instrumented streamed-file preparation family. It does not identify
+a saved live voice's allocation or prove singleton/registry stability. Raw
+arguments remain separate from managed enum labels.
+
+Original selected initialization bytes consume authenticated format prefixes
+from the same external and numeric WEM witnesses. Their rate, channel and
+sample-count metadata agree with the existing offline PCM receipts. Wrong
+format tags and sizes take distinct original failure paths without writing that
+metadata. Format output remains separate from sample output.
+
+The media wrapper's preparation caller reaches the original RIFF-prefix reader.
+It returns format, encoded-data, loop, auxiliary and seek views and can succeed
+at a data header before its payload is available. It does not enforce the RIFF
+declared whole-file length. First format wins, odd-chunk padding is conditional
+on a readable zero byte, and a legacy channel branch can rewrite the supplied
+format bytes. Readable chunk substructures and provider lifetime remain
+separate conditions; this is not a safe arbitrary RIFF decoder. The selected
+physical WEMs also pass this original reader.
+
+A selected Opus WEM now follows that native RIFF reader, the complete original
+codec initializer, packet collection, original Opus sample computation and
+planar sample writes. The whole media wrapper returns the same sample buffers
+and advances its cursor through pre-skip and final trim to the stored frame
+count. The independently decoded reference agrees in frame geometry, and every
+sample is within one signed-16-bit quantization step. This is an offline native
+PCM witness, with explicit resident input, owner/descriptor state, allocations,
+byte copies and emulated CPU/thread storage. Independent execution in an
+isolated helper, using the selected DLL's normal Windows loader/CRT
+initialization, returns exactly the same float samples and wrapper buffers.
+Only helper-process allocation/free entry points are replaced and an available
+setup-cache lock is initialized. Platform models calculate no sample values.
+WAV packaging performs a separately declared float-to-integer conversion; it is
+not device output or byte-identical decoder equality.
+
+The same contract joins media preparation's embedded-owner adjustment and
+resident pointer/count reads to the existing source LockDataPtr consumer and
+media-reference layout. This is an authenticated storage join, rather than an
+offset inferred from proximity. For selected direct numeric Events, original
+source read/set and exact-key registry lookup now feed whole native
+preparation, RIFF parsing, codec construction/setup and sample-wrapper output
+on the host CPU. The registry rows hold independently authenticated physical
+package entries. Original readable-row admission now constructs those entries
+and their buffer records through native exact-key hash insertion, retaining the
+supplied media pointer/count without copying or decoding its bytes. Available
+table capacity, typed input lifetime, owner readiness and provider interfaces
+remain conditions: the readiness replacement invokes the original lookup with
+the checked consumer arguments, without executing complete owner preparation.
+Starting with an empty reference, a wrong-key registry collision leaves no
+resident pointer and preparation stops before creating a codec. This does not
+generalize to early-return paths retaining an existing reference.
+
+The same admission code rejects null/empty payloads and unwinds a successful
+prefix after a later invalid row or allocation failure in bounded native
+cohorts. Duplicate IDs prepend buffer records to the shared entry. Among the
+eligible positive-length rows tested, source lookup chooses the greatest byte
+count; equal-size ties select the first list occurrence, which is the latest
+admitted row in that cohort. Preserve row identity and actual selected bytes:
+this is neither package/language precedence nor a unique filename from an ID.
+
+The selected memory-labelled sources take the resident-memory provider branch.
+It passes the acquired pointer/count to the provider; it does not request a
+numeric filename at that slot. Their WEMs nevertheless come from a separate
+sound package. Successful preparation advances the input view past RIFF and
+Vorbis setup before sample processing. The whole wrapper returns finite samples
+through the stored end frame and produces playable offline WAVs. Physical
+bank/source identity joins these witnesses to the earlier Event and Action
+execution cohorts; separate cohorts do not establish one live pointer
+generation or actual package callback/API selection.
+
+The node preparation slot now closes a stronger conditional population path. It
+addresses the same embedded source as the checked bank loader and node-play
+wrapper, then forwards that source to original resident preparation. The
+manager either prepares immediately or collects complete source records for a
+later drain. Deferred records are ordered and reused by their file-ID word;
+equal-key records are overwritten, so this collection is not a distinct list of
+every source registration. The native source record carries the registry ID,
+numeric file ID, requested byte count, language flag and plugin codec into the
+file-open request. Keep registry identity and file identity distinct even when
+a selected physical source repeats the same value in both words.
+
+Original numeric stream open/setup/read/close, resident allocation and buffer
+publication now execute before native source lookup, whole preparation and
+context PCM. The supplied stream-manager interface observes that original
+request and selects an independently authenticated physical package occurrence;
+it copies the clear WEM into the original allocation. The later memory-provider
+branch consumes those allocated/read bytes. Immediate and deferred preparation
+return exactly the earlier native floats for the checked source, and selected
+numeric Events preserve their complete PCM through the context consumer. Open
+failure, a partial read followed by EOF, and read error leave no resident bytes
+for the source lookup. The original reader attempts the remaining bytes before
+rejecting incomplete input. Existing prepared buffers, alternate buffer kinds,
+source counter lifetime, wider rollback and allocation reuse remain distinct
+branches. Readable node storage, manager capacity/collection state, package
+selection, provider interfaces and pointer generations remain conditions. This
+narrows the missing join to the game's actual package/provider choice and live
+ownership; it does not establish a continuously observed Event generation.
 """
 from __future__ import annotations
 

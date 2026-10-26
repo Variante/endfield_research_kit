@@ -2,6 +2,62 @@
 
 Consumes one already opened image from the explicit codec gate. No bank is
 loaded and no native engine state or audio endpoint is changed by this module.
+
+Evidence and admission boundary:
+
+The separate inherited-parameter cohort now authenticates and executes original
+native loaders. Original bus factories and whole bank loaders can populate the
+selected Initial-bank bus ancestry through original exact-key insertion. Sound
+loading initially leaves its absent parent unlinked; subsequent child-first
+ActorMixer loading resolves its stored child list and attaches the same Sound
+and ancestor instances. Preconstructing the whole hierarchy can instead trigger
+duplicate-link failures. Registry membership and load order are therefore part
+of the consumer preconditions, not merely a list of objects whose identifiers
+appear in the bank.
+
+Recursive property collection reaches the parameter manager through the
+ancestor's stored RTPC bindings. An absent manager faults in this isolated
+configuration. Original manager initialization removes that missing-storage
+condition, but an empty manager is still different from bank-authored defaults
+and produces a substantially different provisional level. The original STMG
+loader's read sequence independently frames the physical section end to end:
+global scalars, counted state records, counted parameter-driven switch records,
+fixed-width parameter/default/transition records and the trailing record count.
+Original default and transition setters consume those reconstructed parameter
+records before the hierarchy loads; recursive collection then returns,
+retaining an inherited low-pass control even for a Sound whose own record has
+only makeup gain.
+
+The reviewed `wwise_inheritance_native.json` and `wwise_inheritance_native.py`
+now gate complete hierarchy, registry/link, settings,
+manager/default/transition, curve and component-routing bodies.
+Constructor/base-reader ownership stays with the existing Sound and
+source-queue contracts. The codec gate validates all dependencies on the same
+explicitly selected native image and withholds the child claims on missing or
+mismatched inputs. The reusable raw settings reader and authenticated
+available-bank corpus are documented in `audio_bank_format.md`.
+
+Original inherited collection now composes with stream preparation, decoding,
+owner readiness/admission, source filters, route/matrix mixing and negotiated
+finite render-buffer submission for the selected physical UI sources. The
+unfiltered decoder floats remain unchanged. Every complete submitted sample
+value agrees with the independent gain reconstruction from original filtered
+input and native route gains; padded tails and signed-zero differences remain
+separate. This closes conditional inherited PCM, without promoting the earlier
+frontier-only receipt or changing the own-Sound receipt's empty-parent
+condition.
+
+An additional dependency appears when the ancestor enables listener-relative
+routing. The embedded owner supplies its retained object to a component getter;
+a nonnull component selects its own listener state when its override flag is
+set, otherwise the original lazy default component supplies that state. A null
+object component also selects the original default. The offline cohort supplies
+that null branch, executes original lazy default construction and retains its
+empty listener vectors. Default routing storage follows the original inline
+construction and leaf initialization. The earlier opaque object placeholder
+contained a scalar where this path reads a pointer; its access fault is a
+helper input error, not evidence of game behavior. A fabricated component or
+forced listener flag would not establish the game's actual association.
 """
 from __future__ import annotations
 

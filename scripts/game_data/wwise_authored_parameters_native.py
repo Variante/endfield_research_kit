@@ -2,6 +2,71 @@
 
 The codec gate supplies one already opened, authenticated image. This module
 does not load a bank, decode audio, change engine state or activate a device.
+
+Evidence and admission boundary:
+
+The authored-parameter frontier must keep the bank loader ABI explicit. The
+existing source-queue contract now witnesses its fifth Win64 argument: a stack
+byte forwarded into the node-base remainder loader. A four-argument host
+invocation leaves that byte undefined and is rejected as evidence. The
+source-reader/setter receipts remain source-only; a positive loader result does
+not establish that the stored parameter remainder was collected. The separate
+`wwise_authored_parameters_native.json` contract and its validator now
+authenticate inherited Sound construction, bank remainder loading, fixed/ranged
+property storage, the Sound/base collectors, the native property-to-output slot
+map and the selected filter and matrix/gain consumers. Existing source-queue,
+voice and routing bodies and the Sound address point remain owned by their
+original contracts. The optional codec gate checks these dependencies on the
+same opened selected image and withholds claims when any child or native input
+fails.
+
+Fixed properties retain key bytes followed by aligned parallel float values.
+The collector requires an in-range key and its output-mask bit before adding
+the float into the mapped native slot. Volume feeds the context level path;
+makeup gain feeds a distinct secondary source level before route-gain
+preparation. Authored low/high-pass controls reach source filter state through
+the original owner refresh and frame preparation. These are consumer reads, not
+meanings inferred from a property-name match.
+
+Physical Sound records now run through the original constructor and whole
+loader with the explicit remainder argument enabled, then through original
+own-property collection, source preparation/decoding, frame filters, route
+creation/mix/reset and the negotiated finite sink. The decoded unfiltered
+samples still match the prior native source cohort; authored gain and active
+low-pass filtering change the submitted PCM. Every submitted sample value,
+including padded frames and terminal gain transitions, agrees with an
+independent reconstruction of the selected AVX/FMA matrix/gain arithmetic from
+captured native filtered PCM and native route gains. Signed-zero bit
+differences are recorded separately. The filter samples are original native
+kernel output; an independent filter implementation is not claimed.
+
+Padding precedes native filter processing. A filter can therefore emit its
+retained history into a final padded block, and the original ending path can
+fade the route target to zero across that block. Preserve the complete
+submitted block separately from logical source-frame PCM. Neither a zero input
+tail nor decoder end establishes a silent rendered tail.
+
+Preserve constructor-established filter flags when enabling authored
+collection. A helper write that forces the earlier bypass state discards
+initialization/transition flags and is invalid for the authored filter cohort;
+exploratory output produced under that write is rejected. The admitted helper
+supplies only bounded allocator/free surfaces, including null reallocation, and
+opaque object/play state, registry/topology/cache/arena availability, ordered
+worker dispatch and finite endpoint/COM responses. It performs no sample
+arithmetic and writes neither node policy nor filter-bypass flags.
+
+The own-Sound cohort's registry deliberately has no parent or override bus.
+Successful whole Sound loading can retain its own properties while leaving its
+direct parent unlinked. The bank framing reader finds ActorMixer ancestry and
+an explicit output-bus override in the root ancestor, so an empty-parent result
+does not establish effective game gain or complete routing. Native parent/bus
+construction, exact registry admission and recursive collection now have a
+separate inherited cohort below. Effective output topology and runtime
+object/RTPC/state/MIDI/random-range and effects selection, general filter
+widths/transitions, resampling, concurrent lifetime and real endpoint
+acceptance remain open. Earlier unit-gain receipts and the historical
+constructor/skip-remainder frontier retain their own conditions; they do not
+inherit these authored values.
 """
 from __future__ import annotations
 

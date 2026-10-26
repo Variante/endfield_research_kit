@@ -1,6 +1,52 @@
 """Authenticate native sink format/service negotiation on an opened voice image.
 
 This validator does not enumerate, activate or start an audio endpoint.
+
+Evidence and admission boundary:
+
+Sink negotiation is reviewed in `wwise_sink_negotiation_native.json` and
+checked by the codec gate on the same image. It reuses the existing sink
+constructor/service body and render IID rather than copying their catalogs.
+Original service setup activates the supplied audio-client interface, obtains
+and normalizes its mix format, and checks a requested channel layout when the
+channel count differs. An accepted request retains that layout; a
+closest-format response or rejection falls back to normalized endpoint/closest
+channels. The conventional channel table also handles anonymous counts
+explicitly. Non-extensible float formats receive native extensible fields and
+the IEEE-float subtype. These paths execute with finite COM responses and real
+COM-task format allocations that the original code frees.
+
+When available, the session-control interface receives automatic-ducking
+opt-out. The optional newer client interface receives offload capability and
+client-property calls; the stored sink type selects the SDK game-effects,
+game-media or game-chat category. These are conditional interface calls, not a
+mapping from a game voice family to an actual endpoint category. Negotiation
+uses shared mode and an event callback. If endpoint and engine rates differ, it
+first requests Windows automatic conversion at the engine rate with the
+default-quality flag. A failed initialization restores the endpoint format and
+retries without those conversion flags, then initializes a native resampler.
+The matched/auto-conversion path has no native sink resampler buffer. The
+fallback initializes one, but its continuous sample output remains unproved.
+
+Original setup attaches the event, checks device capacity, obtains the render
+service, gets a buffer and releases initial silence before allocating the
+sink's native output buffer. Event, period, format, initialization, service,
+buffer and release failure branches have bounded witnesses. Setup checks the
+silence release result, unlike the steady-state frame-end path described above.
+The available-frame query separately checks sink validity and current padding;
+success can return zero quanta when the endpoint is full. Failed padding or
+invalid state returns failure without publishing a count.
+
+The successful matched-format setup also composes with the complete source,
+native route/mix and render-buffer cohort. The sink output allocation now comes
+from original negotiation, and original capacity queries run before each frame.
+The helper assigns neither sink capacity nor valid-frame count. Complete sample
+values and the previously described signed-zero behavior are preserved. The
+endpoint, plugin context, driver padding and render-client responses remain
+finite supplied interfaces; no real endpoint is activated or started. Actual
+device selection, real format acceptance, scheduler/event behavior,
+concurrency, resampled sink PCM and hardware audibility remain distinct open
+joins.
 """
 from __future__ import annotations
 

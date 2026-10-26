@@ -3,6 +3,72 @@
 This ledger does not read memory or establish endpoint coverage. Its caller must
 authenticate the selected layout and all observations, and supply a complete,
 loss-free endpoint scope. Saved recipes without frame-end cannot enable it.
+
+Evidence and admission boundary:
+
+The native sink handoff is also more specific: conversion writes an inline
+descriptor and sets input-present. On the non-ring, non-resampling path,
+frame-end submits that descriptor when valid frames exist, then clears
+input-present. The resampled path uses a different descriptor; the no-input
+path submits silent COM buffers outside the observed sink-submit call. These
+branches must remain distinct. Field displacements, masks and call witnesses
+are native-bound in the mixer-frame contract. `sink_handoff_capture` implements
+the corresponding observed write/consume ledger. It requires complete
+sink-write and frame-end endpoint coverage, matching checked descriptors,
+same-thread parent nesting, successful paired returns and the consumed flag.
+Overlaps, intervening writes, unsupported modes and descriptor changes withhold
+the join. A retained submit capture ID can connect to a same-invocation device
+copy; it does not identify the upstream Event or a global allocation
+generation. Both saved frame recipes fail this coverage gate, including the
+loss-free recipe, because frame-end is absent and sink writes are sampled. No
+generation join has been recovered from them.
+
+A bounded offline replay of original callback records preserves all serialized
+JSON values through the current worker writer and measures serialization and
+file-write throughput. The measured rates and corpus are generated report data.
+This excludes game contention, provider callback cost and the worker's other
+tasks; it does not prove loss-free gameplay. The recorder still needs an
+explicit bounded observation policy and the missing consumer/frame-end
+endpoints; this measurement alone does not justify another capture.
+
+The separate `audio-handoff` profile now supplies the sink-write/frame-end/
+submission endpoints for a narrower question: does a completed master
+conversion's saved PCM prefix reach a later same-sink device copy through a
+checked write/consume interval? It observes every sink write, frame-end and
+submission in an explicitly selected native window. Loading-time native roots
+are excluded before observational memory reads. Paired returns and nested
+device children retain the window ID acquired by their parent; a closure flag
+prevents a late return from admitting an interval, including when timestamps
+share the same coarse tick. Numpad and console toggles close the window, and
+bounded drain batches keep those controls responsive under continuous traffic.
+The user controls duration; the earlier fixed short cutoff has been removed.
+The handoff preset starts the overlay automatically and retains host-stop
+closure and the existing window/record bounds. Outside-window counters remain
+distinct from intentional sampling skips and queue loss. The offline importer
+checks the frozen activation, window IDs, closure flags, complete endpoint
+scope, descriptor/mode/client addresses and same-thread parent nesting. It
+joins completed master conversions and accepted device copies only through
+their checked write and submit capture IDs, with converted-to-submitted prefix
+equality. The new endpoints and controls are built and regression-tested; both
+historical frame sessions retain their prior evidence boundaries on replay. A
+loss-free handoff capture now supplies this conditional prefix witness:
+completed master output contains the checked output consumer and sink
+conversion; the completed sink write is consumed by a nested direct frame-end
+submission before another observed write/consume; its device calls receive
+successful HRESULTs and copy the same nonzero prefix. Independent inspection of
+the original phase rows confirms the nesting, descriptor/mode/ client fields,
+call order and byte equality. The first input plane also explains the
+corresponding converted first-channel prefix under its recorded constant gain.
+These observations connect master conversion to actual render-client buffer
+submission. They cover saved prefixes and observed intervals, not whole
+buffers, unobserved writers, audibility or an individual Event's contribution
+to mixed output. Last-observed same-bus mixes agree with the master input's
+descriptor while their saved prefixes differ from the later conversion input.
+The native matching-layout master branch can pad the descriptor and apply
+retained per-frame gains before the output consumer; these saved rows lack all
+intervening operands. Sampled bus-mix endpoints also leave possible intervening
+writers. Descriptor matches remain discovery candidates, not a proved buffer
+generation, numerical explanation or an Event-to-master join.
 """
 from __future__ import annotations
 

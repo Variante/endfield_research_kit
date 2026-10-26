@@ -1,4 +1,42 @@
-"""Same-call first-output equation at the original matrix consumer boundary."""
+"""Same-call first-output equation at the original matrix consumer boundary.
+
+Evidence and admission boundary:
+
+The separate `audio-mixer-consumer` observer now adds the original unfiltered
+consumer entry and return. The existing mixer-frame contract owns its complete
+body, argument/read bindings and bounded declarations; preparation still gates
+the selected native inputs. It forwards all eight arguments, retains the entry
+rounding mode, and samples source planes, effective gain pairs, padded
+previous/target matrix rows, initial first-output samples and returned output.
+Source tail padding and capacity promotion occur before this boundary. A local
+forwarding/read example exercises the real read program on private PCM storage;
+it establishes observer behavior, not game DSP output. The importer checks
+exact frozen consumer reads, scalar/plane addresses and paired stack arguments,
+then evaluates a same-call constant first-output equation. Missing operands,
+changed geometry, aliasing, unsupported layouts/ramps/sums, late returns and
+capture diagnostics withhold the numerical witness. Parent source candidates
+additionally require completed bus nesting and descriptor/sample identity; the
+completed-mix key now includes its recording window. The loss-free consumer
+capture now supplies live numerical agreement. Original consumer PCM, constant
+effective gain/matrix, zero initial output and entry rounding explain nonzero
+first-output samples. Independent original phase-row inspection confirms
+ordered same-parent nesting, unchanged descriptor/PCM/ format/extents and
+identical returned prefixes at the parent bus output. Source content continuity
+additionally compares saved plane prefixes, rather than treating a reused PCM
+pointer as unchanged content. Completed Action/ selector/constructor candidates
+require the full current owner/source/serial/ allocation tuple and
+constructor-before-sample ordering. Observed native external paths remain
+distinct from managed path candidates. Selected current package headers and WEM
+bytes are checked; complete isolated original-codec decodes match the live
+source prefixes for the admitted switch-bark cases. These bounded joins connect
+Event/source/file through decoded PCM and numerical mixing to parent bus
+output. They do not establish whole live buffers or an individual Event's
+contribution to the final device mix. The importer initially treated
+guarded-out PCM/matrix anchors in unsupported output layouts as corrupt
+addresses. Corrected validation retains those calls as numerically unselected,
+while selected layouts still require exact read addresses. Regression and
+replay preserve the earlier clean/failed boundaries.
+"""
 from __future__ import annotations
 
 from collections import Counter
