@@ -1714,6 +1714,32 @@ solo Endminf/Rodin context cannot supply missing runtime actor/skill ownership,
 input acceptance, animation recovery or asynchronous descendants. No live
 observation is added by preparing the capture preset or running fixture tests.
 
+A retained full Endminf/Rodin combat session now supplies healthy, accounted
+paired observations. Its stable Rodin HP target reaches stored client HP zero;
+the admitted outer HP pairs agree exactly with returned `realDelta`. The inner
+`_DoApplyModifier` observations are nested views of the outer `ApplyModifier`
+calls, not additional damage to sum. Non-HP modifiers compare different
+quantities, and identity changes revoke the HP residual comparison.
+[The numerical reader](../../scripts/game_data/damage_runtime_numerics.py)
+keeps those cases separate and streams the source-bound attribute sidecar.
+Attribute UID/pointer equality supplies candidate joins to observed targets,
+not proof of uninterrupted object lifetime. User-reported weekly selection,
+loadout and victory remain separate from the captured target fields and HP.
+
+The standalone `BattleFormula.CalculateDamage` observer was not reached in
+that session despite complete Pack and DEF-helper observations. Selected-build
+return-site resolution instead reaches `DamageAction._ProcessDamage` as the
+immediate Pack caller. Its native body contains subsequent Dice, DEF/type-
+resistance calls and Double arithmetic on the Pack result. Thus absence of the
+standalone entry does not imply absence of damage calculation. This bounded
+caller/body evidence does not establish compiler-inlining provenance, all
+executed branches, critical flags or complete numerical formula parity; old
+Pack arithmetic contracts still require their own selected-build gate.
+The session also observes separate targets named for Rodin wall AbilityEntities;
+those identities must not be merged into the boss's HP series or treated as
+proof of collider geometry. Per-session counts, numerical snapshots and native
+addresses remain in generated analysis reports.
+
 ## Character attribute formula
 
 [`attribute_formula_native.json`](../../scripts/game_data/contracts/attribute_formula_native.json)

@@ -6,7 +6,7 @@ import json
 import math
 import struct
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable, Iterable
 
 from scripts.game_data import mission_trace_inspect as trace
 from scripts.game_data.contracts import CONTRACTS_DIR
@@ -20,8 +20,9 @@ BOUNDARY = ("Observed same-thread synchronous DamageAction enclosure only. No ac
             "RNG seed, server authority, omitted callbacks or complete combat claim.")
 
 
-def project_damage_rows(rows: list[dict[str, Any]], hooks: list[dict[str, Any]], *,
-                        source_context: dict[str, Any]) -> dict[str, Any]:
+def project_damage_rows(rows: Iterable[dict[str, Any]], hooks: list[dict[str, Any]], *,
+                        source_context: dict[str, Any], compact: bool = False,
+                        attribute_sink: Callable[[dict[str, Any]], None] | None = None) -> dict[str, Any]:
     """Project already inspected decoded rows; callers must admit their source first.
 
     This pure helper validates pairs again, but does not authenticate a session.
@@ -30,8 +31,15 @@ def project_damage_rows(rows: list[dict[str, Any]], hooks: list[dict[str, Any]],
     report = dict(schema=SCHEMA, status="projected", combatComplete=False,
                   sourceContext=source_context, boundary=BOUNDARY,
                   actions=[], unownedObservations=[], diagnostics=[])
+    report["projectionMode"] = ("compact-attributes-sidecar-v1" if attribute_sink is not None
+                                else "compact-attributes-v1" if compact else "full")
+    report["projectionCounts"] = {"decodedRows": 0, "inlineObservationRows": 0,
+                                  "attributeEntryRowsOmitted": 0, "attributeReturnRowsCompacted": 0}
+    report["attributeSnapshots"] = []
+    snapshot_groups, active_attributes, dumps = {}, {}, {}
     pairs, stacks, owners = Invocations(), {}, {}
     for row in rows:
+        report["projectionCounts"]["decodedRows"] += 1
         index = trace.integer(row.get("hookIndex"), "hookIndex", len(hooks)-1)
         hook = hooks[index]
         trace.require(row.get("hook") == hook["name"] and
@@ -46,9 +54,13 @@ def project_damage_rows(rows: list[dict[str, Any]], hooks: list[dict[str, Any]],
                 owner = dict(invocationId=identity, parentInvocationId=row["parentInvocationId"],
                              threadId=thread, enter=dict(row), exit=None,
                              attribution={"actor": "unknown", "skill": "unknown", "target": "unknown"},
-                             observations=[])
+                             observations=[], attributeReturnCount=0)
                 report["actions"].append(owner)
             owners[thread, identity] = owner
+            dumps[thread, identity] = (identity if row["hook"] == "damage.Pack.DumpAttributes"
+                                       else dumps.get((thread, row["parentInvocationId"])))
+            if compact and row["hook"] == "buff.Attributes.GetValue":
+                active_attributes[thread, identity] = row
             stack.append(identity)
         else:
             owner = owners.get((thread, identity))
@@ -60,6 +72,47 @@ def project_damage_rows(rows: list[dict[str, Any]], hooks: list[dict[str, Any]],
                 "hpModifier" if "ApplyModifier" in row["hook"] else
                 "attribute" if row["hook"] == "buff.Attributes.GetValue" else
                 "constant" if row["hook"].startswith("damage.Const.") else "action")
+        dump_identity = dumps.get((thread, identity))
+        if row["phase"] != "enter":
+            owners.pop((thread, identity), None)
+            dumps.pop((thread, identity), None)
+        if compact and role == "attribute":
+            if row["phase"] == "enter":
+                report["projectionCounts"]["attributeEntryRowsOmitted"] += 1
+                continue
+            trace.require(PAIRED_ABI.fullmatch(hook["abiId"])[1] == "double",
+                          "compact attribute snapshot requires double return ABI")
+            entered = active_attributes.pop((thread, identity))
+            fields = {field["label"]: field for field in entered.get("fields", [])}
+            fields.update({field["label"]: field for field in row.get("fields", [])})
+            uid = fields.get("attributesInstanceUid")
+            caller = row.get("callerGameAssemblyRva")
+            key = (thread, dump_identity, json.dumps(uid, sort_keys=True), caller,
+                   owner["invocationId"] if owner is not None else None)
+            group = snapshot_groups.get(key)
+            if group is None:
+                group = dict(threadId=thread, dumpInvocationId=dump_identity,
+                             actionInvocationId=key[-1], attributesInstanceUid=uid,
+                             callerGameAssemblyRva=caller,
+                             columns=["sequence", "invocationId", "parentInvocationId", "thisRaw",
+                                      "attributeTypeRaw", "attributeTypeField", "returnValue", "decodedReturnValue"], values=[])
+                if attribute_sink is None:
+                    snapshot_groups[key] = group
+                    report["attributeSnapshots"].append(group)
+            bits = row.get("returnValue")
+            value = struct.unpack("<d", bits.to_bytes(8, "little"))[0] if bits is not None else None
+            args = row.get("rawArgs", [])
+            group["values"].append([row["sequence"], identity, row["parentInvocationId"],
+                                    args[0] if args else None, args[1] if len(args) > 1 else None,
+                                    fields.get("attributeType"), bits,
+                                    value if value is not None and math.isfinite(value) else None])
+            if owner is not None:
+                owner["attributeReturnCount"] += 1
+            if attribute_sink is not None:
+                attribute_sink(group)
+            report["projectionCounts"]["attributeReturnRowsCompacted"] += 1
+            continue
+        report["projectionCounts"]["inlineObservationRows"] += 1
         observation = {"role": role, **row}
         if row["phase"] == "return":
             return_type = PAIRED_ABI.fullmatch(hook["abiId"])[1]
@@ -133,18 +186,29 @@ def inspect_damage_session(session: Path, output_dir: Path, *, local_files: bool
             trace.require({field["label"] for field in hook.get("fields", [])} ==
                           {field["label"] for field in spec.get("fields", [])},
                           "damage admission field selection differs: " + hook["name"])
-        rows = []
         decoded_path = output_dir / "trace" / inspected["decodedOutput"]
         decoded_pin = fingerprint(decoded_path, limits.output_bytes)
-        with decoded_path.open("rb") as source:
-            for line in source:
-                trace.require(len(rows) < limits.rows and len(line) <= limits.output_line_bytes,
-                              "damage decoded row budget exceeded")
-                rows.append(trace.parse_json(line, "damage decoded row"))
-        report = project_damage_rows(rows, hooks, source_context={
-            **report["sourceContext"], "nativeInputs": profile.get("files"),
+        def decoded_rows():
+            with decoded_path.open("rb") as source:
+                for count, line in enumerate(source):
+                    trace.require(count < limits.rows and len(line) <= limits.output_line_bytes,
+                                  "damage decoded row budget exceeded")
+                    yield trace.parse_json(line, "damage decoded row")
+        attribute_path = output_dir / "attribute-returns.jsonl"
+        trace.require(not attribute_path.exists(), "damage attribute sidecar already exists")
+        with attribute_path.open("w", encoding="ascii") as attribute_output:
+            def write_attribute(snapshot):
+                json.dump(snapshot, attribute_output, ensure_ascii=True, separators=(",", ":"), allow_nan=False)
+                attribute_output.write("\n")
+            report = project_damage_rows(decoded_rows(), hooks, compact=True, attribute_sink=write_attribute, source_context={
+            **report["sourceContext"], "decodedSource": {"path": str(decoded_path.resolve()), **decoded_pin}, "nativeInputs": profile.get("files"),
             "hooks": hooks, "inventory": inventory, "receipt": summary,
             "provenanceBoundary": "Retained session consistency only; package origin and live ABI/source selection not independently authenticated."})
+        report["attributeSnapshotSource"] = {
+            "path": str(attribute_path.resolve()), **fingerprint(attribute_path, limits.output_bytes),
+            "rows": report["projectionCounts"]["attributeReturnRowsCompacted"],
+            "format": "jsonl; each row carries explicit identities, columns and one values row",
+            "boundary": "All attribute returns retained here; entry rows and full field/raw detail remain in decodedSource."}
         report["status"] = "observed"
         trace.require(bool(report["actions"]), "damage admission observed no DamageAction enclosure")
         trace.require(fingerprint(decoded_path, limits.output_bytes) == decoded_pin,
@@ -153,10 +217,12 @@ def inspect_damage_session(session: Path, output_dir: Path, *, local_files: bool
             trace.require(fingerprint(artifact["path"], limits.artifact_bytes)["sha256"] == artifact["sha256"],
                           "damage retained source changed during projection")
     except (trace.InspectionError, ValueError, OSError, KeyError, TypeError) as exc:
-        report.update(status="blocked", actions=[], unownedObservations=[])
+        report.update(status="blocked", actions=[], unownedObservations=[], attributeSnapshots=[])
         report["diagnostics"] = [{"validator": "damage_runtime_inspect", "failedCheck": "session_admission_or_pair_projection",
                                   "sourcePath": str(session.resolve()), "detail": str(exc)[:2048]}]
-    destination.write_text(json.dumps(report, ensure_ascii=True, indent=2, allow_nan=False)+"\n", encoding="ascii")
+    with destination.open("w", encoding="ascii") as output:
+        json.dump(report, output, ensure_ascii=True, separators=(",", ":"), allow_nan=False)
+        output.write("\n")
     return report
 
 
