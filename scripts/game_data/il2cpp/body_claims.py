@@ -46,6 +46,14 @@ by type and method, and evaluates them against whichever build is installed:
                       false named Boolean guard; true returns null
 ``readsNestedField``  reads a named field through a previously loaded parent field
 ``passesFieldToCall`` loads a named field into a named register at a named call
+``copiesArgumentValueField`` copies the 16-byte block holding a named field of
+                      a by-reference value-type argument into the same position of
+                      a named inline value-type field of the incoming receiver
+``passesInlineFieldToCall`` loads a reference field of a named inline value-type
+                      field into a register that reaches a named call's argument
+                      register, directly or by one register copy; an intervening
+                      call is crossed only when its body is a proved call-free
+                      leaf that never writes the carrying register
 ``closedReferenceLayout`` a selected concrete witness proves its sole generic
                       reference slot, optionally through a complete named field suffix
 ``readsClosedDataField`` a selected concrete witness proves its closed generic
@@ -64,6 +72,8 @@ by type and method, and evaluates them against whichever build is installed:
                       comparator and complete scan coverage remain separate
 ``feedsReferenceResultToCall`` a typed full reference return reaches a named
                       reference parameter on a selected contiguous fallthrough
+                      (a shared generic ``T`` getter is typed by an optional
+                      ``receiverField`` declared as its closed instantiation)
 ``queriesFloatBlackboardDirectBeforeEntity`` complete ordinary keyed Float
                       getter/query/result/restore program and checked local edges
 ``filtersDynamicBlackboardPairOnFalseGuard`` incoming non-dynamic DataPair
@@ -584,6 +594,119 @@ def _writes_register(row: dict[str, Any], register: str) -> bool:
     return bool(match and _REGISTER_ROOT.get(match.group(1), match.group(1)) == root)
 
 
+def _inline_field_offset(index: BodyIndex, field: str, value_field: str) -> int:
+    """Offset of ``value_field`` inside the inline value-type ``field``.
+
+    IL2CPP value-type field offsets include the 0x10 object header that an
+    inline (unboxed) copy does not carry.
+    """
+    value_type = value_field.partition("::")[0]
+    type_def = index.types.get(value_type)
+    if type_def is None:
+        raise ClaimError(f"field-owner-missing:{value_type}")
+    from scripts.game_data.il2cpp.reference_layouts import NativeReferenceContext
+    context = NativeReferenceContext(index.image, index=index)
+    owner_name, field_type, _ = context.field(field)
+    if field_type != value_type or not context.is_value_type(value_type):
+        raise ClaimError(f"inline-field-not-value-type:{field}:{field_type}")
+    inner = index.field_offset(value_field)
+    if inner < 0x10:
+        raise ClaimError(f"inline-field-offset:{value_field}")
+    return index.field_offset(field) + inner - 0x10
+
+
+def _leaf_preserves(index: BodyIndex, pointer: int, register: str, depth: int = 2) -> bool:
+    """True when a bounded callee, and each callee it calls (``depth`` levels,
+    ending in call-free leaves), never writes ``register``."""
+    size = index._extent(pointer)
+    if not 0 < size <= 0x200:
+        return False
+    rows = index._decode(pointer, size)
+    root = _REGISTER_ROOT.get(register, register)
+    for row in rows:
+        text = str(row.get("text") or "")
+        call = _CALL.fullmatch(text)
+        if call and call.group(1) == "call":
+            if depth <= 1 or not _leaf_preserves(index, int(call.group(2), 16), register, depth - 1):
+                return False
+            continue
+        if text.startswith(("call ", "db ")) or text.startswith("jmp ") and not _within(text, pointer, size):
+            return False
+        if _writes_register(row, root):
+            return False
+        # Implicit destinations (rax/rdx/rcx) are not decoded as writes.
+        if root in {"rax", "rcx", "rdx"} and re.match(r"(?:lock |rep\w* )?(?:cmpxchg|xchg|mul|div|imul|idiv|cqo|cdq|cpuid|rdtsc|loop|movs|stos|lods|scas|cmps)", text):
+            return False
+    return any(str(row.get("text") or "") == "ret" for row in rows)
+
+
+def _within(text: str, pointer: int, size: int) -> bool:
+    match = re.search(r"0x([0-9a-f]+)$", text)
+    return bool(match and pointer <= int(match.group(1), 16) < pointer + size)
+
+
+def _copies_argument_value_field(index: BodyIndex, rows: list[dict[str, Any]], spec: dict[str, Any]) -> str | None:
+    """A 16-byte xmm move from the argument copy to the receiver's inline field."""
+    target = _inline_field_offset(index, spec["field"], spec["valueField"])
+    base = index.field_offset(spec["field"])
+    source_register = spec["register"]
+    texts = [str(row.get("text") or "") for row in rows[:400]]
+    receiver = argument = None
+    for text in texts[:40]:
+        copy = re.fullmatch(r"mov (\w+), (\w+)", text)
+        if copy and copy.group(2) == "rcx" and receiver is None:
+            receiver = copy.group(1)
+        if copy and copy.group(2) == source_register and argument is None:
+            argument = copy.group(1)
+    if receiver is None or argument is None:
+        return f"no receiver/argument copy of rcx/{source_register}"
+    for position, text in enumerate(texts):
+        load = re.fullmatch(rf"movups (xmm\d+), \[{argument}(?:\+0x([0-9a-f]+))?\]", text)
+        if not load:
+            continue
+        delta = int(load.group(2) or "0", 16)
+        if not base + delta <= target < base + delta + 16:
+            continue
+        for later in texts[position + 1:position + 8]:
+            if later == f"movups [{receiver}+0x{base + delta:x}], {load.group(1)}":
+                return None
+            if re.match(rf"\w+ {load.group(1)}\b", later):
+                break
+    return f"{spec['field']}.{spec['valueField'].partition('::')[2]} is not copied from {source_register}"
+
+
+def _passes_inline_field_to_call(index: BodyIndex, rows: list[dict[str, Any]], spec: dict[str, Any]) -> str | None:
+    offset = _inline_field_offset(index, spec["field"], spec["valueField"])
+    register, target = spec["register"], spec["call"]
+    hits = 0
+    for position, row in enumerate(rows):
+        match = _CALL.fullmatch(str(row.get("text") or ""))
+        if not match or target not in index.names_of(int(match.group(2), 16)):
+            continue
+        carrier, crossed = register, 0
+        for preceding in reversed(rows[max(0, position - 64):position]):
+            text = str(preceding.get("text") or "")
+            call = _CALL.fullmatch(text)
+            if call:
+                if crossed or not _leaf_preserves(index, int(call.group(2), 16), carrier):
+                    break
+                crossed += 1
+                continue
+            if not _writes_register(preceding, carrier):
+                continue
+            if _field_load(text, offset) == carrier:
+                hits += 1
+                break
+            copy = re.fullmatch(r"mov (\w+), (\w+)", text)
+            if carrier == register and copy and copy.group(1) == register and copy.group(2) in _REGISTER_ROOT:
+                carrier = copy.group(2)
+                continue
+            break
+    if hits:
+        return None
+    return f"{target} never receives {spec['field']}.{spec['valueField'].partition('::')[2]} in {register}"
+
+
 def _field_load(text: str, offset: int) -> str | None:
     match = re.fullmatch(rf"mov (\w+), \[\w+\+0x{offset:x}\]", text)
     return match.group(1) if match else None
@@ -702,12 +825,21 @@ def _virtual_getter_helper(index: BodyIndex, pointer: int) -> bool:
     second = data.find(lookup, first + len(receiver_slot)) if first >= 0 else -1
     third = data.find(invoke, second + len(lookup)) if second >= 0 else -1
     if first >= 0 and second >= 0 and third >= 0:return True
-    # RDI receiver / RBX slot with an R8 function and RDX MethodInfo. Match
-    # the complete generic entry/lookup/dispatch/epilogue; only the direct
-    # class-init displacement and specialization address are variable.
-    prefix=bytes.fromhex('48895c2408574883ec300fb7d9488bfa488b0a')
-    lookup=bytes.fromhex('488d431448c1e0044803074c8b00488b5008')
-    invoke=bytes.fromhex('488bcf41ffd0488b5c24404883c4305fc3')
+    # RDI receiver / RBX slot (0x30 frame), or RBX receiver / RDI slot (0x20
+    # frame), with an R8 function and RDX MethodInfo. Match the complete
+    # generic entry/lookup/dispatch/epilogue; only the direct class-init
+    # displacement and specialization address are variable.
+    return any(_slot_getter_variant(data, *variant) for variant in (
+        ('48895c2408574883ec300fb7d9488bfa488b0a',
+         '488d431448c1e0044803074c8b00488b5008',
+         '488bcf41ffd0488b5c24404883c4305fc3'),
+        ('48895c2408574883ec200fb7f9488bda488b0a',
+         '488b03488d4f144803c94c8b04c8488b54c808',
+         '488bcb41ffd0488b5c24304883c4205fc3')))
+
+
+def _slot_getter_variant(data: bytes, prefix: str, lookup: str, invoke: str) -> bool:
+    prefix, lookup, invoke = bytes.fromhex(prefix), bytes.fromhex(lookup), bytes.fromhex(invoke)
     if not data.startswith(prefix) or data[len(prefix):len(prefix)+1]!=b'\xe8':return False
     at=len(prefix)+5
     if data[at:at+len(lookup)]!=lookup:return False
@@ -1370,6 +1502,10 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
                         return None
                     break
         return f"{target} never receives {spec['field']} in {register}"
+    if "copiesArgumentValueField" in claim:
+        return _copies_argument_value_field(index, rows, claim["copiesArgumentValueField"])
+    if "passesInlineFieldToCall" in claim:
+        return _passes_inline_field_to_call(index, rows, claim["passesInlineFieldToCall"])
     if "zeroArgumentAt" in claim:
         target, register = claim["zeroArgumentAt"]["call"], claim["zeroArgumentAt"]["register"]
         for position, row in enumerate(rows):

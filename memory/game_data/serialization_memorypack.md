@@ -1162,6 +1162,23 @@ rechecked on every operation; duplicates and missing identities still refuse.
 
 ## BuffData
 
+Installed-build status: the current client stores every BuffData string,
+including root `id` and icon `spritePath`, as a signed StringPool index read
+through the pooled `BeyondReadString` helper, and BuffIconConfig gained a
+twentieth member (`showProgressInEnemyHeadBar`). Re-derived on the installed
+build: the root table (`buff_root_regenerate.py`), BuffIconConfig, the pooled
+BlackboardDouble child (`buff_blackboard_double_native.py`, validator
+re-derives and compares), addingCooldown, dispelConfig, the empty-timeline
+suffix and the structural `buff_actions.Reader` (pooled `byte_payload`; drifted
+EffectAction/SelfRotate/RecoverDashEnergy/CheckSkillType layouts). Still
+prior-build: attributeModifier, stacking, datapair, globalModifier, event maps,
+damage receipts and formatter windows, plus Reader layouts for
+SpawnAbilityEntity, LaunchProjectile and MoveTo; the family gate therefore
+still refuses. Re-pinning hex windows is stopped: the name-derived
+`derived_values`/`wrapper_body_audit` line re-proves counts and write order
+on each build without pins, so remaining Buff gates should move to that line
+(read kinds via claims-style proofs) rather than new window hashes.
+
 Frontier 9's direction-angle actions read the one-byte `clampToXZ` at member 4; `buff_residual_actions.py` owns the stored framing, while historical source cursors still need a current-byte rejoin.
 
 The 30-member root readers (`memorypack/buff.py`, `buff_actions.py`,
@@ -2863,7 +2880,24 @@ export replay; the standalone diagnostics never supply that publication.
 
 `skill_custom_root_motion_regenerate.py` re-proves the v2 25-member plan, including member 9's added boolean and the inlined LayerMask DWORD/Advance(4); the enclosing shared timeline contract remains unmigrated and fail-closed.
 
-SkillData is one 48-member object: field 0 `ActionGroupData`, fields 1-42
+**Current build (StringPool, 49-member root).** The installed client stores
+every string as a signed i32 StringPool index and its SkillData root has 49
+members, so the frozen pinned line (`skill_corpus`, the `skill_timeline_*`
+readers, hard-coded root header 48 and old-build tag literals) refuses at its
+first native gate; migrating its ~230-contract dependency closure would not
+revive it without StringPool threading and the new root. The build-derived
+line covers the family instead: `derived_values` (with the export StringPool)
+frames all files to physical EOF with every `skillId` equal to its filename,
+and `memorypack/wrapper_body_audit.py` proves, for every wrapper the corpus
+reaches, the generated reader's `ThrowInvalidPropertyCount` count and its
+own-member write order against the plan, by name on the selected build with
+no pins. Every SkillData and BuffData file is `nativeOrderChecked`. That is
+names, order and header counts (`direct`); per-member read kinds stay
+`structuralOnly`, and the audit does not promote the frozen family report's
+framing status. The paragraphs below describe the previous build's pinned
+line.
+
+SkillData (previous build) was one 48-member object: field 0 `ActionGroupData`, fields 1-42
 read by a sequential reader derived from the generated wrapper types, and a
 five-member terminal (fields 43-47). A gated immediate-registration site joins
 the Core `ReadValue<T>` key to `GenericMemoryPackFormatter`. That is static

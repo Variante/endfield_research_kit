@@ -3,166 +3,122 @@
 The positive list still needs independent element boundaries.  This reader
 only joins an empty or null list count to the following exact trigger tail.
 
-The selected native join identifies the root call after
-``tagsAfterTriggerExtendBuffAction`` as
-``ReadPackable<List<TimelineActionData>>``, stores it in
-``BuffData.timelineActions``, and then reads and stores ``triggerInterval``
-through a different ``BlackboardDouble`` context. On the source-hash-checked
-empty branch the list consumes exactly its four-byte zero count before that
-exact trigger tail. The receipt removes the suffix-fallback blocker only
-when both the native gate and the cursor joins validate (``conditional``).
-Positive timeline bodies keep a structural endpoint and their
-fallback-ownership blocker.
+Ownership comes entirely from the re-derived root contract
+(``buff_root_no_positive_native``), validated first: its field 26 is the
+``ReadPackable<List<TimelineActionData>>`` call (generic context, call target
+and store into ``BuffData.timelineActions``), and the immediately following
+members 27-29 are the ``BlackboardDouble`` ``triggerInterval`` read and the
+two bool reads. This contract names those root members and the
+BlackboardDouble child contract; it records no address of its own. The
+validator requires the members to be adjacent and of the expected kinds and
+types, and requires the BlackboardDouble contract to validate on the same
+build.
+
+On the empty branch the list consumes exactly its four-byte ``-1``/``0``
+count; the trigger tail is then a pooled BlackboardDouble, two bytes and EOF.
+The receipt removes the suffix-fallback blocker only when both native gates
+and the cursor joins validate (``conditional``). Positive timeline bodies
+keep a structural endpoint and their fallback-ownership blocker.
 """
 from __future__ import annotations
 
-import hashlib
-import json
 import struct
-from typing import Any
+from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from scripts.common import check_installed_native_inputs
-from scripts.game_data.il2cpp.context import method_spec_usage_index
-from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
-from scripts.game_data.il2cpp.protocol import runtime_type_field_offsets, runtime_type_name
-from scripts.game_data.memorypack.buff import read_buff_trigger_interval_bool_tail_exact
+from scripts.game_data.il2cpp.native_image import native_validation_failure, read_reviewed_contract
+from scripts.game_data.memorypack import buff_blackboard_double_native
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+
+if TYPE_CHECKING:
+    from scripts.game_data.string_pool import StringPool
 
 
 LABEL = "buffTimelineEmpty"
-SCHEMA = "endfield.buff-timeline-empty-native-contract.v1"
+SCHEMA = "endfield.buff-timeline-empty-native-contract.v2"
 CONTRACT_PATH = CONTRACTS_DIR / "buff_timeline_empty_native.json"
-ROOT_CONTRACT_PATH = CONTRACTS_DIR / "buff_root_prefix_native.json"
+ROOT_CONTRACT_PATH = CONTRACTS_DIR / "buff_root_no_positive_native.json"
+CHILD_CONTRACT_PATH = buff_blackboard_double_native.CONTRACT_PATH
+TAIL_KINDS = ("list", "object", "bool", "bool")
 
 
 def _contract() -> dict[str, Any]:
-    return read_reviewed_contract(
+    value = read_reviewed_contract(
         CONTRACT_PATH, schema=SCHEMA, status="exact-current-build", label=LABEL
     )[0]
+    if value.get("reviewedDependencies") != [ROOT_CONTRACT_PATH.name, CHILD_CONTRACT_PATH.name]:
+        raise ValueError(f"{LABEL}.contract:dependency-list")
+    return value
 
 
-def _call_target(image: Any, rva: int) -> int:
-    code = image.pe.bytes_at_va(image.pe.image_base + rva, 5)
-    if code[0] != 0xE8:
-        raise ValueError(f"{LABEL}.native:not-direct-call={rva:#x}")
-    return rva + 5 + struct.unpack_from("<i", code, 1)[0]
+def _check_root_tail(contract: dict[str, Any], root: dict[str, Any],
+                     child: dict[str, Any]) -> None:
+    """Require timeline, trigger and the two bools to be the root's last four members."""
+    names = [contract["timelineField"], contract["followingField"], *contract["tailBoolFields"]]
+    tail = root["fields"][-4:]
+    if (root["ownerType"] != contract["ownerType"] or len(root["fields"]) != root["rootMemberCount"]
+            or [row["name"] for row in tail] != names
+            or [row["source"]["kind"] for row in tail] != list(TAIL_KINDS)):
+        raise ValueError(f"{LABEL}.native:root-tail-members")
+    timeline, trigger = tail[0], tail[1]
+    if (timeline["declaredType"] != contract["timelineFieldType"]
+            or timeline["source"]["context"]["argumentType"] != contract["timelineFieldType"]):
+        raise ValueError(f"{LABEL}.native:timeline-type")
+    if (trigger["declaredType"] != contract["followingFieldType"]
+            or trigger["source"]["context"]["argumentType"] != contract["followingFieldType"]
+            or child["wrappedType"] != contract["followingFieldType"]):
+        raise ValueError(f"{LABEL}.native:trigger-type")
+    if {k: v.upper() for k, v in root["nativeInputs"].items()} != \
+            {k: v.upper() for k, v in contract["nativeInputs"].items()} or \
+            {k: v.upper() for k, v in child["nativeInputs"].items()} != \
+            {k: v.upper() for k, v in contract["nativeInputs"].items()}:
+        raise ValueError(f"{LABEL}.native:dependency-native-inputs")
 
 
-def _check_context(image: Any, context: dict[str, Any]) -> None:
-    cell, usage = image.nested_usage_cell(context, label=LABEL)
-    index = method_spec_usage_index(
-        usage, image.registration["methodSpecsCount"],
-        source=str(image.gameassembly), offset=cell,
-    )
-    if index != context["methodSpecIndex"]:
-        raise ValueError(f"{LABEL}.native:method-spec-index={index}")
-    spec = struct.unpack(
-        "<iii", image.pe.bytes_at_va(
-            int(image.registration["methodSpecs"], 16) + index * 12, 12
+def validate_current_native_contract(*, gameassembly: Path | None = None,
+                                     metadata: Path | None = None) -> dict[str, Any]:
+    """Validate the root and BlackboardDouble contracts, then the tail-member join."""
+    from scripts.game_data.memorypack import buff_root_no_positive_native
+    try:
+        contract = _contract()
+        expected = contract["nativeInputs"]
+        gate = check_installed_native_inputs(
+            expected["GameAssembly.dll"], expected["global-metadata.dat"],
+            gameassembly=gameassembly, metadata=metadata,
         )
-    )
-    if list(spec) != context["methodSpec"]:
-        raise ValueError(f"{LABEL}.native:method-spec={spec!r}")
-    method = image.metadata.methods[spec[0]]
-    owner = image.metadata.types[method.declaring_type]
-    if (image.metadata.type_full_name(owner) != context["methodType"]
-            or image.metadata.string(method.name_index) != context["methodName"]):
-        raise ValueError(f"{LABEL}.native:method-identity")
-    instance = image.instantiations.resolve(spec[2])
-    if len(instance.arguments) != 1:
-        raise ValueError(f"{LABEL}.native:method-argument-count")
-    argument = instance.arguments[0]
-    if (argument.raw_type_record_hex != context["argumentRawHex"]
-            or runtime_type_name(
-                image.pe, image.metadata, argument.type_pointer_va
-            ) != context["argumentType"]):
-        raise ValueError(f"{LABEL}.native:method-argument-type")
+        if gate.status != "validated":
+            return {"status": gate.status, "nativeStatus": gate.status, "detail": gate.detail,
+                    "evidenceBoundary": "No named timeline list on missing or changed native inputs."}
+        for name, module in (("root", buff_root_no_positive_native),
+                             ("blackboardDouble", buff_blackboard_double_native)):
+            result = module.validate_current_native_contract(
+                gameassembly=gate.gameassembly, metadata=gate.metadata)
+            if result.get("status") != "validated":
+                return {"status": result.get("status", "invalid"),
+                        "nativeStatus": result.get("status"), "detail": f"{name}: {result.get('detail')}"}
+        _check_root_tail(contract, buff_root_no_positive_native._contract(),
+                         buff_blackboard_double_native._contract())
+        return {"status": "validated", "nativeStatus": "validated",
+                "nativeInputs": expected, "field": contract["timelineField"],
+                "evidenceBoundary": contract["evidenceBoundary"]}
+    except (ValueError, KeyError, IndexError, TypeError, OSError) as error:
+        return native_validation_failure(error, label=LABEL, source_path=CONTRACT_PATH)
 
 
-def validate_current_native_contract() -> dict[str, Any]:
-    """Validate root source contexts, calls, stores, and field types."""
-    contract = _contract()
-    expected = contract["nativeInputs"]
-    gate = check_installed_native_inputs(
-        expected["GameAssembly.dll"], expected["global-metadata.dat"]
-    )
-    if gate.status != "validated":
-        return {"status": gate.status, "nativeStatus": gate.status,
-                "detail": gate.detail,
-                "evidenceBoundary": "No named timeline list on missing or changed native inputs."}
-    unity = gate.gameassembly.parent / "UnityPlayer.dll"
-    if not unity.is_file():
-        return {"status": "missing", "nativeStatus": "missing",
-                "detail": f"{unity} is absent"}
-    if hashlib.sha256(unity.read_bytes()).hexdigest().upper() != expected["UnityPlayer.dll"]:
-        return {"status": "mismatched", "nativeStatus": "mismatched",
-                "detail": "UnityPlayer.dll hash differs"}
-
-    image = open_native_image(gate.gameassembly, gate.metadata)
-    if contract["reviewedDependencies"] != [ROOT_CONTRACT_PATH.name]:
-        raise ValueError(f"{LABEL}.native:dependencies")
-    root = json.loads(ROOT_CONTRACT_PATH.read_text(encoding="utf-8"))
-    if root.get("schemaVersion") != 1 or root["methods"][1] != contract["methods"][0]:
-        raise ValueError(f"{LABEL}.native:root-dependency")
-    image.check_windows(root["codeWindows"][:1], label=LABEL)
-    for method in contract["methods"]:
-        image.validate_method_row(method, label=LABEL)
-    setter = image.metadata.methods[contract["methods"][1][0]]
-    parameters = image.metadata.parameters_for(setter)
-    if len(parameters) != 1:
-        raise ValueError(f"{LABEL}.native:timeline-setter-parameter-count")
-    setter_type_pointer = image.pe.u64_at_va(
-        int(image.registration["types"], 16) + parameters[0].type_index * 8
-    )
-    if runtime_type_name(image.pe, image.metadata, setter_type_pointer) != contract["timelineFieldType"]:
-        raise ValueError(f"{LABEL}.native:timeline-setter-parameter-type")
-    image.check_instruction_windows(
-        [[row["instructionRva"], row["instructionHex"]] for row in (
-            contract["listSourceContext"], contract["followingSourceContext"]
-        )], label=LABEL,
-    )
-    image.check_instruction_windows(contract["rootInstructions"], label=LABEL)
-    _check_context(image, contract["listSourceContext"])
-    _check_context(image, contract["followingSourceContext"])
-    if (_call_target(image, contract["rootInstructions"][0][0]) != contract["listReadTargetRva"]
-            or _call_target(image, contract["rootInstructions"][2][0]) != contract["followingReadTargetRva"]):
-        raise ValueError(f"{LABEL}.native:read-target")
-
-    owners = [row for row in image.metadata.types
-              if image.metadata.type_full_name(row) == contract["ownerType"]]
-    if len(owners) != 1:
-        raise ValueError(f"{LABEL}.native:owner-type-count={len(owners)}")
-    owner = owners[0]
-    offsets = runtime_type_field_offsets(
-        image.metadata, image.pe, image.registration, owner.index
-    )
-    fields = {image.metadata.string(field.name_index): field
-              for field in image.metadata.fields_for(owner)}
-    type_table = int(image.registration["types"], 16)
-    for field_name, type_name, instruction, source_context in (
-        (contract["timelineField"], contract["timelineFieldType"],
-         contract["rootInstructions"][1], contract["listSourceContext"]),
-        (contract["followingField"], contract["followingFieldType"],
-         contract["rootInstructions"][3], contract["followingSourceContext"]),
-    ):
-        field = fields[field_name]
-        pointer = image.pe.u64_at_va(type_table + field.type_index * 8)
-        if (runtime_type_name(image.pe, image.metadata, pointer) != type_name
-                or source_context["argumentType"] != type_name):
-            raise ValueError(f"{LABEL}.native:field-type={field_name}")
-        expected_store = b"\x48\x89\x81" + struct.pack("<I", offsets[field_name])
-        if bytes.fromhex(instruction[1]) != expected_store:
-            raise ValueError(f"{LABEL}.native:field-store={field_name}")
-
-    return {"status": "validated", "nativeStatus": "validated",
-            "nativeInputs": expected, "field": contract["timelineField"],
-            "evidenceBoundary": contract["evidenceBoundary"]}
+def _bool(data: bytes, offset: int, name: str) -> dict[str, Any]:
+    if offset >= len(data):
+        raise ValueError(f"{LABEL}.{name}:truncated")
+    if data[offset] not in (0, 1):
+        raise ValueError(f"{LABEL}.{name}:invalid-bool={data[offset]}")
+    return {"name": name, "start": offset, "end": offset + 1, "value": bool(data[offset])}
 
 
 def decode_empty_timeline_suffix(
-    data: bytes, count_start: int, *, native_validation: dict[str, Any]
+    data: bytes, count_start: int, *, native_validation: dict[str, Any],
+    strings: "StringPool | None" = None,
 ) -> dict[str, Any]:
-    """Require a null/zero list and immediate exact named trigger tail."""
+    """Require a null/zero list and the immediate exact pooled trigger tail to EOF."""
     if native_validation.get("status") != "validated":
         raise ValueError(f"{LABEL}.native:unvalidated")
     if type(count_start) is not int or not 0 <= count_start <= len(data) - 4:
@@ -171,9 +127,13 @@ def decode_empty_timeline_suffix(
     if count not in (-1, 0):
         raise ValueError(f"{LABEL}.count:positive-or-invalid={count}")
     trigger_start = count_start + 4
-    trigger, use_time_dilation, wait_first, end = (
-        read_buff_trigger_interval_bool_tail_exact(data, trigger_start)
-    )
+    trigger = buff_blackboard_double_native.decode_blackboard_double(
+        data, trigger_start, strings=strings, label=f"{LABEL}.triggerInterval")
+    use_time_dilation = _bool(data, trigger["consumedEnd"], "useTimeDilationDt")
+    wait_first = _bool(data, use_time_dilation["end"], "waitFirstTriggerInterval")
+    end = wait_first["end"]
+    if end != len(data):
+        raise ValueError(f"{LABEL}.tail-not-exact={end:#x}")
     return {
         "status": "exact-null-or-empty-list-to-eof",
         "startOffset": count_start, "consumedEnd": trigger_start,
@@ -182,8 +142,8 @@ def decode_empty_timeline_suffix(
         "followingStart": trigger_start,
         "followingEnd": end,
         "triggerInterval": trigger,
-        "useTimeDilationDt": use_time_dilation,
-        "waitFirstTriggerInterval": wait_first,
+        "useTimeDilationDt": use_time_dilation["value"],
+        "waitFirstTriggerInterval": wait_first["value"],
         "wholeTimelineListExact": True,
         "positiveTimelineInteriorExact": False,
     }

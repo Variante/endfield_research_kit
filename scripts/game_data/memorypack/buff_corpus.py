@@ -102,7 +102,6 @@ from scripts.game_data.memorypack import buff_create_input_child_receipt
 from scripts.game_data.memorypack.buff_adding_cooldown import (
     CHILD_CONTRACT_PATH as ADDING_COOLDOWN_CHILD_CONTRACT_PATH,
     CONTRACT_PATH as ADDING_COOLDOWN_CONTRACT_PATH,
-    DEFAULT_DUMMYDLL_ROOT as ADDING_COOLDOWN_DUMMYDLL_ROOT,
     ROOT_CONTRACT_PATH as ADDING_COOLDOWN_ROOT_CONTRACT_PATH,
     decode_adding_cooldown,
     validate_current_native_contract as validate_adding_cooldown_native_contract,
@@ -697,8 +696,7 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             ADDING_COOLDOWN_CONTRACT_PATH,
             ADDING_COOLDOWN_ROOT_CONTRACT_PATH,
             ADDING_COOLDOWN_CHILD_CONTRACT_PATH,
-            ADDING_COOLDOWN_DUMMYDLL_ROOT / 'generation.json',
-            ADDING_COOLDOWN_DUMMYDLL_ROOT / 'MemoryPack.Beyond.dll',
+            Path(decode_adding_cooldown.__code__.co_filename),
         )
         dispel_config_sources = (
             DISPEL_CONFIG_CONTRACT_PATH,
@@ -719,9 +717,6 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             Path(buff_root_no_positive.__file__),
             Path(buff_root_no_positive_native.__file__),
             buff_root_no_positive_native.CONTRACT_PATH,
-            buff_root_no_positive_native.ROOT_CONTRACT_PATH,
-            buff_root_no_positive_native.INT_CONTRACT_PATH,
-            buff_root_no_positive_native.PROVIDER_CONTRACT_PATH,
             buff_datapair_native.CONTRACT_PATH,
             buff_datapair_native.ROOT_CONTRACT_PATH,
             buff_global_modifier_receipt.CONTRACT_PATH,

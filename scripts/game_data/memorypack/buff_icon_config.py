@@ -1,12 +1,21 @@
 """Exact current-build reader for BuffData's nested ``iconConfig`` field.
 
-On the authenticated build the generated 19-member
-``BuffIconConfigForMemoryPack`` wrapper and its selected reader close the
-field-14 range exactly at the independently accepted ``id`` marker. The
-order-priority value is a direct twelve-byte native-value read: a boolean,
-three preserved padding bytes, a signed priority value and an enum-like
-DWORD. The remaining members are the sprite path, three enum-like DWORDs and
-fourteen booleans, in generated setter order. A null wrapper is one ``FF``
+On the authenticated build the generated ``BuffIconConfigForMemoryPack``
+wrapper and its selected reader close the field-14 range exactly at the
+independently accepted ``id`` marker. The member count is not a constant of
+this module: the contract records the reader's own ``cmp r14b, N`` gate
+(20 on the pinned build, which inserted ``showProgressInEnemyHeadBar``
+between ``showInSquadIcon`` and ``showProgressInHpBar``; the previous build
+had 19) and the generated setter order. The order-priority value is a direct
+twelve-byte native-value read: a boolean, three preserved padding bytes, a
+signed priority value and an enum-like DWORD. ``spritePath`` is one signed
+StringPool index (``-1`` empty, ``-2`` null): the contract records the
+reader's call into the pooled ``BeyondReadString`` helper, and the validator
+re-proves that helper through ``pooled_source_helper``. Passing the export's
+own ``StringPool`` resolves the text; without it only the index is reported.
+The remaining members are three enum-like DWORDs (``abnormalColorType``,
+``charHpBarVfxType``, ``iconStyleInSquad``) and booleans, in generated setter
+order; every member past ``iconStyleInSquad`` is a boolean read. A null wrapper is one ``FF``
 byte. Without the validated contract, ``buff.frame_buff_named_middle``
 keeps ``iconConfig`` as one named opaque range instead.
 
@@ -16,11 +25,16 @@ presentation behavior and UI ownership do not follow from the field names.
 from __future__ import annotations
 
 import struct
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
+from scripts.game_data.memorypack import pooled_source_helper
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.string_pool import resolve_string_pool_index
+
+if TYPE_CHECKING:
+    from scripts.game_data.string_pool import StringPool
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "buff_icon_config_native.json"
@@ -48,6 +62,19 @@ def validate_current_native_contract() -> dict[str, Any]:
         raise ValueError(f"{LABEL}.native:code-registration={image.code_registration:#x}")
     validated_methods = [image.validate_method_row(row, label=LABEL) for row in contract["methods"]]
     image.check_windows(contract["codeWindows"], label=LABEL)
+    gate_row = contract["memberCountInstruction"]
+    image.check_instruction_windows([[gate_row["rva"], gate_row["hex"]]], label=LABEL)
+    count = gate_row["memberCount"]
+    if bytes.fromhex(gate_row["hex"])[-1] != count or len(contract["selectedReadOrder"]) != count:
+        raise ValueError(f"{LABEL}.native:member-count-gate")
+    call = contract["spritePathReadCall"]
+    image.check_instruction_windows([[call["rva"], call["hex"]]], label=LABEL)
+    raw = bytes.fromhex(call["hex"])
+    if raw[0] != 0xE8 or call["rva"] + 5 + struct.unpack_from("<i", raw, 1)[0] != call["targetRva"]:
+        raise ValueError(f"{LABEL}.native:sprite-path-call-target")
+    pooled = pooled_source_helper.validate_on_image(
+        image, image.pe.image_base + call["targetRva"], expected
+    )
     for wrapper in contract["wrappers"]:
         owner = image.metadata.types[wrapper["typeDefinition"]]
         if image.metadata.type_full_name(owner) != wrapper["typeName"]:
@@ -58,6 +85,7 @@ def validate_current_native_contract() -> dict[str, Any]:
         "status": "validated",
         "methodIndices": validated_methods,
         "nativeInputs": contract["nativeInputs"],
+        "spritePathEncoding": pooled["wireEncoding"],
     }
 
 
@@ -67,6 +95,7 @@ def decode_icon_config(
     limit: int,
     *,
     require_limit_end: bool = True,
+    strings: "StringPool | None" = None,
 ) -> dict[str, Any]:
     """Decode one BuffIconConfig wrapper within ``limit``.
 
@@ -93,7 +122,8 @@ def decode_icon_config(
             "fields": [],
             "wholeValueExact": True,
         }
-    if member_count != 19:
+    expected_count = contract["memberCountInstruction"]["memberCount"]
+    if member_count != expected_count:
         raise ValueError(f"buffIconConfig.member-count:{member_count}")
 
     fields: list[dict[str, Any]] = []
@@ -134,21 +164,19 @@ def decode_icon_config(
     )
 
     field_start = offset
-    need(4, "spritePath.length")
-    string_length = struct.unpack_from("<I", data, offset)[0]
+    need(4, "spritePath.poolIndex")
+    pool_index = struct.unpack_from("<i", data, offset)[0]
     offset += 4
-    if string_length == 0xFFFFFFFF:
-        sprite_path = None
+    if pool_index < -2:
+        raise ValueError(f"buffIconConfig.spritePath.poolIndex:{pool_index}")
+    sprite_extra: dict[str, Any] = {"poolIndex": pool_index, "encoding": "int32-pool-index"}
+    sprite_path: str | None = None
+    if pool_index in (-1, -2) or strings is not None:
+        sprite_path = resolve_string_pool_index(pool_index, strings, "buffIconConfig.spritePath")
+        sprite_extra["resolved"] = True
     else:
-        if string_length > 16_384:
-            raise ValueError(f"buffIconConfig.spritePath.length:{string_length}")
-        need(string_length, "spritePath.bytes")
-        try:
-            sprite_path = data[offset : offset + string_length].decode("utf-8")
-        except UnicodeDecodeError as exc:
-            raise ValueError("buffIconConfig.spritePath:utf8") from exc
-        offset += string_length
-    field("spritePath", field_start, sprite_path, byteLength=None if sprite_path is None else string_length)
+        sprite_extra["resolved"] = False
+    field("spritePath", field_start, sprite_path, **sprite_extra)
 
     def read_u32(name: str) -> None:
         nonlocal offset
@@ -174,19 +202,8 @@ def decode_icon_config(
     read_bool("forceRaiseIconEvent")
     read_bool("hasCharHpBarVfxType")
     read_u32("iconStyleInSquad")
-    for name in (
-        "onlyShowForMainCharacter",
-        "playStrongInAnimation",
-        "showDirectlyInHeadBuff",
-        "showInHeadBarAttached",
-        "showInHeadBarCommon",
-        "showInSquadIcon",
-        "showProgressInHpBar",
-        "showProgressInNormalSkillButton",
-        "showProgressInUltimateSkillButton",
-        "showWarningBackground",
-        "useWeakProgressInNormalSkillButton",
-    ):
+    order = contract["selectedReadOrder"]
+    for name in order[order.index("iconStyleInSquad") + 1 :]:
         read_bool(name)
     if require_limit_end and offset != limit:
         raise ValueError(f"buffIconConfig.eof:expected={limit} actual={offset}")

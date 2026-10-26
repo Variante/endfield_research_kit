@@ -43,7 +43,7 @@ from scripts.game_data.memorypack import buff_event_maps
 import hashlib
 import struct
 from pathlib import PurePosixPath
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from scripts.game_data.memorypack import (
     buff_adding_cooldown,
@@ -84,7 +84,6 @@ from scripts.game_data.memorypack.buff import (
     read_buff_blackboard_float_raw_field_bounded,
     read_buff_blackboard_int_field,
     read_buff_bool_field,
-    read_buff_memorypack_utf8_string_strict_bounded,
 )
 from scripts.game_data.memorypack.buff_actions import event_prefix, root_continuation
 from scripts.game_data.memorypack.buff_residual_actions import (
@@ -95,6 +94,10 @@ from scripts.game_data.memorypack.buff_root_no_positive_native import (
     _contract as _native_contract,
     validate_current_native_contract as validate_root_native,
 )
+from scripts.game_data.string_pool import resolve_string_pool_index
+
+if TYPE_CHECKING:
+    from scripts.game_data.string_pool import StringPool
 
 
 CHILD_VALIDATORS = {
@@ -537,10 +540,11 @@ def validate_positive_damage_native_contract(
 def decode_no_positive_buff(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
+    strings: "StringPool | None" = None,
 ) -> dict[str, Any]:
     """Decode the established null/empty and DataPair/GlobalModifier cohort."""
     return _decode_buff(
-        data, source=source, expected_sha256=expected_sha256,
+        data, source=source, expected_sha256=expected_sha256, strings=strings,
         native_validation=native_validation, positive_damage_validation=None,
     )
 
@@ -548,11 +552,12 @@ def decode_no_positive_buff(
 def decode_positive_damage_buff(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
+    strings: "StringPool | None" = None,
     positive_damage_validation: dict[str, Any],
 ) -> dict[str, Any]:
     """Decode selected conditions and processors in exact damage child roots."""
     return _decode_buff(
-        data, source=source, expected_sha256=expected_sha256,
+        data, source=source, expected_sha256=expected_sha256, strings=strings,
         native_validation=native_validation,
         positive_damage_validation=positive_damage_validation,
     )
@@ -561,6 +566,7 @@ def decode_positive_damage_buff(
 def decode_selected_positive_heal_buff(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
+    strings: "StringPool | None" = None,
     positive_heal_validation: dict[str, Any],
     outer_row: dict[str, Any],
 ) -> dict[str, Any]:
@@ -570,7 +576,7 @@ def decode_selected_positive_heal_buff(
     exact set until that gate is deliberately rebuilt.
     """
     result = _decode_buff(
-        data, source=source, expected_sha256=expected_sha256,
+        data, source=source, expected_sha256=expected_sha256, strings=strings,
         native_validation=native_validation, positive_damage_validation=None,
         positive_heal_validation=positive_heal_validation, outer_row=outer_row,
     )
@@ -583,12 +589,13 @@ def decode_selected_positive_heal_buff(
 def decode_selected_break_passing_buff(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
+    strings: "StringPool | None" = None,
     break_passing_validation: dict[str, Any],
     outer_row: dict[str, Any],
 ) -> dict[str, Any]:
     """Reread one named positive buffEventAction source through physical EOF."""
     result = _decode_buff(
-        data, source=source, expected_sha256=expected_sha256,
+        data, source=source, expected_sha256=expected_sha256, strings=strings,
         native_validation=native_validation, positive_damage_validation=None,
         break_passing_validation=break_passing_validation, outer_row=outer_row,
     )
@@ -601,12 +608,13 @@ def decode_selected_break_passing_buff(
 def decode_selected_empty_condition_tag_ten_buff(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
+    strings: "StringPool | None" = None,
     empty_tag_ten_validation: dict[str, Any],
     outer_row: dict[str, Any],
 ) -> dict[str, Any]:
     """Reread one zero-action, tag-ten damage modifier source to EOF."""
     result = _decode_buff(
-        data, source=source, expected_sha256=expected_sha256,
+        data, source=source, expected_sha256=expected_sha256, strings=strings,
         native_validation=native_validation, positive_damage_validation=None,
         empty_tag_ten_validation=empty_tag_ten_validation, outer_row=outer_row,
     )
@@ -619,12 +627,13 @@ def decode_selected_empty_condition_tag_ten_buff(
 def decode_selected_sword_damage_buff(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
+    strings: "StringPool | None" = None,
     sword_validation: dict[str, Any],
     outer_row: dict[str, Any],
 ) -> dict[str, Any]:
     """Compose one recursive sword condition into the sole thirty-field reader."""
     result = _decode_buff(
-        data, source=source, expected_sha256=expected_sha256,
+        data, source=source, expected_sha256=expected_sha256, strings=strings,
         native_validation=native_validation, positive_damage_validation=None,
         sword_validation=sword_validation, outer_row=outer_row,
     )
@@ -637,6 +646,7 @@ def decode_selected_sword_damage_buff(
 def _decode_buff(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
+    strings: "StringPool | None" = None,
     positive_damage_validation: dict[str, Any] | None,
     positive_heal_validation: dict[str, Any] | None = None,
     break_passing_validation: dict[str, Any] | None = None,
@@ -1479,18 +1489,21 @@ def _decode_buff(
     else:
         cursor = count_null_or_empty(cursor, 13)
     start = cursor
-    child = buff_icon_config.decode_icon_config(data, start, len(data), require_limit_end=False)
+    child = buff_icon_config.decode_icon_config(data, start, len(data), require_limit_end=False,
+                                                strings=strings)
     cursor = child["consumedEnd"]
     add(14, start, cursor, child=child)
 
     start = cursor
-    buff_id, cursor = read_buff_memorypack_utf8_string_strict_bounded(
-        data, start, len(data), "id", max_length=512,
-    )
+    if start + 4 > len(data):
+        raise ValueError("buffRootNoPositive.id:truncated-pool-index")
+    pool_index = struct.unpack_from("<i", data, start)[0]
+    cursor = start + 4
+    buff_id = resolve_string_pool_index(pool_index, strings, "buffRootNoPositive.id")
     expected_id = PurePosixPath(source).stem
     if buff_id != expected_id:
         raise ValueError(f"buffRootNoPositive.id:expected={expected_id!r} actual={buff_id!r}")
-    add(15, start, cursor, value=buff_id)
+    add(15, start, cursor, value=buff_id, poolIndex=pool_index, encoding="int32-pool-index")
     cursor = count_null_or_empty(cursor, 16)
     for index in (17, 18):
         start = cursor
@@ -1591,9 +1604,10 @@ def _decode_buff(
 
 def decode_shared_event_root(data: bytes, *, source: str, expected_sha256: str,
                              native_validation: dict[str, Any],
-                             event_maps_validation: dict[str, Any]) -> dict[str, Any]:
+                             event_maps_validation: dict[str, Any],
+                             strings: "StringPool | None" = None) -> dict[str, Any]:
     """Prove both event fields and all remaining original root bytes."""
-    result = _decode_buff(data, source=source, expected_sha256=expected_sha256,
+    result = _decode_buff(data, source=source, expected_sha256=expected_sha256, strings=strings,
                           native_validation=native_validation, positive_damage_validation=None,
                           event_maps_validation=event_maps_validation)
     result["schema"] = "endfield.buff-root-shared-event-receipt.v1"

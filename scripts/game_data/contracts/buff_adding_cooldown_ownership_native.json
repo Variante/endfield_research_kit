@@ -1,40 +1,26 @@
 {
-  "schema": "endfield.buff-adding-cooldown-ownership-native-contract.v1",
+  "schema": "endfield.buff-adding-cooldown-ownership-native-contract.v2",
   "status": "exact-current-build",
   "nativeInputs": {
-    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
   },
   "reviewedDependencies": [
-    "buff_root_prefix_native.json",
-    "buff_35_native.json"
+    "buff_root_no_positive_native.json",
+    "buff_blackboard_double_native.json"
   ],
-  "rootMethod": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack.Deserialize",
-  "rootWrapper": "Beyond_Gameplay_Core_BuffDataForMemoryPack",
   "rootFieldIndex": 1,
-  "rootSetter": ["set___addingCooldown__", "Blackboard.BlackboardDouble"],
-  "rootContextIndex": 1,
   "rootContextType": "Beyond.Blackboard+BlackboardDouble",
-  "instanceField": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack::__instance",
   "destinationField": "Beyond.Gameplay.Core.BuffData::addingCooldown",
-  "sourceToFieldInstructions": [
-    [53281004, "E89F5BADFF", "call immediately after BlackboardDouble source context"],
-    [53281018, "488B4B10", "load wrapped BuffData instance after source call"],
-    [53281031, "48894128", "store returned object in BuffData.addingCooldown"]
+  "selectedReadOrder": [
+    "blackboardKey",
+    "useBlackboardKey",
+    "value"
   ],
-  "nestedWrapper": "Beyond_Blackboard_BlackboardDoubleForMemoryPack",
-  "nestedBaseWrapper": "Beyond_Blackboard_BlackboardParamBase_float_double_ForMemoryPack",
-  "nestedSetters": [
-    ["set___blackboardKey__", "string"],
-    ["set___useBlackboardKey__", "bool"],
-    ["set___value__", "float"]
-  ],
-  "selectedReadOrder": ["blackboardKey", "useBlackboardKey", "value"],
   "evidenceBoundary": {
-    "exact": "The selected native pair, root and nested method identities, their reviewed code windows, the BlackboardDouble generic source context, and the direct call-result store to the installed BuffData.addingCooldown field are checked byte-for-byte or against current MetadataRegistration offsets.",
-    "direct": "The current generated wrapper setter declarations name blackboardKey, useBlackboardKey, and value in source order; the separately reviewed nested reader consumes a nullable signed-length byte payload, one byte, and four raw source bytes.",
-    "conditional": "The child layout describes the selected reader and authenticated stored bytes; live generic provider selection is not observed.",
-    "unresolved": "String decoder parity, runtime blackboard lookup, evaluated cooldown, alternate BuffData branches, and whole-BuffData recursive schema remain open."
+    "exact": "The root contract's BlackboardDouble ReadValue call and its store to BuffData.addingCooldown, and the BlackboardDouble reader contract (member header, pooled key, bool and Single reads and stores in generated setter order), are each re-derived and validated on the selected build.",
+    "conditional": "The child layout describes the selected normal reader paths on authenticated stored bytes; live generic provider selection and cold/refill paths are not observed.",
+    "unresolved": "Runtime blackboard lookup, useBlackboardKey semantics, evaluated cooldown, and whole-BuffData recursive schema remain open."
   }
 }

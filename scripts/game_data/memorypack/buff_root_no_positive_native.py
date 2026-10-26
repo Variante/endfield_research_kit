@@ -1,20 +1,23 @@
 """Selected BuffData root read order for records without recursive list children.
 
-The reviewed root body already has a complete native code window. This
-contract adds the per-member source-call, generic argument, and destination
-store joins. The byte reader in ``buff_root_no_positive`` uses these facts only
-for the null/empty recursive collection branch.
+``buff_root_no_positive_native.json`` (schema v2) is self-contained: it pins
+the root ``Deserialize`` method row, every range of its AMD64 unwind-chain
+family as a hashed code window, the ``cmp bpl,<memberCount>`` header, and for
+each of the 30 generated setters the source read, generic method-spec context
+and destination store inside the contiguous primary body. ``id`` is a
+``pooled-string`` read: a signed StringPool index whose helper target is
+re-proved through ``pooled_source_helper`` (the installed build no longer
+writes inline UTF-8 strings). Helper call targets must be uniform per kind.
 
-``buff_root_no_positive_native.json`` joins all 30 root source reads,
-generic contexts, generated setters and destination stores to the installed
-native body; the positive branches in ``buff_root_no_positive`` reuse this
-root order and add their own child contracts. A different installed build
-yields no rows.
+The byte reader in ``buff_root_no_positive`` uses these facts for the
+null/empty recursive collection branch; its positive branches reuse this root
+order and add their own child contracts. The contract is regenerated, never
+hand-carried, by ``python -m scripts.game_data.buff_root_regenerate --write``.
+A different installed build yields no rows (``mismatched``/``missing``).
 """
 from __future__ import annotations
 
 import hashlib
-import json
 import struct
 from functools import lru_cache
 from pathlib import Path
@@ -24,15 +27,14 @@ from scripts.common import check_installed_native_inputs
 from scripts.game_data.il2cpp.context import method_spec_record, method_spec_usage_index
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.il2cpp.protocol import runtime_type_field_offsets, runtime_type_name
+from scripts.game_data.memorypack import pooled_source_helper
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 
 LABEL = "buffRootNoPositive"
 CONTRACT_PATH = CONTRACTS_DIR / "buff_root_no_positive_native.json"
-ROOT_CONTRACT_PATH = CONTRACTS_DIR / "buff_root_prefix_native.json"
-INT_CONTRACT_PATH = CONTRACTS_DIR / "buff_16b_native.json"
-PROVIDER_CONTRACT_PATH = CONTRACTS_DIR / "buff_b4_native.json"
-CALL_KINDS = {"list", "object", "packed-gameplay-tag-array", "bool", "string"}
+SCHEMA = "endfield.buff-root-no-positive-native-contract.v2"
+CALL_KINDS = {"list", "object", "packed-gameplay-tag-array", "bool", "pooled-string"}
 INLINE_KINDS = {"raw8", "byte"}
 
 
@@ -40,17 +42,15 @@ INLINE_KINDS = {"raw8", "byte"}
 def _contract() -> dict[str, Any]:
     contract, _digest = read_reviewed_contract(
         CONTRACT_PATH,
-        schema="endfield.buff-root-no-positive-native-contract.v1",
+        schema=SCHEMA,
         status="exact-current-build",
         label=LABEL,
     )
     fields = contract.get("fields")
     if (
-        contract.get("reviewedDependencies", [None])[0] != ROOT_CONTRACT_PATH.name
-        or INT_CONTRACT_PATH.name not in contract.get("reviewedDependencies", ())
-        or PROVIDER_CONTRACT_PATH.name not in contract.get("reviewedDependencies", ())
-        or contract.get("conditionalProviderEvidence", {}).get("contract") != PROVIDER_CONTRACT_PATH.name
-        or not isinstance(fields, list)
+        not isinstance(fields, list)
+        or not contract.get("codeWindows")
+        or contract.get("bodyRange", [None])[0] != contract.get("rootMethod", [None] * 4)[3]
         or contract.get("rootMemberCount") != len(fields)
         or len(fields) != 30
         or [f.get("index") for f in fields] != list(range(len(fields)))
@@ -131,24 +131,15 @@ def validate_current_native_contract(*, gameassembly: Path | None = None,
         return {"status": "mismatched", "detail": "UnityPlayer.dll hash differs"}
 
     image = open_native_image(gate.gameassembly, gate.metadata)
-    root = json.loads(ROOT_CONTRACT_PATH.read_bytes())
-    child_int = json.loads(INT_CONTRACT_PATH.read_bytes())
-    provider = json.loads(PROVIDER_CONTRACT_PATH.read_bytes())
-    if (
-        root.get("schemaVersion") != 1 or child_int.get("schemaVersion") != 1
-        or provider.get("schemaVersion") != 1
-        or root["methods"][1] != contract["rootMethod"]
-        or root["codeWindows"][0]["startRva"] != contract["rootMethod"][3]
-        or contract["conditionalProviderEvidence"]["codeWindowIndices"] != [9, 10, 11]
-    ):
-        raise ValueError(f"{LABEL}.native:reviewed-dependency")
-    for method in root["methods"]:
-        image.validate_method_row(method, label=LABEL)
-    image.check_windows(root["codeWindows"], label=LABEL)
-    image.check_windows([provider["codeWindows"][index] for index in (9, 10, 11)], label=LABEL)
-    for method in child_int["methods"][2:]:
-        image.validate_method_row(method, label=LABEL)
-    image.check_windows(child_int["codeWindows"][4:], label=LABEL)
+    image.validate_method_row(contract["rootMethod"], label=LABEL)
+    image.check_windows(contract["codeWindows"], label=LABEL)
+    body_start, root_end = contract["bodyRange"]
+    covered = body_start
+    for window in sorted(contract["codeWindows"], key=lambda w: w["startRva"]):
+        if window["startRva"] == covered:
+            covered = window["endRva"]
+    if covered != root_end:
+        raise ValueError(f"{LABEL}.native:body-range")
     int_child = contract["blackboardIntChild"]
     int_wrapper = image.metadata.types[int_child["wrapperTypeDefinition"]]
     int_base = image.metadata.types[int_child["baseTypeDefinition"]]
@@ -175,7 +166,6 @@ def validate_current_native_contract(*, gameassembly: Path | None = None,
                     for row in image.metadata.fields_for(owner)}
     helper_targets: dict[str, set[int]] = {}
     previous = contract["headerInstruction"][0]
-    root_end = root["codeWindows"][0]["endRva"]
     for field in contract["fields"]:
         name = field["name"]
         source = field["source"]
@@ -207,6 +197,8 @@ def validate_current_native_contract(*, gameassembly: Path | None = None,
             if target != source["targetRva"]:
                 raise ValueError(f"{LABEL}.native:source-target={name}")
             helper_targets.setdefault(kind, set()).add(target)
+            if kind == "pooled-string":
+                pooled_source_helper.validate_on_image(image, image.pe.image_base + target, inputs)
             context = source.get("context")
             if kind in {"list", "object", "packed-gameplay-tag-array"}:
                 if (not isinstance(context, dict)

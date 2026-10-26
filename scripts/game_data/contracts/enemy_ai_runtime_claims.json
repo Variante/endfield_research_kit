@@ -1,0 +1,353 @@
+{
+  "schema": "endfield.enemy-ai-runtime-claims.v1",
+  "groups": {
+    "graphSelection": {
+      "methods": {
+        "EnemyAIComponent.OnStart": {
+          "type": "Beyond.Gameplay.AI.EnemyAIComponent",
+          "method": "OnStart",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AI.EnemyAIBrain.InitData",
+                "Beyond.Gameplay.AI.EnemyAIBrain.SwitchAIMode"
+              ],
+              "ordered": true
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.AIManager.RegisterEnemy"
+              ]
+            }
+          ],
+          "contract": "Enemy AI start initializes the brain from the component before the first mode switch and registers the enemy with the AI manager. Which mode the switch selects is a runtime argument."
+        },
+        "EnemyAIBrain.InitData": {
+          "type": "Beyond.Gameplay.AI.EnemyAIBrain",
+          "method": "InitData",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AI.Config.EnemyAIBlackboard.GetMergedData",
+                "Beyond.Gameplay.AI.EnemyAIMode.InitData"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Brain initialization merges the selected AI blackboard (the AI config aiBB) before it initializes each enemy AI mode from that merged mode data."
+        },
+        "EnemyAIMode.InitData": {
+          "type": "Beyond.Gameplay.AI.EnemyAIMode",
+          "method": "InitData",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AIManager.GetClassFromPool",
+                "Beyond.Gameplay.AI.AIGraph.AssignData",
+                "Beyond.Gameplay.AI.EnemyAIGraph.InitBehavior",
+                "Beyond.Gameplay.AI.AIGraph.Init"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Each mode takes a pooled graph object, assigns the mode's graph data to it, initializes its behaviours and then the graph. The concrete graph class is chosen from pooled type data at run time."
+        },
+        "AIGraph.AssignData": {
+          "type": "Beyond.Gameplay.AI.AIGraph",
+          "method": "AssignData",
+          "claims": [
+            {
+              "callsVirtualGetter": "Beyond.Gameplay.AI.AIGraph+AIGraphData.get_graph"
+            },
+            {
+              "writesField": "Beyond.Gameplay.AI.AIGraph::m_graph"
+            },
+            {
+              "readsField": "Beyond.Gameplay.AI.AIGraph+AIGraphData::tickInterval"
+            },
+            {
+              "writesField": "Beyond.Gameplay.AI.AIGraph::m_tickInterval"
+            }
+          ],
+          "contract": "Graph assignment stores the graph data's virtual graph getter result as the graph to run, and copies its tick interval."
+        },
+        "EnemyBattleGraphData.get_graph": {
+          "type": "Beyond.Gameplay.AI.EnemyBattleGraph+EnemyBattleGraphData",
+          "method": "get_graph",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.AI.EnemyBattleGraph+EnemyBattleGraphData::canvasGraph"
+            }
+          ],
+          "contract": "The battle graph mode's graph getter returns its serialized canvasGraph reference."
+        },
+        "EnemySettlementBattleGraphData.get_graph": {
+          "type": "Beyond.Gameplay.AI.EnemySettlementBattleGraph+EnemySettlementBattleGraphData",
+          "method": "get_graph",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.AI.EnemySettlementBattleGraph+EnemySettlementBattleGraphData::canvasGraph"
+            }
+          ],
+          "contract": "The settlement battle graph mode's graph getter returns its serialized canvasGraph reference."
+        },
+        "EnemyDefendBattleGraphData.get_graph": {
+          "type": "Beyond.Gameplay.AI.EnemyDefendBattleGraph+EnemyDefendBattleGraphData",
+          "method": "get_graph",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.AI.EnemyDefendBattleGraph+EnemyDefendBattleGraphData::canvasGraph"
+            }
+          ],
+          "contract": "The defend battle graph mode's graph getter returns its serialized canvasGraph reference (after an iFix patch check)."
+        },
+        "EnemyAIGraph.LoadGraph": {
+          "type": "Beyond.Gameplay.AI.EnemyAIGraph",
+          "method": "LoadGraph",
+          "claims": [
+            {
+              "passesFieldToCall": {
+                "field": "Beyond.Gameplay.AI.AIGraph::m_graph",
+                "register": "rcx",
+                "call": "UnityEngine.Object.get_name"
+              }
+            },
+            {
+              "passesFieldToCall": {
+                "field": "Beyond.Gameplay.AI.AIGraph::m_graph",
+                "register": "r9",
+                "call": "Beyond.Gameplay.AIManager.GetAIGraphDataAsync"
+              }
+            },
+            {
+              "calls": [
+                "UnityEngine.Object.get_name",
+                "Beyond.Gameplay.AIManager.GetAIGraphDataAsync"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "The enemy graph load passes the assigned graph asset as the graph argument, and its name as the id, to the AI manager's async graph provider. The virtual dispatch site that invokes this override is not claimed."
+        },
+        "AIManager.GetAIGraphDataAsync": {
+          "type": "Beyond.Gameplay.AIManager",
+          "method": "GetAIGraphDataAsync",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AIManager._GetAIGraphDataFromPool",
+                "NodeCanvas.Framework.GraphOwner.StartBehaviour"
+              ],
+              "ordered": true
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.AIManager._CreateAIGraphData",
+                "NodeCanvas.Framework.GraphOwner.StartBehaviourAsync"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "The provider either reuses a pooled graph owner and starts it, or creates one and starts it asynchronously. Pool hits and async completion are run-time state."
+        }
+      }
+    },
+    "graphScheduling": {
+      "methods": {
+        "EnemyAIBrain.SwitchAIMode": {
+          "type": "Beyond.Gameplay.AI.EnemyAIBrain",
+          "method": "SwitchAIMode",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AI.AIMode`1.ExitMode",
+                "Beyond.Gameplay.AI.AIMode`1.EnterMode"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "A mode switch exits the current mode before entering the selected one."
+        },
+        "AIGraph.Enter": {
+          "type": "Beyond.Gameplay.AI.AIGraph",
+          "method": "Enter",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AI.AIGraph._ResetGraph",
+                "Beyond.Gameplay.AI.AIGraph._StartGraph"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Entering a mode graph resets and then starts it."
+        },
+        "EnemyAIComponent.AITick": {
+          "type": "Beyond.Gameplay.AI.EnemyAIComponent",
+          "method": "AITick",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AI.EnemyAIBrain.Tick"
+              ]
+            }
+          ],
+          "contract": "The enemy AI tick drives the brain tick."
+        },
+        "EnemyAIBrain.Tick": {
+          "type": "Beyond.Gameplay.AI.EnemyAIBrain",
+          "method": "Tick",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AI.AIGraph.Tick"
+              ]
+            }
+          ],
+          "contract": "The brain tick ticks the current mode graph."
+        },
+        "AIGraph.Tick": {
+          "type": "Beyond.Gameplay.AI.AIGraph",
+          "method": "Tick",
+          "claims": [
+            {
+              "calls": [
+                "NodeCanvas.Framework.GraphOwner.get_isRunning",
+                "NodeCanvas.Framework.Graph.UpdateGraph"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "A graph tick updates the NodeCanvas graph only when its owner is running; tick throttling and pause are run-time state."
+        }
+      }
+    },
+    "taskToSkill": {
+      "methods": {
+        "CastSkill.OnExecute": {
+          "type": "Beyond.Gameplay.AI.Action.CastSkill",
+          "method": "OnExecute",
+          "claims": [
+            {
+              "passesFieldToCall": {
+                "field": "Beyond.Gameplay.AI.Action.CastSkill::skillId",
+                "register": "rcx",
+                "call": "NodeCanvas.Framework.BBParameter`1.get_value"
+              }
+            },
+            {
+              "feedsReferenceResultToCall": {
+                "fromCall": "NodeCanvas.Framework.BBParameter`1.get_value",
+                "toCall": "Beyond.Gameplay.Core.AbilitySystem.TryCastSkill",
+                "toParameter": "skillId",
+                "receiverField": "Beyond.Gameplay.AI.Action.CastSkill::skillId"
+              }
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.AbilitySystem.TryCastSkill",
+                "NodeCanvas.Framework.ActionTask.EndAction"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "The CastSkill behaviour-tree task resolves its skillId blackboard parameter and passes that string as the skill id of the agent's AbilitySystem.TryCastSkill. The stored value may be a blackboard variable reference, so the cast id is the resolved value, not necessarily the serialized literal."
+        },
+        "AbilitySystem.TryCastSkill": {
+          "type": "Beyond.Gameplay.Core.AbilitySystem",
+          "method": "TryCastSkill",
+          "parametersPrefix": [
+            "System.String"
+          ],
+          "claims": [
+            {
+              "calls": [
+                "System.Collections.Generic.Dictionary`2.ContainsKey",
+                "Beyond.Gameplay.Core.AbilitySystem._InitSkillIfNot",
+                "System.Collections.Generic.Dictionary`2.get_Item",
+                "Beyond.Gameplay.Core.Ability.AssignSkillCastInfo"
+              ],
+              "ordered": true
+            },
+            {
+              "calls": [
+                "Proto.BATTLE_SKILL_START_CAST_OP_DATA.SetTargetRef",
+                "Beyond.Gameplay.Core.BattleManager+ServerReporter.CreateServerOp"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "The string cast looks the id up in the entity's skill dictionary, lazily initializes the skill, assigns cast info and reports a BATTLE_SKILL_START_CAST op. Which entity skills are registered, and whether the server accepts the op, are not proved."
+        },
+        "CastSeqSkill.OnExecute": {
+          "type": "Beyond.Gameplay.AI.Action.CastSeqSkill",
+          "method": "OnExecute",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AI.EnemyCommonCastSkill.Enter"
+              ]
+            }
+          ],
+          "contract": "The sequence-skill task hands its EnemyAISkillData to the common enemy cast routine."
+        },
+        "EnemyCommonCastSkill.Enter": {
+          "type": "Beyond.Gameplay.AI.EnemyCommonCastSkill",
+          "method": "Enter",
+          "claims": [
+            {
+              "copiesArgumentValueField": {
+                "register": "r8",
+                "field": "Beyond.Gameplay.AI.EnemyCommonCastSkill::m_skillData",
+                "valueField": "Beyond.Gameplay.AI.Config.EnemyAISkillData::skillID"
+              }
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.AI.EnemyCommonCastSkill._ResetRuntimeData",
+                "Beyond.Gameplay.AI.EnemyCommonCastSkill.Tick"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "Entering a common cast copies the EnemyAISkillData argument (including skillID) into the routine's inline m_skillData, then ticks the routine."
+        },
+        "EnemyCommonCastSkill.Tick": {
+          "type": "Beyond.Gameplay.AI.EnemyCommonCastSkill",
+          "method": "Tick",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.AI.EnemyCommonCastSkill._IsValid",
+                "Beyond.Gameplay.AI.EnemyCommonCastSkill._CastSkill",
+                "Beyond.Gameplay.AI.EnemyCommonCastSkill._WaitFinish"
+              ],
+              "ordered": true
+            }
+          ],
+          "contract": "The routine tick validates, then reaches the cast step before waiting for the skill to finish; movement/rotation phases and timeouts are run-time state."
+        },
+        "EnemyCommonCastSkill._CastSkill": {
+          "type": "Beyond.Gameplay.AI.EnemyCommonCastSkill",
+          "method": "_CastSkill",
+          "claims": [
+            {
+              "passesInlineFieldToCall": {
+                "field": "Beyond.Gameplay.AI.EnemyCommonCastSkill::m_skillData",
+                "valueField": "Beyond.Gameplay.AI.Config.EnemyAISkillData::skillID",
+                "register": "rdx",
+                "call": "Beyond.Gameplay.Core.AbilitySystem.TryCastSkill"
+              }
+            }
+          ],
+          "contract": "The cast step passes m_skillData.skillID as the skill id string of the entity AbilitySystem.TryCastSkill."
+        }
+      }
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "Named original bodies: enemy AI start initializes the brain from the merged AI blackboard, each mode assigns its graph data whose battle/settlement/defend getter returns the serialized canvasGraph, the enemy graph loader passes that graph to the async provider that starts a NodeCanvas GraphOwner, mode entry resets and starts the graph, and brain tick updates it. The CastSkill task passes its resolved skillId parameter string to AbilitySystem.TryCastSkill, which looks up, initializes and reports the cast; the CastSeqSkill path copies its EnemyAISkillData into EnemyCommonCastSkill, whose tick-reached cast step passes that skillID to TryCastSkill.",
+    "conditional": "Holds per mode only for the mode the brain switches to; canvasGraph -> compressed BehaviourTree ordinal is the extend_data_graph_ai corpus join. A CastSkill skillId stored as a blackboard variable resolves at run time. CastSeqSkill skillData is normally a blackboard variable whose value comes from the AI config aiBB, so the cast id is that resolved EnemyAISkillData.skillID.",
+    "unresolved": "Which mode is entered first and later switches, the virtual dispatch site of LoadGraph, task scheduling order inside the NodeCanvas graph, which phase branch of EnemyCommonCastSkill.Tick runs, the entity skill dictionary contents, and server acceptance of the cast op. The SpawnerConfig library enemyId -> SCENE_MONSTER template id join stays server-authoritative."
+  }
+}

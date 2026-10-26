@@ -1,0 +1,150 @@
+{
+  "schema": "endfield.buff-blackboard-double-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "AB00F1C41E13EDF9816F142B166E3C2536D5BC7707992C39E5ED52D1CC888E2C",
+    "global-metadata.dat": "461321D9DCA6A832BCE3BD2390402EFC7C83C145554E97A8058BB68FBEC1C8CA",
+    "UnityPlayer.dll": "9AA9397A6C5EE4FA083EA379B81FF14019EEBA26A76D15446318D5947FB3D2D0"
+  },
+  "reviewedDependencies": [
+    "memorypack_pooled_string_reader_native.json"
+  ],
+  "wrapper": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardDoubleForMemoryPack",
+  "baseWrapper": "Beyond.MemoryPack.Beyond_Blackboard_BlackboardParamBase_float_double_ForMemoryPack",
+  "wrappedType": "Beyond.Blackboard+BlackboardDouble",
+  "readerMethod": [
+    244907,
+    "Beyond.MemoryPack.Beyond_Blackboard_BlackboardDoubleForMemoryPack",
+    "Deserialize",
+    85924928
+  ],
+  "codeWindows": [
+    {
+      "startRva": 85924928,
+      "endRva": 85925233,
+      "sha256": "092AC4D26B1BB10D7B302C5598F54F3B58E26DC94BBBA8A5F19F4EC774609335",
+      "boundary": "complete unwind-chain range 0 of the selected reader family"
+    },
+    {
+      "startRva": 85925233,
+      "endRva": 85925626,
+      "sha256": "B7E09FE0E0CCC33756358E4A3BB2698BCF87763B1CF23CCF6233F20ED9BC9A87",
+      "boundary": "complete unwind-chain range 1 of the selected reader family"
+    },
+    {
+      "startRva": 85925626,
+      "endRva": 85925778,
+      "sha256": "00ED89B38405E02233E863D9E9B4299AF91F24FF063153335E6D9C37531751D6",
+      "boundary": "complete unwind-chain range 2 of the selected reader family"
+    },
+    {
+      "startRva": 85925778,
+      "endRva": 85925809,
+      "sha256": "005044CA7B5DD6C60CC6DA4B328820F0C4BB1B6D0BA6089A719BCA13B03AA5E5",
+      "boundary": "complete unwind-chain range 3 of the selected reader family"
+    },
+    {
+      "startRva": 85925809,
+      "endRva": 85925821,
+      "sha256": "B17011F639ED08EA7452E8018399A2D565D4D2885BD8D12771E865695CF9619D",
+      "boundary": "complete unwind-chain range 4 of the selected reader family"
+    },
+    {
+      "startRva": 85925821,
+      "endRva": 85925827,
+      "sha256": "F07568FC3D09F9916F8A0EFF8BCA83AA89129C4A974445A5BFC4388688763868",
+      "boundary": "complete unwind-chain range 5 of the selected reader family"
+    },
+    {
+      "startRva": 85925827,
+      "endRva": 85925833,
+      "sha256": "AA5901B4BE6E9B58EC795A2750A13C40C02B17FF4D12D563CBE34285368A2759",
+      "boundary": "complete unwind-chain range 6 of the selected reader family"
+    },
+    {
+      "startRva": 85925833,
+      "endRva": 85925889,
+      "sha256": "3697245632E26F389C097DA01BC9183E81BDDBF010DB92A6A4CF310FCF56C1F7",
+      "boundary": "complete unwind-chain range 7 of the selected reader family"
+    }
+  ],
+  "setterMethods": [
+    [
+      245230,
+      "set___blackboardKey__",
+      "System.String"
+    ],
+    [
+      245231,
+      "set___useBlackboardKey__",
+      "System.Boolean"
+    ],
+    [
+      245232,
+      "set___value__",
+      "System.Single"
+    ]
+  ],
+  "instanceOffset": 16,
+  "fieldOffsets": {
+    "blackboardKey": 24,
+    "useBlackboardKey": 16,
+    "value": 20
+  },
+  "nullInstruction": [
+    85925162,
+    "4080FDFF"
+  ],
+  "memberCountInstruction": [
+    85925223,
+    "4080FD03"
+  ],
+  "keyPooledEntryRva": 85925293,
+  "keyJoinRva": 85925463,
+  "stores": {
+    "blackboardKey": [
+      85925492,
+      "49895818"
+    ],
+    "useBlackboardKey": [
+      85925659,
+      "884110"
+    ],
+    "value": [
+      85925755,
+      "F30F117014"
+    ]
+  },
+  "reads": {
+    "useBlackboardKey": [
+      85925584,
+      "440FB630"
+    ],
+    "value": [
+      85925691,
+      "F30F1030"
+    ]
+  },
+  "wire": [
+    {
+      "name": "blackboardKey",
+      "encoding": "int32-pool-index",
+      "bytes": 4
+    },
+    {
+      "name": "useBlackboardKey",
+      "encoding": "byte",
+      "bytes": 1
+    },
+    {
+      "name": "value",
+      "encoding": "single-raw",
+      "bytes": 4
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected reader identity, complete unwind-family code windows, the FF/member-count header, the three generated base-wrapper setters with their parameter types and decoded instance-field stores, and the pooled-key null/empty/lookup paths joining one key store, then the bool and Single reads and stores in setter order.",
+    "conditional": "Normal selected paths only: sufficient contiguous bytes, initialized pool, non-null wrapper and instance. Refill, cold and throw exits are excluded.",
+    "unresolved": "Which StringPool an export uses is supplied by the caller; blackboard lookup, useBlackboardKey semantics and evaluated values are not proved."
+  }
+}

@@ -81,7 +81,7 @@ from scripts.game_data.memorypack.derived_schema import (
 )
 from scripts.repo_paths import REPO_ROOT as REPO
 from scripts.source_paths import ExportLayout
-from scripts.game_data.string_pool import StringPool
+from scripts.game_data.string_pool import StringPool, export_string_pool
 
 
 DEFAULT_OUTPUT = REPO / "reports/game_data/memorypack_derived_values.json"
@@ -188,12 +188,12 @@ class ValueReader(DerivedPlanMixin, _FrozenReader):
         if self.strings is not None:
             index = struct.unpack("<i", self.take(4, "string-pool-index"))[0]
             return self.strings.resolve(index)
-        start = self.pos
-        self.byte_payload()
-        span = self.data[start:self.pos]
-        if len(span) <= 4:
+        # The frozen reader's ``byte_payload`` now reads the pooled index, so
+        # the prior-build length-prefixed payload is framed here instead.
+        length = self.count(1, nullable=True)
+        if length <= 0:
             return None                       # the null or empty payload
-        payload = span[4:]
+        payload = self.take(length, "length-prefixed-string")
         try:
             return payload.decode("utf-8")
         except UnicodeDecodeError:
@@ -297,7 +297,10 @@ def find_identifier(value: Any) -> str | None:
     return None
 
 
-def verify_identifier(directory: Path, definition: int, registry: PlanRegistry) -> dict[str, Any]:
+def verify_identifier(
+    directory: Path, definition: int, registry: PlanRegistry, *,
+    strings: StringPool | None = None,
+) -> dict[str, Any]:
     """Decode every file and check its identifier against its own filename.
 
     This is an oracle the decoder does not control. The file's name comes from
@@ -313,7 +316,8 @@ def verify_identifier(directory: Path, definition: int, registry: PlanRegistry) 
     for path in sorted(directory.glob("*.json")):
         data = path.read_bytes()
         try:
-            value, reached = decode_file(data, definition, registry, source=path.name)
+            value, reached = decode_file(
+                data, definition, registry, source=path.name, strings=strings)
         except (Unsupported, ValueError, IndexError, struct.error, UnicodeDecodeError):
             refused += 1
             continue
@@ -368,7 +372,8 @@ def collect_references(value: Any, found: dict[str, set], depth: int = 0, name: 
 
 
 def verify_references(
-    directories: dict[str, Path], registry: PlanRegistry, definitions: dict[str, int]
+    directories: dict[str, Path], registry: PlanRegistry, definitions: dict[str, int], *,
+    strings: StringPool | None = None,
 ) -> dict[str, Any]:
     """Resolve each cross-reference member against the records that exist.
 
@@ -392,7 +397,8 @@ def verify_references(
         for path in sorted(directory.glob("*.json")):
             try:
                 value, reached = decode_file(
-                    path.read_bytes(), definition, registry, source=path.name)
+                    path.read_bytes(), definition, registry, source=path.name,
+                    strings=strings)
             except (Unsupported, ValueError, IndexError, struct.error):
                 continue
             if reached == path.stat().st_size:
@@ -449,6 +455,9 @@ def build(output: Path, export_root: Path | None = None) -> dict[str, Any]:
     registry, audit = load_registry()
     layout = (ExportLayout(root=export_root) if export_root is not None
               else ExportLayout.configured())
+    # A build that ships ``Json/StringPool/`` stores every string as an i32
+    # pool index; decoding it as an inline UTF-8 payload drifts the cursor.
+    strings = export_string_pool(layout.json_dir)
     families: dict[str, Any] = {}
     samples: dict[str, Any] = {}
     for directory_name, type_name in sorted(WHOLE_RECORD_FAMILIES.items()):
@@ -461,17 +470,20 @@ def build(output: Path, export_root: Path | None = None) -> dict[str, Any]:
             families[directory_name] = {"status": "missing-export", "detail": str(directory)}
             continue
         families[directory_name] = dict(
-            verify_identifier(directory, definition, registry), type=type_name)
+            verify_identifier(directory, definition, registry, strings=strings),
+            type=type_name)
         first = sorted(directory.glob("*.json"))[:1]
         if first:
             value, _ = decode_file(
-                first[0].read_bytes(), definition, registry, source=first[0].name)
+                first[0].read_bytes(), definition, registry, source=first[0].name,
+                strings=strings)
             samples[directory_name] = {"file": first[0].stem, "record": _summarize(value)}
     references = verify_references(
         {name: layout.json_dir / name for name in WHOLE_RECORD_FAMILIES},
         registry,
         {name: registry.named_roots.get(type_name)
          for name, type_name in WHOLE_RECORD_FAMILIES.items()},
+        strings=strings,
     )
     statuses = {row.get("status") for row in families.values()} - {"no-identifier-member"}
     report = {

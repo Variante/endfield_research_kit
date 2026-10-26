@@ -90,6 +90,7 @@ contract in `scripts/game_data/contracts/`:
 | 8 | `SCENE_MONSTER.commonInfo.templateid` to enemy root to `EnemyTable.aiTemplateId` to `AIConfig` load | `extend_data_graph_ai_native.py` | conditional, static |
 | 9 | each `SpawnMonsterFromTemplateV2.libraryKey` selects one `enemyLibrary[].key` in its file | `extend_data_spawner_library_corpus.py` | authored |
 | 10 | server object ID to action to keyed library item, feeding an AI override and a born-data fallback | `extend_data_spawner_library_native.py` | conditional, static |
+| 11 | AI start -> merged `aiBB` -> mode graph data `canvasGraph` -> NodeCanvas `GraphOwner` start; mode enter/tick; `CastSkill.skillId` and `CastSeqSkill` -> `EnemyCommonCastSkill` `m_skillData.skillID` -> `AbilitySystem.TryCastSkill` | `enemy_ai_runtime_native.py` (claims) | direct, build-independent |
 
 Conclusions that span the links:
 
@@ -114,6 +115,13 @@ Conclusions that span the links:
   `aiTemplateId` route), `bornTemplateId` and `bornBehaviorData`, never its
   `enemyId`. In the current corpus, positive `bornTemplateId` values differ
   from the item's `enemyId`, and every `bornBehaviorData` is null.
+- Links 4, 5, 8 and 10 pin one build in `nativeInputs` and return `mismatched`
+  after a client update; link 11 is a claims contract re-proved per build.
+  With link 7 it makes a skill id an enemy input under three conditions: the
+  owning mode is entered, the task node is reached, and the entity skill
+  dictionary holds the id. Most casts go through `CastSeqSkill`, whose
+  `skillData` is a blackboard variable filled from the AI config `aiBB`
+  `EnemyAISkillData` (`skillID`, range, waits); literal `CastSkill` ids are rare.
 
 None of these witnesses a live graph instance, protocol message, resource load,
 or execution, and IFix can redirect every checked method. Asset names and graph
@@ -133,4 +141,8 @@ particular spawner action and library item, selection into a particular
 a live override load. The next direct witness is a server producer or client
 consumer that carries one selected library item into the monster message or
 entity data with matching object and action identity; an ID intersection alone
-cannot close it.
+cannot close it. No client body writes `SCENE_MONSTER.commonInfo.templateid`
+or `monsterLibraryKey`, and nothing reads `EnemyServerData.subgameLibraryKey`,
+so the client only parses the server's choice: treat this join as
+server-authoritative and source it from a captured `SCENE_MONSTER` message, not
+from offline data.

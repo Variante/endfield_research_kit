@@ -107,15 +107,15 @@ _ACTION_MEMBER_COUNTS = {
     'Core_Conditions_CheckBuffIdInContextAdvanced_Data': 8,
     'Core_Conditions_CheckDamageDecorateMask_Data': 6,
     'Core_CheckBuffStackNumAdvanced_Data': 10,
-    'Core_Conditions_CheckSkillType_Data': 9,
+    'Core_Conditions_CheckSkillType_Data': 10,
     'Core_FindTargetAction_FindTargetActionData': 18,
     'Core_Conditions_CheckMainCharacterCondition_Data': 5,
     'Core_Conditions_CheckTimedMarkerCondition_Data': 9,
     'Core_Conditions_CheckBuffStackNum_Data': 8,
     'Core_AbilityActions_FinishBuffAction_Data': 12,
     'Core_DamageAction_DamageActionData': 11,
-    'Core_EffectAction_EffectActionData': 18,
-    'EffectLineCenterAction_Data': 19,
+    'Core_EffectAction_EffectActionData': 20,
+    'EffectLineCenterAction_Data': 21,
     'Core_Conditions_CheckHp_Data': 8,
     'Core_SpawnAbilityEntity_Data': 38,
     'Core_SetSkillCdAtOnce_Data': 11,
@@ -228,7 +228,7 @@ _ACTION_MEMBER_COUNTS = {
     'Core_Conditions_OrConditionAction_Data': 5,
     'Core_Condition_CheckSquadInFight_Data': 5,
     'Core_CostAtbRefreshLongestSkillCd_Data': 5,
-    'Core_RecoverDashEnergy_Data': 6,
+    'Core_RecoverDashEnergy_Data': 7,
     'Core_RecordBattleDetails_Data': 5,
     'Core_SetFirstDashParam_Data': 5,
     'Core_Conditions_CheckProjectileInPerfectDodgeCd_Data': 5,
@@ -257,7 +257,7 @@ _ACTION_MEMBER_COUNTS = {
     'Core_ShelterAction_Data': 13,
     'Core_CharWeaponVisibleAction_CharWeaponVisibleActionData': 10,
     'Core_RefrainObtainUsp_Data': 7,
-    'Core_SelfRotateAction_Data': 18,
+    'Core_SelfRotateAction_Data': 19,
     'Core_SetWeaknessAction_Data': 11,
     'Core_AddAIMarkerAction_Data': 8,
     'Core_TriggerSpellBurstEventAction_Data': 5,
@@ -644,7 +644,8 @@ class Reader:
             self.byte_payload()
             for _ in range(3):self.take(4,'anonymous-scalar32')
             self.take(4,'anonymous-raw-float32');self.take(4,'anonymous-scalar32')
-            self.target_profile();self.take(1,'anonymous-byte')
+            self.target_profile()
+            for _ in range(2):self.take(1,'anonymous-byte')
             return
         if name=='Core_RefrainObtainUsp_Data':
             self.take(1,'anonymous-byte');self.tag_list_profile(reserve=1);self.target_profile()
@@ -751,7 +752,7 @@ class Reader:
         if name=='Core_RecordBattleDetails_Data':
             self.take(4,'anonymous-scalar32');return
         if name=='Core_RecoverDashEnergy_Data':
-            self.take(1,'anonymous-nonzero-byte');self.scalar_payload();return
+            self.take(1,'anonymous-nonzero-byte');self.scalar_payload();self.tag_value();return
         if name in ('Core_CostAtbRefreshLongestSkillCd_Data','Core_ModifyResilienceDecreaseFactor_Data'):
             self.scalar_payload();return
         if name=='Core_Condition_CheckSquadInFight_Data':
@@ -1121,16 +1122,20 @@ class Reader:
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload()
             return
         if name=='Core_EffectAction_EffectActionData':
+            self.take(1,'anonymous-byte')
             self.byte_payload();self.target_profile();self.effect_configuration_profile();self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.target_profile()
             for _ in range(5):self.take(1,'anonymous-nonzero-byte')
-            self.byte_payload();self.target_profile();self.take(1,'anonymous-nonzero-byte')
+            self.byte_payload();self.take(4,'anonymous-scalar32')
+            self.target_profile();self.take(1,'anonymous-nonzero-byte')
             return
         if name=='EffectLineCenterAction_Data':
+            self.take(1,'anonymous-byte')
             self.byte_payload();self.target_profile();self.effect_configuration_profile();self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.target_profile()
             for _ in range(5):self.take(1,'anonymous-nonzero-byte')
-            self.byte_payload();self.target_profile();self.take(1,'anonymous-nonzero-byte')
+            self.byte_payload();self.take(4,'anonymous-scalar32')
+            self.target_profile();self.take(1,'anonymous-nonzero-byte')
             self.target_profile()
             return
         if name=='Core_DamageAction_DamageActionData':
@@ -1169,7 +1174,7 @@ class Reader:
             self.take(4,'anonymous-scalar32')
             if name=='Core_Conditions_CheckSkillType_Data':
                 for _ in range(2):self.take(1,'anonymous-nonzero-byte')
-                self.target_profile()
+                self.take(4,'anonymous-scalar32');self.target_profile()
             start=self.pos
             # Conditional list framing plus an independently joined element
             # source reader; not a live generic formatter-selection claim.
@@ -1371,13 +1376,15 @@ class Reader:
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-special-aim-shape',tag=tag))
 
     def byte_payload(self,*,reserve=0):
+        # Installed generated readers read every string member through the
+        # pooled BeyondReadString helper (memorypack_pooled_string_reader_native):
+        # one signed int32 StringPool index, -1 empty and -2 null. ``reserve``
+        # is kept for callers; a fixed four-byte read needs no length bound.
         start=self.pos
-        n=self.count(1,reserve=reserve,nullable=True)
-        # The selected native helper advances by the supplied byte length.
-        # Do not substitute standard MemoryPack UTF-16/negative-length layouts
-        # or claim decoder parity; even non-UTF8 bytes are structurally valid.
-        if n>0:self.take(n,'anonymous-length-prefixed-bytes')
-        self.records.append(dict(start=start,end=self.pos,kind='anonymous-byte-payload',isNull=n==-1))
+        n=struct.unpack('<i',self.take(4,'string-pool-index-i32'))[0]
+        if n<-2:raise FrameError(self.source,start,'string pool index >= -2',n,'string-pool-index')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-byte-payload',
+                                 poolIndex=n,isNull=n==-2))
 
     def paired_payload(self):
         start=self.pos
@@ -1825,6 +1832,12 @@ class Reader:
             if self.peek()==255:self.take(1,'null-tag-element')
             else:self.header(1);self.take(4,'anonymous-scalar32')
             self.records.append(dict(start=element,end=self.pos,kind='anonymous-tag-element'))
+
+    def tag_value(self):
+        # One GameplayTag member is the same unmanaged four-byte value the
+        # root packed-tag helper copies count*4 bytes of; no element header.
+        start=self.pos;self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-tag-value'))
 
     def raw_dword_array(self):
         # The selected root helper copies count*4 bytes, without element headers.

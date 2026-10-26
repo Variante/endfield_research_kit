@@ -11,7 +11,8 @@ live patch-state, phase or ban-outcome claim.
 Consumer (direct, conditional on the unpatched branches). The contract checks
 named fields, signatures, full code windows, direct call targets and
 controlling branches. ``LoadFromBasePath`` first resolves active major,
-minor and phase (``dynamic_active_version_native``). It exits before entry
+minor and phase; where that value comes from is a network-lane proof, kept in
+``tools/endfield_network_viewer`` and not claimed here. It exits before entry
 processing when the phase is at least the full-phase sentinel, or when the
 path, file or root checks or the root major/minor comparisons fail. On its
 successful entry loop, ``Entry.Version > m_activePhase`` selects a candidate

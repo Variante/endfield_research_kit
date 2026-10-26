@@ -87,7 +87,7 @@ def validate_current_native_contract() -> dict[str, Any]:
     """Check only the selected root/map/sequence and small residual frontier."""
     contract = _contract()
     root, _ = read_reviewed_contract(
-        ROOT_PATH, schema="endfield.buff-root-no-positive-native-contract.v1",
+        ROOT_PATH, schema="endfield.buff-root-no-positive-native-contract.v2",
         status="exact-current-build", label=LABEL,
     )
     action_contract, _ = read_reviewed_contract(

@@ -97,7 +97,7 @@ def validate_current_native_contract(audit_report: dict[str, Any]) -> dict[str, 
     """Reuse the current root gate and one previously audited 0x63 route."""
     contract = _contract()
     root, _ = read_reviewed_contract(
-        ROOT_PATH, schema="endfield.buff-root-no-positive-native-contract.v1",
+        ROOT_PATH, schema="endfield.buff-root-no-positive-native-contract.v2",
         status="exact-current-build", label=LABEL,
     )
     action = json.loads(ACTION_PATH.read_text(encoding="utf-8"))

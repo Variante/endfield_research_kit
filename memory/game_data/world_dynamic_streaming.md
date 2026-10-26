@@ -48,7 +48,7 @@ play.
 | [`dynamic_streaming_config_join`](../../scripts/game_data/dynamic_streaming_config_join.py) | MapConfig to `StreamingMapConfig` asset and scene roots |
 | [`dynamic_main_path_join`](../../scripts/game_data/dynamic_main_path_join.py) | `fb_main` filename to root `UniqueId` |
 | [`dynamic_version_native`](../../scripts/game_data/dynamic_version_native.py), [`dynamic_version_id_domain`](../../scripts/game_data/dynamic_version_id_domain.py) | version root and entries; same-scene IdComp join |
-| [`dynamic_active_version_native`](../../scripts/game_data/dynamic_active_version_native.py), [`dynamic_version_ban_native`](../../scripts/game_data/dynamic_version_ban_native.py) | branch-version source and parser; ban-set consumer |
+| [`dynamic_version_ban_native`](../../scripts/game_data/dynamic_version_ban_native.py) | ban-set consumer; the active-version source is out of scope (network lane) |
 | [`dynamic_aux_pair_corpus`](../../scripts/game_data/dynamic_aux_pair_corpus.py), [`dynamic_aux_bridge_native`](../../scripts/game_data/dynamic_aux_bridge_native.py) | auxiliary pair relations and descriptor 21; native path-to-copy route |
 | [`dynamic_stream_area_corpus`](../../scripts/game_data/dynamic_stream_area_corpus.py), [`dynamic_stream_area_native`](../../scripts/game_data/dynamic_stream_area_native.py) | area framing; area records, relations, `CheckInArea` |
 | [`portal_center_join`](../../scripts/game_data/portal_center_join.py) | portal template and override destination vectors |

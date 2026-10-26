@@ -27,7 +27,12 @@ from scripts.game_data.memorypack import buff_recursive_actions
 import hashlib
 import struct
 from pathlib import PurePosixPath
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from scripts.game_data.string_pool import resolve_string_pool_index
+
+if TYPE_CHECKING:
+    from scripts.game_data.string_pool import StringPool
 
 from scripts.game_data.memorypack import (
     buff_adding_cooldown,
@@ -40,7 +45,6 @@ from scripts.game_data.memorypack import (
 from scripts.game_data.memorypack.buff import (
     read_buff_blackboard_float_raw_field_bounded,
     read_buff_blackboard_int_field, read_buff_bool_field,
-    read_buff_memorypack_utf8_string_strict_bounded,
 )
 from scripts.game_data.memorypack.buff_actions import event_prefix, root_continuation
 from scripts.game_data.memorypack.buff_root_no_positive_native import (
@@ -112,8 +116,13 @@ def _decode_single_create_action(
 def decode_single_create_action_root(
     data: bytes, *, source: str, expected_sha256: str,
     native_validation: dict[str, Any],
+    strings: "StringPool | None" = None,
 ) -> dict[str, Any]:
-    """Replay one selected 30-field root on original bytes, with no anchor."""
+    """Replay one selected 30-field root on original bytes, with no anchor.
+
+    ``id`` is a signed StringPool index; ``strings`` (the export's pool) must
+    resolve it to the source stem.
+    """
     if (native_validation.get("status") != "validated"
             or native_validation.get("root", {}).get("status") != "validated"):
         raise ValueError(f"{LABEL}:native-not-validated")
@@ -236,16 +245,20 @@ def decode_single_create_action_root(
         add(index, start, cursor, value=value)
     cursor = null_or_empty(13, cursor)
     start = cursor
-    child = buff_icon_config.decode_icon_config(data, start, len(data), require_limit_end=False)
+    child = buff_icon_config.decode_icon_config(
+        data, start, len(data), require_limit_end=False, strings=strings,
+    )
     cursor = child["consumedEnd"]
     add(14, start, cursor, child=child)
     start = cursor
-    buff_id, cursor = read_buff_memorypack_utf8_string_strict_bounded(
-        data, start, len(data), "id", max_length=512,
-    )
+    if start + 4 > len(data):
+        raise ValueError(f"{LABEL}.id:truncated")
+    pool_index = struct.unpack_from("<i", data, start)[0]
+    cursor = start + 4
+    buff_id = resolve_string_pool_index(pool_index, strings, f"{LABEL}.id")
     if buff_id != PurePosixPath(source).stem:
         raise ValueError(f"{LABEL}.id:source-name-mismatch={buff_id!r}")
-    add(15, start, cursor, value=buff_id)
+    add(15, start, cursor, value=buff_id, poolIndex=pool_index, encoding="int32-pool-index")
     cursor = null_or_empty(16, cursor)
     for index in (17, 18):
         start = cursor

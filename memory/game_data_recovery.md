@@ -42,7 +42,7 @@ Three existing vertical chains provide the starting point for synthesis:
 | Chain | What can already be explained | Keep the real break visible |
 | --- | --- | --- |
 | Character configuration → Skill/Blackboard → Buff/action → attributes and healing → events | Configuration processing, parameter precedence, lifecycle/reentry, staged attributes, requested versus actual healing, and two event channels. | Other action semantics, shared scheduling and full damage settlement; historical scalar recovery is separate, while relevant listeners remain simulation requirements. |
-| Enemy message/template → AIConfig → blackboard/graph → task | Selected default template/config/graph identity and a task's field consumption. | Spawner library identity is not proved to become the protocol template identity; graph scheduling and task-to-skill execution need separate joins. |
+| Enemy message/template → AIConfig → blackboard/graph → task | Selected default template/config/graph identity, mode graph start/enter/tick, and task-to-skill id flow (`CastSkill`, `CastSeqSkill` via `EnemyCommonCastSkill`) into `AbilitySystem.TryCastSkill`. | Spawner library identity becoming the protocol template identity is server-authoritative (no client writer); the first mode, node order inside a graph, and the entity skill dictionary remain run-time. |
 | Quest/mission/variables → MapConfig scene state → streaming visibility; LevelScript → interaction/Story | Conditional state calculation reaches state controllers; typed playback and callback carriers identify local interfaces. | Visibility is not a proof of interaction or Story activation. Mission transition ownership and server callback decisions remain separate. |
 
 For each subsystem, design understanding is sufficient when its definitions,
@@ -821,8 +821,12 @@ runtime question may improve understanding without decoding another file.
   scope. Name the missing state transition or observation before requesting
   further evidence, and diagnose failed admission before repeating a recording.
 
-1. **BuffData.** Rank residual recursive fields after excluding every admitted
-   root. Reuse shared DataPair, AttributeModifierData, action and finder
+1. **BuffData.** First move the remaining prior-build child gates (attribute
+   modifier, stacking, datapair, global modifier, event maps, damage receipts)
+   onto the pin-free derived line (`derived_values` + `wrapper_body_audit`,
+   read kinds by claims) instead of re-pinning windows; until then the gate
+   and residual census refuse as `mismatched`. Then rank residual recursive fields
+   after excluding every admitted root. Reuse shared DataPair, AttributeModifierData, action and finder
    grammars only through independently proved parent typed calls. Ability and
    Buff event maps have different stored read orders despite sharing their
    SequenceActionData element. General input-list and sibling-action counts
@@ -1001,9 +1005,11 @@ runtime question may improve understanding without decoding another file.
    anonymous children and missing naming receipts remain explicit even at EOF.
    A complete family report owns framing promotion; a sparse report or a closed
    first ActionGroup does not classify the remaining corpus or top-level
-   continuation. Rank the residual distinct
-   action stops after publication, and reuse authenticated stored framing for
-   selection-only replay when its current dependency closure still matches.
+   continuation. On the current StringPool build the pinned Skill line is
+   dead (49-member root, pooled strings, stale pins); the derived line plus
+   `memorypack.wrapper_body_audit` (header count and write order per reached
+   wrapper) checks every file, so the next step is native proof of per-member
+   read kinds, not re-pinning `skill_timeline_*` contracts.
 4. **Gameplay formulas.** Selected damage/Poise evaluators and callers are
    proven statically ([`game_data/gameplay_semantics.md`](game_data/gameplay_semantics.md));
    receiver identity, live invocation, subtype selection, patch state,
